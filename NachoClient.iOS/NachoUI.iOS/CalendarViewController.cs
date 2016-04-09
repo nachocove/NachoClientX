@@ -67,7 +67,7 @@ namespace NachoClient.iOS
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
             addEventButton.AccessibilityLabel = "New meeting";
             addEventButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
+                CreateEvent ();
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
@@ -123,6 +123,22 @@ namespace NachoClient.iOS
             eventCalendarMap.UiRefresh = null;
         }
 
+        public void CreateEvent (DateTime startDate)
+        {
+            var vc = new EditEventViewController ();
+            vc.SetStartingDate (startDate);
+            vc.SetCalendarItem (null);
+            vc.SetOwner (this);
+            NavigationController.PushViewController (vc, true);
+        }
+
+        void CreateEvent ()
+        {
+            var vc = new EditEventViewController ();
+            vc.SetCalendarItem (null);
+            vc.SetOwner (this);
+        }
+
         /// <summary>
         /// Prepares for segue.
         /// </summary>
@@ -138,17 +154,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier == "CalendarToEditEventView") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                if (holder.value != null) {
-                    var dt = (DateTime)holder.value;
-                    vc.SetStartingDate (dt);
-                }
-                vc.SetCalendarItem (null);
-                vc.SetOwner (this);
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }

@@ -831,12 +831,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("EventToEditEvent")) {
-                var dc = (EditEventViewController)segue.DestinationViewController;
-                dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
-                return;
-            }
-
             if (segue.Identifier.Equals ("SegueToContactDetail")) {
                 var h = sender as SegueHolder;
                 var c = (McContact)h.value;
@@ -1366,7 +1360,14 @@ namespace NachoClient.iOS
         private void EditButtonClicked (object sender, EventArgs e)
         {
             detail.HasBeenEdited = true;
-            PerformSegue ("EventToEditEvent", this);
+            EditEvent ();
+        }
+
+        void EditEvent ()
+        {
+            var dc = new EditEventViewController ();
+            dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
+            NavigationController.PushViewController (dc, true);
         }
 
         private void CancelMeetingButtonClicked (object sender, EventArgs args)

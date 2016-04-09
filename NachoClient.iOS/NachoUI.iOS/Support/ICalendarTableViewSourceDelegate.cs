@@ -17,6 +17,8 @@ namespace NachoClient.iOS
 
         void ReturnToToday ();
 
+        void CreateEvent (DateTime date);
+
     }
 }
 

@@ -210,14 +210,6 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, true, accountId, h);
                 return;
             }
-            if (segue.Identifier == "NachoNowToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var c = (McCalendar)holder.value;
-                vc.SetCalendarItem (c);
-                vc.SetOwner (this);
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }

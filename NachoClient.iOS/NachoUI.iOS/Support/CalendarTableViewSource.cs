@@ -430,7 +430,7 @@ namespace NachoClient.iOS
             addButton.TintColor = A.Color_NachoGreen;
             addButton.Frame = new CGRect (tableView.Frame.Width - 34, (view.Frame.Height / 2) - 8, 16, 16);
             addButton.TouchUpInside += (sender, e) => {
-                owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
+                owner.CreateEvent (date);
             };
 
             preventAddButtonGC.Add (addButton);

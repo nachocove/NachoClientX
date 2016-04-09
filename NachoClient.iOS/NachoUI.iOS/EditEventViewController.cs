@@ -144,6 +144,21 @@ namespace NachoClient.iOS
 
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
 
+        UIStoryboard mainStorybaord;
+        UIStoryboard MainStoryboard {
+            get {
+                if (mainStorybaord == null) {
+                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                }
+                return mainStorybaord;
+            }
+
+        }
+
+        public EditEventViewController () : base ()
+        {
+        }
+
         public EditEventViewController (IntPtr handle)
             : base (handle)
         {
@@ -183,6 +198,11 @@ namespace NachoClient.iOS
                 NcAssert.CaseError ();
                 break;
             }
+
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
 
             base.ViewDidLoad ();
         }
@@ -348,58 +368,45 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowAttendees ()
         {
-            if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
-                var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                ExtractValues ();
-                dc.Setup (this, account, c.attendees, c, editing: true,
-                    organizer: CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr), recurring: false);
-                return;
-            }
+            var dc = MainStoryboard.InstantiateViewController("EventAttendeeViewController") as EventAttendeeViewController;
+            ExtractValues ();
+            dc.Setup (this, account, c.attendees, c, editing: true,
+                organizer: CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr), recurring: false);
+            NavigationController.PushViewController (dc, true);
+        }
 
-            if (segue.Identifier.Equals ("EditEventToAlert")) {
-                var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (c.ReminderIsSet, c.Reminder);
-                ExtractValues ();
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    uint reminder;
-                    c.ReminderIsSet = dc.GetReminder (out reminder);
-                    if (c.ReminderIsSet) {
-                        c.Reminder = reminder;
+        void ShowAlert ()
+        {
+            var dc = MainStoryboard.InstantiateViewController ("EventAttendeeViewController") as AlertChooserViewController;
+            dc.SetReminder (c.ReminderIsSet, c.Reminder);
+            ExtractValues ();
+            dc.ViewDisappearing += (object s, EventArgs e) => {
+                uint reminder;
+                c.ReminderIsSet = dc.GetReminder (out reminder);
+                if (c.ReminderIsSet) {
+                    c.Reminder = reminder;
+                }
+            };
+            NavigationController.PushViewController (dc, true);
+        }
+
+        void ShowCalendarChooser ()
+        {
+            var dc = MainStoryboard.InstantiateViewController ("ChooseCalendarViewController") as ChooseCalendarViewController;
+            ExtractValues ();
+            dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
+            dc.ViewDisappearing += (object s, EventArgs e) => {
+                var newCalendar = dc.GetSelectedCalendar ();
+                if (null != newCalendar) {
+                    if (newCalendar.AccountId != calendarFolder.AccountId) {
+                        ChangeToAccount (newCalendar.AccountId);
                     }
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToPhone")) {
-                var dc = (PhoneViewController)segue.DestinationViewController;
-                dc.SetPhone (TempPhone);
-                ExtractValues ();
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    TempPhone = dc.GetPhone ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
-                var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                ExtractValues ();
-                dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    var newCalendar = dc.GetSelectedCalendar ();
-                    if (null != newCalendar) {
-                        if (newCalendar.AccountId != calendarFolder.AccountId) {
-                            ChangeToAccount (newCalendar.AccountId);
-                        }
-                        calendarFolder = newCalendar;
-                    }
-                };
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+                    calendarFolder = newCalendar;
+                }
+            };
+            NavigationController.PushViewController (dc, true);
         }
 
         protected override void CreateViewHierarchy ()
@@ -1695,19 +1702,19 @@ namespace NachoClient.iOS
         private void PeopleTapAction ()
         {
             View.EndEditing (true);
-            PerformSegue ("EditEventToEventAttendees", this);
+            ShowAttendees ();
         }
 
         private void AlertTapAction ()
         {
             View.EndEditing (true);
-            PerformSegue ("EditEventToAlert", this);
+            ShowAlert ();
         }
 
         private void CalendarTapAction ()
         {
             View.EndEditing (true);
-            PerformSegue ("EditEventToCalendarChooser", this);
+            ShowCalendarChooser ();
         }
 
         private void DeleteTapAction ()

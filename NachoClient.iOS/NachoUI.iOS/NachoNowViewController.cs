@@ -119,7 +119,7 @@ namespace NachoClient.iOS
             Util.SetAutomaticImageForButton (newMeetingButton, "cal-add");
             newMeetingButton.AccessibilityLabel = "New meeting";
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
+                EditEvent (null);
             };
                 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
@@ -293,15 +293,18 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
+        void EditEvent (McCalendar calendarEvent)
+        {
+            var vc = new EditEventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            vc.SetOwner (this);
+            NavigationController.PushViewController (vc, true);
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "NachoNowToEditEventView") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                vc.SetCalendarItem (c);
-                vc.SetOwner (this);
-            } else if (segue.Identifier == "NachoNowToEventView") {
+            
+            if (segue.Identifier == "NachoNowToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var e = holder.value as McEvent;

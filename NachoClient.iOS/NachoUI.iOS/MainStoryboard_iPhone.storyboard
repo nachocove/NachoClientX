@@ -33,7 +33,6 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="47A-TQ-Je6"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEventView" id="56g-2o-gUv"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="Kmd-x6-iCJ"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="rew-s7-VAQ"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="NachoNowToFolders" modalTransitionStyle="crossDissolve" id="UJW-GW-OZz"/>
@@ -63,7 +62,6 @@
                     <connections>
                         <outlet property="dateView" destination="OaC-4H-Y1h" id="g76-sY-DyU"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="zDw-Tx-fTt"/>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="CalendarToEditEventView" id="6Lm-Uk-Knv"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -390,14 +388,13 @@
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="ted-eg-Hzc"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="uqv-uq-oCq"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" modalTransitionStyle="crossDissolve" id="FD7-0T-FGT"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="z10-H9-HYt"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-305" y="2348"/>
+            <point key="canvasLocation" x="-2529" y="3153"/>
         </scene>
         <!--Message Thread View Controller-->
         <scene sceneID="iAW-bD-vnX">
@@ -413,7 +410,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="1P6-H9-JTD"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="sSC-cG-RLf"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="dMa-zN-I2w"/>
                     </connections>
                 </tableViewController>
@@ -497,7 +493,6 @@
                         <segue destination="p7r-P8-BKK" kind="push" identifier="EventToAlert" id="tdu-G2-PEp"/>
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EventToCal" id="Tfk-Mt-BlS"/>
                         <segue destination="qAG-NA-NKz" kind="push" identifier="EventToNotes" id="JTo-qU-j7O"/>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="EventToEditEvent" id="k2t-Pj-AhS"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EventToEventAttendees" id="HCr-Oa-UHV"/>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="SegueToContactDetail" id="udF-bU-cV6"/>
                     </connections>
@@ -569,41 +564,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="QU2-pC-E3Z" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-4479" y="-2598"/>
-        </scene>
-        <!--Edit Event View Controller-->
-        <scene sceneID="ndR-FK-UVf">
-            <objects>
-                <viewController storyboardIdentifier="EditEventViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="15q-DA-GFk" customClass="EditEventViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="fIw-3C-DaA">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="ur7-bo-IIh">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="Gsy-wq-3TG" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="Hg4-Vj-sQl"/>
-                    <connections>
-                        <outlet property="contentView" destination="Gsy-wq-3TG" id="DxE-KR-TXr"/>
-                        <outlet property="scrollView" destination="ur7-bo-IIh" id="exr-dy-EXm"/>
-                        <segue destination="p7r-P8-BKK" kind="push" identifier="EditEventToAlert" id="m2D-2n-RiV"/>
-                        <segue destination="cXD-rq-iSl" kind="push" identifier="EditEventToCalendarChooser" id="7sK-rg-HQL"/>
-                        <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
-                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Kr2-7H-kbB"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="j2D-VY-BIq"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="O99-IW-kIW" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-2695" y="-1252"/>
         </scene>
         <!--Alert Chooser View Controller-->
         <scene sceneID="DXi-EB-bSZ">
@@ -815,7 +775,6 @@
                         <outlet property="scrollView" destination="RJq-gT-NuY" id="PRQ-NN-dgK"/>
                         <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
                         <segue destination="vgr-FH-RtX" kind="custom" identifier="ContactToContactEdit" customClass="FadeCustomSegue" id="mLY-u0-R5O"/>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="kYM-OY-NE0"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
@@ -846,7 +805,7 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="add" id="4z6-Fd-6ku" userLabel="Bar Button Item - Add"/>
             </objects>
-            <point key="canvasLocation" x="1593" y="1029"/>
+            <point key="canvasLocation" x="1309" y="1205"/>
         </scene>
         <!--About Us Navigation Controller-->
         <scene sceneID="nZ5-g1-nam">
@@ -913,7 +872,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="XEc-ET-UDe"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="e7N-39-HB4"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="TCS-zD-Pad"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="lof-V2-Nc4"/>
                     </connections>
@@ -970,7 +928,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="xDy-7i-efd"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="w5M-2I-OPz"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="NjM-BZ-zUf"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="b83-m2-lyF"/>
                     </connections>
@@ -1011,7 +968,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="XjX-O2-c15"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="FUw-4q-4q9"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="62b-xt-XXd"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="Vqu-N7-OvL"/>
                     </connections>
@@ -1035,7 +991,6 @@
                     <tabBarItem key="tabBarItem" title="Inbox" id="QX4-1r-Lvc" userLabel="Inbox"/>
                     <navigationItem key="navigationItem" id="vg1-S8-ywa"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="fHx-e4-Ujt"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="IoZ-Yo-ies"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="u7I-4F-wRY"/>
                     </connections>
@@ -1193,7 +1148,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="l9o-hP-TXM"/>
                     <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="gVj-FW-dv1"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="H86-lc-tSW"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="oCQ-GI-yPC"/>
                     </connections>
@@ -1208,28 +1162,24 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="56g-2o-gUv"/>
-        <segue reference="UJW-GW-OZz"/>
-        <segue reference="wQh-Gq-11B"/>
-        <segue reference="rew-s7-VAQ"/>
         <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="QDW-pm-HY2"/>
+        <segue reference="rew-s7-VAQ"/>
+        <segue reference="FD7-0T-FGT"/>
+        <segue reference="z10-H9-HYt"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
-        <segue reference="rEt-DF-c51"/>
         <segue reference="oUa-Te-1to"/>
-        <segue reference="j2D-VY-BIq"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="z8t-Er-kGd"/>
-        <segue reference="d1S-bn-Rkc"/>
-        <segue reference="dAf-rc-Hh3"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="WNu-7Y-s9s"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="5u2-X0-TbZ"/>
+        <segue reference="b2R-9j-Kqr"/>
+        <segue reference="tt1-JW-EVV"/>
         <segue reference="2D9-t9-ebv"/>
+        <segue reference="d1S-bn-Rkc"/>
         <segue reference="STf-DG-2qn"/>
         <segue reference="nsx-vp-5fz"/>
         <segue reference="Pjt-TP-v3d"/>
+        <segue reference="47y-6M-xBI"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
