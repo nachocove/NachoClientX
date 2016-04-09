@@ -17,6 +17,10 @@ namespace NachoClient.iOS
         INachoIntentChooserParent owner;
         INachoDateControllerParent dateOwner;
 
+        public IntentSelectionViewController() : base ()
+        {
+        }
+
         public IntentSelectionViewController (IntPtr handle) : base (handle)
         {
 

@@ -202,7 +202,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" userLabel="Contacts Search View" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
                             <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
@@ -339,7 +339,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
@@ -795,20 +795,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-6207" y="2968"/>
-        </scene>
-        <!--Intent Selection View Controller-->
-        <scene sceneID="mbi-5g-bbR">
-            <objects>
-                <viewController storyboardIdentifier="IntentSelectionViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ErX-HX-Xxl" customClass="IntentSelectionViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="daV-V3-z61">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="q3l-8c-9gn" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-2497" y="-3562"/>
         </scene>
         <!--Add Attachment View Controller-->
         <scene sceneID="iNT-Bg-Usj">
@@ -1287,29 +1273,29 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="nJv-0g-ewn"/>
-        <segue reference="nsx-vp-5fz"/>
-        <segue reference="Pjt-TP-v3d"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="udF-bU-cV6"/>
-        <segue reference="mLY-u0-R5O"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="sSC-cG-RLf"/>
+        <segue reference="z10-H9-HYt"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="NjM-BZ-zUf"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="Gi8-ik-ZM2"/>
+        <segue reference="vNg-HB-UMF"/>
+        <segue reference="oUa-Te-1to"/>
+        <segue reference="f6U-bH-mTW"/>
+        <segue reference="j2D-VY-BIq"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="m2D-2n-RiV"/>
         <segue reference="b2R-9j-Kqr"/>
         <segue reference="2D9-t9-ebv"/>
         <segue reference="z8t-Er-kGd"/>
-        <segue reference="Gi8-ik-ZM2"/>
-        <segue reference="NjM-BZ-zUf"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="vNg-HB-UMF"/>
-        <segue reference="oUa-Te-1to"/>
-        <segue reference="z10-H9-HYt"/>
-        <segue reference="f6U-bH-mTW"/>
-        <segue reference="sSC-cG-RLf"/>
-        <segue reference="j2D-VY-BIq"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="udF-bU-cV6"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="nJv-0g-ewn"/>
+        <segue reference="nsx-vp-5fz"/>
+        <segue reference="Pjt-TP-v3d"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

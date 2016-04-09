@@ -528,7 +528,7 @@ namespace NachoClient.iOS
         // User tapping the intent field 
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
         {
-            IntentSelectionViewController intentController = MainStoryboard.InstantiateViewController ("IntentSelectionViewController") as IntentSelectionViewController;
+            var intentController = new IntentSelectionViewController ();
             intentController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
             intentController.SetOwner (this);
             intentController.SetDateControllerOwner (this);
