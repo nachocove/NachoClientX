@@ -54,8 +54,6 @@ namespace NachoClient.iOS
     {
         void MessageThreadSelected (McEmailMessageThread thread);
 
-        void PerformSegueForDelegate (string identifier, NSObject sender);
-
         void MultiSelectToggle (IMessageTableViewSource source, bool enabled);
 
         void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts);
@@ -63,6 +61,8 @@ namespace NachoClient.iOS
         void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action);
 
         void DeferThread (McEmailMessageThread thread);
+
+        void MoveThread (McEmailMessageThread thread);
     }
 }
 

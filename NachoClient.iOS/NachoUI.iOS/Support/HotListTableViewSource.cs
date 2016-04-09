@@ -540,12 +540,20 @@ namespace NachoClient.iOS
 
         private void DeferredClicked (object sender)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id)));
+            var deferred = new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id);
+            var nowViewController = owner as NachoNowViewController;
+            if (nowViewController != null) {
+                nowViewController.ShowMessages (deferred);
+            }
         }
 
         private void DeadlinesClicked (object sender)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id)));
+            var deadlines = new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id);
+            var nowViewController = owner as NachoNowViewController;
+            if (nowViewController != null) {
+                nowViewController.ShowMessages (deadlines);
+            }
         }
 
         /// INachoFolderChooserParent delegate
@@ -594,7 +602,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToFolders", new SegueHolder (messageThread));
+            owner.MoveThread (messageThread);
         }
 
         void onArchiveButtonClicked (McEmailMessageThread messageThread)

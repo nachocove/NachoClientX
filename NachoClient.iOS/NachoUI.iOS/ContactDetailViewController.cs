@@ -1096,9 +1096,10 @@ namespace NachoClient.iOS
 
         ////////InteractionsTableViewStuff
 
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        public void MoveThread (McEmailMessageThread thread)
         {
-            PerformSegue (identifier, sender);
+            var holder = new SegueHolder (thread);
+            PerformSegue ("MessageListToFolders", holder);
         }
 
         public void MessageThreadSelected (McEmailMessageThread messageThread)

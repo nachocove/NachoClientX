@@ -1018,14 +1018,11 @@ namespace NachoClient.iOS
         /// </summary>
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            NcAssert.True (cookie is SegueHolder);
-            var h = cookie as SegueHolder;
-
             if (MultiSelectActive ()) {
-                var t = h.value as UITableView;
+                var t = cookie as UITableView;
                 MultiSelectMove (t, folder);
             } else {
-                var messageThread = h.value as McEmailMessageThread;
+                var messageThread = cookie as McEmailMessageThread;
                 MoveThisMessage (messageThread, folder);
             }
         }
@@ -1051,7 +1048,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("MessageListToFolders", new SegueHolder (messageThread));
+            owner.MoveThread (messageThread);
         }
 
         public override void DraggingStarted (UIScrollView scrollView)

@@ -310,17 +310,7 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "NachoNowToMessageList") {
-                var holder = (SegueHolder)sender;
-                var messageList = (INachoEmailMessages)holder.value;
-                var messageListViewController = (MessageListViewController)segue.DestinationViewController;
-                messageListViewController.SetEmailMessages (messageList);
-            } else if (segue.Identifier == "SegueToMessageThreadView") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (MessageListViewController)segue.DestinationViewController;
-                vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread));
-            } else if (segue.Identifier == "NachoNowToFolders") {
+            if (segue.Identifier == "NachoNowToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 int accountId = 0;
@@ -451,9 +441,10 @@ namespace NachoClient.iOS
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        public void MoveThread (McEmailMessageThread thread)
         {
-            PerformSegue (identifier, sender);
+            var holder = new SegueHolder (thread);
+            PerformSegue ("NachoNowToFolders", holder);
         }
 
         public void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action)
@@ -496,10 +487,24 @@ namespace NachoClient.iOS
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
             if (messageThread.HasMultipleMessages ()) {
-                PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox (NcApplication.Instance.Account.Id)));
+                ShowThread (messageThread);
             } else {
                 ShowMessage (messageThread);
             }
+        }
+
+        public void ShowMessages (INachoEmailMessages messages)
+        {
+            var messageListViewController = new MessageListViewController ();
+            messageListViewController.SetEmailMessages (messages);
+            NavigationController.PushViewController (messageListViewController, true);
+        }
+
+        public void ShowThread (McEmailMessageThread thread)
+        {
+            var vc = new MessageThreadViewController ();
+            vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread));
+            NavigationController.PushViewController (vc, true);
         }
 
         ///  IMessageTableViewSourceDelegate

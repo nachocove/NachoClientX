@@ -33,14 +33,12 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="47A-TQ-Je6"/>
                     <connections>
-                        <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="rew-s7-VAQ"/>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="NachoNowToFolders" modalTransitionStyle="crossDissolve" id="UJW-GW-OZz"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="wQh-Gq-11B"/>
+                        <segue destination="v8Y-11-4jc" kind="modal" identifier="NachoNowToFolders" modalTransitionStyle="crossDissolve" id="OTH-fc-eqV"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6213" y="-2274"/>
+            <point key="canvasLocation" x="-6189" y="-2274"/>
         </scene>
         <!--Calendar-->
         <scene sceneID="lp3-oi-9fg">
@@ -179,7 +177,6 @@
                     </view>
                     <navigationItem key="navigationItem" id="568-nK-YHB"/>
                     <connections>
-                        <segue destination="kq1-eO-X0p" kind="push" identifier="FoldersToMessageList" id="szv-KC-TId"/>
                         <segue destination="SnS-WJ-KWp" kind="push" identifier="SegueToDeferredList" id="rEt-DF-c51"/>
                         <segue destination="S8F-Mj-kVD" kind="push" identifier="SegueToHotList" id="zOx-eF-clw"/>
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
@@ -229,7 +226,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="812" y="-340"/>
+            <point key="canvasLocation" x="-3092" y="-911"/>
         </scene>
         <!--Advanced Settings View Controller-->
         <scene sceneID="eed-GO-vzW">
@@ -248,7 +245,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3040" y="4882"/>
+            <point key="canvasLocation" x="-3992" y="4710"/>
         </scene>
         <!--Drafts View Controller-->
         <scene sceneID="DqQ-E2-ipI">
@@ -263,9 +260,6 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="267-CG-8aK"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="iIU-5R-oQQ"/>
-                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -284,7 +278,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="OaO-Lv-bxz" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2488" y="4093"/>
+            <point key="canvasLocation" x="-3568" y="3829"/>
         </scene>
         <!--Account Validation View Controller-->
         <scene sceneID="zKg-bZ-wb2">
@@ -299,7 +293,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="V2o-ry-ikP" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="81" y="3617"/>
+            <point key="canvasLocation" x="-4471" y="5521"/>
         </scene>
         <!--Chooser-->
         <scene sceneID="Ora-ag-cc2">
@@ -325,7 +319,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="796" y="-1295"/>
+            <point key="canvasLocation" x="-3508" y="-1879"/>
         </scene>
         <!--Notification Chooser View Controller-->
         <scene sceneID="ngQ-k6-uNM">
@@ -339,7 +333,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ACI-Lc-wVg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4074" y="4838"/>
+            <point key="canvasLocation" x="-4490" y="4710"/>
         </scene>
         <!--Contact Edit View Controller-->
         <scene sceneID="0AJ-Oh-Ge6">
@@ -369,51 +363,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="g1S-pD-vZ9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="244" y="1452"/>
-        </scene>
-        <!--Message List View Controller-->
-        <scene sceneID="piL-bm-yTE">
-            <objects>
-                <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <connections>
-                            <outlet property="dataSource" destination="kq1-eO-X0p" id="XpW-1e-5mf"/>
-                            <outlet property="delegate" destination="kq1-eO-X0p" id="rsz-rX-3ij"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" id="ted-eg-Hzc"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" modalTransitionStyle="crossDissolve" id="FD7-0T-FGT"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="z10-H9-HYt"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-2529" y="3153"/>
-        </scene>
-        <!--Message Thread View Controller-->
-        <scene sceneID="iAW-bD-vnX">
-            <objects>
-                <tableViewController storyboardIdentifier="MessageThreadViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="3s4-Wa-4oT" customClass="MessageThreadViewController" sceneMemberID="viewController">
-                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="Ezw-cc-nmk">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <connections>
-                            <outlet property="dataSource" destination="3s4-Wa-4oT" id="QxV-kY-o4Q"/>
-                            <outlet property="delegate" destination="3s4-Wa-4oT" id="e43-gj-03n"/>
-                        </connections>
-                    </tableView>
-                    <navigationItem key="navigationItem" id="1P6-H9-JTD"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="dMa-zN-I2w"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="uYc-UB-Nqv" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-1875" y="1077"/>
+            <point key="canvasLocation" x="-3556" y="420"/>
         </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
@@ -449,7 +399,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="UfH-96-Z9b" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-17" y="2771"/>
+            <point key="canvasLocation" x="-5137" y="1075"/>
         </scene>
         <!--Label Selection View Controller-->
         <scene sceneID="QNT-Vv-DeF">
@@ -462,7 +412,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Y6q-vD-mQg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1813" y="1238"/>
+            <point key="canvasLocation" x="-3568" y="1846"/>
         </scene>
         <!--Notes Viewer View Controller-->
         <scene sceneID="Hd9-0q-M2W">
@@ -519,7 +469,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="kiK-9g-6gb" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2807" y="-475"/>
+            <point key="canvasLocation" x="-4311" y="997"/>
         </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
@@ -581,7 +531,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="3d3-Vl-kXG" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5297" y="2364"/>
+            <point key="canvasLocation" x="-5657" y="2084"/>
         </scene>
         <!--About Us View Controller-->
         <scene sceneID="3SJ-Xi-4H0">
@@ -648,12 +598,11 @@
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="EVd-W1-ppt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1021" y="123"/>
+            <point key="canvasLocation" x="-4333" y="-120"/>
         </scene>
         <!--Event Attendee View Controller-->
         <scene sceneID="odK-NZ-B9r">
@@ -675,7 +624,7 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="add" id="4z6-Fd-6ku" userLabel="Bar Button Item - Add"/>
             </objects>
-            <point key="canvasLocation" x="-355" y="-1295"/>
+            <point key="canvasLocation" x="-5137" y="-1863"/>
         </scene>
         <!--About Us Navigation Controller-->
         <scene sceneID="nZ5-g1-nam">
@@ -741,14 +690,10 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="XEc-ET-UDe"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="TCS-zD-Pad"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="lof-V2-Nc4"/>
-                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TZT-bK-ZdC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4207" y="3043"/>
+            <point key="canvasLocation" x="-5639" y="1407"/>
         </scene>
         <!--Inbox Navigation Controller-->
         <scene sceneID="OK6-7u-Mab">
@@ -797,10 +742,6 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="xDy-7i-efd"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="NjM-BZ-zUf"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="b83-m2-lyF"/>
-                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="6wM-bQ-5UO" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -837,10 +778,6 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="XjX-O2-c15"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="62b-xt-XXd"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="Vqu-N7-OvL"/>
-                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="zCN-MO-NfE" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -860,10 +797,6 @@
                     </tableView>
                     <tabBarItem key="tabBarItem" title="Inbox" id="QX4-1r-Lvc" userLabel="Inbox"/>
                     <navigationItem key="navigationItem" id="vg1-S8-ywa"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="IoZ-Yo-ies"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="u7I-4F-wRY"/>
-                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="BFH-Ry-urH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1017,10 +950,6 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="l9o-hP-TXM"/>
-                    <connections>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="H86-lc-tSW"/>
-                        <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="oCQ-GI-yPC"/>
-                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8o0-Ox-CuC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1035,19 +964,17 @@
         <segue reference="STf-DG-2qn"/>
         <segue reference="nsx-vp-5fz"/>
         <segue reference="Pjt-TP-v3d"/>
-        <segue reference="QDW-pm-HY2"/>
-        <segue reference="rew-s7-VAQ"/>
-        <segue reference="ZzH-qS-KOm"/>
-        <segue reference="5u2-X0-TbZ"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="tt1-JW-EVV"/>
-        <segue reference="Ar9-Nl-fq9"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="EVd-W1-ppt"/>
-        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="OTH-fc-eqV"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
+        <segue reference="rEt-DF-c51"/>
         <segue reference="oUa-Te-1to"/>
+        <segue reference="dAf-rc-Hh3"/>
+        <segue reference="z8t-Er-kGd"/>
+        <segue reference="Ar9-Nl-fq9"/>
+        <segue reference="WNu-7Y-s9s"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="alQ-9Z-W4y"/>
         <segue reference="47y-6M-xBI"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>

@@ -170,11 +170,19 @@ namespace NachoClient.iOS
                 if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
                     PerformSegue ("SegueToDrafts", new SegueHolder (folder));
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    ShowMessages (folder);
                 }
             } else {
                 owner.FolderSelected (this, folder, cookie);
             }
+        }
+
+        void ShowMessages (McFolder folder)
+        {
+            var viewController = new MessageListViewController ();
+            var messageList = new NachoEmailMessages (folder);
+            viewController.SetEmailMessages (messageList);
+            NavigationController.PushViewController (viewController, true);
         }
 
         void switchAccountButtonPressed ()
@@ -193,13 +201,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if ("FoldersToMessageList" == segue.Identifier) {
-                var holder = (SegueHolder)sender;
-                var messageList = new NachoEmailMessages ((McFolder)holder.value);
-                var messageListViewController = (MessageListViewController)segue.DestinationViewController;
-                messageListViewController.SetEmailMessages (messageList);
-                return;
-            }
             if ("SegueToDrafts" == segue.Identifier) {
                 var holder = (SegueHolder)sender;
                 var draftsList = new NachoDraftMessages ((McFolder)holder.value);
