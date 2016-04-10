@@ -148,10 +148,24 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (McAccount.AccountTypeEnum.SalesForce == account.AccountType) {
-                PerformSegue ("SegueToSalesforceSettings", new SegueHolder (account));
+                ShowSalesforceAccount (account);
             } else {
-                PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+                ShowAccount (account);
             }
+        }
+
+        void ShowAccount (McAccount account)
+        {
+            var vc = new AccountSettingsViewController ();
+            vc.SetAccount (account);
+            NavigationController.PushViewController (vc, true);
+        }
+
+        void ShowSalesforceAccount (McAccount account)
+        {
+            var vc = new SalesforceSettingsViewController ();
+            vc.SetAccount (account);
+            NavigationController.PushViewController (vc, true);
         }
 
         // INachoAccountsTableDelegate
@@ -192,20 +206,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("SegueToAccountSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (AccountSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToSalesforceSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (SalesforceSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
             if (segue.Identifier.Equals ("SegueToAdvancedLoginView")) {
                 return;
             }
@@ -226,8 +226,7 @@ namespace NachoClient.iOS
             if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
                 BackEnd.Instance.Start (account.Id);
                 DismissViewController (true, () => {
-                    var holder = new SegueHolder(account);
-                    PerformSegue("SegueToSalesforceSettings", holder);
+                    ShowSalesforceAccount (account);
                 });
             }else{
                 var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");

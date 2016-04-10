@@ -4,23 +4,6 @@
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
     </dependencies>
     <scenes>
-        <!--Switch Account View Controller-->
-        <scene sceneID="40K-tw-a8J">
-            <objects>
-                <viewController storyboardIdentifier="SwitchAccountViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="dkC-Cd-pp9" customClass="SwitchAccountViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="ZJ2-8h-kH9">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <connections>
-                        <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="STf-DG-2qn"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="iq2-Qy-b8s" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-8769" y="3012"/>
-        </scene>
         <!--Nacho Now View Controller-->
         <scene sceneID="w1N-3O-jJd">
             <objects>
@@ -87,8 +70,6 @@
                     <connections>
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
-                        <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="nJv-0g-ewn"/>
-                        <segue destination="Ef5-Gs-Ti8" kind="push" identifier="SegueToSalesforceSettings" id="Io9-QA-erY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -189,21 +170,6 @@
             </objects>
             <point key="canvasLocation" x="-5669" y="-107"/>
         </scene>
-        <!--Advanced Settings View Controller-->
-        <scene sceneID="eed-GO-vzW">
-            <objects>
-                <viewController storyboardIdentifier="AdvancedSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="2Zy-cI-oWr" customClass="AdvancedSettingsViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="CKs-LK-5Qq">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="anI-ka-jMv"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3992" y="4430"/>
-        </scene>
         <!--Drafts View Controller-->
         <scene sceneID="DqQ-E2-ipI">
             <objects>
@@ -221,20 +187,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-4935" y="330"/>
-        </scene>
-        <!--Notification Chooser View Controller-->
-        <scene sceneID="ngQ-k6-uNM">
-            <objects>
-                <viewController storyboardIdentifier="NotificationChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="sh6-zq-0y0" customClass="NotificationChooserViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="g9b-WC-Xbu">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="FOl-s4-nFB"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="ACI-Lc-wVg" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4490" y="4526"/>
         </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
@@ -262,21 +214,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="reC-sA-KTw" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-5521" y="2968"/>
-        </scene>
-        <!--Salesforce Settings View Controller-->
-        <scene sceneID="uVd-e3-2MQ">
-            <objects>
-                <viewController storyboardIdentifier="SalesforceSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Ef5-Gs-Ti8" customClass="SalesforceSettingsViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="oK8-a9-Mh6">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="UJX-OJ-OJJ"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="fT6-px-d7J" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4678" y="3289"/>
         </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
@@ -355,24 +292,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cr8-O2-f2u" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-6207" y="5296"/>
-        </scene>
-        <!--Account Settings View Controller-->
-        <scene sceneID="fE5-BJ-2a2">
-            <objects>
-                <viewController storyboardIdentifier="AccountSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="WIT-yF-b17" customClass="AccountSettingsViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="EqU-wp-I5R">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="sgT-DG-MvI"/>
-                    <connections>
-                        <segue destination="sh6-zq-0y0" kind="push" identifier="SettingsToNotificationChooser" id="kK5-Or-Bs8"/>
-                        <segue destination="2Zy-cI-oWr" kind="push" identifier="SegueToAdvancedSettings" id="Dac-hF-ivK"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-5507" y="3789"/>
         </scene>
         <!--About Us Navigation Controller-->
         <scene sceneID="nZ5-g1-nam">
@@ -715,7 +634,6 @@
         <segue reference="rEt-DF-c51"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
-        <segue reference="STf-DG-2qn"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

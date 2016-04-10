@@ -51,6 +51,10 @@ namespace NachoClient.iOS
             this.account = account;
         }
 
+        public AccountSettingsViewController () : base ()
+        {
+        }
+
         public AccountSettingsViewController (IntPtr handle) : base (handle)
         {
         }
@@ -414,20 +418,11 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowAdvancedSettings ()
         {
-            if (segue.Identifier == "SettingsToNotificationChooser") {
-                var vc = (NotificationChooserViewController)segue.DestinationViewController;
-                vc.Setup (this, account.Id, account.NotificationConfiguration);
-                return;
-            }
-            if (segue.Identifier == "SegueToAdvancedSettings") {
-                var vc = (AdvancedSettingsViewController)segue.DestinationViewController;
-                vc.Setup (account);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var vc = new AdvancedSettingsViewController ();
+            vc.Setup (account);
+            NavigationController.PushViewController (vc, true);
         }
 
         void ShowAccountValidation ()
@@ -493,7 +488,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToAdvancedSettings", this);
+                ShowAdvancedSettings (); 
             }
         }
 
@@ -525,8 +520,15 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SettingsToNotificationChooser", this);
+                ShowNotificationChooser ();
             }
+        }
+
+        void ShowNotificationChooser ()
+        {
+            var vc = new NotificationChooserViewController ();
+            vc.Setup (this, account.Id, account.NotificationConfiguration);
+            NavigationController.PushViewController (vc, true);
         }
 
         protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
@@ -600,7 +602,7 @@ namespace NachoClient.iOS
                     break;
                 case BackEndStateEnum.ServerConfWait:
                     if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
-                        PerformSegue ("SegueToAdvancedSettings", this);
+                        ShowAdvancedSettings ();
                     } else {
                         BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
                         NavigationController.PopViewController (true);
