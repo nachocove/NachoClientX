@@ -19,7 +19,8 @@ namespace NachoClient.iOS
         protected static string TabBarOrderKey = "TabBarOrder";
 
         // UI elements needed to customize the "More" tab.
-        protected UITableView existingTableView;
+        protected UITableView moreTableView;
+        protected UIScrollView moreScrollView;
         protected static NachoTabBarController instance;
 
         SwitchAccountButton switchAccountButton;
@@ -86,8 +87,6 @@ namespace NachoClient.iOS
         protected UITabBarItem deferredItem;
         protected UITabBarItem inboxItem;
         protected UITabBarItem chatsItem;
-
-        protected const int TABLEVIEW_TAG = 1999;
 
         public override void ViewDidLoad ()
         {
@@ -324,9 +323,8 @@ namespace NachoClient.iOS
         {
             nint visibleItems = 5; // default
 
-            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
-            if (null != tableView) {
-                visibleItems = ViewControllers.Length - tableView.NumberOfRowsInSection (0);
+            if (null != moreTableView) {
+                visibleItems = ViewControllers.Length - moreTableView.NumberOfRowsInSection (0);
             }
 
             for (int i = 0; i < ViewControllers.Length; i++) {
@@ -371,53 +369,40 @@ namespace NachoClient.iOS
 
             moreTabController.NavigationItem.TitleView = switchAccountButton;
 
-            existingTableView = (UITableView)moreTabController.View;
-            existingTableView.TintColor = A.Color_NachoGreen;
+            moreTableView = (UITableView)moreTabController.View;
+            moreTableView.TintColor = A.Color_NachoGreen;
 
-            // FIXME: the table view doesn't have any data at this point, even if ReloadData is called
-            // something in in the loading sequence different now that we're not using a storyboard
-            // For now, just update the tint color and forget about the card look
+            moreTableView.ScrollEnabled = false;
 
-//            existingTableView.ScrollEnabled = false;
-//            nfloat cellHeight = 44.0f;
-//            foreach (var cell in existingTableView.VisibleCells) {
-//                cell.TextLabel.Font = A.Font_AvenirNextMedium14;
-//                cellHeight = cell.Frame.Height;
-//            }
-//
-//            var newView = new UIScrollView (View.Frame);
-//
-//            newView.BackgroundColor = A.Color_NachoBackgroundGray;
-//
-//            var tableHeight = (((existingTableView.NumberOfRowsInSection (0)) + 2) * cellHeight + 25);
-//
-//            existingTableView.Frame = new CGRect (
-//                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-//                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, tableHeight);
-//            existingTableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-//            existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
-//            existingTableView.Layer.MasksToBounds = true;
-//            existingTableView.Layer.BorderWidth = A.Card_Border_Width;
-//            existingTableView.Layer.BorderColor = A.Card_Border_Color;
-//            existingTableView.Tag = TABLEVIEW_TAG;
-//
-//            newView.ContentSize = new CGSize (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
-//
-//            newView.AddSubview (existingTableView);
-//            moreTabController.View = newView;
-//
-//            LayoutMoreTable ();
+            moreScrollView = new UIScrollView (View.Frame);
+
+            moreScrollView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            moreTableView.Frame = new CGRect (
+                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
+                moreScrollView.Frame.Width - 2 * A.Card_Horizontal_Indent, moreScrollView.Bounds.Height - 2 * A.Card_Vertical_Indent);
+            moreTableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            moreTableView.Layer.CornerRadius = A.Card_Corner_Radius;
+            moreTableView.Layer.MasksToBounds = true;
+            moreTableView.Layer.BorderWidth = A.Card_Border_Width;
+            moreTableView.Layer.BorderColor = A.Card_Border_Color;
+
+            moreScrollView.AddSubview (moreTableView);
+            moreTabController.View = moreScrollView;
+
+            LayoutMoreTable ();
         }
 
         // ViewDidAppear is not reliable
         protected void LayoutMoreTable ()
         {
             UpdateSwitchAccountButton ();
-            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
-            if (null != tableView) {
-                var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);
-                tableView.Frame = new CGRect (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
+            if (null != moreTableView) {
+                var tableHeight = (moreTableView.NumberOfRowsInSection (0) * 44);
+                moreTableView.Frame = new CGRect (moreTableView.Frame.X, moreTableView.Frame.Y, moreTableView.Frame.Width, tableHeight);
             }
+
+            moreScrollView.ContentSize = new CGSize (moreScrollView.Bounds.Width, moreTableView.Frame.Bottom + A.Card_Vertical_Indent);
         }
 
         protected void UpdateSwitchAccountButton ()
@@ -445,7 +430,7 @@ namespace NachoClient.iOS
                 // make other changes, but this event is triggered at the wrong time, so
                 // those other changes won't stick.  The one change that does seem to stick
                 // is to hide the arrow on the right side of the cell.
-                foreach (var cell in ((UITableView)existingTableView).VisibleCells) {
+                foreach (var cell in ((UITableView)moreTableView).VisibleCells) {
                     if (3 == cell.Subviews.Length && cell.Subviews [2] is UIButton) {
                         cell.Subviews [2].Hidden = true;
                     }
