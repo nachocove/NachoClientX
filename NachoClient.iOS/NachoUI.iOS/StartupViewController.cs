@@ -213,7 +213,7 @@ namespace NachoClient.iOS
         void ShowApplication ()
         {
             Log.Info (Log.LOG_UI, "StartupViewController ShowApplication");
-            var appViewController = new UITabBarController ();
+            var appViewController = new NachoTabBarController ();
 
             // If we have an event, we'll push it on the selected nav controller so when the user hits back, they're at the app
             // NOTE: this assumes that the selected view controller will be a UINavigationController.  In this case, the selected
