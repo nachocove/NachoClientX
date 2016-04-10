@@ -9,6 +9,11 @@ namespace NachoClient.iOS
 {
     public partial class NotesViewerViewController : NcUIViewController
     {
+
+        public NotesViewerViewController () : base ()
+        {
+        }
+
         public NotesViewerViewController (IntPtr handle) : base (handle)
         {
         }

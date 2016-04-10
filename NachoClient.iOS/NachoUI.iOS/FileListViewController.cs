@@ -36,9 +36,6 @@ namespace NachoClient.iOS
 
         UILabel EmptyListLabel;
 
-        // segue id's
-        string FilesToNotesModalSegueId = "AttachmentsToNotesModal";
-
         // animation constants
         public nfloat AnimationDuration = 3.0f;
 
@@ -339,13 +336,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals (FilesToNotesModalSegueId)) {
-                var dc = (NotesViewerViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                selectedNote = (McNote)holder.value;
-                dc.SetOwner (this);
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -616,8 +606,16 @@ namespace NachoClient.iOS
             }
 
             FileChooserSheet (note, alertParentView, () => {
-                PerformSegue (FilesToNotesModalSegueId, new SegueHolder (note));
+                ShowNoteViewer (note);
             });
+        }
+
+        void ShowNoteViewer (McNote note)
+        {
+            var dc = new NotesViewerViewController ();
+            selectedNote = note;
+            dc.SetOwner (this);
+            PresentViewController (dc, true, null);
         }
 
         void ShowNote (McNote note)

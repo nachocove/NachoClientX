@@ -168,7 +168,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5669" y="-107"/>
+            <point key="canvasLocation" x="-5877" y="581"/>
         </scene>
         <!--Drafts View Controller-->
         <scene sceneID="DqQ-E2-ipI">
@@ -186,7 +186,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4935" y="330"/>
+            <point key="canvasLocation" x="-4687" y="434"/>
         </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
@@ -201,19 +201,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pD4-ER-Ao1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-6221" y="-115"/>
-        </scene>
-        <!--Notes Viewer View Controller-->
-        <scene sceneID="Hd9-0q-M2W">
-            <objects>
-                <viewController storyboardIdentifier="NotesViewerViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="nWJ-PS-9xE" userLabel="Notes Viewer View Controller" customClass="NotesViewerViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="SVg-bm-Mae">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="reC-sA-KTw" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-5521" y="2968"/>
         </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
@@ -252,9 +239,6 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
-                    <connections>
-                        <segue destination="nWJ-PS-9xE" kind="modal" identifier="AttachmentsToNotesModal" id="7EA-mX-9sf"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -360,7 +344,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TZT-bK-ZdC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5215" y="1183"/>
+            <point key="canvasLocation" x="-4655" y="1247"/>
         </scene>
         <!--Inbox Navigation Controller-->
         <scene sceneID="OK6-7u-Mab">
@@ -412,7 +396,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="6wM-bQ-5UO" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6237" y="1023"/>
+            <point key="canvasLocation" x="-6207" y="1375"/>
         </scene>
         <!--Deadlines Navigation Controller-->
         <scene sceneID="iWE-5M-Q5r">
@@ -448,7 +432,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="zCN-MO-NfE" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6197" y="2065"/>
+            <point key="canvasLocation" x="-6197" y="2185"/>
         </scene>
         <!--Inbox-->
         <scene sceneID="NMJ-WX-bQO">
@@ -467,7 +451,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="BFH-Ry-urH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5405" y="-1560"/>
+            <point key="canvasLocation" x="-6189" y="-1552"/>
         </scene>
         <!--Folders Navigation Controller-->
         <scene sceneID="ObW-V6-9oJ">
