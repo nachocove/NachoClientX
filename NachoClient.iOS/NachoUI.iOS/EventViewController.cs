@@ -816,7 +816,7 @@ namespace NachoClient.iOS
 
         void ShowContact (McContact contact)
         {
-            var vc = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+            var vc = new ContactDetailViewController ();
             vc.contact = contact;
             NavigationController.PushViewController (vc, true);
         }
