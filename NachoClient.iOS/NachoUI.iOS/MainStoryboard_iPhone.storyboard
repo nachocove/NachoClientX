@@ -201,7 +201,6 @@
                     <navigationItem key="navigationItem" id="anI-ka-jMv"/>
                     <connections>
                         <segue destination="adP-Vh-8en" kind="push" identifier="SegueToAccountValidation" id="Pjt-TP-v3d"/>
-                        <segue destination="LUv-cO-x9F" kind="push" identifier="SegueToCertAsk" id="nsx-vp-5fz"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -224,22 +223,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4775" y="410"/>
-        </scene>
-        <!--Cert Ask View Controller-->
-        <scene sceneID="sRh-yQ-JkD">
-            <objects>
-                <viewController storyboardIdentifier="CertAskViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="LUv-cO-x9F" customClass="CertAskViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="BgF-vD-tsN">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="C6x-cs-4pd"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="OaO-Lv-bxz" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3568" y="3829"/>
+            <point key="canvasLocation" x="-4935" y="330"/>
         </scene>
         <!--Account Validation View Controller-->
         <scene sceneID="zKg-bZ-wb2">
@@ -403,7 +387,6 @@
                         <segue destination="sh6-zq-0y0" kind="push" identifier="SettingsToNotificationChooser" id="kK5-Or-Bs8"/>
                         <segue destination="2Zy-cI-oWr" kind="push" identifier="SegueToAdvancedSettings" id="Dac-hF-ivK"/>
                         <segue destination="adP-Vh-8en" kind="push" identifier="SegueToAccountValidation" id="88w-D9-03c"/>
-                        <segue destination="LUv-cO-x9F" kind="push" identifier="SegueToCertAsk" id="eyY-I1-wel"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -584,7 +567,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="BFH-Ry-urH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5421" y="-1520"/>
+            <point key="canvasLocation" x="-5405" y="-1560"/>
         </scene>
         <!--Folders Navigation Controller-->
         <scene sceneID="ObW-V6-9oJ">
@@ -752,7 +735,6 @@
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
         <segue reference="STf-DG-2qn"/>
-        <segue reference="nsx-vp-5fz"/>
         <segue reference="Pjt-TP-v3d"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>

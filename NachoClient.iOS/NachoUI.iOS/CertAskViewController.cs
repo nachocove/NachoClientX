@@ -19,6 +19,10 @@ namespace NachoClient.iOS
 
         CertificateView certificateView;
 
+        public CertAskViewController () : base ()
+        {
+        }
+
         public CertAskViewController (IntPtr handle) : base (handle)
         {
         }

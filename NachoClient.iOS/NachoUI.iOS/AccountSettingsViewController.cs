@@ -426,13 +426,6 @@ namespace NachoClient.iOS
                 vc.Setup (account);
                 return;
             }
-            if (segue.Identifier == "SegueToCertAsk") {
-                var vc = (CertAskViewController)segue.DestinationViewController;
-                var h = (SegueHolder)sender;
-                var capabililty = (McAccount.AccountCapabilityEnum)h.value;
-                vc.Setup (account, capabililty);
-                return;
-            }
             if (segue.Identifier == "SegueToAccountValidation") {
                 var vc = (AccountValidationViewController)segue.DestinationViewController;
                 vc.ChangePassword (account);
@@ -601,7 +594,7 @@ namespace NachoClient.iOS
                     }
                     break;
                 case BackEndStateEnum.CertAskWait:
-                    PerformSegue ("SegueToCertAsk", new SegueHolder (McAccount.AccountCapabilityEnum.EmailSender));
+                    CertAsk (McAccount.AccountCapabilityEnum.EmailSender);
                     break;
                 case BackEndStateEnum.ServerConfWait:
                     if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
@@ -613,6 +606,13 @@ namespace NachoClient.iOS
                     break;
                 }
             }
+        }
+
+        void CertAsk (McAccount.AccountCapabilityEnum capability)
+        {
+            var vc = new CertAskViewController ();
+            vc.Setup (account, capability);
+            NavigationController.PushViewController (vc, true);
         }
 
         void onDeleteAccount (object sender, EventArgs e)
