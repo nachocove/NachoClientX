@@ -130,7 +130,7 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Next Month", "modal-nextmonth", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     null,
-                    new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
+                    new ButtonInfo ("Pick Date", "modal-pick-date", ShowDatePicker),
                     null,
                 });
                 break;
@@ -193,17 +193,6 @@ namespace NachoClient.iOS
             owner = null;
             thread = null;
             DismissViewController (animated, action);
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         public void ShowDatePicker ()

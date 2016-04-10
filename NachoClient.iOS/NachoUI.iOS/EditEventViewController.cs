@@ -144,17 +144,6 @@ namespace NachoClient.iOS
 
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
 
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
-
         public EditEventViewController () : base ()
         {
         }
@@ -1292,7 +1281,7 @@ namespace NachoClient.iOS
         /// IUcAttachmentBlock delegate
         public void ShowChooserForAttachmentBlock ()
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard, attachmentView);
+            var helper = new AddAttachmentViewController.MenuHelper (this, account, attachmentView);
             PresentViewController (helper.MenuViewController, true, null);
         }
 

@@ -35,7 +35,7 @@ namespace NachoClient.iOS
         UIButton showPrivacyPolicyButton;
         SwitchAccountButton switchAccountButton;
 
-        public AboutUsViewController (IntPtr handle) : base (handle)
+        public AboutUsViewController () : base ()
         {
         }
 
@@ -253,12 +253,6 @@ namespace NachoClient.iOS
             showPrivacyPolicyButton = null;
 
             versionLabel = null;
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
     }
 }

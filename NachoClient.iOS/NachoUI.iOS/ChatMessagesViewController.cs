@@ -32,16 +32,6 @@ namespace NachoClient.iOS
         Dictionary<string, int> PendingSendMap;
         List<McAttachment> AttachmentsForUnsavedChat;
         int MessageCount;
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
         public bool CanSend {
             get {
                 return Chat != null || !HeaderView.ToView.IsEmpty ();
@@ -246,7 +236,7 @@ namespace NachoClient.iOS
 
         public void Attach ()
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, Account, MainStoryboard, View);
+            var helper = new AddAttachmentViewController.MenuHelper (this, Account, View);
             PresentViewController (helper.MenuViewController, true, null);
         }
 

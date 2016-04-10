@@ -11,7 +11,7 @@ namespace NachoClient.iOS
 
     public partial class DeadlinesViewController : MessageListViewController
     {
-        public DeadlinesViewController (IntPtr handle) : base (handle)
+        public DeadlinesViewController () : base ()
         {
             SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
         }

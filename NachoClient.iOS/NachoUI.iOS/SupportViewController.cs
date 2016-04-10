@@ -28,7 +28,7 @@ namespace NachoClient.iOS
 
         protected UITapGestureRecognizer telemetryFlushGesture;
 
-        public SupportViewController (IntPtr handle) : base (handle)
+        public SupportViewController () : base ()
         {
         }
 

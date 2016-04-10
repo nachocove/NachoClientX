@@ -16,7 +16,7 @@ namespace NachoClient.iOS
 {
     public partial class FileListViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
     {
-        public FileListViewController (IntPtr handle) : base (handle)
+        public FileListViewController () : base ()
         {
             Account = NcApplication.Instance.Account;
         }
@@ -332,12 +332,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 Util.ConfigureNavBar (false, this.NavigationController);
             }
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         void SwitchAccountButtonPressed ()
@@ -736,11 +730,6 @@ namespace NachoClient.iOS
         }
 
         public void RemoveAttachment (McAttachment attachment)
-        {
-            NcAssert.CaseError ();
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             NcAssert.CaseError ();
         }

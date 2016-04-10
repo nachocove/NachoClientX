@@ -943,8 +943,7 @@ namespace NachoClient.iOS
             if (MultiSelectActive ()) {
                 MultiSelectMove (tableView, folder);
             } else {
-                var h = cookie as SegueHolder;
-                var messageThread = (McEmailMessageThread)h.value;
+                var messageThread = (McEmailMessageThread)cookie;
                 MoveThisMessage (messageThread, folder);
             }
         }

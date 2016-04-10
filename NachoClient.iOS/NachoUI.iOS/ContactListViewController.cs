@@ -33,7 +33,7 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
-        public ContactListViewController (IntPtr handle) : base (handle)
+        public ContactListViewController () : base ()
         {
             // iOS 8 bug sez stack overflow
             //  var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(ContactListViewController));
@@ -44,6 +44,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            View.BackgroundColor = UIColor.White;
 
             ReloadCaptureName = "ContactListViewController.Reload";
             NcCapture.AddKind (ReloadCaptureName);
@@ -192,12 +194,6 @@ namespace NachoClient.iOS
         {
             contactTableViewSource.SetSearchResults (results);
             SearchDisplayController.SearchResultsTableView.ReloadData ();
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         void AddContact (McAccount account)

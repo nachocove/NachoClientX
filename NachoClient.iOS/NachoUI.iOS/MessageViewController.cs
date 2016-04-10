@@ -95,17 +95,6 @@ namespace NachoClient.iOS
 
         private bool isAppearing;
 
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
-
         public MessageViewController() : base  ()
         {
         }
@@ -815,7 +804,7 @@ namespace NachoClient.iOS
 
         void ShowMove ()
         {
-            var vc = MainStoryboard.InstantiateViewController ("FoldersViewController") as FoldersViewController;
+            var vc = new FoldersViewController ();
             var message = thread.FirstMessage ();
             if (null != message) {
                 vc.SetOwner (this, true, message.AccountId, thread);

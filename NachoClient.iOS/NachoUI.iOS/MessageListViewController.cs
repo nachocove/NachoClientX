@@ -46,17 +46,6 @@ namespace NachoClient.iOS
 
         bool StatusIndCallbackIsSet = false;
 
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
-
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads, "No messages");
@@ -486,7 +475,7 @@ namespace NachoClient.iOS
 
         public void MoveThread (McEmailMessageThread thread)
         {
-            var vc = MainStoryboard.InstantiateViewController ("FoldersViewController") as FoldersViewController;
+            var vc = new FoldersViewController ();
             var message = thread.FirstMessage ();
             if (message != null) {
                 vc.SetOwner (this, true, message.AccountId, thread);
@@ -496,7 +485,7 @@ namespace NachoClient.iOS
 
         void MoveSelected ()
         {
-            var vc = MainStoryboard.InstantiateViewController ("FoldersViewController") as FoldersViewController;
+            var vc = new FoldersViewController ();
             var accountId = messageSource.MultiSelectAccount (TableView);
             NcAssert.False (0 == accountId);
             vc.SetOwner (this, true, accountId, TableView);

@@ -16,15 +16,6 @@ namespace NachoClient.iOS
         public ChatMessagesViewController MessagesViewController;
         ChatParticipantTableViewSource Source;
         public List<McChatParticipant> Participants;
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-        }
 
         public ChatParticipantListViewController () : base()
         {

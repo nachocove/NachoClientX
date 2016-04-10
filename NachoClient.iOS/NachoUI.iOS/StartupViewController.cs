@@ -213,8 +213,7 @@ namespace NachoClient.iOS
         void ShowApplication ()
         {
             Log.Info (Log.LOG_UI, "StartupViewController ShowApplication");
-            var mainStoryboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var appViewController = (UITabBarController)mainStoryboard.InstantiateInitialViewController ();
+            var appViewController = new UITabBarController ();
 
             // If we have an event, we'll push it on the selected nav controller so when the user hits back, they're at the app
             // NOTE: this assumes that the selected view controller will be a UINavigationController.  In this case, the selected

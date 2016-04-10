@@ -10,7 +10,7 @@ namespace NachoClient.iOS
 {
     public partial class InboxViewController : MessageListViewController
     {
-        public InboxViewController (IntPtr handle) : base (handle)
+        public InboxViewController () : base ()
         {
             SetEmailMessages (NcEmailManager.Inbox (NcApplication.Instance.Account.Id));
         }

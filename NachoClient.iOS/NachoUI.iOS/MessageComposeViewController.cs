@@ -64,16 +64,6 @@ namespace NachoClient.iOS
         NcUIBarButtonItem AddAttachmentButton;
         List<McAccount> EmailAccounts;
         bool HasShownOnce;
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
 
         NSObject ContentSizeCategoryChangedNotification;
         string ContentHtml;
@@ -897,7 +887,7 @@ namespace NachoClient.iOS
 
         private void ShowAddAttachment (bool inline = false)
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, MainStoryboard, AddAttachmentButton);
+            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, AddAttachmentButton);
             PresentViewController (helper.MenuViewController, true, null);
         }
 

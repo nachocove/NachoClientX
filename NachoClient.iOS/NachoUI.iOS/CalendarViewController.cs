@@ -38,7 +38,7 @@ namespace NachoClient.iOS
         public static bool BasicView = false;
         protected bool firstTime = true;
 
-        public CalendarViewController (IntPtr handle) : base (handle)
+        public CalendarViewController () : base ()
         {
             var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
             a.TextColor = UIColor.LightGray;
@@ -146,17 +146,6 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
-        /// <summary>
-        /// Prepares for segue.
-        /// </summary>
-        /// <param name="segue">Segue in charge</param>
-        /// <param name="sender">Typically the cell that was clicked.</param>
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -233,11 +222,6 @@ namespace NachoClient.iOS
             } else {
                 DateDotView.UpdateButtonsMonth ();
             }
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)

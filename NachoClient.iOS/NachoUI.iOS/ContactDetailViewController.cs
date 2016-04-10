@@ -85,17 +85,6 @@ namespace NachoClient.iOS
 
         protected List<TapGesturePair> tapGestures = new List<TapGesturePair> ();
 
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
-
         public ContactDetailViewController () : base ()
         {
             messageSource = new MessageTableViewSource (this);
@@ -201,12 +190,6 @@ namespace NachoClient.iOS
             var destinationViewController = new ContactEditViewController ();
             destinationViewController.contact = contact;
             FadeCustomSegue.Transition (this, destinationViewController);
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         protected override void CreateViewHierarchy ()
@@ -1111,7 +1094,7 @@ namespace NachoClient.iOS
 
         public void MoveThread (McEmailMessageThread thread)
         {
-            var vc = MainStoryboard.InstantiateViewController ("FoldersViewController") as FoldersViewController;
+            var vc = new FoldersViewController ();
             var message = thread.FirstMessage ();
             if (message != null) {
                 vc.SetOwner (this, true, message.AccountId, thread);

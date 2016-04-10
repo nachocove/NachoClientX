@@ -1840,7 +1840,6 @@
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
-    <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />

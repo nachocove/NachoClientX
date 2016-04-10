@@ -26,7 +26,7 @@ namespace NachoClient.iOS
 
         SwitchAccountButton switchAccountButton;
 
-        public GeneralSettingsViewController (IntPtr handle) : base (handle)
+        public GeneralSettingsViewController () : base ()
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
@@ -72,8 +72,6 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            // garf
-            scrollView.RemoveFromSuperview ();
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             View.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -202,15 +200,6 @@ namespace NachoClient.iOS
             var navigationController = new UINavigationController (credentialsViewController);
             Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToAdvancedLoginView")) {
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)

@@ -430,12 +430,13 @@ namespace NachoClient.iOS
             // to be in iOS-specific code.
             Log.Info (Log.LOG_LIFECYCLE, "Current time zone: {0}", NSTimeZone.LocalTimeZone.Description);
 
-            var firstStoryboardName = NcApplication.ReadyToStartUI () ? "MainStoryboard_iPhone" : "Startup";
-            var mainStoryboard = UIStoryboard.FromName (firstStoryboardName, null);
-            var appViewController = mainStoryboard.InstantiateInitialViewController ();
-
             Window = new UIWindow (UIScreen.MainScreen.Bounds);
-            Window.RootViewController = appViewController;
+            if (NcApplication.ReadyToStartUI ()) {
+                Window.RootViewController = new NachoTabBarController ();
+            } else {
+                var storyboard = UIStoryboard.FromName ("Startup", null);
+                Window.RootViewController = storyboard.InstantiateInitialViewController ();
+            }
             Window.MakeKeyAndVisible ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");

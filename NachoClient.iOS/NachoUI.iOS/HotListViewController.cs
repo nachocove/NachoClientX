@@ -10,7 +10,7 @@ namespace NachoClient.iOS
 {
     public partial class HotListViewController : MessageListViewController
     {
-        public HotListViewController (IntPtr handle) : base (handle)
+        public HotListViewController () : base ()
         {
             SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
         }

@@ -158,17 +158,6 @@ namespace NachoClient.iOS
             { 10080, "1 week before" },
         };
 
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
-
         public EventViewController () : base ()
         {
         }

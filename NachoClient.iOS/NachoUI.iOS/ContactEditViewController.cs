@@ -776,12 +776,6 @@ namespace NachoClient.iOS
             PresentViewController (destinationController, true, null);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         protected override void OnKeyboardChanged ()
         {
             LayoutView ();

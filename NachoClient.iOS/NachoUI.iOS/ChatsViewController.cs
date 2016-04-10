@@ -25,7 +25,7 @@ namespace NachoClient.iOS
         bool needsReload;
         bool hasAppeared;
 
-        public ChatsViewController (IntPtr ptr) : base(ptr)
+        public ChatsViewController () : base()
         {
             NavigationItem.LeftBarButtonItem = new UIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             using (var image = UIImage.FromBundle ("chat-newmsg")) {
