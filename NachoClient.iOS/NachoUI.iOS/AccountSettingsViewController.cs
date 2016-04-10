@@ -426,13 +426,15 @@ namespace NachoClient.iOS
                 vc.Setup (account);
                 return;
             }
-            if (segue.Identifier == "SegueToAccountValidation") {
-                var vc = (AccountValidationViewController)segue.DestinationViewController;
-                vc.ChangePassword (account);
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        void ShowAccountValidation ()
+        {
+            var vc = new AccountValidationViewController ();
+            vc.ChangePassword (account);
+            NavigationController.PushViewController (vc, true);
         }
 
         protected void ChangeDescriptionTapHandler (NSObject sender)
@@ -451,7 +453,7 @@ namespace NachoClient.iOS
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 if (!MaybeStartGmailAuth (account)) {
-                    PerformSegue ("SegueToAccountValidation", this);
+                    ShowAccountValidation ();
                 }
             }
         }
@@ -590,7 +592,7 @@ namespace NachoClient.iOS
                 switch (serverIssue) {
                 case BackEndStateEnum.CredWait:
                     if (!MaybeStartGmailAuth (account)) {
-                        PerformSegue ("SegueToAccountValidation", this);
+                        ShowAccountValidation ();
                     }
                     break;
                 case BackEndStateEnum.CertAskWait:

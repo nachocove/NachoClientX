@@ -199,9 +199,6 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="anI-ka-jMv"/>
-                    <connections>
-                        <segue destination="adP-Vh-8en" kind="push" identifier="SegueToAccountValidation" id="Pjt-TP-v3d"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -224,21 +221,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-4935" y="330"/>
-        </scene>
-        <!--Account Validation View Controller-->
-        <scene sceneID="zKg-bZ-wb2">
-            <objects>
-                <viewController storyboardIdentifier="AccountValidationViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="adP-Vh-8en" customClass="AccountValidationViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="8SW-Ul-mka">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="BMS-A2-lC3"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="V2o-ry-ikP" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4359" y="5401"/>
         </scene>
         <!--Notification Chooser View Controller-->
         <scene sceneID="ngQ-k6-uNM">
@@ -294,7 +276,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="fT6-px-d7J" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5070" y="3153"/>
+            <point key="canvasLocation" x="-4678" y="3289"/>
         </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
@@ -355,7 +337,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="3d3-Vl-kXG" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5593" y="2084"/>
+            <point key="canvasLocation" x="-5521" y="2128"/>
         </scene>
         <!--About Us View Controller-->
         <scene sceneID="3SJ-Xi-4H0">
@@ -386,7 +368,6 @@
                     <connections>
                         <segue destination="sh6-zq-0y0" kind="push" identifier="SettingsToNotificationChooser" id="kK5-Or-Bs8"/>
                         <segue destination="2Zy-cI-oWr" kind="push" identifier="SegueToAdvancedSettings" id="Dac-hF-ivK"/>
-                        <segue destination="adP-Vh-8en" kind="push" identifier="SegueToAccountValidation" id="88w-D9-03c"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -735,7 +716,6 @@
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
         <segue reference="STf-DG-2qn"/>
-        <segue reference="Pjt-TP-v3d"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
