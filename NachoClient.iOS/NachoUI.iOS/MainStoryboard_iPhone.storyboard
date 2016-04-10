@@ -100,53 +100,10 @@
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Support" id="mWr-gQ-Yyx"/>
-                    <connections>
-                        <segue destination="kuw-v2-91Q" kind="modal" identifier="SupportToSupportMessage" id="CeD-4t-veK"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sxr-xY-2cF" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-6207" y="4565"/>
-        </scene>
-        <!--Support Message View Controller-->
-        <scene sceneID="7yh-xJ-ffT">
-            <objects>
-                <viewController storyboardIdentifier="SupportMessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kuw-v2-91Q" customClass="SupportMessageViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="ngC-ze-2BG">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <subviews>
-                            <navigationBar contentMode="scaleToFill" id="jpJ-vA-znB">
-                                <rect key="frame" x="0.0" y="262" width="320" height="44"/>
-                                <items>
-                                    <navigationItem title="Title" id="6Oy-it-ccO" userLabel="Navigation Item - Contact Us"/>
-                                </items>
-                            </navigationBar>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="H0t-Oq-NPf">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="AV3-V1-QWj" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="bM9-EM-jGp"/>
-                    <connections>
-                        <outlet property="cancelButton" destination="SeI-fe-BAR" id="ESk-Qa-HA5"/>
-                        <outlet property="contentView" destination="AV3-V1-QWj" id="SFz-zs-Kz5"/>
-                        <outlet property="navigationBar" destination="jpJ-vA-znB" id="JP1-Hh-l66"/>
-                        <outlet property="scrollView" destination="H0t-Oq-NPf" id="g94-uc-o3I"/>
-                        <outlet property="sendButton" destination="FeG-Jx-fjU" id="VeN-CR-LJz"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="hqQ-yA-uNQ" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem systemItem="cancel" id="SeI-fe-BAR" userLabel="Bar Button Item - cancelButton"/>
-                <barButtonItem id="FeG-Jx-fjU" userLabel="Bar Button Item - sendButton"/>
-            </objects>
-            <point key="canvasLocation" x="-5499" y="4565"/>
         </scene>
         <!--Folders View Controller-->
         <scene sceneID="DPk-Fz-GfI">
