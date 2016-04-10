@@ -49,6 +49,10 @@ namespace NachoClient.iOS
         protected static int SEGMENTED_CONTROL_TAG = 100;
         protected static readonly nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
 
+        public EventAttendeeViewController () : base ()
+        {
+        }
+
         public EventAttendeeViewController (IntPtr handle) : base (handle)
         {
         }
@@ -183,7 +187,7 @@ namespace NachoClient.iOS
             addAttendeesButton = new NcUIBarButtonItem ();
             addAttendeesButton.TintColor = A.Color_NachoBlue;
             addAttendeesButton.Image = UIImage.FromBundle ("calendar-add-attendee");
-            addAttendeeButton.AccessibilityLabel = "Add attendee";
+            addAttendeesButton.AccessibilityLabel = "Add attendee";
 
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);

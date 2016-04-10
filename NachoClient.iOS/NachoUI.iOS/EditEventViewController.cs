@@ -370,7 +370,7 @@ namespace NachoClient.iOS
 
         void ShowAttendees ()
         {
-            var dc = MainStoryboard.InstantiateViewController("EventAttendeeViewController") as EventAttendeeViewController;
+            var dc = new EventAttendeeViewController ();
             ExtractValues ();
             dc.Setup (this, account, c.attendees, c, editing: true,
                 organizer: CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr), recurring: false);

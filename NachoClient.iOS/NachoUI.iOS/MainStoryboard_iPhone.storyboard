@@ -410,24 +410,6 @@
             </objects>
             <point key="canvasLocation" x="-5507" y="3789"/>
         </scene>
-        <!--Event Attendee View Controller-->
-        <scene sceneID="odK-NZ-B9r">
-            <objects>
-                <viewController storyboardIdentifier="EventAttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="rp9-J1-cgU" customClass="EventAttendeeViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="lA6-eN-CZq">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="WcB-L4-4xt"/>
-                    <connections>
-                        <outlet property="addAttendeeButton" destination="4z6-Fd-6ku" id="dnv-oH-k1n"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem systemItem="add" id="4z6-Fd-6ku" userLabel="Bar Button Item - Add"/>
-            </objects>
-            <point key="canvasLocation" x="-4345" y="-1855"/>
-        </scene>
         <!--About Us Navigation Controller-->
         <scene sceneID="nZ5-g1-nam">
             <objects>
