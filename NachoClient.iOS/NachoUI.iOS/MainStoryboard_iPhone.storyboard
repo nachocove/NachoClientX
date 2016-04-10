@@ -76,20 +76,6 @@
             </objects>
             <point key="canvasLocation" x="-6207" y="3789"/>
         </scene>
-        <!--Settings Legal View Controller-->
-        <scene sceneID="G7Z-DN-RLf">
-            <objects>
-                <viewController storyboardIdentifier="SettingsLegalViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="dqi-Cj-nDi" customClass="SettingsLegalViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="b2I-01-BAZ">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="iF3-5l-bGz"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="94A-qQ-Dpy" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-5499" y="5296"/>
-        </scene>
         <!--Support-->
         <scene sceneID="vbl-v1-uBK">
             <objects>
@@ -143,7 +129,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4687" y="434"/>
+            <point key="canvasLocation" x="-5199" y="-78"/>
         </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
@@ -226,9 +212,6 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="kfk-r0-3P9"/>
-                    <connections>
-                        <segue destination="dqi-Cj-nDi" kind="push" identifier="SegueToSettingsLegal" id="Dua-nO-BSs"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cr8-O2-f2u" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -301,7 +284,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TZT-bK-ZdC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4655" y="1247"/>
+            <point key="canvasLocation" x="-5199" y="615"/>
         </scene>
         <!--Inbox Navigation Controller-->
         <scene sceneID="OK6-7u-Mab">

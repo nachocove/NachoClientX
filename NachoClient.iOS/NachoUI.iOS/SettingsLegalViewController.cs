@@ -33,6 +33,10 @@ namespace NachoClient.iOS
         protected const int INTERIOR_VIEW_TAG = 101;
         protected const int TEXT_VIEW_TAG = 102;
 
+        public SettingsLegalViewController () : base ()
+        {
+        }
+
         public SettingsLegalViewController (IntPtr handle) : base (handle)
         {
         }
