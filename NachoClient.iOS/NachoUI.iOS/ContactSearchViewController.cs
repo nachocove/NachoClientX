@@ -35,6 +35,10 @@ namespace NachoClient.iOS
         UIBarButtonItem cancelButton;
         UIBarButtonItem searchButton;
 
+        public ContactSearchViewController () : base ()
+        {
+        }
+
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
         }
@@ -58,6 +62,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            NavigationItem.Title = "Contacts";
+
+            var searchController = new UISearchDisplayController (new UISearchBar (), this);
+
+            TableView.TableHeaderView = searchController.SearchBar;
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
             contactTableViewSource.SetOwner (this, account, false, SearchDisplayController);

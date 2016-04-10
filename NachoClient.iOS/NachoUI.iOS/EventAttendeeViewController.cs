@@ -109,21 +109,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("EventAttendeesToContactChooser")) {
-                var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToContactSearch")) {
-                var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
 
             if (segue.Identifier.Equals ("SegueToContactDetail")) {
                 var h = sender as SegueHolder;
@@ -135,6 +120,13 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        void ChooseAttendee (NcEmailAddress address)
+        {
+            var dc = new ContactChooserViewController ();
+            dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
+            NavigationController.PushViewController (dc, true);
         }
 
         public void LoadAttendees ()
@@ -196,7 +188,7 @@ namespace NachoClient.iOS
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
-                PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
+                ChooseAttendee (address);
             }; 
 
             segmentedControlView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 40));

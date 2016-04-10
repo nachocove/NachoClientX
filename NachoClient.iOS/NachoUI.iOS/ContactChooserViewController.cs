@@ -59,12 +59,23 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            NavigationItem.RightBarButtonItem = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, Search);
+
+            NavigationItem.Title = "Chooser";
+
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
 
             CreateView ();
 
             PermissionManager.DealWithContactsPermission ();
+        }
+
+        void Search (object sender, EventArgs e)
+        {
+            var searchViewController = new ContactSearchViewController ();
+            searchViewController.SetOwner (this, account, address, NachoContactType.EmailRequired);
+            NavigationController.PushViewController (searchViewController, true);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -167,18 +178,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLayoutSubviews ();
             resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("ContactChooserToContactSearch")) {
-                var dvc = (INachoContactChooser)segue.DestinationViewController;
-                dvc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         protected void UpdateUi (string searchString, List<McContactEmailAddressAttribute> results)

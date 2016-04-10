@@ -187,45 +187,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6197" y="635"/>
-        </scene>
-        <!--Contacts Search View-->
-        <scene sceneID="qZb-fd-BvT">
-            <objects>
-                <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" userLabel="Contacts Search View" customClass="ContactSearchViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
-                            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                            <textInputTraits key="textInputTraits"/>
-                            <connections>
-                                <outlet property="delegate" destination="HJp-il-GU9" id="a0H-aQ-58Y"/>
-                            </connections>
-                        </searchBar>
-                        <connections>
-                            <outlet property="dataSource" destination="HJp-il-GU9" id="LPl-WA-Ev3"/>
-                            <outlet property="delegate" destination="HJp-il-GU9" id="Qlr-7k-Qht"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Contacts" id="I0n-EO-ORC"/>
-                    <connections>
-                        <outlet property="searchDisplayController" destination="d2b-8D-Qih" id="NuX-J9-6Lz"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="pfN-iL-6BF" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <searchDisplayController id="d2b-8D-Qih">
-                    <connections>
-                        <outlet property="delegate" destination="HJp-il-GU9" id="fqg-pd-AV2"/>
-                        <outlet property="searchBar" destination="bWo-z7-sbJ" id="QEg-l4-RGp"/>
-                        <outlet property="searchContentsController" destination="HJp-il-GU9" id="C2w-tJ-4b5"/>
-                        <outlet property="searchResultsDataSource" destination="HJp-il-GU9" id="J7X-Ah-gRb"/>
-                        <outlet property="searchResultsDelegate" destination="HJp-il-GU9" id="laK-LC-CZc"/>
-                    </connections>
-                </searchDisplayController>
-            </objects>
-            <point key="canvasLocation" x="-3092" y="-911"/>
+            <point key="canvasLocation" x="-5669" y="-107"/>
         </scene>
         <!--Advanced Settings View Controller-->
         <scene sceneID="eed-GO-vzW">
@@ -244,7 +206,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3992" y="4710"/>
+            <point key="canvasLocation" x="-3992" y="4430"/>
         </scene>
         <!--Drafts View Controller-->
         <scene sceneID="DqQ-E2-ipI">
@@ -262,7 +224,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5607" y="-174"/>
+            <point key="canvasLocation" x="-4775" y="410"/>
         </scene>
         <!--Cert Ask View Controller-->
         <scene sceneID="sRh-yQ-JkD">
@@ -292,32 +254,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="V2o-ry-ikP" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4471" y="5521"/>
-        </scene>
-        <!--Chooser-->
-        <scene sceneID="Ora-ag-cc2">
-            <objects>
-                <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Chooser" id="d4h-6e-NRq">
-                        <barButtonItem key="backBarButtonItem" title="Cancel" id="JmU-cR-I3t"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="search" id="PfB-rr-F7z">
-                            <connections>
-                                <segue destination="HJp-il-GU9" kind="push" identifier="ContactChooserToContactSearch" id="z8t-Er-kGd"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
-                    <connections>
-                        <outlet property="ContactsButton" destination="PfB-rr-F7z" id="JTC-Ef-UAG"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3508" y="-1879"/>
+            <point key="canvasLocation" x="-4359" y="5401"/>
         </scene>
         <!--Notification Chooser View Controller-->
         <scene sceneID="ngQ-k6-uNM">
@@ -331,7 +268,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ACI-Lc-wVg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4490" y="4710"/>
+            <point key="canvasLocation" x="-4490" y="4526"/>
         </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
@@ -345,7 +282,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pD4-ER-Ao1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6165" y="-107"/>
+            <point key="canvasLocation" x="-6221" y="-115"/>
         </scene>
         <!--Notes Viewer View Controller-->
         <scene sceneID="Hd9-0q-M2W">
@@ -434,7 +371,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="3d3-Vl-kXG" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5657" y="2084"/>
+            <point key="canvasLocation" x="-5593" y="2084"/>
         </scene>
         <!--About Us View Controller-->
         <scene sceneID="3SJ-Xi-4H0">
@@ -484,8 +421,6 @@
                     <navigationItem key="navigationItem" id="WcB-L4-4xt"/>
                     <connections>
                         <outlet property="addAttendeeButton" destination="4z6-Fd-6ku" id="dnv-oH-k1n"/>
-                        <segue destination="Mow-Gy-F9N" kind="push" identifier="EventAttendeesToContactChooser" id="4M9-UI-9mt"/>
-                        <segue destination="HJp-il-GU9" kind="push" identifier="SegueToContactSearch" id="tt1-JW-EVV"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -560,7 +495,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TZT-bK-ZdC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5639" y="1407"/>
+            <point key="canvasLocation" x="-5215" y="1183"/>
         </scene>
         <!--Inbox Navigation Controller-->
         <scene sceneID="OK6-7u-Mab">
@@ -612,7 +547,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="6wM-bQ-5UO" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6197" y="1407"/>
+            <point key="canvasLocation" x="-6237" y="1023"/>
         </scene>
         <!--Deadlines Navigation Controller-->
         <scene sceneID="iWE-5M-Q5r">
@@ -648,7 +583,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="zCN-MO-NfE" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6197" y="2161"/>
+            <point key="canvasLocation" x="-6197" y="2065"/>
         </scene>
         <!--Inbox-->
         <scene sceneID="NMJ-WX-bQO">
@@ -667,7 +602,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="BFH-Ry-urH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6165" y="-1560"/>
+            <point key="canvasLocation" x="-5421" y="-1520"/>
         </scene>
         <!--Folders Navigation Controller-->
         <scene sceneID="ObW-V6-9oJ">
@@ -834,10 +769,9 @@
         <segue reference="rEt-DF-c51"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
-        <segue reference="tt1-JW-EVV"/>
         <segue reference="STf-DG-2qn"/>
-        <segue reference="eyY-I1-wel"/>
-        <segue reference="88w-D9-03c"/>
+        <segue reference="nsx-vp-5fz"/>
+        <segue reference="Pjt-TP-v3d"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

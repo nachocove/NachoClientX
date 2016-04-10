@@ -63,7 +63,7 @@ namespace NachoClient.iOS
 
         public void ShowContactSearch (NcEmailAddress address)
         {
-            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            var searchController = new ContactSearchViewController ();
             searchController.SetOwner (MessagesViewController, MessagesViewController.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, searchController);
         }

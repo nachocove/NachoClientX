@@ -425,7 +425,7 @@ namespace NachoClient.iOS
         // User selecting + button in To/CC/BCC field
         public void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address)
         {
-            ContactChooserViewController chooserController = MainStoryboard.InstantiateViewController ("ContactChooserViewController") as ContactChooserViewController;
+            var chooserController = new ContactChooserViewController ();
             chooserController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, chooserController);
         }
@@ -433,7 +433,7 @@ namespace NachoClient.iOS
         // User starting to type in To/CC/BCC field
         public void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address)
         {
-            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            var searchController = new ContactSearchViewController ();
             searchController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, searchController);
         }
