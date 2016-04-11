@@ -255,6 +255,39 @@ namespace NachoCore.Model
             }
         }
 
+        public void CleanupOldDbConnections (TimeSpan staleInterval, int maxCached)
+        {
+            Log.Info (Log.LOG_DB, "Cleaning DB connections older than {0:n0} sec, caching at most {1} connections.", staleInterval.TotalSeconds, maxCached);
+            DateTime staleCuttoff = DateTime.UtcNow - staleInterval;
+            int uiThreadId = NcApplication.Instance.UiThreadId;
+            foreach (var kvp in DbConns) {
+                if (uiThreadId != kvp.Key && kvp.Value.GetLastAccess() < staleCuttoff) {
+                    NcSQLiteConnection staleConnection;
+                    if (DbConns.TryRemove (kvp.Key, out staleConnection)) {
+                        Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < recycling stale connection ({1:N0} sec)",
+                            kvp.Key, (DateTime.UtcNow - staleConnection.GetLastAccess ()).TotalSeconds);
+                        ConnectionPool.Enqueue (staleConnection);
+                    } else {
+                        Log.Error (Log.LOG_DB, "Internal error: Can't remove connection {0} from DbConns.", kvp.Key);
+                    }
+                }
+            }
+            int originalCacheCount = ConnectionPool.Count;
+            while (ConnectionPool.Count > maxCached) {
+                NcSQLiteConnection db;
+                if (ConnectionPool.TryDequeue (out db)) {
+                    db.Eliminate ();
+                } else {
+                    Log.Error (Log.LOG_DB, "Internal error: Can't remove a connection from the cached connection pool with size {0}", ConnectionPool.Count);
+                    break;
+                }
+            }
+            int finalCacheCount = ConnectionPool.Count;
+            if (originalCacheCount != finalCacheCount) {
+                Log.Info (Log.LOG_DB, "Removed {0} DB connections from the cache, leaving {1} connections.", originalCacheCount - finalCacheCount, finalCacheCount);
+            }
+        }
+
         public Dictionary<string, long> AllTableRowCounts (bool includeZeroCounts = false)
         {
             Dictionary<string, long> tableCounts = new Dictionary<string, long> ();
