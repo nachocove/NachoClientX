@@ -904,10 +904,6 @@
     <Compile Include="NachoUI.iOS\EventViewController.designer.cs">
       <DependentUpon>EventViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\PhoneViewController.cs" />
-    <Compile Include="NachoUI.iOS\PhoneViewController.designer.cs">
-      <DependentUpon>PhoneViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ChooseCalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\ChooseCalendarViewController.designer.cs">
       <DependentUpon>ChooseCalendarViewController.cs</DependentUpon>
