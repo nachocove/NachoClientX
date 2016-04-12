@@ -222,7 +222,6 @@
     <Folder Include="NachoPlatform\" />
     <Folder Include="NachoUI.iOS\Support\" />
     <Folder Include="NachoUI.iOS\Interfaces\" />
-    <Folder Include="NachoUI.iOS\Tables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="Content\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
@@ -638,11 +637,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\TaskListViewController.cs" />
-    <Compile Include="NachoUI.iOS\TaskListViewController.designer.cs">
-      <DependentUpon>TaskListViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Tables\TaskTableSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoTasks.cs">
       <Link>NachoCore\Adapters\INachoTasks.cs</Link>
     </Compile>
