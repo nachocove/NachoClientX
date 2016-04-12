@@ -124,8 +124,7 @@ namespace NachoCore.Model
             Delete,
         }
 
-        /// ActiveSync or Device
-        [Indexed]
+        /// ActiveSync, Device, Salesforce, etc.
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device contacts
@@ -234,13 +233,11 @@ namespace NachoCore.Model
 
         public int PortraitId { get; set; }
 
-        [Indexed]
         public bool IsVip { get; set; }
 
         // 0 means unindexed. If IndexedVersion == ContactIndexDocument.Version - 1, only McContact fields
         // are indexed. If IndexedVersion == ContactIndexDocument.Version, both fields and body (note) are
         // indexed.
-        [Indexed]
         public int IndexVersion { get; set; }
 
         public override ClassCodeEnum GetClassCode ()
@@ -1626,6 +1623,11 @@ namespace NachoCore.Model
                 var selectAccount = String.Format ("    c.AccountId = {0} AND ", accountId);
                 return String.Format (fmt, selectAccount);
             }
+        }
+
+        public static int CountByAccountId (int accountId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
         }
 
         public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)

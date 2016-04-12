@@ -10,6 +10,7 @@ using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
@@ -449,7 +450,7 @@ namespace NachoClient.iOS
             MultiSelectToggle (tableView);
         }
 
-        void UpdateMultiSelectAccounts(McEmailMessageThread messageThread, int delta)
+        void UpdateMultiSelectAccounts (McEmailMessageThread messageThread, int delta)
         {
             var message = messageThread.FirstMessage ();
             if (null == message) {
@@ -467,6 +468,12 @@ namespace NachoClient.iOS
                 NcAssert.True (1 == delta);
                 MultiSelectAccounts.Add (message.AccountId, delta);
             }
+        }
+
+        public int MultiSelectAccount (UITableView tableView)
+        {
+            NcAssert.True (1 == MultiSelectAccounts.Count);
+            return MultiSelectAccounts.Keys.First<int> ();
         }
 
         /// <summary>
@@ -536,11 +543,7 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = UIColor.Yellow;
 
                 // Unread message dot
-                var unreadMessageView = new UIImageView (new Rectangle (15, 60, 40, 27));
-                unreadMessageView.ContentMode = UIViewContentMode.Center;
-                using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
-                    unreadMessageView.Image = image;
-                }
+                var unreadMessageView = new UnreadMessageIndicator (new Rectangle (15, 60, 40, 27));
                 unreadMessageView.BackgroundColor = UIColor.White;
                 unreadMessageView.Tag = UNREAD_IMAGE_TAG;
                 unreadMessageView.UserInteractionEnabled = true;
@@ -740,17 +743,10 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
-            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            var unreadMessageView = (UnreadMessageIndicator)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = false;
-            if (message.IsRead) {
-                using (var image = UIImage.FromBundle ("MessageRead")) {
-                    unreadMessageView.Image = image;
-                }
-            } else {
-                using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
-                    unreadMessageView.Image = image;
-                }
-            }
+            unreadMessageView.State = message.IsRead ? UnreadMessageIndicator.MessageState.Read : UnreadMessageIndicator.MessageState.Unread;
+            unreadMessageView.Color = Util.ColorForAccount (message.AccountId);
 
             var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
             messageHeaderView.ConfigureMessageView (messageThread, message);
@@ -857,7 +853,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
            
-            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            var unreadMessageView = cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = true;
 
             var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
@@ -928,7 +924,7 @@ namespace NachoClient.iOS
                     }
                 }
             }
-            if (null != headerText && null != messageThreads && messageThreads.HasFilterSemantics()) {
+            if (null != headerText && null != messageThreads && messageThreads.HasFilterSemantics ()) {
                 headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
             }
         }

@@ -185,7 +185,9 @@ namespace NachoCore.Utils
                     var messageIds = new HashSet<string> ();
                     var scoredResults = new List<SearchMatch> ();
 
+                    NcAssert.NotNull (indexResults, "StartSearch: indexResults is null");
                     foreach (var indexMatch in indexResults) {
+                        NcAssert.NotNull (indexMatch, "StartSearch: indexMatch is null");
                         try {
                             float matchScore;
                             int id = int.Parse (indexMatch.Id);
@@ -208,10 +210,14 @@ namespace NachoCore.Utils
                     // extended period of time.
                     List<List<NcEmailMessageIndex>> allAccountsServerResults;
                     lock (serverResultsLock) {
-                        allAccountsServerResults = new List<List<NcEmailMessageIndex>> (serverResults.Values);
+                        var values = serverResults.Values;
+                        NcAssert.NotNull (values, "StartSearch: serverResults.Values is null");
+                        allAccountsServerResults = new List<List<NcEmailMessageIndex>> (values);
                     }
+                    NcAssert.NotNull (allAccountsServerResults, "StartSearch: allAccountsServerResults is null");
                     foreach (var serverMatches in allAccountsServerResults) {
                         foreach (var serverMatch in serverMatches) {
+                            NcAssert.NotNull (serverMatch, "StartSearch: serverMatch is null");
                             float matchScore;
                             if (ScoreMessage (serverMatch.Id, searchWords, 0, out matchScore, dbIds, messageIds)) {
                                 scoredResults.Add (new SearchMatch () {

@@ -56,6 +56,8 @@ namespace NachoCore.IMAP
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
             }
+            // call will do nothing if the hint isn't there.
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             return result;
         }
 
@@ -74,7 +76,10 @@ namespace NachoCore.IMAP
                     email.Delete ();
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
+                McPending.EmailBodyError (email.AccountId, email.ServerId);
             }
+            // call will do nothing if the hint isn't there.
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             return result;
         }
 
@@ -115,8 +120,14 @@ namespace NachoCore.IMAP
             }
 
             BodyPart imapBody;
-            if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
-                Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}", email.ImapBodyStructure);
+            try {
+                if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
+                    Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}", email.ImapBodyStructure);
+                    return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                        NcResult.WhyEnum.BadOrMalformed);
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}\n{1}", email.ImapBodyStructure, ex);
                 return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
                     NcResult.WhyEnum.BadOrMalformed);
             }
@@ -202,7 +213,6 @@ namespace NachoCore.IMAP
             }
             Cts.Token.ThrowIfCancellationRequested ();
 
-            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             MimeHelpers.PossiblyExtractAttachmentsFromBody (body, email, Cts.Token);
 
             return NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);

@@ -285,12 +285,16 @@ namespace NachoClient.AndroidClient
 
         void PickAttachment ()
         {
+
+            Save (() => {});
+
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
             imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
 
             Intent shareIntent = new Intent ();
-            shareIntent.SetAction (Intent.ActionPick);
-            shareIntent.SetType ("image/*");
+            shareIntent.SetAction (Intent.ActionGetContent);
+            shareIntent.AddCategory (Intent.CategoryOpenable);
+            shareIntent.SetType ("*/*");
             shareIntent.PutExtra (Intent.ExtraAllowMultiple, true);
             var resInfos = Activity.PackageManager.QueryIntentActivities (shareIntent, 0);
             var packages = new List<string> ();

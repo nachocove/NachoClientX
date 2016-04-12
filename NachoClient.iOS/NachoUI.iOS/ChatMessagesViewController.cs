@@ -175,6 +175,7 @@ namespace NachoClient.iOS
 
         public void Send ()
         {
+            ComposeView.SetEnabled (false);
             if (Chat == null) {
                 var addresses = HeaderView.ToView.AddressList;
                 Chat = McChat.ChatForAddresses (Account.Id, addresses);
@@ -192,17 +193,20 @@ namespace NachoClient.iOS
             }
             var text = ComposeView.GetMessage ();
             var previousMessages = new List<McEmailMessage> ();
-            for (int i = Messages.Count - 1; i >= Messages.Count - 3 && i >= 0; --i){
+            for (int i = Messages.Count - 1; i >= Messages.Count - 5 && i >= 0; --i){
                 previousMessages.Add (Messages [i]);
             }
             ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message, NcResult result) => {
-                if (result.isOK()){
-                    Chat.AddMessage (message);
-                    ComposeView.Clear ();
-                    ChatView.ScrollToBottom ();
-                    PendingSendMap.Add(result.Value as string, message.Id);
-                }else{
-                    NcAlertView.ShowMessage (this, "Could not send messasge", "Sorry, there was a problem sending the message.  Please try again.");
+                if (IsViewLoaded){
+                    ComposeView.SetEnabled(true);
+                    if (result.isOK()){
+                        Chat.AddMessage (message);
+                        ComposeView.Clear ();
+                        ChatView.ScrollToBottom ();
+                        PendingSendMap.Add(result.Value as string, message.Id);
+                    }else{
+                        NcAlertView.ShowMessage (this, "Could not send messasge", "Sorry, there was a problem sending the message.  Please try again.");
+                    }
                 }
             });
         }
@@ -847,6 +851,12 @@ namespace NachoClient.iOS
             ChatViewController.Send ();
         }
 
+        public void SetEnabled (bool isEnabled)
+        {
+            SendButton.Enabled = isEnabled;
+            AttachButton.Enabled = isEnabled;
+        }
+
         void Attach (object sender, EventArgs e)
         {
             ChatViewController.Attach ();
@@ -1232,7 +1242,7 @@ namespace NachoClient.iOS
         McEmailMessage Message;
         McChatParticipant Participant;
         List<McAttachment> Attachments;
-        UILabel MessageLabel;
+        UITextView MessageLabel;
         public int Index;
         UIEdgeInsets MessageInsets;
         nfloat BubbleSideInset = 15.0f;
@@ -1293,9 +1303,14 @@ namespace NachoClient.iOS
             BubbleView.Layer.MasksToBounds = true;
             BubbleView.Layer.BorderWidth = 1.0f;
             BubbleView.Layer.CornerRadius = 8.0f;
-            MessageLabel = new UILabel (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
-            MessageLabel.Lines = 0;
+            MessageLabel = new UITextView (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
+            MessageLabel.Editable = false;
+            MessageLabel.DataDetectorTypes = UIDataDetectorType.All;
             MessageLabel.Font = A.Font_AvenirNextRegular17;
+            MessageLabel.UserInteractionEnabled = true;
+            MessageLabel.ScrollEnabled = false;
+            MessageLabel.DelaysContentTouches = false;
+            MessageLabel.TextContainerInset = new UIEdgeInsets (0, 0, 0, 0);
             var timestampDividerFont = A.Font_AvenirNextDemiBold14;
             TimestampDividerLabel = new UILabel (new CGRect (0.0f, 0.0f, Bounds.Width, timestampDividerFont.LineHeight * 2.0f));
             TimestampDividerLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;

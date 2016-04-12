@@ -97,9 +97,15 @@ namespace NachoCore.Model
             ExpirySecs = expirySecs;
             NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
             AccessToken = null;
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            if (string.IsNullOrEmpty (refreshToken)) {
+                var st = new System.Diagnostics.StackTrace ();
+                Log.Warn (Log.LOG_SYS, "UpdateOauth2({0}:{1}): No refreshToken!\n{2}", AccountId, account.AccountService, st.ToString ());
+            }
             NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
             RefreshToken = null;
             UpdateCredential ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
         public void ClearExpiry ()
@@ -205,28 +211,6 @@ namespace NachoCore.Model
                 NcAssert.CaseError (CredType.ToString ());
                 return false;
             }
-        }
-
-
-        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
-        {
-            var account = McAccount.QueryById<McAccount> (AccountId);
-            Oauth2TokenRefresh refresh;
-            switch (account.AccountService) {
-            case McAccount.AccountServiceEnum.GoogleDefault:
-                refresh = new GoogleOauth2Refresh (this);
-                break;
-
-            case McAccount.AccountServiceEnum.SalesForce:
-                refresh = new SFDCOauth2Refresh (this);
-                break;
-
-            default:
-                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Can not refresh {1}", account.Id, account.AccountService);
-                return;
-            }
-
-            refresh.Refresh (onSuccess, onFailure, Token);
         }
     }
 }

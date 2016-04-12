@@ -166,6 +166,10 @@ namespace NachoPlatform
 
             var rq = builder.Build ();
             var call = cloned.NewCall (rq);
+            if (cancellationToken.IsCancellationRequested) {
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Cancellation requested", request.guid);
+                return;
+            }
             cancellationToken.Register (() => {
                 if (!call.IsCanceled) {
                     if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
@@ -288,7 +292,7 @@ namespace NachoPlatform
                         }
                     }
                 } catch (Exception ex) {
-                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Error Processing response: {0}", OriginalRequest.guid, ex);
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Error Processing response: {1}", OriginalRequest.guid, ex);
                     ErrorAction (ex, Token);
                 } finally {
                     File.Delete (filename);

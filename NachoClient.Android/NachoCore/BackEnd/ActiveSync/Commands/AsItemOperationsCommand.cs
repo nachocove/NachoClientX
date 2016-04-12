@@ -169,27 +169,7 @@ namespace NachoCore.ActiveSync
             } else if (null != xmlServerId) {
                 // This means we are processing a body download prefetch response.
                 NcModel.Instance.RunInTransaction (() => {
-                    var item = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, xmlServerId.Value);
-                    if (null == item) {
-                        Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McEmailMessage with ServerId {0}", xmlServerId.Value);
-                    } else {
-                        if (0 == item.BodyId) {
-                            var body = McBody.InsertError (AccountId);
-                            item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                var target = (McEmailMessage)record;
-                                target.BodyId = body.Id;
-                                return true;
-                            });
-                        } else {
-                            var body = McBody.QueryById<McBody> (item.BodyId);
-                            if (null == body) {
-                                Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McBody with Id {0}", item.BodyId);
-                            } else {
-                                body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
-                                body.Update ();
-                            }
-                        }
-                    }
+                    McPending.EmailBodyError(AccountId, xmlServerId.Value);
                 });
             } else {
                 Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: null xmlFileReference and xmlServerId");

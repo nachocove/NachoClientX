@@ -14,13 +14,11 @@ namespace NachoCore.Model
         [Indexed]
         public string ClientId { get; set; }
 
-        [Indexed]
         // The "owner" can record a value here that idicates the conditions under which the entry
         // was created. The owner can then know that later enhancements weren't available when the the
         // entry was created, and take actions. For example, adding street address to device contacts.
         public int OwnerEpoch { get; set; }
 
-        [Indexed]
         public int HasBeenGleaned { get; set; }
 
         /// Index of Body container

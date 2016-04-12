@@ -416,8 +416,11 @@ namespace NachoCore
         // Interface to owner.
         public void Stop ()
         {
+            var name = this.GetType ().Name;
+            Log.Info (Log.LOG_BACKEND, "NcProtoControl.Stop({0}) called", name);
             IsStarted = false;
             ForceStop ();
+            Log.Info (Log.LOG_BACKEND, "NcProtoControl.Stop({0}) exited", name);
         }
 
         protected virtual void ForceStop ()

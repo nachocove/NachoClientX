@@ -493,12 +493,13 @@ namespace NachoCore.IMAP
         /// Resolves the one sync, i.e. One SyncKit.
         /// </summary>
         /// <param name="BEContext">BEContext.</param>
-        /// <param name="synckit">Synckit.</param>
-        public static void ResolveOneSync (IBEContext BEContext, SyncKit synckit)
+        /// <param name = "pending">A McPending</param>
+        /// <param name = "folder">A McFolder</param>
+        public static void ResolveOneSync (IBEContext BEContext, McPending pending, McFolder folder)
         {
             var protocolState = BEContext.ProtocolState;
-            ResolveOneSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
-            MaybeAdvanceSyncStage (ref protocolState, synckit.PendingSingle != null);
+            ResolveOneSync (BEContext, ref protocolState, folder, pending);
+            MaybeAdvanceSyncStage (ref protocolState, pending != null);
         }
 
         /// <summary>
@@ -518,11 +519,6 @@ namespace NachoCore.IMAP
                         target.HasSyncedInbox = true;
                         return true;
                     });
-                }
-                var exeCtxt = NcApplication.Instance.ExecutionContext;
-                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                    // Need to tell the BE that we did what it asked us to, i.e. sync. Even though there's nothing to do.
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
                 }
             }
 

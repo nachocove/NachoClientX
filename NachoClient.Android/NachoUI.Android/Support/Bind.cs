@@ -24,6 +24,7 @@ using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using Android.Widget;
 using NachoPlatform;
+using Android.Graphics;
 
 namespace NachoClient.AndroidClient
 {
@@ -71,6 +72,9 @@ namespace NachoClient.AndroidClient
             }
 
             SetVisibility (ViewStates.Visible, vh.senderView, vh.subjectView, vh.dateView);
+
+            var dot = vh.isUnreadView.Drawable as GradientDrawable;
+            dot.SetColor (NachoClient.AndroidClient.Util.ColorForAccount(message.AccountId));
 
             if (!message.IsRead && !isDraft) {
                 vh.isUnreadView.Visibility = ViewStates.Visible;
@@ -508,12 +512,13 @@ namespace NachoClient.AndroidClient
             var previewView = view.FindViewById<TextView> (Resource.Id.preview);
             var bundle = new NcEmailMessageBundle (message);
             if (bundle.NeedsUpdate) {
-                previewView.Text = "!! " + message.BodyPreview;  
+                previewView.Text = message.BodyPreview;  
             } else {
                 previewView.Text = bundle.TopText;
             }
 
             var previewCardView = view.FindViewById<CardView> (Resource.Id.preview_card);
+            var cardLayout = previewCardView.LayoutParameters as LinearLayout.LayoutParams;
 
             int textColorId;
             int backgroundColorId;
@@ -521,14 +526,42 @@ namespace NachoClient.AndroidClient
             if (null == participant) {
                 textColorId = Android.Resource.Color.White;
                 backgroundColorId = Resource.Color.NachoGreen;
+                cardLayout.Gravity = GravityFlags.Right;
+                cardLayout.LeftMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 50.0f, view.Context.Resources.DisplayMetrics);
+                cardLayout.RightMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 0.0f, view.Context.Resources.DisplayMetrics);
             } else {
                 backgroundColorId = Android.Resource.Color.White;
                 textColorId = Resource.Color.NachoGreen;
+                cardLayout.Gravity = GravityFlags.Left;
+                cardLayout.LeftMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 0.0f, view.Context.Resources.DisplayMetrics);
+                cardLayout.RightMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 50.0f, view.Context.Resources.DisplayMetrics);
             }
             previewView.SetTextColor (view.Resources.GetColor (textColorId));
             previewView.SetBackgroundResource (backgroundColorId);
             previewCardView.SetCardBackgroundColor (view.Resources.GetColor (backgroundColorId));
+            previewView.RequestLayout ();
 
+        }
+
+        private static Bitmap BitmapFromPathConstrainedToSize (string path, int maxWidth, int maxHeight)
+        {
+            var options = new BitmapFactory.Options ();
+            options.InJustDecodeBounds = true;
+            BitmapFactory.DecodeFile (path, options);
+            int width = options.OutWidth;
+            int height = options.OutHeight;
+            int sampleSize = 1;
+            while (width > maxWidth || height > maxHeight) {
+                sampleSize += 1;
+                width = width / 2;
+                height = height / 2;
+            }
+            if (sampleSize > 1) {
+                sampleSize -= 1;
+            }
+            options.InJustDecodeBounds = false;
+            options.InSampleSize = sampleSize;
+            return BitmapFactory.DecodeFile (path, options);
         }
 
         public static void BindChatAttachments (McEmailMessage message, View view, LayoutInflater inflater, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
@@ -538,12 +571,29 @@ namespace NachoClient.AndroidClient
 
             var attachments = McAttachment.QueryByItemId (message.AccountId, message.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
             if (null != attachments) {
-                foreach (var a in attachments) {
-                    var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
-                    new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
-                    attachmentListView.AddView (cell);
+                foreach (var attachment in attachments) {
+                    string contentType = attachment.ContentType == null ? "" : attachment.ContentType.ToLower ();
+                    if (contentType.StartsWith ("image/") && attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                        var imageView = new ImageView (view.Context);
+                        BindChatImageAttachment (attachment, imageView, onAttachmentSelected);
+                        attachmentListView.AddView (imageView);
+                    } else {
+                        var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+                        new NcAttachmentView (attachment, cell, onAttachmentSelected, onAttachmentError);
+                        attachmentListView.AddView (cell);
+                    }
                 }
             }
+        }
+
+        static void BindChatImageAttachment(McAttachment attachment, ImageView imageView, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected){
+            using (var image = BitmapFromPathConstrainedToSize(attachment.GetFilePath (), 1024, 1024)) {
+                imageView.SetAdjustViewBounds (true);
+                imageView.SetImageBitmap (image);
+            }
+            imageView.Click += (object sender, EventArgs e) => {
+                onAttachmentSelected (attachment);
+            };
         }
 
         public static void BindChatAttachmentColors (View view, bool useDarkBackground)
@@ -563,11 +613,18 @@ namespace NachoClient.AndroidClient
             for (int i = 0; i < attachmentListView.ChildCount; i++) {
                 var attachmentView = attachmentListView.GetChildAt (i);
                 attachmentView.SetBackgroundResource (backgroundColorId);
-                attachmentView.FindViewById (Resource.Id.separator).Visibility = ViewStates.Gone;
+                var separator = attachmentView.FindViewById (Resource.Id.separator);
+                if (separator != null) {
+                    separator.Visibility = ViewStates.Gone;
+                }
                 var nameView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_name);
-                nameView.SetTextColor (view.Resources.GetColor (textColorId));
+                if (nameView != null) {
+                    nameView.SetTextColor (view.Resources.GetColor (textColorId));
+                }
                 var descriptionView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_description);
-                descriptionView.SetTextColor (view.Resources.GetColor (textColorId));
+                if (descriptionView != null) {
+                    descriptionView.SetTextColor (view.Resources.GetColor (textColorId));
+                }
             }
         }
 

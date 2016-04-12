@@ -9,6 +9,7 @@ using NachoPlatform;
 using Newtonsoft.Json;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -21,14 +22,26 @@ namespace NachoCore.Utils
         public static string AuthorizeUrl = "https://accounts.google.com/o/oauth2/auth";
         public static string RefreshUrl = "https://www.googleapis.com/oauth2/v3/token";
         public static string Redirecturi = "http://www.nachocove.com/authorization_callback";
+        public static List<string> Scopes = new List<string> () {
+            "email",
+            "profile",
+            "https://mail.google.com",
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.google.com/m8/feeds/",
+        };
     }
 
     public class GoogleOAuth2Authenticator : OAuth2Authenticator
     {
 
-
-        public GoogleOAuth2Authenticator (string clientId, string clientSecret, string scope, Uri authorizeUrl, Uri redirectUrl, Uri accessTokenUrl, string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
-            : base (clientId, clientSecret, scope, authorizeUrl, redirectUrl, accessTokenUrl, getUsernameAsync)
+        public GoogleOAuth2Authenticator (string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
+            : base (GoogleOAuthConstants.ClientId,
+                GoogleOAuthConstants.ClientSecret,
+                String.Join (" ", GoogleOAuthConstants.Scopes.ToArray ()),
+                new Uri (GoogleOAuthConstants.AuthorizeUrl),
+                new Uri (GoogleOAuthConstants.Redirecturi),
+                new Uri (GoogleOAuthConstants.TokenUrl),
+                getUsernameAsync)
         {
             LoginHint = loginHint;
         }

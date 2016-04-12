@@ -5,6 +5,7 @@ using Xamarin.Auth;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.SFDC;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -16,17 +17,27 @@ namespace NachoCore.Utils
         public static string AuthorizeUrl = "https://login.salesforce.com/services/oauth2/authorize";
         public static string RefreshUrl = "https://login.salesforce.com/services/oauth2/token";
         public static string Redirecturi = "https://www.nachocove.com/authorization_callback";
+        public static List<string> Scopes = new List<string> () {
+            "api",
+            "refresh_token",
+        };
     }
-
 
     public class SFDCOAuth2Authenticator : OAuth2Authenticator
     {
 
-        public SFDCOAuth2Authenticator (string clientId, string clientSecret, string scope, Uri authorizeUrl, Uri redirectUrl, Uri accessTokenUrl, string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
-            : base (clientId, clientSecret, scope, authorizeUrl, redirectUrl, accessTokenUrl, getUsernameAsync)
+        public SFDCOAuth2Authenticator (string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
+            : base (SFDCOAuth2Constants.ClientId,
+                SFDCOAuth2Constants.ClientSecret,
+                String.Join (" ", SFDCOAuth2Constants.Scopes),
+                new Uri (SFDCOAuth2Constants.AuthorizeUrl),
+                new Uri (SFDCOAuth2Constants.Redirecturi),
+                new Uri (SFDCOAuth2Constants.TokenUrl),
+                getUsernameAsync)
         {
             LoginHint = loginHint;
         }
+
         public string LoginHint {
             get;
             set;

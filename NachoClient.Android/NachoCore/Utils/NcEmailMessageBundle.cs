@@ -331,8 +331,8 @@ namespace NachoCore.Utils
 
         public MemberInfo MemberForEntryName (string entryName)
         {
-            var entry = Manifest.Entries [entryName];
-            if (entry != null) {
+            BundleManifest.Entry entry = null;
+            if (Manifest.Entries.TryGetValue (entryName, out entry)) {
                 var reader = Storage.BinaryReaderForPath (entry.Path);
                 return new MemberInfo (Path.GetFileName (entry.Path), entry.ContentType, reader);
             }
@@ -393,7 +393,7 @@ namespace NachoCore.Utils
             return filename;
         }
 
-        protected HtmlDocument TemplateHtmlDocument ()
+        public HtmlDocument TemplateHtmlDocument ()
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             var htmlPath = Path.Combine (documentsPath, "nacho.html");
@@ -465,14 +465,42 @@ namespace NachoCore.Utils
             CompleteBundleAfterParse ();
         }
 
+        public void ImportImageNode (HtmlNode node, string name, string mimeType, System.IO.Stream contents)
+        {
+            var entry = new BundleManifest.Entry ();
+            entry.Path = SafeFilename (name);
+            string entryKey = entry.Path;
+            Manifest.Entries [entryKey] = entry;
+            entry.ContentType = mimeType;
+            using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                contents.CopyTo (writer.BaseStream);
+            }
+            var relativeUrl = Storage.RelativeUrlForPath (entry.Path, FullHtmlPath);
+            if (!node.Attributes.Contains ("nacho-original-src") && node.Attributes.Contains ("src")) {
+                node.SetAttributeValue ("nacho-original-src", node.GetAttributeValue ("src", ""));
+            }
+            node.SetAttributeValue ("nacho-resize", "true");
+            if (null != relativeUrl) {
+                node.SetAttributeValue ("nacho-bundle-entry", entryKey);
+                node.SetAttributeValue ("src", relativeUrl.ToString ());
+            } else {
+                node.SetAttributeValue ("src", Storage.UrlForPath (entry.Path, entry.ContentType).ToString ());
+            }
+        }
+
         private void CompleteBundleAfterParse ()
         {
             FillMissing ();
-            StoreFullEntries ();
-            StoreTopEntries ();
-            StoreLightlyStyledEntries ();
-            StoreManifest ();
-            NeedsUpdate = false;
+            try {
+                StoreFullEntries ();
+                StoreTopEntries ();
+                StoreLightlyStyledEntries ();
+                StoreManifest ();
+                NeedsUpdate = false;
+            } catch (System.IO.IOException e){
+                Log.Error(Log.LOG_UI, "NcEmailMessageBundle error storing files: {0}", e);
+                Manifest = null;
+            }
         }
 
         private void ParseMessage ()
@@ -517,6 +545,14 @@ namespace NachoCore.Utils
             } else if (parsed.FullText == null) {
                 IncludeHtmlDocumentAsText (parsed.FullHtmlDocument);
             }
+
+            if (NachoPlatform.Device.Instance.BaseOs () == NachoPlatform.OsCode.Android) {
+                // Detecting links now instead of during IncludeHtmlDocument because it's easier to use
+                // a recursive stragegy to make sure we don't hit every text node (for example, we want to
+                // ingore anything that's already a decendant of an "a" tag).
+                DetectLinksInNode (parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body"));
+            }
+
             if (parsed.TopHtmlDocument == null) {
                 if (parsed.TopText != null) {
                     var serializer = new HtmlTextDeserializer ();
@@ -787,7 +823,7 @@ namespace NachoCore.Utils
         protected override void VisitTextPart (TextPart entity)
         {
             bool isAttachment = entity.ContentDisposition != null && entity.ContentDisposition.IsAttachment;
-            if (isAttachment && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
+            if (isAttachment && !string.IsNullOrEmpty (entity.FileName) && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
                 isAttachment = false;
             }
             if (!isAttachment) {
@@ -1241,6 +1277,125 @@ namespace NachoCore.Utils
             foreach (var element in bodyElements) {
                 body.AppendChild (element);
             }
+        }
+
+        static Regex HttpLinkPattern = new Regex ("(http(s)?://)?(\\w+\\.)+\\w{2,8}(([^\\s])*[\\w])?");
+        static Regex EmailLinkPattern = new Regex ("[\\w\\.\\-_\\+]+@(\\w+\\.)+\\w{2,8}");
+
+        private void DetectLinksInNode(HtmlNode node)
+        {
+            if (node.NodeType == HtmlNodeType.Element) {
+                // Certain elements we don't want to mess with...
+                if (node.Name.Equals ("a")) {
+                    // Already a link, no futher detection necessary
+                    return;
+                }
+                if (node.Name.Equals ("script")) {
+                    // Scripts should have already been removed, but in case we allow some in the future,
+                    // this ensures that the link detection won't dive inside and mess up the script code
+                    return;
+                }
+                if (node.Name.Equals ("style")) {
+                    // Style tags should only be in HEAD, but in case we find one elsewhere, we shouldn't try to
+                    // do any link detection inside
+                    return;
+                }
+                // making a copy of children becuase we may be modifying node.ChildNodes during the loop
+                // the list of children before any modifications is what we want to loop over
+                var children = new List<HtmlNode> (node.ChildNodes);
+                foreach (var child in children) {
+                    DetectLinksInNode (child);
+                }
+            }else if (node.NodeType == HtmlNodeType.Text) {
+                var textWithDetectedLinks = DetectsLinksInText (HtmlEntity.DeEntitize ((node as HtmlTextNode).Text));
+                // We should get something like [("go to ", null), ("google.com", "http://google.com"), (" now", null))
+                // where the first tuple element is the plain text and the second is an href (if any)
+                // In the case where no links are found, we should get back a single tuple ((text, null)), and don't 
+                // have to change anything
+                if (textWithDetectedLinks.Count > 1) {
+                    foreach (var textLinkPair in textWithDetectedLinks) {
+                        HtmlNode newNode = null;
+                        if (textLinkPair.Item2 == null) {
+                            if (!String.IsNullOrEmpty (textLinkPair.Item1)) {
+                                newNode = node.OwnerDocument.CreateTextNodeWithEscaping (textLinkPair.Item1);
+                            }
+                        } else {
+                            newNode = node.OwnerDocument.CreateElement("a");
+                            newNode.AddAttributeWithEscaping ("href", textLinkPair.Item2);
+                            newNode.AppendChild (node.OwnerDocument.CreateTextNodeWithEscaping (textLinkPair.Item1));
+                        }
+                        if (newNode != null) {
+                            node.ParentNode.InsertBefore (newNode, node);
+                        }
+                    }
+                    node.Remove ();
+                }
+            }
+        }
+
+        private List<Tuple<string, string>> DetectsLinksInText(string text)
+        {
+            // Kicks off a recursive chain of detections.
+            // Currently the chain is just email->http, but we can always add more (e.g., phone, address) later
+            // It's important to do email before http or else the domain part of an email will match the http regex
+            var newNodes = DetectEmailLinksInText (text);
+            return newNodes;
+        }
+
+        private List<Tuple<string, string>> DetectEmailLinksInText (string text)
+        {
+            var match = EmailLinkPattern.Match (text);
+            if (match.Success) {
+                // OK, we found a match.  So we'll split the string into three parts (before, target, after).
+                var before = text.Substring (0, match.Index);
+                var target = text.Substring (match.Index, match.Length);
+                var after = text.Substring (match.Index + match.Length);
+
+                // before doesn't have a match, so we forward it to the next detector
+                var tuples = DetectHttpLinksInText (before);
+
+                // target is the match, so we create an entry for it
+                var href = "mailto:" + target;
+                tuples.Add (new Tuple<string, string> (target, href));
+
+                // after may have another match, so we'll recursively look into it
+                tuples.AddRange (DetectEmailLinksInText (after));
+
+                return tuples;
+            } else {
+                // If we didn't find a match, forward on to the next detector
+                return DetectHttpLinksInText (text);
+            }
+        }
+
+        private List<Tuple<string, string>> DetectHttpLinksInText (string text)
+        {
+            var match = HttpLinkPattern.Match (text);
+            if (match.Success) {
+                var before = text.Substring (0, match.Index);
+                var target = text.Substring (match.Index, match.Length);
+                var after = text.Substring (match.Index + match.Length);
+                var tuples = DetectNoLinksInText (before);
+                var href = target;
+                if (!href.StartsWith ("http://") && !href.StartsWith ("https://")) {
+                    href = "http://" + href;
+                }
+                tuples.Add (new Tuple<string, string> (target, href));
+                tuples.AddRange (DetectHttpLinksInText (after));
+                return tuples;
+            } else {
+                return DetectNoLinksInText (text);
+            }
+        }
+
+        private List<Tuple<string, string>> DetectNoLinksInText (string text)
+        {
+            // This is just a convenience method to make the previous detectors easier to change as new
+            // detectors are added.  If they're all calling another detector function, only the name they call
+            // needs to change in order to adjust the chain.
+            var tuples = new List<Tuple<string,string>> ();
+            tuples.Add (new Tuple<string, string> (text, null));
+            return tuples;
         }
 
         private void IncludeTextAsHtml (string text)

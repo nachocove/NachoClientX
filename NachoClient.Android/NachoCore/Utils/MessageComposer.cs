@@ -185,8 +185,10 @@ namespace NachoCore.Utils
         public void StartPreparingMessage ()
         {
             if (MessagePreparationState != MessagePreparationStatus.NotStarted) {
+                Log.Info (Log.LOG_UI, "MessageComposer StartPreparingMessage return early because in {0} state", MessagePreparationState);
                 return;
             }
+            Log.Info (Log.LOG_UI, "MessageComposer StartPreparingMessage()");
             if (RelatedThread != null) {
                 RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
             }
@@ -209,6 +211,7 @@ namespace NachoCore.Utils
 
         private void PrepareNewMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareNewMessage()");
             // For a new message, we need to first save it to the database so we have an Id
             // that will be referenced by the bundle, attachments, etc.
             if (RelatedThread != null) {
@@ -250,6 +253,7 @@ namespace NachoCore.Utils
 
         private void PrepareSavedMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareSavedMessage()");
             // This is essentially a draft message, so there's no need to do anything
             // but load & display the contents that were saved.
             if (Bundle.NeedsUpdate) {
@@ -264,6 +268,7 @@ namespace NachoCore.Utils
 
         private void CopyAttachments (List<McAttachment> attachments)
         {
+            Log.Info (Log.LOG_UI, "MessageComposer CopyAttachments()");
             foreach (var attachment in attachments) {
                 CopyAttachment (attachment);
             }
@@ -276,6 +281,7 @@ namespace NachoCore.Utils
 
         private void DownloadRelatedMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer DownloadRelatedMessage()");
             if (RelatedMessage.BodyId == 0) {
                 var body = McBody.InsertPlaceholder (RelatedMessage.AccountId);
                 RelatedMessage = RelatedMessage.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
@@ -290,7 +296,9 @@ namespace NachoCore.Utils
                 RelatedMessageDownloader.Delegate = this;
                 RelatedMessageDownloader.Bundle = relatedBundle;
                 RelatedMessageDownloader.Download (RelatedMessage);
+                Log.Info (Log.LOG_UI, "MessageComposer DownloadRelatedMessage() starting downloader");
             } else {
+                Log.Info (Log.LOG_UI, "MessageComposer DownloadRelatedMessage() already ready to go");
                 PrepareMessageBodyUsingRelatedBundle (relatedBundle);
             }
         }
@@ -300,6 +308,7 @@ namespace NachoCore.Utils
             if (downloader == MainMessageDownloader) {
                 FinishPreparingMessage ();
             } else if (downloader == RelatedMessageDownloader) {
+                Log.Info (Log.LOG_UI, "MessageComposer related message download complete");
                 PrepareMessageBodyUsingRelatedBundle (downloader.Bundle);
             } else {
                 NcAssert.CaseError ();
@@ -311,6 +320,7 @@ namespace NachoCore.Utils
             if (downloader == MainMessageDownloader) {
                 Delegate.MessageComposerDidFailToLoadMessage (this);
             } else if (downloader == RelatedMessageDownloader) {
+                Log.Info (Log.LOG_UI, "MessageComposer related message download failed");
                 FinishPreparingMessage ();
             } else {
                 NcAssert.CaseError ();
@@ -319,6 +329,7 @@ namespace NachoCore.Utils
 
         void PrepareMessageBodyUsingRelatedBundle (NcEmailMessageBundle relatedBundle)
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareMessageBodyUsingRelatedBundle()");
             NcTask.Run (() => {
                 var doc = new HtmlDocument ();
                 doc.LoadHtml (relatedBundle.FullHtml);
@@ -346,7 +357,12 @@ namespace NachoCore.Utils
             if (!String.IsNullOrWhiteSpace (InitialText)) {
                 messageText += InitialText;
             }
-            messageText += SignatureText ();
+
+            string htmlSignature = Account.HtmlSignature;
+            if (string.IsNullOrEmpty (htmlSignature) && !string.IsNullOrEmpty (Account.Signature)) {
+                messageText += "\n\n" + Account.Signature;
+            }
+
             if (!String.IsNullOrWhiteSpace (messageText)) {
                 using (var reader = new StringReader (messageText)) {
                     var line = reader.ReadLine ();
@@ -364,6 +380,26 @@ namespace NachoCore.Utils
                         }
                         line = reader.ReadLine ();
                     }
+                }
+            }
+
+            if (!string.IsNullOrEmpty (htmlSignature)) {
+                var signatureDoc = new HtmlDocument ();
+                signatureDoc.LoadHtml (htmlSignature);
+                var div = doc.CreateElement ("div");
+                div.AppendChild (doc.CreateElement ("br"));
+                div.AppendChild (doc.CreateElement ("br"));
+                // Skip over the <html> or <body> nodes, if any, at the top of the document.
+                var startingNode = signatureDoc.DocumentNode;
+                startingNode = startingNode.Element ("html") ?? startingNode;
+                startingNode = startingNode.Element ("body") ?? startingNode;
+                foreach (var sigPiece in startingNode.ChildNodes) {
+                    div.AppendChild (sigPiece);
+                }
+                if (null != firstChildBeforeInserts) {
+                    body.InsertBefore (div, firstChildBeforeInserts);
+                } else {
+                    body.AppendChild (div);
                 }
             }
         }
@@ -452,13 +488,11 @@ namespace NachoCore.Utils
 
         protected virtual void PrepareMessageBody ()
         {
-            string messageText = "";
-            if (!String.IsNullOrWhiteSpace (InitialText)) {
-                messageText += InitialText;
-            }
-            messageText += SignatureText ();
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareMessageBody()");
             NcTask.Run (() => {
-                Bundle.SetFullText (messageText);
+                var htmlDoc = Bundle.TemplateHtmlDocument ();
+                InsertInitialHtml (htmlDoc);
+                Bundle.SetFullHtml(htmlDoc, Bundle);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     FinishPreparingMessage ();
                 });
@@ -467,6 +501,7 @@ namespace NachoCore.Utils
 
         protected virtual void FinishPreparingMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer FinishPreparingMessage()");
             MessagePreparationState = MessagePreparationStatus.Done;
             if (Delegate != null) {
                 Delegate.MessageComposerDidCompletePreparation (this);
@@ -523,6 +558,10 @@ namespace NachoCore.Utils
         {
             if (Message.BodyId != 0) {
                 Body = McBody.QueryById<McBody> (Message.BodyId);
+            } else {
+                Body = null;
+            }
+            if (Body != null) {
                 Body.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
                 Body.UpdateData ((FileStream stream) => {
                     Mime.WriteTo (stream);
@@ -652,28 +691,53 @@ namespace NachoCore.Utils
                                     node.Attributes.Remove ("nacho-original-src");
                                 }
                                 var info = Bundle.MemberForEntryName (entryName);
-                                OpenReaders.Add (info.Reader);
-                                hasRelatedParts = true;
-                                var attachment = new MimePart (info.ContentType ?? "image/jpeg");
-                                attachment.FileName = info.Filename;
-                                attachment.IsAttachment = true;
-                                attachment.ContentTransferEncoding = ContentEncoding.Base64;
-                                attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
-                                attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
-                                related.Add (attachment);
-                                var src = "cid:" + attachment.ContentId;
-                                node.SetAttributeValue ("src", src);
-                                AdjustEstimatedSizesForAttachment (info.Reader.BaseStream);
-                                SrcsByEntryName [entryName] = src;
-                                if (mcattachment != null) {
-                                    mcattachment.ContentId = attachment.ContentId;
-                                    mcattachment.Update ();
-                                    AttachmentsInHtml [mcattachment.Id] = true;
+                                if (info != null) {
+                                    OpenReaders.Add (info.Reader);
+                                    hasRelatedParts = true;
+                                    var attachment = new MimePart (info.ContentType ?? "image/jpeg");
+                                    attachment.FileName = info.Filename;
+                                    attachment.IsAttachment = false;
+                                    attachment.ContentTransferEncoding = ContentEncoding.Base64;
+                                    attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
+                                    attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                                    related.Add (attachment);
+                                    var src = "cid:" + attachment.ContentId;
+                                    node.SetAttributeValue ("src", src);
+                                    AdjustEstimatedSizesForAttachment (info.Reader.BaseStream);
+                                    SrcsByEntryName [entryName] = src;
+                                    if (mcattachment != null) {
+                                        mcattachment.ContentId = attachment.ContentId;
+                                        mcattachment.Update ();
+                                        AttachmentsInHtml [mcattachment.Id] = true;
+                                    }
                                 }
                             } else {
                                 node.SetAttributeValue ("src", SrcsByEntryName [entryName]);
                             }
                             node.Attributes.Remove ("nacho-bundle-entry");
+                        }
+                        if (node.Attributes.Contains ("nacho-data-url")) {
+                            Uri url = null;
+                            try {
+                                url = new Uri (node.GetAttributeValue ("src", ""));
+                            }catch{
+                            }
+                            if (url != null && url.Scheme == "data") {
+                                var parts = url.AbsolutePath.Split (new char[] { ';' }, 2);
+                                var contentType = parts [0];
+                                parts = parts [1].Split (new char[] { ',' }, 2);
+                                var data = Convert.FromBase64String (parts[1]);
+                                hasRelatedParts = true;
+                                var attachment = new MimePart (contentType);
+                                attachment.IsAttachment = false;
+                                attachment.ContentTransferEncoding = ContentEncoding.Base64;
+                                attachment.ContentObject = new ContentObject (new MemoryStream(data));
+                                attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                                related.Add (attachment);
+                                var src = "cid:" + attachment.ContentId;
+                                node.SetAttributeValue ("src", src);
+                            }
+                            node.Attributes.Remove ("nacho-data-src");
                         }
                     }
                 }

@@ -85,10 +85,11 @@ namespace NachoClient.AndroidClient
             cancelButton.Click += CancelButton_Click;
 
             // Highlight the tab bar icon of this activity
-//            var chatsImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
-//            chatsImage.SetImageResource (Resource.Drawable.nav_chat_active);
+            var chatsImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chat_image);
+            chatsImage.SetImageResource (Resource.Drawable.nav_chat_active);
 
             chatListAdapter = new ChatListAdapter (this);
+            Sync ();
 
             MaybeDisplayNoChatsView (view);
 
@@ -162,6 +163,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            Sync ();
             RefreshVisibleChatCells ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
@@ -339,6 +341,23 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
+        void Sync ()
+        {
+            if (chatListAdapter.account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                EmailHelper.SyncUnified ();
+                EmailHelper.SyncUnifiedSent ();
+            } else {
+                var inbox = McFolder.GetDefaultInboxFolder (chatListAdapter.account.Id);
+                if (inbox != null) {
+                    BackEnd.Instance.SyncCmd (inbox.AccountId, inbox.Id);
+                }
+                var sent = McFolder.GetDefaultInboxFolder (chatListAdapter.account.Id);
+                if (sent != null) {
+                    BackEnd.Instance.SyncCmd (sent.AccountId, sent.Id);
+                }
+            }
+        }
+
     }
 
     public class ChatListAdapter : Android.Widget.BaseAdapter<McChat>
@@ -349,7 +368,7 @@ namespace NachoClient.AndroidClient
 
         ChatListFragment parent;
 
-        McAccount account;
+        public McAccount account { get; private set; }
 
         public ChatListAdapter (ChatListFragment parent)
         {
@@ -417,10 +436,15 @@ namespace NachoClient.AndroidClient
         {
             var s = (StatusIndEventArgs)e;
 
-            switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_ChatSetChanged:
-                RefreshChatsIfVisible ();
-                break;
+            if (s.Account != null) {
+                if (NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified || NcApplication.Instance.Account.Id == s.Account.Id) {
+                    switch (s.Status.SubKind) {
+                    case NcResult.SubKindEnum.Info_ChatSetChanged:
+                    case NcResult.SubKindEnum.Info_ChatMessageAdded:
+                        RefreshChatsIfVisible ();
+                        break;
+                    }
+                }
             }
         }
 
