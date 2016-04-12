@@ -806,7 +806,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTimeVariance.cs">
       <Link>NachoCore\Brain\NcTimeVariance.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\ActionTableView.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
