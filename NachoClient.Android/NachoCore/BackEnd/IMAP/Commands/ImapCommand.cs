@@ -272,11 +272,15 @@ namespace NachoCore.IMAP
             Sm.PostEvent (evt);
         }
 
+        const int SocketTimeoutMsec = 1000;
+        const int SocketConnectTimeoutMsec = 2000;
+
         public void ConnectAndAuthenticate ()
         {
+            var server = BEContext.Server;
             if (!Client.IsConnected) {
-                Log.Info (Log.LOG_IMAP, "Connecting to Server {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
-                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
+                Log.Info (Log.LOG_IMAP, "Connecting to Server {0}:{1}", server.Host, server.Port);
+                Client.Connect (server, SocketConnectTimeoutMsec, SocketTimeoutMsec, Cts.Token);
                 var capUnauth = McProtocolState.FromImapCapabilities (Client.Capabilities);
 
                 Log.Info (Log.LOG_IMAP, "saving Unauthenticated Capabilities");
@@ -289,21 +293,22 @@ namespace NachoCore.IMAP
                 }
                 Cts.Token.ThrowIfCancellationRequested ();
             }
+            var beCred = BEContext.Cred;
             if (!Client.IsAuthenticated) {
                 ImapDiscoverCommand.possiblyFixUsername (BEContext);
-                string username = BEContext.Cred.Username;
+                string username = beCred.Username;
                 string cred;
-                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                if (beCred.CredType == McCred.CredTypeEnum.OAuth2) {
                     Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
-                    cred = BEContext.Cred.GetAccessToken ();
+                    cred = beCred.GetAccessToken ();
                 } else {
                     Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
-                    cred = BEContext.Cred.GetPassword ();
+                    cred = beCred.GetPassword ();
                 }
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
-                    Log.Info (Log.LOG_IMAP, "Authenticating to Server {0}:{1} (type {2})", BEContext.Server.Host, BEContext.Server.Port, BEContext.Cred.CredType);
+                    Log.Info (Log.LOG_IMAP, "Authenticating to Server {0}:{1} (type {2})", server.Host, server.Port, beCred.CredType);
                     BEContext.Account.LogHashedPassword (Log.LOG_IMAP, "ConnectAndAuthenticate", cred);
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (ImapProtocolException e) {
@@ -329,7 +334,7 @@ namespace NachoCore.IMAP
                 ImapImplementation serverId = null;
                 // if the server supports ID, send one.
                 if ((Client.Capabilities & ImapCapabilities.Id) == ImapCapabilities.Id) {
-                    Log.Info (Log.LOG_IMAP, "ID exchange with server {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+                    Log.Info (Log.LOG_IMAP, "ID exchange with server {0}:{1}", server.Host, server.Port);
                     ImapImplementation ourId = new ImapImplementation () {
                         Name = "Nacho Mail",
                         Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
@@ -346,7 +351,7 @@ namespace NachoCore.IMAP
                         serverId = Client.Identify (null, Cts.Token);
                     }
                 }
-                Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
+                Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", server.Host, server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
             }
         }
 

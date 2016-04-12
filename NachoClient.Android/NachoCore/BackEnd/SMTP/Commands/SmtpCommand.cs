@@ -190,13 +190,17 @@ namespace NachoCore.SMTP
             }
         }
 
+        const int SocketTimeoutMsec = 1000;
+        const int SocketConnectTimeoutMsec = 2000;
+
         public void ConnectAndAuthenticate ()
         {
             ImapDiscoverCommand.guessServiceType (BEContext);
 
+            var server = BEContext.Server;
             if (!Client.IsConnected) {
                 //client.ClientCertificates = new X509CertificateCollection ();
-                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                Client.Connect (server, SocketConnectTimeoutMsec, SocketTimeoutMsec, Cts.Token);
                 Cts.Token.ThrowIfCancellationRequested ();
             }
             if (!Client.IsAuthenticated) {
@@ -207,14 +211,15 @@ namespace NachoCore.SMTP
                     RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
                 }
 
-                string username = BEContext.Cred.Username;
+                var beCred = BEContext.Cred;
+                string username = beCred.Username;
                 string cred;
-                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                if (beCred.CredType == McCred.CredTypeEnum.OAuth2) {
                     Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
-                    cred = BEContext.Cred.GetAccessToken ();
+                    cred = beCred.GetAccessToken ();
                 } else {
                     Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
-                    cred = BEContext.Cred.GetPassword ();
+                    cred = beCred.GetPassword ();
                 }
 
                 Cts.Token.ThrowIfCancellationRequested ();
@@ -231,7 +236,7 @@ namespace NachoCore.SMTP
                     }
                 }
 
-                Log.Info (Log.LOG_SMTP, "SMTP Server {0}:{1} capabilities: {2}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString ());
+                Log.Info (Log.LOG_SMTP, "SMTP Server {0}:{1} capabilities: {2}", server.Host, server.Port, Client.Capabilities.ToString ());
                 if (null != Client.MailKitProtocolLogger && null != RestartLog) {
                     Client.MailKitProtocolLogger.Start (RestartLog);
                 }
