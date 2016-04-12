@@ -1110,10 +1110,6 @@
     <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
-    <Compile Include="NachoUI.iOS\SelectProviderViewController.cs" />
-    <Compile Include="NachoUI.iOS\SelectProviderViewController.designer.cs">
-      <DependentUpon>SelectProviderViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailHelper.cs">
