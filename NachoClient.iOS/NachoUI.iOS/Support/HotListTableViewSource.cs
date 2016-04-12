@@ -559,10 +559,9 @@ namespace NachoClient.iOS
         /// INachoFolderChooserParent delegate
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            NcAssert.True (cookie is SegueHolder);
-            var h = cookie as SegueHolder;
+            NcAssert.True (cookie is McEmailMessageThread);
 
-            var messageThread = (McEmailMessageThread)h.value;
+            var messageThread = (McEmailMessageThread)cookie;
             NcAssert.NotNull (messageThread);
             NcEmailArchiver.Move (messageThread, folder);
         }
