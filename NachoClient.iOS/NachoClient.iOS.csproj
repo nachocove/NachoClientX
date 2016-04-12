@@ -505,7 +505,6 @@
     <Compile Include="NachoUI.iOS\Support\Locale.cs" />
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
-    <Compile Include="NachoUI.iOS\Support\CidImageProtocol.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
