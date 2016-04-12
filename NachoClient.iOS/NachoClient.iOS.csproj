@@ -1084,7 +1084,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
     <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.designer.cs">
       <DependentUpon>AccountSettingsViewController.cs</DependentUpon>
