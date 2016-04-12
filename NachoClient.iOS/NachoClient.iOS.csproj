@@ -501,7 +501,6 @@
     <Compile Include="..\NachoClient.Android\NachoPlatform\IPlatform.cs">
       <Link>NachoPlatform\IPlatform.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\BlurryViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\LabeledIconButton.cs" />
     <Compile Include="NachoUI.iOS\Support\Locale.cs" />
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
