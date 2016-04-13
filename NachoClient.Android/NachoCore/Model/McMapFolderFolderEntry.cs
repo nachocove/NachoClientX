@@ -98,6 +98,6 @@ namespace NachoCore.Model
                 accountId, imapUid, classCode);
             return maps.ToList ();
         }
-        }
+    }
 }
 
