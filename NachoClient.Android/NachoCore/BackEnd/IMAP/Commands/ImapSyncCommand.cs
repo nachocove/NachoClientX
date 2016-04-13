@@ -173,7 +173,7 @@ namespace NachoCore.IMAP
 
                             // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
                             toDelete.AddRange (vanished);
-                            deleteEmails (toDelete);
+                            deleteEmails (Synckit.Folder, toDelete);
 
                             Cts.Token.ThrowIfCancellationRequested ();
                             changed |= toDelete.Any () || newOrChanged.Any ();
@@ -351,8 +351,15 @@ namespace NachoCore.IMAP
                 return null;
             }
 
-            var serverId = imapSummary.GMailMessageId.HasValue ? imapSummary.GMailMessageId.Value.ToString () : imapSummary.UniqueId.Id.ToString ();
-            McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, serverId);
+            McEmailMessage emailMessage;
+            string serverId;
+            if (imapSummary.GMailMessageId.HasValue) {
+                serverId = imapSummary.GMailMessageId.Value.ToString ();
+                emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, serverId);
+            } else {
+                serverId = ImapProtoControl.NonGmailMessageServerId (folder, imapSummary.UniqueId);
+                emailMessage = null;
+            }
             if (null != emailMessage) {
                 try {
                     changed = UpdateEmailMetaData (emailMessage, imapSummary);
@@ -464,12 +471,12 @@ namespace NachoCore.IMAP
             return messagesDeleted;
         }
 
-        private UniqueIdSet deleteEmails (UniqueIdSet uids)
+        private UniqueIdSet deleteEmails (McFolder folder, UniqueIdSet uids)
         {
             // TODO Convert some of this to queries instead of loops
             UniqueIdSet messagesDeleted = new UniqueIdSet ();
             foreach (var uid in uids) {
-                var email = McEmailMessage.QueryByImapUid (AccountId, uid);
+                var email = McEmailMessage.QueryByFolderImapUid (AccountId, folder.Id, uid);
                 if (null != email) {
                     email.Delete ();
                     messagesDeleted.Add (uid);

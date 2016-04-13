@@ -1099,21 +1099,13 @@ namespace NachoCore.Model
             }
         }
 
-        public static McEmailMessage QueryByImapUid (int accountId, UniqueId uid)
+        public static McEmailMessage QueryByFolderImapUid (int accountId, int folderId, UniqueId uid)
         {
-            int folderId;
-            return QueryByImapUid (accountId, uid, out folderId);
-        }
-
-        public static McEmailMessage QueryByImapUid (int accountId, UniqueId uid, out int folderId)
-        {
-            var mappings = McMapFolderFolderEntry.QueryByFolderEntryImapIdClassCode (accountId, uid.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            var mappings = McMapFolderFolderEntry.QueryByFolderIdFolderEntryImapIdClassCode (accountId, folderId, uid.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
             if (mappings.Count == 0) {
-                folderId = -1;
                 return null;
             }
             NcAssert.True (mappings.Count == 1);
-            folderId = mappings [0].FolderId;
             return McEmailMessage.QueryById<McEmailMessage> (mappings [0].FolderEntryId);
         }
 

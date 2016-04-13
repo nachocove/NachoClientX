@@ -88,14 +88,15 @@ namespace NachoCore.Model
             return maps.ToList ();
         }
 
-        public static List<McMapFolderFolderEntry> QueryByFolderEntryImapIdClassCode (int accountId, uint imapUid,
+        public static List<McMapFolderFolderEntry> QueryByFolderIdFolderEntryImapIdClassCode (int accountId, int folderId, uint imapUid,
             McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
                 " likelihood (mm.AccountId = ?, 1.0) AND " +
+                " likelihood (mm.FolderId = ?, 0.05) AND " +
                 " likelihood (mm.ImapUid = ?, 0.001) AND " +
                 " likelihood (mm.ClassCode = ?, 0.2)",
-                accountId, imapUid, classCode);
+                accountId, folderId, imapUid, classCode);
             return maps.ToList ();
         }
     }

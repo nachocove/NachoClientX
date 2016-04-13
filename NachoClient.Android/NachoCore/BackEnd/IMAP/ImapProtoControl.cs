@@ -491,6 +491,11 @@ namespace NachoCore.IMAP
             }
         }
 
+        public static string NonGmailMessageServerId (McFolder folder, UniqueId ImapMessageUid)
+        {
+            return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
+        }
+
         protected override void ForceStop ()
         {
             base.ForceStop ();
