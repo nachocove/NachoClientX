@@ -188,9 +188,9 @@ namespace NachoCore.Utils
             Error_AlreadyAttached,
             Error_NotAttached,
             Info_AccountSetChanged,
-            Info_ItemOrphaned,
             Info_ChatSetChanged,
-            Info_ChatMessageAdded
+            Info_ChatMessageAdded,
+            Info_ItemOrphaned,
         };
 
         public enum WhyEnum
