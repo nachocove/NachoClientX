@@ -137,6 +137,7 @@ namespace NachoClient.iOS
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (null);
             vc.SetOwner (this);
+            NavigationController.PushViewController (vc, true);
         }
 
         public void ShowEvent (McEvent calendarEvent)
