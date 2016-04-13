@@ -34,13 +34,18 @@ namespace NachoPlatform
             if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.Lollipop) {
                 return;
             }
-
+            Log.Info (Log.LOG_SYS, "MdmConfig:ExtractValues()");
             var myRestrictionsMgr = (RestrictionsManager)MainApplication.Context.GetSystemService (Context.RestrictionsService);
             ExtractValuesFromRestrictions (myRestrictionsMgr.ApplicationRestrictions);
         }
 
         public void ExtractValuesFromRestrictions (Android.OS.Bundle appRestrictions)
         {
+            if (appRestrictions.IsEmpty) {
+                Log.Info (Log.LOG_SYS, "MdmConfig: no config");
+                return;
+            }
+
             try {
                 NcMdmConfig.Instance.SetValues ((mdmConfig) => {
                     mdmConfig.Host = appRestrictions.GetString ("AppServiceHost");
@@ -54,6 +59,7 @@ namespace NachoPlatform
                     mdmConfig.BrandingName = appRestrictions.GetString ("BrandingName");
                     mdmConfig.BrandingLogoUrl = appRestrictions.GetString ("BrandingLogo");
                 });
+                Log.Info (Log.LOG_SYS, "{0}", NcMdmConfig.Instance);
             } catch (ArgumentException ex) {
                 Log.Error (Log.LOG_SYS, "Could not get app config: {0}", ex);
             }
@@ -67,6 +73,7 @@ namespace NachoPlatform
             {
                 MainApplication.OneTimeStartup ("RestrictionsChangedBroadcastReceiverNotificationActivity");
                 if (intent.Action == Intent.ActionApplicationRestrictionsChanged) {
+                    Log.Info (Log.LOG_SYS, "MdmConfig: RestrictionsChangedBroadcastReceiver.OnReceive()");
                     var myRestrictionsMgr = (RestrictionsManager)context.GetSystemService (Context.RestrictionsService);
                     MdmConfig.Instance.ExtractValuesFromRestrictions (myRestrictionsMgr.ApplicationRestrictions);
                 }
