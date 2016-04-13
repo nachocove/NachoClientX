@@ -922,10 +922,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainControl.cs">
       <Link>NachoCore\Brain\NcBrainControl.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\CredentialsAskViewController.cs" />
-    <Compile Include="NachoUI.iOS\CredentialsAskViewController.designer.cs">
-      <DependentUpon>CredentialsAskViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
     </Compile>
