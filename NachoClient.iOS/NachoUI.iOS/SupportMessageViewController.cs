@@ -14,6 +14,11 @@ namespace NachoClient.iOS
 {
     public partial class SupportMessageViewController : NcUIViewControllerNoLeaks
     {
+
+        UIScrollView scrollView;
+        UIView contentView;
+        NcUIBarButtonItem sendButton;
+
         protected nfloat yOffset;
         protected static nfloat CELL_HEIGHT = 44f;
         protected static nfloat LINE_OFFSET = 30f;

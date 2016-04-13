@@ -31,6 +31,8 @@ namespace NachoClient.iOS
         public McEmailMessageThread thread;
         protected List<McAttachment> attachments;
 
+        UIScrollView scrollView;
+
         // UI elements for the main view
         protected UIView headerView;
         protected AttachmentListView attachmentListView;

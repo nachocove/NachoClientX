@@ -92,6 +92,9 @@ namespace NachoClient.iOS
         protected const int MORE_VIEW_DEFAULT_BUTTON_TAG = 1000;
         protected const int MORE_VIEW_DELETE_BUTTON_TAG = 2000;
 
+        UIScrollView scrollView;
+        UIView contentView;
+
         protected UILabel contactNameLabel;
         protected UITextField firstNameField;
         protected UITextField middleNameField;

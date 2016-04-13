@@ -36,6 +36,9 @@ namespace NachoClient.iOS
         protected string TempPhone = "";
         protected McFolder calendarFolder;
 
+        UIView contentView;
+        UIScrollView scrollView;
+
         UITextField titleField;
         UITextView descriptionTextView;
         UILabel descriptionPlaceHolder;

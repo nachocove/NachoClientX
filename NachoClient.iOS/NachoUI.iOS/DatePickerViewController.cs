@@ -11,6 +11,9 @@ namespace NachoClient.iOS
     public partial class DatePickerViewController : NcUIViewController
     {
         public INcDatePickerDelegate owner;
+        UIButton cancelButton;
+        UIDatePicker datePicker;
+        UIButton OKButton;
 
         public DatePickerViewController () : base ()
         {
