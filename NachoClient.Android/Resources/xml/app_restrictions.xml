@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <restriction android:key="AppServiceHost"
+<restrictions
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <restriction
+        android:key="AppServiceHost"
         android:title="Server Hostname"
-        android:restrictionType="string"/>
-
-    <restriction android:key="AppServicePort"
+        android:restrictionType="string" />
+    <restriction
+        android:key="AppServicePort"
         android:title="Server Port"
-        android:restrictionType="integer"/>
-
-    <restriction android:key="UserName"
+        android:restrictionType="integer" />
+    <restriction
+        android:key="UserName"
         android:title="User username for login"
-        android:restrictionType="string"/>
-
-    <restriction android:key="UserDomain"
+        android:restrictionType="string" />
+    <restriction
+        android:key="UserDomain"
         android:title="User domain for login"
-        android:restrictionType="string"/>
-
-    <restriction android:key="UserEmail"
+        android:restrictionType="string" />
+    <restriction
+        android:key="UserEmail"
         android:title="User email address"
-        android:restrictionType="string"/>
-
-    <restriction android:key="BrandingName"
+        android:restrictionType="string" />
+    <restriction
+        android:key="BrandingName"
         android:title="Service Account Branding Name"
-        android:restrictionType="string"/>
-
-    <restriction android:key="BrandingLogo"
+        android:restrictionType="string" />
+    <restriction
+        android:key="BrandingLogo"
         android:title="Service Account Branding Logo URL"
-        android:restrictionType="string"/>
-
+        android:restrictionType="string" />
 </restrictions>
