@@ -1671,6 +1671,10 @@
     <Compile Include="NachoUI.iOS\Support\PressGestureRecognizer.cs" />
     <Compile Include="NachoUI.iOS\Support\SwipeTableViewCell.cs" />
     <Compile Include="NachoUI.iOS\Support\SwipeActionsView.cs" />
+    <Compile Include="NachoUI.iOS\Support\UIFont+Utils.cs" />
+    <Compile Include="NachoUI.iOS\Support\ImageAccessoryView.cs" />
+    <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
+    <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
