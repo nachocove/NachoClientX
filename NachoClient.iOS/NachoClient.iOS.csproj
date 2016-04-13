@@ -1578,7 +1578,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs">
       <Link>NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
       <Link>NachoCore\Utils\ContactsSearch.cs</Link>
@@ -1662,6 +1661,10 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration56.cs">
       <Link>NachoCore\Model\Migration\NcMigration56.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
+      <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
