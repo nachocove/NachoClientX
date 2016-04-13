@@ -544,6 +544,8 @@ namespace NachoCore.IMAP
                     case "\\Drafts":
                     case "\\Trash":
                         // various standard folder types (i.e. labels in gmail-land)
+                        // NOTE: We could link the message to the folder named in the label *IF* we had
+                        // the ImapUid of the message *in that folder*. But we don't, so we can't.
                         break;
 
                     default:
