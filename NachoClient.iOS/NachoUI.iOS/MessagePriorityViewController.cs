@@ -12,7 +12,7 @@ using CoreGraphics;
 
 namespace NachoClient.iOS
 {
-    public partial class MessagePriorityViewController : BlurryViewController, INcDatePickerDelegate, INachoDateController
+    public partial class MessagePriorityViewController : UIViewController, INcDatePickerDelegate, INachoDateController
     {
         protected McEmailMessageThread thread;
         protected INachoDateControllerParent owner;

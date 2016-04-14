@@ -377,8 +377,6 @@ namespace NachoClient.iOS
                 Log.Error (Log.LOG_PUSH, "notification not registered!");
             }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
-            // Set up webview to handle html with embedded custom types (curtesy of Exchange)
-            NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(CidImageProtocol)));
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 

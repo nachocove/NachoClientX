@@ -22,6 +22,9 @@ namespace NachoClient.iOS
     {
         public McContact contact;
 
+        UIScrollView scrollView;
+        UIView contentView;
+
         protected UIColor originalBarTintColor;
         protected UIBarButtonItem editContact;
 

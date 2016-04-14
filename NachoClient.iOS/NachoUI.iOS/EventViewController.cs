@@ -34,6 +34,9 @@ namespace NachoClient.iOS
         //protected McAbstrCalendarRoot c;
         //protected McAccount account;
 
+        UIView contentView;
+        UIScrollView scrollView;
+
         // UI elements
         protected UIView eventCardView;
         protected UcLocationView locationView;

@@ -19,6 +19,7 @@ namespace NachoClient.iOS
         protected INcEventProvider eventCalendarMap;
         protected UITableView calendarTableView;
         SwitchAccountButton switchAccountButton;
+        NcUIBarButtonItem todayButton;
         protected DateTime todayButtonDate;
         public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
