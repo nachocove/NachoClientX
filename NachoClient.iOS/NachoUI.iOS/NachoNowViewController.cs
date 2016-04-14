@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent
+    public partial class NachoNowViewController : NcUIViewController, MessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         protected bool priorityInboxNeedsRefresh;
         protected INachoEmailMessages priorityInbox;
@@ -496,12 +496,12 @@ namespace NachoClient.iOS
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
+        public void MultiSelectChange (MessageTableViewSource source, int count, bool multipleAccounts)
         {
         }
 

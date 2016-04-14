@@ -18,7 +18,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, MessageTableViewSourceDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoContactDefaultSelector
     {
         public McContact contact;
 
@@ -30,7 +30,7 @@ namespace NachoClient.iOS
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected IMessageTableViewSource messageSource;
+        protected MessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
         protected nint selectedSegment = 0;
@@ -1158,11 +1158,11 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
-        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
         }
 
-        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
+        public void MultiSelectChange (MessageTableViewSource source, int count, bool multipleAccounts)
         {
         }
 

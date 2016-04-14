@@ -17,10 +17,10 @@ using NachoCore.Index;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate
+    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, MessageTableViewSourceDelegate
     {
-        IMessageTableViewSource messageSource;
-        IMessageTableViewSource searchResultsSource;
+        MessageTableViewSource messageSource;
+        MessageTableViewSource searchResultsSource;
         EmailSearch emailSearcher;
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem multiSelectButton;
@@ -34,6 +34,9 @@ namespace NachoClient.iOS
 
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
+
+        public bool HasAccountSwitcher;
+        public bool PopsWhenEmpty;
 
         SwitchAccountButton switchAccountButton;
 
@@ -76,7 +79,7 @@ namespace NachoClient.iOS
 
             NavigationController.NavigationBar.Translucent = false;
 
-            if (HasAccountSwitcher ()) {
+            if (HasAccountSwitcher) {
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton;
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -242,7 +245,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
             if (enabled) {
                 var msg = messageSource.GetNachoEmailMessages ();
@@ -295,7 +298,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
+        public void MultiSelectChange (MessageTableViewSource source, int count, bool multipleAccounts)
         {
             archiveButton.Enabled = (count != 0);
             deleteButton.Enabled = (count != 0);
@@ -347,7 +350,9 @@ namespace NachoClient.iOS
                         refreshVisibleCells = false;
                     }
                     if (messageSource.NoMessageThreads ()) {
-                        refreshVisibleCells = !MaybeDismissView ();
+                        if (PopsWhenEmpty && NavigationController.TopViewController == this) {
+                            NavigationController.PopViewController (true);
+                        }
                     }
                     if (searchDisplayController.Active) {
                         UpdateSearchResults ();
@@ -359,16 +364,6 @@ namespace NachoClient.iOS
             if (refreshVisibleCells) {
                 messageSource.ReconfigureVisibleCells (TableView);
             }
-        }
-
-        public virtual bool MaybeDismissView ()
-        {
-            return false;
-        }
-
-        public virtual bool HasAccountSwitcher ()
-        {
-            return false;
         }
 
         McAccount currentAccount;
@@ -383,13 +378,13 @@ namespace NachoClient.iOS
                     searchDisplayController.Active = false;
                 }
                 CancelSearchIfActive ();
-                if (HasAccountSwitcher ()) {
+                if (HasAccountSwitcher) {
                     SwitchToAccount (NcApplication.Instance.Account);
                 }
             }
             currentAccount = NcApplication.Instance.Account;
                 
-            if (HasAccountSwitcher ()) {
+            if (HasAccountSwitcher) {
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 

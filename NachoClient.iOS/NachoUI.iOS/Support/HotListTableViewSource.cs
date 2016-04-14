@@ -19,7 +19,7 @@ namespace NachoClient.iOS
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected const string AccountReuseIdentifier = "Account";
 
-        protected IMessageTableViewSourceDelegate owner;
+        protected MessageTableViewSourceDelegate owner;
 
         bool scrolling;
         // to control whether swiping is allowed or not
@@ -61,7 +61,7 @@ namespace NachoClient.iOS
         protected CGPoint? expectedScrollEndOffset;
         protected int cardIndexAtScrollStart;
 
-        public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
+        public HotListTableViewSource (MessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
             this.owner = owner;
             this.messageThreads = messageThreads;

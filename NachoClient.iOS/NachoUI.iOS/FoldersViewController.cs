@@ -177,26 +177,32 @@ namespace NachoClient.iOS
 
         void ShowInbox ()
         {
-            var viewController = new InboxViewController ();
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
             NavigationController.PushViewController (viewController, true);
         }
 
         void ShowHotList ()
         {
-            var viewController = new HotListViewController ();
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
             NavigationController.PushViewController (viewController, true);
         }
 
         void ShowLikelyToRead ()
         {
-            var viewController = new LikelyToReadViewController ();
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.LikelyToReadInbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
             NavigationController.PushViewController (viewController, true);
         }
 
         void ShowDrafts (McFolder folder)
         {
             var draftsList = new NachoDraftMessages (folder);
-            var draftsListViewController = new DraftsViewController ();
+            var draftsListViewController = new MessageListViewController ();
             draftsListViewController.SetEmailMessages (draftsList);
             NavigationController.PushViewController (draftsListViewController, true);
         }

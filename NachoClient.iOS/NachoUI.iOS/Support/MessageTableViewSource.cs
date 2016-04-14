@@ -14,7 +14,21 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public class MessageTableViewSource : UITableViewSource, IMessageTableViewSource, INachoFolderChooserParent
+    public static class MessageTableViewConstants
+    {
+        static public readonly nfloat NORMAL_ROW_HEIGHT = 126.0f;
+        static public readonly nfloat DATED_ROW_HEIGHT = 161.0f;
+    }
+
+    public interface MessageTableViewSourceDelegate
+    {
+        void MessageThreadSelected (McEmailMessageThread thread);
+        void MultiSelectToggle (MessageTableViewSource source, bool enabled);
+        void MultiSelectChange (MessageTableViewSource source, int count, bool multipleAccounts);
+        void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action);
+        void MoveThread (McEmailMessageThread thread);
+    }
+    public class MessageTableViewSource : UITableViewSource, INachoFolderChooserParent
     {
         bool scrolling;
         string messageWhenEmpty;
@@ -26,7 +40,7 @@ namespace NachoClient.iOS
         protected Dictionary<int, int> MultiSelectAccounts = null;
         protected bool multiSelectAllowed;
         protected bool multiSelectActive;
-        public IMessageTableViewSourceDelegate owner;
+        public MessageTableViewSourceDelegate owner;
 
         protected NcCapture ArchiveCaptureMessage;
         protected NcCapture RefreshCapture;
@@ -158,7 +172,7 @@ namespace NachoClient.iOS
             return false;
         }
 
-        public MessageTableViewSource (IMessageTableViewSourceDelegate owner)
+        public MessageTableViewSource (MessageTableViewSourceDelegate owner)
         {
             this.owner = owner;
             multiSelectAllowed = true;
