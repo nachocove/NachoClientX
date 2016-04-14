@@ -666,7 +666,7 @@ namespace NachoCore.Model
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " e.DateReceived >= ? " +
+                " e.DateReceived >= ? AND " +
                 "e.IsRead = 0";
 
             var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
