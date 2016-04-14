@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoLikelyToReadEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoLikelyToReadEmailMessages : NachoEmailMessages
     {
         List<McEmailMessageThread> ThreadList;
         McFolder Folder;
@@ -71,7 +71,7 @@ namespace NachoCore
             }
         }
 
-        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             return new NachoThreadedEmailMessages (Folder, thread.GetThreadId());
         }

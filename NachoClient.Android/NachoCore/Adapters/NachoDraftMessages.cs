@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoDraftMessages : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoDraftMessages : NachoEmailMessages
     {
         McFolder folder;
 

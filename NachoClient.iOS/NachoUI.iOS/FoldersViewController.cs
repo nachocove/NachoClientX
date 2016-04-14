@@ -210,7 +210,7 @@ namespace NachoClient.iOS
         void ShowMessages (McFolder folder)
         {
             var viewController = new MessageListViewController ();
-            var messageList = new NachoEmailMessages (folder);
+            var messageList = new NachoFolderMessages (folder);
             viewController.SetEmailMessages (messageList);
             NavigationController.PushViewController (viewController, true);
         }

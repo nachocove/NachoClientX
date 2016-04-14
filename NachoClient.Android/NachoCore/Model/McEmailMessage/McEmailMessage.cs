@@ -1144,7 +1144,7 @@ namespace NachoCore.Model
 
         public int FirstMessageId { set; get; }
 
-        public INachoEmailMessages Source;
+        public NachoEmailMessages Source;
 
         // Filled on demand
         List<McEmailMessageThread> thread;

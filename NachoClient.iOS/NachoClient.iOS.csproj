@@ -340,12 +340,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
       <Link>NachoCore\Adapters\NachoFolders.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoEmailMessages.cs">
-      <Link>NachoCore\Adapters\INachoEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoFolders.cs">
       <Link>NachoCore\Adapters\INachoFolders.cs</Link>
     </Compile>
@@ -1663,6 +1657,12 @@
     <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
     <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolderMessages.cs">
+      <Link>NachoCore\Adapters\NachoFolderMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

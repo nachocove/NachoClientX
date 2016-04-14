@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoThreadedEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoThreadedEmailMessages : NachoEmailMessages
     {
         string threadId;
         McFolder folder;

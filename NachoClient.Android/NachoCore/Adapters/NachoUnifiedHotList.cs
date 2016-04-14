@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoUnifiedHotList : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoUnifiedHotList : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
 
@@ -73,7 +73,7 @@ namespace NachoCore
             return EmailHelper.SyncUnified ();
         }
 
-        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);

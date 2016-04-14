@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
 
         private const string MESSAGE_LIST_FRAGMENT_TAG = "MessageList";
 
-        protected virtual INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
+        protected virtual NachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             throw new NotImplementedException ();
         }
@@ -83,7 +83,7 @@ namespace NachoClient.AndroidClient
             StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
-        void MessageListFragment_onThreadClick (object sender, INachoEmailMessages threadMessages)
+        void MessageListFragment_onThreadClick (object sender, NachoEmailMessages threadMessages)
         {
             var intent = MessageThreadActivity.ShowThreadIntent (this, threadMessages);
             StartActivity (intent);

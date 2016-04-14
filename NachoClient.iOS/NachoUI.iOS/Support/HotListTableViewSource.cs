@@ -15,7 +15,7 @@ namespace NachoClient.iOS
 
     public class HotListTableViewSource : UITableViewSource, INachoFolderChooserParent, IBodyViewOwner
     {
-        INachoEmailMessages messageThreads;
+        NachoEmailMessages messageThreads;
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected const string AccountReuseIdentifier = "Account";
 
@@ -61,13 +61,13 @@ namespace NachoClient.iOS
         protected CGPoint? expectedScrollEndOffset;
         protected int cardIndexAtScrollStart;
 
-        public HotListTableViewSource (MessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
+        public HotListTableViewSource (MessageTableViewSourceDelegate owner, NachoEmailMessages messageThreads)
         {
             this.owner = owner;
             this.messageThreads = messageThreads;
         }
 
-        public void SetMessageThreads(INachoEmailMessages messageThreads)
+        public void SetMessageThreads(NachoEmailMessages messageThreads)
         {
             this.messageThreads = messageThreads;
         }

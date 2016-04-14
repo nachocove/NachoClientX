@@ -16,9 +16,9 @@ namespace NachoClient.AndroidClient
 
         static object lockObj = new object ();
 
-        static INachoEmailMessages GetSingleton (int accountId, ConcurrentDictionary<int, INachoEmailMessages> list, Func<INachoEmailMessages> creator)
+        static NachoEmailMessages GetSingleton (int accountId, ConcurrentDictionary<int, NachoEmailMessages> list, Func<NachoEmailMessages> creator)
         {
-            INachoEmailMessages messages;
+            NachoEmailMessages messages;
 
             if (!list.TryGetValue (accountId, out messages)) {
                 lock (lockObj) {
@@ -31,27 +31,27 @@ namespace NachoClient.AndroidClient
             return messages;
         }
 
-        static ConcurrentDictionary<int, INachoEmailMessages> inboxDictionary = new ConcurrentDictionary<int, INachoEmailMessages> ();
+        static ConcurrentDictionary<int, NachoEmailMessages> inboxDictionary = new ConcurrentDictionary<int, NachoEmailMessages> ();
 
-        static public INachoEmailMessages InboxSingleton (int accountId)
+        static public NachoEmailMessages InboxSingleton (int accountId)
         {
             return GetSingleton (accountId, inboxDictionary, () => {
                 return NcEmailManager.Inbox (accountId);
             });
         }
 
-        static ConcurrentDictionary<int, INachoEmailMessages> priorityDictionary = new ConcurrentDictionary<int, INachoEmailMessages> ();
+        static ConcurrentDictionary<int, NachoEmailMessages> priorityDictionary = new ConcurrentDictionary<int, NachoEmailMessages> ();
 
-        static public INachoEmailMessages PrioritySingleton (int accountId)
+        static public NachoEmailMessages PrioritySingleton (int accountId)
         {
             return GetSingleton (accountId, priorityDictionary, () => {
                 return NcEmailManager.PriorityInbox (accountId);
             });
         }
 
-        static ConcurrentDictionary<INachoEmailMessages, DateTime> lastRefreshDictionary = new ConcurrentDictionary<INachoEmailMessages, DateTime> ();
+        static ConcurrentDictionary<NachoEmailMessages, DateTime> lastRefreshDictionary = new ConcurrentDictionary<NachoEmailMessages, DateTime> ();
 
-        static public bool RefreshIfNeeded (INachoEmailMessages messages, out List<int> adds, out List<int> deletes)
+        static public bool RefreshIfNeeded (NachoEmailMessages messages, out List<int> adds, out List<int> deletes)
         {
             DateTime lastRefresh;
             if (lastRefreshDictionary.TryGetValue (messages, out lastRefresh)) {

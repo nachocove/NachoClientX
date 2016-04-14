@@ -32,7 +32,7 @@ namespace NachoClient.iOS
     {
         bool scrolling;
         string messageWhenEmpty;
-        INachoEmailMessages messageThreads;
+        NachoEmailMessages messageThreads;
         protected const string NoMessagesReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected const string DraftsMessageReuseIdentifier = "DraftsMessage";
@@ -71,7 +71,7 @@ namespace NachoClient.iOS
                 "Delete", A.Color_NachoSwipeEmailDelete);
 
 
-        public INachoEmailMessages GetNachoEmailMessages ()
+        public NachoEmailMessages GetNachoEmailMessages ()
         {
             return messageThreads;
         }
@@ -186,7 +186,7 @@ namespace NachoClient.iOS
             RefreshCapture = NcCapture.Create (RefreshCaptureName);
         }
 
-        public void SetEmailMessages (INachoEmailMessages messageThreads, string messageWhenEmpty)
+        public void SetEmailMessages (NachoEmailMessages messageThreads, string messageWhenEmpty)
         {
             ClearCache ();
             this.messageThreads = messageThreads;

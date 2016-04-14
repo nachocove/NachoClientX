@@ -49,7 +49,7 @@ namespace NachoClient.iOS
 
         bool StatusIndCallbackIsSet = false;
 
-        public void SetEmailMessages (INachoEmailMessages messageThreads)
+        public void SetEmailMessages (NachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads, "No messages");
         }
@@ -648,7 +648,7 @@ namespace NachoClient.iOS
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
-        protected virtual INachoEmailMessages GetNachoEmailMessages (int accountId)
+        protected virtual NachoEmailMessages GetNachoEmailMessages (int accountId)
         {
             return NcEmailManager.Inbox (accountId);
         }

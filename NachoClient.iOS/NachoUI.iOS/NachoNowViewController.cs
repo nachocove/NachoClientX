@@ -16,7 +16,7 @@ namespace NachoClient.iOS
     public partial class NachoNowViewController : NcUIViewController, MessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         protected bool priorityInboxNeedsRefresh;
-        protected INachoEmailMessages priorityInbox;
+        protected NachoEmailMessages priorityInbox;
         protected HotListTableViewSource hotListSource;
 
         protected UITableView hotListView;
@@ -479,7 +479,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void ShowMessages (INachoEmailMessages messages)
+        public void ShowMessages (NachoEmailMessages messages)
         {
             var messageListViewController = new MessageListViewController ();
             messageListViewController.SetEmailMessages (messages);
