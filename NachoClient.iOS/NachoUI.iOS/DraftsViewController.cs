@@ -9,7 +9,7 @@ namespace NachoClient.iOS
 {
     public partial class DraftsViewController : MessageListViewController
 	{
-		public DraftsViewController (IntPtr handle) : base (handle)
+		public DraftsViewController () : base ()
 		{
 		}
 	}

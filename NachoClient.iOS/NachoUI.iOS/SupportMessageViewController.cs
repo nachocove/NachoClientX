@@ -33,6 +33,10 @@ namespace NachoClient.iOS
         protected bool hasDisplayedStatusMessage = false;
         protected bool problemWasChanged = false;
 
+        public SupportMessageViewController () : base ()
+        {
+        }
+
         public SupportMessageViewController (IntPtr handle) : base (handle)
         {
         }
@@ -63,19 +67,23 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            sendButton = new NcUIBarButtonItem ();
+            base.ViewDidLoad ();
+            NavigationItem.Title = "Contact Us";
+        }
+
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            navigationBar.Frame = new CGRect (0, 0, View.Frame.Width, 64);
-            navigationBar.Alpha = 1.0f;
-            navigationBar.Opaque = true;
-            navigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
-            navigationBar.BarTintColor = A.Color_NachoGreen;
-            navigationBar.Translucent = false;
-
-            yOffset = navigationBar.Frame.Bottom + VERTICAL_PADDING;
+            yOffset = VERTICAL_PADDING;
 
             UIView sectionOneView = new UIView (new CGRect (HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
             sectionOneView.Layer.BorderWidth = .5f;
@@ -166,14 +174,14 @@ namespace NachoClient.iOS
 
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
 
-            UINavigationItem navItems = new UINavigationItem ("Message Support");
+            NavigationItem.Title = "Message Support";
 
             using (var image = UIImage.FromBundle ("modal-close")) {
                 var DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     this.DismissViewController (true, null);
                 });
                 DismissButton.AccessibilityLabel = "Dismiss";
-                navItems.LeftBarButtonItem = DismissButton;
+                NavigationItem.LeftBarButtonItem = DismissButton;
             }
           
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
@@ -181,9 +189,7 @@ namespace NachoClient.iOS
 
             sendButton.Clicked += SendButtonClicked;
 
-            navItems.RightBarButtonItem = sendButton;
-            navigationBar.Items = new UINavigationItem[]{ navItems };
-            View.AddSubview (navigationBar);
+            NavigationItem.RightBarButtonItem = sendButton;
 
             UIView grayBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             grayBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);

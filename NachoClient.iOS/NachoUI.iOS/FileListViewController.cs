@@ -16,7 +16,7 @@ namespace NachoClient.iOS
 {
     public partial class FileListViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
     {
-        public FileListViewController (IntPtr handle) : base (handle)
+        public FileListViewController () : base ()
         {
             Account = NcApplication.Instance.Account;
         }
@@ -35,10 +35,6 @@ namespace NachoClient.iOS
         SwitchAccountButton switchAccountButton;
 
         UILabel EmptyListLabel;
-
-        // segue id's
-        string FilesToNotesSegueId = "AttachmentsToNotes";
-        string FilesToNotesModalSegueId = "AttachmentsToNotesModal";
 
         // animation constants
         public nfloat AnimationDuration = 3.0f;
@@ -147,6 +143,7 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
             } else {
+                View.BackgroundColor = UIColor.White;
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton; 
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -336,26 +333,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 Util.ConfigureNavBar (false, this.NavigationController);
             }
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals (FilesToNotesSegueId)) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                selectedNote = (McNote)holder.value;
-                dc.SetOwner (this, null, insertDate: false);
-                return;
-            }
-            if (segue.Identifier.Equals (FilesToNotesModalSegueId)) {
-                var dc = (NotesViewerViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                selectedNote = (McNote)holder.value;
-                dc.SetOwner (this);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         void SwitchAccountButtonPressed ()
@@ -619,13 +596,29 @@ namespace NachoClient.iOS
         public void NoteAction (McNote note, UIView alertParentView)
         {
             if (null == Owner) {
-                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+                ShowNote (note);
                 return;
             }
 
             FileChooserSheet (note, alertParentView, () => {
-                PerformSegue (FilesToNotesModalSegueId, new SegueHolder (note));
+                ShowNoteViewer (note);
             });
+        }
+
+        void ShowNoteViewer (McNote note)
+        {
+            var dc = new NotesViewerViewController ();
+            selectedNote = note;
+            dc.SetOwner (this);
+            PresentViewController (dc, true, null);
+        }
+
+        void ShowNote (McNote note)
+        {
+            var dc = new NotesViewController ();
+            selectedNote = note;
+            dc.SetOwner (this, null, insertDate: false);
+            NavigationController.PushViewController (dc, true);
         }
 
         private void searchClicked (object sender, EventArgs e)
@@ -738,11 +731,6 @@ namespace NachoClient.iOS
         }
 
         public void RemoveAttachment (McAttachment attachment)
-        {
-            NcAssert.CaseError ();
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             NcAssert.CaseError ();
         }

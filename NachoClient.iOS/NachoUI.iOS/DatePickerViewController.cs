@@ -3,6 +3,7 @@
 using System;
 using Foundation;
 using UIKit;
+using CoreGraphics;
 using NachoClient.iOS;
 
 namespace NachoClient.iOS
@@ -10,6 +11,11 @@ namespace NachoClient.iOS
     public partial class DatePickerViewController : NcUIViewController
     {
         public INcDatePickerDelegate owner;
+
+        public DatePickerViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
 
         public DatePickerViewController (IntPtr handle) : base (handle)
         {
@@ -19,6 +25,24 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             View.BackgroundColor = A.Color_NachoGreen;
+
+            datePicker = new UIDatePicker (new CGRect (0.0f, 101.0f, View.Bounds.Width, 162.0f));
+            datePicker.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            View.AddSubview (datePicker);
+
+            OKButton = new UIButton (UIButtonType.System);
+            OKButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+            OKButton.SetTitle ("OK", UIControlState.Normal);
+            OKButton.Frame = new CGRect (20.0f, datePicker.Frame.Y + datePicker.Frame.Height + 32.0f, 110.0f, 30.0f);
+            OKButton.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            View.AddSubview (OKButton);
+
+            cancelButton = new UIButton (UIButtonType.System);
+            cancelButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+            cancelButton.SetTitle ("Cancel", UIControlState.Normal);
+            cancelButton.Frame = new CGRect (View.Bounds.Width - 20.0f - 100.0f, OKButton.Frame.Y, 110.0f, 30.0f);
+            cancelButton.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            View.AddSubview (cancelButton);
 
             datePicker.Mode = UIDatePickerMode.Date;
             datePicker.TintAdjustmentMode = UIViewTintAdjustmentMode.Dimmed;

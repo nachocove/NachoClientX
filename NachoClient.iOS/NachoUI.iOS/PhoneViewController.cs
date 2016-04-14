@@ -58,6 +58,10 @@ namespace NachoClient.iOS
         const int CAL_DETAIL_TAG = 210;
         UIColor solidTextColor = A.Color_NachoBlack;
 
+        public PhoneViewController () : base ()
+        {
+        }
+
 
         public PhoneViewController (IntPtr handle) : base (handle)
         {

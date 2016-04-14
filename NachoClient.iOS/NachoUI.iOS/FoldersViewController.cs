@@ -25,6 +25,10 @@ namespace NachoClient.iOS
 
         SwitchAccountButton switchAccountButton;
 
+        public FoldersViewController () : base ()
+        {
+        }
+
         public FoldersViewController (IntPtr handle) : base (handle)
         {
         }
@@ -149,32 +153,78 @@ namespace NachoClient.iOS
         {
             switch (folder.Id) {
             case McFolder.INBOX_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToInbox", new SegueHolder (null));
+                ShowInbox ();
                 return;
             case McFolder.HOT_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToHotList", new SegueHolder (null));
+                ShowHotList ();
                 return;
             case McFolder.LTR_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToLikelyToRead", new SegueHolder (null));
+                ShowLikelyToRead ();
                 return;
             case McFolder.DEFERRED_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToDeferredList", new SegueHolder (null));
+                ShowDeferred ();
                 return;
             case McFolder.DEADLINE_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToDeadlines", new SegueHolder (null));
+                ShowDeadlines ();
                 return;
             }
 
             folder.UpdateSet_LastAccessed (DateTime.UtcNow);
             if (null == owner) {
                 if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
-                    PerformSegue ("SegueToDrafts", new SegueHolder (folder));
+                    ShowDrafts (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    ShowMessages (folder);
                 }
             } else {
                 owner.FolderSelected (this, folder, cookie);
             }
+        }
+
+        void ShowInbox ()
+        {
+            var viewController = new InboxViewController ();
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowHotList ()
+        {
+            var viewController = new HotListViewController ();
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowDeferred ()
+        {
+            var viewController = new DeferredViewController ();
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowLikelyToRead ()
+        {
+            var viewController = new LikelyToReadViewController ();
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowDeadlines ()
+        {
+            var viewController = new DeadlinesViewController ();
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowDrafts (McFolder folder)
+        {
+            var draftsList = new NachoDraftMessages (folder);
+            var draftsListViewController = new DraftsViewController ();
+            draftsListViewController.SetEmailMessages (draftsList);
+            NavigationController.PushViewController (draftsListViewController, true);
+        }
+
+        void ShowMessages (McFolder folder)
+        {
+            var viewController = new MessageListViewController ();
+            var messageList = new NachoEmailMessages (folder);
+            viewController.SetEmailMessages (messageList);
+            NavigationController.PushViewController (viewController, true);
         }
 
         void switchAccountButtonPressed ()
@@ -189,41 +239,6 @@ namespace NachoClient.iOS
             switchAccountButton.SetAccountImage (account);
             folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
             TableView.ReloadData ();
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if ("FoldersToMessageList" == segue.Identifier) {
-                var holder = (SegueHolder)sender;
-                var messageList = new NachoEmailMessages ((McFolder)holder.value);
-                var messageListViewController = (MessageListViewController)segue.DestinationViewController;
-                messageListViewController.SetEmailMessages (messageList);
-                return;
-            }
-            if ("SegueToDrafts" == segue.Identifier) {
-                var holder = (SegueHolder)sender;
-                var draftsList = new NachoDraftMessages ((McFolder)holder.value);
-                var draftsListViewController = (DraftsViewController)segue.DestinationViewController;
-                draftsListViewController.SetEmailMessages (draftsList);
-                return;
-            }
-            if ("SegueToInbox" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToHotList" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToDeferredList" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToLikelyToRead" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToDeadlines" == segue.Identifier) {
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         private void ComposeMessage ()

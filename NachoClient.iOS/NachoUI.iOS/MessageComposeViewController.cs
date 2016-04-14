@@ -64,16 +64,6 @@ namespace NachoClient.iOS
         NcUIBarButtonItem AddAttachmentButton;
         List<McAccount> EmailAccounts;
         bool HasShownOnce;
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
 
         NSObject ContentSizeCategoryChangedNotification;
         string ContentHtml;
@@ -425,7 +415,7 @@ namespace NachoClient.iOS
         // User selecting + button in To/CC/BCC field
         public void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address)
         {
-            ContactChooserViewController chooserController = MainStoryboard.InstantiateViewController ("ContactChooserViewController") as ContactChooserViewController;
+            var chooserController = new ContactChooserViewController ();
             chooserController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, chooserController);
         }
@@ -433,7 +423,7 @@ namespace NachoClient.iOS
         // User starting to type in To/CC/BCC field
         public void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address)
         {
-            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            var searchController = new ContactSearchViewController ();
             searchController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, searchController);
         }
@@ -528,7 +518,7 @@ namespace NachoClient.iOS
         // User tapping the intent field 
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
         {
-            IntentSelectionViewController intentController = MainStoryboard.InstantiateViewController ("IntentSelectionViewController") as IntentSelectionViewController;
+            var intentController = new IntentSelectionViewController ();
             intentController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
             intentController.SetOwner (this);
             intentController.SetDateControllerOwner (this);
@@ -897,7 +887,7 @@ namespace NachoClient.iOS
 
         private void ShowAddAttachment (bool inline = false)
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, MainStoryboard, AddAttachmentButton);
+            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, AddAttachmentButton);
             PresentViewController (helper.MenuViewController, true, null);
         }
 

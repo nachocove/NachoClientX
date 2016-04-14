@@ -14,6 +14,10 @@ namespace NachoClient.iOS
         protected UIView backgroundOverlayView;
         protected UIImageView backgroundBlurredImageView;
 
+        public BlurryViewController () : base ()
+        {
+        }
+
         public BlurryViewController (IntPtr handle) : base (handle)
         {
         }

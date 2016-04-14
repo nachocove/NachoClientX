@@ -943,8 +943,7 @@ namespace NachoClient.iOS
             if (MultiSelectActive ()) {
                 MultiSelectMove (tableView, folder);
             } else {
-                var h = cookie as SegueHolder;
-                var messageThread = (McEmailMessageThread)h.value;
+                var messageThread = (McEmailMessageThread)cookie;
                 MoveThisMessage (messageThread, folder);
             }
         }
@@ -1018,14 +1017,11 @@ namespace NachoClient.iOS
         /// </summary>
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            NcAssert.True (cookie is SegueHolder);
-            var h = cookie as SegueHolder;
-
             if (MultiSelectActive ()) {
-                var t = h.value as UITableView;
+                var t = cookie as UITableView;
                 MultiSelectMove (t, folder);
             } else {
-                var messageThread = h.value as McEmailMessageThread;
+                var messageThread = cookie as McEmailMessageThread;
                 MoveThisMessage (messageThread, folder);
             }
         }
@@ -1043,7 +1039,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+            owner.DeferThread (messageThread);
         }
 
         protected void ShowFileChooser (McEmailMessageThread messageThread)
@@ -1051,7 +1047,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("MessageListToFolders", new SegueHolder (messageThread));
+            owner.MoveThread (messageThread);
         }
 
         public override void DraggingStarted (UIScrollView scrollView)

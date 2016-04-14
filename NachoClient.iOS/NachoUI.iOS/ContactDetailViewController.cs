@@ -85,10 +85,25 @@ namespace NachoClient.iOS
 
         protected List<TapGesturePair> tapGestures = new List<TapGesturePair> ();
 
+        public ContactDetailViewController () : base ()
+        {
+            messageSource = new MessageTableViewSource (this);
+            MultiSelect = new HashSet<int> ();
+        }
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource (this);
             MultiSelect = new HashSet<int> ();
+        }
+
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            base.ViewDidLoad ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -170,70 +185,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void EditContact ()
         {
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelector")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
-                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
-                destinationController.SetContact (c);
-                destinationController.viewType = type;
-                destinationController.owner = this;
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactToNotes")) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactToContactEdit")) {
-                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
-                destinationViewController.contact = contact;
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessagePriority") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
-            if (segue.Identifier == "MessageListToFolders") {
-                var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var h = (SegueHolder)sender;
-                int accountId = 0;
-                if (h.value is McEmailMessage) {
-                    accountId = ((McEmailMessage)h.value).AccountId;
-                }
-                if (h.value is McEmailMessageThread) {
-                    var message = ((McEmailMessageThread)h.value).FirstMessage ();
-                    if (null == message) {
-                        return;
-                    }
-                    accountId = message.AccountId;
-                }
-                NcAssert.False (0 == accountId);
-                vc.SetOwner (this, true, accountId, h);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (INachoMessageViewer)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;  
-                vc.SetSingleMessageThread (thread);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var c = (McCalendar)holder.value;
-                vc.SetCalendarItem (c);
-                vc.SetOwner (this);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var destinationViewController = new ContactEditViewController ();
+            destinationViewController.contact = contact;
+            FadeCustomSegue.Transition (this, destinationViewController);
         }
 
         protected override void CreateViewHierarchy ()
@@ -416,15 +372,22 @@ namespace NachoClient.iOS
         {
             switch (selectedSegment) {
             case 0:
-                PerformSegue ("ContactToContactEdit", this);
+                EditContact ();
                 break;
             case 1:
                 //TODO: Multi-Select
                 break;
             case 2:
-                PerformSegue ("ContactToNotes", new SegueHolder (contact));
+                ShowNotes ();
                 break;
             }
+        }
+
+        void ShowNotes ()
+        {
+            var dc = new NotesViewController ();
+            dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
+            NavigationController.PushViewController (dc, true);
         }
 
         protected void LayoutView ()
@@ -712,12 +675,12 @@ namespace NachoClient.iOS
                 if (address == null) {
                     if (contact.EmailAddresses.Count == 0) {
                         if (contact.CanUserEdit ()) {
-                            PerformSegue ("SegueToContactDefaultSelector", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
                         } else {
                             Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
                         }
                     } else {
-                        PerformSegue ("SegueToContactDefaultSelector", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
                     }
                 } else {
                     ComposeMessage (address);
@@ -727,7 +690,18 @@ namespace NachoClient.iOS
 
         protected void DefaultCallTapHandler ()
         {
-            Util.CallContact ("SegueToContactDefaultSelector", contact, this);
+            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
+                SelectDefault(contact, type);
+            });
+        }
+            
+        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
+        {
+            var destinationController = new ContactDefaultSelectionViewController ();
+            destinationController.SetContact (contact);
+            destinationController.viewType = type;
+            destinationController.owner = this;
+            PresentViewController (destinationController, true, null);
         }
 
         protected nfloat AddEmailAddress (McContactEmailAddressAttribute email, nfloat yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
@@ -1118,14 +1092,28 @@ namespace NachoClient.iOS
 
         ////////InteractionsTableViewStuff
 
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        public void MoveThread (McEmailMessageThread thread)
         {
-            PerformSegue (identifier, sender);
+            var vc = new FoldersViewController ();
+            var message = thread.FirstMessage ();
+            if (message != null) {
+                vc.SetOwner (this, true, message.AccountId, thread);
+                PresentViewController (vc, true, null);
+            }
         }
 
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
-            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (messageThread);
+            NavigationController.PushViewController (messageViewController, true);
+        }
+
+        public void DeferThread (McEmailMessageThread thread)
+        {
+            var priorityViewController = new MessagePriorityViewController ();
+            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
+            PresentViewController (priorityViewController, true, null);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

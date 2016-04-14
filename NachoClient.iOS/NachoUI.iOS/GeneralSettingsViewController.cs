@@ -26,7 +26,7 @@ namespace NachoClient.iOS
 
         SwitchAccountButton switchAccountButton;
 
-        public GeneralSettingsViewController (IntPtr handle) : base (handle)
+        public GeneralSettingsViewController () : base ()
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
@@ -72,8 +72,6 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            // garf
-            scrollView.RemoveFromSuperview ();
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             View.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -148,10 +146,24 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (McAccount.AccountTypeEnum.SalesForce == account.AccountType) {
-                PerformSegue ("SegueToSalesforceSettings", new SegueHolder (account));
+                ShowSalesforceAccount (account);
             } else {
-                PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+                ShowAccount (account);
             }
+        }
+
+        void ShowAccount (McAccount account)
+        {
+            var vc = new AccountSettingsViewController ();
+            vc.SetAccount (account);
+            NavigationController.PushViewController (vc, true);
+        }
+
+        void ShowSalesforceAccount (McAccount account)
+        {
+            var vc = new SalesforceSettingsViewController ();
+            vc.SetAccount (account);
+            NavigationController.PushViewController (vc, true);
         }
 
         // INachoAccountsTableDelegate
@@ -190,29 +202,6 @@ namespace NachoClient.iOS
             PresentViewController (navigationController, true, null);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToAccountSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (AccountSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToSalesforceSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (SalesforceSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToAdvancedLoginView")) {
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
         {
             var credentialsViewController = vc.SuggestedCredentialsViewController (service);
@@ -226,8 +215,7 @@ namespace NachoClient.iOS
             if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
                 BackEnd.Instance.Start (account.Id);
                 DismissViewController (true, () => {
-                    var holder = new SegueHolder(account);
-                    PerformSegue("SegueToSalesforceSettings", holder);
+                    ShowSalesforceAccount (account);
                 });
             }else{
                 var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");

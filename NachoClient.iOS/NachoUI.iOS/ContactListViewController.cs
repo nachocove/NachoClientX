@@ -33,7 +33,7 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
-        public ContactListViewController (IntPtr handle) : base (handle)
+        public ContactListViewController () : base ()
         {
             // iOS 8 bug sez stack overflow
             //  var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(ContactListViewController));
@@ -44,6 +44,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            View.BackgroundColor = UIColor.White;
 
             ReloadCaptureName = "ContactListViewController.Reload";
             NcCapture.AddKind (ReloadCaptureName);
@@ -105,7 +107,7 @@ namespace NachoClient.iOS
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
                 if (NcApplication.Instance.Account.CanAddContact ()) {
-                    PerformSegue ("ContactsToContactEdit", new SegueHolder (NcApplication.Instance.Account));
+                    AddContact (NcApplication.Instance.Account);
                 } else {
                     var canAddAccounts = McAccount.GetCanAddContactAccounts ();
                     var actions = new NcAlertAction[canAddAccounts.Count];
@@ -113,7 +115,7 @@ namespace NachoClient.iOS
                         var account = canAddAccounts [n];
                         var displayName = account.DisplayName + ": " + account.EmailAddr;
                         actions [n] = new NcAlertAction (displayName, () => {
-                            PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
+                            AddContact (account);
                         });
                     }
                     NcActionSheet.Show (addContactButton, this, null,
@@ -194,35 +196,12 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsTableView.ReloadData ();
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void AddContact (McAccount account)
         {
-            if (segue.Identifier.Equals ("ContactsToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
-                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
-                destinationController.SetContact (c);
-                destinationController.viewType = type;
-                destinationController.owner = this;
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactsToContactEdit")) {
-                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
-                destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
-                var h = sender as SegueHolder;
-                var a = (McAccount)h.value;
-                destinationViewController.account = a;
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var destinationViewController = new ContactEditViewController ();
+            destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
+            destinationViewController.account = account;
+            NavigationController.PushViewController (destinationViewController, true);
         }
 
         protected void RefreshContactsIfVisible ()
@@ -258,7 +237,14 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
-            PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
+            ShowContact (contact);
+        }
+
+        void ShowContact (McContact contact)
+        {
+            var destinationController = new ContactDetailViewController ();
+            destinationController.contact = contact;
+            NavigationController.PushViewController (destinationController, true);
         }
 
         /// IContactsTableViewSourceDelegate
@@ -271,12 +257,12 @@ namespace NachoClient.iOS
                 if (address == null) {
                     if (contact.EmailAddresses.Count == 0) {
                         if (contact.CanUserEdit ()) {
-                            PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
                         } else {
                             Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
                         }
                     } else {
-                        PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
                     }
                 } else {
                     ComposeMessage (address);
@@ -284,10 +270,21 @@ namespace NachoClient.iOS
             }
         }
 
+        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
+        {
+            var destinationController = new ContactDefaultSelectionViewController ();
+            destinationController.SetContact (contact);
+            destinationController.viewType = type;
+            destinationController.owner = this;
+            PresentViewController (destinationController, true, null);
+        }
+
         /// IContactsTableViewSourceDelegate
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallContact ("SegueToContactDefaultSelection", contact, this);
+            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
+                SelectDefault(contact, type);
+            });
         }
 
         public void SelectSectionIncludingRecent (int index)

@@ -19,13 +19,65 @@ namespace NachoClient.iOS
         protected static string TabBarOrderKey = "TabBarOrder";
 
         // UI elements needed to customize the "More" tab.
-        protected UITableView existingTableView;
+        protected UITableView moreTableView;
+        protected UIScrollView moreScrollView;
         protected static NachoTabBarController instance;
 
         SwitchAccountButton switchAccountButton;
 
-        public NachoTabBarController (IntPtr handle) : base (handle)
+        public NachoTabBarController () : base ()
         {
+
+            var nowNavController = new UINavigationController (new NachoNowViewController ());
+            nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-nachonow");
+
+            var inboxNavController = new UINavigationController (new InboxViewController ());
+            inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");
+
+            var chatsNavController = new UINavigationController (new ChatsViewController ());
+            chatsItem = chatsNavController.TabBarItem = MakeTabBarItem ("Chats", "nav-chat");
+
+            var calendarNavController = new UINavigationController (new CalendarViewController ());
+            calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");
+
+            var contactsNavController = new UINavigationController (new ContactListViewController ());
+            contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
+
+            var foldersNavController = new UINavigationController (new FoldersViewController ());
+            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("Mail", "nav-mail");
+
+            var deferredNavController = new UINavigationController (new DeferredViewController ());
+            deferredItem = deferredNavController.TabBarItem = MakeTabBarItem ("Deferred", "nav-mail");
+
+            var deadlinesNavController = new UINavigationController (new DeadlinesViewController ());
+            deadlinesItem = deadlinesNavController.TabBarItem = MakeTabBarItem ("Deadlines", "nav-mail");
+
+            var filesNavController = new UINavigationController (new FileListViewController ());
+            filesNavController.TabBarItem = MakeTabBarItem ("Files", "more-files");
+
+            var settingsNavController = new UINavigationController (new GeneralSettingsViewController ());
+            settingsItem = settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
+
+            var supportNavController = new UINavigationController (new SupportViewController ());
+            supportNavController.TabBarItem = MakeTabBarItem ("Support", "more-support");
+
+            var aboutNavController = new UINavigationController (new AboutUsViewController ());
+            aboutNavController.TabBarItem = MakeTabBarItem ("About Nacho Mail", "more-nachomail");
+
+            ViewControllers = new UIViewController[] {
+                nowNavController,
+                inboxNavController,
+                chatsNavController,
+                calendarNavController,
+                contactsNavController,
+                foldersNavController,
+                deferredNavController,
+                deadlinesNavController,
+                filesNavController,
+                settingsNavController,
+                supportNavController,
+                aboutNavController
+            };
         }
 
         protected UITabBarItem nachoNowItem;
@@ -35,8 +87,6 @@ namespace NachoClient.iOS
         protected UITabBarItem deferredItem;
         protected UITabBarItem inboxItem;
         protected UITabBarItem chatsItem;
-
-        protected const int TABLEVIEW_TAG = 1999;
 
         public override void ViewDidLoad ()
         {
@@ -60,21 +110,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             RestoreCustomTabBarOrder ();
-
-            nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
-            chatsItem = SetTabBarItem ("NachoClient.iOS.ChatsViewController", "Chats", "nav-chat", "nav-chat-active");
-            SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
-            inboxItem = SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
-            settingsItem = SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
-            // SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
-            deferredItem = SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
-            deadlinesItem = SetTabBarItem ("NachoClient.iOS.DeadlinesViewController", "Deadlines", "nav-mail", "nav-mail-active"); // Done
-            foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.FileListViewController", "Files", "more-files", "more-files-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.AboutUsViewController", "About Nacho Mail", "more-nachomail", "more-nachomail-active"); // Done
-
 
             // This code is for testing purposes only.  It must never be compiled as part of a product build.
             // Change "#if false" to "#if true" when you want to run this code in the simulator, then discard
@@ -275,29 +310,21 @@ namespace NachoClient.iOS
             ViewControllers = orderedList.ToArray ();
         }
 
-        protected UITabBarItem SetTabBarItem (string typeName, string title, string imageName, string selectedImageName)
+        protected UITabBarItem MakeTabBarItem (string title, string imageName)
         {
-            foreach (var vc in ViewControllers) {
-                if (typeName == GetTabBarItemTypeName (vc)) {
-                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
-                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
-                            var item = new UITabBarItem (title, image, selectedImage);
-                            vc.TabBarItem = item;
-                            return item;
-                        }
-                    }
+            using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+                using (var selectedImage = UIImage.FromBundle (imageName + "-active").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+                    return new UITabBarItem (title, image, selectedImage);
                 }
             }
-            return null;
         }
 
         protected bool IsItemVisible (UITabBarItem item)
         {
             nint visibleItems = 5; // default
 
-            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
-            if (null != tableView) {
-                visibleItems = ViewControllers.Length - tableView.NumberOfRowsInSection (0);
+            if (null != moreTableView) {
+                visibleItems = ViewControllers.Length - moreTableView.NumberOfRowsInSection (0);
             }
 
             for (int i = 0; i < ViewControllers.Length; i++) {
@@ -342,34 +369,26 @@ namespace NachoClient.iOS
 
             moreTabController.NavigationItem.TitleView = switchAccountButton;
 
-            existingTableView = (UITableView)moreTabController.View;
-            existingTableView.TintColor = A.Color_NachoGreen;
-            existingTableView.ScrollEnabled = false;
-            nfloat cellHeight = 0;
-            foreach (var cell in existingTableView.VisibleCells) {
-                cell.TextLabel.Font = A.Font_AvenirNextMedium14;
-                cellHeight = cell.Frame.Height;
-            }
+            moreTableView = (UITableView)moreTabController.View;
+            moreTableView.TintColor = A.Color_NachoGreen;
 
-            var newView = new UIScrollView (View.Frame);
+            moreTableView.ScrollEnabled = false;
 
-            newView.BackgroundColor = A.Color_NachoBackgroundGray;
+            moreScrollView = new UIScrollView (View.Frame);
 
-            var tableHeight = (((existingTableView.NumberOfRowsInSection (0)) + 2) * cellHeight + 25);
+            moreScrollView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            existingTableView.Frame = new CGRect (
+            moreTableView.Frame = new CGRect (
                 A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, tableHeight);
-            existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
-            existingTableView.Layer.MasksToBounds = true;
-            existingTableView.Layer.BorderWidth = A.Card_Border_Width;
-            existingTableView.Layer.BorderColor = A.Card_Border_Color;
-            existingTableView.Tag = TABLEVIEW_TAG;
+                moreScrollView.Frame.Width - 2 * A.Card_Horizontal_Indent, moreScrollView.Bounds.Height - 2 * A.Card_Vertical_Indent);
+            moreTableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            moreTableView.Layer.CornerRadius = A.Card_Corner_Radius;
+            moreTableView.Layer.MasksToBounds = true;
+            moreTableView.Layer.BorderWidth = A.Card_Border_Width;
+            moreTableView.Layer.BorderColor = A.Card_Border_Color;
 
-            newView.ContentSize = new CGSize (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
-
-            newView.AddSubview (existingTableView);
-            moreTabController.View = newView;
+            moreScrollView.AddSubview (moreTableView);
+            moreTabController.View = moreScrollView;
 
             LayoutMoreTable ();
         }
@@ -378,11 +397,12 @@ namespace NachoClient.iOS
         protected void LayoutMoreTable ()
         {
             UpdateSwitchAccountButton ();
-            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
-            if (null != tableView) {
-                var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);
-                tableView.Frame = new CGRect (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
+            if (null != moreTableView) {
+                var tableHeight = (moreTableView.NumberOfRowsInSection (0) * 44);
+                moreTableView.Frame = new CGRect (moreTableView.Frame.X, moreTableView.Frame.Y, moreTableView.Frame.Width, tableHeight);
             }
+
+            moreScrollView.ContentSize = new CGSize (moreScrollView.Bounds.Width, moreTableView.Frame.Bottom + A.Card_Vertical_Indent);
         }
 
         protected void UpdateSwitchAccountButton ()
@@ -410,7 +430,7 @@ namespace NachoClient.iOS
                 // make other changes, but this event is triggered at the wrong time, so
                 // those other changes won't stick.  The one change that does seem to stick
                 // is to hide the arrow on the right side of the cell.
-                foreach (var cell in ((UITableView)existingTableView).VisibleCells) {
+                foreach (var cell in ((UITableView)moreTableView).VisibleCells) {
                     if (3 == cell.Subviews.Length && cell.Subviews [2] is UIButton) {
                         cell.Subviews [2].Hidden = true;
                     }
