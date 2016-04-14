@@ -18,7 +18,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoContactDefaultSelector
     {
         public McContact contact;
 
@@ -1112,13 +1112,6 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
-        public void DeferThread (McEmailMessageThread thread)
-        {
-            var priorityViewController = new MessagePriorityViewController ();
-            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-            PresentViewController (priorityViewController, true, null);
-        }
-
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -1143,16 +1136,6 @@ namespace NachoClient.iOS
                 var interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
                 interactionsTableView.ReloadData ();
             });
-        }
-
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (true, null);
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)

@@ -60,8 +60,6 @@ namespace NachoClient.iOS
 
         void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action);
 
-        void DeferThread (McEmailMessageThread thread);
-
         void MoveThread (McEmailMessageThread thread);
     }
 }

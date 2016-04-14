@@ -161,12 +161,6 @@ namespace NachoClient.iOS
             case McFolder.LTR_FAKE_FOLDER_ID:
                 ShowLikelyToRead ();
                 return;
-            case McFolder.DEFERRED_FAKE_FOLDER_ID:
-                ShowDeferred ();
-                return;
-            case McFolder.DEADLINE_FAKE_FOLDER_ID:
-                ShowDeadlines ();
-                return;
             }
 
             folder.UpdateSet_LastAccessed (DateTime.UtcNow);
@@ -193,21 +187,9 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (viewController, true);
         }
 
-        void ShowDeferred ()
-        {
-            var viewController = new DeferredViewController ();
-            NavigationController.PushViewController (viewController, true);
-        }
-
         void ShowLikelyToRead ()
         {
             var viewController = new LikelyToReadViewController ();
-            NavigationController.PushViewController (viewController, true);
-        }
-
-        void ShowDeadlines ()
-        {
-            var viewController = new DeadlinesViewController ();
             NavigationController.PushViewController (viewController, true);
         }
 

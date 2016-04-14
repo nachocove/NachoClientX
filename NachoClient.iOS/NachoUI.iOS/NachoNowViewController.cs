@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent, INachoDateControllerParent
+    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         protected bool priorityInboxNeedsRefresh;
         protected INachoEmailMessages priorityInbox;
@@ -503,23 +503,6 @@ namespace NachoClient.iOS
         ///  IMessageTableViewSourceDelegate
         public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
         {
-        }
-
-        public void DeferThread (McEmailMessageThread thread)
-        {
-            var priorityViewController = new MessagePriorityViewController ();
-            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-            PresentViewController (priorityViewController, true, null);
-        }
-
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (false, null);
         }
 
         /// <summary>

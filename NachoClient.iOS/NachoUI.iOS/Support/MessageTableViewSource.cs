@@ -41,7 +41,6 @@ namespace NachoClient.iOS
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
-        private const int DEFER_TAG = 4;
 
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor ARCHIVE_BUTTON =
@@ -53,9 +52,6 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDelete),
                 "Delete", A.Color_NachoSwipeEmailDelete);
-        private static SwipeActionDescriptor DEFER_BUTTON =
-            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
-                "Defer", A.Color_NachoSwipeEmailDefer);
         private static SwipeActionDescriptor SOLO_DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.50f, UIImage.FromBundle (A.File_NachoSwipeEmailDelete),
                 "Delete", A.Color_NachoSwipeEmailDelete);
@@ -280,12 +276,6 @@ namespace NachoClient.iOS
 
         protected nfloat HeightForMessage (McEmailMessage message)
         {
-            if (null == message) {
-                return MessageTableViewConstants.NORMAL_ROW_HEIGHT;
-            }
-            if (message.IsDeferred () || message.HasDueDate ()) {
-                return MessageTableViewConstants.DATED_ROW_HEIGHT;
-            }
             return MessageTableViewConstants.NORMAL_ROW_HEIGHT;
         }
 
@@ -514,7 +504,6 @@ namespace NachoClient.iOS
                     view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
-                    view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
                 }
 
                 cell.ContentView.AddSubview (view);
@@ -695,9 +684,6 @@ namespace NachoClient.iOS
                 case SAVE_TAG:
                     ShowFileChooser (messageThread);
                     break;
-                case DEFER_TAG:
-                    ShowPriorityChooser (messageThread);
-                    break;
                 case ARCHIVE_TAG:
                     ArchiveThisMessage (messageThread);
                     break;
@@ -773,14 +759,8 @@ namespace NachoClient.iOS
             // Reminder image view and label
             var reminderImageView = (UIImageView)cell.ContentView.ViewWithTag (REMINDER_ICON_TAG);
             var reminderLabelView = (UILabel)cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG);
-            if (message.HasDueDate () || message.IsDeferred ()) {
-                reminderImageView.Hidden = false;
-                reminderLabelView.Hidden = false;
-                reminderLabelView.Text = Pretty.ReminderText (message);
-            } else {
-                reminderImageView.Hidden = true;
-                reminderLabelView.Hidden = true;
-            }
+            reminderImageView.Hidden = true;
+            reminderLabelView.Hidden = true;
             // Since there is a decent chance that the user will open this message, ask the backend to fetch it
             // download its body.
             if (0 == message.BodyId) {
@@ -1032,14 +1012,6 @@ namespace NachoClient.iOS
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
             vc.DismissFolderChooser (true, null);
-        }
-
-        protected void ShowPriorityChooser (McEmailMessageThread messageThread)
-        {
-            if (null == messageThread) {
-                return;
-            }
-            owner.DeferThread (messageThread);
         }
 
         protected void ShowFileChooser (McEmailMessageThread messageThread)

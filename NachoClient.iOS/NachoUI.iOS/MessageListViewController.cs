@@ -17,7 +17,7 @@ using NachoCore.Index;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
+    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate
     {
         IMessageTableViewSource messageSource;
         IMessageTableViewSource searchResultsSource;
@@ -521,13 +521,6 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
-        public void DeferThread (McEmailMessageThread thread)
-        {
-            var priorityViewController = new MessagePriorityViewController ();
-            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-            PresentViewController (priorityViewController, true, null);
-        }
-
         public void DealWithThreadInOutbox (McEmailMessageThread messageThread)
         {
             var message = messageThread.SingleMessageSpecialCase ();
@@ -554,16 +547,6 @@ namespace NachoClient.iOS
                     ComposeDraft (copy);
                     return;
                 }));
-        }
-
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (false, null);
         }
 
         /// <summary>

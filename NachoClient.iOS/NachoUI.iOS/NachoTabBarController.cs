@@ -44,13 +44,7 @@ namespace NachoClient.iOS
             contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
 
             var foldersNavController = new UINavigationController (new FoldersViewController ());
-            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("Mail", "nav-mail");
-
-            var deferredNavController = new UINavigationController (new DeferredViewController ());
-            deferredItem = deferredNavController.TabBarItem = MakeTabBarItem ("Deferred", "nav-mail");
-
-            var deadlinesNavController = new UINavigationController (new DeadlinesViewController ());
-            deadlinesItem = deadlinesNavController.TabBarItem = MakeTabBarItem ("Deadlines", "nav-mail");
+            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
 
             var filesNavController = new UINavigationController (new FileListViewController ());
             filesNavController.TabBarItem = MakeTabBarItem ("Files", "more-files");
@@ -71,8 +65,6 @@ namespace NachoClient.iOS
                 calendarNavController,
                 contactsNavController,
                 foldersNavController,
-                deferredNavController,
-                deadlinesNavController,
                 filesNavController,
                 settingsNavController,
                 supportNavController,

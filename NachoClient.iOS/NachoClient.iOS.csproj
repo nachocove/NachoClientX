@@ -949,7 +949,6 @@
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
     <Compile Include="NachoUI.iOS\NachoTabBarController.cs" />
     <Compile Include="NachoUI.iOS\HotListViewController.cs" />
-    <Compile Include="NachoUI.iOS\DeferredViewController.cs" />
     <Compile Include="NachoUI.iOS\InboxViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
       <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
@@ -1009,7 +1008,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
       <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\DeadlinesViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
