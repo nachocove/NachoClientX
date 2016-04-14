@@ -56,12 +56,6 @@ namespace NachoClient.AndroidClient
             case McFolder.LTR_FAKE_FOLDER_ID:
                 intent = LtrFolderActivity.ShowLtrFolderIntent (this, folder);
                 break;
-            case McFolder.DEFERRED_FAKE_FOLDER_ID:
-                intent = DeferredActivity.ShowDeferredFolderIntent (this, folder);
-                break;
-            case McFolder.DEADLINE_FAKE_FOLDER_ID:
-                intent = DeadlineActivity.ShowDeadlineFolderIntent (this, folder);
-                break;
             default:
                 intent = MessageFolderActivity.ShowFolderIntent (this, folder);
                 folder.UpdateSet_LastAccessed (DateTime.UtcNow);

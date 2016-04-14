@@ -538,8 +538,6 @@
     <Compile Include="NachoUI.Android\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration47.cs" />
     <Compile Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\DeferredActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\DeadlineActivity.cs" />
     <Compile Include="NachoCore\Model\McMapAttachmentItem.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration48.cs" />
     <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
