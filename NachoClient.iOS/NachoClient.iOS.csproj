@@ -1675,6 +1675,7 @@
     <Compile Include="NachoUI.iOS\Support\ImageAccessoryView.cs" />
     <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
     <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

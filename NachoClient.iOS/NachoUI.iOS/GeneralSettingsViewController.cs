@@ -192,6 +192,7 @@ namespace NachoClient.iOS
                     var account = Accounts [indexPath.Row];
                     cell.TextLabel.Text = account.DisplayName;
                     cell.DetailTextLabel.Text = account.EmailAddr;
+                    cell.IndicateError = LoginHelpers.ShouldAlertUser (account.Id);
                     using (var image = Util.ImageForAccount (account)) {
                         cell.AccountImageView.Image = image;
                     }
@@ -388,7 +389,10 @@ namespace NachoClient.iOS
 
             public readonly UIImageView AccountImageView;
             public static nfloat PreferredHeight = 72.0f;
+            private ErrorIndicatorView ErrorIndicator;
+            private bool _IndicateError;
             nfloat ImageSize = 40.0f;
+            nfloat ErrorIndicatorSize = 24.0f;
 
             public AccountCell (IntPtr handle) : base (handle)
             {
@@ -406,11 +410,37 @@ namespace NachoClient.iOS
                 SeparatorInset = new UIEdgeInsets(0.0f, PreferredHeight, 0.0f, 0.0f);
             }
 
+            public bool IndicateError {
+                get{
+                    return _IndicateError;
+                }
+                set{
+                    _IndicateError = value;
+                    if (_IndicateError && ErrorIndicator == null) {
+                        ErrorIndicator = new ErrorIndicatorView (ErrorIndicatorSize);
+                        ContentView.AddSubview (ErrorIndicator);
+                    }
+                    if (ErrorIndicator != null) {
+                        ErrorIndicator.Hidden = !_IndicateError;
+                        SetNeedsLayout ();
+                    }
+                }
+            }
+
             public override void LayoutSubviews ()
             {
                 base.LayoutSubviews ();
                 var imagePadding = (ContentView.Bounds.Height - AccountImageView.Bounds.Height) / 2.0f;
                 AccountImageView.Frame = new CGRect (imagePadding, imagePadding, AccountImageView.Frame.Width, AccountImageView.Frame.Height);
+                if (ErrorIndicator != null && !ErrorIndicator.Hidden) {
+                    ErrorIndicator.Center = new CGPoint (ContentView.Bounds.Width - ErrorIndicator.Frame.Width / 2.0f, ContentView.Bounds.Height / 2.0f);
+                    var frame = TextLabel.Frame;
+                    frame.Width -= ErrorIndicator.Frame.Width;
+                    TextLabel.Frame = frame;
+                    frame = DetailTextLabel.Frame;
+                    frame.Width -= ErrorIndicator.Frame.Width;
+                    DetailTextLabel.Frame = frame;
+                }
             }
         }
 
