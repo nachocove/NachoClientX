@@ -74,9 +74,26 @@ namespace NachoClient.iOS
         {
             var option = Options [indexPath.Row];
             EmailHelper.SetHowToDisplayUnreadCount (option.Option);
-            TableView.ReloadData ();
+            UpdateCheckmark (indexPath);
             NavigationController.PopViewController (true);
             (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadgeCount ();
+        }
+
+        void UpdateCheckmark (Foundation.NSIndexPath selectedIndexPath)
+        {
+            SwipeTableViewCell cell;
+            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                cell = TableView.CellAt (indexPath) as SwipeTableViewCell;
+                if (indexPath.Equals (selectedIndexPath)) {
+                    if (cell.AccessoryView == null) {
+                        cell.AccessoryView = new CheckmarkAccessoryView ();
+                    }
+                } else {
+                    if (cell.AccessoryView != null) {
+                        cell.AccessoryView = null;
+                    }
+                }
+            }
         }
 
         private class CheckmarkAccessoryView : ImageAccessoryView
