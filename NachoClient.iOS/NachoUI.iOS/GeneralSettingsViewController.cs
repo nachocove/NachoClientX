@@ -36,6 +36,7 @@ namespace NachoClient.iOS
         List<McAccount> Accounts;
         bool HasSalesforce;
         SwitchAccountButton switchAccountButton;
+        UINavigationController AddAccountNavigationController;
 
         #endregion
 
@@ -269,9 +270,17 @@ namespace NachoClient.iOS
             View.EndEditing (true);
             var accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
             var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                vc.NavigationItem.LeftBarButtonItem = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (object sender, EventArgs e) => {
+                    DismissViewController(true, () => {
+                        AddAccountNavigationController = null;
+                    });
+                });
+            }
             vc.AccountDelegate = this;
-            vc.HidesBottomBarWhenPushed = true;
-            NavigationController.PushViewController (vc, true);
+            AddAccountNavigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, AddAccountNavigationController);
+            PresentViewController (AddAccountNavigationController, true, null);
         }
 
         private void ConnectToSalesforce ()
@@ -302,7 +311,7 @@ namespace NachoClient.iOS
             var credentialsViewController = vc.SuggestedCredentialsViewController (service);
             credentialsViewController.Service = service;
             credentialsViewController.AccountDelegate = this;
-            NavigationController.PushViewController (credentialsViewController, true);
+            AddAccountNavigationController.PushViewController (credentialsViewController, true);
         }
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
@@ -317,14 +326,16 @@ namespace NachoClient.iOS
                 syncingViewController.AccountDelegate = this;
                 syncingViewController.Account = account;
                 BackEnd.Instance.Start (syncingViewController.Account.Id);
-                NavigationController.PushViewController (syncingViewController, true);
+                AddAccountNavigationController.PushViewController (syncingViewController, true);
             }
         }
 
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
         {
             ReloadAccounts ();
-            NavigationController.PopToViewController (this, true);
+            DismissViewController (true, () => {
+                AddAccountNavigationController = null;
+            });
         }
 
         #endregion
