@@ -14,19 +14,12 @@ namespace NachoCore.IMAP
     public class ImapIdleCommand : ImapCommand
     {
         McFolder IdleFolder;
-        bool ENABLED = true;
 
         public ImapIdleCommand (IBEContext beContext, McFolder folder) : base (beContext)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
             IdleFolder = folder;
-            RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return logData;
         }
 
         private bool mailArrived = false;
@@ -40,7 +33,7 @@ namespace NachoCore.IMAP
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
-            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
+            if (Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
                 IdleIdle(mailKitFolder, done);
             } else {
                 NoopIdle(mailKitFolder, done);
