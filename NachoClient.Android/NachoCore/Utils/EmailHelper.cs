@@ -894,8 +894,8 @@ namespace NachoCore.Utils
                     if (null != inboxFolder) {
                         var newSince = GetNewSincePreference (accountId);
                         unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
-                        deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
-                        deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
+                        deadlineMessageCount += 0;
+                        deferredMessageCount += 0;
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
                     }
                 }

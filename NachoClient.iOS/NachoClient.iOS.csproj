@@ -340,9 +340,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
       <Link>NachoCore\Adapters\NachoFolders.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeferredEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoDeferredEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
       <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
     </Compile>
@@ -1530,9 +1527,6 @@
     <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration47.cs">
       <Link>NachoCore\Model\Migration\NcMigration47.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeadlineEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoDeadlineEmailMessages.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapAttachmentItem.cs">
       <Link>NachoCore\Model\McMapAttachmentItem.cs</Link>

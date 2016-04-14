@@ -526,20 +526,10 @@ namespace NachoClient.iOS
 
         private void DeferredClicked (object sender)
         {
-            var deferred = new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id);
-            var nowViewController = owner as NachoNowViewController;
-            if (nowViewController != null) {
-                nowViewController.ShowMessages (deferred);
-            }
         }
 
         private void DeadlinesClicked (object sender)
         {
-            var deadlines = new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id);
-            var nowViewController = owner as NachoNowViewController;
-            if (nowViewController != null) {
-                nowViewController.ShowMessages (deadlines);
-            }
         }
 
         /// INachoFolderChooserParent delegate

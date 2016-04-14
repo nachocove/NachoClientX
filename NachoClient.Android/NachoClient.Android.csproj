@@ -133,7 +133,6 @@
     <Compile Include="NachoCore\Adapters\INachoFolders.cs" />
     <Compile Include="NachoCore\Adapters\INachoEmailMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
-    <Compile Include="NachoCore\Adapters\NachoDeferredEmailMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoCalendar.cs" />
     <Compile Include="NachoCore\Adapters\NachoContacts.cs" />
     <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
@@ -541,7 +540,6 @@
     <Compile Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\DeferredActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\DeadlineActivity.cs" />
-    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
     <Compile Include="NachoCore\Model\McMapAttachmentItem.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration48.cs" />
     <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
