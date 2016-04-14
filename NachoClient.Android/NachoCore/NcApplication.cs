@@ -362,15 +362,33 @@ namespace NachoCore
             };
             UiThreadId = Thread.CurrentThread.ManagedThreadId;
 
-            // Maintain 'last time we entered background' time
-            StatusIndEvent += (object sender, EventArgs ea) => {
-                var siea = (StatusIndEventArgs)ea;
-                if (NcResult.SubKindEnum.Info_ExecutionContextChanged == siea.Status.SubKind) {
-                    if (ExecutionContextEnum.Background == ExecutionContext) {
-                        LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
-                    }
+            StatusIndEvent += StatusIndEventHandler;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                // Maintain 'last time we entered background' time
+                if (ExecutionContextEnum.Background == ExecutionContext) {
+                    LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
                 }
-            };
+                break;
+
+            case NcResult.SubKindEnum.Info_DaysToSyncChanged:
+                // check to see if the account is IMAP. We do this here, because it's possible to set the
+                // days to sync without the ProtoController having been set up and started, in which case
+                // we'd miss this signal and not be able to reset the state. Unlike AS, which tells the
+                // server how many days to sync, we manage that ourselves only when we ask for the
+                // list of UIDs for a folder (which happens only periodically and not often), so we need
+                // to trigger that re-fetching of the list ourselves.
+                if (null != siea.Account && siea.Account.AccountType == McAccount.AccountTypeEnum.IMAP_SMTP &&
+                    !BackEnd.Instance.AccountHasServices (siea.Account.Id)) {
+                    NachoCore.IMAP.ImapProtoControl.ResetDaysToSync (siea.Account.Id);
+                }
+                break;
+            }
         }
 
         private static volatile NcApplication instance;
