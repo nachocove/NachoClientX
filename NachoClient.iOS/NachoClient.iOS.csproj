@@ -1666,6 +1666,11 @@
     <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
       <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\ViewControllers\NachoTableViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\UIColor+Utils.cs" />
+    <Compile Include="NachoUI.iOS\Support\PressGestureRecognizer.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwipeTableViewCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwipeActionsView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
