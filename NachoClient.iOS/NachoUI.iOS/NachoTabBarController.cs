@@ -104,6 +104,8 @@ namespace NachoClient.iOS
 
             MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
             MoreNavigationController.NavigationBar.Translucent = false;
+            MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem.Title = "";
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
 
