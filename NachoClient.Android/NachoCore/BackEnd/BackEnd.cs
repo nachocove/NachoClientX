@@ -76,7 +76,7 @@ namespace NachoCore
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
 
-        private bool AccountHasServices (int accountId)
+        public bool AccountHasServices (int accountId)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
             return Services.ContainsKey (accountId);

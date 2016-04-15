@@ -17,14 +17,12 @@ namespace NachoCore.SMTP
     {
         public NcSmtpClient Client { get; set; }
 
-        protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
         protected bool DontReportCommResult { get; set; }
         public INcCommStatus NcCommStatusSingleton { set; get; }
 
         public SmtpCommand (IBEContext beContext, NcSmtpClient smtpClient) : base (beContext)
         {
             Client = smtpClient;
-            RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
             DontReportCommResult = false;
         }
@@ -57,22 +55,10 @@ namespace NachoCore.SMTP
         {
             Cts.Token.ThrowIfCancellationRequested ();
             return TryLock (Client.SyncRoot, KLockTimeout, () => {
-                try {
-                    if (null != Client.MailKitProtocolLogger && null != RedactProtocolLogFunc) {
-                        Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
-                    }
-                    if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        ConnectAndAuthenticate ();
-                    }
-                    if (null != Client.MailKitProtocolLogger) {
-                        Client.MailKitProtocolLogger.ResetBuffers ();
-                    }
-                    return ExecuteCommand ();
-                } finally {
-                    if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
-                        ProtocolLoggerStopAndLog ();
-                    }
+                if (!Client.IsConnected || !Client.IsAuthenticated) {
+                    ConnectAndAuthenticate ();
                 }
+                return ExecuteCommand ();
             });
         }
 
@@ -201,12 +187,6 @@ namespace NachoCore.SMTP
             }
             if (!Client.IsAuthenticated) {
                 ImapDiscoverCommand.possiblyFixUsername (BEContext);
-                RedactProtocolLogFuncDel RestartLog = null;
-                if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
-                    ProtocolLoggerStopAndLog ();
-                    RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
-                }
-
                 string username = BEContext.Cred.Username;
                 string cred;
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
@@ -232,16 +212,7 @@ namespace NachoCore.SMTP
                 }
 
                 Log.Info (Log.LOG_SMTP, "SMTP Server {0}:{1} capabilities: {2}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString ());
-                if (null != Client.MailKitProtocolLogger && null != RestartLog) {
-                    Client.MailKitProtocolLogger.Start (RestartLog);
-                }
             }
-        }
-
-        protected void ProtocolLoggerStopAndLog ()
-        {
-            //Log.Info (Log.LOG_SMTP, "{0}SMTP exchange\n{1}", CmdNameWithAccount, Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ()));
-            Client.MailKitProtocolLogger.Stop ();
         }
     }
 

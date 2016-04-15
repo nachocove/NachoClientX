@@ -183,12 +183,8 @@ namespace NachoClient.AndroidClient
             if (WasShowingAdvanced && !IsShowingAdvanced) {
                 ToggleAdvancedFields ();
             }
-            if (Account != null && Account.IsMdmBased == true) {
-                if (!String.IsNullOrEmpty (NcMdmConfig.Instance.EmailAddr)) {
-                    LockEmailField = true;
-                    emailField.Enabled = false;
-                    emailField.Alpha = 0.6f;
-                }
+            if (Account != null && Account.IsMdmBased) {
+                LockFieldsForMDMConfig (NcMdmConfig.Instance);
             }
 
             if (IsSubmitting) {
@@ -198,6 +194,15 @@ namespace NachoClient.AndroidClient
             }
                 
             return view;
+        }
+
+        void LockFieldsForMDMConfig (NcMdmConfig config)
+        {
+            if (!String.IsNullOrEmpty (config.EmailAddr)) {
+                LockEmailField = true;
+                emailField.Enabled = false;
+                emailField.Alpha = 0.6f;
+            }
         }
 
         public override void OnSaveInstanceState (Bundle outState)

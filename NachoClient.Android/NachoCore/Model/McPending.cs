@@ -1406,7 +1406,7 @@ namespace NachoCore.Model
             try {
                 var next = NcModel.Instance.Db.Table<McPending> ().Where (rec => rec.State == StateEnum.Deferred && rec.DeferredReason == DeferredEnum.UntilTime).OrderBy (x => x.DeferredUntilTime).First ();
                 return next.DeferredUntilTime;
-            } catch (System.InvalidOperationException e){
+            } catch (InvalidOperationException){
                 return null;
             }
         }
