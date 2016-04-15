@@ -81,6 +81,7 @@
     <string name="incompatible_version">Incompatible Version</string>
     <string name="incompatible_message">"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app."</string>
     <string name="gettingstarted">Start by choosing your email service provider</string>
+    <string name="mdmgettingstarted">Start by setting up your {0} account.</string>
     <string name="choose_provider">Choose Provider</string>
     <string name="enter_credentials">Enter Credentials</string>
     <string name="advanced_signin">Advanced Sign In</string>

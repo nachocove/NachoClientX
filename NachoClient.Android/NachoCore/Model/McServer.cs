@@ -52,7 +52,7 @@ namespace NachoCore.Model
         public const string ICloud_Suffix3 = "mac.com";
         public static string[] Yahoo_Suffixes {
             get {
-                return new []{ "yahoo.com", "yahoo.net", "ymail.com", "rocketmail.com" };
+                return new []{ "yahoo.com", "yahoo.ca", "yahoo.net", "ymail.com", "rocketmail.com" };
             }
         }
         public const string Aol_Suffix = "aol.com";

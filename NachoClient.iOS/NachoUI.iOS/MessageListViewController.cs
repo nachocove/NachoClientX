@@ -337,15 +337,11 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshThreads ()
         {
-            bool refreshVisibleCells = true;
-
             if (threadsNeedsRefresh) {
-                using (NcAbate.UIAbatement ()) {
-                    threadsNeedsRefresh = false;
-                    ReloadCapture.Start ();
-                    List<int> adds;
-                    List<int> deletes;
-                    if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
+                threadsNeedsRefresh = false;
+                messageSource.BackgroundRefreshEmailMessages ((bool changed, List<int> adds, List<int> deletes) => {
+                    bool refreshVisibleCells = true;
+                    if (changed) {
                         Util.UpdateTable (TableView, adds, deletes);
                         refreshVisibleCells = false;
                     }
@@ -358,10 +354,11 @@ namespace NachoClient.iOS
                         UpdateSearchResults ();
                         refreshVisibleCells = false;
                     }
-                    ReloadCapture.Stop ();
-                }
-            }
-            if (refreshVisibleCells) {
+                    if (refreshVisibleCells) {
+                        messageSource.ReconfigureVisibleCells (TableView);
+                    }
+                });
+            } else {
                 messageSource.ReconfigureVisibleCells (TableView);
             }
         }

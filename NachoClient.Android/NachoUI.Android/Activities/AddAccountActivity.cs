@@ -44,6 +44,9 @@ namespace NachoClient.AndroidClient
             }
                 
             account = McAccount.GetAccountBeingConfigured ();
+            if (null == account && NcMdmConfig.Instance.IsPopulated && null == McAccount.GetMDMAccount ()) {
+                account = NcAccountHandler.Instance.CreateAccount (NcMdmConfig.Instance);
+            }
             if (null == account) {
                 var chooseProviderFragment = ChooseProviderFragment.newInstance ();
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, chooseProviderFragment, CHOOSE_PROVIDER_FRAGMENT_TAG).Commit ();

@@ -143,6 +143,7 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
             } else {
+                View.BackgroundColor = UIColor.White;
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton; 
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);

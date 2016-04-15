@@ -50,7 +50,7 @@ namespace NachoClient.iOS
         public UIColor GroupBorderColor;
         public UIColor GroupSeparatorColor;
         public nfloat GroupCornerRadius = 6.0f;
-        public nfloat GroupBorderWidth = 1.0f;
+        public nfloat GroupBorderWidth = 0.5f;
         public nfloat GroupSeparatorWidth = 0.5f;
         public nfloat DetailTextSpacing = 3.0f;
         private UIView _GroupSelectedBackgroundView;
@@ -742,6 +742,7 @@ namespace NachoClient.iOS
                 ctx.ClearRect (Bounds);
                 ctx.SetFillColor (TableBackgroundColor);
                 ctx.SetStrokeColor (CellBorderColor);
+                ctx.SetLineWidth (_CellBorderWidth);
                 ctx.BeginPath ();
                 ctx.MoveTo (0.0f, 0.0f);
                 ctx.AddLineToPoint (0.0f, Bounds.Height);
