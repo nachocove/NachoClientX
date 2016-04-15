@@ -9,7 +9,7 @@ namespace NachoClient.iOS
 {
     public partial class DeferredViewController : MessageListViewController
     {
-        public DeferredViewController (IntPtr handle) : base (handle)
+        public DeferredViewController () : base ()
         {
             SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
         }

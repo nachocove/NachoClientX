@@ -20,21 +20,6 @@ namespace NachoCore.IMAP
                     pending.MarkDispatched ();
                 }
             });
-            RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // Nothing additional to redact. The command just has UID's.
-            //L00000059 OK [READ-WRITE] REDACTED selected. (Success)
-            //2015-06-22T17:18:23.971Z: IMAP C: L00000060 UID STORE 8642 FLAGS.SILENT (\Deleted)
-            //2015-06-22T17:18:25.468Z: IMAP S: * 12 FETCH (UID 8642 MODSEQ (953602) FLAGS (\Deleted))
-            //L00000060 OK Success
-            //2015-06-22T17:18:25.470Z: IMAP C: L00000061 UID EXPUNGE 8642
-            //2015-06-22T17:18:27.717Z: IMAP S: * 12 EXPUNGE
-            //* 16 EXISTS
-            //L00000061 OK Success
-            return logData;
         }
 
         protected override Event ExecuteCommand ()

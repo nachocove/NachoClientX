@@ -525,10 +525,10 @@ namespace NachoClient.iOS
             }
             if (messageThread.HasMultipleMessages ()) {
                 Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
-                owner.PerformSegueForDelegate ("SegueToMessageThreadView", new SegueHolder (messageThread));
+                owner.MessageThreadSelected (messageThread);
             } else {
                 Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
-                owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+                owner.MessageThreadSelected (messageThread);
             }
         }
 
@@ -540,21 +540,28 @@ namespace NachoClient.iOS
 
         private void DeferredClicked (object sender)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id)));
+            var deferred = new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id);
+            var nowViewController = owner as NachoNowViewController;
+            if (nowViewController != null) {
+                nowViewController.ShowMessages (deferred);
+            }
         }
 
         private void DeadlinesClicked (object sender)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id)));
+            var deadlines = new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id);
+            var nowViewController = owner as NachoNowViewController;
+            if (nowViewController != null) {
+                nowViewController.ShowMessages (deadlines);
+            }
         }
 
         /// INachoFolderChooserParent delegate
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            NcAssert.True (cookie is SegueHolder);
-            var h = cookie as SegueHolder;
+            NcAssert.True (cookie is McEmailMessageThread);
 
-            var messageThread = (McEmailMessageThread)h.value;
+            var messageThread = (McEmailMessageThread)cookie;
             NcAssert.NotNull (messageThread);
             NcEmailArchiver.Move (messageThread, folder);
         }
@@ -586,7 +593,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+            owner.DeferThread (messageThread);
         }
 
         void onSaveButtonClicked (McEmailMessageThread messageThread)
@@ -594,7 +601,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToFolders", new SegueHolder (messageThread));
+            owner.MoveThread (messageThread);
         }
 
         void onArchiveButtonClicked (McEmailMessageThread messageThread)

@@ -10,13 +10,10 @@ namespace NachoCore.IMAP
 {
     public class NcImapClient : ImapClient
     {
-        public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
-
         public bool DOA { get; set; }
 
         public NcImapClient () : base (getLogger ())
         {
-            MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
         }
 
         protected override ImapFolder CreateImapFolder (ImapFolderConstructorArgs args)
@@ -26,7 +23,6 @@ namespace NachoCore.IMAP
 
         private static IProtocolLogger getLogger ()
         {
-            //return new NcMailKitProtocolLogger ("IMAP");
             //return new NcDebugProtocolLogger (Log.LOG_IMAP);
             return new NullProtocolLogger ();
         }

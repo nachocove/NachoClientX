@@ -80,6 +80,11 @@ namespace NachoClient.iOS
 
         public DefaultSelectionType viewType;
 
+        public ContactDefaultSelectionViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
+
         public ContactDefaultSelectionViewController (IntPtr handle) : base (handle)
         {
         }
@@ -522,7 +527,16 @@ namespace NachoClient.iOS
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
             newPhoneString = phoneTextField.Text;
 
-            PerformSegue ("SegueToLabelSelection", this);
+            SelectLabel ();
+        }
+
+        void SelectLabel ()
+        {
+            var destinationController = new LabelSelectionViewController ();
+            destinationController.SetLabelList (ContactsHelper.GetAvailablePhoneNames (contact));
+            destinationController.SetSelectedName (ContactsHelper.GetAvailablePhoneNames (contact).First ());
+            destinationController.SetOwner (this, contact.AccountId);
+            PresentViewController (destinationController, true, null);
         }
 
         private void SaveAndCall (object sender, EventArgs e)
@@ -622,19 +636,6 @@ namespace NachoClient.iOS
                     return;
                 }
             }
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToLabelSelection")) {
-                LabelSelectionViewController destinationController = (LabelSelectionViewController)segue.DestinationViewController;
-                destinationController.SetLabelList (ContactsHelper.GetAvailablePhoneNames (contact));
-                destinationController.SetSelectedName (ContactsHelper.GetAvailablePhoneNames (contact).First ());
-                destinationController.SetOwner (this, contact.AccountId);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         public void PrepareForDismissal (string selectedName)

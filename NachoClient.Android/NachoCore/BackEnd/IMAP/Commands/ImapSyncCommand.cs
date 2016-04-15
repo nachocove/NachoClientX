@@ -59,36 +59,54 @@ namespace NachoCore.IMAP
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
             }
-            UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
-
             if (UInt32.MinValue != Synckit.Folder.ImapUidValidity &&
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
+
+            var changed = UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
+            if (changed) {
+                // HACK: Ignore strategy and do a QuickSync.
+                Synckit = new SyncKit (Synckit.Folder, Synckit.PendingSingle);
+            }
+
             Event evt;
             NcCapture cap;
+            changed = false;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.Sync:
                 NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
-                evt = syncFolder (mailKitFolder);
-                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
-                PendingSingle = null; // we resolved it.
+                evt = RegularSync (mailKitFolder, out changed);
                 break;
 
             case SyncKit.MethodEnum.QuickSync:
                 NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
-                evt = QuickSync (mailKitFolder, timespan);
-                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
-                PendingSingle = null; // we resolved it.
+                evt = QuickSync (mailKitFolder, timespan, out changed);
                 break;
 
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
+
+            Finish (changed);
+            ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+            PendingSingle = null; // we resolved it.
             cap.Dispose ();
             return evt;
+        }
+
+        /// <summary>
+        /// Regular sync.
+        /// </summary>
+        /// <returns>The sync.</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="changed">Changed.</param>
+        Event RegularSync (NcImapFolder mailKitFolder, out bool changed)
+        {
+            changed = false;
+            return syncFolder (mailKitFolder, ref changed);
         }
 
         /// <summary>
@@ -99,13 +117,14 @@ namespace NachoCore.IMAP
         /// <returns>The Event to post</returns>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="timespan">Timespan.</param>
-        private Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan)
+        /// <param name="changed">Has anything changed?</param>
+        Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan, out bool changed)
         {
-            bool changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
+            changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
             Event evt;
             var protocolState = BEContext.ProtocolState;
             if (ImapStrategy.FillInQuickSyncKit (ref protocolState, ref Synckit, AccountId)) {
-                evt = syncFolder (mailKitFolder);
+                evt = syncFolder (mailKitFolder, ref changed);
                 changed = true;
             } else {
                 // TODO: Need to figure out how strategy knows when to stop trying quicksync.
@@ -119,7 +138,6 @@ namespace NachoCore.IMAP
                     evt = Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
                 }
             }
-            Finish (changed);
             return evt;
         }
 
@@ -132,9 +150,9 @@ namespace NachoCore.IMAP
         /// </description>
         /// <returns>The folder.</returns>
         /// <param name="mailKitFolder">Mail kit folder.</param>
-        private Event syncFolder (NcImapFolder mailKitFolder)
+        /// <param name="changed">Has anything changed?</param>
+        private Event syncFolder (NcImapFolder mailKitFolder, ref bool changed)
         {
-            bool changed = false;
             // start by uploading messages
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
                 var uidSet = new UniqueIdSet ();
@@ -185,7 +203,27 @@ namespace NachoCore.IMAP
                 }
             }
 
-            Finish (changed);
+            // THis section is only for deleting LOCAL emails, i.e. ones that strategy tells us to
+            // (probably old ones we no longer need). It is NOT meant to delete messages on the server.
+            if (null != Synckit.DeleteEmailIds && Synckit.DeleteEmailIds.Count > 0) {
+                changed = true;
+                var sw = new PlatformStopwatch ();
+                sw.Start ();
+                int deleted = 0;
+                try {
+                    foreach (var emailId in Synckit.DeleteEmailIds) {
+                        Cts.Token.ThrowIfCancellationRequested ();
+                        var email = emailId.GetMessage ();
+                        if (null != email) {
+                            email.Delete ();
+                            deleted++;
+                        }
+                    }
+                } finally {
+                    sw.Stop ();
+                    Log.Info (Log.LOG_IMAP, "{0}: removed {1} old emails (took {2}ms)", Synckit.Folder.ImapFolderNameRedacted (), deleted, sw.ElapsedMilliseconds);
+                }
+            }
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
@@ -680,10 +718,7 @@ namespace NachoCore.IMAP
                 }
             }
             if (summary.Envelope.ReplyTo.Count > 0) {
-                if (summary.Envelope.ReplyTo.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} ReplyTo entries in message.", summary.Envelope.ReplyTo.Count);
-                }
-                emailMessage.ReplyTo = summary.Envelope.ReplyTo [0].ToString ();
+                emailMessage.ReplyTo = string.Join (";", summary.Envelope.ReplyTo);
             }
             if (summary.Envelope.Sender.Count > 0) {
                 if (summary.Envelope.Sender.Count > 1) {

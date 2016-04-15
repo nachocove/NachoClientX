@@ -26,6 +26,16 @@ namespace NachoCore.IMAP
         const int KImapSyncRung0InboxCount = 100;
 
         /// <summary>
+        /// The maximum number of emails we'll delete in one go.
+        /// </summary>
+        const int KImapMaxEmailDeleteCount = 100;
+
+        /// <summary>
+        /// Easy way to disable old-email-deleting
+        /// </summary>
+        const bool KImapAllowDeleteOldEmails = false;
+
+        /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
         /// window size calculations, i.e. multiplied by a certain number for CellFast and another
         /// number for Wifi, etc.
@@ -47,7 +57,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The time in seconds after which we'll add the inbox to the top of the list in SyncFolderList.
         /// </summary>
-        const int KInboxMinSyncTime = 5 * 60;
+        const int KInboxMinSyncTime = 60;
 
         /// <summary>
         /// The multiplier we apply to the span for messages we're just resyncing, i.e. checking for flag changes and deletion.
@@ -188,7 +198,7 @@ namespace NachoCore.IMAP
                 return null;
             }
             bool havePending = null != pending;
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, QuickSync {7})",
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, QuickSync {7}, ImapNeedFullSync {8})",
                 folder.ImapFolderNameRedacted (), 
                 folder.ImapUidNext,
                 folder.ImapLastExamine.ToString ("MM/dd/yyyy hh:mm:ss.fff tt"),
@@ -196,7 +206,8 @@ namespace NachoCore.IMAP
                 folder.ImapUidHighestUidSynced, 
                 folder.ImapUidLowestUidSynced, 
                 havePending,
-                quickSync);
+                quickSync,
+                folder.ImapNeedFullSync);
 
             SyncKit syncKit = null;
             if (HasNewMail (folder) || havePending || quickSync || NeedFolderMetadata (folder)) {
@@ -224,6 +235,13 @@ namespace NachoCore.IMAP
                     }
                     ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }
+                if (null == syncKit) {
+                    // see if we can/should delete some older emails
+                    var emailList = GetEmailsToDelete (folder);
+                    if (null != emailList && emailList.Count > 0) {
+                        syncKit = new SyncKit (folder, emailList);
+                    }
+                }
             }
             if (null == syncKit) {
                 // update the sync count, even though there was nothing to do.
@@ -240,6 +258,36 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: nothing to do", folder.ImapFolderNameRedacted ());
             }
             return syncKit;
+        }
+
+        /// <summary>
+        /// Gets the list NcEmailMessageIndex to delete. We select emails to delete simply by querying for all
+        /// existing emails with an ImapUid lower than the smallest one in the folder.ImapUidSet. We update
+        /// the set (via GetFolderMetadata) by taking the DaysToSync into account, so the lowest number there 
+        /// will match the user-set DaysToSync. McEmailMessage.ImapUid is indexed, so this should be a relatively
+        /// quick query.
+        /// </summary>
+        /// <returns>The emails to delete.</returns>
+        /// <param name="folder">Folder.</param>
+        List<NcEmailMessageIndex> GetEmailsToDelete (McFolder folder)
+        {
+            if (!KImapAllowDeleteOldEmails ||
+                folder.ImapNeedFullSync ||
+                BEContext.Account.DaysToSyncEmail == NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0) {
+                return null;
+            }
+            var uidSet = getCurrentUIDSet (folder, 0, 0, 0);
+            if (uidSet == null || uidSet.Count == 0) {
+                return null;
+            }
+            var lowestUid = uidSet.Min ().Id;
+            // get list of email Ids less than lowestUid, ordered lowest to highest, limited to KImapMaxEmailDeleteCount.
+            // this gives us a bounded list of oldest-first email IDs
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT Id FROM McEmailMessage WHERE AccountId = ? AND ImapUid < ? ORDER BY ImapUid ASC LIMIT ?",
+                folder.AccountId,
+                lowestUid,
+                KImapMaxEmailDeleteCount);
         }
 
         #endregion
@@ -362,7 +410,7 @@ namespace NachoCore.IMAP
 
         public static void resetLastSyncPoint (ref McFolder folder)
         {
-            if (folder.ImapLastUidSynced != folder.ImapUidNext) {
+            if (folder.ImapLastUidSynced != folder.ImapUidNext || folder.ImapNeedFullSync) {
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     McFolder target = (McFolder)record;
                     target.ImapLastUidSynced = target.ImapUidNext; // reset to the top
@@ -382,6 +430,9 @@ namespace NachoCore.IMAP
             }
             if (folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
                 return true;  // folder metadata is stale. Get new data.
+            }
+            if (folder.ImapNeedFullSync) {
+                return true;
             }
             return false;
         }
@@ -424,7 +475,7 @@ namespace NachoCore.IMAP
                 var emails = getCurrentEmailUids (Synckit.Folder, 0, startingPoint, span);
                 if (emails.Any ()) {
                     var startingUid = new UniqueId (startingPoint - 1);
-                    if (startingPointMustBeInSet && !emails.Contains(startingUid)) {
+                    if (startingPointMustBeInSet && !emails.Contains (startingUid)) {
                         emails.Add (startingUid);
                         startingPointMustBeInSet = false;
                     }

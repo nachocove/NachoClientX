@@ -28,7 +28,7 @@ namespace NachoClient.iOS
 
         protected UITapGestureRecognizer telemetryFlushGesture;
 
-        public SupportViewController (IntPtr handle) : base (handle)
+        public SupportViewController () : base ()
         {
         }
 
@@ -174,8 +174,16 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SupportToSupportMessage", this);
+                ShowMessage ();
             }
+        }
+
+        void ShowMessage ()
+        {
+            var vc = new SupportMessageViewController ();
+            var navController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navController);
+            PresentViewController (navController, true, null);
         }
 
         private void CallSingleTapHandler (NSObject sender)

@@ -14,26 +14,10 @@ namespace NachoCore.IMAP
 {
     public class ImapSearchCommand : ImapCommand
     {
-        private List<Regex> RegexList;
-
         public ImapSearchCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispatched ();
-
-            RedactProtocolLogFunc = RedactProtocolLog;
-
-            RegexList = new List<Regex> ();
-            RegexList.Add (new Regex (@"^" + NcMailKitProtocolLogger.ImapCommandNumRegexStr + @"(?<uidstr>UID SEARCH RETURN \(.*\) )(?<redact>.*)(?<end>[\r\n]+)$", NcMailKitProtocolLogger.rxOptions));
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // Need to redact search strings
-            //2015-06-22T17:28:56.589Z: IMAP C: B00000006 UID SEARCH RETURN () REDACTED
-            //2015-06-22T17:28:57.190Z: IMAP S: * ESEARCH (TAG "B00000006") UID
-            //B00000006 OK SEARCH completed (Success)
-            return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
         }
 
         public override void Execute (NcStateMachine sm)

@@ -31,6 +31,8 @@ namespace NachoClient.iOS
         public McEmailMessageThread thread;
         protected List<McAttachment> attachments;
 
+        UIScrollView scrollView;
+
         // UI elements for the main view
         protected UIView headerView;
         protected AttachmentListView attachmentListView;
@@ -95,6 +97,10 @@ namespace NachoClient.iOS
 
         private bool isAppearing;
 
+        public MessageViewController() : base  ()
+        {
+        }
+
         public MessageViewController (IntPtr handle)
             : base (handle)
         {
@@ -108,6 +114,9 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            scrollView = new UIScrollView (View.Bounds);
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            View.AddSubview (scrollView);
             base.ViewDidLoad ();
             ConfigureAndLayout ();
         }
@@ -403,13 +412,13 @@ namespace NachoClient.iOS
                     ComposeResponse (EmailHelper.Action.Reply, true);
                 }),
                 new UIBlockMenu.Block ("email-calendartime", "Create Deadline", () => {
-                    PerformSegue ("SegueToMessageDeadline", new SegueHolder (null));
+                    ShowDeadline ();
                 }),
                 new UIBlockMenu.Block ("now-addcalevent", "Create Event", () => {
                     var message = thread.SingleMessageSpecialCase ();
                     if (null != message) {
                         var c = CalendarHelper.CreateMeeting (message);
-                        PerformSegue ("SegueToEditEvent", new SegueHolder (c));
+                        EditEvent (c);
                     }
                 })
             }, View.Frame.Width);
@@ -650,57 +659,6 @@ namespace NachoClient.iOS
             ScrollViewScrolled (null, null);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-
-            if (segue.Identifier == "MessageViewToMessagePriority") {
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
-            if (segue.Identifier == "SegueToMessageDeadline") {
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Deadline);
-                return;
-            }
-            if (segue.Identifier == "MessageViewToFolders") {
-                var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var message = thread.FirstMessage ();
-                if (null != message) {
-                    vc.SetOwner (this, true, message.AccountId, thread);
-                }
-                return;
-            }
-            if (segue.Identifier == "MessageViewToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                var c = h.value as McCalendar;
-                vc.SetOwner (this);
-                vc.SetCalendarItem (c);
-                return;
-            }
-//            if (segue.Identifier == "SegueToDatePicker") {
-//                var vc = (DatePickerViewController)segue.DestinationViewController;
-//                vc.owner = this;
-//                return;
-//            }
-            if (segue.Identifier == "SegueToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var e = holder.value as McCalendar;
-                vc.SetCalendarItem (e);
-                vc.SetOwner (this);
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         public override bool HidesBottomBarWhenPushed {
             get {
                 return true;
@@ -831,9 +789,41 @@ namespace NachoClient.iOS
             }
         }
 
+        void ShowDeadline ()
+        {
+            var priorityViewController = new MessagePriorityViewController ();
+            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Deadline);
+            PresentViewController (priorityViewController, true, null);
+        }
+
+        void EditEvent (McCalendar calendarEvent)
+        {
+            var vc = new EditEventViewController ();
+            vc.SetOwner (this);
+            vc.SetCalendarItem (calendarEvent);
+            NavigationController.PushViewController (vc, true);
+        }
+
+        void ShowMove ()
+        {
+            var vc = new FoldersViewController ();
+            var message = thread.FirstMessage ();
+            if (null != message) {
+                vc.SetOwner (this, true, message.AccountId, thread);
+            }
+            PresentViewController (vc, true, null);
+        }
+
+        void ShowDefer ()
+        {
+            var priorityViewController = new MessagePriorityViewController ();
+            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
+            PresentViewController (priorityViewController, true, null);
+        }
+
         private void MoveButtonClicked (object sender, EventArgs e)
         {
-            PerformSegue ("MessageViewToFolders", new SegueHolder (null));
+            ShowMove ();
         }
 
         private void BlockMenuButtonClicked (object sender, EventArgs e)
@@ -861,7 +851,7 @@ namespace NachoClient.iOS
 
         private void DeferButtonClicked (object sender, EventArgs e)
         {
-            PerformSegue ("MessageViewToMessagePriority", new SegueHolder (null));
+            ShowDefer ();
         }
 
         private bool SingleTapGestureRecognizer (UIGestureRecognizer a, UIGestureRecognizer b)

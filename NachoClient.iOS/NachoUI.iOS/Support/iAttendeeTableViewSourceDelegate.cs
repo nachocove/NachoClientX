@@ -9,7 +9,6 @@ namespace NachoClient.iOS
     public interface IAttendeeTableViewSourceDelegate
     {
         void ContactSelectedCallback(McContact contact);
-        void PerformSegueForDelegate (string identifier, NSObject sender);
         void SendAttendeeInvite (McAttendee attendee);
         void UpdateLists ();
         void ConfigureAttendeeTable();

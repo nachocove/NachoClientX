@@ -18,6 +18,9 @@ namespace NachoClient.iOS
     {
         McAccount account;
 
+        public SalesforceSettingsViewController () : base ()
+        {
+        }
 
         public SalesforceSettingsViewController (IntPtr handle) : base (handle)
         {

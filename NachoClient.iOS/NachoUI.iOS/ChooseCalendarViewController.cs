@@ -23,6 +23,10 @@ namespace NachoClient.iOS
 
         private UITableView tableView;
 
+        public ChooseCalendarViewController () : base ()
+        {
+        }
+
         public ChooseCalendarViewController (IntPtr handle) : base (handle)
         {
         }

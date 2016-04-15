@@ -43,11 +43,6 @@ namespace NachoCore.IMAP
         protected NcStateMachine Sm { get; set; }
 
         /// <summary>
-        /// Log redaction function. Not used. TODO: Remove log redaction code
-        /// </summary>
-        protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
-
-        /// <summary>
         /// Whether this command should Report CommStatus. Subclasses can override
         /// </summary>
         /// <value><c>true</c> if dont report comm result; otherwise, <c>false</c>.</value>
@@ -77,7 +72,6 @@ namespace NachoCore.IMAP
 
         public ImapCommand (IBEContext beContext) : base (beContext)
         {
-            RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
             DontReportCommResult = false;
             RetryCount = 0;
@@ -130,21 +124,12 @@ namespace NachoCore.IMAP
             ImapDiscoverCommand.guessServiceType (BEContext);
 
             return TryLock (Client.SyncRoot, KLockTimeout, () => {
-                try {
-                    if (null != RedactProtocolLogFunc && null != Client.MailKitProtocolLogger) {
-                        Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
-                    }
-                    if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        ConnectAndAuthenticate ();
-                    }
-                    using (var cap = NcCapture.CreateAndStart (CmdName)) {
-                        var evt = ExecuteCommand ();
-                        return evt;
-                    }
-                } finally {
-                    if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
-                        ProtocolLoggerStopAndPostTelemetry ();
-                    }
+                if (!Client.IsConnected || !Client.IsAuthenticated) {
+                    ConnectAndAuthenticate ();
+                }
+                using (var cap = NcCapture.CreateAndStart (CmdName)) {
+                    var evt = ExecuteCommand ();
+                    return evt;
                 }
             });
         }
@@ -356,26 +341,6 @@ namespace NachoCore.IMAP
                 return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
             } else {
                 return "Server did not return an ID or no ID capability";
-            }
-        }
-
-        protected void ProtocolLoggerStopAndPostTelemetry ()
-        {
-            string ClassName = CmdName + " ";
-            byte[] requestData;
-            byte[] responseData;
-            //string combinedLog = Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ());
-            //Log.Info (Log.LOG_IMAP, "{0}IMAP exchange\n{1}", ClassName, combinedLog);
-            Client.MailKitProtocolLogger.Stop (out requestData, out responseData);
-            byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
-
-            if (null != requestData && requestData.Length > 0) {
-                //Log.Info (Log.LOG_IMAP, "{0}IMAP Request\n{1}", ClassName, Encoding.UTF8.GetString (RedactProtocolLog(requestData)));
-                Telemetry.RecordImapEvent (true, Combine (ClassNameBytes, requestData));
-            }
-            if (null != responseData && responseData.Length > 0) {
-                //Log.Info (Log.LOG_IMAP, "{0}IMAP Response\n{1}", ClassName, Encoding.UTF8.GetString (responseData));
-                Telemetry.RecordImapEvent (false, Combine (ClassNameBytes, responseData));
             }
         }
 

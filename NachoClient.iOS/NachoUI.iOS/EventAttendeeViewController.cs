@@ -49,6 +49,10 @@ namespace NachoClient.iOS
         protected static int SEGMENTED_CONTROL_TAG = 100;
         protected static readonly nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
 
+        public EventAttendeeViewController () : base ()
+        {
+        }
+
         public EventAttendeeViewController (IntPtr handle) : base (handle)
         {
         }
@@ -107,45 +111,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ChooseAttendee (NcEmailAddress address)
         {
-            if (segue.Identifier.Equals ("EventAttendeesToContactChooser")) {
-                var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToContactSearch")) {
-                var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
-                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
-                destinationController.SetContact (c);
-                destinationController.viewType = type;
-                destinationController.owner = this;
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var dc = new ContactChooserViewController ();
+            dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
+            NavigationController.PushViewController (dc, true);
         }
 
         public void LoadAttendees ()
@@ -202,12 +172,12 @@ namespace NachoClient.iOS
             addAttendeesButton = new NcUIBarButtonItem ();
             addAttendeesButton.TintColor = A.Color_NachoBlue;
             addAttendeesButton.Image = UIImage.FromBundle ("calendar-add-attendee");
-            addAttendeeButton.AccessibilityLabel = "Add attendee";
+            addAttendeesButton.AccessibilityLabel = "Add attendee";
 
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
-                PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
+                ChooseAttendee (address);
             }; 
 
             segmentedControlView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 40));
@@ -566,12 +536,12 @@ namespace NachoClient.iOS
                 if (address == null) {
                     if (contact.EmailAddresses.Count == 0) {
                         if (contact.CanUserEdit ()) {
-                            PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
                         } else {
                             Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
                         }
                     } else {
-                        PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
                     }
                 } else {
                     ComposeMessage (address);
@@ -581,7 +551,18 @@ namespace NachoClient.iOS
 
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallContact ("SegueToContactDefaultSelection", contact, this);
+            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
+                SelectDefault(contact, type);
+            });
+        }
+
+        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
+        {
+            var destinationController = new ContactDefaultSelectionViewController ();
+            destinationController.SetContact (contact);
+            destinationController.viewType = type;
+            destinationController.owner = this;
+            PresentViewController (destinationController, true, null);
         }
 
         public void UpdateLists ()
@@ -602,12 +583,6 @@ namespace NachoClient.iOS
         public Int64 GetAccountId ()
         {
             return account.Id;
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
         }
 
         /// IContactsTableViewSourceDelegate
@@ -670,7 +645,9 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
-            PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
+            var contactViewController = new ContactDetailViewController ();
+            contactViewController.contact = contact;
+            NavigationController.PushViewController (contactViewController, true);
         }
 
         public void ContactDefaultSelectorComposeMessage (string address)

@@ -53,7 +53,7 @@ namespace NachoCore.Model
         FORWARD = 3,
     }
 
-    public class NcEmailMessageIndex
+    public class NcEmailMessageIndex : IComparable
     {
         public int Id { set; get; }
 
@@ -71,6 +71,16 @@ namespace NachoCore.Model
             return McEmailMessage.QueryById<McEmailMessage> (Id);
         }
 
+        #region IComparable implementation
+
+        public int CompareTo (object obj)
+        {
+            var other = obj as NcEmailMessageIndex;
+            NcAssert.NotNull (other, string.Format ("CompareTo object is not NcEmailMessageIndex: {0}", obj.GetType ().Name));
+            return other.Id.CompareTo (Id);
+        }
+
+        #endregion
     }
 
     public class NcEmailMessageIndexComparer : IEqualityComparer<NcEmailMessageIndex>

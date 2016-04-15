@@ -101,6 +101,11 @@ namespace NachoCore.IMAP
         /// </summary>
         public List<SyncInstruction> SyncInstructions;
 
+        /// <summary>
+        /// List of email Ids which we need to delete
+        /// </summary>
+        public List<NcEmailMessageIndex> DeleteEmailIds;
+
         public SyncKit (McFolder folder, McPending pending)
         {
             Method = MethodEnum.QuickSync;
@@ -114,6 +119,14 @@ namespace NachoCore.IMAP
             Method = MethodEnum.Sync;
             Folder = folder;
             SyncInstructions = syncInstructions ?? new List<SyncInstruction> ();
+        }
+
+        public SyncKit (McFolder folder, List<NcEmailMessageIndex> emailsToDelete)
+        {
+            Method = MethodEnum.Sync;
+            Folder = folder;
+            SyncInstructions = new List<SyncInstruction> ();
+            DeleteEmailIds = emailsToDelete;
         }
 
         public uint? MaxSynced {
@@ -175,11 +188,13 @@ namespace NachoCore.IMAP
                 if (SyncInstructions.Any ()) {
                     me += " SyncInstructions {";
                     foreach (var inst in SyncInstructions) {
-                        me += string.Format (" {{{0}}}", inst);;
+                        me += string.Format (" {{{0}}}", inst);
                     }
                     me += "}";
                 }
-                me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
+                if (null != UploadMessages && UploadMessages.Count > 0) {
+                    me += string.Format (" UploadMessages {{{0}}}", UploadMessages.Count);
+                }
                 break;
 
             default:
@@ -187,6 +202,9 @@ namespace NachoCore.IMAP
             }
             if (null != PendingSingle) {
                 me += " pending=true";
+            }
+            if (null != DeleteEmailIds && DeleteEmailIds.Count > 0) {
+                me += string.Format (" DeleteEmailIDs {{{0}:{1}}}", DeleteEmailIds.Min ().Id, DeleteEmailIds.Max ().Id);
             }
             me += ")";
             return me;
