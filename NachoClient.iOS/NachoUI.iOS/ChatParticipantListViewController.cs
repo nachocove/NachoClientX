@@ -16,15 +16,6 @@ namespace NachoClient.iOS
         public ChatMessagesViewController MessagesViewController;
         ChatParticipantTableViewSource Source;
         public List<McChatParticipant> Participants;
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-        }
 
         public ChatParticipantListViewController () : base()
         {
@@ -50,7 +41,7 @@ namespace NachoClient.iOS
 
         public void ParticipantSelected (McChatParticipant participant)
         {
-            var contactDetailViewController = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+            var contactDetailViewController = new ContactDetailViewController ();
             contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
             NavigationController.PushViewController (contactDetailViewController, true);
         }
@@ -63,7 +54,7 @@ namespace NachoClient.iOS
 
         public void ShowContactSearch (NcEmailAddress address)
         {
-            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            var searchController = new ContactSearchViewController ();
             searchController.SetOwner (MessagesViewController, MessagesViewController.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, searchController);
         }

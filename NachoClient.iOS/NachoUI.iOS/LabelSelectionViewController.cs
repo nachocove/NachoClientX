@@ -35,6 +35,10 @@ namespace NachoClient.iOS
         UIView contentView = new UIView ();
         nfloat yOffset = 0;
 
+        public LabelSelectionViewController () : base()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
 
         public LabelSelectionViewController (IntPtr handle) : base (handle)
         {

@@ -13,12 +13,6 @@ namespace NachoCore.IMAP
         {
             PendingSingle = pending;
             PendingSingle.MarkDispatched ();
-            //RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return logData;
         }
 
         protected override Event ExecuteCommand ()

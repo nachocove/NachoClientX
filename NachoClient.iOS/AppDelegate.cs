@@ -377,8 +377,6 @@ namespace NachoClient.iOS
                 Log.Error (Log.LOG_PUSH, "notification not registered!");
             }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
-            // Set up webview to handle html with embedded custom types (curtesy of Exchange)
-            NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(CidImageProtocol)));
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
@@ -430,12 +428,13 @@ namespace NachoClient.iOS
             // to be in iOS-specific code.
             Log.Info (Log.LOG_LIFECYCLE, "Current time zone: {0}", NSTimeZone.LocalTimeZone.Description);
 
-            var firstStoryboardName = NcApplication.ReadyToStartUI () ? "MainStoryboard_iPhone" : "Startup";
-            var mainStoryboard = UIStoryboard.FromName (firstStoryboardName, null);
-            var appViewController = mainStoryboard.InstantiateInitialViewController ();
-
             Window = new UIWindow (UIScreen.MainScreen.Bounds);
-            Window.RootViewController = appViewController;
+            if (NcApplication.ReadyToStartUI ()) {
+                Window.RootViewController = new NachoTabBarController ();
+            } else {
+                var storyboard = UIStoryboard.FromName ("Startup", null);
+                Window.RootViewController = storyboard.InstantiateInitialViewController ();
+            }
             Window.MakeKeyAndVisible ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");

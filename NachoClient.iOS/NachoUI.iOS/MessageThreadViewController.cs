@@ -9,6 +9,11 @@ namespace NachoClient.iOS
 {
     public partial class MessageThreadViewController : MessageListViewController
 	{
+
+        public MessageThreadViewController () : base ()
+        {
+        }
+
 		public MessageThreadViewController (IntPtr handle) : base (handle)
 		{
 		}

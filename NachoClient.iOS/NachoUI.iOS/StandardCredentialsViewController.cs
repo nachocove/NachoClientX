@@ -196,8 +196,7 @@ namespace NachoClient.iOS
         partial void Support (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController showing support");
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = (SupportViewController)storyboard.InstantiateViewController ("SupportViewController");
+            var vc = new SupportViewController ();
             vc.HideNavTitle = false;
             NavigationController.PushViewController (vc, true);
         }

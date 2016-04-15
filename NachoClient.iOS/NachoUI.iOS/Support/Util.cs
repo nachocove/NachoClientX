@@ -969,7 +969,7 @@ namespace NachoClient
         /// ///////////
         /// ///////////
 
-        public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
+        public static void CallContact (McContact contact, Action<ContactDefaultSelectionViewController.DefaultSelectionType> selectDefault)
         {
             if (null == contact) {
                 ComplainAbout ("No Phone Number", "This contact does not have a phone number.");
@@ -977,7 +977,7 @@ namespace NachoClient
             }
             if (0 == contact.PhoneNumbers.Count) {
                 if (contact.CanUserEdit ()) {
-                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+                    selectDefault (ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder);
                 } else {
                     ComplainAbout ("No Phone Number", "This contact does not have a phone number, and we are unable to modify the contact.");
                 }
@@ -994,7 +994,7 @@ namespace NachoClient
                         return; 
                     }
                 }
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
+                selectDefault (ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector);
             }
         }
 

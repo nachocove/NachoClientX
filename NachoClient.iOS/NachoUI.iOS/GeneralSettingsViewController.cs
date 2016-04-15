@@ -12,24 +12,53 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks, INachoAccountsTableDelegate, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
+    public partial class GeneralSettingsViewController : NachoTableViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
     {
-        UITableView accountsTableView;
-        AccountsTableViewSource accountsTableViewSource;
-        UIStoryboard accountStoryboard;
 
-        static readonly nfloat HEIGHT = 50;
-        static readonly nfloat INDENT = 25;
-        UcNameValuePair UnreadCountBlock;
+        #region Constants
 
-        ConnectToSalesforceCell connectToSalesforceView;
+        const string NameValueCellIdentifier = "NameValueCellIdentifier";
+        const string AccountCellIdentifier = "AccountCellIdentifier";
+        const string ActionCellIdentifier = "ActionCellIdentifier";
 
+        const int SectionGeneralSettings = 0;
+        const int SectionAccounts = 1;
+
+        const int GeneralSettingsRowUnreadCount = 0;
+
+        const int AccountsExtraRowAddAccount = 0;
+        const int AccountsExtraRowConnectToSalesforce = 1;
+
+        #endregion
+
+        #region Propreties
+
+        List<McAccount> Accounts;
+        bool HasSalesforce;
         SwitchAccountButton switchAccountButton;
+        UINavigationController AddAccountNavigationController;
 
-        public GeneralSettingsViewController (IntPtr handle) : base (handle)
+        #endregion
+
+        #region Constructors
+
+        public GeneralSettingsViewController () : base (UITableViewStyle.Grouped)
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+        }
+
+        #endregion
+
+        #region View Lifecycle
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.RegisterClassForCellReuse (typeof (AccountCell), AccountCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ActionCell), ActionCellIdentifier);
         }
 
         public override void ViewDidLoad ()
@@ -38,19 +67,17 @@ namespace NachoClient.iOS
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
+
+            SwitchToAccount (NcApplication.Instance.Account);
+            ReloadAccounts ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
-                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            if (!IsMovingFromParentViewController){
+                ReloadAccounts ();
             }
-            accountsTableViewSource.Refresh ();
-            var contentOffset = accountsTableView.ContentOffset;
-            accountsTableView.ReloadData ();
-            accountsTableView.SetContentOffset (contentOffset, false);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -70,110 +97,196 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        protected override void CreateViewHierarchy ()
+        #endregion
+
+        #region Table Delegate & Data Source
+
+        void ReloadAccounts ()
         {
-            // garf
-            scrollView.RemoveFromSuperview ();
-
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            Util.ConfigureNavBar (false, this.NavigationController);
-
-            accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false, showUnified: false, showSalesforce: true);
-
-            accountsTableView = new UITableView (View.Frame);
-            accountsTableView.Source = accountsTableViewSource;
-            accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
-
-            var footerView = new UIView (new CGRect (0, 0, accountsTableView.Frame.Width, 160));
-            var addAccountView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 60), AddAccountSelected);
-            footerView.AddSubview (addAccountView);
-
-            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, accountsTableView.Frame.Width, 80), ConnectToSalesforceSelected);
-            footerView.AddSubview (connectToSalesforceView);
-
-            accountsTableView.TableFooterView = footerView;
-
-            View.AddSubview (accountsTableView);           
-        }
-
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            switchAccountButton.SetAccountImage (account);
-        }
-
-        protected override void ConfigureAndLayout ()
-        {
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            accountsTableView.Frame = new CGRect (0, 0, accountsTableView.Frame.Width, View.Frame.Height);
-
-            RefreshUnreadBlock ();
-
-            connectToSalesforceView.Hidden = (null != McAccount.GetSalesForceAccount ());
-        }
-
-        public override void ViewDidLayoutSubviews ()
-        {
-            base.ViewDidLayoutSubviews ();
-            ConfigureAndLayout ();
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
-                ConfigureAndLayout ();
-            }
-            if (NcResult.SubKindEnum.Info_AccountSetChanged == s.Status.SubKind) {
-                ConfigureAndLayout ();
-            }
-        }
-
-        protected override void Cleanup ()
-        {
-        }
-
-        // INachoAccountsTableDelegate
-        public void AccountSelected (McAccount account)
-        {
-            View.EndEditing (true);
-            if (McAccount.AccountTypeEnum.SalesForce == account.AccountType) {
-                PerformSegue ("SegueToSalesforceSettings", new SegueHolder (account));
+            Accounts = McAccount.GetAllConfiguredNormalAccounts ();
+            var salesforceAccount = McAccount.GetSalesForceAccount ();
+            if (salesforceAccount != null) {
+                HasSalesforce = true;
+                Accounts.Add (salesforceAccount);
             } else {
-                PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+                HasSalesforce = false;
+            }
+            TableView.ReloadData ();
+        }
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return 2;
+        }
+
+        public override nint RowsInSection (UITableView tableView, nint section)
+        {
+            if (section == SectionGeneralSettings) {
+                return 1;
+            }
+            if (section == SectionAccounts) {
+                return Accounts.Count + (HasSalesforce ? 1 : 2);
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.RowsInSection unknown table section {0}", section));
+        }
+
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == SectionGeneralSettings) {
+                return NameValueCell.PreferredHeight;
+            }
+            if (indexPath.Section == SectionAccounts) {
+                if (indexPath.Row < Accounts.Count) {
+                    return AccountCell.PreferredHeight;
+                }
+                return ActionCell.PreferredHeight;
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetHeightForRow unknown table section {0}", indexPath.Section));
+        }
+
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        {
+            if (section == SectionAccounts) {
+                return AccountsHeader.Label.Font.RoundedLineHeight (1.0f) + AccountsHeader.LabelInsets.Top + AccountsHeader.LabelInsets.Bottom;
+            }
+            return 0.0f;
+        }
+
+        private InsetLabelView _AccountsHeader;
+        private InsetLabelView AccountsHeader {
+            get {
+                if (_AccountsHeader == null) {
+                    _AccountsHeader = new InsetLabelView ();
+                    _AccountsHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
+                    _AccountsHeader.Label.Text = "Accounts";
+                    _AccountsHeader.Label.Font = A.Font_AvenirNextRegular14;
+                    _AccountsHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
+                    _AccountsHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+                }
+                return _AccountsHeader;
+            }
+        }
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
+        {
+            if (section == SectionAccounts) {
+                return AccountsHeader;
+            }
+            return null;
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == SectionGeneralSettings) {
+                if (indexPath.Row == GeneralSettingsRowUnreadCount) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as NameValueCell;
+                    cell.TextLabel.Text = "Unread Count";
+                    cell.ValueLabel.Text = ValueForUnreadCount ();
+                    if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+            } else if (indexPath.Section == SectionAccounts) {
+                if (indexPath.Row < Accounts.Count) {
+                    var cell = tableView.DequeueReusableCell (AccountCellIdentifier) as AccountCell;
+                    var account = Accounts [indexPath.Row];
+                    cell.TextLabel.Text = account.DisplayName;
+                    cell.DetailTextLabel.Text = account.EmailAddr;
+                    cell.IndicateError = LoginHelpers.ShouldAlertUser (account.Id);
+                    using (var image = Util.ImageForAccount (account)) {
+                        cell.AccountImageView.Image = image;
+                    }
+                    if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                } else {
+                    var actionRow = indexPath.Row - Accounts.Count;
+                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+//                    cell.SeparatorInset = new UIEdgeInsets (0.0f, AccountCell.PreferredHeight, 0.0f, 0.0f);
+                    if (actionRow == AccountsExtraRowAddAccount) {
+                        cell.TextLabel.Text = "Add Account";
+                        if ((cell.AccessoryView as AddAccessoryView) == null) {
+                            cell.AccessoryView = new AddAccessoryView ();
+                        }
+                        return cell;
+                    } else if (actionRow == AccountsExtraRowConnectToSalesforce) {
+                        cell.TextLabel.Text = "Connect to Salesforce";
+                        if ((cell.AccessoryView as AddAccessoryView) == null) {
+                            cell.AccessoryView = new AddAccessoryView ();
+                        }
+                        return cell;
+                    }
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetCell unknown table row {0}.{1}", indexPath.Section, indexPath.Row));
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == SectionGeneralSettings) {
+                if (indexPath.Row == GeneralSettingsRowUnreadCount) {
+                    var vc = new SettingsUnreadCountViewController ();
+                    NavigationController.PushViewController (vc, true);
+                }
+            } else if (indexPath.Section == SectionAccounts) {
+                if (indexPath.Row < Accounts.Count) {
+                    var account = Accounts [indexPath.Row];
+                    if (account.AccountType == McAccount.AccountTypeEnum.SalesForce) {
+                        ShowSalesforceAccount (account);
+                    } else {
+                        ShowAccount (account);
+                    }
+                } else {
+                    var actionRow = indexPath.Row - Accounts.Count;
+                    if (actionRow == AccountsExtraRowAddAccount) {
+                        AddAccount ();
+                    } else if (actionRow == AccountsExtraRowConnectToSalesforce) {
+                        ConnectToSalesforce ();
+                    }
+                }
             }
         }
 
-        // INachoAccountsTableDelegate
-        public void AddAccountSelected ()
+        #endregion
+
+        #region Private Helpers
+
+        private void ShowAccount (McAccount account)
         {
-            View.EndEditing (true);
-            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
-            var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
-            vc.AccountDelegate = this;
-            vc.HidesBottomBarWhenPushed = true;
+            var vc = new AccountSettingsViewController ();
+            vc.SetAccount (account);
             NavigationController.PushViewController (vc, true);
         }
 
-        // INachoAccountsTableDelegate
-        public void SettingsSelected (McAccount account)
+        private void ShowSalesforceAccount (McAccount account)
         {
-            NcAssert.CaseError ();
+            var vc = new SalesforceSettingsViewController ();
+            vc.SetAccount (account);
+            NavigationController.PushViewController (vc, true);
         }
 
-        public void ConnectToSalesforceSelected ()
+        private void AddAccount ()
         {
-            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            View.EndEditing (true);
+            var accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                vc.NavigationItem.LeftBarButtonItem = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (object sender, EventArgs e) => {
+                    DismissViewController(true, () => {
+                        AddAccountNavigationController = null;
+                    });
+                });
+            }
+            vc.AccountDelegate = this;
+            AddAccountNavigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, AddAccountNavigationController);
+            PresentViewController (AddAccountNavigationController, true, null);
+        }
+
+        private void ConnectToSalesforce ()
+        {
+            var accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
             var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
             credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
             credentialsViewController.AccountDelegate = this;
@@ -190,35 +303,16 @@ namespace NachoClient.iOS
             PresentViewController (navigationController, true, null);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToAccountSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (AccountSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToSalesforceSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (SalesforceSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToAdvancedLoginView")) {
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
+        #endregion
+
+        #region Account Creation Delegate
 
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
         {
             var credentialsViewController = vc.SuggestedCredentialsViewController (service);
             credentialsViewController.Service = service;
             credentialsViewController.AccountDelegate = this;
-            NavigationController.PushViewController (credentialsViewController, true);
+            AddAccountNavigationController.PushViewController (credentialsViewController, true);
         }
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
@@ -226,82 +320,206 @@ namespace NachoClient.iOS
             if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
                 BackEnd.Instance.Start (account.Id);
                 DismissViewController (true, () => {
-                    var holder = new SegueHolder(account);
-                    PerformSegue("SegueToSalesforceSettings", holder);
+                    ShowSalesforceAccount (account);
                 });
             }else{
-                var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+                var syncingViewController = (AccountSyncingViewController)vc.Storyboard.InstantiateViewController ("AccountSyncingViewController");
                 syncingViewController.AccountDelegate = this;
                 syncingViewController.Account = account;
                 BackEnd.Instance.Start (syncingViewController.Account.Id);
-                NavigationController.PushViewController (syncingViewController, true);
+                AddAccountNavigationController.PushViewController (syncingViewController, true);
             }
         }
 
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
         {
-            accountsTableViewSource.Refresh ();
-            accountsTableView.ReloadData ();
-            NavigationController.PopToViewController (this, true);
-
+            ReloadAccounts ();
+            DismissViewController (true, () => {
+                AddAccountNavigationController = null;
+            });
         }
 
-        UIView GetViewForHeader (UITableView tableView)
+        #endregion
+
+        #region Account Switching
+
+        void SwitchAccountButtonPressed ()
         {
-            var headerView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 0));
-            headerView.BackgroundColor = UIColor.White;
-
-            nfloat yOffset = 5;
-            UnreadCountBlock = new UcNameValuePair (new CGRect (0, yOffset, headerView.Frame.Width, HEIGHT), "Display Unread Counts", INDENT, 15, UnreadCountBlockTapHandler);
-            headerView.AddSubview (UnreadCountBlock);
-            yOffset = UnreadCountBlock.Frame.Bottom;
-
-            yOffset += 5;
-
-            ViewFramer.Create (headerView).Height (yOffset);
-            return headerView;
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
-        protected void UnreadCountBlockTapHandler (NSObject sender)
+        void SwitchToAccount (McAccount account)
         {
-            NcActionSheet.Show (UnreadCountBlock, this,
-                new NcAlertAction ("All Messages", () => {
-                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.AllMessages);
-                    RefreshUnreadBlock ();
-                }),
-                new NcAlertAction ("Recent Messages", () => {
-                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.RecentMessages);
-                    RefreshUnreadBlock ();
-                }),
-                new NcAlertAction ("Today's Messages", () => {
-                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.TodaysMessages);
-                    RefreshUnreadBlock ();
-                }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
-            );
+            switchAccountButton.SetAccountImage (account);
         }
 
-        protected void RefreshUnreadBlock ()
-        {
-            string label;
+        #endregion
 
+        #region System Events
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Info_AccountSetChanged == s.Status.SubKind) {
+                ReloadAccounts ();
+            }
+        }
+
+        #endregion
+
+        #region Cells
+
+        private class DisclosureAccessoryView : ImageAccessoryView
+        {
+            public DisclosureAccessoryView () : base ("gen-more-arrow")
+            {
+            }
+        }
+
+        private class AddAccessoryView : ImageAccessoryView
+        {
+            public AddAccessoryView () : base ("email-add")
+            {
+            }
+        }
+
+        private class AccountCell : SwipeTableViewCell
+        {
+
+            public readonly UIImageView AccountImageView;
+            public static nfloat PreferredHeight = 72.0f;
+            private ErrorIndicatorView ErrorIndicator;
+            private bool _IndicateError;
+            nfloat ImageSize = 40.0f;
+            nfloat ErrorIndicatorSize = 24.0f;
+
+            public AccountCell (IntPtr handle) : base (handle)
+            {
+                AccountImageView = new UIImageView (new CGRect(0.0f, 0.0f, ImageSize, ImageSize));
+                AccountImageView.ClipsToBounds = true;
+                AccountImageView.Layer.CornerRadius = ImageSize / 2.0f;
+                ContentView.AddSubview(AccountImageView);
+
+                TextLabel.Font = A.Font_AvenirNextDemiBold14;
+                TextLabel.TextColor = A.Color_NachoBlack;
+
+                DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+                DetailTextLabel.TextColor = A.Color_NachoTextGray;
+
+                SeparatorInset = new UIEdgeInsets(0.0f, PreferredHeight, 0.0f, 0.0f);
+            }
+
+            public bool IndicateError {
+                get{
+                    return _IndicateError;
+                }
+                set{
+                    _IndicateError = value;
+                    if (_IndicateError && ErrorIndicator == null) {
+                        ErrorIndicator = new ErrorIndicatorView (ErrorIndicatorSize);
+                        ContentView.AddSubview (ErrorIndicator);
+                    }
+                    if (ErrorIndicator != null) {
+                        ErrorIndicator.Hidden = !_IndicateError;
+                        SetNeedsLayout ();
+                    }
+                }
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                var imagePadding = (ContentView.Bounds.Height - AccountImageView.Bounds.Height) / 2.0f;
+                AccountImageView.Frame = new CGRect (imagePadding, imagePadding, AccountImageView.Frame.Width, AccountImageView.Frame.Height);
+                if (ErrorIndicator != null && !ErrorIndicator.Hidden) {
+                    ErrorIndicator.Center = new CGPoint (ContentView.Bounds.Width - ErrorIndicator.Frame.Width / 2.0f, ContentView.Bounds.Height / 2.0f);
+                    var frame = TextLabel.Frame;
+                    frame.Width -= ErrorIndicator.Frame.Width;
+                    TextLabel.Frame = frame;
+                    frame = DetailTextLabel.Frame;
+                    frame.Width -= ErrorIndicator.Frame.Width;
+                    DetailTextLabel.Frame = frame;
+                }
+            }
+        }
+
+        private class NameValueCell : SwipeTableViewCell
+        {
+
+            public static nfloat PreferredHeight = 44.0f;
+            public readonly UILabel ValueLabel;
+            public nfloat RightPadding = 10.0f;
+
+            public NameValueCell (IntPtr handle) : base (handle)
+            {
+                TextLabel.Font = A.Font_AvenirNextRegular14;
+                TextLabel.TextColor = A.Color_NachoDarkText;
+
+                ValueLabel = new UILabel ();
+                ValueLabel.Font = A.Font_AvenirNextMedium14;
+                ValueLabel.TextColor = A.Color_NachoGreen;
+                ValueLabel.Lines = 1;
+                ValueLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+                ContentView.AddSubview(ValueLabel);
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                var availableWidth = ContentView.Bounds.Width - SeparatorInset.Left - SeparatorInset.Right - RightPadding;
+                var nameWidth = TextLabel.SizeThatFits (new CGSize (availableWidth, 0.0f)).Width;
+                var valueWidth = ValueLabel.SizeThatFits (new CGSize (availableWidth, 0.0f)).Width;
+                CGRect frame;
+                if (nameWidth + valueWidth > availableWidth) {
+                    if (nameWidth < availableWidth) {
+                        valueWidth = availableWidth - nameWidth;
+                    } else if (valueWidth < availableWidth) {
+                        nameWidth = availableWidth - valueWidth;
+                    } else {
+                        nameWidth = valueWidth = availableWidth / 2.0f;
+                    }
+                }
+                frame = TextLabel.Frame;
+                frame.Width = nameWidth;
+                TextLabel.Frame = frame;
+
+                frame = ValueLabel.Frame;
+                frame.Width = valueWidth;
+                frame.Height = ValueLabel.Font.LineHeight;
+                frame.X = ContentView.Bounds.Width - frame.Width - RightPadding;
+                frame.Y = (ContentView.Bounds.Height - frame.Height) / 2.0f;
+                ValueLabel.Frame = frame;
+            }
+        }
+
+        private class ActionCell : SwipeTableViewCell
+        {
+
+            public static nfloat PreferredHeight = 44.0f;
+
+            public ActionCell (IntPtr handle) : base (handle)
+            {
+                TextLabel.Font = A.Font_AvenirNextRegular14;
+                TextLabel.TextColor = A.Color_NachoGreen;
+            }
+        }
+
+        #endregion
+
+        protected string ValueForUnreadCount ()
+        {
             switch (EmailHelper.HowToDisplayUnreadCount ()) {
             case EmailHelper.ShowUnreadEnum.AllMessages:
-                label = "All Messages";
-                break;
+                return "All Messages";
             case EmailHelper.ShowUnreadEnum.RecentMessages:
-                label = "Recent Messages";
-                break;
+                return "Recent Messages";
             case EmailHelper.ShowUnreadEnum.TodaysMessages:
-                label = "Today's Messages";
-                break;
+                return "Today's Messages";
             default:
-                label = null;
                 NcAssert.CaseError ();
-                break;
+                return "";
             }
-            UnreadCountBlock.SetValue (label);
-            (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadgeCount ();
         }
 
     }

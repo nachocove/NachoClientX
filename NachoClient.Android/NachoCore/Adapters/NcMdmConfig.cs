@@ -20,12 +20,17 @@ namespace NachoCore
         // Begin MDM Values. All types must be nullable (null => not set).
         public string Host { get; set; }
         public uint? Port { get; set; }
-        public string Username;
-        public string Domain;
-        public string EmailAddr;
-        public string BrandingName;
-        public string BrandingLogoUrl;
+        public string Username { get; set; }
+        public string Domain { get; set; }
+        public string EmailAddr { get; set; }
+        public string BrandingName { get; set; }
+        public string BrandingLogoUrl { get; set; }
         // End MDM Values
+
+        public override string ToString ()
+        {
+            return string.Format ("[NcMdmConfig: IsPopulated={0}, IsValid={1}, Host={2}, Port={3}, Username={4}, Domain={5}, EmailAddr={6}, BrandingName={7}, BrandingLogoUrl={8}]", IsPopulated, IsValid, Host, Port, Username, Domain, EmailAddr, BrandingName, BrandingLogoUrl);
+        }
 
         public static NcMdmConfig Instance {
             get {
@@ -89,6 +94,15 @@ namespace NachoCore
                 if (result != EmailHelper.ParseServerWhyEnum.Success_0) {
                     IsValid = false;
                     Log.Info (Log.LOG_UTILS, "NcMdmConfig invalid config: server does not validate: {0} {1}", result, Host);
+                }
+            }
+            if (!string.IsNullOrEmpty (BrandingLogoUrl)) {
+                try {
+                    // Analysis disable once ObjectCreationAsStatement
+                    new Uri (BrandingLogoUrl);
+                } catch (UriFormatException ex) {
+                    IsValid = false;
+                    Log.Info (Log.LOG_UTILS, "NcMdmConfig invalid config: BrandingLogoUrl: {0} {1}", BrandingLogoUrl, ex.Message);
                 }
             }
         }

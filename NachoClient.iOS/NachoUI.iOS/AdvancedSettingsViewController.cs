@@ -27,6 +27,10 @@ namespace NachoClient.iOS
 
         public delegate void onValidateCallback (McCred creds, List<McServer> servers);
 
+        public AdvancedSettingsViewController () : base ()
+        {
+        }
+
         public AdvancedSettingsViewController (IntPtr handle) : base (handle)
         {
         }

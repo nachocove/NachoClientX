@@ -222,7 +222,6 @@
     <Folder Include="NachoPlatform\" />
     <Folder Include="NachoUI.iOS\Support\" />
     <Folder Include="NachoUI.iOS\Interfaces\" />
-    <Folder Include="NachoUI.iOS\Tables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="Content\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
@@ -265,9 +264,6 @@
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
-    <Compile Include="NachoUI.iOS\CalendarViewController.designer.cs">
-      <DependentUpon>CalendarViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\HomeViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
       <DependentUpon>HomeViewController.cs</DependentUpon>
@@ -304,17 +300,8 @@
       <Link>NachoCore\NcEnforcer.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\LabelSelectionViewController.cs" />
-    <Compile Include="NachoUI.iOS\LabelSelectionViewController.designer.cs">
-      <DependentUpon>LabelSelectionViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactChooserViewController.designer.cs">
-      <DependentUpon>ContactChooserViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactSearchViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactSearchViewController.designer.cs">
-      <DependentUpon>ContactSearchViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
       <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
     </Compile>
@@ -328,23 +315,14 @@
       <Link>NachoCore\Utils\Log.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\MessageListViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageListViewController.designer.cs">
-      <DependentUpon>MessageListViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\MimeHelpers.cs">
       <Link>NachoCore\Utils\MimeHelpers.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessagePriorityViewController.designer.cs">
-      <DependentUpon>MessagePriorityViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPending.cs">
       <Link>NachoCore\Model\McPending.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\NachoNowViewController.cs" />
-    <Compile Include="NachoUI.iOS\NachoNowViewController.designer.cs">
-      <DependentUpon>NachoNowViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\StartupViewController.cs" />
     <Compile Include="NachoUI.iOS\StartupViewController.designer.cs">
       <DependentUpon>StartupViewController.cs</DependentUpon>
@@ -356,9 +334,6 @@
       <Link>NachoCore\Brain\NcMessageDeferral.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\DatePickerViewController.cs" />
-    <Compile Include="NachoUI.iOS\DatePickerViewController.designer.cs">
-      <DependentUpon>DatePickerViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\DateTime+ToString.cs">
       <Link>NachoCore\Extensions\DateTime+ToString.cs</Link>
     </Compile>
@@ -501,12 +476,9 @@
     <Compile Include="..\NachoClient.Android\NachoPlatform\IPlatform.cs">
       <Link>NachoPlatform\IPlatform.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\BlurryViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\LabeledIconButton.cs" />
     <Compile Include="NachoUI.iOS\Support\Locale.cs" />
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
-    <Compile Include="NachoUI.iOS\Support\CidImageProtocol.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
@@ -538,13 +510,6 @@
       <Link>NachoCore\Adapters\NcContactManager.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
-      <DependentUpon>MessageViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\CalendarSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\CalendarSettingsViewController.designer.cs">
-      <DependentUpon>CalendarSettingsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderFolderEntry.cs">
       <Link>NachoCore\Model\McMapFolderFolderEntry.cs</Link>
     </Compile>
@@ -641,11 +606,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\TaskListViewController.cs" />
-    <Compile Include="NachoUI.iOS\TaskListViewController.designer.cs">
-      <DependentUpon>TaskListViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Tables\TaskTableSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoTasks.cs">
       <Link>NachoCore\Adapters\INachoTasks.cs</Link>
     </Compile>
@@ -806,14 +766,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTimeVariance.cs">
       <Link>NachoCore\Brain\NcTimeVariance.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\ActionTableView.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\MessageComposeViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageComposeViewController.designer.cs">
-      <DependentUpon>MessageComposeViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\UcAttachmentBlock.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAttachmentBlock.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcScoreCombiner.cs">
@@ -915,39 +871,17 @@
     </Compile>
     <Compile Include="NachoPlatform.iOS\PlatformUserColorIndex.cs" />
     <Compile Include="NachoUI.iOS\EventViewController.cs" />
-    <Compile Include="NachoUI.iOS\EventViewController.designer.cs">
-      <DependentUpon>EventViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\PhoneViewController.cs" />
-    <Compile Include="NachoUI.iOS\PhoneViewController.designer.cs">
-      <DependentUpon>PhoneViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ChooseCalendarViewController.cs" />
-    <Compile Include="NachoUI.iOS\ChooseCalendarViewController.designer.cs">
-      <DependentUpon>ChooseCalendarViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AlertChooserViewController.cs" />
-    <Compile Include="NachoUI.iOS\AlertChooserViewController.designer.cs">
-      <DependentUpon>AlertChooserViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactEmailAddressAttribute.cs">
       <Link>NachoCore\Model\McContactEmailAddressAttribute.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\ContactsiOS.cs" />
     <Compile Include="NachoUI.iOS\SupportViewController.cs" />
-    <Compile Include="NachoUI.iOS\SupportViewController.designer.cs">
-      <DependentUpon>SupportViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\NotesViewController.cs" />
-    <Compile Include="NachoUI.iOS\NotesViewController.designer.cs">
-      <DependentUpon>NotesViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\ContactDetailViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactDetailViewController.designer.cs">
-      <DependentUpon>ContactDetailViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceContacts.cs">
       <Link>NachoCore\Adapters\NcDeviceContacts.cs</Link>
     </Compile>
@@ -956,9 +890,6 @@
     </Compile>
     <Compile Include="NachoPlatform.iOS\CalendarsiOS.cs" />
     <Compile Include="NachoUI.iOS\EditEventViewController.cs" />
-    <Compile Include="NachoUI.iOS\EditEventViewController.designer.cs">
-      <DependentUpon>EditEventViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McNote.cs">
       <Link>NachoCore\Model\McNote.cs</Link>
     </Compile>
@@ -967,9 +898,6 @@
       <Link>NachoCore\Utils\RegexUtilities.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\EventAttendeeViewController.cs" />
-    <Compile Include="NachoUI.iOS\EventAttendeeViewController.designer.cs">
-      <DependentUpon>EventAttendeeViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\IFilesViewItem.cs">
       <Link>NachoCore\Model\IFilesViewItem.cs</Link>
     </Compile>
@@ -977,9 +905,6 @@
       <Link>NachoCore\Model\McDocument.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\ContactEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactEditViewController.designer.cs">
-      <DependentUpon>ContactEditViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAttendeeListChooser.cs" />
@@ -988,28 +913,14 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\CertificateView.cs" />
     <Compile Include="NachoUI.iOS\SupportMessageViewController.cs" />
-    <Compile Include="NachoUI.iOS\SupportMessageViewController.designer.cs">
-      <DependentUpon>SupportMessageViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\iAttachmentTableViewSourceDelegate.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoAttachmentListChooser.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMeetingRequest.cs">
       <Link>NachoCore\Model\McMeetingRequest.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\GeneralSettingsViewController.designer.cs">
-      <DependentUpon>GeneralSettingsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
-    <Compile Include="NachoUI.iOS\SettingsLegalViewController.designer.cs">
-      <DependentUpon>SettingsLegalViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainControl.cs">
       <Link>NachoCore\Brain\NcBrainControl.cs</Link>
-    </Compile>
-    <Compile Include="NachoUI.iOS\CredentialsAskViewController.cs" />
-    <Compile Include="NachoUI.iOS\CredentialsAskViewController.designer.cs">
-      <DependentUpon>CredentialsAskViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
@@ -1037,42 +948,21 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
     <Compile Include="NachoUI.iOS\NachoTabBarController.cs" />
-    <Compile Include="NachoUI.iOS\NachoTabBarController.designer.cs">
-      <DependentUpon>NachoTabBarController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\HotListViewController.cs" />
-    <Compile Include="NachoUI.iOS\HotListViewController.designer.cs">
-      <DependentUpon>HotListViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\DeferredViewController.cs" />
-    <Compile Include="NachoUI.iOS\DeferredViewController.designer.cs">
-      <DependentUpon>DeferredViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\InboxViewController.cs" />
-    <Compile Include="NachoUI.iOS\InboxViewController.designer.cs">
-      <DependentUpon>InboxViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
       <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\FoldersViewController.cs" />
-    <Compile Include="NachoUI.iOS\FoldersViewController.designer.cs">
-      <DependentUpon>FoldersViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\BodyView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyWebView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
-    <Compile Include="NachoUI.iOS\IntentSelectionViewController.designer.cs">
-      <DependentUpon>IntentSelectionViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoIntentChooser.cs" />
     <Compile Include="NachoUI.iOS\ContactListViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactListViewController.designer.cs">
-      <DependentUpon>ContactListViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\MessageToolbar.cs" />
     <Compile Include="NachoUI.iOS\Support\UIBlockMenu.cs" />
     <Compile Include="NachoUI.iOS\Support\ExpandButton.cs" />
@@ -1082,24 +972,11 @@
     <Compile Include="NachoUI.iOS\Support\SwipeActionView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageHeaderView.cs" />
     <Compile Include="NachoUI.iOS\QuickResponseViewController.cs" />
-    <Compile Include="NachoUI.iOS\QuickResponseViewController.designer.cs">
-      <DependentUpon>QuickResponseViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
     <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountSettingsViewController.designer.cs">
-      <DependentUpon>AccountSettingsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\SignatureEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\SignatureEditViewController.designer.cs">
-      <DependentUpon>SignatureEditViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AboutUsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AboutUsViewController.designer.cs">
-      <DependentUpon>AboutUsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
       <Link>NachoCore\Utils\CertificateHelper.cs</Link>
     </Compile>
@@ -1107,9 +984,6 @@
       <Link>NachoCore\Utils\ContactsHelpers.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
-      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAbate.cs">
       <Link>NachoCore\Utils\NcAbate.cs</Link>
     </Compile>
@@ -1117,9 +991,6 @@
       <Link>NachoCore\Utils\TelemetryAWS.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
-      <DependentUpon>ContactDefaultSelectionViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Index\Index.cs">
       <Link>NachoCore\Index\Index.cs</Link>
     </Compile>
@@ -1130,10 +1001,6 @@
     <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
-    <Compile Include="NachoUI.iOS\SelectProviderViewController.cs" />
-    <Compile Include="NachoUI.iOS\SelectProviderViewController.designer.cs">
-      <DependentUpon>SelectProviderViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailHelper.cs">
@@ -1143,9 +1010,6 @@
       <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\DeadlinesViewController.cs" />
-    <Compile Include="NachoUI.iOS\DeadlinesViewController.designer.cs">
-      <DependentUpon>DeadlinesViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
@@ -1204,9 +1068,6 @@
       <Link>NachoCore\Brain\NcBrainActions.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\MessageThreadViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageThreadViewController.designer.cs">
-      <DependentUpon>MessageThreadViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoThreadedEmailMessages.cs">
       <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
     </Compile>
@@ -1215,9 +1076,6 @@
       <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\NotesViewerViewController.cs" />
-    <Compile Include="NachoUI.iOS\NotesViewerViewController.designer.cs">
-      <DependentUpon>NotesViewerViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration6.cs">
       <Link>NachoCore\Model\Migration\NcMigration6.cs</Link>
     </Compile>
@@ -1278,9 +1136,6 @@
       <Link>NachoCore\Adapters\NachoDraftMessages.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
-    <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
-      <DependentUpon>DraftsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
       <Link>NachoCore\Model\McLicenseInformation.cs</Link>
     </Compile>
@@ -1288,9 +1143,6 @@
       <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\NotificationChooserViewController.cs" />
-    <Compile Include="NachoUI.iOS\NotificationChooserViewController.designer.cs">
-      <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McBrainEvent.cs">
       <Link>NachoCore\Model\McBrainEvent.cs</Link>
@@ -1320,7 +1172,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration21.cs">
       <Link>NachoCore\Model\Migration\NcMigration21.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\AttachmentHelper.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration22.cs">
       <Link>NachoCore\Model\Migration\NcMigration22.cs</Link>
     </Compile>
@@ -1328,9 +1179,6 @@
       <Link>NachoCore\Model\Migration\NcMigration23.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\FileListViewController.cs" />
-    <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
-      <DependentUpon>FileListViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountsTableViewSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcProtoControl.cs">
@@ -1377,9 +1225,6 @@
       <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
-    <Compile Include="NachoUI.iOS\SwitchAccountViewController.designer.cs">
-      <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\AccountTypeViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountTypeViewController.designer.cs">
@@ -1408,7 +1253,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration28.cs">
       <Link>NachoCore\Model\Migration\NcMigration28.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Interfaces\INachoCredentials.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
     <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommand.cs">
@@ -1516,16 +1360,10 @@
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.designer.cs">
-      <DependentUpon>AdvancedSettingsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration34.cs">
       <Link>NachoCore\Model\Migration\NcMigration34.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\AccountValidationViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountValidationViewController.designer.cs">
-      <DependentUpon>AccountValidationViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\CertAskViewController.cs" />
     <Compile Include="NachoUI.iOS\CertAskViewController.designer.cs">
       <DependentUpon>CertAskViewController.cs</DependentUpon>
@@ -1663,9 +1501,6 @@
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\LikelyToReadViewController.cs" />
-    <Compile Include="NachoUI.iOS\LikelyToReadViewController.designer.cs">
-      <DependentUpon>LikelyToReadViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
@@ -1743,14 +1578,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs">
       <Link>NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
-      <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountPickerViewController.designer.cs">
-      <DependentUpon>AccountPickerViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
       <Link>NachoCore\Utils\ContactsSearch.cs</Link>
     </Compile>
@@ -1812,9 +1640,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\ChatMessagesViewController.cs" />
     <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.designer.cs">
-      <DependentUpon>SalesforceSettingsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
     <Compile Include="NachoUI.iOS\ChatParticipantListViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
@@ -1837,10 +1662,23 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration56.cs">
       <Link>NachoCore\Model\Migration\NcMigration56.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
+      <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ViewControllers\NachoTableViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\UIColor+Utils.cs" />
+    <Compile Include="NachoUI.iOS\Support\PressGestureRecognizer.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwipeTableViewCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwipeActionsView.cs" />
+    <Compile Include="NachoUI.iOS\Support\UIFont+Utils.cs" />
+    <Compile Include="NachoUI.iOS\Support\ImageAccessoryView.cs" />
+    <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
+    <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
-    <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />

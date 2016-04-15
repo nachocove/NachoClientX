@@ -24,13 +24,11 @@ namespace NachoClient.iOS
             public UIDocumentMenuViewController MenuViewController { get; private set; }
             INachoFileChooserParent owner;
             McAccount account;
-            UIStoryboard storyboard;
 
-            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard, UIBarButtonItem parentButton, UIView parentView)
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIBarButtonItem parentButton, UIView parentView)
             {
                 this.owner = owner;
                 this.account = account;
-                this.storyboard = storyboard;
 
                 MenuViewController = new UIDocumentMenuViewController(new string[] {
                     UTType.Data,
@@ -51,13 +49,13 @@ namespace NachoClient.iOS
                 }
             }
 
-            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard, UIBarButtonItem parentButton)
-                : this (owner, account, storyboard, parentButton, null)
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIBarButtonItem parentButton)
+                : this (owner, account, parentButton, null)
             {
             }
 
-            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard, UIView parentView)
-                : this (owner, account, storyboard, null, parentView)
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIView parentView)
+                : this (owner, account, null, parentView)
             {
             }
 
@@ -73,7 +71,7 @@ namespace NachoClient.iOS
 
             void ShowBrowseAttachments ()
             {
-                var fileListViewController = storyboard.InstantiateViewController ("FileListViewController") as FileListViewController;
+                var fileListViewController = new FileListViewController ();
                 fileListViewController.SetOwner (owner, account);
                 fileListViewController.SetModal (true);
                 owner.PresentFileChooserViewController (fileListViewController);
@@ -267,18 +265,6 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("AddAttachmentToAttachments")) {
-                var dc = (FileListViewController)segue.DestinationViewController;
-                dc.SetOwner (owner, account);
-                dc.SetModal (true);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         protected const int DISMISS_TAG = 1000;
         protected const int BUTTON_TAG = 2000;
 
@@ -370,7 +356,7 @@ namespace NachoClient.iOS
 
         void SetupPhotoPicker (bool useCamera)
         {
-            var helper = new MenuHelper (owner, account, Storyboard, View);
+            var helper = new MenuHelper (owner, account, View);
             helper.ShowPhotoPicker (useCamera, this);
         }
 
@@ -395,7 +381,15 @@ namespace NachoClient.iOS
 
         public void SetupAttachmentChooser ()
         {
-            PerformSegue ("AddAttachmentToAttachments", this);
+            ShowFiles ();
+        }
+
+        void ShowFiles ()
+        {
+            var dc = new FileListViewController ();
+            dc.SetOwner (owner, account);
+            dc.SetModal (true);
+            PresentViewController (dc, true, null);
         }
 
         protected override void ConfigureAndLayout ()
@@ -422,11 +416,6 @@ namespace NachoClient.iOS
         protected void MaintainLightStyleStatusBar ()
         {
             UIApplication.SharedApplication.SetStatusBarStyle (UIStatusBarStyle.LightContent, false);
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
         }
 
         public void RemoveAttachment (McAttachment attachment)

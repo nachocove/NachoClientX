@@ -14,18 +14,8 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderSyncCommand : ImapCommand
     {
-        private List<Regex> RegexList;
-
         public ImapFolderSyncCommand (IBEContext beContext) : base (beContext)
         {
-            RedactProtocolLogFunc = RedactProtocolLog;
-            RegexList = new List<Regex> ();
-            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+)(?<space1>\s)(?<redact>.*)$", NcMailKitProtocolLogger.rxOptions));
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
         }
 
         private bool FindAndCreateFolder(ref IList<IMailFolder> folderList, ref List<string> foldernames, string debugTag,

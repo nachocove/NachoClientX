@@ -15,14 +15,7 @@ namespace NachoCore.IMAP
     {
         public ImapDiscoverCommand (IBEContext beContext) : base (beContext)
         {
-            RedactProtocolLogFunc = RedactProtocolLog;
             DontReportCommResult = !BEContext.ProtocolState.ImapDiscoveryDone;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // Redaction is done in the base class, since it's more complicated than just string replacement
-            return logData;
         }
 
         public override void Execute (NcStateMachine sm)

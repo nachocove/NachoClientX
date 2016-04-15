@@ -9,7 +9,7 @@ namespace NachoClient.iOS
 {
     public partial class LikelyToReadViewController : MessageListViewController
     {
-        public LikelyToReadViewController (IntPtr handle) : base (handle)
+        public LikelyToReadViewController () : base ()
         {
             SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
         }

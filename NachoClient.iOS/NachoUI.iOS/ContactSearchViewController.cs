@@ -35,6 +35,10 @@ namespace NachoClient.iOS
         UIBarButtonItem cancelButton;
         UIBarButtonItem searchButton;
 
+        public ContactSearchViewController () : base ()
+        {
+        }
+
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
         }
@@ -58,6 +62,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            NavigationItem.Title = "Contacts";
+
+            var searchController = new UISearchDisplayController (new UISearchBar (), this);
+
+            TableView.TableHeaderView = searchController.SearchBar;
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
             contactTableViewSource.SetOwner (this, account, false, SearchDisplayController);
@@ -146,17 +155,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowContact (McContact contact)
         {
-            if (segue.Identifier.Equals ("ContactsToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var destinationController = new ContactDetailViewController ();
+            destinationController.contact = contact;
+            NavigationController.PushViewController (destinationController, true);
         }
 
         /// IContactsTableViewSourceDelegate
