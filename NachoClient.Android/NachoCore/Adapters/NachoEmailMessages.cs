@@ -11,6 +11,7 @@ namespace NachoCore
 
     public class NachoEmailMessages
     {
+
         public virtual int Count ()
         {
             return 0;
@@ -96,6 +97,107 @@ namespace NachoCore
         {
             return false;
         }
+
+        #region Message Caching
+
+        int[] first = new int[3] { -1, -1, -1 };
+        List<McEmailMessage>[] cache = new List<McEmailMessage>[3];
+        const int CACHEBLOCKSIZE = 32;
+
+        public void ClearCache ()
+        {
+            for (var i = 0; i < first.Length; i++) {
+                first [i] = -1;
+            }
+        }
+
+        public McEmailMessage GetCachedMessage (int i)
+        {
+            var block = i / CACHEBLOCKSIZE;
+            var cacheIndex = block % 3;
+
+            if (block != first [cacheIndex]) {
+                MaybeReadBlock (block);
+            } else {
+                MaybeReadBlock (block - 1);
+                MaybeReadBlock (block + 1);
+            }
+
+            var index = i % CACHEBLOCKSIZE;
+            return cache [cacheIndex] [index];
+        }
+
+        void MaybeReadBlock (int block)
+        {
+            if (0 > block) {
+                return;
+            }
+            var cacheIndex = block % 3;
+            if (block == first [cacheIndex]) {
+                return;
+            }
+            var start = block * CACHEBLOCKSIZE;
+            var finish = (Count () < (start + CACHEBLOCKSIZE)) ? Count () : start + CACHEBLOCKSIZE;
+            var indexList = new List<int> ();
+            for (var i = start; i < finish; i++) {
+                var thread = GetEmailThread (i);
+                if (thread == null) {
+                    indexList.Add (0);
+                } else {
+                    indexList.Add (thread.FirstMessageSpecialCaseIndex ());
+                }
+            }
+            cache [cacheIndex] = new List<McEmailMessage> ();
+            var resultList = McEmailMessage.QueryForSet (indexList);
+            // Reorder the list, add in nulls for missing entries
+            foreach (var i in indexList) {
+                var result = resultList.Find (x => x.Id == i);
+                cache [cacheIndex].Add (result);
+            }
+            first [cacheIndex] = block;
+            // Get portraits
+            var fromAddressIdList = new List<int> ();
+            foreach (var message in cache[cacheIndex]) {
+                if (null != message) {
+                    if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
+                        fromAddressIdList.Add (message.FromEmailAddressId);
+                    }
+                }
+            }
+            // Assign matching portrait ids to email messages
+            var portraitIndexList = McContact.QueryForPortraits (fromAddressIdList);
+            foreach (var portraitIndex in portraitIndexList) {
+                foreach (var message in cache[cacheIndex]) {
+                    if (null != message) {
+                        if (portraitIndex.EmailAddress == message.FromEmailAddressId) {
+                            message.cachedPortraitId = portraitIndex.PortraitId;
+                        }
+                    }
+                }
+            }
+        }
+
+        public bool MaybeUpdateMessageInCache (int id)
+        {
+            foreach (var c in cache) {
+                if (null == c) {
+                    continue;
+                }
+                for (int i = 0; i < c.Count; i++) {
+                    var m = c [i];
+                    if (null != m) {
+                        if (m.Id == id) {
+                            c [i] = McEmailMessage.QueryById<McEmailMessage> (id);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        #endregion
+
     }
 
     public static class NachoSyncResult
