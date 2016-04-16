@@ -36,10 +36,14 @@ namespace NachoClient.iOS
         NachoEmailMessages Messages;
 
         UIBarButtonItem NewMessageButton;
-        NcCapture ArchiveCaptureMessage;
 
         int NumberOfPreviewLines = 3;
         bool HasLoadedOnce;
+        bool HasAppearedOnce;
+        bool IsListeningForStatusInd;
+        List<string> SyncTokens;
+        int SyncTimeoutSeconds = 30;
+        NcTimer SyncTimeoutTimer;
 
         #endregion
 
@@ -72,6 +76,7 @@ namespace NachoClient.iOS
             TableView.AllowsMultipleSelectionDuringEditing = true;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
+            TableView.AccessibilityLabel = "Message list";
             View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
 
@@ -82,13 +87,44 @@ namespace NachoClient.iOS
             Reload ();
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (SyncTokens != null) {
+                CheckForSyncComplete ();
+            }
+            if (HasAppearedOnce) {
+                Reload ();
+            }
+            StartListeningForStatusInd ();
+            HasAppearedOnce = true;
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            StopListeningForStatusInd ();
+            base.ViewDidDisappear (animated);
+        }
+
         #endregion
 
         #region User Actions
 
         protected override void HandleRefreshControlEvent (object sender, EventArgs e)
         {
-            Reload ();
+            var result = Messages.StartSync ();
+            if (result.isError ()) {
+                Reload ();
+            }else{
+                var tokens = result.Value as string;
+                if (tokens == null) {
+                    EndRefreshing ();
+                }else{
+                    RefreshIndicator.StartAnimating ();
+                    SyncTokens = new List<string> (tokens.Split (new char[] { ',' }));
+                    SyncTimeoutTimer = new NcTimer ("MessageListViewController_SyncTimeout", HandleSyncTimeout, null, SyncTimeoutSeconds * 1000, 0);
+                }
+            }
         }
 
         void NewMessage (object sender, EventArgs e)
@@ -101,6 +137,7 @@ namespace NachoClient.iOS
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsRead (message, true);
+                message.IsRead = true;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
                     cell.SetMessage (message);
@@ -113,6 +150,7 @@ namespace NachoClient.iOS
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsUnread (message, true);
+                message.IsRead = false;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
                     cell.SetMessage (message);
@@ -124,7 +162,7 @@ namespace NachoClient.iOS
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
-                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
                     cell.SetMessage (message);
@@ -136,7 +174,7 @@ namespace NachoClient.iOS
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
-                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
                     cell.SetMessage (message);
@@ -168,9 +206,7 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 NcAssert.NotNull (thread);
-                ArchiveCaptureMessage.Start ();
                 NcEmailArchiver.Archive (thread);
-                ArchiveCaptureMessage.Stop ();
                 // TODO: remove from Messages & update table immediately?  Or wait for status ind?
             }
         }
@@ -183,6 +219,7 @@ namespace NachoClient.iOS
                 var alertView = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
                 alertView.AddAction(UIAlertAction.Create("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove(thread, message); }));
                 alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
                 PresentViewController (alertView, true, null);
             }
         }
@@ -241,13 +278,25 @@ namespace NachoClient.iOS
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
         {
-            if (IsShowingRefreshIndicator) {
+            if (IsShowingRefreshIndicator && SyncTokens == null) {
                 EndRefreshing ();
             }
             if (!HasLoadedOnce) {
+                HasLoadedOnce = true;
                 TableView.ReloadData ();
             } else {
                 Util.UpdateTable (TableView, adds, deletes);
+            }
+        }
+
+        void UpdateVisibleRows ()
+        {
+            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null && message != null) {
+                    cell.SetMessage (message);
+                }
             }
         }
 
@@ -325,15 +374,17 @@ namespace NachoClient.iOS
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
                 var actions = new List<SwipeTableRowAction> ();
-                if (message.IsRead) {
-                    actions.Add (new SwipeTableRowAction ("Mark Unread", UIImage.FromBundle ("gen-unread-msgs"), A.Color_NachoYellow, MarkMessageAsUnread));
-                } else {
-                    actions.Add (new SwipeTableRowAction ("Mark Read", UIImage.FromBundle ("gen-unread-msgs"), A.Color_NachoYellow, MarkMessageAsRead));
-                }
-                if (message.isHot ()) {
-                    actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), A.Color_NachoSwipeActionOrange, MarkMessageAsUnhot));
-                } else {
-                    actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), A.Color_NachoSwipeActionOrange, MarkMessageAsHot));
+                if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
+                    if (message.IsRead) {
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), A.Color_NachoYellow, MarkMessageAsUnread));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), A.Color_NachoYellow, MarkMessageAsRead));
+                    }
+                    if (message.isHot ()) {
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), A.Color_NachoSwipeActionOrange, MarkMessageAsUnhot));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), A.Color_NachoSwipeActionOrange, MarkMessageAsHot));
+                    }
                 }
                 return actions;
             }
@@ -344,14 +395,103 @@ namespace NachoClient.iOS
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
-                var actions = new List<SwipeTableRowAction> (new SwipeTableRowAction[] {
-                    new SwipeTableRowAction ("Delete", UIImage.FromBundle("email-delete-swipe"), A.Color_NachoSwipeEmailDelete, DeleteMessage),
-                    new SwipeTableRowAction ("Archive", UIImage.FromBundle("email-archive-swipe"), A.Color_NachoSwipeEmailArchive, ArchiveMessage),
-                    new SwipeTableRowAction ("More", UIImage.FromBundle("gen-more-active"), A.Color_NachoSwipeActionMatteBlack, ShowMoreActionsForMessage)
-                });
+                var actions = new List<SwipeTableRowAction> ();
+                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), A.Color_NachoSwipeEmailDelete, DeleteMessage));
+                if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
+                    actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), A.Color_NachoSwipeEmailArchive, ArchiveMessage));
+                    actions.Add (new SwipeTableRowAction ("More", UIImage.FromBundle ("gen-more-active"), A.Color_NachoSwipeActionMatteBlack, ShowMoreActionsForMessage));
+                }
                 return actions;
             }
             return null;
+        }
+
+        #endregion
+
+        #region System Events
+
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd) {
+                IsListeningForStatusInd = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndCallback;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndCallback;
+                IsListeningForStatusInd = false;
+            }
+        }
+
+        void StatusIndCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
+
+                bool isVisible = IsViewLoaded && View.Window != null;
+
+                switch (s.Status.SubKind) {
+                case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+                    if (isVisible) {
+                        Reload ();
+                    }
+                    break;
+                case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+                case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+                case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+                case NcResult.SubKindEnum.Info_EmailMessageChanged:
+                case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                    if (isVisible) {
+                        UpdateVisibleRows ();
+                    }
+                    break;
+                case NcResult.SubKindEnum.Error_SyncFailed:
+                case NcResult.SubKindEnum.Info_SyncSucceeded:
+                    if (SyncTokens != null) {
+                        if (s.Tokens != null) {
+                            foreach (var token in s.Tokens) {
+                                SyncTokens.Remove (token);
+                            }
+                        }
+                        if (SyncTokens.Count == 0) {
+                            SyncTimeoutTimer.Dispose ();
+                            SyncTimeoutTimer = null;
+                            SyncTokens = null;
+                            EndRefreshing ();
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        void CheckForSyncComplete ()
+        {
+            var tokens = new List<string> (SyncTokens);
+            foreach (var token in tokens) {
+                var pendings = McPending.QueryByToken (NcApplication.Instance.Account.Id, token);
+                if (pendings.Count() > 0) {
+                    var pending = pendings.First ();
+                    if (pending.State == McPending.StateEnum.Failed || pending.State == McPending.StateEnum.Deleted) {
+                        SyncTokens.Remove (token);
+                    }
+                }
+            }
+            if (SyncTokens.Count == 0) {
+                SyncTokens = null;
+                EndRefreshing ();
+            }
+        }
+
+        void HandleSyncTimeout (object state)
+        {
+            SyncTokens = null;
+            SyncTimeoutTimer = null;
+            EndRefreshing ();
         }
 
         #endregion
@@ -401,7 +541,8 @@ namespace NachoClient.iOS
 
     public class MessageCell : SwipeTableViewCell
     {
-
+        
+        UIImageView UnreadIndicator;
         UIView _ColorIndicatorView;
         UIView ColorIndicatorView {
             get {
@@ -490,6 +631,12 @@ namespace NachoClient.iOS
             PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
             ContentView.AddSubview (PortraitView);
 
+            using (var image = UIImage.FromBundle ("chat-stat-online")) {
+                UnreadIndicator = new UIImageView (image);
+            }
+            UnreadIndicator.Hidden = true;
+            ContentView.AddSubview (UnreadIndicator);
+
             SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
         }
 
@@ -513,9 +660,11 @@ namespace NachoClient.iOS
                 if (message.cachedHasAttachments) {
                     attributedPreview.Replace (new NSRange (subjectLength, 0), " ");
                     attributedPreview.Insert (AttachAttachmentString, subjectLength + 1);
+                    // TODO: add space after if subjectLength was originally 0
                 }
                 DetailTextLabel.AttributedText = attributedPreview;
             }
+            UnreadIndicator.Hidden = message.IsRead;
         }
 
         public override void LayoutSubviews ()
@@ -555,6 +704,7 @@ namespace NachoClient.iOS
             DetailTextLabel.Frame = frame;
 
             PortraitView.Center = new CGPoint (SeparatorInset.Left / 2.0f, textTop * 2.0f + PortraitView.Frame.Height / 2.0f);
+            UnreadIndicator.Center = new CGPoint (PortraitView.Frame.X + PortraitView.Frame.Width - UnreadIndicator.Frame.Width / 2.0f, PortraitView.Frame.Y + UnreadIndicator.Frame.Height / 2.0f);
 
             if (_ColorIndicatorView != null) {
                 _ColorIndicatorView.Frame = new CGRect (ContentView.Bounds.Width - ColorIndicatorInsets.Right - ColorIndicatorSize, ColorIndicatorInsets.Top, ColorIndicatorSize, ContentView.Bounds.Height - ColorIndicatorInsets.Top - ColorIndicatorInsets.Bottom);

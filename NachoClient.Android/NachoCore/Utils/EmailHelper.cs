@@ -1052,7 +1052,7 @@ namespace NachoCore.Utils
 
         public static void MarkAsUnread (McEmailMessage message, bool force = false)
         {
-            if ((null != message) && !message.IsRead) {
+            if ((null != message) && message.IsRead) {
                 if (force || McBody.IsComplete (McBody.QueryById<McBody> (message.BodyId))) {
                     NcTask.Run (() => {
                         BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, false);
@@ -1169,6 +1169,7 @@ namespace NachoCore.Utils
         public static NcResult SyncUnified ()
         {
             bool syncStarted = false;
+            var tokens = new List<string> ();
             var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
             foreach (var account in EmailAccounts) {
                 if (McAccount.GetUnifiedAccount ().Id != account.Id) {
@@ -1176,10 +1177,14 @@ namespace NachoCore.Utils
                     if (null != inboxFolder) {
                         var nr = BackEnd.Instance.SyncCmd (inboxFolder.AccountId, inboxFolder.Id);
                         syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                        if (!nr.isError () && (nr.Value is string)) {
+                            tokens.Add (nr.Value as string);
+                        }
                     }
                 }
             }
-            return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
+            var value = String.Join (",", tokens);
+            return (syncStarted ? NcResult.OK (value) : NachoSyncResult.DoesNotSync ());
         }
 
         public static NcResult SyncUnifiedSent ()
