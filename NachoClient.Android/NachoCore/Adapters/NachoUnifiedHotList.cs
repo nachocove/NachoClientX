@@ -84,6 +84,11 @@ namespace NachoCore
         {
             return McAccount.GetUnifiedAccount ().Id == account.Id;
         }
+
+        public override bool IncludesMultipleAccounts ()
+        {
+            return true;
+        }
     }
 }
 

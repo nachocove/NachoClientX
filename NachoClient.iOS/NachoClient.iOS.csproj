@@ -1663,6 +1663,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
       <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\InboxViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

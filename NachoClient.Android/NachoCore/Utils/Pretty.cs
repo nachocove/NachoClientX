@@ -38,9 +38,43 @@ namespace NachoCore.Utils
             if (null == preview) {
                 return "";
             } else {
-                var regex = new Regex ("\\s+");
-                return regex.Replace (preview, " ");
+                return ConsecutiveWhitespace.Replace (preview, " ");
             }
+        }
+
+        static Regex SymbolRun = new Regex ("[~`\\-\\+=_#<>\\*\\/]{4,}");
+        static Regex ConsecutiveWhitespace = new Regex ("\\s+");
+
+        static public string MessagePreview (McEmailMessage message, out int subjectLength)
+        {
+            string subject = "";
+            if (message.Subject != null) {
+                subject = message.Subject.Trim ();
+            }
+            string bodyPreview = "";
+            if (message.BodyPreview != null) {
+                var reader = new System.IO.StringReader (message.BodyPreview);
+                var line = reader.ReadLine ();
+                while (line != null) {
+                    if (EmailHelper.IsQuoteLine (line)) {
+                        line = null;
+                    } else {
+                        bodyPreview += line + " ";
+                        line = reader.ReadLine ();
+                    }
+                }
+                bodyPreview = EmailHelper.AdjustPreviewText (bodyPreview).Trim ();
+                bodyPreview = SymbolRun.Replace (bodyPreview, " ");
+                bodyPreview = ConsecutiveWhitespace.Replace (bodyPreview, " ");
+            }
+            subjectLength = subject.Length;
+            if (subject != "" && bodyPreview != "") {
+                return subject + "  ·  " + bodyPreview;
+            }
+            if (subject != "") {
+                return subject;
+            }
+            return bodyPreview;
         }
 
         /// <summary>

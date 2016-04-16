@@ -16,11 +16,11 @@ namespace NachoClient.iOS
     {
         
         NSIndexPath SwipingIndexPath;
-        NcActivityIndicatorView RefreshIndicator;
-        UILabel RefreshLabel;
+        protected NcActivityIndicatorView RefreshIndicator { get ; private set; }
+        protected UILabel RefreshLabel { get; private set; }
         protected nfloat RefreshIndicatorSize = 40.0f;
         protected nfloat GroupedCellInset = 10.0f;
-        bool IsShowingRefreshIndicator;
+        protected bool IsShowingRefreshIndicator { get ; private set; }
         UITableViewStyle TableStyle;
         string ClassName;
 
@@ -74,7 +74,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        void EnableRefreshControl ()
+        protected void EnableRefreshControl ()
         {
             RefreshControl = new UIRefreshControl ();
             RefreshControl.AttributedTitle = new NSAttributedString ("test");
@@ -101,18 +101,13 @@ namespace NachoClient.iOS
             RefreshControl.AddSubview (refreshOverlay);
         }
 
-        void EndRefreshing ()
+        protected void EndRefreshing ()
         {
             RefreshIndicator.StopAnimating ();
             RefreshControl.EndRefreshing ();
         }
 
-        void HandleRefreshControlEvent (object sender, EventArgs e)
-        {
-            Refresh ();
-        }
-
-        protected void Refresh ()
+        protected virtual void HandleRefreshControlEvent (object sender, EventArgs e)
         {
         }
 

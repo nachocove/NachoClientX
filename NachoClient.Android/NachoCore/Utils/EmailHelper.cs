@@ -1041,10 +1041,21 @@ namespace NachoCore.Utils
         public static void MarkAsRead (McEmailMessage message, bool force = false)
         {
             if ((null != message) && !message.IsRead) {
-                var body = McBody.QueryById<McBody> (message.BodyId);
-                if (force || McBody.IsComplete (body)) {
+                if (force || McBody.IsComplete (McBody.QueryById<McBody> (message.BodyId))) {
                     NcTask.Run (() => {
                         BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                    }, "MarkEmailReadCmd");
+
+                }
+            }
+        }
+
+        public static void MarkAsUnread (McEmailMessage message, bool force = false)
+        {
+            if ((null != message) && !message.IsRead) {
+                if (force || McBody.IsComplete (McBody.QueryById<McBody> (message.BodyId))) {
+                    NcTask.Run (() => {
+                        BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, false);
                     }, "MarkEmailReadCmd");
 
                 }

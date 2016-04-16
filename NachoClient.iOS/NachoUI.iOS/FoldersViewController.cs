@@ -177,9 +177,7 @@ namespace NachoClient.iOS
 
         void ShowInbox ()
         {
-            var viewController = new MessageListViewController ();
-            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
-            viewController.SetEmailMessages (messages);
+            var viewController = new InboxViewController ();
             NavigationController.PushViewController (viewController, true);
         }
 

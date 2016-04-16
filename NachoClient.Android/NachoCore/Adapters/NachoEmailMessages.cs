@@ -98,6 +98,11 @@ namespace NachoCore
             return false;
         }
 
+        public virtual bool IncludesMultipleAccounts ()
+        {
+            return false;
+        }
+
         #region Message Caching
 
         int[] first = new int[3] { -1, -1, -1 };

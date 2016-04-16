@@ -31,11 +31,7 @@ namespace NachoClient.iOS
             var nowNavController = new UINavigationController (new NachoNowViewController ());
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-nachonow");
 
-            var inbox = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
-            var inboxViewController = new MessageListViewController ();
-            inboxViewController.HasAccountSwitcher = true;
-            inboxViewController.SetEmailMessages (inbox);
-            var inboxNavController = new UINavigationController (inboxViewController);
+            var inboxNavController = new UINavigationController (new InboxViewController ());
             inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");
 
             var chatsNavController = new UINavigationController (new ChatsViewController ());
