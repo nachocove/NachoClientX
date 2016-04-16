@@ -36,16 +36,28 @@ namespace NachoClient.iOS
         NachoEmailMessages Messages;
 
         UIBarButtonItem NewMessageButton;
+        UIBarButtonItem EditTableButton;
+        UIBarButtonItem DoneSwipingButton;
+        UIBarButtonItem CancelEditingButton;
+
+        UIBarButtonItem MoveButton;
+        UIBarButtonItem DeleteButton;
+        UIBarButtonItem ArchiveButton;
+        UIBarButtonItem MarkButton;
 
         int NumberOfPreviewLines = 3;
-        bool HasLoadedOnce;
+        protected bool HasLoadedOnce;
         bool HasAppearedOnce;
         bool IsListeningForStatusInd;
         List<string> SyncTokens;
         int SyncTimeoutSeconds = 30;
         NcTimer SyncTimeoutTimer;
 
+        Dictionary<int, int> SelectedAccounts;
+
         #endregion
+
+        #region Constructors
 
         public MessageListViewController () : base (UITableViewStyle.Grouped)
         {
@@ -53,10 +65,20 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("contact-newemail")) {
                 NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
             }
-            NavigationItem.RightBarButtonItem = NewMessageButton;
+            using (var image = UIImage.FromBundle ("folder-edit")) {
+                EditTableButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, EditTable);
+                EditTableButton.AccessibilityLabel = "Folder edit";
+            }
+            CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
+            DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
+
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+
+            UpdateNavigationItem ();
         }
+
+        #endregion
 
         #region Public API
 
@@ -77,6 +99,7 @@ namespace NachoClient.iOS
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
             TableView.AccessibilityLabel = "Message list";
+            TableView.TintColor = A.Color_NachoGreen;
             View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
 
@@ -93,7 +116,7 @@ namespace NachoClient.iOS
             if (SyncTokens != null) {
                 CheckForSyncComplete ();
             }
-            if (HasAppearedOnce) {
+            if (HasAppearedOnce && !TableView.Editing) {
                 Reload ();
             }
             StartListeningForStatusInd ();
@@ -108,28 +131,31 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region User Actions
+        #region User Actions (Except Table Delegate)
 
         protected override void HandleRefreshControlEvent (object sender, EventArgs e)
         {
-            var result = Messages.StartSync ();
-            if (result.isError ()) {
-                Reload ();
-            }else{
-                var tokens = result.Value as string;
-                if (tokens == null) {
-                    EndRefreshing ();
-                }else{
-                    RefreshIndicator.StartAnimating ();
-                    SyncTokens = new List<string> (tokens.Split (new char[] { ',' }));
-                    SyncTimeoutTimer = new NcTimer ("MessageListViewController_SyncTimeout", HandleSyncTimeout, null, SyncTimeoutSeconds * 1000, 0);
-                }
-            }
+            StartSync ();
         }
 
         void NewMessage (object sender, EventArgs e)
         {
             ComposeMessage ();
+        }
+
+        void EditTable (object sender, EventArgs e)
+        {
+            StartEditingTable ();
+        }
+
+        void CancelEditingTable (object sender, EventArgs e)
+        {
+            CancelEditingTable ();
+        }
+
+        void EndSwiping (object sender, EventArgs e)
+        {
+            EndSwiping ();
         }
 
         void MarkMessageAsRead (NSIndexPath indexPath)
@@ -235,11 +261,15 @@ namespace NachoClient.iOS
 
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            // TODO: multiselect
             var messageThread = cookie as McEmailMessageThread;
-            NcAssert.NotNull (messageThread);
-            NcEmailArchiver.Move (messageThread, folder);
-            // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+            if (messageThread != null) {
+                NcAssert.NotNull (messageThread);
+                NcEmailArchiver.Move (messageThread, folder);
+                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+            } else {
+                NcEmailArchiver.Move (SelectedMessages (), folder);
+                CancelEditingTable ();
+            }
         }
 
         void QuickReply (McEmailMessage message)
@@ -250,6 +280,58 @@ namespace NachoClient.iOS
             composeViewController.StartWithQuickResponse = true;
             composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();
+        }
+
+        void ShowFoldersForMovingSelectedMessages (object sender, EventArgs e)
+        {
+            var vc = new FoldersViewController ();
+            var accountId = SelectedAccounts.Keys.First ();
+            NcAssert.False (0 == accountId);
+            vc.SetOwner (this, true, accountId, null);
+            PresentViewController (vc, true, null);
+        }
+
+        void ArchiveSelectedMessages (object sender, EventArgs e)
+        {
+            NcEmailArchiver.Archive (SelectedMessages ());
+            CancelEditingTable ();
+        }
+
+        void DeleteSelectedMessages (object sender, EventArgs e)
+        {
+            NcEmailArchiver.Delete (SelectedMessages ());
+            CancelEditingTable ();
+        }
+
+        void MarkSelectedMessages (object sender, EventArgs e)
+        {
+            var alertView = UIAlertController.Create (String.Format ("Mark {0} messages", TableView.IndexPathsForSelectedRows.Length), null, UIAlertControllerStyle.ActionSheet);
+            alertView.AddAction(UIAlertAction.Create("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
+            alertView.AddAction(UIAlertAction.Create("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
+            alertView.AddAction (UIAlertAction.Create ("As Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsHot));
+            alertView.AddAction (UIAlertAction.Create ("As Not Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsNotHot));
+            alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
+            PresentViewController (alertView, true, null);
+        }
+
+        void MarkSelectedMessagesAsRead (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        void MarkSelectedMessagesAsUnread (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        void MarkSelectedMessagesAsHot (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        void MarkSelectedMessagesAsNotHot (UIAlertAction action)
+        {
+            // TODO:
         }
 
         #endregion
@@ -284,7 +366,7 @@ namespace NachoClient.iOS
             if (!HasLoadedOnce) {
                 HasLoadedOnce = true;
                 TableView.ReloadData ();
-            } else {
+            } else if ((adds != null && adds.Count > 0) || (deletes != null && deletes.Count > 0)){
                 Util.UpdateTable (TableView, adds, deletes);
             }
         }
@@ -354,18 +436,39 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            var thread = Messages.GetEmailThread (indexPath.Row);
-            if (thread != null) {
-                if (Messages.HasDraftsSemantics ()) {
-                    ComposeDraft (thread.SingleMessageSpecialCase ());
-                } else if (Messages.HasOutboxSemantics ()) {
-                    // TODO
-                    // DealWithThreadInOutbox (messageThread);
-                } else if (thread.HasMultipleMessages ()) {
-                    ShowThread (thread);
-                } else {
-                    ShowMessage (thread);
+            if (TableView.Editing) {
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                if (!SelectedAccounts.ContainsKey (message.AccountId)) {
+                    SelectedAccounts [message.AccountId] = 0;
                 }
+                SelectedAccounts [message.AccountId] += 1;
+                UpdateToolbarEnabled ();
+            } else {
+                var thread = Messages.GetEmailThread (indexPath.Row);
+                if (thread != null) {
+                    if (Messages.HasDraftsSemantics ()) {
+                        ComposeDraft (thread.SingleMessageSpecialCase ());
+                    } else if (Messages.HasOutboxSemantics ()) {
+                        // TODO
+                        // DealWithThreadInOutbox (messageThread);
+                    } else if (thread.HasMultipleMessages ()) {
+                        ShowThread (thread);
+                    } else {
+                        ShowMessage (thread);
+                    }
+                }
+            }
+        }
+
+        public override void RowDeselected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (TableView.Editing) {
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                SelectedAccounts [message.AccountId] -= 1;
+                if (SelectedAccounts [message.AccountId] == 0) {
+                    SelectedAccounts.Remove (message.AccountId);
+                }
+                UpdateToolbarEnabled ();
             }
         }
 
@@ -404,6 +507,18 @@ namespace NachoClient.iOS
                 return actions;
             }
             return null;
+        }
+
+        public override void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
+        {
+            base.WillBeginSwiping (tableView, indexPath);
+            UpdateNavigationItem ();
+        }
+
+        public override void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
+        {
+            base.DidEndSwiping (tableView, indexPath);
+            UpdateNavigationItem ();
         }
 
         #endregion
@@ -491,7 +606,9 @@ namespace NachoClient.iOS
         {
             SyncTokens = null;
             SyncTimeoutTimer = null;
-            EndRefreshing ();
+            BeginInvokeOnMainThread (() => {
+                EndRefreshing ();
+            });
         }
 
         #endregion
@@ -526,10 +643,109 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
+        void UpdateNavigationItem ()
+        {
+            if (SwipingIndexPath != null) {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    DoneSwipingButton
+                };
+            } else if (IsViewLoaded && TableView.Editing) {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    CancelEditingButton
+                };
+            } else {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    NewMessageButton,
+                    EditTableButton
+                };
+            }
+        }
+
+        void UpdateToolbarEnabled ()
+        {
+            var paths = TableView.IndexPathsForSelectedRows;
+            var hasSelection = paths != null && paths.Length > 0;
+
+            MarkButton.Enabled = hasSelection;
+            MoveButton.Enabled = SelectedAccounts.Count == 1;
+            ArchiveButton.Enabled = hasSelection;
+            DeleteButton.Enabled = hasSelection;
+        }
+
+        List<McEmailMessage> SelectedMessages ()
+        {
+            var messages = new List<McEmailMessage> ();
+            foreach (var indexPath in TableView.IndexPathsForSelectedRows) {
+                var thread = Messages.GetEmailThread (indexPath.Row);
+                if (thread != null) {
+                    foreach (var message in thread) {
+                        messages.Add (message);
+                    }
+                }
+            }
+            return messages;
+        }
+
+        void CancelEditingTable ()
+        {
+            TableView.SetEditing (false, true);
+            UpdateNavigationItem ();
+            NavigationController.SetToolbarHidden (true, true);
+        }
+
+        void StartEditingTable ()
+        {
+            SelectedAccounts = new Dictionary<int, int> ();
+            TableView.SetEditing(true, true);
+            UpdateNavigationItem ();
+            MoveButton = new UIBarButtonItem ("Move", UIBarButtonItemStyle.Plain, ShowFoldersForMovingSelectedMessages);
+            ArchiveButton = new UIBarButtonItem ("Archive", UIBarButtonItemStyle.Plain, ArchiveSelectedMessages);
+            DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedMessages);
+            MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
+            if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
+                ToolbarItems = new UIBarButtonItem[] {
+                    DeleteButton
+                };
+            } else {
+                ToolbarItems = new UIBarButtonItem[] {
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    // Mark multi select functionality not yet enabled
+                    // MarkButton,
+                    // new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    MoveButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    ArchiveButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    DeleteButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace)
+                };
+            }
+            UpdateToolbarEnabled ();
+            NavigationController.SetToolbarHidden (false, true);
+        }
+
+        void StartSync ()
+        {
+            var result = Messages.StartSync ();
+            if (result.isError ()) {
+                Reload ();
+            }else{
+                var tokens = result.Value as string;
+                if (tokens == null) {
+                    EndRefreshing ();
+                }else{
+                    RefreshIndicator.StartAnimating ();
+                    SyncTokens = new List<string> (tokens.Split (new char[] { ',' }));
+                    SyncTimeoutTimer = new NcTimer ("MessageListViewController_SyncTimeout", HandleSyncTimeout, null, SyncTimeoutSeconds * 1000, 0);
+                }
+            }
+        }
+
         #endregion
 
         #region Folder Chooser Parent (for Move)
 
+        // The folder chooser should really just close itself, but it's easier to just add this than change its interface
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
             DismissViewController (true, null);

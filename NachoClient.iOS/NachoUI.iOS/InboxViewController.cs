@@ -35,7 +35,8 @@ namespace NachoClient.iOS
             SwitchAccountButton.SetAccountImage (account);
             SetEmailMessages (NcEmailManager.Inbox (account.Id));
             TableView.ReloadData ();
-            Reload ();
+            HasLoadedOnce = false;
+            // Relying on ViewWillAppear to call Reload
         }
     }
 }

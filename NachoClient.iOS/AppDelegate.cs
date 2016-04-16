@@ -330,8 +330,9 @@ namespace NachoClient.iOS
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
             UINavigationBar.Appearance.ShadowImage = new UIImage ();
+            UINavigationBar.Appearance.TintColor = A.Color_NachoBlue;
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
-            UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
+            UIToolbar.Appearance.TintColor = A.Color_NachoGreen;
 
             var navigationTitleTextAttributes = new UITextAttributes ();
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
@@ -341,7 +342,9 @@ namespace NachoClient.iOS
                 UINavigationBar.Appearance.BackIndicatorImage = arrow;
                 UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
             }
-            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
+            var navigationButtonTextAttibutes = new UITextAttributes ();
+            navigationButtonTextAttibutes.Font = A.Font_AvenirNextRegular17;
+            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationButtonTextAttibutes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
                 var replyAction = new UIMutableUserNotificationAction ();

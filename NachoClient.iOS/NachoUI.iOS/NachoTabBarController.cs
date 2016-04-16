@@ -454,4 +454,16 @@ namespace NachoClient.iOS
             switchAccountButton.SetAccountImage (account);
         }
     }
+
+    public static class UIView_Debugging
+    {
+        [System.Runtime.InteropServices.DllImport(ObjCRuntime.Constants.ObjectiveCLibrary, EntryPoint="objc_msgSend")]
+        private static extern IntPtr IntPtr_objc_msgSend (IntPtr receiver, IntPtr selector);
+
+        public static string RecursiveDescription (this UIView view)
+        {
+            return ((NSString)ObjCRuntime.Runtime.GetNSObject(IntPtr_objc_msgSend(view.Handle, new ObjCRuntime.Selector ("recursiveDescription").Handle))).ToString ();
+
+        }
+    }
 }

@@ -156,7 +156,7 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return McAccount.GetUnifiedAccount ().Id == account.Id;
+            return true;
         }
 
         public override bool IncludesMultipleAccounts ()
