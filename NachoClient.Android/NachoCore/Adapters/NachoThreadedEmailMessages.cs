@@ -23,6 +23,7 @@ namespace NachoCore
             this.threadId = threadId;
             List<int> adds;
             List<int> deletes;
+            threadList = new List<McEmailMessageThread> ();
             Refresh (out adds, out deletes);
         }
 

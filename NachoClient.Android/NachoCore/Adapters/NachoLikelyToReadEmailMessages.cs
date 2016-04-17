@@ -19,6 +19,7 @@ namespace NachoCore
             Folder = folder;
             List<int> adds;
             List<int> deletes;
+            ThreadList = new List<McEmailMessageThread> ();
             Refresh (out adds, out deletes);
         }
 
