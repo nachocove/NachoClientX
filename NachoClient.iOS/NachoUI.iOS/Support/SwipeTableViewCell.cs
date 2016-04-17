@@ -570,25 +570,29 @@ namespace NachoClient.iOS
 
         public override void SetHighlighted (bool highlighted, bool animated)
         {
-            if (highlighted) {
-                PreserveBackgroundColors ();
-            }
-            base.SetHighlighted (highlighted, animated);
-            if (highlighted) {
-                RestoreBackgroundColors ();
-                PreserveBackgroundColors ();
-            }
-            if (animated) {
-                UIView.BeginAnimations (null);
-                UIView.SetAnimationDuration (0.25f);
-            }
-            if (highlighted) {
-                ShowSelectedBackgroundColor ();
+            if (Selected) {
+                base.SetHighlighted (highlighted, animated);
             } else {
-                RestoreBackgroundColors ();
-            }
-            if (animated) {
-                UIView.CommitAnimations ();
+                if (highlighted) {
+                    PreserveBackgroundColors ();
+                }
+                base.SetHighlighted (highlighted, animated);
+                if (highlighted) {
+                    RestoreBackgroundColors ();
+                    PreserveBackgroundColors ();
+                }
+                if (animated) {
+                    UIView.BeginAnimations (null);
+                    UIView.SetAnimationDuration (0.25f);
+                }
+                if (highlighted) {
+                    ShowSelectedBackgroundColor ();
+                } else {
+                    RestoreBackgroundColors ();
+                }
+                if (animated) {
+                    UIView.CommitAnimations ();
+                }
             }
         }
 
