@@ -11,10 +11,12 @@ namespace NachoClient.iOS
     {
 
         SwitchAccountButton SwitchAccountButton;
+        McAccount Account;
 
         public InboxViewController () : base ()
         {
-            SetEmailMessages (NcEmailManager.Inbox (NcApplication.Instance.Account.Id));
+            Account = NcApplication.Instance.Account;
+            SetEmailMessages (NcEmailManager.Inbox (Account.Id));
         }
 
         public override void ViewDidLoad ()
@@ -25,6 +27,14 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            if (NcApplication.Instance.Account.Id != Account.Id) {
+                SwitchToAccount (NcApplication.Instance.Account);
+            }
+            base.ViewWillAppear (animated);
+        }
+
         void ShowAccountSwitcher ()
         {
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
@@ -32,10 +42,18 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
+            Account = account;
+            CancelSyncing ();
+            if (TableView.Editing) {
+                CancelEditingTable (animated: false);
+            }
+            if (SwipingIndexPath != null) {
+                EndSwiping ();
+            }
             SwitchAccountButton.SetAccountImage (account);
             SetEmailMessages (NcEmailManager.Inbox (account.Id));
             UpdateFilterBar ();
-            TableView.ReloadData ();
+            TableView.ReloadData ();  // to clear the table
             HasLoadedOnce = false;
             // Relying on ViewWillAppear to call Reload
         }

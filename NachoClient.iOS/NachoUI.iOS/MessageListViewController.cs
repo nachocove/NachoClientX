@@ -417,10 +417,18 @@ namespace NachoClient.iOS
                 EndRefreshing ();
             }
             if (!HasLoadedOnce) {
+                // If this is the first time we're showing messages, don't bother with any add/delete animations
                 HasLoadedOnce = true;
                 TableView.ReloadData ();
-            } else if (changed) {
-                Util.UpdateTable (TableView, adds, deletes);
+            } else {
+                if (changed) {
+                    // If the message set has changed, animate added and deleted rows
+                    Util.UpdateTable (TableView, adds, deletes);
+                }
+                // Regardless of whether messges have been added or deleted, existing rows may have new data, at least
+                // for properties like read/unread.  To catch any of those changes, we'll refresh all visible rows.
+                // Note that this may do a small amount of double work for any visible row that was just added.
+                UpdateVisibleRows ();
             }
         }
 
@@ -709,6 +717,16 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void CancelSyncing ()
+        {
+            if (SyncTimeoutTimer != null) {
+                SyncTimeoutTimer.Dispose ();
+                SyncTimeoutTimer = null;
+            }
+            SyncTokens = null;
+            EndRefreshing ();
+        }
+
         void ComposeMessage ()
         {
             var composeViewController = new MessageComposeViewController (NcApplication.Instance.DefaultEmailAccount);
@@ -780,9 +798,9 @@ namespace NachoClient.iOS
             return messages;
         }
 
-        void CancelEditingTable ()
+        protected void CancelEditingTable (bool animated = true)
         {
-            TableView.SetEditing (false, true);
+            TableView.SetEditing (false, animated);
             UpdateNavigationItem ();
             NavigationController.SetToolbarHidden (true, true);
         }
