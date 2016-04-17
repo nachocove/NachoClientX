@@ -11,7 +11,7 @@ namespace NachoCore.Brain
         UNKNOWN = 0,
         PERIODIC_GLEAN,
         UI,
-        STATE_MACHINE,
+        STATE_MACHINE_OBSOLETE,
         TERMINATE,
         TEST,
         MESSAGE_FLAGS,
@@ -295,24 +295,6 @@ namespace NachoCore.Brain
         public NcBrainReindexContactEvent (Int64 accountId, Int64 contactId)
             : base (NcBrainEventType.REINDEX_CONTACT, accountId, contactId)
         {
-        }
-    }
-
-    [Serializable]
-    public class NcBrainStateMachineEvent : NcBrainEvent
-    {
-        public Int64 AccountId;
-        public int Count;
-
-        public NcBrainStateMachineEvent (Int64 accountId, int count) : base (NcBrainEventType.STATE_MACHINE)
-        {
-            AccountId = accountId;
-            Count = count;
-        }
-
-        public override string ToString ()
-        {
-            return String.Format ("[NcBrainStateMachineEvent: type={0} accountId={1}", GetEventType (), AccountId);
         }
     }
 

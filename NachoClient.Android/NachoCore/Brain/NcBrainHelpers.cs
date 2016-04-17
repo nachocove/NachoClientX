@@ -54,7 +54,7 @@ namespace NachoCore.Brain
         }
     }
 
-    public class RoundRobinSource
+    public class BrainQueryAndProcess
     {
         public delegate List<object> QuerySourceFunction (int count);
 
@@ -74,7 +74,7 @@ namespace NachoCore.Brain
 
         protected ProcessObjectFunction ProcessFunction;
 
-        public RoundRobinSource (QuerySourceFunction queryFunction, ProcessObjectFunction processFunction, int chunkSize = 5)
+        public BrainQueryAndProcess (QuerySourceFunction queryFunction, ProcessObjectFunction processFunction, int chunkSize = 5)
         {
             QueryFunction = queryFunction;
             ProcessFunction = processFunction;
@@ -106,164 +106,6 @@ namespace NachoCore.Brain
         public void Reset ()
         {
             Objects = new List<object> ();
-        }
-    }
-
-    public class RoundRobinList
-    {
-        public class ScheduleOrder : IComparable
-        {
-            public double Order { get; protected set; }
-
-            public int Id {
-                get {
-                    return Record.Id;
-                }
-            }
-
-            public RoundRobinListRecord Record;
-
-            public ScheduleOrder (double order, RoundRobinListRecord record)
-            {
-                Order = order;
-                Record = record;
-            }
-
-            public int CompareTo (object obj)
-            {
-                ScheduleOrder other = (ScheduleOrder)obj;
-                if (this.Order < other.Order) {
-                    return -1;
-                }
-                if (this.Order > other.Order) {
-                    return +1;
-                }
-                if (this.Id < other.Id) {
-                    return -1;
-                }
-                if (this.Id > other.Id) {
-                    return +1;
-                }
-                return 0;
-            }
-        }
-
-        public class RoundRobinListRecord
-        {
-            protected static int NextId = 0;
-
-            // Configuration
-            public int Id { get; protected set; }
-
-            public string Description { get; protected set; }
-
-            protected RoundRobinSource Source;
-            protected int Weight;
-
-            // States
-            protected int Count;
-
-            // Counter
-            public int RunCount { get; set; }
-
-            public bool IsEmpty { get; protected set; }
-
-            public RoundRobinListRecord (string description, RoundRobinSource source, int weight)
-            {
-                Id = NextId++;
-                Description = description;
-                NcAssert.True ((null != source) && (0 < weight));
-                Source = source;
-                Weight = weight;
-                IsEmpty = false;
-            }
-
-            public void AddToSchedule (List<ScheduleOrder> schedule)
-            {
-                if (!IsEmpty) {
-                    for (int n = 0; n < Weight; n++) {
-                        schedule.Add (new ScheduleOrder ((double)n / (double)Weight, this));
-                    }
-                }
-            }
-
-            public void Initialize ()
-            {
-                IsEmpty = !Source.Initialize ();
-            }
-
-            public bool Run (out bool processResult)
-            {
-                processResult = false;
-                if (!Source.Process (out processResult)) {
-                    IsEmpty = true;
-                    return false;
-                }
-                RunCount += 1;
-                return true;
-            }
-        }
-
-        protected List<RoundRobinListRecord> Sources;
-        protected List<ScheduleOrder> Schedule;
-        protected int CurrentSourceIndex;
-
-        public RoundRobinList ()
-        {
-            Sources = new List<RoundRobinListRecord> ();
-            Schedule = new List<ScheduleOrder> ();
-        }
-
-        public void Initialize ()
-        {
-            Schedule.Clear ();
-            foreach (var source in Sources) {
-                source.Initialize ();
-                source.AddToSchedule (Schedule);
-                source.RunCount = 0;
-            }
-            Schedule.Sort ();
-            CurrentSourceIndex = 0;
-        }
-
-        public void Add (string description, RoundRobinSource source, int weight)
-        {
-            if (int.MaxValue == Sources.Count) {
-                throw new IndexOutOfRangeException ();
-            }
-            Sources.Add (new RoundRobinListRecord (description, source, weight));
-        }
-
-        public bool Run (out bool processResult)
-        {
-            processResult = false;
-            while (0 < Schedule.Count) {
-                var record = Schedule [CurrentSourceIndex].Record;
-                if (!record.Run (out processResult)) {
-                    // This source has no more object to process. Remove this and try the next one
-                    Schedule.RemoveAt (CurrentSourceIndex);
-                    if (0 == Schedule.Count) {
-                        CurrentSourceIndex = 0;
-                        break;
-                    } else {
-                        CurrentSourceIndex = CurrentSourceIndex % Schedule.Count;
-                    }
-                } else {
-                    CurrentSourceIndex = (CurrentSourceIndex + 1) % Schedule.Count;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public void DumpRunCounts ()
-        {
-            foreach (var source in Sources) {
-                if (0 == source.RunCount) {
-                    continue;
-                }
-                Log.Info (Log.LOG_BRAIN, "{0}: {1}", source.RunCount, source.Description);
-            }
         }
     }
 

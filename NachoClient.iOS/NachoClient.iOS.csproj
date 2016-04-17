@@ -919,9 +919,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainControl.cs">
-      <Link>NachoCore\Brain\NcBrainControl.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
     </Compile>
