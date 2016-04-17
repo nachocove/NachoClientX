@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, MessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent
+    public partial class NachoNowViewController : NcUIViewController, MessageTableViewSourceDelegate, INachoFolderChooserParent
     {
         protected bool priorityInboxNeedsRefresh;
         protected NachoEmailMessages priorityInbox;
@@ -311,9 +311,9 @@ namespace NachoClient.iOS
         {
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (calendarEvent);
-            vc.SetOwner (this);
-            skipNextLayout = vc.HidesBottomBarWhenPushed;
-            NavigationController.PushViewController (vc, true);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -522,15 +522,6 @@ namespace NachoClient.iOS
             var messageThread = (McEmailMessageThread)cookie;
             NcEmailArchiver.Move (messageThread, folder);
             vc.DismissFolderChooser (true, null);
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (false, null);
         }
 
         private void ComposeMessage ()

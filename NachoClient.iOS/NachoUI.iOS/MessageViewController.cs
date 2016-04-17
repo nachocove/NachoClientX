@@ -24,7 +24,7 @@ using DDay.iCal.Serialization.iCalendar;
 namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewControllerNoLeaks, INachoMessageViewer,
-        INachoFolderChooserParent, INachoCalendarItemEditorParent, 
+        INachoFolderChooserParent, 
         IUcAddressBlockDelegate, IBodyViewOwner
     {
         // Model data
@@ -671,12 +671,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             MoveThisMessage (folder);
@@ -726,9 +720,10 @@ namespace NachoClient.iOS
         void EditEvent (McCalendar calendarEvent)
         {
             var vc = new EditEventViewController ();
-            vc.SetOwner (this);
             vc.SetCalendarItem (calendarEvent);
-            NavigationController.PushViewController (vc, true);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         void ShowMove ()

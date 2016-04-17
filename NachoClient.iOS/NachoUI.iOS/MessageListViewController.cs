@@ -297,6 +297,10 @@ namespace NachoClient.iOS
             if (message != null) {
                 var alertView = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
                 alertView.AddAction(UIAlertAction.Create("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove(thread, message); }));
+                alertView.AddAction (UIAlertAction.Create ("Create Event", UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Forward", UIAlertActionStyle.Default, (UIAlertAction action) => { Forward(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { Reply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply All", UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll(message); }));
                 alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply(message); }));
                 alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
                 PresentViewController (alertView, true, null);
@@ -327,12 +331,28 @@ namespace NachoClient.iOS
 
         void QuickReply (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.FirstMessageId = message.Id;
-            var composeViewController = new MessageComposeViewController (McAccount.QueryById<McAccount> (message.AccountId));
-            composeViewController.StartWithQuickResponse = true;
-            composeViewController.Composer.RelatedThread = thread;
-            composeViewController.Present ();
+            ComposeReply (message, EmailHelper.Action.Reply, quickReply: true);
+        }
+
+        void Reply (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Reply);
+        }
+
+        void ReplyAll (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.ReplyAll);
+        }
+
+        void Forward (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Forward);
+        }
+
+        void CreateEvent (McEmailMessage message)
+        {
+            var c = CalendarHelper.CreateMeeting (message);
+            EditEvent (c);
         }
 
         void ShowFoldersForMovingSelectedMessages (object sender, EventArgs e)
@@ -741,6 +761,26 @@ namespace NachoClient.iOS
             composeViewController.Present ();
         }
 
+        void ComposeReply (McEmailMessage message, EmailHelper.Action kind, bool quickReply = false)
+        {
+            var thread = new McEmailMessageThread ();
+            thread.FirstMessageId = message.Id;
+            var composeViewController = new MessageComposeViewController (McAccount.QueryById<McAccount> (message.AccountId));
+            composeViewController.Composer.RelatedThread = thread;
+            composeViewController.Composer.Kind = kind;
+            composeViewController.StartWithQuickResponse = quickReply;
+            composeViewController.Present ();
+        }
+
+        void EditEvent (McCalendar calendarEvent)
+        {
+            var vc = new EditEventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
+        }
+
         void ShowThread (McEmailMessageThread thread)
         {
             var vc = new MessageThreadViewController ();
@@ -1081,7 +1121,7 @@ namespace NachoClient.iOS
 
     }
 
-    public partial class MessageListViewController_Old : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, MessageTableViewSourceDelegate
+    public partial class MessageListViewController_Old : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoFolderChooserParent, MessageTableViewSourceDelegate
     {
         MessageTableViewSource messageSource;
         MessageTableViewSource searchResultsSource;
@@ -1606,15 +1646,6 @@ namespace NachoClient.iOS
         }
 
         /// <summary>
-        /// INachoCalendarItemEditorParent Delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
-        /// <summary>
         /// INachoFolderChooser Delegate
         /// </summary>
         public void DismissChildFolderChooser (INachoFolderChooser vc)
@@ -1742,7 +1773,7 @@ namespace NachoClient.iOS
             var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Message = draft;
             composeViewController.Present ();
-        }
+                 }
 
         public void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action)
         {

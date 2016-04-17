@@ -18,7 +18,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, MessageTableViewSourceDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, MessageTableViewSourceDelegate, INachoFolderChooserParent, INachoNotesControllerParent, INachoContactDefaultSelector
     {
         public McContact contact;
 
@@ -1136,12 +1136,6 @@ namespace NachoClient.iOS
                 var interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
                 interactionsTableView.ReloadData ();
             });
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
         }
 
         public void DismissChildFolderChooser (INachoFolderChooser vc)
