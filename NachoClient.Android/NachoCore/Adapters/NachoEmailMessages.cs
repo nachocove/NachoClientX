@@ -83,6 +83,16 @@ namespace NachoCore
             }
         }
 
+        public virtual FolderFilterOptions PossibleFilterSettingsMask {
+            get {
+                FolderFilterOptions mask = 0;
+                foreach (var option in PossibleFilterSettings) {
+                    mask |= option;
+                }
+                return mask;
+            }
+        }
+
         public virtual bool HasOutboxSemantics ()
         {
             return false;

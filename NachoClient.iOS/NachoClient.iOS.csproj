@@ -1664,6 +1664,8 @@
       <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\InboxViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\CornerLayer.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageListFilterBar.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2703,6 +2705,15 @@
     <BundleResource Include="Resources\avatar-salesforce%404x.png" />
     <BundleResource Include="Resources\avatar-salesforce%406x.png" />
     <BundleResource Include="Resources\chat-email.html" />
+    <BundleResource Include="Resources\email-filter-all.png" />
+    <BundleResource Include="Resources\email-filter-all%402x.png" />
+    <BundleResource Include="Resources\email-filter-all%403x.png" />
+    <BundleResource Include="Resources\email-filter-focus.png" />
+    <BundleResource Include="Resources\email-filter-focus%402x.png" />
+    <BundleResource Include="Resources\email-filter-focus%403x.png" />
+    <BundleResource Include="Resources\email-filter-unread.png" />
+    <BundleResource Include="Resources\email-filter-unread%402x.png" />
+    <BundleResource Include="Resources\email-filter-unread%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

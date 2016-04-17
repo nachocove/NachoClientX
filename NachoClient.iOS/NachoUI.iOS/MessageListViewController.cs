@@ -45,6 +45,17 @@ namespace NachoClient.iOS
         UIBarButtonItem ArchiveButton;
         UIBarButtonItem MarkButton;
 
+        MessageListFilterBar FilterBar;
+        UITableView _TableView;
+        public override UITableView TableView {
+            get {
+                return _TableView;
+            }
+            set {
+                base.TableView = _TableView = value;
+            }
+        }
+
         int NumberOfPreviewLines = 3;
         protected bool HasLoadedOnce;
         bool HasAppearedOnce;
@@ -59,9 +70,8 @@ namespace NachoClient.iOS
 
         #region Constructors
 
-        public MessageListViewController () : base (UITableViewStyle.Grouped)
+        public MessageListViewController () : base (UITableViewStyle.Plain)
         {
-            GroupedCellInset = 0.0f;
             using (var image = UIImage.FromBundle ("contact-newemail")) {
                 NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
             }
@@ -100,13 +110,30 @@ namespace NachoClient.iOS
             TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
             TableView.AccessibilityLabel = "Message list";
             TableView.TintColor = A.Color_NachoGreen;
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.BackgroundColor = UIColor.White;
+
+            var view = new UIView (new CGRect (0.0f, 0.0f, 320.0f, 320.0f));
+            view.BackgroundColor = UIColor.White;
+
+            FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, view.Bounds.Width, MessageListFilterBar.PreferredHeight));
+            FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            FilterBar.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, view.Bounds.Width, view.Bounds.Height - FilterBar.Frame.Height);
+            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            _TableView = TableView;
+
+            view.AddSubview (TableView);
+            view.AddSubview (FilterBar);
+
+            View = view;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
             EnableRefreshControl ();
+            UpdateFilterBar ();
             Reload ();
         }
 
@@ -156,6 +183,30 @@ namespace NachoClient.iOS
         void EndSwiping (object sender, EventArgs e)
         {
             EndSwiping ();
+        }
+
+        void FilterAll ()
+        {
+            Messages.FilterSetting = FolderFilterOptions.All;
+            Reload ();
+        }
+
+        void FilterHot ()
+        {
+            Messages.FilterSetting = FolderFilterOptions.Hot;
+            Reload ();
+        }
+
+        void FilterUnread ()
+        {
+            Messages.FilterSetting = FolderFilterOptions.Unread;
+            Reload ();
+        }
+
+        void FilterFocus ()
+        {
+            Messages.FilterSetting = FolderFilterOptions.Focused;
+            Reload ();
         }
 
         void MarkMessageAsRead (NSIndexPath indexPath)
@@ -210,6 +261,7 @@ namespace NachoClient.iOS
 
         void DeleteMessage (NSIndexPath indexPath)
         {
+            DidEndSwiping (TableView, indexPath);
             var message = Messages.GetCachedMessage (indexPath.Row);
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
@@ -228,6 +280,7 @@ namespace NachoClient.iOS
 
         void ArchiveMessage (NSIndexPath indexPath)
         {
+            DidEndSwiping (TableView, indexPath);
             var message = Messages.GetCachedMessage (indexPath.Row);
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
@@ -366,7 +419,7 @@ namespace NachoClient.iOS
             if (!HasLoadedOnce) {
                 HasLoadedOnce = true;
                 TableView.ReloadData ();
-            } else if ((adds != null && adds.Count > 0) || (deletes != null && deletes.Count > 0)){
+            } else if (changed) {
                 Util.UpdateTable (TableView, adds, deletes);
             }
         }
@@ -479,14 +532,14 @@ namespace NachoClient.iOS
                 var actions = new List<SwipeTableRowAction> ();
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), A.Color_NachoYellow, MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), A.Color_NachoYellow, MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
                     if (message.isHot ()) {
-                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), A.Color_NachoSwipeActionOrange, MarkMessageAsUnhot));
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), A.Color_NachoSwipeActionOrange, MarkMessageAsHot));
+                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
                     }
                 }
                 return actions;
@@ -499,10 +552,10 @@ namespace NachoClient.iOS
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
                 var actions = new List<SwipeTableRowAction> ();
-                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), A.Color_NachoSwipeEmailDelete, DeleteMessage));
+                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
-                    actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), A.Color_NachoSwipeEmailArchive, ArchiveMessage));
-                    actions.Add (new SwipeTableRowAction ("More", UIImage.FromBundle ("gen-more-active"), A.Color_NachoSwipeActionMatteBlack, ShowMoreActionsForMessage));
+                    actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
+                    actions.Add (new SwipeTableRowAction ("More", UIImage.FromBundle ("gen-more-active"), UIColor.FromRGB (0x4F, 0x64, 0x6D), ShowMoreActionsForMessage));
                 }
                 return actions;
             }
@@ -614,6 +667,47 @@ namespace NachoClient.iOS
         #endregion
 
         #region Private Helpers
+
+        protected void UpdateFilterBar ()
+        {
+            if (!Messages.HasFilterSemantics () || Messages.PossibleFilterSettings.Length < 2) {
+                // TODO: hide filter
+            } else {
+                // TODO: show filter
+
+                var items = new List<MessageFilterBarItem> ();
+                var filters = Messages.PossibleFilterSettingsMask;
+                MessageFilterBarItem selectedItem = null;
+
+                if (filters.HasFlag (FolderFilterOptions.All)) {
+                    items.Add (new MessageFilterBarItem ("All", UIImage.FromBundle ("email-filter-all"), FilterAll));
+                    if (Messages.FilterSetting == FolderFilterOptions.All) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Hot)) {
+                    items.Add (new MessageFilterBarItem ("Hot", UIImage.FromBundle ("email-hot"), FilterHot));
+                    if (Messages.FilterSetting == FolderFilterOptions.Hot) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Unread)) {
+                    items.Add (new MessageFilterBarItem ("Unread", UIImage.FromBundle ("email-filter-unread"), FilterUnread));
+                    if (Messages.FilterSetting == FolderFilterOptions.Unread) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Focused)) {
+                    items.Add (new MessageFilterBarItem ("Focus", UIImage.FromBundle ("email-filter-focus"), FilterFocus));
+                    if (Messages.FilterSetting == FolderFilterOptions.Focused) {
+                        selectedItem = items.Last ();
+                    }
+                }
+
+                FilterBar.SetItems (items.ToArray());
+                FilterBar.SelectItem (selectedItem);
+            }
+        }
 
         void ComposeMessage ()
         {

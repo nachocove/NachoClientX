@@ -27,6 +27,8 @@ namespace NachoClient.iOS
 
         public FoldersViewController () : base ()
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         public FoldersViewController (IntPtr handle) : base (handle)

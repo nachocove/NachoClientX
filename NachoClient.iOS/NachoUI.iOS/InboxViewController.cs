@@ -34,6 +34,7 @@ namespace NachoClient.iOS
         {
             SwitchAccountButton.SetAccountImage (account);
             SetEmailMessages (NcEmailManager.Inbox (account.Id));
+            UpdateFilterBar ();
             TableView.ReloadData ();
             HasLoadedOnce = false;
             // Relying on ViewWillAppear to call Reload
