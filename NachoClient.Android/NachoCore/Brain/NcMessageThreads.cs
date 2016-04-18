@@ -50,32 +50,26 @@ namespace NachoCore.Brain
                     }
                 }
             } else {
-                var oldMessageIdIndexes = new Dictionary<int, int> (oldItems.Count);
-                var newMessageIdIndexes = new Dictionary<int, int> (newItems.Count);
-                var oldMessageIds = new List<int> (oldItems.Count);
-                var newMessageIds = new List<int> (newItems.Count);
-                int i = 0;
+                var oldIndexesByMessageId = new Dictionary<int, int> (oldItems.Count);
+                int oldIndex = 0;
                 int messageId;
                 foreach (var thread in oldItems) {
                     messageId = thread.FirstMessageSpecialCaseIndex ();
-                    oldMessageIdIndexes [messageId] = i;
-                    oldMessageIds.Add (messageId);
-                    ++i;
+                    oldIndexesByMessageId [messageId] = oldIndex;
+                    ++oldIndex;
                 }
-                i = 0;
+                int newIndex = 0;
                 foreach (var thread in newItems) {
                     messageId = thread.FirstMessageSpecialCaseIndex ();
-                    newMessageIdIndexes [messageId] = i;
-                    newMessageIds.Add (messageId);
-                    ++i;
+                    if (!oldIndexesByMessageId.ContainsKey (messageId)) {
+                        adds.Add (newIndex);
+                    } else {
+                        oldIndexesByMessageId.Remove (messageId);
+                    }
+                    ++newIndex;
                 }
-                var deletedMessageIds = oldMessageIds.Except (newMessageIds);
-                var addedMessageIds = newMessageIds.Except (oldMessageIds);
-                foreach (var messageId_ in deletedMessageIds){
-                    deletes.Add (oldMessageIdIndexes [messageId_]);
-                }
-                foreach (var messageId_ in addedMessageIds) {
-                    adds.Add (newMessageIdIndexes[messageId_]);
+                foreach (var entry in oldIndexesByMessageId) {
+                    deletes.Add (entry.Value);
                 }
             }
             return adds.Count > 0 || deletes.Count > 0;
