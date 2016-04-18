@@ -481,19 +481,23 @@ namespace NachoClient.iOS
             if (IsShowingRefreshIndicator && SyncTokens == null) {
                 EndRefreshing ();
             }
-            if (!HasLoadedOnce) {
-                // If this is the first time we're showing messages, don't bother with any add/delete animations
-                HasLoadedOnce = true;
-                TableView.ReloadData ();
-            } else {
-                if (changed) {
-                    // If the message set has changed, animate added and deleted rows
-                    Util.UpdateTable (TableView, adds, deletes);
+            if (PopsWhenEmpty && Messages.Count () == 0 && this == NavigationController.TopViewController) {
+                NavigationController.PopViewController (true);
+            }else{
+                if (!HasLoadedOnce) {
+                    // If this is the first time we're showing messages, don't bother with any add/delete animations
+                    HasLoadedOnce = true;
+                    TableView.ReloadData ();
+                } else {
+                    if (changed) {
+                        // If the message set has changed, animate added and deleted rows
+                        Util.UpdateTable (TableView, adds, deletes);
+                    }
+                    // Regardless of whether messges have been added or deleted, existing rows may have new data, at least
+                    // for properties like read/unread.  To catch any of those changes, we'll refresh all visible rows.
+                    // Note that this may do a small amount of double work for any visible row that was just added.
+                    UpdateVisibleRows ();
                 }
-                // Regardless of whether messges have been added or deleted, existing rows may have new data, at least
-                // for properties like read/unread.  To catch any of those changes, we'll refresh all visible rows.
-                // Note that this may do a small amount of double work for any visible row that was just added.
-                UpdateVisibleRows ();
             }
         }
 
