@@ -18,20 +18,22 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, MessageTableViewSourceDelegate, INachoFolderChooserParent, INachoNotesControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, INachoContactDefaultSelector, IUITableViewDelegate, IUITableViewDataSource
     {
         public McContact contact;
 
         UIScrollView scrollView;
         UIView contentView;
 
+        UserInteractionEmailMessages InteractionMessages;
+        UITableView InteractionsTableView;
+        const string MessageCellIdentifier = "MessageCellIdentifier";
+
         protected UIColor originalBarTintColor;
         protected UIBarButtonItem editContact;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected MessageTableViewSource messageSource;
-        protected HashSet<int> MultiSelect = null;
 
         protected nint selectedSegment = 0;
         protected bool isFirstInfoItem = true;
@@ -55,8 +57,6 @@ namespace NachoClient.iOS
         protected const int CONTACT_INFO_VIEW_TAG = 300;
         protected const int TRANSIENT_TAG_INITIAL_VALUE = 301;
         protected int variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
-
-        protected const int INTERACTIONS_TABLE_VIEW_TAG = 400;
 
         protected const int NOTES_VIEW_TAG = 500;
         protected const int NOTES_TEXT_VIEW_TAG = 501;
@@ -90,14 +90,10 @@ namespace NachoClient.iOS
 
         public ContactDetailViewController () : base ()
         {
-            messageSource = new MessageTableViewSource (this);
-            MultiSelect = new HashSet<int> ();
         }
 
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
-            messageSource = new MessageTableViewSource (this);
-            MultiSelect = new HashSet<int> ();
         }
 
         public override void ViewDidLoad ()
@@ -150,8 +146,8 @@ namespace NachoClient.iOS
             if (null != contact) {
                 contact = McContact.QueryById<McContact> (contact.Id);
             }
-            RefreshData ();
             ConfigureAndLayout ();
+            RefreshData ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -348,13 +344,15 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (contactInfoScrollView);
 
             //INTERACTIONS
-            UITableView interactionsTableView = new UITableView (new CGRect (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
-            interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
-            interactionsTableView.Hidden = true;
-            interactionsTableView.BackgroundColor = UIColor.White;
-            interactionsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
-            interactionsTableView.AccessibilityLabel = "Contact interaction";
-            segmentedViewHolder.AddSubview (interactionsTableView);
+            InteractionsTableView = new UITableView (new CGRect (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            InteractionsTableView.WeakDelegate = this;
+            InteractionsTableView.WeakDataSource = this;
+            InteractionsTableView.Hidden = true;
+            InteractionsTableView.BackgroundColor = UIColor.White;
+            InteractionsTableView.RowHeight = MessageCell.PreferredHeight (3, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+            InteractionsTableView.AccessibilityLabel = "Contact interaction";
+            InteractionsTableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            segmentedViewHolder.AddSubview (InteractionsTableView);
 
             //NOTES
             UIView notesView = new UIView (new CGRect (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
@@ -397,7 +395,6 @@ namespace NachoClient.iOS
         {
             UIView segmentedViewHolder = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
             UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             switch (selectedSegment) {
@@ -405,7 +402,7 @@ namespace NachoClient.iOS
                 SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoScrollView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 1:
-                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + interactionsTableView.Frame.Height + VERTICAL_PADDING / 2);
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + InteractionsTableView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 2:
                 SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + notesView.Frame.Height + VERTICAL_PADDING / 2);
@@ -566,10 +563,7 @@ namespace NachoClient.iOS
             contactInfoScrollView.ContentSize = new CGSize (contactInfoScrollView.Frame.Width, contactInfoHeight);
 
             //CONFIGURE INTERACTIONS VIEW
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-            interactionsTableView.Source = messageSource.GetTableViewSource ();
-            MultiSelectToggle (messageSource, false);
-            SetEmailMessages (new UserInteractionEmailMessages (contact));
+            InteractionMessages = new UserInteractionEmailMessages (contact);
 
             // CONFIGURE NOTES VIEW
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
@@ -596,7 +590,6 @@ namespace NachoClient.iOS
         protected void SegmentedControlHandler (Object sender, EventArgs e)
         {
             UIView contactInfoScrollView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
@@ -604,19 +597,19 @@ namespace NachoClient.iOS
             case 0:
                 editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = false;
-                interactionsTableView.Hidden = true;
+                InteractionsTableView.Hidden = true;
                 notesView.Hidden = true;
                 break;
             case 1:
                 editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = true;
-                interactionsTableView.Hidden = false;
+                InteractionsTableView.Hidden = false;
                 notesView.Hidden = true;
                 RefreshData ();
                 break;
             case 2:
                 editContact.Enabled = (null != contact) && contact.CanUserEdit ();
-                interactionsTableView.Hidden = true;
+                InteractionsTableView.Hidden = true;
                 contactInfoScrollView.Hidden = true;
                 notesView.Hidden = false;
                 break;
@@ -1095,20 +1088,36 @@ namespace NachoClient.iOS
 
         ////////InteractionsTableViewStuff
 
-        public void MoveThread (McEmailMessageThread thread)
+        [Export ("numberOfSectionsInTableView:")]
+        public nint NumberOfSections (UIKit.UITableView tableView)
         {
-            var vc = new FoldersViewController ();
-            var message = thread.FirstMessage ();
-            if (message != null) {
-                vc.SetOwner (this, true, message.AccountId, thread);
-                PresentViewController (vc, true, null);
-            }
+            return 1;
         }
 
-        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        [Foundation.Export("tableView:numberOfRowsInSection:")]
+        public nint RowsInSection (UITableView tableView, nint section)
         {
+            return InteractionMessages.Count ();
+        }
+
+        [Foundation.Export("tableView:cellForRowAtIndexPath:")]
+        public UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = InteractionMessages.GetCachedMessage (indexPath.Row);
+            var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+            cell.SetMessage (message);
+            return cell;
+        }
+
+        [Foundation.Export("tableView:didSelectRowAtIndexPath:")]
+        public void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = InteractionMessages.GetCachedMessage (indexPath.Row);
+            var thread = new McEmailMessageThread ();
+            thread.MessageCount = 1;
+            thread.FirstMessageId = message.Id;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (messageThread);
+            messageViewController.SetSingleMessageThread (thread);
             NavigationController.PushViewController (messageViewController, true);
         }
 
@@ -1132,37 +1141,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            messageSource.BackgroundRefreshEmailMessages ((changed, adds, deletes) => {
-                var interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-                interactionsTableView.ReloadData ();
+            InteractionMessages.BackgroundRefresh ((bool changed, List<int> adds, List<int> deletes) => {
+                InteractionsTableView.ReloadData();
             });
-        }
 
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            vc.SetOwner (null, false, 0, null);
-            vc.DismissFolderChooser (false, null);
-        }
-
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
-        {
-            if (null != messageSource) {
-                messageSource.FolderSelected (vc, folder, cookie);
-            }
-            vc.DismissFolderChooser (true, null);
-        }
-
-        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
-        {
-        }
-
-        public void MultiSelectChange (MessageTableViewSource source, int count, bool multipleAccounts)
-        {
-        }
-
-        public void SetEmailMessages (NachoEmailMessages messageThreads)
-        {
-            this.messageSource.SetEmailMessages (messageThreads, "No interactions");
         }
 
         public void SaveNote (string noteText)
