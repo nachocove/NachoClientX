@@ -12,45 +12,63 @@ namespace NachoCore.Model
 
         public override int GetNumberOfObjects ()
         {
+            int objectCount = 0;
             messages = new Dictionary<int, List<NcEmailMessageIndex>> ();
             var accounts = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.IMAP_SMTP).Where (x => x.AccountService == McAccount.AccountServiceEnum.GoogleDefault).ToList ();
             foreach (var account in accounts) {
                 var emails = QueryEmailsByAccountId (account.Id);
                 if (emails.Count > 0) {
                     messages [account.Id] = emails;
+                    objectCount += emails.Count;
+                } else {
+                    messages [account.Id] = null;
+                }
+                objectCount += McFolder.QueryByAccountId<McFolder> (account.Id).Count ();
+                if (null != McProtocolState.QueryByAccountId<McProtocolState> (account.Id).FirstOrDefault ()) {
+                    objectCount++;
                 }
             }
-            return messages.Keys.Count;
+            return objectCount+(2*messages.Keys.Count);
         }
 
         public override void Run (System.Threading.CancellationToken token)
         {
-            if (messages.Count > 0) {
-                foreach (var accountId in messages.Keys) {
-                    NcModel.Instance.Db.RunInTransaction (() => {
-                        // delete all emails
-                        foreach (var emailId in messages[accountId]) {
-                            var email = emailId.GetMessage ();
-                            if (email != null) {
-                                email.Delete ();
-                            }
+            foreach (var accountId in messages.Keys) {
+                // delete all emails
+                // FIXME? This could be very slow with thousands of messages.
+                if (null != messages [accountId]) {
+                    foreach (var emailId in messages[accountId]) {
+                        var email = emailId.GetMessage ();
+                        if (email != null) {
+                            email.Delete ();
                         }
-                        // reset folder variables
-                        foreach (var folder in McFolder.QueryByAccountId<McFolder> (accountId)) {
-                            folder.ImapNeedFullSync = true;
-                            folder.ImapUidNext = 0;
-                            folder.ImapUidSet = "";
-                            folder.Update ();
-                        }
-                        // set rung back to 0 
-                        var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (accountId).FirstOrDefault ();
-                        if (protocolState != null) {
-                            protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                                var target = (McProtocolState)record;
-                                target.ImapSyncRung = 0;
-                                return true;
-                            });
-                        }
+                        UpdateProgress (1);
+                    }
+                }
+
+                // reset folder variables
+                foreach (var folder in McFolder.QueryByAccountId<McFolder> (accountId)) {
+                    folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ImapNeedFullSync = true;
+                        target.ImapUidNext = 0;
+                        target.ImapUidSet = "";
+                        target.ImapUidLowestUidSynced = uint.MaxValue;
+                        target.ImapLastUidSynced = uint.MinValue;
+                        target.ImapUidHighestUidSynced = uint.MinValue;
+                        target.ImapLastExamine = DateTime.MinValue;
+                        return true;
+                    });
+                    UpdateProgress (1);
+                }
+
+                // set rung back to 0 
+                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (accountId).FirstOrDefault ();
+                if (protocolState != null) {
+                    protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.ImapSyncRung = 0;
+                        return true;
                     });
                     UpdateProgress (1);
                 }
