@@ -18,7 +18,7 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     
-    public class MessageListViewController : NachoTableViewController, INachoFolderChooserParent
+    public class MessageListViewController : NachoTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate
     {
         #region Constants
 
@@ -35,6 +35,7 @@ namespace NachoClient.iOS
 
         NachoEmailMessages Messages;
 
+        UIBarButtonItem SearchButton;
         UIBarButtonItem NewMessageButton;
         UIBarButtonItem EditTableButton;
         UIBarButtonItem DoneSwipingButton;
@@ -47,6 +48,10 @@ namespace NachoClient.iOS
 
         MessageListFilterBar FilterBar;
         UITableView _TableView;
+
+        MessageSearchResultsViewController SearchResultsViewController;
+        NachoSearchController SearchController;
+
         public override UITableView TableView {
             get {
                 return _TableView;
@@ -72,6 +77,8 @@ namespace NachoClient.iOS
 
         public MessageListViewController () : base (UITableViewStyle.Plain)
         {
+            AutomaticallyAdjustsScrollViewInsets = false;
+            SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             using (var image = UIImage.FromBundle ("contact-newemail")) {
                 NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
             }
@@ -82,6 +89,8 @@ namespace NachoClient.iOS
             CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
             DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
 
+            NavigationItem.LeftItemsSupplementBackButton = true;
+            NavigationItem.LeftBarButtonItem = SearchButton;
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
 
@@ -165,6 +174,19 @@ namespace NachoClient.iOS
             StartSync ();
         }
 
+        void ShowSearch (object sender, EventArgs e)
+        {
+            EndAllTableEdits ();
+            if (SearchController == null) {
+                SearchResultsViewController = new MessageSearchResultsViewController ();
+                SearchController = new NachoSearchController (SearchResultsViewController);
+                SearchController.Delegate = this;
+            }
+            SearchResultsViewController.PrepareForSearching ();
+            SearchResultsViewController.NumberOfPreviewLines = NumberOfPreviewLines;
+            SearchController.PresentOverViewController (this);
+        }
+
         void NewMessage (object sender, EventArgs e)
         {
             ComposeMessage ();
@@ -187,24 +209,28 @@ namespace NachoClient.iOS
 
         void FilterAll ()
         {
+            EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.All;
             Reload ();
         }
 
         void FilterHot ()
         {
+            EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.Hot;
             Reload ();
         }
 
         void FilterUnread ()
         {
+            EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.Unread;
             Reload ();
         }
 
         void FilterFocus ()
         {
+            EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.Focused;
             Reload ();
         }
@@ -405,6 +431,25 @@ namespace NachoClient.iOS
         void MarkSelectedMessagesAsNotHot (UIAlertAction action)
         {
             // TODO:
+        }
+
+        #endregion
+
+        #region Search
+
+        public void DidChangeSearchText (NachoSearchController searchController, string text)
+        {
+            SearchResultsViewController.SearchForText (text);
+        }
+
+        public void DidSelectSearch (NachoSearchController searchController)
+        {
+            SearchResultsViewController.StartServerSearch ();
+        }
+
+        public void DidEndSearch (NachoSearchController searchController)
+        {
+            SearchResultsViewController.EndSearching ();
         }
 
         #endregion
@@ -696,12 +741,16 @@ namespace NachoClient.iOS
 
         #region Private Helpers
 
+        protected bool ShouldShowFilterBar {
+            get {
+                return Messages.HasFilterSemantics () && Messages.PossibleFilterSettings.Length > 1;
+            }
+        }
+
         protected void UpdateFilterBar ()
         {
-            if (!Messages.HasFilterSemantics () || Messages.PossibleFilterSettings.Length < 2) {
-                // TODO: hide filter
-            } else {
-                // TODO: show filter
+            if (ShouldShowFilterBar) {
+                ShowFilterBar ();
 
                 var items = new List<MessageFilterBarItem> ();
                 var filters = Messages.PossibleFilterSettingsMask;
@@ -732,8 +781,31 @@ namespace NachoClient.iOS
                     }
                 }
 
-                FilterBar.SetItems (items.ToArray());
+                FilterBar.SetItems (items.ToArray ());
                 FilterBar.SelectItem (selectedItem);
+            } else {
+                HideFilterBar ();
+            }
+        }
+
+        protected void HideFilterBar ()
+        {
+            FilterBar.Hidden = true;
+            TableView.Frame = View.Bounds;
+        }
+
+        protected void ShowFilterBar ()
+        {
+            FilterBar.Hidden = false;
+            TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, View.Bounds.Width, View.Bounds.Height - FilterBar.Frame.Height);
+        }
+
+        protected void EndAllTableEdits ()
+        {
+            if (TableView.Editing) {
+                CancelEditingTable ();
+            } else if (SwipingIndexPath != null) {
+                EndSwiping ();
             }
         }
 
@@ -795,8 +867,9 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
-        void UpdateNavigationItem ()
+        protected virtual void UpdateNavigationItem ()
         {
+            NavigationItem.LeftBarButtonItem = SearchButton;
             if (SwipingIndexPath != null) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     DoneSwipingButton
@@ -904,6 +977,98 @@ namespace NachoClient.iOS
         }
 
         #endregion
+
+    }
+
+
+    public class MessageSearchResultsViewController : NachoTableViewController
+    {
+
+        const string MessageCellIdentifier = "MessageCellIdentifier";
+        public int NumberOfPreviewLines = 3;
+
+        EmailSearch SearchResults;
+
+        public MessageSearchResultsViewController () : base (UITableViewStyle.Plain)
+        {
+            SearchResults = new EmailSearch (UpdateResults);
+        }
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (!NavigationController.NavigationBarHidden) {
+                NavigationController.SetNavigationBarHidden (true, true);
+            }
+        }
+
+        public void PrepareForSearching ()
+        {
+            SearchResults.EnterSearchMode (NcApplication.Instance.Account);
+        }
+
+        public void StartServerSearch ()
+        {
+            SearchResults.StartServerSearch ();
+        }
+
+        public void EndSearching ()
+        {
+            SearchResults.ExitSearchMode ();
+        }
+
+        public void SearchForText (string searchText)
+        {
+            SearchResults.ClearCache ();
+            SearchResults.SearchFor (searchText);
+        }
+
+        void UpdateResults (string searchString, List<McEmailMessageThread> results)
+        {
+            TableView.ReloadData ();
+        }
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        public override nint RowsInSection (UITableView tableView, nint section)
+        {
+            return SearchResults.Count ();
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+            var message = SearchResults.GetCachedMessage (indexPath.Row);
+            cell.SetMessage (message);
+            return cell;
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = SearchResults.GetCachedMessage (indexPath.Row);
+            ShowMessage (message);
+        }
+
+        void ShowMessage (McEmailMessage message)
+        {
+            var thread = new McEmailMessageThread ();
+            thread.MessageCount = 1;
+            thread.FirstMessageId = message.Id;
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (thread);
+            NavigationController.PushViewController (messageViewController, true);
+            NavigationController.SetNavigationBarHidden (false, true);
+        }
 
     }
 

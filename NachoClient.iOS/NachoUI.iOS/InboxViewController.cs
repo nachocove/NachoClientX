@@ -57,6 +57,12 @@ namespace NachoClient.iOS
             HasLoadedOnce = false;
             // Relying on ViewWillAppear to call Reload
         }
+
+        protected override void UpdateNavigationItem ()
+        {
+            base.UpdateNavigationItem ();
+            NavigationItem.TitleView = SwitchAccountButton;
+        }
     }
 }
 

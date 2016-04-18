@@ -1666,6 +1666,7 @@
     <Compile Include="NachoUI.iOS\InboxViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\CornerLayer.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageListFilterBar.cs" />
+    <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
