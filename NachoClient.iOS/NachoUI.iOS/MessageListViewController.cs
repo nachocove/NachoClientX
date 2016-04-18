@@ -984,6 +984,9 @@ namespace NachoClient.iOS
     public class MessageSearchResultsViewController : NachoTableViewController
     {
 
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
+
         const string MessageCellIdentifier = "MessageCellIdentifier";
         public int NumberOfPreviewLines = 3;
 
@@ -1006,6 +1009,44 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (!NavigationController.NavigationBarHidden) {
                 NavigationController.SetNavigationBarHidden (true, true);
+            }
+            KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, KeyboardWillShow);
+            KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, KeyboardWillHide);
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            if (NcKeyboardSpy.Instance.keyboardShowing) {
+                AdjustInsetsForKeyboard ();
+            }
+        }
+
+        void AdjustInsetsForKeyboard ()
+        {
+            nfloat keyboardHeight = NcKeyboardSpy.Instance.KeyboardHeightInView (View);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, 0.0f, keyboardHeight, 0.0f);
+            TableView.ScrollIndicatorInsets = new UIEdgeInsets (TableView.ScrollIndicatorInsets.Top, TableView.ScrollIndicatorInsets.Left, keyboardHeight, TableView.ScrollIndicatorInsets.Right);
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+            base.ViewDidDisappear (animated);
+        }
+
+        void KeyboardWillShow (NSNotification notification)
+        {
+            if (IsViewLoaded && View.Window != null) {
+                AdjustInsetsForKeyboard ();
+            }
+        }
+
+        void KeyboardWillHide (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                AdjustInsetsForKeyboard ();
             }
         }
 
