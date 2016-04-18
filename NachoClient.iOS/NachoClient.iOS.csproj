@@ -1676,6 +1676,9 @@
     <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
     <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration57.cs">
+      <Link>NachoCore\Model\Migration\NcMigration57.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
