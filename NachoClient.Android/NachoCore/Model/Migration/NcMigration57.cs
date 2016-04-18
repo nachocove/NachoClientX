@@ -51,12 +51,6 @@ namespace NachoCore.Model
                     folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.ImapNeedFullSync = true;
-                        target.ImapUidNext = 0;
-                        target.ImapUidSet = "";
-                        target.ImapUidLowestUidSynced = uint.MaxValue;
-                        target.ImapLastUidSynced = uint.MinValue;
-                        target.ImapUidHighestUidSynced = uint.MinValue;
-                        target.ImapLastExamine = DateTime.MinValue;
                         return true;
                     });
                     UpdateProgress (1);
