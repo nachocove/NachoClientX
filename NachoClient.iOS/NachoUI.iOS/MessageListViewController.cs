@@ -539,6 +539,15 @@ namespace NachoClient.iOS
             } else {
                 cell.IndicatorColor = null;
             }
+
+            // TODO: enable after merging David's brain scheduling fixes
+            // NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
+
+            if (message.BodyId == 0) {
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+                }, "MessageTableViewSource.SendEmailBodyFetchHint");
+            }
             return cell;
         }
 
