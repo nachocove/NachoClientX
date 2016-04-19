@@ -141,7 +141,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            EnableRefreshControl ();
             UpdateFilterBar ();
             Reload ();
         }
@@ -149,6 +148,10 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            if (RefreshControl == null) {
+                EnableRefreshControl ();
+                ScheduleContentOffsetAdjustment ();
+            }
             if (SyncTokens != null) {
                 CheckForSyncComplete ();
             }
@@ -157,6 +160,24 @@ namespace NachoClient.iOS
             }
             StartListeningForStatusInd ();
             HasAppearedOnce = true;
+        }
+
+        public void ScheduleContentOffsetAdjustment ()
+        {
+            var selector = new ObjCRuntime.Selector ("adjustContentOffset");
+            var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+            NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+        }
+
+        [Export ("adjustContentOffset")]
+        void AdjustContentOffset ()
+        {
+            TableView.ContentOffset = new CGPoint (0.0f, 0.0f);
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
         }
 
         public override void ViewDidDisappear (bool animated)
@@ -721,6 +742,7 @@ namespace NachoClient.iOS
                             }
                         }
                         if (SyncTokens.Count == 0) {
+                            Messages.RefetchSyncTime ();
                             SyncTimeoutTimer.Dispose ();
                             SyncTimeoutTimer = null;
                             SyncTokens = null;
@@ -745,6 +767,7 @@ namespace NachoClient.iOS
                 }
             }
             if (SyncTokens.Count == 0) {
+                Messages.RefetchSyncTime ();
                 SyncTokens = null;
                 EndRefreshing ();
             }
@@ -984,6 +1007,31 @@ namespace NachoClient.iOS
                     RefreshIndicator.StartAnimating ();
                     SyncTokens = new List<string> (tokens.Split (new char[] { ',' }));
                     SyncTimeoutTimer = new NcTimer ("MessageListViewController_SyncTimeout", HandleSyncTimeout, null, SyncTimeoutSeconds * 1000, 0);
+                }
+            }
+        }
+
+        protected override void PrepareRefreshIndicator ()
+        {
+            UpdateLastSyncLabel ();
+        }
+
+        void UpdateLastSyncLabel ()
+        {
+            if (RefreshControl != null) {
+                DateTime? lastSyncDate = null;
+                if (Messages != null) {
+                    lastSyncDate = Messages.LastSuccessfulSyncTime ();
+                }
+                if (lastSyncDate.HasValue) {
+                    var diff = DateTime.UtcNow - lastSyncDate.Value;
+                    if (diff.TotalSeconds < 60) {
+                        RefreshLabel.Text = "Last updated just now";
+                    } else {
+                        RefreshLabel.Text = "Last updated " + Pretty.TimeWithDecreasingPrecision (lastSyncDate.Value);
+                    }
+                } else {
+                    RefreshLabel.Text = "";
                 }
             }
         }

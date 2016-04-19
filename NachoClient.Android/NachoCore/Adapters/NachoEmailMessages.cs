@@ -58,6 +58,15 @@ namespace NachoCore
             return NachoSyncResult.DoesNotSync ();
         }
 
+        public virtual void RefetchSyncTime ()
+        {
+        }
+
+        public virtual DateTime? LastSuccessfulSyncTime ()
+        {
+            return null;
+        }
+
         public virtual NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             return null;

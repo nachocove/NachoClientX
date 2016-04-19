@@ -78,6 +78,22 @@ namespace NachoCore
         {
             return account.ContainsAccount (folder.AccountId);
         }
+
+        public override DateTime? LastSuccessfulSyncTime ()
+        {
+            if (folder == null) {
+                return null;
+            }
+            if (folder.IsClientOwned) {
+                return null;
+            }
+            return folder.LastSyncAttempt;
+        }
+
+        public override void RefetchSyncTime ()
+        {
+            folder = McFolder.QueryById<McFolder> (folder.Id);
+        }
     }
 }
 

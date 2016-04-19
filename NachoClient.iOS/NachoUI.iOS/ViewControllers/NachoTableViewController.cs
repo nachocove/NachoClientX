@@ -103,9 +103,14 @@ namespace NachoClient.iOS
 
         protected void EndRefreshing ()
         {
-            RefreshIndicator.StopAnimating ();
-            RefreshControl.EndRefreshing ();
-            IsShowingRefreshIndicator = false;
+            if (RefreshControl != null) {
+                if (RefreshIndicator.IsAnimating) {
+                    RefreshIndicator.StopAnimating ();
+                }
+                if (RefreshControl.Refreshing) {
+                    RefreshControl.EndRefreshing ();
+                }
+            }
         }
 
         protected virtual void HandleRefreshControlEvent (object sender, EventArgs e)
@@ -139,16 +144,24 @@ namespace NachoClient.iOS
         {
             if (RefreshControl != null) {
                 var distancePulled = (nfloat)Math.Max (0, -RefreshControl.Frame.Y);
-                if (distancePulled > 0.0f) {
+                if (distancePulled >= 1.0f) {
+                    if (!IsShowingRefreshIndicator) {
+                        PrepareRefreshIndicator ();
+                    }
                     UpdateRefreshIndicatorForPosition (distancePulled);
                     IsShowingRefreshIndicator = true;
                 } else {
                     if (IsShowingRefreshIndicator) {
+                        UpdateRefreshIndicatorForPosition (0.0f);
                         ClearRefreshIndicator ();
                         IsShowingRefreshIndicator = false;
                     }
                 }
             }
+        }
+
+        protected virtual void PrepareRefreshIndicator()
+        {
         }
 
         void UpdateRefreshIndicatorForPosition (nfloat distancePulled)
