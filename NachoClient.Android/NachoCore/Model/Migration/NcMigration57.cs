@@ -51,6 +51,8 @@ namespace NachoCore.Model
                     folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.ImapNeedFullSync = true;
+                        target.LastSyncAttempt = DateTime.MinValue;
+                        target.ImapLastExamine = DateTime.MinValue;
                         return true;
                     });
                     UpdateProgress (1);
@@ -62,6 +64,7 @@ namespace NachoCore.Model
                     protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                         var target = (McProtocolState)record;
                         target.ImapSyncRung = 0;
+                        target.AsLastFolderSync = DateTime.MinValue;
                         return true;
                     });
                     UpdateProgress (1);
