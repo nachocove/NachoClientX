@@ -94,6 +94,14 @@ namespace NachoCore
         {
             folder = McFolder.QueryById<McFolder> (folder.Id);
         }
+
+        public override bool HasSentSemantics ()
+        {
+            if (folder == null) {
+                return false;
+            }
+            return folder.Type == NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
+        }
     }
 }
 
