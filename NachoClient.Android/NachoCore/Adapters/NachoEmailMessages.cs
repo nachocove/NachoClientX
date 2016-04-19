@@ -112,6 +112,11 @@ namespace NachoCore
             return false;
         }
 
+        public virtual bool HasSentSemantics ()
+        {
+            return false;
+        }
+
         public virtual bool IsCompatibleWithAccount (McAccount account)
         {
             return false;
@@ -179,9 +184,14 @@ namespace NachoCore
                 cache [cacheIndex].Add (result);
             }
             first [cacheIndex] = block;
+            UpdateCachedPropertiesForBlock (cache [cacheIndex]);
+        }
+
+        void UpdateCachedPropertiesForBlock (List<McEmailMessage> messages)
+        {
             // Get portraits
             var fromAddressIdList = new List<int> ();
-            foreach (var message in cache[cacheIndex]) {
+            foreach (var message in messages) {
                 if (null != message) {
                     if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
                         fromAddressIdList.Add (message.FromEmailAddressId);
@@ -191,7 +201,7 @@ namespace NachoCore
             // Assign matching portrait ids to email messages
             var portraitIndexList = McContact.QueryForPortraits (fromAddressIdList);
             foreach (var portraitIndex in portraitIndexList) {
-                foreach (var message in cache[cacheIndex]) {
+                foreach (var message in messages) {
                     if (null != message) {
                         if (portraitIndex.EmailAddress == message.FromEmailAddressId) {
                             message.cachedPortraitId = portraitIndex.PortraitId;

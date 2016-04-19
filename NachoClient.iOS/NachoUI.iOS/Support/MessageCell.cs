@@ -51,6 +51,7 @@ namespace NachoClient.iOS
         nfloat RightPadding = 10.0f;
         nfloat ColorIndicatorSize = 3.0f;
         UIEdgeInsets ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 7.0f);
+        public bool UseRecipientName;
 
         static NSAttributedString _HotAttachmentString;
         static NSAttributedString HotAttachmentString {
@@ -113,9 +114,17 @@ namespace NachoClient.iOS
 
         public void SetMessage (McEmailMessage message)
         {
-            PortraitView.SetPortrait (message.cachedPortraitId, message.cachedFromColor, message.cachedFromLetters);
             DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
-            TextLabel.Text = Pretty.SenderString (message.From);
+            if (UseRecipientName) {
+                TextLabel.Text = Pretty.RecipientString (message.To);
+                PortraitView.Hidden = true;
+                SeparatorInset = new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f);
+            } else {
+                TextLabel.Text = Pretty.SenderString (message.From);
+                PortraitView.SetPortrait (message.cachedPortraitId, message.cachedFromColor, message.cachedFromLetters);
+                PortraitView.Hidden = false;
+                SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
+            }
             int subjectLength;
             var previewText = Pretty.MessagePreview (message, out subjectLength);
             using (var attributedPreview = new NSMutableAttributedString (previewText)) {

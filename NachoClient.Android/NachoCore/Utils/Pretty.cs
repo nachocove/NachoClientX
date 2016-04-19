@@ -425,8 +425,23 @@ namespace NachoCore.Utils
 
         static public string RecipientString (string Recipient)
         {
-            if (null == Recipient) {
-                return "";
+            if (String.IsNullOrWhiteSpace (Recipient)) {
+                return "(No Recipients)";
+            }
+            InternetAddressList addresses;
+            if (false == InternetAddressList.TryParse (Recipient, out addresses)) {
+                return Recipient;
+            }
+            var names = new List<string> ();
+            foreach (var mailbox in addresses.Mailboxes){
+                if (String.IsNullOrEmpty (mailbox.Name)) {
+                    names.Add (mailbox.Address);
+                } else {
+                    names.Add (mailbox.Name);
+                }
+            }
+            if (names.Count > 0) {
+                return String.Join (", ", names);
             }
             return Recipient;
         }

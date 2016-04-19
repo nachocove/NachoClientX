@@ -116,6 +116,14 @@ namespace NachoCore
             return true;
         }
 
+        public override bool HasSentSemantics ()
+        {
+            if (folder == null) {
+                return false;
+            }
+            return folder.Type == NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
+        }
+
         public override FolderFilterOptions FilterSetting {
             get {
                 return folder.FilterSetting;

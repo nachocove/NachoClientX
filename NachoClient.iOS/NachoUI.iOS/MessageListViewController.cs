@@ -557,6 +557,7 @@ namespace NachoClient.iOS
                 return tableView.DequeueReusableCell (UnavailableCellIdentifier);
             }
             var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+            cell.UseRecipientName = Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics () || Messages.HasSentSemantics ();
             cell.SetMessage (message);
             cell.NumberOfPreviewLines = NumberOfPreviewLines;
             if (Messages.IncludesMultipleAccounts ()) {
@@ -735,6 +736,7 @@ namespace NachoClient.iOS
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
+                    Messages.RefetchSyncTime ();
                     if (SyncTokens != null) {
                         if (s.Tokens != null) {
                             foreach (var token in s.Tokens) {
@@ -742,7 +744,6 @@ namespace NachoClient.iOS
                             }
                         }
                         if (SyncTokens.Count == 0) {
-                            Messages.RefetchSyncTime ();
                             SyncTimeoutTimer.Dispose ();
                             SyncTimeoutTimer = null;
                             SyncTokens = null;
