@@ -23,6 +23,18 @@ namespace NachoClient.iOS
         }
     }
 
+    public class BasicSwipeAction : SwipeAction
+    {
+
+        public readonly Action Action;
+
+        public BasicSwipeAction (string title, UIImage image, UIColor color, Action action) : base (title, image, color)
+        {
+            Action = action;
+        }
+
+    }
+
     public interface SwipeActionsViewDelegate
     {
         List<SwipeAction> ActionsForViewSwipingRight (SwipeActionsView view);

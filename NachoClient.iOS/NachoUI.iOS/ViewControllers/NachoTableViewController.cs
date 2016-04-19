@@ -260,5 +260,38 @@ namespace NachoClient.iOS
         }
 
     }
+
+    public class NachoWrappedTableViewController : NachoTableViewController
+    {
+        
+        UITableView _TableView;
+        public override UITableView TableView {
+            get {
+                return _TableView;
+            }
+            set {
+                base.TableView = _TableView = value;
+            }
+        }
+
+        public NachoWrappedTableViewController (UITableViewStyle style) : base (style)
+        {
+        }
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+
+            var view = new UIView (new CGRect (0.0f, 0.0f, 320.0f, 320.0f));
+            view.BackgroundColor = UIColor.White;
+
+            TableView.Frame = view.Bounds;
+            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+
+            view.AddSubview (TableView);
+
+            View = view;
+        }
+    }
 }
 

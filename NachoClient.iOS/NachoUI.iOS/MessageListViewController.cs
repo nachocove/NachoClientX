@@ -18,7 +18,7 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     
-    public class MessageListViewController : NachoTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate
+    public class MessageListViewController : NachoWrappedTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate
     {
         #region Constants
 
@@ -47,19 +47,9 @@ namespace NachoClient.iOS
         UIBarButtonItem MarkButton;
 
         MessageListFilterBar FilterBar;
-        UITableView _TableView;
 
         MessageSearchResultsViewController SearchResultsViewController;
         NachoSearchController SearchController;
-
-        public override UITableView TableView {
-            get {
-                return _TableView;
-            }
-            set {
-                base.TableView = _TableView = value;
-            }
-        }
 
         int NumberOfPreviewLines = 3;
         protected bool HasLoadedOnce;
@@ -121,21 +111,14 @@ namespace NachoClient.iOS
             TableView.TintColor = A.Color_NachoGreen;
             TableView.BackgroundColor = UIColor.White;
 
-            var view = new UIView (new CGRect (0.0f, 0.0f, 320.0f, 320.0f));
-            view.BackgroundColor = UIColor.White;
-
-            FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, view.Bounds.Width, MessageListFilterBar.PreferredHeight));
+            FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, View.Bounds.Width, MessageListFilterBar.PreferredHeight));
             FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             FilterBar.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, view.Bounds.Width, view.Bounds.Height - FilterBar.Frame.Height);
+            TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, View.Bounds.Width, View.Bounds.Height - FilterBar.Frame.Height);
             TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
-            _TableView = TableView;
 
-            view.AddSubview (TableView);
-            view.AddSubview (FilterBar);
-
-            View = view;
+            View.AddSubview (FilterBar);
         }
 
         public override void ViewDidLoad ()

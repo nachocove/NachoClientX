@@ -722,7 +722,6 @@
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\A.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
@@ -985,7 +984,6 @@
       <Link>NachoCore\Index\IndexDocument.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
-    <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />

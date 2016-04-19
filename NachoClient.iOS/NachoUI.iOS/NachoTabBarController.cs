@@ -58,6 +58,7 @@ namespace NachoClient.iOS
             var aboutNavController = new UINavigationController (new AboutUsViewController ());
             aboutNavController.TabBarItem = MakeTabBarItem ("About Nacho Mail", "more-nachomail");
 
+            Util.ConfigureNavBar (false, nowNavController);
             Util.ConfigureNavBar (false, inboxNavController);
 
             ViewControllers = new UIViewController[] {
