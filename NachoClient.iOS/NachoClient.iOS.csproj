@@ -1667,6 +1667,8 @@
     <Compile Include="NachoUI.iOS\Support\CornerLayer.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageListFilterBar.cs" />
     <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
