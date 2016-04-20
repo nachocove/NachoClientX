@@ -2721,6 +2721,9 @@
     <BundleResource Include="Resources\nav-hot.png" />
     <BundleResource Include="Resources\nav-hot%402x.png" />
     <BundleResource Include="Resources\nav-hot%403x.png" />
+    <BundleResource Include="Resources\empty-hot.png" />
+    <BundleResource Include="Resources\empty-hot%402x.png" />
+    <BundleResource Include="Resources\empty-hot%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

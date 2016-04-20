@@ -38,6 +38,8 @@ namespace NachoClient.iOS
         NachoEmailMessages HotMessages;
         MessagesSyncManager SyncManager;
 
+        EmptyHotView EmptyView;
+
         bool IsListeningForStatusInd;
         bool HasAppearedOnce = false;
         bool HasLoadedOnce = false;
@@ -109,6 +111,13 @@ namespace NachoClient.iOS
             // Have the event manager keep the McEvents accurate for at least the next seven days.
             NcEventManager.AddEventWindow (this, new TimeSpan (7, 0, 0, 0));
 
+            EmptyView = new EmptyHotView (TableView.Frame);
+            EmptyView.TintColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.5f);
+            EmptyView.ImageView.TintColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.25f);
+            EmptyView.AutoresizingMask = TableView.AutoresizingMask;
+            EmptyView.Hidden = true;
+            View.AddSubview (EmptyView);
+
             ReloadHotMessages ();
             ReloadCalendar ();
         }
@@ -126,6 +135,7 @@ namespace NachoClient.iOS
                 SyncManager.ResumeEvents ();
             }
             StartListeningForStatusInd ();
+            HotMessages.RefetchSyncTime ();
             if (HasAppearedOnce) {
                 ReloadCalendar ();
                 ReloadHotMessages ();
@@ -493,6 +503,7 @@ namespace NachoClient.iOS
                 }
                 UpdateVisibleRows ();
             }
+            EmptyView.Hidden = HotMessages.Count () > 0;
         }
 
         void UpdateVisibleRows ()
@@ -697,7 +708,7 @@ namespace NachoClient.iOS
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
-                    // cancelRefreshTimer ();
+                    HotMessages.RefetchSyncTime ();
                     break;
                 }
             }
@@ -871,6 +882,51 @@ namespace NachoClient.iOS
             }
         }
 
+        private class EmptyHotView : UIView 
+        {
+
+            public readonly UILabel TextLabel;
+            public readonly UIImageView ImageView;
+            nfloat Padding = 30.0f;
+            nfloat ImageSpacing = 30.0f;
+
+            public EmptyHotView (CGRect frame) : base (frame)
+            {
+                UserInteractionEnabled = false;
+                TextLabel = new UILabel ();
+                TextLabel.UserInteractionEnabled = false;
+                TextLabel.Lines = 0;
+                TextLabel.Font = A.Font_AvenirNextRegular14;
+                TextLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                TextLabel.TextAlignment = UITextAlignment.Center;
+                TextLabel.Text = "Your most important items will show up here automatically as Nacho Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
+
+                using (var image = UIImage.FromBundle("empty-hot")){
+                    ImageView = new UIImageView (image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
+                }
+
+                AddSubview(ImageView);
+                AddSubview(TextLabel);
+            }
+
+            public override void TintColorDidChange ()
+            {
+                base.TintColorDidChange ();
+                TextLabel.TextColor = TintColor;
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                var size = TextLabel.SizeThatFits (new CGSize (Bounds.Width - 2.0f * Padding, 0.0f));
+                size.Width = (nfloat)Math.Ceiling (size.Width);
+                size.Height = (nfloat)Math.Ceiling (size.Height);
+                TextLabel.Frame = new CGRect ((Bounds.Width - size.Width) / 2.0f, (Bounds.Height - size.Height) / 2.0f, size.Width, size.Height);
+                ImageView.Center = new CGPoint (Bounds.Width / 2.0f, TextLabel.Frame.Top - ImageSpacing - ImageView.Frame.Size.Height / 2.0f);
+            }
+        }
+
         #endregion
     }
+        
 }

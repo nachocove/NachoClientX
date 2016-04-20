@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         public readonly SwipeActionsView SwipeView;
         public Action Action;
         UIEdgeInsets ContentInsets;
+        UIEdgeInsets TextInsets;
         UILabel TitleLabel;
         UILabel DetailLabel;
         UILabel DateLabel;
@@ -47,7 +48,8 @@ namespace NachoClient.iOS
 
         public HotEventView (CGRect rect) : base (rect)
         {
-            ContentInsets = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 10.0f);
+            ContentInsets = new UIEdgeInsets (0.0f, 10.0f, 0.0f, 10.0f);
+            TextInsets = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 10.0f);
 
             SwipeView = new SwipeActionsView (Bounds);
             SwipeView.BackgroundColor = UIColor.White;
@@ -155,14 +157,14 @@ namespace NachoClient.iOS
                 CGRect frame;
 
                 frame = DateLabel.Frame;
-                frame.X = ContentView.Bounds.Width - ContentInsets.Right - dateSize.Width;
+                frame.X = ContentView.Bounds.Width - ContentInsets.Right - TextInsets.Right - dateSize.Width;
                 frame.Width = dateSize.Width;
                 frame.Height = DateLabel.Font.RoundedLineHeight (1.0f);
                 frame.Y = (ContentView.Bounds.Height - frame.Height) / 2.0f;
                 DateLabel.Frame = frame;
 
                 frame = TitleLabel.Frame;
-                frame.X = ContentInsets.Left;
+                frame.X = ContentInsets.Left + TextInsets.Left;
                 frame.Y = textTop;
                 frame.Width = DateLabel.Frame.X - frame.X;
                 frame.Height = titleHeight;
@@ -174,9 +176,10 @@ namespace NachoClient.iOS
                     frame.Y = TitleLabel.Frame.Y + TitleLabel.Frame.Height;
                     frame.Width = TitleLabel.Frame.Width;
                     frame.Height = detailHeight;
+                    DetailLabel.Frame = frame;
                 }
 
-                IconView.Center = new CGPoint ((ContentInsets.Left - IconView.Frame.Width) / 2.0f, ContentView.Bounds.Height / 2.0f);
+                IconView.Center = new CGPoint (ContentInsets.Left + TextInsets.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
             }
         }
 

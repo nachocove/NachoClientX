@@ -139,6 +139,7 @@ namespace NachoClient.iOS
             if (SyncManager.IsSyncing) {
                 SyncManager.ResumeEvents ();
             }
+            Messages.RefetchSyncTime ();
             if (HasAppearedOnce && !TableView.Editing) {
                 Reload ();
             }
