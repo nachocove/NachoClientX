@@ -545,6 +545,7 @@ namespace NachoCore.IMAP
         /// <param name="TransferEncoding">Transfer encoding.</param>
         /// <param name="func">Func.</param>
         /// <param name="outCharSet">Output Char set (default "utf-8").</param>
+        /// <param name = "token">cancellation token</param>
         protected void CopyFilteredStream (Stream inStream, Stream outStream,
                                            string inCharSet, string TransferEncoding, Action<Stream, Stream, CancellationToken> func,
                                            string outCharSet, CancellationToken token)
