@@ -99,6 +99,26 @@ namespace NachoClient.iOS
             refreshOverlay.AddSubview (RefreshLabel);
 
             RefreshControl.AddSubview (refreshOverlay);
+
+            // The refresh control will sometimes be visible when a table loads.  It often seems to happen when the table rows
+            // don't fill up the full view height.  Regardless of the cause, scheduling an update on the run loop, so it
+            // happens after other queued layout events, seems to help.  Although, I've caught a few cases where it still shows,
+            // so there may still be a better solution/workaround than this one.
+            // One assumption here is that EnableRefreshControl will only be called when the table is expected to be at 0,0 offset
+            ScheduleContentOffsetAdjustment ();
+        }
+
+        public void ScheduleContentOffsetAdjustment ()
+        {
+            var selector = new ObjCRuntime.Selector ("adjustContentOffset");
+            var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+            NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+        }
+
+        [Export ("adjustContentOffset")]
+        void AdjustContentOffset ()
+        {
+            TableView.ContentOffset = new CGPoint (0.0f, 0.0f);
         }
 
         protected void EndRefreshing ()

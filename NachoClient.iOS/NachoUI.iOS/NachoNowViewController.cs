@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate
+    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate
     {
         #region Constants
 
@@ -36,6 +36,7 @@ namespace NachoClient.iOS
         NcTimer CalendarUpdateTimer;
 
         NachoEmailMessages HotMessages;
+        MessagesSyncManager SyncManager;
 
         bool IsListeningForStatusInd;
         bool HasAppearedOnce = false;
@@ -53,6 +54,9 @@ namespace NachoClient.iOS
 
         public NachoNowViewController () : base (UITableViewStyle.Grouped)
         {
+            SyncManager = new MessagesSyncManager ();
+            SyncManager.Delegate = this;
+
             AutomaticallyAdjustsScrollViewInsets = false;
 
             using (var image = UIImage.FromBundle ("contact-newemail")) {
@@ -79,7 +83,6 @@ namespace NachoClient.iOS
         {
             base.LoadView ();
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            TableView.ContentInset = new UIEdgeInsets (14.0f, 0.0f, 0.0f, 0.0f);
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);
@@ -113,8 +116,14 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            if (RefreshControl == null) {
+                EnableRefreshControl ();
+            }
             if (NcApplication.Instance.Account.Id != Account.Id) {
                 SwitchToAccount (NcApplication.Instance.Account);
+            }
+            if (SyncManager.IsSyncing) {
+                SyncManager.ResumeEvents ();
             }
             StartListeningForStatusInd ();
             if (HasAppearedOnce) {
@@ -137,6 +146,7 @@ namespace NachoClient.iOS
 
         public override void ViewDidDisappear (bool animated)
         {
+            SyncManager.PauseEvents ();
             StopListeningForStatusInd ();
             if (CalendarUpdateTimer != null) {
                 CalendarUpdateTimer.Dispose ();
@@ -148,6 +158,12 @@ namespace NachoClient.iOS
         #endregion
 
         #region User Actions
+
+        protected override void HandleRefreshControlEvent (object sender, EventArgs e)
+        {
+            RefreshIndicator.StartAnimating ();
+            StartSync ();
+        }
 
         void NewEmailMessage (object sender, EventArgs e)
         {
@@ -405,6 +421,9 @@ namespace NachoClient.iOS
 
         void HandleReloadHotMessagesResults (bool changed, List<int> adds, List<int> deletes)
         {
+            if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
+                EndRefreshing ();
+            }
             SectionCount = 0;
             if (HotMessages.Count () > 0) {
                 SectionCount = 1;
@@ -478,20 +497,23 @@ namespace NachoClient.iOS
 
         void UpdateVisibleRows ()
         {
-            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
-                if (indexPath.Section == HotMessagesSection){
-                    if (indexPath.Row < MaximumNumberOfHotMessages) {
-                        var message = HotMessages.GetCachedMessage (indexPath.Row);
-                        var cell = TableView.CellAt (indexPath) as MessageCell;
-                        if (cell != null && message != null) {
-                            cell.SetMessage (message);
+            var indexPaths = TableView.IndexPathsForVisibleRows;
+            if (indexPaths != null) {
+                foreach (var indexPath in indexPaths) {
+                    if (indexPath.Section == HotMessagesSection) {
+                        if (indexPath.Row < MaximumNumberOfHotMessages) {
+                            var message = HotMessages.GetCachedMessage (indexPath.Row);
+                            var cell = TableView.CellAt (indexPath) as MessageCell;
+                            if (cell != null && message != null) {
+                                cell.SetMessage (message);
+                            }
+                        } else {
+                            TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
                         }
-                    } else {
-                        TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
                     }
+                    // Needed to tell our custom table group cells to redraw corners
+                    WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
                 }
-                // Needed to tell our custom table group cells to redraw corners
-                WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
             }
         }
 
@@ -504,7 +526,7 @@ namespace NachoClient.iOS
             get {
                 if (_HotMessagesHeader == null) {
                     _HotMessagesHeader = new InsetLabelView ();
-                    _HotMessagesHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
+                    _HotMessagesHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _HotMessagesHeader.Label.Text = "Hot Messages";
                     _HotMessagesHeader.Label.Font = A.Font_AvenirNextRegular14;
                     _HotMessagesHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
@@ -685,6 +707,29 @@ namespace NachoClient.iOS
 
         #region Private Helpers
 
+        void StartSync ()
+        {
+            if (!SyncManager.SyncEmailMessages (HotMessages)) {
+                ReloadHotMessages ();
+            }
+        }
+
+        protected void CancelSyncing ()
+        {
+            SyncManager.Cancel ();
+            EndRefreshing ();
+        }
+
+        public void MessagesSyncDidComplete (MessagesSyncManager manager)
+        {
+            EndRefreshing ();
+        }
+
+        public void MessagesSyncDidTimeOut (MessagesSyncManager manager)
+        {
+            EndRefreshing ();
+        }
+
         void ShowAllHotMessages ()
         {
             var viewController = new MessageListViewController ();
@@ -759,6 +804,7 @@ namespace NachoClient.iOS
             if (SwipingIndexPath != null) {
                 EndSwiping ();
             }
+            CancelSyncing ();
             Account = account;
             SwitchAccountButton.SetAccountImage (account);
             HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
@@ -775,6 +821,31 @@ namespace NachoClient.iOS
             composeViewController.Composer.Kind = action;
             composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();
+        }
+
+        protected override void PrepareRefreshIndicator ()
+        {
+            UpdateLastSyncLabel ();
+        }
+
+        void UpdateLastSyncLabel ()
+        {
+            if (RefreshControl != null) {
+                DateTime? lastSyncDate = null;
+                if (HotMessages != null) {
+                    lastSyncDate = HotMessages.LastSuccessfulSyncTime ();
+                }
+                if (lastSyncDate.HasValue) {
+                    var diff = DateTime.UtcNow - lastSyncDate.Value;
+                    if (diff.TotalSeconds < 60) {
+                        RefreshLabel.Text = "Last updated just now";
+                    } else {
+                        RefreshLabel.Text = "Last updated " + Pretty.TimeWithDecreasingPrecision (lastSyncDate.Value);
+                    }
+                } else {
+                    RefreshLabel.Text = "";
+                }
+            }
         }
 
         #endregion

@@ -18,7 +18,7 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     
-    public class MessageListViewController : NachoWrappedTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate
+    public class MessageListViewController : NachoWrappedTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate, MessagesSyncManagerDelegate
     {
         #region Constants
 
@@ -55,9 +55,8 @@ namespace NachoClient.iOS
         protected bool HasLoadedOnce;
         bool HasAppearedOnce;
         bool IsListeningForStatusInd;
-        List<string> SyncTokens;
-        int SyncTimeoutSeconds = 30;
-        NcTimer SyncTimeoutTimer;
+
+        MessagesSyncManager SyncManager;
 
         Dictionary<int, int> SelectedAccounts;
 
@@ -67,6 +66,9 @@ namespace NachoClient.iOS
 
         public MessageListViewController () : base (UITableViewStyle.Plain)
         {
+            SyncManager = new MessagesSyncManager ();
+            SyncManager.Delegate = this;
+
             AutomaticallyAdjustsScrollViewInsets = false;
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             using (var image = UIImage.FromBundle ("contact-newemail")) {
@@ -133,29 +135,15 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (RefreshControl == null) {
                 EnableRefreshControl ();
-                ScheduleContentOffsetAdjustment ();
             }
-            if (SyncTokens != null) {
-                CheckForSyncComplete ();
+            if (SyncManager.IsSyncing) {
+                SyncManager.ResumeEvents ();
             }
             if (HasAppearedOnce && !TableView.Editing) {
                 Reload ();
             }
             StartListeningForStatusInd ();
             HasAppearedOnce = true;
-        }
-
-        public void ScheduleContentOffsetAdjustment ()
-        {
-            var selector = new ObjCRuntime.Selector ("adjustContentOffset");
-            var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
-            NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
-        }
-
-        [Export ("adjustContentOffset")]
-        void AdjustContentOffset ()
-        {
-            TableView.ContentOffset = new CGPoint (0.0f, 0.0f);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -165,6 +153,7 @@ namespace NachoClient.iOS
 
         public override void ViewDidDisappear (bool animated)
         {
+            SyncManager.PauseEvents ();
             StopListeningForStatusInd ();
             base.ViewDidDisappear (animated);
         }
@@ -175,6 +164,7 @@ namespace NachoClient.iOS
 
         protected override void HandleRefreshControlEvent (object sender, EventArgs e)
         {
+            RefreshIndicator.StartAnimating ();
             StartSync ();
         }
 
@@ -462,9 +452,6 @@ namespace NachoClient.iOS
 
         protected void Reload ()
         {
-            if (IsShowingRefreshIndicator) {
-                RefreshIndicator.StartAnimating ();
-            }
             Messages.ClearCache ();
             if (Messages.HasBackgroundRefresh ()) {
                 Messages.BackgroundRefresh (HandleReloadResults);
@@ -482,7 +469,7 @@ namespace NachoClient.iOS
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
         {
-            if (IsShowingRefreshIndicator && SyncTokens == null) {
+            if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
             if (PopsWhenEmpty && Messages.Count () == 0 && this == NavigationController.TopViewController) {
@@ -507,11 +494,14 @@ namespace NachoClient.iOS
 
         void UpdateVisibleRows ()
         {
-            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
-                var message = Messages.GetCachedMessage (indexPath.Row);
-                var cell = TableView.CellAt (indexPath) as MessageCell;
-                if (cell != null && message != null) {
-                    cell.SetMessage (message);
+            var indexPaths = TableView.IndexPathsForVisibleRows;
+            if (indexPaths != null) {
+                foreach (var indexPath in indexPaths) {
+                    var message = Messages.GetCachedMessage (indexPath.Row);
+                    var cell = TableView.CellAt (indexPath) as MessageCell;
+                    if (cell != null && message != null) {
+                        cell.SetMessage (message);
+                    }
                 }
             }
         }
@@ -720,50 +710,19 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
                     Messages.RefetchSyncTime ();
-                    if (SyncTokens != null) {
-                        if (s.Tokens != null) {
-                            foreach (var token in s.Tokens) {
-                                SyncTokens.Remove (token);
-                            }
-                        }
-                        if (SyncTokens.Count == 0) {
-                            SyncTimeoutTimer.Dispose ();
-                            SyncTimeoutTimer = null;
-                            SyncTokens = null;
-                            EndRefreshing ();
-                        }
-                    }
                     break;
                 }
             }
         }
 
-        void CheckForSyncComplete ()
+        public void MessagesSyncDidComplete (MessagesSyncManager manager)
         {
-            var tokens = new List<string> (SyncTokens);
-            foreach (var token in tokens) {
-                var pendings = McPending.QueryByToken (NcApplication.Instance.Account.Id, token);
-                if (pendings.Count() > 0) {
-                    var pending = pendings.First ();
-                    if (pending.State == McPending.StateEnum.Failed || pending.State == McPending.StateEnum.Deleted) {
-                        SyncTokens.Remove (token);
-                    }
-                }
-            }
-            if (SyncTokens.Count == 0) {
-                Messages.RefetchSyncTime ();
-                SyncTokens = null;
-                EndRefreshing ();
-            }
+            EndRefreshing ();
         }
 
-        void HandleSyncTimeout (object state)
+        public void MessagesSyncDidTimeOut (MessagesSyncManager manager)
         {
-            SyncTokens = null;
-            SyncTimeoutTimer = null;
-            BeginInvokeOnMainThread (() => {
-                EndRefreshing ();
-            });
+            EndRefreshing ();
         }
 
         #endregion
@@ -840,11 +799,7 @@ namespace NachoClient.iOS
 
         protected void CancelSyncing ()
         {
-            if (SyncTimeoutTimer != null) {
-                SyncTimeoutTimer.Dispose ();
-                SyncTimeoutTimer = null;
-            }
-            SyncTokens = null;
+            SyncManager.Cancel ();
             EndRefreshing ();
         }
 
@@ -929,11 +884,14 @@ namespace NachoClient.iOS
         List<McEmailMessage> SelectedMessages ()
         {
             var messages = new List<McEmailMessage> ();
-            foreach (var indexPath in TableView.IndexPathsForSelectedRows) {
-                var thread = Messages.GetEmailThread (indexPath.Row);
-                if (thread != null) {
-                    foreach (var message in thread) {
-                        messages.Add (message);
+            var indexPaths = TableView.IndexPathsForSelectedRows;
+            if (indexPaths != null) {
+                foreach (var indexPath in indexPaths) {
+                    var thread = Messages.GetEmailThread (indexPath.Row);
+                    if (thread != null) {
+                        foreach (var message in thread) {
+                            messages.Add (message);
+                        }
                     }
                 }
             }
@@ -980,18 +938,9 @@ namespace NachoClient.iOS
 
         void StartSync ()
         {
-            var result = Messages.StartSync ();
-            if (result.isError ()) {
+            if (!SyncManager.SyncEmailMessages (Messages)) {
+                // If we couldn't start a sync, just requery the db
                 Reload ();
-            }else{
-                var tokens = result.Value as string;
-                if (tokens == null) {
-                    EndRefreshing ();
-                }else{
-                    RefreshIndicator.StartAnimating ();
-                    SyncTokens = new List<string> (tokens.Split (new char[] { ',' }));
-                    SyncTimeoutTimer = new NcTimer ("MessageListViewController_SyncTimeout", HandleSyncTimeout, null, SyncTimeoutSeconds * 1000, 0);
-                }
             }
         }
 

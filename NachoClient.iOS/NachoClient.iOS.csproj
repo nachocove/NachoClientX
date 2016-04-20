@@ -1664,6 +1664,9 @@
     <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageCell.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessagesSyncManager.cs">
+      <Link>NachoCore\Utils\MessagesSyncManager.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

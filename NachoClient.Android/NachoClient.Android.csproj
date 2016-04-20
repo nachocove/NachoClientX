@@ -663,6 +663,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration56.cs" />
     <Compile Include="NachoCore\Adapters\NachoFolderMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
+    <Compile Include="NachoCore\Utils\MessagesSyncManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
