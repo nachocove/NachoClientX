@@ -677,9 +677,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            NcTask.Run (() => {
-                NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
-            }, "MessageNotificationStatusUpdated");
+            NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
 
             cell.TextLabel.Text = "";
             cell.ContentView.Hidden = false;
