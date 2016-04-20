@@ -898,7 +898,9 @@ namespace NachoCore.Model
                     // Re-index the contact. Must do this after the contact update because
                     // re-indexing has a contact update (for updating IndexVersion) and
                     // doing this before contact update would set up a race.
-                    NcBrain.ReindexContact (this);
+                    if (!this.IsGleaned () && ContactIndexDocument.Version == this.IndexVersion) {
+                        NcBrain.ReindexContact (this);
+                    }
                 });
                 return retval;
             }
