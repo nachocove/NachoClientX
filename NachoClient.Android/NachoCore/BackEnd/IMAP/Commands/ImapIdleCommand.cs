@@ -145,7 +145,7 @@ namespace NachoCore.IMAP
                     timeout = new TimeSpan(0, 30, 0);
                 }
                 Log.Info (Log.LOG_IMAP, "Setting IDLE timeout to {0} on folder {1}", timeout, IdleFolder.ImapFolderNameRedacted ());
-                done.CancelAfter (timeout);
+                Done.CancelAfter (timeout);
                 Client.Idle (Done.Token, Cts.Token);
                 Cts.Token.ThrowIfCancellationRequested ();
             } finally {
