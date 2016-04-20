@@ -39,11 +39,13 @@ namespace NachoClient.iOS
 
         bool IsListeningForStatusInd;
         bool HasAppearedOnce = false;
+        bool HasLoadedOnce = false;
 
         int NumberOfMessagePreviewLines = 2;
         int SectionCount = 0;
         int HotMessagesSection;
         int MaximumNumberOfHotMessages = 4;
+        int HotSectionRows;
 
         #endregion
 
@@ -77,7 +79,7 @@ namespace NachoClient.iOS
         {
             base.LoadView ();
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            TableView.ContentInset = new UIEdgeInsets (10.0f, 0.0f, 0.0f, 0.0f);
+            TableView.ContentInset = new UIEdgeInsets (14.0f, 0.0f, 0.0f, 0.0f);
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);
@@ -88,7 +90,8 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            Account = NcApplication.Instance.Account;
+            SwitchAccountButton.SetAccountImage (Account);
             NavigationItem.TitleView = SwitchAccountButton;
 
             HotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, HotEventView.PreferredHeight));
@@ -110,6 +113,9 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            if (NcApplication.Instance.Account.Id != Account.Id) {
+                SwitchToAccount (NcApplication.Instance.Account);
+            }
             StartListeningForStatusInd ();
             if (HasAppearedOnce) {
                 ReloadCalendar ();
@@ -161,6 +167,79 @@ namespace NachoClient.iOS
         void ShowHotEvent ()
         {
             ShowEvent (HotEvent);
+        }
+
+        void MarkMessageAsRead (NSIndexPath indexPath)
+        {
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                EmailHelper.MarkAsRead (message, true);
+                message.IsRead = true;
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void MarkMessageAsUnread (NSIndexPath indexPath)
+        {
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                EmailHelper.MarkAsUnread (message, true);
+                message.IsRead = false;
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void MarkMessageAsHot (NSIndexPath indexPath)
+        {
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void MarkMessageAsUnhot (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void DeleteMessage (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
+            if (message != null) {
+                NcAssert.NotNull (thread);
+                NcEmailArchiver.Delete (thread);
+            }
+        }
+
+        void ArchiveMessage (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
+            if (message != null) {
+                NcAssert.NotNull (thread);
+                NcEmailArchiver.Archive (thread);
+            }
         }
 
         #endregion
@@ -331,7 +410,89 @@ namespace NachoClient.iOS
                 SectionCount = 1;
                 HotMessagesSection = 0;
             }
-            TableView.ReloadData ();
+            if (!HasLoadedOnce) {
+                TableView.ReloadData ();
+                HotSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                HasLoadedOnce = true;
+            }else{
+                if (changed) {
+                    int rowsBeforeUpdate = HotSectionRows;
+                    int messageRowsBeforeUpate = Math.Min (rowsBeforeUpdate, MaximumNumberOfHotMessages);
+                    HotSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                    int messageRows = Math.Min (HotSectionRows, MaximumNumberOfHotMessages);
+
+                    var addedIndexPaths = new List<NSIndexPath> ();
+                    var deletedIndexPaths = new List<NSIndexPath> ();
+
+                    // Figure out how many of the adds will actually be added to our limited table
+                    foreach (var index in adds){
+                        if (index < MaximumNumberOfHotMessages) {
+                            addedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
+                        }
+                    }
+
+                    // If the newly added rows put us over the row limit, remove rows from the end as necessary
+                    int messageRowsAfterUpdate = messageRowsBeforeUpate + addedIndexPaths.Count;
+                    int deleteIndex = messageRowsBeforeUpate - 1;
+
+                    while (messageRowsAfterUpdate > messageRows) {
+                        deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, HotMessagesSection));
+                        --deleteIndex;
+                        --messageRowsAfterUpdate;
+                    }
+
+                    // If any of the deletes are from the rows not yet deleted, remove them
+                    foreach (var index in deletes){
+                        if (index <= deleteIndex){
+                            deletedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
+                            --messageRowsAfterUpdate;
+                        }
+                    }
+
+                    var insertIndex = messageRowsAfterUpdate;
+
+                    // If the deletes left us short of the new count, add rows to the end
+                    while (messageRowsAfterUpdate < messageRows) {
+                        addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, HotMessagesSection));
+                        ++messageRowsAfterUpdate;
+                        ++insertIndex;
+                    }
+
+                    // Finally, add or remove the action row if it has changed
+                    if (rowsBeforeUpdate > MaximumNumberOfHotMessages && HotSectionRows <= MaximumNumberOfHotMessages) {
+                        deletedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
+                    } else if (rowsBeforeUpdate <= MaximumNumberOfHotMessages && HotSectionRows > MaximumNumberOfHotMessages) {
+                        addedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
+                    }
+
+                    if (addedIndexPaths.Count > 0 || deletedIndexPaths.Count > 0) {
+                        TableView.BeginUpdates ();
+                        TableView.DeleteRows (deletedIndexPaths.ToArray(), UITableViewRowAnimation.Fade);
+                        TableView.InsertRows (addedIndexPaths.ToArray(), UITableViewRowAnimation.Top);
+                        TableView.EndUpdates ();
+                    }
+                }
+                UpdateVisibleRows ();
+            }
+        }
+
+        void UpdateVisibleRows ()
+        {
+            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                if (indexPath.Section == HotMessagesSection){
+                    if (indexPath.Row < MaximumNumberOfHotMessages) {
+                        var message = HotMessages.GetCachedMessage (indexPath.Row);
+                        var cell = TableView.CellAt (indexPath) as MessageCell;
+                        if (cell != null && message != null) {
+                            cell.SetMessage (message);
+                        }
+                    } else {
+                        TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
+                    }
+                }
+                // Needed to tell our custom table group cells to redraw corners
+                WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
+            }
         }
 
         #endregion
@@ -429,6 +590,41 @@ namespace NachoClient.iOS
                     ShowAllHotMessages ();
                 }
             }
+        }
+
+        public override List<SwipeTableRowAction> ActionsForSwipingRightInRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == HotMessagesSection) {
+                if (indexPath.Row < MaximumNumberOfHotMessages) {
+                    var message = HotMessages.GetCachedMessage (indexPath.Row);
+                    var actions = new List<SwipeTableRowAction> ();
+                    if (message.IsRead) {
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                    }
+                    if (message.isHot ()) {
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
+                    }
+                    return actions;
+                }
+            }
+            return null;
+        }
+
+        public override List<SwipeTableRowAction> ActionsForSwipingLeftInRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == HotMessagesSection) {
+                if (indexPath.Row < MaximumNumberOfHotMessages) {
+                    var actions = new List<SwipeTableRowAction> ();
+                    actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
+                    actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
+                    return actions;
+                }
+            }
+            return null;
         }
 
         #endregion
@@ -560,13 +756,15 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
-//            if (IsViewLoaded) {
-//                using (NcAbate.UIAbatement ()) {
+            if (SwipingIndexPath != null) {
+                EndSwiping ();
+            }
             Account = account;
             SwitchAccountButton.SetAccountImage (account);
             HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
-//                }
-//            }
+            TableView.ReloadData (); // to clear table so we don't show stale data from other account
+            HasLoadedOnce = false;
+            // Relying on ViewWillAppear to do any reloading
         }
 
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
