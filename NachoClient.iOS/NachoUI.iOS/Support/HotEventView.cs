@@ -190,7 +190,7 @@ namespace NachoClient.iOS
 
             if (null != currentEvent) {
                 c = currentEvent.GetCalendarItemforEvent ();
-                cRoot =  CalendarHelper.GetMcCalendarRootForEvent (currentEvent.Id);
+                cRoot = McCalendar.QueryById<McCalendar> (currentEvent.CalendarId);
             }
 
             var view = (SwipeActionView)this.ViewWithTag (SWIPE_TAG);
@@ -200,9 +200,7 @@ namespace NachoClient.iOS
             var dotView = (UIImageView)this.ViewWithTag (DOT_TAG);
             var iconView = (UIImageView)this.ViewWithTag (ICON_TAG);
 
-            view.EnableSwipe ((null != c) && (null != cRoot) && (!String.IsNullOrEmpty(cRoot.OrganizerEmail)));
-
-            if (null == c) {
+            if (null == c || null == cRoot) {
                 noMessagesLabelView.Text = "No upcoming events";
                 noMessagesLabelView.Hidden = false;
                 subjectLabelView.Hidden = true;
@@ -211,8 +209,11 @@ namespace NachoClient.iOS
                 dotView.Hidden = true;
                 view.OnSwipe = null;
                 view.OnClick = null;
+                view.DisableSwipe ();
                 return;
             }
+
+            view.EnableSwipe (!string.IsNullOrEmpty (cRoot.OrganizerEmail));
 
             noMessagesLabelView.Hidden = true;
 
@@ -231,12 +232,12 @@ namespace NachoClient.iOS
 
             var startString = "";
             if (c.AllDayEvent) {
-                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.GetStartTimeUtc ());
+                startString = "ALL DAY " + Pretty.LongFullDate (currentEvent.GetStartTimeUtc ());
             } else {
                 if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
-                    startString = Pretty.ShortTimeString (currentEvent.GetStartTimeUtc ());
+                    startString = Pretty.Time (currentEvent.GetStartTimeUtc ());
                 } else {
-                    startString = Pretty.ShortDayTimeString (currentEvent.GetStartTimeUtc ());
+                    startString = Pretty.LongDayTime (currentEvent.GetStartTimeUtc ());
                 }
             }
 

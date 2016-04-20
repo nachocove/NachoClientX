@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using System.Threading;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore
 {
     public class NcCommand : INcCommand
     {
-        protected const int KLockTimeout = 10000;
+        protected const int KLockTimeout = 1000;
 
         protected IBEContext BEContext;
         protected int AccountId { get; set; }
@@ -27,7 +28,7 @@ namespace NachoCore
         /// The command-specific cancellation token source. Used when the Cancel() method is called.
         /// </summary>
         /// <value>The internal cts.</value>
-        private CancellationTokenSource InternalCts { get; set; }
+        protected CancellationTokenSource InternalCts { get; set; }
 
         /// <summary>
         /// Because of threading, the PendingResolveLockObj must be locked before resolving.
@@ -38,7 +39,7 @@ namespace NachoCore
         /// PendingSingle is for commands that process 1-at-a-time.
         /// Both PendingSingle and PendingList get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
         /// The sublass is responsible for re-writing each from dispatched to something else.
-        /// This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
+        /// This base class has a "diaper" to catch any dispatched left behind by the subclass. This base class
         /// is responsible for clearing PendingSingle/PendingList. 
         /// </summary>
         protected McPending PendingSingle;
@@ -46,7 +47,7 @@ namespace NachoCore
         /// Pending list is for N-at-a-time commands.
         /// Both PendingSingle and PendingList get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
         /// The sublass is responsible for re-writing each from dispatched to something else.
-        /// This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
+        /// This base class has a "diaper" to catch any dispatched left behind by the subclass. This base class
         /// is responsible for clearing PendingSingle/PendingList. 
         /// </summary>
         protected List<McPending> PendingList;
@@ -55,11 +56,24 @@ namespace NachoCore
         protected NcResult FailureInd;
         protected Object LockObj = new Object ();
 
-        public enum AutoDFailureReason : uint
-        {
-            CannotConnectToServer,
-            CannotFindServer
-        }
+        /// <summary>
+        /// Save the credential epoch here, so we can tell after an auth-fail if the credential was changed
+        /// while we were busy.
+        /// </summary>
+        /// <value>The cred epoch.</value>
+        private int SavedCredEpoch;
+
+        /// <summary>
+        /// The command name
+        /// </summary>
+        protected string CmdName;
+
+        /// <summary>
+        /// The command name with account Id
+        /// </summary>
+        protected string CmdNameWithAccount;
+
+        public bool DelayNotAllowed { get; set; }
 
         protected enum ResolveAction
         {
@@ -76,6 +90,9 @@ namespace NachoCore
             PendingResolveLockObj = new object ();
             InternalCts = new CancellationTokenSource ();
             Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token);
+            SavedCredEpoch = BEContext.Cred.Epoch;
+            CmdName = GetType ().Name;
+            CmdNameWithAccount = string.Format ("{0}{{{1}}}", CmdName, AccountId);
         }
 
         /// <summary>
@@ -88,7 +105,10 @@ namespace NachoCore
         /// </description>
         ~NcCommand ()
         {
-            Cts.Dispose ();
+            if (null != Cts) {
+                Cts.Dispose ();
+                Cts = null;
+            }
         }
 
         public virtual void Execute (NcStateMachine sm)
@@ -97,7 +117,11 @@ namespace NachoCore
 
         public virtual void Cancel ()
         {
-            InternalCts.Cancel ();
+            try {
+                InternalCts.Cancel ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_BACKEND, "NcCommand/{0}.Cancel() exception: {1}", CmdNameWithAccount, ex);
+            }
         }
 
         // TODO - should these be in the interface?
@@ -117,6 +141,10 @@ namespace NachoCore
             lock (PendingResolveLockObj) {
                 ConsolidatePending ();
                 foreach (var pending in PendingList) {
+                    if (pending.State != McPending.StateEnum.Dispatched) {
+                        Log.Error (Log.LOG_BACKEND, "NcCommand/ResolveAllDeferred: Ignoring non-Dispatched pending {0} in state {1}", pending, pending.State);
+                        continue;
+                    }
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 }
                 PendingList.Clear ();
@@ -170,7 +198,7 @@ namespace NachoCore
             }
         }
 
-        public static Event TryLock (object lockObj, int timeout, Func<Event> func = null)
+        public Event TryLock (object lockObj, int timeout, Func<Event> func = null)
         {
             if (Monitor.TryEnter (lockObj, timeout)) {
                 try {
@@ -183,8 +211,13 @@ namespace NachoCore
                     Monitor.Exit (lockObj);
                 }
             } else {
-                throw new CommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
+                throw new CommandLockTimeOutException (string.Format ("{0}: Could not acquire lock object after {1:n0}ms", CmdNameWithAccount, timeout));
             }
+        }
+
+        public bool HasPasswordChanged ()
+        {
+            return ((null == BEContext.Cred) || BEContext.Cred.Epoch != SavedCredEpoch);
         }
     }
 
@@ -206,6 +239,7 @@ namespace NachoCore
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             Sm = sm;
 
             WaitTimer = new NcTimer ("NcWaitCommand:WaitTimer",
@@ -214,7 +248,7 @@ namespace NachoCore
                 }, 
                 null,
                 new TimeSpan (0, 0, Duration), 
-                System.Threading.Timeout.InfiniteTimeSpan);
+                Timeout.InfiniteTimeSpan);
 
             if (EarlyOnECChange) {
                 NcApplication.Instance.StatusIndEvent += Detector;
@@ -244,7 +278,7 @@ namespace NachoCore
                 }
                 if (!HasCompleted) {
                     HasCompleted = true;
-                    Sm.PostEvent ((uint)SmEvt.E.Success, "ASWAITS");
+                    Sm.PostEvent ((uint)SmEvt.E.Success, "NCWAITS");
                 }
             }
         }

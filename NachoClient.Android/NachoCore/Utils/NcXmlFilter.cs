@@ -98,7 +98,7 @@ namespace NachoCore.Wbxml
 
         public NcXmlFilterNode Root { set; get; }
 
-        public string NameSpace { set; get; }
+        public string[] NameSpaces { set; get; }
 
         // Filtered XDocument
         private XDocument DocOut { get; set; }
@@ -110,7 +110,24 @@ namespace NachoCore.Wbxml
         {
             ParentSet = null;
             Root = null;
-            NameSpace = nameSpace;
+            NameSpaces = new [] {nameSpace};
+        }
+
+        public NcXmlFilter (string[] nameSpaces)
+        {
+            ParentSet = null;
+            Root = null;
+            NameSpaces = nameSpaces;
+        }
+
+        public bool ContainsNameSpace (string nameSpace)
+        {
+            foreach (var ns in NameSpaces) {
+                if (ns.ToLowerInvariant () == nameSpace.ToLowerInvariant ()) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -123,10 +140,22 @@ namespace NachoCore.Wbxml
             FilterList = new List<NcXmlFilter> ();
         }
 
+        public NcXmlFilter FindFilter (string[] nameSpaces)
+        {
+            foreach (var ns in nameSpaces) {
+                var filter = FindFilter (ns);
+                if (null != filter) {
+                    return filter;
+                }
+            }
+            return null;
+        }
+
         public NcXmlFilter FindFilter (string nameSpace)
         {
             foreach (NcXmlFilter filter in FilterList) {
-                if (filter.NameSpace == nameSpace) {
+                foreach (var ns in filter.NameSpaces)
+                if (ns.ToLowerInvariant () == nameSpace.ToLowerInvariant ()) {
                     return filter;
                 }
             }
@@ -154,7 +183,7 @@ namespace NachoCore.Wbxml
 
         public void Add (NcXmlFilter filter)
         {
-            NcAssert.True (null == FindFilter (filter.NameSpace));
+            NcAssert.True (null == FindFilter (filter.NameSpaces));
             FilterList.Add (filter);
             filter.ParentSet = this;
         }
@@ -272,18 +301,36 @@ namespace NachoCore.Wbxml
             FilterStack.Clear ();
         }
 
+        string GetNamespace (XElement element)
+        {
+            var ns = element.Name.NamespaceName;
+            if (string.IsNullOrEmpty (ns) && element.HasAttributes) {
+                foreach (var attr in element.Attributes ()) {
+                    if (attr.IsNamespaceDeclaration) {
+                        ns = attr.Value;
+                        break;
+                    }
+                }
+            }
+            return ns;
+        }
+
         private Frame InitializeFrame (XNode node)
         {
             Frame current = null;
-
             if (0 == FilterStack.Count) {
                 current = new Frame ();
 
                 NcAssert.True (IsElement (node));
                 XElement element = (XElement)node;
-                current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
+                var ns = GetNamespace (element);
+                // if we couldn't find a namespace, try using the element LocalName.
+                if (string.IsNullOrEmpty (ns) && !string.IsNullOrEmpty (element.Name.LocalName)) {
+                    ns = element.Name.LocalName;
+                }
+                current.Filter = FilterSet.FindFilter (ns);
                 if (null == current.Filter) {
-                    Log.Warn (Log.LOG_XML_FILTER, "No filter for namespace {0}", element.Name.NamespaceName);
+                    Log.Warn (Log.LOG_XML_FILTER, "No filter for namespace {0}", ns);
                 } else {
                     current.ParentNode = current.Filter.Root.FindChildNode (element);
                     if (null == current.ParentNode) {
@@ -295,20 +342,22 @@ namespace NachoCore.Wbxml
 
                 if (IsElement (node)) {
                     XElement element = (XElement)node;
+                    var ns = GetNamespace (element);
 
                     // Is there a namespace switch?
                     if (null != current.Filter) {
-                        if ((current.Filter.NameSpace != element.Name.NamespaceName) &&
+                        if (!string.IsNullOrEmpty (ns) && // if the namespace is empty, assume it's the same as the parent.
+                            !current.Filter.ContainsNameSpace (ns) &&
                             // Do not do a namespace switch if we are already in redacted mode.
                             // This is because it will put a non-null parent node and make it think
                             // this is no longer in redacted mode. So, just ignore the namespace change
                             !current.IsRedacted ()) {
-                            current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
+                            current.Filter = FilterSet.FindFilter (ns);
                             if (null != current.Filter) {
                                 current.ParentNode = current.Filter.Root;
                                 NcAssert.True (null != current.ParentNode);
                             } else {
-                                Log.Warn (Log.LOG_XML_FILTER, "Switching to an unknown namespace {0}", element.Name.NamespaceName);
+                                Log.Warn (Log.LOG_XML_FILTER, "Switching to an unknown namespace {0}:{1}", element.Name, ns);
                                 current.ParentNode = null;
                             }
                         }
@@ -317,9 +366,10 @@ namespace NachoCore.Wbxml
                     // Look for the filter node for this element
                     if (null != current.ParentNode) {
                         if (RedactionType.FULL != current.ParentNode.ElementRedaction) {
+                            var previousParent = current.ParentNode;
                             current.ParentNode = current.ParentNode.FindChildNode (element);
                             if (null == current.ParentNode) {
-                                Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}", element.Name);
+                                Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}:{1}\n{2}", previousParent.Name, element.Name, previousParent.ToString ());
                             }
                         } else {
                             current.ParentNode = null;
@@ -337,6 +387,37 @@ namespace NachoCore.Wbxml
                 Wbxml.AddRange (wbxml);
             } else {
                 newElement = new XElement (element.Name);
+                if (element.HasAttributes && frame.AttributeRedaction != RedactionType.FULL) {
+                    foreach (var attr in element.Attributes ()) {
+                        string value;
+                        if (attr.IsNamespaceDeclaration) {
+                            value = attr.Value;
+                        } else {
+                            string hash;
+                            switch (frame.AttributeRedaction) {
+                            default:
+                                NcAssert.CaseError ("Should not reach here");
+                                return null;
+
+                            case RedactionType.NONE:
+                                value = attr.Value;
+                                break;
+                            case RedactionType.LENGTH:
+                                value = String.Format ("[{0} redacted bytes]", attr.Value.Length);
+                                break;
+                            case RedactionType.SHORT_HASH:
+                                hash = ShortHash (attr.Value);
+                                value = String.Format ("[{0} redacted bytes] {1}", attr.Value.Length, hash);
+                                break;
+                            case RedactionType.FULL_HASH:
+                                hash = FullHash (attr.Value);
+                                value = String.Format ("[{0} redacted bytes] {1}", attr.Value.Length, hash);
+                                break;
+                            }
+                        }
+                        newElement.SetAttributeValue (attr.Name, value);
+                    }
+                }
                 if (0 == FilterStack.Count) {
                     NcAssert.True (null == XmlDoc.Root);
                     XmlDoc.Add (newElement);
@@ -571,8 +652,7 @@ namespace NachoCore.Wbxml
             // Cheating!! Use ASWBXL class to decode. This is less efficient
             // because it walks the tree twice.
             ASWBXML wbxml = new ASWBXML (new CancellationToken (false));
-            MemoryStream byteStream = new MemoryStream (Wbxml.ToArray (), false);
-            wbxml.LoadBytes (0, byteStream);
+            wbxml.LoadBytes (0, Wbxml.ToArray ());
             return new XDocument (wbxml.XmlDoc);
         }
     }

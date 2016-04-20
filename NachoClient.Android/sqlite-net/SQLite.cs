@@ -150,13 +150,17 @@ namespace SQLite
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 		internal static readonly Sqlite3DatabaseHandle NullHandle = default(Sqlite3DatabaseHandle);
 
+		public DateTime LastAccess { get; set; }
+
+		public int GCSeconds { get; set; }
+
 		public string DatabasePath { get; private set; }
 
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
 
-        public int TraceThreshold { get; set; }
+		public int TraceThreshold { get; set; }
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -263,6 +267,11 @@ namespace SQLite
 			return bytes;
 		}
 #endif
+		public virtual bool SetLastAccess ()
+		{
+			LastAccess = DateTime.UtcNow;
+			return true;
+		}
 
         /// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -644,9 +653,9 @@ namespace SQLite
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms/{1} rows for: {2}", span, r, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms/{1} rows for: {2}", span, r, cmd.CommandText);
                     }
                 }
             }
@@ -2228,7 +2237,7 @@ namespace SQLite
 			if (_conn.Trace) {
 				Debug.WriteLine ("Executing Query: " + this);
 			}
-
+			var lastAccess = DateTime.UtcNow;
 			var stmt = Prepare ();
 			try
 			{
@@ -2238,8 +2247,11 @@ namespace SQLite
 					var name = SQLite3.ColumnName16 (stmt, i);
 					cols [i] = map.FindColumn (name);
 				}
-			
+				var bumpSeconds = Math.Max (1, _conn.GCSeconds/4);
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					if (0 < _conn.GCSeconds && DateTime.UtcNow.AddSeconds (-bumpSeconds) > lastAccess) {
+						_conn.SetLastAccess ();
+					}
 					var obj = Activator.CreateInstance(map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols [i] == null)
@@ -3193,7 +3205,7 @@ namespace SQLite
 		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
 #endif
 
-		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_close_v2", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
 		
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
@@ -3356,7 +3368,7 @@ namespace SQLite
 
 		public static Result Close(Sqlite3DatabaseHandle db)
 		{
-			return (Result)Sqlite3.sqlite3_close(db);
+			return (Result)Sqlite3.sqlite3_close_v2(db);
 		}
 
 		public static Result BusyTimeout(Sqlite3DatabaseHandle db, int milliseconds)

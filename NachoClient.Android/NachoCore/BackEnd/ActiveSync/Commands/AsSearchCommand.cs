@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -19,7 +18,7 @@ namespace NachoCore.ActiveSync
             base (Xml.Search.Ns, Xml.Search.Ns, beContext)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             ErrorSubKind = (McPending.Operations.ContactSearch == PendingSingle.Operation) ?
                 NcResult.SubKindEnum.Error_ContactSearchCommandFailed : NcResult.SubKindEnum.Error_EmailSearchCommandFailed;
             InfoSubKind = (McPending.Operations.ContactSearch == PendingSingle.Operation) ?
@@ -78,7 +77,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SRCHCANCEL");

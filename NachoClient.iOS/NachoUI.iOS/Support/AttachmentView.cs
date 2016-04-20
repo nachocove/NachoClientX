@@ -64,11 +64,7 @@ namespace NachoClient.iOS
 
             var imageY = (VIEW_HEIGHT / 2) - (ICON_SIZE / 2);
             imageView = new UIImageView (new CGRect (0, imageY, ICON_SIZE, ICON_SIZE));
-            if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
-                imageView.Image = UIImage.FromBundle ("email-att-photos");
-            } else {
-                imageView.Image = UIImage.FromBundle ("email-att-files");
-            }
+            imageView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
             imageView.Tag = (int)TagType.ATTACHMENT_IMAGE_TAG;
             imageView.UserInteractionEnabled = false;
             AddSubview (imageView);
@@ -76,6 +72,7 @@ namespace NachoClient.iOS
             var leftMargin = ICON_SIZE + ICON_GAP;
             var lineLength = frame.Width - leftMargin - DOWNLOAD_ICON_SIZE - 8;
             filenameView = new UILabel (new CGRect (leftMargin, TOP_MARGIN, lineLength, LINE_HEIGHT));
+            filenameView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             filenameView.TextColor = A.Color_NachoDarkText;
             filenameView.Font = A.Font_AvenirNextDemiBold14;
             filenameView.Tag = (int)TagType.ATTACHMENT_NAME_TAG;
@@ -84,29 +81,18 @@ namespace NachoClient.iOS
             ViewFramer.Create (filenameView).Height (LINE_HEIGHT);
             AddSubview (filenameView);
 
-            var detailText = "";
-            if (attachment.IsInline) {
-                detailText += "Inline ";
-            }
-            string extension = Pretty.GetExtension (attachment.DisplayName);
-            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
-            detailText += "file";
-            if (0 != attachment.FileSize) {
-                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-            } 
-
             detailView = new UILabel (new CGRect (leftMargin, TOP_MARGIN + LINE_HEIGHT, lineLength, LINE_HEIGHT));
-            detailView.Text = detailText;
+            detailView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            detailView.Text = Pretty.AttachmentDescription (attachment);
             detailView.TextColor = A.Color_NachoTextGray;
             detailView.Font = A.Font_AvenirNextRegular14;
             detailView.Tag = (int)TagType.ATTACHMENT_SIZE_TAG;
             detailView.UserInteractionEnabled = false;
-            detailView.SizeToFit ();
-            ViewFramer.Create (detailView).Height (LINE_HEIGHT);
             AddSubview (detailView);
 
             //Download image view
-            downloadImageView = new UIImageView (new CGRect (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16)); 
+            downloadImageView = new UIImageView (new CGRect (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16));
+            downloadImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
             downloadImageView.Tag = (int)TagType.DOWNLOAD_IMAGEVIEW_TAG;
             using (var image = UIImage.FromBundle ("email-att-download")) {
                 downloadImageView.Image = image;
@@ -116,6 +102,7 @@ namespace NachoClient.iOS
 
             separatorView = new UIView (new CGRect (ICON_SIZE + ICON_GAP, VIEW_HEIGHT - 1.0f,
                 Frame.Width - ICON_SIZE, SEPARATOR_HEIGHT));
+            separatorView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             separatorView.BackgroundColor = A.Color_NachoLightBorderGray;
             separatorView.Tag = (int)TagType.ATTACHMENT_SEPARATOR_TAG;
             AddSubview (separatorView);

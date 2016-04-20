@@ -5,6 +5,7 @@ using Android.Content;
 using NachoPlatform;
 
 using Xamarin.Android.NUnitLite;
+using NachoClient.AndroidClient;
 
 namespace Test.Android
 {
@@ -22,6 +23,7 @@ namespace Test.Android
             base.OnCreate (bundle);
 
             NachoPlatform.Assets.AndroidAssetManager = Assets;
+            MainApplication._instance = this.Application;
         }
     }
 }

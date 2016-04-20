@@ -8,14 +8,11 @@ using System.Linq;
 
 namespace NachoCore.Utils
 {
-    public class ContactsHelper
+    public static class ContactsHelper
     {
-        public ContactsHelper ()
-        {
-        }
-
+ 
         //The order of these names also determines their priority when sorting.
-        public List<string> PhoneNames = new List<string> () {
+        public static readonly List<string> PhoneNames = new List<string> () {
             Xml.Contacts.MobilePhoneNumber,
             Xml.Contacts.BusinessPhoneNumber,
             Xml.Contacts.HomePhoneNumber,
@@ -30,30 +27,30 @@ namespace NachoCore.Utils
             Xml.Contacts.HomeFaxNumber,
         };
 
-        public List<string> EmailNames = new List<string> () {
+        public static readonly List<string> EmailNames = new List<string> () {
             Xml.Contacts.Email1Address,
             Xml.Contacts.Email2Address,
             Xml.Contacts.Email3Address
         };
 
-        public List<string> DateNames = new List<string> () {
+        public static readonly List<string> DateNames = new List<string> () {
             Xml.Contacts.Birthday,
             Xml.Contacts.Anniversary
         };
 
-        public List<string> IMAddressNames = new List<string> () {
+        public static readonly List<string> IMAddressNames = new List<string> () {
             Xml.Contacts2.IMAddress,
             Xml.Contacts2.IMAddress2,
             Xml.Contacts2.IMAddress3
         };
 
-        public List<string> AddressNames = new List<string> () {
+        public static readonly List<string> AddressNames = new List<string> () {
             "Home",
             "Business",
             "Other"
         };
 
-        public List<string> MiscNames = new List<string> () {
+        public static readonly List<string> MiscNames = new List<string> () {
             Xml.Contacts.Alias,
             Xml.Contacts.Department,
             Xml.Contacts.FileAs,
@@ -71,14 +68,14 @@ namespace NachoCore.Utils
             Xml.Contacts.YomiLastName,
         };
 
-        public List<string> RelationshipNames = new List<string> () {
+        public static readonly List<string> RelationshipNames = new List<string> () {
             Xml.Contacts.Spouse,
             Xml.Contacts.AssistantName,
             Xml.Contacts2.ManagerName,
             Xml.Contacts.Child,
         };
 
-        public Dictionary<string, string> ExchangeLabelDictionary = new Dictionary<string, string> () {
+        public static readonly Dictionary<string, string> ExchangeLabelDictionary = new Dictionary<string, string> () {
             { Xml.Contacts.Email1Address, "Email" },
             { Xml.Contacts.Email2Address, "Email Two" },
             { Xml.Contacts.Email3Address, "Email Three" },
@@ -276,7 +273,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public string ExchangeNameToLabel (string name)
+        public static string ExchangeNameToLabel (string name)
         {
             string value;
             if (ExchangeLabelDictionary.TryGetValue (name, out value)) {
@@ -286,7 +283,7 @@ namespace NachoCore.Utils
             return name;
         }
 
-        public List<string> GetAvailablePhoneNames (McContact contact)
+        public static List<string> GetAvailablePhoneNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
             foreach (var p in contact.PhoneNumbers) {
@@ -296,7 +293,7 @@ namespace NachoCore.Utils
             return PhoneNames.Except (takenNames).ToList ();
         }
 
-        public List<string> GetAvailableEmailNames (McContact contact)
+        public static List<string> GetAvailableEmailNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
             foreach (var p in contact.EmailAddresses) {
@@ -306,7 +303,7 @@ namespace NachoCore.Utils
             return EmailNames.Except (takenNames).ToList ();
         }
 
-        public List<string> GetAvailableDateNames (McContact contact)
+        public static List<string> GetAvailableDateNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
             foreach (var d in contact.Dates) {
@@ -316,7 +313,7 @@ namespace NachoCore.Utils
             return DateNames.Except (takenNames).ToList ();
         }
 
-        public List<string> GetAvailableAddressNames (McContact contact)
+        public static List<string> GetAvailableAddressNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
             foreach (var a in contact.Addresses) {
@@ -326,7 +323,7 @@ namespace NachoCore.Utils
             return AddressNames.Except (takenNames).ToList ();
         }
 
-        public List<string> GetAvailableIMAddressNames (McContact contact)
+        public static List<string> GetAvailableIMAddressNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
             foreach (var a in contact.IMAddresses) {
@@ -335,7 +332,7 @@ namespace NachoCore.Utils
             return IMAddressNames.Except (takenNames).ToList ();
         }
 
-        public List<string> GetAvailableRelationshipNames (McContact contact)
+        public static List<string> GetAvailableRelationshipNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
             List<string> availableNames = new List<string> (RelationshipNames);
@@ -352,7 +349,7 @@ namespace NachoCore.Utils
         }
 
 
-        public List<string> GetTakenMiscNames (McContact contact)
+        public static List<string> GetTakenMiscNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
 
@@ -407,7 +404,7 @@ namespace NachoCore.Utils
             return takenNames;
         }
 
-        public string MiscContactAttributeNameToValue (string name, McContact contact)
+        public static string MiscContactAttributeNameToValue (string name, McContact contact)
         {
             switch (name) {
             case Xml.Contacts.Alias:
@@ -438,9 +435,130 @@ namespace NachoCore.Utils
             return "";
         }
 
-        public List<string> GetAvailableMiscNames (List<string> takenNames)
+        public static void AssignMiscContactAttribute (McContact contact, string name, string value)
+        {
+            switch (name) {
+            case Xml.Contacts.Alias:
+                contact.Alias = value;
+                break;
+            case Xml.Contacts.Department:
+                contact.Department = value;
+                break;
+            case Xml.Contacts.FileAs:
+                contact.FileAs = value;
+                break;
+            case Xml.Contacts.JobTitle:
+                contact.JobTitle = value;
+                break;
+            case Xml.Contacts.OfficeLocation:
+                contact.OfficeLocation = value;
+                break;
+            case Xml.Contacts.Title:
+                contact.Title = value;
+                break;
+            case Xml.Contacts.WebPage:
+                contact.WebPage = value;
+                break;
+            case Xml.Contacts2.AccountName:
+                contact.AccountName = value;
+                break;
+            case Xml.Contacts2.CustomerId:
+                contact.CustomerId = value;
+                break;
+            case Xml.Contacts2.GovernmentId:
+                contact.GovernmentId = value;
+                break;
+            case Xml.Contacts2.MMS:
+                contact.MMS = value;
+                break;
+            case Xml.Contacts2.NickName:
+                contact.NickName = value;
+                break;
+            default:
+                Log.Warn (Log.LOG_UI, "Setting unknown contact misc. field {0}", name);
+                break;
+            }
+        }
+
+        public static List<string> GetAvailableMiscNames (List<string> takenNames)
         {
             return MiscNames.Except (takenNames).ToList ();
+        }
+
+        public static List<string> GetAvailableMiscNames(McContact contact)
+        {
+            var takenNames = GetTakenMiscNames (contact);
+            return GetAvailableMiscNames (takenNames);
+        }
+
+        public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
+        {
+            public int Compare (McContactStringAttribute x, McContactStringAttribute y)
+            {
+                int xPriority = ContactsHelper.PhoneNames.IndexOf (x.Name);
+                int yPriority = ContactsHelper.PhoneNames.IndexOf (y.Name);
+
+                return xPriority.CompareTo (yPriority);
+            }
+        }
+
+        public static string NameToLetters (string name)
+        {
+            if (null == name) {
+                return "";
+            }
+            var Initials = "";
+            string[] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (1 == names.Length) {
+                Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+            }
+            if (2 == names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                } else {
+                    // First name, Last name
+                    Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                }
+            }
+            if (2 < names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                } else if (-1 == name.IndexOf (',')) {
+                    if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                    } else {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+                    }
+                }
+            }
+
+            return Initials;
+        }
+
+        public static void SaveNoteText (McContact contact, string noteText)
+        {
+            NcAssert.True (null != contact);
+            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+            if (null != contactBody) {
+                contactBody.UpdateData (noteText);
+            } else {
+                contact.BodyId = McBody.InsertFile (contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, noteText).Id;
+            }
+            contact.Update ();
+            NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+        }
+
+        public static string GetNoteText (McContact contact)
+        {
+            NcAssert.True (null != contact);
+            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+            if (null != contactBody) {
+                return contactBody.GetContentsString ();
+            } else {
+                return "";
+            }
         }
     }
 }

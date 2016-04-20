@@ -173,6 +173,14 @@ namespace NachoCore.Model
             }
         }
 
+        public int UpdateRecurrencesGeneratedUntil (DateTime until)
+        {
+            RecurrencesGeneratedUntil = until;
+            return NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McCalendar SET RecurrencesGeneratedUntil = ? WHERE Id = ?", until, Id);
+            });
+        }
+
         public static McCalendar QueryByUID (int accountId, string UID)
         {
             var sameUid = NcModel.Instance.Db.Table<McCalendar> ().Where (

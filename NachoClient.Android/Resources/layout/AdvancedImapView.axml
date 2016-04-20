@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout
+        android:id="@+id/advanced_imap_view"
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <EditText
+                android:id="@+id/imap_username"
+                android:inputType="textEmailAddress"
+                android:textSize="17dp"
+                android:textColor="@android:color/black"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/username"
+                android:paddingLeft="60dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+        <TextView
+            android:text="@string/incoming_mail_server"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="4dip"
+            android:textColor="@android:color/white"
+            android:textSize="17dp" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/host"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/imap_server" />
+            <EditText
+                android:id="@+id/imap_server"
+                android:inputType="textUri"
+                android:textSize="17dp"
+                android:textColor="@android:color/black"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/imap_server_example"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="10dp" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/port"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/imap_port" />
+            <EditText
+                android:id="@+id/imap_port"
+                android:text="@string/default_imap_port"
+                android:textSize="17dp"
+                android:textColor="@android:color/black"
+                android:inputType="number"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/default_imap_port"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+        <TextView
+            android:text="@string/outgoing_mail_server"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="4dip"
+            android:textColor="@android:color/white"
+            android:textSize="17dp" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/host"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/smtp_server" />
+            <EditText
+                android:id="@+id/smtp_server"
+                android:inputType="textUri"
+                android:textSize="17dp"
+                android:textColor="@android:color/black"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/smtp_server_example"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="10dp" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/port"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/smtp_port" />
+            <EditText
+                android:id="@+id/smtp_port"
+                android:text="@string/default_smtp_port"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:inputType="number"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/default_smtp_port"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+    </LinearLayout>
+</merge>

@@ -2,14 +2,16 @@
 //
 using System;
 using NachoClient;
+using NachoClient.AndroidClient;
 
 namespace NachoPlatform
 {
     public class PlatformUserColorIndex
     {
-        public static int PickRandomColorForUser()
+
+        public static int PickRandomColorForUser ()
         {
-            return 0;
+            return Bind.PickRandomColorForUser ();
         }
     }
 }

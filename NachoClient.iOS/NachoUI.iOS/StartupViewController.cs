@@ -10,261 +10,281 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class StartupViewController : NcUIViewController
+    public partial class StartupViewController : NcUIViewController, GettingStartedViewControllerDelegate
     {
-        UIProgressView MigrationProgressBar = null;
-        UITextView MigrationMessageTextView = null;
-        UIActivityIndicatorView MigrationSpinner = null;
+
+        #region Properties
 
         bool StatusIndCallbackIsSet = false;
+
+        enum StartupViewState
+        {
+            Startup,
+            Incompatible,
+            Setup,
+            Migration,
+            Recovery,
+            Blank,
+            App
+        }
+
+        StartupViewState currentState = StartupViewState.Startup;
+
+        #endregion
+
+        #region Constructors
 
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
 
-        /// <summary>
-        /// On first run, push the modal LaunchViewController to get credentials.
-        /// </summary>
+        #endregion
+
+        #region iOS View Lifecycle
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
             Log.Info (Log.LOG_UI, "StartupViewController: viewdidload");
 
-            CreateView ();
-            this.View.BackgroundColor = A.Color_NachoGreen;
-            Util.ConfigureNavBar (false, NavigationController);
-
-            if (NcApplication.Instance.IsUp ()) {
-                GetThisPartyStarted ();
-                return;
-            }
-
             if (!NcMigration.IsCompatible ()) {
+                Log.Info (Log.LOG_UI, "StartupViewController: found incompatible migration");
+                currentState = StartupViewState.Incompatible;
                 // Display an alert view and wait to get out
                 NcAlertView.ShowMessage (this,
                     "Incompatible Version",
                     "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.");
-                return;
-            }
-
-            // We're not up yet.  Wait until we are and then move forward
-
-        }
-
-        void GetThisPartyStarted ()
-        {
-            // Is there an account being configured?
-            var configAccount = McAccount.GetAccountBeingConfigured ();
-            if (null != configAccount) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted finish configuring account SegueToAdvancedLogin");
-                PerformSegue ("SegueToAdvancedLogin", this);
-                return;
-            }
-
-            // Is there a google sign in callback active?
-            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted google sign in callback SegueToAdvancedLogin");
-                PerformSegue ("SegueToAdvancedLogin", this);
-                return;
-            }
-
-            // Fresh start, let's create the first account
-            if (null == NcApplication.Instance.Account) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch because account is null");
-                PerformSegue ("SegueToLaunch", this);
-                return;
-            }
-
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch because account is device account");
-                PerformSegue ("SegueToLaunch", this);
-                return;
-            }
-
-            // Something else in our way?
-            if (!NcApplication.ReadyToStartUI ()) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToAdvancedLogin");
-                PerformSegue ("SegueToAdvancedLogin", this);
-                return;
-            }
-
-            var eventId = McMutables.Get (McAccount.GetDeviceAccount ().Id, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
-            if (null == eventId) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToTabController");
-                PerformSegue ("SegueToTabController", this);
-            } else {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToEventView");
-                PerformSegue ("SegueToEventView", this);
             }
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-                if (null != this.NavigationController) {
-                    if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                        this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
-                    }
-                }
-            }
-            if (!StatusIndCallbackIsSet) {
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            }
-            ConfigureView ();
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
 
-            if (NcApplication.Instance.IsUp ()) {
-                GetThisPartyStarted ();
-                return;
+            if (currentState == StartupViewState.Startup) {
+                Log.Info (Log.LOG_UI, "StartupViewController: viewDidAppear in Startup state, determining where to go");
+                ShowScreenForApplicationState ();
             }
         }
 
-        public override void ViewWillDisappear (bool animated)
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            base.ViewWillDisappear (animated);
-            if (this.IsViewLoaded && null == this.NavigationController) {
+            if (segue.Identifier == "migration") {
+                var vc = (StartupMigrationViewController)segue.DestinationViewController;
+                if (currentState == StartupViewState.Startup) {
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
+                }
+                return;
+            }
+            if (segue.Identifier == "recovery") {
+                var vc = (StartupRecoveryViewController)segue.DestinationViewController;
+                if (currentState == StartupViewState.Startup) {
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
+                }
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
+        }
+
+        #endregion
+
+        #region Auto-Navigations
+
+        void ShowScreenForApplicationState ()
+        {
+            if (NcApplication.Instance.IsUp ()) {
+                StopListeningForApplicationStatus ();
+                var configAccount = McAccount.GetAccountBeingConfigured ();
+                var deviceAccount = McAccount.GetDeviceAccount ();
+                var mdmAccount = McAccount.GetMDMAccount ();
+                if (null != configAccount) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: found account being configured");
+                    ShowSetupScreen ();
+                } else if (null == mdmAccount && NcMdmConfig.Instance.IsPopulated) {
+                    ShowSetupScreen ();
+                } else if (null == NcApplication.Instance.Account) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: null NcApplication.Instance.Account");
+                    ShowSetupScreen ();
+                } else if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: NcApplication.Instance.Account is deviceAccount");
+                    ShowSetupScreen ();
+                } else if (!NcApplication.ReadyToStartUI ()) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: not ready to start UI, assuming tutorial still needs display");
+                    // This should only be if the app closed before the tutorial was dismissed;
+                    ShowSetupScreen (true);
+                } else {
+                    Log.Info (Log.LOG_UI, "StartupViewController: Ready to go, showing application");
+                    ShowApplication ();
+                }
+            } else {
+                StartListeningForApplicationStatus ();
+                if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Migrating) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: instance isn't up yet, in Migrating state");
+                    ShowMigrationScreen ();
+                } else if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Initializing) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: instance isn't up yet, in Initializing state");
+                    if (NcApplication.Instance.InSafeMode ()) {
+                        ShowRecoveryScreen ();
+                    } else {
+                        Log.Info (Log.LOG_UI, "StartupViewController initializing, but not in safe mode, keeping current screen");
+                    }
+                } else {
+                    // I don't think we can ever get here based on the definition of NcApplication.IsUp.  If things
+                    // change (like a new state is added to NcApplication), this will just result in a blank screen
+                    // until the application is up.
+                    currentState = StartupViewState.Blank;
+                    Log.Info (Log.LOG_UI, "StartupViewController instance isn't up yet, in unexpected state, showing BLANK");
+                }
+            }
+        }
+
+        void ShowMigrationScreen ()
+        {
+            if (currentState == StartupViewState.Migration) {
+                return;
+            }
+            Log.Info (Log.LOG_UI, "StartupViewController ShowMigrationScreen");
+            if (PresentedViewController != null) {
+                var window = UIApplication.SharedApplication.Delegate.GetWindow ();
+                UIView.Transition (window, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, () => {
+                    DismissViewController (false, null);
+                    PerformSegue ("migration", null);
+                }, () => {
+                });
+            } else {
+                PerformSegue ("migration", null);
+            }
+            currentState = StartupViewState.Migration;
+        }
+
+        void ShowRecoveryScreen ()
+        {
+            if (currentState == StartupViewState.Recovery) {
+                return;
+            }
+            Log.Info (Log.LOG_UI, "StartupViewController ShowRecoveryScreen");
+            if (PresentedViewController != null) {
+                var window = UIApplication.SharedApplication.Delegate.GetWindow ();
+                UIView.Transition (window, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, () => {
+                    DismissViewController (false, null);
+                    PerformSegue ("recovery", null);
+                }, () => {
+                });
+            } else {
+                PerformSegue ("recovery", null);
+            }
+            currentState = StartupViewState.Recovery;
+        }
+
+        void ShowSetupScreen (bool startWithTutorial = false)
+        {
+            if (currentState == StartupViewState.Setup) {
+                return;
+            }
+            Log.Info (Log.LOG_UI, "StartupViewController ShowSetupScreen");
+            var storyboard = UIStoryboard.FromName ("Welcome", null);
+            UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
+            var gettingStartedViewController = (GettingStartedViewController)vc.ViewControllers [0];
+            gettingStartedViewController.StartWithTutorial = startWithTutorial;
+            gettingStartedViewController.AccountDelegate = this;
+            if (currentState == StartupViewState.Startup) {
+                gettingStartedViewController.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
+            }
+            if (PresentedViewController != null) {
+                var window = UIApplication.SharedApplication.Delegate.GetWindow ();
+                UIView.Transition (window, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, () => {
+                    DismissViewController (false, null);
+                    PresentViewController (vc, false, null);
+                }, () => {
+                });
+            } else {
+                PresentViewController (vc, false, null);
+            }
+            currentState = StartupViewState.Setup;
+        }
+
+        void ShowApplication ()
+        {
+            Log.Info (Log.LOG_UI, "StartupViewController ShowApplication");
+            var appViewController = new NachoTabBarController ();
+
+            // If we have an event, we'll push it on the selected nav controller so when the user hits back, they're at the app
+            // NOTE: this assumes that the selected view controller will be a UINavigationController.  In this case, the selected
+            // view controller should always be the first tab because we've just launched.
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var currentAccountIdString = LoginHelpers.GetCurrentAccountId ().ToString ();
+            var eventId = McMutables.Get (deviceAccount.Id, "EventNotif", currentAccountIdString);
+            if (null != eventId) {
+                Log.Info (Log.LOG_UI, "StartupViewController ShowingEvent");
+                var vc = new EventViewController ();
+                var item = McEvent.QueryById<McEvent> (Convert.ToInt32 (eventId));
+                vc.SetCalendarItem (item);
+                McMutables.Delete (deviceAccount.Id, "EventNotif", currentAccountIdString);
+                var navController = (UINavigationController)appViewController.SelectedViewController;
+                navController.PushViewController (vc, false);
+            }
+
+            var window = UIApplication.SharedApplication.Delegate.GetWindow ();
+            // Swap us out as the window's root view controller because we are no longer needed
+            var windowSnapshot = window.SnapshotView (false);
+            window.RootViewController = appViewController;
+            windowSnapshot.Frame = new CoreGraphics.CGRect (0, -appViewController.View.Frame.Top, windowSnapshot.Frame.Width, windowSnapshot.Frame.Height);
+            appViewController.View.AddSubview (windowSnapshot);
+            UIView.Animate (0.3, 0.0, 0, () => {
+                windowSnapshot.Alpha = 0.0f;
+            }, () => {
+                windowSnapshot.RemoveFromSuperview ();
+            });
+        }
+
+        #endregion
+
+        #region Backend Events
+
+        void StartListeningForApplicationStatus ()
+        {
+            if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+        }
+
+        void StopListeningForApplicationStatus ()
+        {
+            if (StatusIndCallbackIsSet) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                 StatusIndCallbackIsSet = false;
             }
-        }
-
-        public void CreateView ()
-        {
-            var frame = this.View.Frame;
-            var halfHeight = frame.Height / 2.0f;
-
-            MigrationMessageTextView = new UITextView (new CoreGraphics.CGRect (0, halfHeight - 35, frame.Width, 35));
-            MigrationMessageTextView.TextColor = UIColor.White;
-            MigrationMessageTextView.Font = A.Font_AvenirNextRegular14;
-            MigrationMessageTextView.BackgroundColor = A.Color_NachoGreen;
-            MigrationMessageTextView.TextAlignment = UITextAlignment.Center;
-
-            MigrationProgressBar = new UIProgressView (new CoreGraphics.CGRect (0, halfHeight + 10, frame.Width, 20));
-            MigrationProgressBar.ProgressTintColor = A.Color_NachoYellow;
-            MigrationProgressBar.TrackTintColor = A.Color_NachoIconGray;
-
-            MigrationSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
-            MigrationSpinner.Center = new CoreGraphics.CGPoint (frame.Width / 2, frame.Height / 4);
-            MigrationSpinner.ActivityIndicatorViewStyle = UIActivityIndicatorViewStyle.WhiteLarge;
-            MigrationSpinner.HidesWhenStopped = true;
-
-            this.Add (MigrationMessageTextView);
-            this.Add (MigrationProgressBar);
-            this.Add (MigrationSpinner);
-        }
-
-        void BlankScreen ()
-        {
-            this.NavigationItem.Title = "";
-            MigrationMessageTextView.Text = "";
-            MigrationMessageTextView.Hidden = true;
-            MigrationProgressBar.Hidden = true;
-            MigrationSpinner.StopAnimating ();
-        }
-
-        void ConfigureView ()
-        {
-            if (!NcMigration.IsCompatible ()) {
-                return;
-            }
-            switch (NcApplication.Instance.ExecutionContext) {
-            case NcApplication.ExecutionContextEnum.Migrating:
-                this.NavigationItem.Title = "Upgrade";
-                MigrationMessageTextView.Hidden = false;
-                MigrationProgressBar.Hidden = false;
-                MigrationMessageTextView.Text = String.Format ("Updating your app with latest features... (1 of {0})", NcMigration.NumberOfMigrations);
-                MigrationSpinner.StopAnimating ();
-                break;
-            case NcApplication.ExecutionContextEnum.Initializing:
-                if (NcApplication.Instance.InSafeMode ()) {
-                    this.NavigationItem.Title = "Initializing";
-                    MigrationMessageTextView.Text = String.Format ("We are sorry a crash occurred. We are recovering.");
-                    MigrationMessageTextView.Hidden = false;
-                    MigrationProgressBar.Hidden = true;
-                    MigrationSpinner.StartAnimating ();
-                } else {
-                    BlankScreen ();
-                }
-                break;
-            default:
-                // Rare and will be quick
-                BlankScreen ();
-
-                break;
-            }
-            ViewFramer.Create (MigrationMessageTextView).Width (View.Frame.Width);
-            MigrationMessageTextView.SizeToFit ();
-            ViewFramer.Create (MigrationMessageTextView).Width (View.Frame.Width);
-            ViewFramer.Create (MigrationProgressBar).Y (MigrationMessageTextView.Frame.Bottom + 10);
-            Log.Info (Log.LOG_UI, "svc: {0}", NcApplication.Instance.ExecutionContext);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
-                var execContext = (NcApplication.ExecutionContextEnum)s.Status.Value;
-                if (NcApplication.Instance.IsUp ()) {
-                    InvokeOnMainThread (() => {
-                        if (null != MigrationProgressBar) {
-                            MigrationProgressBar.Hidden = true;
-                        }
-                        GetThisPartyStarted ();
-                    });
-                } else {
-                    ConfigureView ();
-                }
-            }
-            if (NcResult.SubKindEnum.Info_MigrationProgress == s.Status.SubKind) {
-                var percentage = (float)s.Status.Value;
-                if (null != MigrationProgressBar) {
-                    InvokeOnMainThread (() => {
-                        // Skip animation for 0%. That happens right before starting
-                        // the next migration. Animation when rewinding to 0% looks weird
-                        MigrationProgressBar.SetProgress (percentage, 0.0 != percentage);
-                    });
-                }
-            }
-            if (NcResult.SubKindEnum.Info_MigrationDescription == s.Status.SubKind) {
-                var description = (string)s.Status.Value;
-                if (null != MigrationMessageTextView) {
-                    InvokeOnMainThread (() => {
-                        MigrationMessageTextView.Text = description;
-                    });
-                }
+                Log.Info (Log.LOG_UI, "StartupViewController got ExecutionContextChanged event");
+                InvokeOnMainThread (() => {
+                    ShowScreenForApplicationState ();
+                });
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        #endregion
+
+        #region Getting Started Delegate
+
+        public void GettingStartedViewControllerDidComplete (GettingStartedViewController vc)
         {
-            if (segue.Identifier == "SegueToLaunch") {
-                return;
-            }
-            if (segue.Identifier == "SegueToAdvancedLogin") {
-                return;
-            }
-            if (segue.Identifier == "SegueToTabController") {
-                return;
-            }
-            if (segue.Identifier == "SegueToEventView") {
-                var vc = (EventViewController)segue.DestinationViewController;
-                var devAccountId = McAccount.GetDeviceAccount ().Id;
-                var eventId = Convert.ToInt32 (McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
-                var item = McEvent.QueryById<McEvent> (eventId);
-                vc.SetCalendarItem (item);
-                McMutables.Delete (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            Log.Info (Log.LOG_UI, "StartupViewController tutorial was dismissed, going direct to application");
+            ShowApplication ();
         }
+
+        #endregion
     }
 }

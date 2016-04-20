@@ -10,7 +10,7 @@ namespace NachoClient.iOS
 {
     public interface INachoContactDefaultSelector
     {
-        void PerformSegueForContactDefaultSelector (string identifier, NSObject sender);
+        void ContactDefaultSelectorComposeMessage (string address);
     }
 }
 

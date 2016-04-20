@@ -61,19 +61,25 @@ namespace NachoCore.Model
         // The highest migration version of the current build
         private static int _currentVersion = -1;
 
+        private static Type[] _subclasses = null;
+        private static Type[] Subclasses {
+            get {
+                if (null == _subclasses) {
+                    _subclasses = (from type_ in Assembly.GetExecutingAssembly ().GetTypes ()
+                        where type_.Name.StartsWith ("NcMigration") && type_.IsSubclassOf (typeof(NcMigration))
+                        select type_
+                    ).ToArray ();
+                }
+                return _subclasses;
+            }
+        }
+
         public static int CurrentVersion {
             get {
                 if (-1 == _currentVersion) {
-                    // Find all derived classes.
-                    var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
-                                                     from type_ in assembly.GetTypes ()
-                                                     where type_.IsSubclassOf (typeof(NcMigration))
-                                                     select type_
-                                     );
-
-                    foreach (var subclass in subclasses) {
-                        NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
-                        var version = migration.Version ();
+                    foreach (var subclass in Subclasses) {
+                        string versionString = subclass.Name.Substring (11);
+                        var version = Convert.ToInt32 (versionString);
                         if (version > _currentVersion) {
                             _currentVersion = version;
                         }
@@ -121,13 +127,6 @@ namespace NachoCore.Model
             IsSetup = true;
 
             _migrations = new List<NcMigration> ();
-            // Find all derived classes.
-            var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
-                                       from type_ in assembly.GetTypes ()
-                                       where type_.IsSubclassOf (typeof(NcMigration))
-                                       select type_
-                             );
-
             // Find the latest version
             var latestMigration = McMigration.QueryLatestMigration ();
             int LastMigration; // the latest complete migration
@@ -144,10 +143,12 @@ namespace NachoCore.Model
             }
 
             // Filter out all migration versions that we have already finished.
-            foreach (var subclass in subclasses) {
-                NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
-                var version = migration.Version ();
+            foreach (var subclass in Subclasses) {
+                var className = subclass.Name;
+                string versionString = className.Substring (11);
+                var version = Convert.ToInt32 (versionString);
                 if (version > LastMigration) {
+                    NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
                     _migrations.Add (migration);
                 }
             }
@@ -273,7 +274,11 @@ namespace NachoCore.Model
                     migrationRecord.Update ();
 
                     // Run the migration
-                    Log.Info (Log.LOG_DB, "Running migration {0}...", version);
+                    if (migrationRecord.NumberOfTimesRan > 1) {
+                        Log.Info (Log.LOG_DB, "Running migration {0} (Attempt #{1})...", version, migrationRecord.NumberOfTimesRan);
+                    } else {
+                        Log.Info (Log.LOG_DB, "Running migration {0}...", version);
+                    }
                     NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     try {
                         migration.Run (NcTask.Cts.Token);
@@ -284,6 +289,7 @@ namespace NachoCore.Model
                         migration.Finished = true;
                     } catch (OperationCanceledException) {
                         migrationRecord.DurationMsec += (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
+                        Log.Warn (Log.LOG_DB, "Migration {0} interrupted", version);
                         rows = migrationRecord.Update ();
                         NcAssert.True (1 == rows);
                         throw;

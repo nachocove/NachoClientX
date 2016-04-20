@@ -13,9 +13,15 @@ using Android.Views;
 using Android.Widget;
 
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
+    public interface ChooseProviderDelegate
+    {
+        void ChooseProviderFinished (McAccount.AccountServiceEnum service);
+    }
+
     public class ChooseProviderFragment : Fragment
     {
         ProviderAdapter providerAdapter;
@@ -26,21 +32,14 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
-
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.ChooseProviderFragment, container, false);
-            var tv = view.FindViewById<TextView> (Resource.Id.textview);
-            tv.Text = "ChooseProvider fragment";
 
             var gridview = view.FindViewById<GridView> (Resource.Id.gridview);
             providerAdapter = new ProviderAdapter (view.Context);
@@ -53,7 +52,7 @@ namespace NachoClient.AndroidClient
         void Gridview_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             var s = providerAdapter.GetItemService (e.Position);
-            var parent = (LaunchActivity)Activity;
+            var parent = (ChooseProviderDelegate)Activity;
             parent.ChooseProviderFinished (s);   
         }
     }
@@ -61,10 +60,12 @@ namespace NachoClient.AndroidClient
     public class ProviderAdapter : BaseAdapter
     {
         Context context;
+        LayoutInflater inflater;
 
         public ProviderAdapter (Context c)
         {
             context = c;
+            inflater = (LayoutInflater)context.GetSystemService (Context.LayoutInflaterService);
         }
 
         public override int Count {
@@ -78,7 +79,7 @@ namespace NachoClient.AndroidClient
 
         public override long GetItemId (int position)
         {
-            return 0;
+            return position;
         }
 
         public McAccount.AccountServiceEnum GetItemService (int position)
@@ -89,16 +90,14 @@ namespace NachoClient.AndroidClient
         // create a new ImageView for each item referenced by the Adapter
         public override View GetView (int position, View convertView, ViewGroup parent)
         {
-            RoundedImageView imageView;
+            var view = inflater.Inflate (Resource.Layout.ChooseProviderCell, null);
+            var imageview = view.FindViewById<RoundedImageView> (Resource.Id.image);
+            var labelview = view.FindViewById<TextView> (Resource.Id.label);
 
-            if (convertView == null) {  // if it's not recycled, initialize some attributes
-                imageView = new RoundedImageView (context);
-            } else {
-                return convertView;
-                imageView = (RoundedImageView)convertView;
-            }
-            imageView.SetImageResource (data [position].i);
-            return imageView;
+            imageview.SetImageResource (data [position].i);
+            labelview.Text = NcServiceHelper.AccountServiceName (data [position].e);
+
+            return view;
         }
 
         struct Data
@@ -109,14 +108,14 @@ namespace NachoClient.AndroidClient
 
         Data[] data = new Data[] {
             new Data { i = Resource.Drawable.avatar_msexchange, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_gmail, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_googleapps, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_hotmail, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_icloud, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_imap, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_office365, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_outlook, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_yahoo, e = McAccount.AccountServiceEnum.Exchange },
+            new Data { i = Resource.Drawable.avatar_gmail, e = McAccount.AccountServiceEnum.GoogleDefault },
+            new Data { i = Resource.Drawable.avatar_googleapps, e = McAccount.AccountServiceEnum.GoogleExchange },
+            new Data { i = Resource.Drawable.avatar_hotmail, e = McAccount.AccountServiceEnum.HotmailExchange },
+            new Data { i = Resource.Drawable.avatar_icloud, e = McAccount.AccountServiceEnum.iCloud },
+            new Data { i = Resource.Drawable.avatar_imap, e = McAccount.AccountServiceEnum.IMAP_SMTP },
+            new Data { i = Resource.Drawable.avatar_office365, e = McAccount.AccountServiceEnum.Office365Exchange },
+            new Data { i = Resource.Drawable.avatar_outlook, e = McAccount.AccountServiceEnum.OutlookExchange },
+            new Data { i = Resource.Drawable.avatar_yahoo, e = McAccount.AccountServiceEnum.Yahoo },
         };
     }
 }

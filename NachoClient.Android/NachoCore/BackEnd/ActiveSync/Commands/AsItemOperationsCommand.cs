@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -21,10 +20,12 @@ namespace NachoCore.ActiveSync
         {
             Attachments = new List<McAttachment> ();
             FetchKit = fetchKit;
-            foreach (var pending in fetchKit.Pendings) {
-                pending.Pending.MarkDispached ();
-                PendingList.Add (pending.Pending);
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in fetchKit.Pendings) {
+                    pending.Pending.MarkDispatched ();
+                    PendingList.Add (pending.Pending);
+                }
+            });
         }
 
         private XElement ToEmailFetch (string parentId, string serverId, Xml.AirSync.TypeCode bodyPref)
@@ -168,27 +169,7 @@ namespace NachoCore.ActiveSync
             } else if (null != xmlServerId) {
                 // This means we are processing a body download prefetch response.
                 NcModel.Instance.RunInTransaction (() => {
-                    var item = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, xmlServerId.Value);
-                    if (null == item) {
-                        Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McEmailMessage with ServerId {0}", xmlServerId.Value);
-                    } else {
-                        if (0 == item.BodyId) {
-                            var body = McBody.InsertError (AccountId);
-                            item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                var target = (McEmailMessage)record;
-                                target.BodyId = body.Id;
-                                return true;
-                            });
-                        } else {
-                            var body = McBody.QueryById<McBody> (item.BodyId);
-                            if (null == body) {
-                                Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McBody with Id {0}", item.BodyId);
-                            } else {
-                                body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
-                                body.Update ();
-                            }
-                        }
-                    }
+                    McPending.EmailBodyError(AccountId, xmlServerId.Value);
                 });
             } else {
                 Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: null xmlFileReference and xmlServerId");
@@ -203,7 +184,7 @@ namespace NachoCore.ActiveSync
             PendingList.Remove (pending);
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "IOPCANCEL");
@@ -271,9 +252,13 @@ namespace NachoCore.ActiveSync
                             switch (op) {
                             case McPending.Operations.EmailBodyDownload:
                                 item = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, serverId);
-                                successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
+                                if (item == null) {
+                                    successInd = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
+                                } else {
+                                    successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
+                                }
                                 if (null != pending) {
-                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", item.AccountId, pending.Id, pending.Token, item.Id);
+                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1} for email {2}", item.AccountId, pending, item.Id);
                                 } else {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) for email {1}", item.AccountId, item.Id);
                                 }
@@ -308,6 +293,10 @@ namespace NachoCore.ActiveSync
                                         item.ApplyAsXmlBody (xmlBody);
                                         return true;
                                     });
+                                    if (item.BodyId == 0) {
+                                        Log.Error (Log.LOG_AS, "ItemOperations: BodyId == 0 after message body download");
+                                        successInd = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
+                                    }
                                 } else {
                                     item.ApplyAsXmlBody (xmlBody);
                                     item.Update ();
@@ -318,7 +307,11 @@ namespace NachoCore.ActiveSync
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);
                                 result.Value = item;
-                                pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                                if (result.isError ()) {
+                                    pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilSync, result);
+                                } else {
+                                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                                }
                                 PendingList.Remove (pending);
                             }
                         } else {

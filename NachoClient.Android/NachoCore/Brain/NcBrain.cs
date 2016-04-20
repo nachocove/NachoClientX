@@ -10,6 +10,8 @@ using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Index;
+using System.Threading;
+using System.Linq;
 
 namespace NachoCore.Brain
 {
@@ -19,14 +21,19 @@ namespace NachoCore.Brain
 
         public static bool RegisterStatusIndHandler = false;
 
-        public static int StartupDelayMsec = 5000;
+        public static int StartupDelayMsec = 500;
 
-        private static NcBrain _SharedInstance;
+        private static volatile NcBrain _SharedInstance;
+        private static object syncRoot = new Object ();
 
         public static NcBrain SharedInstance {
             get {
                 if (null == _SharedInstance) {
-                    _SharedInstance = new NcBrain ();
+                    lock (syncRoot) {
+                        if (null == _SharedInstance) {
+                            _SharedInstance = new NcBrain ();
+                        }
+                    }
                 }
                 return _SharedInstance;
             }
@@ -55,10 +62,10 @@ namespace NachoCore.Brain
         public OperationCounters McEmailAddressCounters;
         public OperationCounters McEmailAddressScoreSyncInfo;
 
-        private DateTime LastPeriodicGlean;
-        private DateTime LastPeriodicGleanRestart;
+        private object ProcessLoopLockObj;
+        private object SyncRoot;
 
-        private object LockObj;
+        private NcTimer periodicTimer;
 
         private NcBrainNotification NotificationRateLimiter;
 
@@ -66,8 +73,6 @@ namespace NachoCore.Brain
         {
             _Indexes = new ConcurrentDictionary<int, NcIndex> ();
 
-            LastPeriodicGlean = new DateTime ();
-            LastPeriodicGleanRestart = new DateTime ();
             NotificationRateLimiter = new NcBrainNotification ();
 
             RootCounter = new NcCounter (prefix, true);
@@ -76,7 +81,10 @@ namespace NachoCore.Brain
             RootCounter.AutoReset = true;
             RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
 
-            LockObj = new object ();
+            ProcessLoopLockObj = new object ();
+            SyncRoot = new object ();
+
+            periodicTimer = null;
 
             InitializeEventHandler ();
         }
@@ -105,30 +113,91 @@ namespace NachoCore.Brain
             return index;
         }
 
+        public bool IsRunning { get; protected set; }
+
         public static void StartService ()
         {
-            // Set up the logging functions for IndexLib
-            NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
-                brain.EventQueue.Token = NcTask.Cts.Token;
-                brain.Process ();
+                NcBrain brain = NcBrain.SharedInstance;
+                lock (brain.SyncRoot) {
+                    if (brain.IsRunning) {
+                        Log.Info (Log.LOG_BRAIN, "NcBrain.StartService() called when the brain is already running.");
+                        return;
+                    }
+                    var token = NcTask.Cts.Token;
+                    brain.EventQueue.Token = token;
+                    brain.IsRunning = true;
+                    // Remove any TERMINATE events at the front of the queue.  They were intended for
+                    // the previous run of the brain, not this session.
+                    while (null != brain.EventQueue.DequeueIf (evt => { return evt.Type == NcBrainEventType.TERMINATE; })) {
+                    }
+                    brain.periodicTimer = new NcTimer ("NcBrain.periodicTimer", (state) => {
+                        if (NcApplication.Instance.IsForegroundOrBackground) {
+                            try {
+                                SharedInstance.EnqueueIfNotAlreadyThere (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
+                            } catch (OperationCanceledException) {
+                                // The timer filed at about the same time that the brain was shut down.
+                            }
+                        }
+                    }, null, TimeSpan.FromSeconds (NcContactGleaner.GLEAN_PERIOD), TimeSpan.FromSeconds (NcContactGleaner.GLEAN_PERIOD));
+                    brain.periodicTimer.Stfu = true;
+                }
+                try {
+                    brain.Process ();
+                } finally {
+                    lock (brain.SyncRoot) {
+                        brain.IsRunning = false;
+                    }
+                }
             }, "Brain");
         }
 
         public static void StopService ()
         {
-            NcBrain.SharedInstance.SignalTermination ();
-        }
-
-        public void SignalTermination ()
-        {
-            var brainEvent = new NcBrainEvent (NcBrainEventType.TERMINATE);
-            EventQueue.Undequeue (brainEvent);
+            var brain = NcBrain.SharedInstance;
+            lock (brain.SyncRoot) {
+                if (brain.IsRunning) {
+                    brain.IsRunning = false;
+                    brain.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+                    if (null != brain.periodicTimer) {
+                        brain.periodicTimer.Dispose ();
+                        brain.periodicTimer = null;
+                    }
+                }
+            }
         }
 
         private bool IsInUnitTest ()
         {
             return (0 == StartupDelayMsec);
+        }
+
+        private bool RunSeveralTimes (string name, BrainQueryAndProcess action, int maxCount)
+        {
+            int numberProcessed = 0;
+            bool dummyResult;
+            while (numberProcessed < maxCount && KeepGoing () && action.Process (out dummyResult)) {
+                ++numberProcessed;
+            }
+            if (0 < numberProcessed) {
+                Log.Info (Log.LOG_BRAIN, "{0}: {1} items processed", name, numberProcessed);
+            }
+            return 0 < numberProcessed;
+        }
+
+        private bool ProcessSeveralPersistedEvents (NcBrainEventType type, int maxCount)
+        {
+            int numberProcessed = 0;
+            while (numberProcessed < maxCount && KeepGoing ()) {
+                var brainEvent = McBrainEvent.QueryNextType (type);
+                if (null == brainEvent) {
+                    return 0 < numberProcessed;
+                }
+                ProcessEvent (brainEvent.BrainEvent ());
+                brainEvent.Delete ();
+                ++numberProcessed;
+            }
+            return 0 < numberProcessed;
         }
 
         public void Process ()
@@ -140,9 +209,8 @@ namespace NachoCore.Brain
                     NcTask.Cts.Token.ThrowIfCancellationRequested ();
                 }
 
-                // If brain task is running under quick sync, do not start time variance
-                // as it is a waste of time.
-                if (NcApplication.Instance.IsForegroundOrBackground) {
+                // Only start the time variance stuff when in the foreground.
+                if (NcApplication.Instance.IsForeground) {
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
                     tvStarted = true;
                 }
@@ -151,26 +219,96 @@ namespace NachoCore.Brain
                     NcBrain.RegisterStatusIndHandler = true;
                 }
             }
-            lock (LockObj) {
+            lock (ProcessLoopLockObj) {
+
+                bool didSomething = true;
                 while (true) {
-                    var brainEvent = EventQueue.Dequeue ();
-                    if (NcBrainEventType.TERMINATE == brainEvent.Type) {
-                        Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
-                        return;
+                    if (!tvStarted && !IsInUnitTest () && NcApplication.Instance.IsForeground) {
+                        McEmailMessage.StartTimeVariance (EventQueue.Token);
+                        tvStarted = true;
                     }
-                    if (!IsInUnitTest ()) {
-                        if (!tvStarted && NcApplication.Instance.IsForegroundOrBackground) {
-                            McEmailMessage.StartTimeVariance (EventQueue.Token);
-                            tvStarted = true;
+
+                    // Priority 1: Events in the queue.
+                    // If there is nothing to do, then the Dequeue call will block until
+                    // something is added to the queue.
+                    if (!didSomething || !EventQueue.IsEmpty ()) {
+                        var brainEvent = EventQueue.Dequeue ();
+                        if (NcBrainEventType.TERMINATE == brainEvent.Type) {
+                            Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
+                            return;
                         }
-                        // TODO - scheduling of brain actions need to be smarter. This will be
-                        // addressed in brain 2.0.
-                        if (!NcApplication.Instance.IsForegroundOrBackground) {
-                            continue;
+                        if (ENABLED) {
+                            ProcessEvent (brainEvent);
                         }
+                        didSomething = true;
+                        continue;
                     }
-                    if (ENABLED) {
-                        ProcessEvent (brainEvent);
+
+                    didSomething = false;
+
+                    // Priority 2: Quick scoring of new messages
+                    if (KeepGoing () && RunSeveralTimes ("Quick score messages", QuickScore, 50)) {
+                        didSomething = true;
+                    }
+
+                    // Only P1 and P2 are done in quick sync mode.
+                    if (didSomething || !KeepGoing () || !NcApplication.Instance.IsForegroundOrBackground) {
+                        continue;
+                    }
+
+                    // Priority 3: Glean and score unscored messages. Update the score of messages with
+                    // a high NeedsUpdate count. Index newly arrived messages.
+                    if (KeepGoing () && RunSeveralTimes ("Glean/analyze messages", AnalyzeEmail, 30)) {
+                        didSomething = true;
+                    }
+                    if (KeepGoing () && RunSeveralTimes ("Update message scores (high)", UpdateScoreHigh, 20)) {
+                        didSomething = true;
+                    }
+                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.INDEX_MESSAGE, 10)) {
+                        didSomething = true;
+                    }
+                    if (didSomething || !KeepGoing ()) {
+                        continue;
+                    }
+
+                    // Priority 4: Update the score of messages with a low NeedsUpdate count. Unindex deleted
+                    // messages. Reindex messages that have been downloaded.
+                    if (KeepGoing () && RunSeveralTimes ("Update message scores (low)", UpdateScoreLow, 20)) {
+                        didSomething = true;
+                    }
+                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.UNINDEX_MESSAGE, 10)) {
+                        didSomething = true;
+                    }
+                    if (KeepGoing () && RunSeveralTimes ("Index messages", IndexEmail, 10)) {
+                        didSomething = true;
+                    }
+                    if (didSomething || !KeepGoing () || !NcApplication.Instance.IsForeground) {
+                        continue;
+                    }
+
+                    // Priority 5: Index/reindex/unindex contacts.  This is only done when in the foreground.
+                    // Indexing of contacts is the lowest priority because the indexes are rarely used.
+                    if (KeepGoing () && RunSeveralTimes ("Index contacts", IndexContacts, 20)) {
+                        didSomething = true;
+                    }
+                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.REINDEX_CONTACT, 20)) {
+                        didSomething = true;
+                    }
+                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.UNINDEX_CONTACT, 20)) {
+                        didSomething = true;
+                    }
+
+                    // Finally, handle any persistent events that slipped through the cracks.  This could be
+                    // persisted events that were left over from before the app was upgraded to the current
+                    // Brain event scheme.  Though sometimes this will catch an INDEX_MESSAGE event that was
+                    // added while querying for other kinds of work.
+                    if (!didSomething && KeepGoing ()) {
+                        var brainEvent = McBrainEvent.QueryNext ();
+                        if (null != brainEvent) {
+                            ProcessEvent (brainEvent.BrainEvent ());
+                            brainEvent.Delete ();
+                            didSomething = true;
+                        }
                     }
                 }
             }
@@ -186,34 +324,38 @@ namespace NachoCore.Brain
             NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
         }
 
-        public void StatusIndicationHandler (object sender, EventArgs args)
+        private static void StatusIndicationHandler (object sender, EventArgs args)
         {
             StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
             switch (eventArgs.Status.SubKind) {
             case NcResult.SubKindEnum.Info_RicInitialSyncCompleted:
-                /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
-                /// generate initial email address scores from RIC in this function for 2
-                /// reasons. First, we do not want to hold up the status indication callback
-                /// for a long duration. Second, the callback may be in a different threads
-                /// as NcBrain task. So, we may have two threads updatind the same object.
-                /// Therefore, we enqueue a brain event and let brain task to do the actual
-                /// processing.
+                // Status indication handler for Info_RicInitialSyncCompleted. We do not 
+                // generate initial email address scores from RIC in this function for 2
+                // reasons. First, we do not want to hold up the status indication callback
+                // for a long duration. Second, the callback may be in a different threads
+                // as NcBrain task. So, we may have two threads updating the same object.
+                // Therefore, we enqueue a brain event and let brain task to do the actual
+                // processing.
                 var initialRicEvent = new NcBrainInitialRicEvent (eventArgs.Account.Id);
                 NcBrain.SharedInstance.Enqueue (initialRicEvent);
                 break;
-            case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
-                DateTime now = DateTime.Now;
-                if (((double)NcContactGleaner.GLEAN_PERIOD < (now - LastPeriodicGlean).TotalSeconds) &&
-                    (LastPeriodicGleanRestart < LastPeriodicGlean)) {
-                    LastPeriodicGleanRestart = now;
-                    NcContactGleaner.Stop ();
-                    NcContactGleaner.Start ();
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+                // If the brain is asleep, wake it up.
+                var brain = NcBrain.SharedInstance;
+                if (brain.EventQueue.IsEmpty ()) {
+                    brain.EventQueue.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
                 }
                 break;
-            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                var stateMachineEvent = new NcBrainStateMachineEvent (eventArgs.Account.Id);
-                NcBrain.SharedInstance.Enqueue (stateMachineEvent);
-                break;
+            }
+        }
+
+        public void ProcessOneNewEmail (McEmailMessage emailMessage)
+        {
+            NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+
+            var folder = McFolder.QueryByFolderEntryId<McEmailMessage> (emailMessage.AccountId, emailMessage.Id).FirstOrDefault ();
+            if (null != folder && !folder.IsJunkFolder () && NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 != folder.Type) {
+                NcBrain.IndexMessage (emailMessage);
             }
         }
     }

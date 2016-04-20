@@ -20,9 +20,13 @@ native.Android/jni/*.h
 native.Android/jni/*.c
 NachoClient.iOS/UploadDSym/nachomail/build
 NachoClient.*/.build_number*
+NachoClientShare.iOS*/.build_number*
 Test.*/.build_number
 NachoClient.*/BuildInfo.cs
+NachoClientShare.iOS*/BuildInfo.cs
 NachoClient.*/LogSettings.cs
-NachoClient.iOS/.skip_hockeyapp_upload
+NachoClient.*/.skip_hockeyapp_upload
 *.pyc
-packages/
+NachoClient.Android/Resources/Resource.designer.cs
+Test.Android/Resources/Resource.designer.cs
+.idea/*

@@ -66,8 +66,8 @@ namespace NachoCore.Utils
             Info_FolderSyncSucceeded,
             Info_MeetingResponseSucceeded,
             Info_ContactSearchCommandSucceeded,
-            Info_BackgroundAbateStarted,
-            Info_BackgroundAbateStopped,
+            Info_BackgroundAbateStarted_Obsolete,
+            Info_BackgroundAbateStopped_Obsolete,
             Info_ServiceUnavailable,
             Info_ValidateConfigSucceeded,
             Info_ExplicitThrottling,
@@ -129,7 +129,7 @@ namespace NachoCore.Utils
             Error_FolderDeleteFailed,
             Error_FolderUpdateFailed,
             Error_SyncFailed,
-            Error_SyncFailedToComplete,
+            Error_SyncFailedToComplete_Obsolete,
             Error_FolderSyncFailed,
             Error_MeetingResponseFailed,
             Error_ContactSearchCommandFailed,
@@ -143,8 +143,8 @@ namespace NachoCore.Utils
             Error_ValidateConfigFailedAuth,
             Error_ValidateConfigFailedComm,
             Error_ValidateConfigFailedUser,
-            Error_ServerConfReqCallback,
-            Error_CertAskReqCallback,
+            Info_ServerConfReqCallback,
+            Info_CertAskReqCallback,
             Error_AutoDUserMessage,
             Error_AutoDAdminMessage,
 
@@ -185,6 +185,11 @@ namespace NachoCore.Utils
             Info_DaysToSyncChanged,
             Error_CredWait,
             Info_DoesNotSync,
+            Error_AlreadyAttached,
+            Error_NotAttached,
+            Info_AccountSetChanged,
+            Info_ChatSetChanged,
+            Info_ChatMessageAdded
         };
 
         public enum WhyEnum

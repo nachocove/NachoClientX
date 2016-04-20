@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Concurrent;
-using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using NachoCore;
 using NachoCore.ActiveSync;
@@ -11,8 +8,6 @@ using NachoCore.Utils;
 using NachoPlatform;
 using DnDns.Enums;
 using DnDns.Query;
-using System.Xml.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Linq;
 using HttpStatusCode = System.Net.HttpStatusCode;
@@ -28,6 +23,7 @@ using HttpStatusCode = System.Net.HttpStatusCode;
 /* Important: Auto-d uses xml, not wbxml */
 /* Details about HTTP OPTIONS responses: http://msdn.microsoft.com/en-us/library/jj127441(v=exchg.140).aspx */
 using System.Net;
+using System.IO;
 
 namespace Test.iOS
 {
@@ -87,32 +83,40 @@ namespace Test.iOS
 
                 bool hasRedirected = false;
 
-                PerformAutoDiscoveryWithSettings (true, sm => {
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request);
-                    return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        step = MockSteps.S1;
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
-                    } else {
-                        answerLength = 0;
-                        return null;
+                PerformAutoDiscoveryWithSettings (true,
+                    sm => {
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request);
+                        return XMLForRobotType (request, robotType, step, xml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                            step = MockSteps.S1;
+                            DnsQueryResponse response = new DnsQueryResponse ();
+                            response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                            return response;
+                        } else {
+                            return null;
+                       }
+                    },
+                    (httpRequest, httpResponse) => {
+                        // provide valid redirection headers if needed
+                        HttpStatusCode status;
+                        NcHttpHeaders headers = new NcHttpHeaders();
+                        if (ShouldRedirect (httpRequest, step) && !hasRedirected) {
+                            status = HttpStatusCode.Found;
+                            headers.Add ("Location", CommonMockData.RedirectionUrl);
+                            hasRedirected = true; // disable second redirection
+                            step = MockSteps.S1;
+                        } else {
+                            MockSteps robotType = DetermineRobotType (httpRequest);
+                            status = AssignStatusCode (httpRequest, robotType, step);
+                            headers.Add ("Content-Length", mockResponseLength);
+                        }
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
-                }, (httpRequest, httpResponse) => {
-                    // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step) && !hasRedirected) {
-                        httpResponse.StatusCode = HttpStatusCode.Found;
-                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                        hasRedirected = true; // disable second redirection
-                        step = MockSteps.S1;
-                    } else {
-                        MockSteps robotType = DetermineRobotType (httpRequest);
-                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
-                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                    }
-                });
+                );
             }
         }
 
@@ -136,37 +140,44 @@ namespace Test.iOS
 
                 bool hasRedirected = false;
 
-                PerformAutoDiscoveryWithSettings (true, sm => {
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
-                    return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        step = MockSteps.S1;
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
-                    } else {
-                        answerLength = 0;
-                        return null;
+                PerformAutoDiscoveryWithSettings (true,
+                    sm => {
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
+                        return XMLForRobotType (request, robotType, step, xml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                            step = MockSteps.S1;
+                            DnsQueryResponse response = new DnsQueryResponse ();
+                            response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                            return response;
+                        } else {
+                            return null;
+                        }
+                    },
+                    (httpRequest, httpResponse) => {
+                        bool urisubdomain = isSubDomain;
+                        if (httpRequest.RequestUri.Host.ToLower () == CommonMockData.Host) {
+                            urisubdomain = false;
+                        }
+                        MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: urisubdomain);
+                        // provide valid redirection headers if needed
+                        HttpStatusCode status;
+                        NcHttpHeaders headers = new NcHttpHeaders();
+                        if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
+                            status = HttpStatusCode.Found;
+                            headers.Add ("Location", CommonMockData.RedirectionUrl);
+                            hasRedirected = true; // disable second redirection
+                            step = MockSteps.S1;
+                        } else {
+                            status = AssignStatusCode (httpRequest, robotType, step, isAuthFailFromBaseDomain: true);
+                            headers.Add ("Content-Length", mockResponseLength);
+                        }
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
-                }, (httpRequest, httpResponse) => {
-                    bool urisubdomain = isSubDomain;
-                    if (httpRequest.RequestUri.Host.ToLower() == CommonMockData.Host)
-                    {
-                        urisubdomain = false;
-                    }
-                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: urisubdomain);
-                    // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
-                        httpResponse.StatusCode = HttpStatusCode.Found;
-                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                        hasRedirected = true; // disable second redirection
-                        step = MockSteps.S1;
-                    } else {
-                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step, isAuthFailFromBaseDomain: true);
-                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                    }
-                });
+                );
             }
         }
 
@@ -206,25 +217,32 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
-                PerformAutoDiscoveryWithSettings (hasCert, sm => {
-                    provideSm (sm);
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request);
-                    return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    answerLength = 0;
-                    return null;
-                }, (httpRequest, httpResponse) => {
-                    // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step)) {
-                        httpResponse.StatusCode = HttpStatusCode.Found;
-                        httpResponse.Headers.Add ("Location", redirUrl);
-                    } else {
-                        MockSteps robotType = DetermineRobotType (httpRequest);
-                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
-                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                PerformAutoDiscoveryWithSettings (hasCert,
+                    sm => {
+                        provideSm (sm);
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request);
+                        return XMLForRobotType (request, robotType, step, xml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        return null;
+                    },
+                    (httpRequest, httpResponse) => {
+                        // provide valid redirection headers if needed
+                        HttpStatusCode status;
+                        NcHttpHeaders headers = new NcHttpHeaders();
+                        if (ShouldRedirect (httpRequest, step)) {
+                            status = HttpStatusCode.Found;
+                            headers.Add ("Location", redirUrl);
+                        } else {
+                            MockSteps robotType = DetermineRobotType (httpRequest);
+                            status = AssignStatusCode (httpRequest, robotType, step);
+                            headers.Add ("Content-Length", mockResponseLength);
+                        }
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
-                });
+                );
             }
         }
 
@@ -261,19 +279,26 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
-                PerformAutoDiscoveryWithSettings (true, sm => {
-                    sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request);
-                    return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    answerLength = 0;
-                    return null;
-                }, (httpRequest, httpResponse) => {
-                    MockSteps robotType = DetermineRobotType (httpRequest);
-                    httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
-                    httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                });
+                PerformAutoDiscoveryWithSettings (true,
+                    sm => {
+                        sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request);
+                        return XMLForRobotType (request, robotType, step, xml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        return null;
+                    },
+                    (httpRequest, httpResponse) => {
+                        HttpStatusCode status;
+                        NcHttpHeaders headers = new NcHttpHeaders ();
+                        MockSteps robotType = DetermineRobotType (httpRequest);
+                        status = AssignStatusCode (httpRequest, robotType, step);
+                        headers.Add ("Content-Length", mockResponseLength);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
+                    }
+                );
 
                 Assert.True (didReportError, "Should report correct status ind result");
             }
@@ -322,39 +347,47 @@ namespace Test.iOS
                 string mockResponseLength = xml.Length.ToString ();
 
                 bool didSetCreds = false;
-                PerformAutoDiscoveryWithSettings (true, sm => {
-                    sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request);
-                    return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
-                    } else {
-                        answerLength = 0;
-                        return null;
-                    }
-                }, (httpRequest, httpResponse) => {
-                    // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step)) {
-                        httpResponse.StatusCode = HttpStatusCode.Found;
-                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                    } else if (IsOptionsRequest (httpRequest)) {
-                        // pass after creds are set (don't do this for the BadGateway tests
-                        if (didSetCreds && status != HttpStatusCode.BadGateway) {
-                            httpResponse.StatusCode = HttpStatusCode.OK;
+                PerformAutoDiscoveryWithSettings (true,
+                    sm => {
+                        sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request);
+                        return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                            DnsQueryResponse response = new DnsQueryResponse ();
+                            response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                            return response;
                         } else {
-                            // check for OPTIONS header and set status code to 404 to force hard fail
-                            httpResponse.StatusCode = status;
-                            didSetCreds = true;
+                            return null;
                         }
-                    } else {
-                        MockSteps robotType = DetermineRobotType (httpRequest);
-                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
-                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                    },
+                    (httpRequest, httpResponse) => {
+                        // provide valid redirection headers if needed
+                        HttpStatusCode xstatus;
+                        NcHttpHeaders headers = new NcHttpHeaders ();
+                        if (ShouldRedirect (httpRequest, step)) {
+                            xstatus = HttpStatusCode.Found;
+                            headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        } else if (IsOptionsRequest (httpRequest)) {
+                            // pass after creds are set (don't do this for the BadGateway tests
+                            if (didSetCreds && status != HttpStatusCode.BadGateway) {
+                                xstatus = HttpStatusCode.OK;
+                            } else {
+                                // check for OPTIONS header and set status code to 404 to force hard fail
+                                xstatus = status;
+                                didSetCreds = true;
+                            }
+                        } else {
+                            MockSteps robotType = DetermineRobotType (httpRequest);
+                            xstatus = AssignStatusCode (httpRequest, robotType, step);
+                            headers.Add ("Content-Length", mockResponseLength);
+                        }
+                        return new NcHttpResponse (httpRequest.Method, xstatus, httpResponse.Content, httpResponse.ContentType, headers);
                     }
-                });
+                );
             }
         }
 
@@ -388,29 +421,36 @@ namespace Test.iOS
                 // gets set to true when creds have been provided so that autod can proceed
                 bool hasProvidedCreds = false;
 
-                PerformAutoDiscoveryWithSettings (true, sm => {
-                    sm.PostEvent ((uint)SmEvt.E.Launch, "TEST_FAIL");
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request);
-                    return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    answerLength = 0;
-                    return null;
-                }, (httpRequest, httpResponse) => {
-                    // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step)) {
-                        httpResponse.StatusCode = HttpStatusCode.Found;
-                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                    } else if (IsOptionsRequest (httpRequest) && !hasProvidedCreds) {
-                        // if OPTIONS, set status code to Unauthorized to force auth failure
-                        httpResponse.StatusCode = HttpStatusCode.Unauthorized;
-                        hasProvidedCreds = true;
-                    } else {
-                        MockSteps robotType = DetermineRobotType (httpRequest);
-                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
-                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                PerformAutoDiscoveryWithSettings (true,
+                    sm => {
+                        sm.PostEvent ((uint)SmEvt.E.Launch, "TEST_FAIL");
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request);
+                        return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        return null;
+                    },
+                    (httpRequest, httpResponse) => {
+                        // provide valid redirection headers if needed
+                        HttpStatusCode status;
+                        NcHttpHeaders headers = new NcHttpHeaders ();
+                        if (ShouldRedirect (httpRequest, step)) {
+                            status = HttpStatusCode.Found;
+                            headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        } else if (IsOptionsRequest (httpRequest) && !hasProvidedCreds) {
+                            // if OPTIONS, set status code to Unauthorized to force auth failure
+                            status = HttpStatusCode.Unauthorized;
+                            hasProvidedCreds = true;
+                        } else {
+                            MockSteps robotType = DetermineRobotType (httpRequest);
+                            status = AssignStatusCode (httpRequest, robotType, step);
+                            headers.Add ("Content-Length", mockResponseLength);
+                        }
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
-                });
+                );
             }
         }
 
@@ -479,37 +519,44 @@ namespace Test.iOS
                 bool hasRedirected = false;
                 bool hasTimedOutOnce = false;
 
-                PerformAutoDiscoveryWithSettings (true, sm => {
-                }, request => {
-                    MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
-                    return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        step = MockSteps.S1;
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
-                    } else {
-                        answerLength = 0;
-                        return null;
-                    }
-                }, (httpRequest, httpResponse) => {
-                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: isSubDomain);
-                    if (!hasTimedOutOnce && robotType == step) {
-                        System.Threading.Thread.Sleep (TimeoutTime);
-                        hasTimedOutOnce = true;
-                        throw new WebException ("Timed out on purpose");
-                    }
-                    // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
-                        httpResponse.StatusCode = HttpStatusCode.Found;
-                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                        hasRedirected = true; // disable second redirection
-                        step = MockSteps.S1;
-                    } else {
-                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
-                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                    }
-                });
+                PerformAutoDiscoveryWithSettings (true,
+                    sm => {
+                    },
+                    request => {
+                        MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
+                        return XMLForRobotType (request, robotType, step, xml);
+                    },
+                    (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
+                        if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                            step = MockSteps.S1;
+                            DnsQueryResponse response = new DnsQueryResponse ();
+                            response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                            return response;
+                        } else {
+                            return null;
+                        }
+                    },
+                    (httpRequest, httpResponse) => {
+                        HttpStatusCode status;
+                        NcHttpHeaders headers = new NcHttpHeaders ();
+                        MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: isSubDomain);
+                        if (!hasTimedOutOnce && robotType == step) {
+                            System.Threading.Thread.Sleep (TimeoutTime);
+                            hasTimedOutOnce = true;
+                            throw new WebException ("Timed out on purpose");
+                        }
+                        // provide valid redirection headers if needed
+                        if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
+                            status = HttpStatusCode.Found;
+                            headers.Add ("Location", CommonMockData.RedirectionUrl);
+                            hasRedirected = true; // disable second redirection
+                            step = MockSteps.S1;
+                        } else {
+                            status = AssignStatusCode (httpRequest, robotType, step);
+                            headers.Add ("Content-Length", mockResponseLength);
+                        }
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
+                    });
             }
         }
     }
@@ -557,7 +604,7 @@ namespace Test.iOS
             ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
-        public HttpStatusCode AssignStatusCode (HttpRequestMessage request, MockSteps robotType, MockSteps step, bool isAuthFailFromBaseDomain = false)
+        public HttpStatusCode AssignStatusCode (NcHttpRequest request, MockSteps robotType, MockSteps step, bool isAuthFailFromBaseDomain = false)
         {
             string requestHost = request.RequestUri.Host.ToLower();
 
@@ -589,7 +636,7 @@ namespace Test.iOS
             }
         }
 
-        public string XMLForRobotType (HttpRequestMessage request, MockSteps robotType, MockSteps step, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
+        public string XMLForRobotType (NcHttpRequest request, MockSteps robotType, MockSteps step, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
         {
             // if a redirection has already occurred, that means we need to have the robot succeed
             if (HasBeenRedirected (request)) {
@@ -616,12 +663,12 @@ namespace Test.iOS
             }
         }
 
-        public bool HasBeenRedirected (HttpRequestMessage request)
+        public bool HasBeenRedirected (NcHttpRequest request)
         {
             return request.RequestUri.ToString () == CommonMockData.RedirectionUrl;
         }
 
-        public bool ShouldRedirect (HttpRequestMessage request, MockSteps step, bool isSubDomain = false)
+        public bool ShouldRedirect (NcHttpRequest request, MockSteps step, bool isSubDomain = false)
         {
             string getUri = "http://autodiscover.";
             if (isSubDomain) {
@@ -633,12 +680,12 @@ namespace Test.iOS
             return request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri && step == MockSteps.S3;
         }
 
-        public bool IsOptionsRequest (HttpRequestMessage request)
+        public bool IsOptionsRequest (NcHttpRequest request)
         {
             return "OPTIONS" == request.Method.ToString ();
         }
 
-        public void DoOptionsAsserts (HttpRequestMessage request)
+        public void DoOptionsAsserts (NcHttpRequest request)
         {
             Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
 
@@ -661,7 +708,7 @@ namespace Test.iOS
             }
         }
 
-        public MockSteps DetermineRobotType (HttpRequestMessage request, bool isSubDomain = false)
+        public MockSteps DetermineRobotType (NcHttpRequest request, bool isSubDomain = false)
         {
             string requestUri = request.RequestUri.ToString ();
             string s1Uri = "https://";
@@ -695,8 +742,11 @@ namespace Test.iOS
             return MockSteps.Other;
         }
 
-        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
-            AsDnsOperation.CallResQueryDelegate exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
+        public delegate string ProvideXmlDelegate (NcHttpRequest request);
+        public delegate NcHttpResponse ExposeHttpMessageDelegate (NcHttpRequest request, NcHttpResponse response);
+
+        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, ProvideXmlDelegate provideXml,
+            AsDnsOperation.CallResQueryDelegate exposeDnsResponse, ExposeHttpMessageDelegate exposeHttpMessage)
         {
             var autoResetEvent = new AutoResetEvent(false);
             bool smFail = false;
@@ -720,23 +770,17 @@ namespace Test.iOS
 
                 // create the response, then allow caller to set headers,
                 // then return response and assign to mockResponse
-                var mockResponse = new HttpResponseMessage () {
-                    Content = new StringContent(xml, Encoding.UTF8, "text/xml"),
-                };
-              
+                var mockResponse = new NcHttpResponse (request.Method, HttpStatusCode.OK, Encoding.UTF8.GetBytes (xml), "text/xml");
                 // check for the type of request and respond with appropriate response (redir, error, pass)
                 // allow the caller to modify the mockResponse object (esp. headers and StatusCode)
-                exposeHttpMessage (request, mockResponse);
-
-
-                return mockResponse;
+                return exposeHttpMessage (request, mockResponse);
             };
 
             MockHttpClient.HasServerCertificate = () => {
                 return hasCert;
             };
 
-            AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+            NcProtoControl.TestHttpClient = MockHttpClient.Instance;
             var autod = new AsAutodiscoverCommand (mockContext);
 
             autodCommand = autod;
@@ -856,5 +900,4 @@ namespace Test.iOS
 
         public byte[] dnsByteArray = { 255, 134, 129, 0, 0, 1, 0, 1, 0, 0, 0, 0, 13, 95, 97, 117, 116, 111, 100, 105, 115, 99, 111, 118, 101, 114, 4, 95, 116, 99, 112, 13, 117, 116, 111, 112, 105, 97, 115, 121, 115, 116, 101, 109, 115, 3, 110, 101, 116, 0, 0, 33, 0, 1, 13, 95, 97, 117, 116, 111, 100, 105, 115, 99, 111, 118, 101, 114, 4, 95, 116, 99, 112, 13, 117, 116, 111, 112, 105, 97, 115, 121, 115, 116, 101, 109, 115, 3, 110, 101, 116, 0, 0, 33, 0, 1, 0, 0, 17, 150, 0, 30, 0, 0, 0, 0, 1, 187, 4, 109, 97, 105, 108, 13, 117, 116, 111, 112, 105, 97, 115, 121, 115, 116, 101, 109, 115, 3, 110, 101, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     }
-        
 }

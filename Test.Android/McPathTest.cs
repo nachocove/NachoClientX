@@ -170,7 +170,9 @@ namespace Test.iOS
             int accountId = 99;
             var tree1 = CreateTree (accountId);
             var tree2 = CreateTree (accountId + 1);
-            McPath.DeleteNonFolderByParentId (accountId, tree1.Root.ServerId);
+            NcModel.Instance.RunInTransaction (() => {
+                McPath.DeleteNonFolderByParentId (accountId, tree1.Root.ServerId);
+            });
             var folders = McPath.QueryByParentId (accountId, tree1.Root.ServerId, true);
             Assert.AreEqual (3, folders.ToList ().Count);
             var leaves = McPath.QueryByParentId (accountId, tree1.Root.ServerId, false);
@@ -181,7 +183,9 @@ namespace Test.iOS
             var lowestFolder1 = tree1.Children [1];
             leaves = McPath.QueryByParentId (accountId, lowestFolder0.Root.ServerId, false);
             Assert.AreEqual (3, leaves.ToList ().Count);
-            McPath.DeleteNonFolderByParentId (accountId, lowestFolder0.Root.ServerId);
+            NcModel.Instance.RunInTransaction (() => {
+                McPath.DeleteNonFolderByParentId (accountId, lowestFolder0.Root.ServerId);
+            });
             leaves = McPath.QueryByParentId (accountId, lowestFolder0.Root.ServerId, false);
             Assert.AreEqual (0, leaves.ToList ().Count);
             ValidateTree (accountId + 1, tree2);

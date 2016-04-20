@@ -74,6 +74,7 @@ namespace NachoCore.ActiveSync
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
         }
@@ -111,11 +112,6 @@ namespace NachoCore.ActiveSync
         /// <returns><c>true</c>, if body should be ignored, <c>false</c> otherwise.</returns>
         /// <param name="Sender">Sender.</param>
         public virtual bool IgnoreBody (AsHttpOperation Sender)
-        {
-            return false;
-        }
-
-        public virtual bool IsContentLarge (AsHttpOperation Sender)
         {
             return false;
         }
@@ -210,7 +206,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
+        public virtual bool SafeToMime (AsHttpOperation Sender, out FileStream mime)
         {
             lock (PendingResolveLockObj) {
                 if (RequiresPending () && null == PendingSingle && 0 == PendingList.Count) {
@@ -222,7 +218,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        protected virtual Stream ToMime (AsHttpOperation Sender)
+        protected virtual FileStream ToMime (AsHttpOperation Sender)
         {
             return null;
         }
@@ -241,7 +237,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public virtual Event PreProcessResponse (AsHttpOperation Sender, NcHttpResponse response)
         {
             PendingNonResolveApply (pending => {
                 pending.ResponseHttpStatusCode = (uint)response.StatusCode;
@@ -249,12 +245,12 @@ namespace NachoCore.ActiveSync
             return null;
         }
         // Called for non-WBXML HTTP 200 responses.
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
@@ -344,6 +340,12 @@ namespace NachoCore.ActiveSync
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+            });
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            result.Value = status;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = BEContext.Account,
+                Status = result,
             });
             return Event.Create ((uint)SmEvt.E.TempFail,
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 

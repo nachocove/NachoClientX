@@ -5,97 +5,23 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
-using System.Text;
 using System.Diagnostics;
 using System.Globalization;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoCore.Wbxml;
 using NachoClient.Build;
 using NachoPlatform;
-using NachoPlatformBinding;
 using System.Security.Cryptography.X509Certificates;
-using System.Runtime.CompilerServices;
 
 namespace NachoCore
 {
-
-    public class UserIdFile
-    {
-        private const string FileName = "user_id";
-        private const string OldFileName = "client_id";
-
-        public string FilePath { get; protected set; }
-
-        private static UserIdFile _Instance;
-
-        public static UserIdFile SharedInstance {
-            get {
-                if (null == _Instance) {
-                    // Check if there is a file with the old file name (client_id). Rename it
-                    var dirPath = NcApplication.GetDataDirPath ();
-                    var oldFilePath = Path.Combine (dirPath, OldFileName);
-                    var newFilePath = Path.Combine (dirPath, FileName);
-                    if (File.Exists (oldFilePath)) {
-                        File.Move (oldFilePath, newFilePath);
-                    }
-
-                    _Instance = new UserIdFile ();
-
-                    // Check if the there is a new file (user_id). If yes, migrate
-                    // the user ID to keychain
-                    if (_Instance.Exists ()) {
-                        _Instance.Write (_Instance.ReadFile ());
-                        File.Delete (_Instance.FilePath);
-                    }
-                }
-                return _Instance;
-            }
-        }
-
-        public UserIdFile ()
-        {
-            FilePath = Path.Combine (NcApplication.GetDataDirPath (), FileName);
-        }
-
-        public bool Exists ()
-        {
-            return File.Exists (FilePath);
-        }
-
-        protected string ReadFile ()
-        {
-            try {
-                using (var stream = new FileStream (FilePath, FileMode.Open, FileAccess.Read)) {
-                    using (var reader = new StreamReader (stream)) {
-                        return reader.ReadLine ();
-                    }
-                }
-            } catch (IOException) {
-                return null;
-            }
-        }
-
-        public string Read ()
-        {
-            return Keychain.Instance.GetUserId ();
-        }
-
-        public void Write (string userId)
-        {
-            Console.WriteLine ("Writing UserId {0}", userId);
-            Keychain.Instance.SetUserId (userId);
-        }
-    }
-
     // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
     // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
     // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD.
 
-    public sealed class NcApplication : IBackEndOwner
+    public sealed class NcApplication : IBackEndOwner, IStatusIndEvent
     {
-        private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
         private const int KSafeModeMaxSeconds = 120;
         private const string KDataPathSegment = "Data";
@@ -118,6 +44,7 @@ namespace NachoCore
         private bool SafeModeStarted = false;
 
         private static string Documents;
+        private static string DataDir;
 
         public double UpTimeSec { 
             get {
@@ -128,14 +55,16 @@ namespace NachoCore
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
             private set { 
-                _ExecutionContext = value; 
-                Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
-                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
-                result.Value = _ExecutionContext;
-                InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = result,
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                if (value != _ExecutionContext) {
+                    _ExecutionContext = value; 
+                    Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
+                    var result = NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
+                    result.Value = _ExecutionContext;
+                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
+                }
             }
         }
 
@@ -178,33 +107,60 @@ namespace NachoCore
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
+        private string _StartupLog;
+
         public string StartupLog {
             get {
-                return Path.Combine (NcModel.Instance.GetDataDirPath (), "startup.log");
+                if (null == _StartupLog) {
+                    _StartupLog = Path.Combine (GetDataDirPath (), "startup.log");
+                }
+                return _StartupLog;
             }
         }
 
-        // Client Id is a string that uniquely identifies a NachoMail client on
-        // all cloud servers (telemetry, pinger, etc.)
-        private string _UserId;
-
+        // UserId is initialized in Telemetry and preserved from
+        // run-to-run and preserved over re-installs if possible
+        // using iOS keychain persistence and Android backup.
         public string UserId {
             get {
+                if (null == _UserId) {
+                    _UserId = Keychain.Instance.GetUserId ();
+                }
                 return _UserId;
             }
             set {
                 if (value != _UserId) {
                     _UserId = value;
-                    UserIdFile.SharedInstance.Write (_UserId);
+                    Keychain.Instance.SetUserId (_UserId);
                     InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_UserIdChanged, _UserId);
                 }
             }
         }
+        // Cache because UserId is called often.
+        string _UserId;
 
+        // Client Id is a string that uniquely identifies a Nacho Mail
+        // client on all cloud servers (telemetry, pinger, etc.)
         public string ClientId {
             get {
                 return Device.Instance.Identity ();
             }
+        }
+
+        public static string ApplicationLogForCrashManager ()
+        {
+            // TODO: UtcNow isn't really the launch-time, nor is it really what we want.
+            // For convenience what we REALLY want here is the time of the crash for 
+            // easy-cut-n-pasting from HA to TeleViewer. What this really is is the
+            // upload-time, i.e. when we upload this sucker to HA.
+            string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
+            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}\n",
+                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
+            if (BuildInfoHelper.IsDev) {
+                log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
+                "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
+            }
+            return log;
         }
 
         public bool IsUp ()
@@ -236,6 +192,42 @@ namespace NachoCore
         }
 
         private McAccount _Account;
+
+        public McAccount DefaultEmailAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount DefaultContactAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.ContactWriter)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.ContactWriter);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount DefaultCalendarAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                }
+                return Account;
+            }
+        }
 
         public delegate void CredReqCallbackDele (int accountId);
 
@@ -278,14 +270,11 @@ namespace NachoCore
         public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
-        // when true, everything in the background needs to chill.
-        public bool IsBackgroundAbateRequired { get; set; }
 
         public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
         private bool serviceHasBeenEstablished = false;
 
-        private NcSamples ProcessMemory;
 
         private bool IsXammit (Exception ex)
         {
@@ -306,12 +295,12 @@ namespace NachoCore
                 // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
                 return true;
             }
-            if (ex is System.IO.IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
+            if (ex is IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
                 Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
                 // XAMMIT. Known bug. AsHttpOperation will time-out and retry. No need to crash.
                 return true;
             }
-            if (ex is System.OperationCanceledException && message.Contains ("Telemetry.Process")) {
+            if (ex is OperationCanceledException && message.Contains ("Telemetry.Process")) {
                 Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: OperationCanceledException with Telemetry.Process");
                 // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                 return true;
@@ -325,17 +314,11 @@ namespace NachoCore
             return false;
         }
 
-        private void UpdateUserIdFromFile (string clientIdFile)
-        {
-            UserId = UserIdFile.SharedInstance.Read ();
-            string cloudUserId = CloudHandler.Instance.GetUserId ();
-            if ((cloudUserId != null) && (cloudUserId != UserId)) {
-                UserId = cloudUserId;
-            }
-        }
-
         private NcApplication ()
         {
+            // Install test mode handlers
+            InitTestMode ();
+
             // SetMaxThreads needs to be called before SetMinThreads, because on some devices (such as
             // iPhone 4s running iOS 7) the default maximum is less than the minimums we are trying to set.
             // NcAssert.True can't be called here, because logging hasn't been set up yet, meaning a
@@ -346,7 +329,7 @@ namespace NachoCore
             if (!ThreadPool.SetMinThreads (8, 6)) {
                 Console.WriteLine ("ERROR: ThreadPool minimums could not be set.");
             }
-            TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
+            TaskScheduler.UnobservedTaskException += (sender, eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
                 var faulted = NcTask.FindFaulted ();
@@ -363,9 +346,10 @@ namespace NachoCore
                     aex.Handle ((ex) => true);
                 } else {
                     foreach (var ex in aex.InnerExceptions) { 
-                        if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
+                        if (ex is IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
-                            Log.DumpFileDescriptors ();
+                            NcApplicationMonitor.DumpFileLeaks ();
+                            NcApplicationMonitor.DumpFileDescriptors ();
                             NcModel.Instance.DumpLastAccess ();
                         }
                     }
@@ -376,38 +360,43 @@ namespace NachoCore
                     }
                 }
             };
-            UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+            UiThreadId = Thread.CurrentThread.ManagedThreadId;
 
-            if (UserIdFile.SharedInstance.Exists ()) {
-                UpdateUserIdFromFile (UserIdFile.SharedInstance.FilePath);
-            }
-            StatusIndEvent += (object sender, EventArgs ea) => {
-                var siea = (StatusIndEventArgs)ea;
-                if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
-                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
-                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
-                } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
-                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
-                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
+            StatusIndEvent += StatusIndEventHandler;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                // Maintain 'last time we entered background' time
+                if (ExecutionContextEnum.Background == ExecutionContext) {
+                    LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
                 }
-            };
-            ProcessMemory = new NcSamples ("Monitor.ProcessMemory");
-            ProcessMemory.MinInput = 0;
-            ProcessMemory.MaxInput = 100000;
-            ProcessMemory.LimitInput = true;
-            ProcessMemory.ReportThreshold = 4;
+                break;
+
+            case NcResult.SubKindEnum.Info_DaysToSyncChanged:
+                // check to see if the account is IMAP. We do this here, because it's possible to set the
+                // days to sync without the ProtoController having been set up and started, in which case
+                // we'd miss this signal and not be able to reset the state. Unlike AS, which tells the
+                // server how many days to sync, we manage that ourselves only when we ask for the
+                // list of UIDs for a folder (which happens only periodically and not often), so we need
+                // to trigger that re-fetching of the list ourselves.
+                if (null != siea.Account && siea.Account.AccountType == McAccount.AccountTypeEnum.IMAP_SMTP &&
+                    !BackEnd.Instance.AccountHasServices (siea.Account.Id)) {
+                    NachoCore.IMAP.ImapProtoControl.ResetDaysToSync (siea.Account.Id);
+                }
+                break;
+            }
         }
 
         private static volatile NcApplication instance;
         private static object syncRoot = new Object ();
-        private NcTimer MonitorTimer;
-        private NcTimer Class4EarlyShowTimer;
         private NcTimer Class4LateShowTimer;
         private NcTimer StartupUnmarkTimer;
 
-        public event EventHandler Class4EarlyShowEvent;
         public event EventHandler Class4LateShowEvent;
-        public event EventHandler MonitorEvent;
 
         public static NcApplication Instance {
             get {
@@ -439,17 +428,12 @@ namespace NachoCore
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();
-            NcModel.Instance.EngageRateLimiter ();
-            NcBrain.StartService ();
-            NcContactGleaner.Start ();
             EmailHelper.Setup ();
-            BackEnd.Instance.Owner = this;
-            BackEnd.Instance.CreateServices ();
-            BackEnd.Instance.Start ();
+            BackEnd.Instance.Enable (this);
             ExecutionContext = _PlatformIndication; 
             ContinueOnActivation ();
             // load products from app store
-            StoreHandler.Instance.Start (); 
+            StoreHandler.Instance.Start ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
@@ -459,11 +443,8 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
-            if (UserId == null) {
-                // this can be null if cloud is not accessible or if this the first time
-                UserId = CloudHandler.Instance.GetUserId (); 
-            }
             Telemetry.StartService ();
+            NcCommStatus.Instance.Reset ("StartBasalServices");
 
             // Pick most recently used account
             Account = LoginHelpers.PickStartupAccount ();
@@ -473,9 +454,21 @@ namespace NachoCore
             // we need to sequence these properly.
             NcMigration.Setup ();
             if (ShouldEnterSafeMode ()) {
+                // Put an error message in the log to increase the chances that this will be noticed and investigated.
+                Log.Error (Log.LOG_LIFECYCLE, "Safe mode was triggered. Please investigate.");
+
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
+
+                // Submit a support request, to make the chances even higher that this will be noticed and investigated.
+                var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
+                supportInfo.Add ("ContactInfo", "None, because this is auto-generated");
+                supportInfo.Add ("Message", "Safe mode was triggered. Please investigate.");
+                supportInfo.Add ("BuildVersion", BuildInfo.Version);
+                supportInfo.Add ("BuildNumber", BuildInfo.BuildNumber);
+                Telemetry.RecordSupport (supportInfo);
+
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
@@ -489,7 +482,7 @@ namespace NachoCore
                         NcMigration.StartService (
                             StartBasalServicesCompletion,
                             (percentage) => {
-                                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                                var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
                                 result.Value = percentage;
                                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                                     Status = result,
@@ -497,7 +490,7 @@ namespace NachoCore
                                 });
                             },
                             (description) => {
-                                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                                var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
                                 result.Value = description;
                                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                                     Status = result,
@@ -520,7 +513,7 @@ namespace NachoCore
                 NcMigration.StartService (
                     StartBasalServicesCompletion,
                     (percentage) => {
-                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                        var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
                         result.Value = percentage;
                         InvokeStatusIndEvent (new StatusIndEventArgs () { 
                             Status = result,
@@ -528,7 +521,7 @@ namespace NachoCore
                         });
                     },
                     (description) => {
-                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                        var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
                         result.Value = description;
                         InvokeStatusIndEvent (new StatusIndEventArgs () { 
                             Status = result,
@@ -545,9 +538,10 @@ namespace NachoCore
         public void StopBasalServices ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
-            BackEnd.Instance.Stop ();
-            NcContactGleaner.Stop ();
             NcBrain.StopService ();
+            BackEnd.Instance.Stop ();
+
+            NcApplicationMonitor.Instance.Stop ();
             NcModel.Instance.Stop ();
             StoreHandler.Instance.Stop (); 
             CloudHandler.Instance.Stop (); 
@@ -564,31 +558,27 @@ namespace NachoCore
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
-        {
+        { 
             // Make sure the scheduled notifications are up to date.
             LocalNotificationManager.ScheduleNotifications ();
 
-            MonitorStart (); // Has a deferred timer start inside.
+            NcApplicationMonitor.Instance.Start (); // Has a deferred timer start inside.
             CrlMonitor.StartService ();
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
-            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0}", CultureInfo.CurrentCulture);
+            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0} ({1})", CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName);
             if (0 < BuildInfo.Source.Length) {
                 Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
             }
-            Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
-                if (null != Class4EarlyShowEvent) {
-                    Class4EarlyShowEvent (this, EventArgs.Empty);
-                }
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
-            }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
+                BackEnd.Instance.Start ();
+                NcBrain.StartService ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
+                NachoPlatform.Calendars.Instance.EventProviderInstance.NumberOfDays ();
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);
                 }
@@ -599,12 +589,7 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            MonitorStop ();
             CrlMonitor.StopService ();
-            if ((null != Class4EarlyShowTimer) && Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
-            }
-
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();
@@ -649,58 +634,6 @@ namespace NachoCore
             }
         }
 
-        public void MonitorStart ()
-        {
-            MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
-                MonitorReport ();
-            }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
-            MonitorTimer.Stfu = true;
-        }
-
-        public void MonitorStop ()
-        {
-            if (null != MonitorTimer) {
-                MonitorTimer.Dispose ();
-                MonitorTimer = null;
-            }
-        }
-
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-        {
-            if (!String.IsNullOrEmpty (moniker)) {
-                Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
-            }
-            var processMemory = PlatformProcess.GetUsedMemory () / (1024 * 1024);
-            ProcessMemory.AddSample ((int)processMemory);
-            Log.Info (Log.LOG_SYS, "Monitor: Memory: Process {0} MB, GC {1} MB",
-                processMemory, GC.GetTotalMemory (true) / (1024 * 1024));
-            int minWorker, maxWorker, minCompletion, maxCompletion;
-            ThreadPool.GetMinThreads (out minWorker, out minCompletion);
-            ThreadPool.GetMaxThreads (out maxWorker, out maxCompletion);
-            int systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
-            string message = string.Format ("Monitor: Threads: Min {0}/{1}, Max {2}/{3}, System {4}",
-                                 minWorker, minCompletion, maxWorker, maxCompletion, systemThreads);
-            if (50 > systemThreads) {
-                Log.Info (Log.LOG_SYS, message);
-            } else {
-                Log.Warn (Log.LOG_SYS, message);
-            }
-            Log.Info (Log.LOG_SYS, "Monitor: Status: Comm {0}, Speed {1}, Battery {2:00}% {3}",
-                NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
-                NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
-            Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
-            Log.Info (Log.LOG_SYS, "Monitor: Files: Max {0}, Currently open {1}",
-                PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
-            if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
-                Log.DumpFileDescriptors ();
-            }
-            NcModel.Instance.DumpLastAccess ();
-            NcTask.Dump ();
-
-            if (null != MonitorEvent) {
-                MonitorEvent (this, EventArgs.Empty);
-            }
-        }
 
         public void EstablishService ()
         {
@@ -711,36 +644,32 @@ namespace NachoCore
             }
             serviceHasBeenEstablished = true;
 
-            // Create Device account if not yet there.
-            McAccount deviceAccount = null;
-            NcModel.Instance.RunInTransaction (() => {
-                deviceAccount = McAccount.GetDeviceAccount ();
-                if (null == deviceAccount) {
-                    deviceAccount = new McAccount ();
-                    deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
-                    deviceAccount.Insert ();
-                }
-            });
+            var deviceAccount = McAccount.GetDeviceAccount ();
+
             // Create file directories.
             NcModel.Instance.InitializeDirs (deviceAccount.Id);
 
             // Create Device contacts/calendars if not yet there.
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetDeviceContactsFolder ()) {
-                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
-                                        McFolder.ClientOwned_DeviceContacts, "Device Contacts",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetDeviceCalendarsFolder ()) {
-                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
-                                        McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
-                    freshMade.Insert ();
-                }
-            });
+            if (null == McFolder.GetDeviceContactsFolder ()) {
+                NcModel.Instance.RunInTransaction (() => {
+                    if (null == McFolder.GetDeviceContactsFolder ()) {
+                        var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
+                                            McFolder.ClientOwned_DeviceContacts, "Device Contacts",
+                                            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                        freshMade.Insert ();
+                    }
+                });
+            }
+            if (null == McFolder.GetDeviceCalendarsFolder ()) {
+                NcModel.Instance.RunInTransaction (() => {
+                    if (null == McFolder.GetDeviceCalendarsFolder ()) {
+                        var freshMade = McFolder.Create (deviceAccount.Id, true, true, true, "0",
+                                            McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
+                                            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                        freshMade.Insert ();
+                    }
+                });
+            }
         }
 
         /// <summary>
@@ -752,14 +681,12 @@ namespace NachoCore
             // to happen right away should go into a background task.
             NcTask.Run (delegate {
 
-                //////////////////////////////////////////////////////////////////////////////////////
                 // Actions that shouldn't be cancelled.  These need to run to completion, even if that
                 // means the task survives across a shutdown.
 
                 NcEventManager.Initialize ();
                 LocalNotificationManager.InitializeLocalNotifications ();
 
-                /////////////////////////////////////////////////////////////////////////////////////
                 // Actions that can be cancelled.  These are not necessary for the correctness of the
                 // running app, or they can be delayed until the next time the app starts.
 
@@ -810,7 +737,8 @@ namespace NachoCore
             InvokeStatusIndEvent (siea);
         }
 
-        // IBackEndOwner methods below.
+        #region IBackEndOwner
+
         public void CredReq (int accountId)
         {
             if (null != CredReqCallback) {
@@ -818,15 +746,25 @@ namespace NachoCore
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication CredReqCallback.");
             }
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
+                Account = McAccount.QueryById<McAccount> (accountId),
+            });
         }
 
-        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg)
+        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, BackEnd.AutoDFailureReasonEnum arg)
         {
             if (null != ServConfReqCallback) {
                 ServConfReqCallback (accountId, capabilities, arg);
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication ServConfReqCallback.");
             }
+            var status = NcResult.Info (NcResult.SubKindEnum.Info_ServerConfReqCallback);
+            status.Value = new Tuple<McAccount.AccountCapabilityEnum, BackEnd.AutoDFailureReasonEnum> (capabilities, arg);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = status,
+                Account = McAccount.QueryById<McAccount> (accountId),
+            });
         }
 
         public void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, X509Certificate2 certificate)
@@ -840,6 +778,12 @@ namespace NachoCore
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication CertAskReqCallback.");
             }
+            var status = NcResult.Info (NcResult.SubKindEnum.Info_CertAskReqCallback);
+            status.Value = new Tuple<McAccount.AccountCapabilityEnum, X509Certificate2> (capabilities, certificate);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = status,
+                Account = McAccount.QueryById<McAccount> (accountId),
+            });
         }
 
         public void SearchContactsResp (int accountId, string prefix, string token)
@@ -859,6 +803,8 @@ namespace NachoCore
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SendEmailRespCallback.");
             }
         }
+
+        #endregion
 
         public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
@@ -899,7 +845,6 @@ namespace NachoCore
 
         private bool ShouldEnterSafeMode ()
         {
-            var startupLog = StartupLog;
             if (Debugger.IsAttached) {
                 return false;
             }
@@ -909,22 +854,10 @@ namespace NachoCore
             if (!File.Exists (StartupLog)) {
                 return false;
             }
-            var bytes = new byte[128];
-            int numBytes = 0;
-            using (var fileStream = File.Open (startupLog, FileMode.Open, FileAccess.Read)) {
-                numBytes = fileStream.Read (bytes, 0, bytes.Length);
+            if (new FileInfo (StartupLog).Length > 2) {
+                Telemetry.Instance.FinalizeAll (); // close of all JSON files
+                return true;
             }
-            int numTimestamps = 0;
-            for (int n = 0; n < numBytes; n++) {
-                if ('\n' == bytes [n]) {
-                    numTimestamps += 1;
-                    if (numTimestamps > 2) {
-                        Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
-                        return true;
-                    }
-                }
-            }
-
             return false;
         }
 
@@ -938,6 +871,10 @@ namespace NachoCore
 
         private bool MonitorUploads ()
         {
+            // Even if everything is already caught up, keep the safe mode screen visible for
+            // a couple of seconds so the user has time to read it.
+            Thread.Sleep (TimeSpan.FromSeconds (2));
+
             bool telemetryDone = false;
             bool crashReportingDone = false;
             SafeModeStarted = true;
@@ -965,7 +902,7 @@ namespace NachoCore
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
                     numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
-                    if ((0 == numTelemetryEvents) && (null == Telemetry.JsonFileTable.GetNextReadFile ())) {
+                    if ((0 == numTelemetryEvents) && !Telemetry.Instance.TelemetryPending ()) {
                         telemetryDone = true;
                     }
                 }
@@ -989,9 +926,6 @@ namespace NachoCore
             }
             if (KSafeModeMaxSeconds > UpTimeSec) {
                 // Safe mode does not use up all allowed time. Reschedule class 4 timer to an earlier time.
-                if ((null != Class4EarlyShowTimer) && !Class4EarlyShowTimer.IsExpired ()) {
-                    Class4EarlyShowTimer.Change (new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
-                }
                 if ((null != Class4LateShowTimer) && !Class4LateShowTimer.IsExpired ()) {
                     Class4LateShowTimer.Change (new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
                 }
@@ -1010,20 +944,17 @@ namespace NachoCore
                     UnmarkStartup ();
                 }, null, 20 * 1000, 0);
             using (var fileStream = File.Open (StartupLog, FileMode.OpenOrCreate | FileMode.Append)) {
-                var timestamp = String.Format ("{0}\n", DateTime.UtcNow);
-                var bytes = Encoding.ASCII.GetBytes (timestamp);
-                fileStream.Write (bytes, 0, bytes.Length);
+                fileStream.WriteByte ((byte)0);
             }
         }
 
         public void UnmarkStartup ()
         {
-            var startupLog = StartupLog;
-            if (File.Exists (startupLog)) {
+            if (File.Exists (StartupLog)) {
                 try {
-                    File.Delete (startupLog);
+                    File.Delete (StartupLog);
                 } catch (Exception e) {
-                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", startupLog, e.Message);
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", StartupLog, e.Message);
                 }
             }
         }
@@ -1062,14 +993,18 @@ namespace NachoCore
 
         public static string GetDataDirPath ()
         {
-            if (Documents == null) {
-                GetDocumentsPath ();
+            if (DataDir == null) {
+                DataDir = Path.Combine (GetDocumentsPath (), KDataPathSegment);
+                if (!Directory.Exists (DataDir)) {
+                    Directory.CreateDirectory (DataDir);
+                }
             }
-            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
-            if (!Directory.Exists (dataDirPath)) {
-                Directory.CreateDirectory (dataDirPath);
-            }
-            return dataDirPath;
+            return DataDir;
+        }
+
+        public static string GetVersionString ()
+        {
+            return String.Format ("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
         }
 
         // Fast track to UI
@@ -1092,10 +1027,38 @@ namespace NachoCore
             if (null != configAccount) {
                 return false;
             }
+            var mdmAccount = McAccount.GetMDMAccount ();
+            if (null == mdmAccount && NcMdmConfig.Instance.IsPopulated) {
+                return false;
+            }
             if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
                 return false;
             }
             return true;
+        }
+
+        public static void InitTestMode ()
+        {
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                TestMode.Instance.Add ("markhoton", (parameters) => {
+                    ScoringHelpers.SetTestMode (true);
+                    Console.WriteLine ("!!!!! ENTER MARKHOT TEST MODE !!!!!");
+                });
+                TestMode.Instance.Add ("markhotoff", (parameters) => {
+                    ScoringHelpers.SetTestMode (false);
+                    Console.WriteLine ("!!!!! EXIT MARKHOT TEST MODE !!!!!");
+                });
+                TestMode.Instance.Add ("searchon", (parameters) => {
+                    Log.SharedInstance.Settings.Debug.EnableConsole (Log.LOG_SEARCH);
+                    Log.SharedInstance.Settings.Debug.EnableTelemetry (Log.LOG_SEARCH);
+                    Console.WriteLine ("!!!!! START SEARCH DEBUG LOGGING  !!!!!");
+                });
+                TestMode.Instance.Add ("searchoff", (parameters) => {
+                    Log.SharedInstance.Settings.Debug.DisableConsole (Log.LOG_SEARCH);
+                    Log.SharedInstance.Settings.Debug.DisableTelemetry (Log.LOG_SEARCH);
+                    Console.WriteLine ("!!!!! STOP SEARCH DEBUG LOGGING !!!!!");
+                });
+            }
         }
 
     }

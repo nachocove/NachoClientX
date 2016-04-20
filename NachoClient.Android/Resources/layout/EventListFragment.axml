@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    <include
+        layout="@layout/NavigationBar" />
+    <NachoClient.AndroidClient.CalendarPagerView
+        android:id="@+id/calendar_pager"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <NachoClient.AndroidClient.SwipeMenuListView
+            android:id="@+id/listView"
+            android:scrollbars="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@color/NachoLightGray" />
+    </android.support.v4.widget.SwipeRefreshLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="@color/NachoLightGray" />
+    <include
+        layout="@layout/NavigationToolbar" />
+</LinearLayout>

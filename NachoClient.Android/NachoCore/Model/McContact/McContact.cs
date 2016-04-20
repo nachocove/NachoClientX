@@ -124,7 +124,7 @@ namespace NachoCore.Model
             Delete,
         }
 
-        /// ActiveSync or Device
+        /// ActiveSync, Device, Salesforce, etc.
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device contacts
@@ -233,13 +233,11 @@ namespace NachoCore.Model
 
         public int PortraitId { get; set; }
 
-        [Indexed]
         public bool IsVip { get; set; }
 
         // 0 means unindexed. If IndexedVersion == ContactIndexDocument.Version - 1, only McContact fields
         // are indexed. If IndexedVersion == ContactIndexDocument.Version, both fields and body (note) are
         // indexed.
-        [Indexed]
         public int IndexVersion { get; set; }
 
         public override ClassCodeEnum GetClassCode ()
@@ -441,6 +439,71 @@ namespace NachoCore.Model
                 l.Add (c.Name);
             }
             return l;
+        }
+
+        public void RemoveDateAttribute (string name)
+        {
+            foreach (var l in Dates) {
+                if (l.Name.Equals (name)) {
+                    Dates.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemoveAddressAttribute (string name)
+        {
+            foreach (var l in Addresses) {
+                if (l.Name.Equals (name)) {
+                    Addresses.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemoveEmailAddressAttribute (string name)
+        {
+            foreach (var l in EmailAddresses) {
+                if (l.Name.Equals (name)) {
+                    EmailAddresses.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemoveStringAttribute (List<McContactStringAttribute> list, McContactStringType type, string name)
+        {
+            foreach (var l in list) {
+                if (l.Type.Equals (type) && l.Name.Equals (name)) {
+                    list.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemovePhoneNumberAttribute (string name)
+        {
+            RemoveStringAttribute (PhoneNumbers, McContactStringType.PhoneNumber, name);
+        }
+
+        public void RemoveIMAddressAttribute (string name)
+        {
+            RemoveStringAttribute (IMAddresses, McContactStringType.IMAddress, name);
+        }
+
+        public void RemoveRelationshipAttribute (string name)
+        {
+            RemoveStringAttribute (Relationships, McContactStringType.Relationship, name);
+        }
+
+        public void RemoveRelationshipAttributes (string name, string value)
+        {
+            foreach (var r in Relationships) {
+                if (r.Name.Equals (name) && r.Value.Equals (value)) {
+                    Relationships.Remove (r);
+                    return;
+                }
+            }
         }
 
         public McContactDateAttribute AddDateAttribute (int accountId, string name, string label, DateTime value)
@@ -647,6 +710,38 @@ namespace NachoCore.Model
             return f;
         }
 
+        public string GetDefaultOrSinglePhoneNumber ()
+        {
+            if (0 == PhoneNumbers.Count) {
+                return null;
+            }
+            if (1 == PhoneNumbers.Count) {
+                return PhoneNumbers [0].Value;
+            }
+            foreach (var p in PhoneNumbers) {
+                if (p.IsDefault) {
+                    return p.Value;
+                }
+            }
+            return null;
+        }
+
+        public string GetDefaultOrSingleEmailAddress ()
+        {
+            if (0 == EmailAddresses.Count) {
+                return null;
+            }
+            if (1 == EmailAddresses.Count) {
+                return EmailAddresses [0].Value;
+            }
+            foreach (var e in EmailAddresses) {
+                if (e.IsDefault) {
+                    return e.Value;
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         ///        Db.CreateTable<McContact> ();
         ///        Db.CreateTable<McContactDateAttribute> ();
@@ -714,7 +809,7 @@ namespace NachoCore.Model
             // FIXME: Fix this hammer?
             // FIXME: For update, Id may not be zero. Insert() asserts that Id is zero, so zero it.
             // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
-            DeleteAncillaryData ();
+            DeleteAncillaryData (deleteAll: false);
 
             if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
                 foreach (var o in Dates) {
@@ -777,6 +872,12 @@ namespace NachoCore.Model
                     CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
                 }
                 EvaluateSelfEclipsing ();
+
+                // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
+                if (this.IsGleaned()) {
+                    IndexVersion = ContactIndexDocument.Version;
+                }
+
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     retval = base.Insert ();
@@ -800,10 +901,10 @@ namespace NachoCore.Model
                     }
                     EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
 
-                    // Re-index the contact. Must do this after the contact update because
-                    // re-indexing has a contact update (for updating IndexVersion) and
-                    // doing this before contact update would set up a race.
-                    NcBrain.ReindexContact (this);
+                    if (!this.IsGleaned () && ContactIndexDocument.Version == this.IndexVersion) {
+                        // A non-gleaned contact that has already been indexed. Re-index the contact.
+                        NcBrain.ReindexContact (this);
+                    }
                 });
                 return retval;
             }
@@ -926,21 +1027,22 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
-            DeleteAncillaryData ();
+            DeleteAncillaryData (deleteAll: true);
         }
 
         private void DeleteStringAttribute (McContactStringType stringType)
         {
-            NcModel.Instance.Db.Query<McContactStringAttribute> (
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
+            NcModel.Instance.Db.Execute (
                 "DELETE FROM McContactStringAttribute WHERE ContactId = ? AND Type = ?", Id, (int)stringType);
         }
 
-        private NcResult DeleteAncillaryData ()
+        private NcResult DeleteAncillaryData (bool deleteAll)
         {
-            NcModel.Instance.RunInTransaction (() => {
-                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
-                    NcModel.Instance.Db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
-                }
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
+            if (deleteAll) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactStringAttribute WHERE ContactId = ?", Id);
+            } else {
                 if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
                     DeleteStringAttribute (McContactStringType.Relationship);
                 }
@@ -953,13 +1055,16 @@ namespace NachoCore.Model
                 if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
                     DeleteStringAttribute (McContactStringType.Category);
                 }
-                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
-                    NcModel.Instance.Db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
-                }
-                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
-                    NcModel.Instance.Db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
-                }
-            });
+            }
+            if (deleteAll || HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactDateAttribute WHERE ContactId = ?", Id);
+            }
+            if (deleteAll || HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactAddressAttribute WHERE ContactId = ?", Id);
+            }
+            if (deleteAll || HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId = ?", Id);
+            }
             return NcResult.OK ();
         }
 
@@ -1264,6 +1369,18 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContact> QueryByEmailAddress (string emailAddress)
+        {
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                " WHERE " +
+                " s.Value = ? AND " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                emailAddress);
+            return contactList;
+        }
+
         public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", emailAddressIndexList.ToArray<int> ()));
@@ -1423,106 +1540,62 @@ namespace NachoCore.Model
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
-        {
-            // TODO: Put this in the brain
-            if (String.IsNullOrEmpty (searchFor)) {
-                return new List<McContactEmailAddressAttribute> ();
-            }
-            var target = searchFor.Split (new char[] { ' ' });
-            var firstName = target.First () + "%";
-            var lastName = target.Last () + "%";
-            return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
-                "Select s.*, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
-                "FROM McContactEmailAddressAttribute AS s " +
-                "JOIN McEmailAddress AS a ON s.EmailAddress = a.Id " +
-                "JOIN McContact AS c ON s.ContactId = c.Id " +
-                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                "WHERE " +
-                " likelihood (m.ClassCode=?, 0.2) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
-                (withEclipsing ? "(c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
-                "( " +
-                "  c.FirstName LIKE ? OR c.LastName LIKE ?  OR s.Value LIKE ? OR s.Value LIKE ? " +
-                ") " +
-                "ORDER BY a.Score DESC, SORT_ORDER COLLATE NOCASE ASC  LIMIT 100", 
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
-        }
-
         public static List<McContact> QueryByIds (List<string> ids)
         {
+            if (0 == ids.Count) {
+                return new List<McContact> ();
+            }
             var query = String.Format ("SELECT c.* FROM McContact AS c WHERE c.Id IN ({0})", String.Join (",", ids));
             return NcModel.Instance.Db.Query<McContact> (query);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchIndexAllContacts (string searchFor, bool onlyWithEmailAddresses, bool withEclipsing)
+        public static List<McContact> QueryByIds (List<long> ids)
         {
-            const int maxResults = 30;
-            var trimmedSearchFor = searchFor.Trim ();
-
-            var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
-            if (String.IsNullOrEmpty (trimmedSearchFor)) {
-                return emailAddressAttributes;
+            if (0 == ids.Count) {
+                return new List<McContact> ();
             }
+            var query = string.Format ("SELECT * FROM McContact WHERE Id IN ({0})", string.Join (",", ids));
+            return NcModel.Instance.Db.Query<McContact> (query);
+        }
 
-            // Special case short strings for speed
-            if (onlyWithEmailAddresses && (4 > searchFor.Length)) {
-                return SearchAllContactsWithEmailAddresses (searchFor, withEclipsing);
+        /// <summary>
+        /// Search all contacts, returning any contact whose first name, last name, or company name
+        /// starts with the given string.
+        /// </summary>
+        public static List<McContact> SearchAllContactsByName (string searchFor)
+        {
+            if (searchFor.Contains ("%") || searchFor.Contains ("_")) {
+                string prefixPattern = searchFor.Replace ("^", "^^").Replace ("%", "^%").Replace ("_", "^_") + "%";
+                return NcModel.Instance.Db.Query<McContact> (
+                    "SELECT * FROM McContact WHERE FirstName LIKE ? ESCAPE '^' OR LastName LIKE ? ESCAPE '^' OR CompanyName LIKE ? ESCAPE '^' LIMIT 100",
+                    prefixPattern, prefixPattern, prefixPattern);
+            } else {
+                string prefixPattern = searchFor + "%";
+                return NcModel.Instance.Db.Query<McContact> (
+                    "SELECT * FROM McContact WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ? LIMIT 100",
+                    prefixPattern, prefixPattern, prefixPattern);
             }
+        }
 
-            var allMatches = new List<MatchedItem> ();
-            var allContacts = new List<McContact> ();
-            foreach (var account in McAccount.GetAllAccounts()) {
-                var index = NcBrain.SharedInstance.Index (account.Id);
-                var matches = index.SearchAllContactFields (searchFor, maxResults);
-                allMatches.AddRange (matches);
+        /// <summary>
+        /// Search the e-mail addresses associated with all contacts, returning any e-mail address
+        /// where the address as a whole or the domain name starts with the given string.
+        /// </summary>
+        public static List<McContactEmailAddressAttribute> SearchAllContactEmail (string searchFor)
+        {
+            if (searchFor.Contains ("%") || searchFor.Contains ("_")) {
+                string prefixPattern = searchFor.Replace ("^", "^^").Replace ("%", "^%").Replace ("_", "^_") + "%";
+                string domainPattern = "%@" + prefixPattern;
+                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                    "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? ESCAPE '^' OR Value LIKE ? ESCAPE '^' LIMIT 100",
+                    prefixPattern, domainPattern);
+            } else {
+                string prefixPattern = searchFor + "%";
+                string domainPattern = "%@" + prefixPattern;
+                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                    "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? OR Value LIKE ? LIMIT 100",
+                    prefixPattern, domainPattern);
             }
-            if (0 == allMatches.Count) {
-                return emailAddressAttributes;
-            }
-
-            // Cull low scores
-            var maxScore = 0f;
-            foreach (var m in allMatches) {
-                maxScore = Math.Max (maxScore, m.Score);
-            }
-            allMatches.RemoveAll (x => x.Score < (maxScore / 2));
-
-            // Shrink long list, keeping highest scores
-            allMatches.Sort (new MatchedItemScoreComparer ());
-            allMatches = allMatches.GetRange (0, Math.Min (allMatches.Count, maxResults));
-
-            var idList = allMatches.Select (x => x.Id).Distinct ().ToList ();
-            var matchingContacts = McContact.QueryByIds (idList);
-            foreach (var id in idList) {
-                var match = matchingContacts.Where (x => x.Id == int.Parse (id)).SingleOrDefault ();
-                if (null != match) {
-                    allContacts.Add (match);
-                }
-            }
-
-            // FIXME: Do not sort for contact auto-complete?
-            allContacts.Sort (new McContactNameComparer ());
-
-            // Get all matching email addresses
-            foreach (var contact in allContacts) {
-                if (withEclipsing && contact.EmailAddressesEclipsed) {
-                    continue;
-                }
-                if (0 == contact.EmailAddresses.Count) {
-                    if (onlyWithEmailAddresses) {
-                        continue;
-                    }
-                    var addressAttr = new McContactEmailAddressAttribute () {
-                        AccountId = contact.AccountId,
-                        ContactId = contact.Id
-                    };
-                    emailAddressAttributes.Add (addressAttr);
-                } else {
-                    emailAddressAttributes.AddRange (contact.EmailAddresses);
-                }
-            }
-            return emailAddressAttributes;
         }
 
         static string GetAllContactsQueryString (bool withEclipsing, int accountId = 0)
@@ -1556,6 +1629,11 @@ namespace NachoCore.Model
                 var selectAccount = String.Format ("    c.AccountId = {0} AND ", accountId);
                 return String.Format (fmt, selectAccount);
             }
+        }
+
+        public static int CountByAccountId (int accountId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
         }
 
         public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)
@@ -1632,6 +1710,23 @@ namespace NachoCore.Model
                 name = CompanyName;
             }
             return name;
+        }
+
+        public string GetInformalDisplayName ()
+        {
+            if (!String.IsNullOrEmpty (FirstName)) {
+                return FirstName;
+            }
+            if (!String.IsNullOrEmpty (LastName)) {
+                return LastName;
+            }
+            if (!String.IsNullOrEmpty (MiddleName)) {
+                return MiddleName;
+            }
+            if (!String.IsNullOrEmpty (DisplayName)) {
+                return DisplayName;
+            }
+            return CompanyName;
         }
 
         public string GetEmailAddress ()
@@ -1717,6 +1812,11 @@ namespace NachoCore.Model
                     NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
                 }
             }
+
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactChanged),
+                Account = McAccount.QueryById<McAccount> (this.AccountId),
+            });
         }
 
         public bool CanUserEdit ()

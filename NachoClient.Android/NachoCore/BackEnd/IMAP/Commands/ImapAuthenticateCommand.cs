@@ -8,15 +8,8 @@ namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
-        public ImapAuthenticateCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapAuthenticateCommand (IBEContext beContext) : base (beContext)
         {
-            RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // Redaction is done in the base class, since it's more complicated than just string replacement
-            return logData;
         }
 
         protected override Event ExecuteCommand ()

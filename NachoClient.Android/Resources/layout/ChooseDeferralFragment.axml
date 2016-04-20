@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@color/NachoGreen"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="40dp">
+    <TextView
+        android:id="@+id/message"
+        android:textColor="@color/NachoFFFFFF"
+        android:text="@string/defer_message_until"
+        android:textSize="17dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:paddingLeft="20dp"
+        android:paddingTop="20dip" />
+    <TextView
+        android:id="@+id/textview"
+        android:textColor="@color/NachoFFFFFF"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:paddingLeft="20dp"
+        android:paddingTop="20dip"
+        android:paddingBottom="20dip" />
+    <GridView
+        android:id="@+id/gridview"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:columnWidth="90dp"
+        android:numColumns="3"
+        android:verticalSpacing="20dp"
+        android:horizontalSpacing="20dp"
+        android:stretchMode="columnWidth"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:layout_gravity="center_horizontal"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp" />
+</LinearLayout>

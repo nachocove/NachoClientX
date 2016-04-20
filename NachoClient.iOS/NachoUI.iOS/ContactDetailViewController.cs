@@ -18,18 +18,22 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, INachoContactDefaultSelector, IUITableViewDelegate, IUITableViewDataSource
     {
         public McContact contact;
+
+        UIScrollView scrollView;
+        UIView contentView;
+
+        UserInteractionEmailMessages InteractionMessages;
+        UITableView InteractionsTableView;
+        const string MessageCellIdentifier = "MessageCellIdentifier";
 
         protected UIColor originalBarTintColor;
         protected UIBarButtonItem editContact;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected ContactsHelper contactHelper = new ContactsHelper ();
-        protected IMessageTableViewSource messageSource;
-        protected HashSet<int> MultiSelect = null;
 
         protected nint selectedSegment = 0;
         protected bool isFirstInfoItem = true;
@@ -53,8 +57,6 @@ namespace NachoClient.iOS
         protected const int CONTACT_INFO_VIEW_TAG = 300;
         protected const int TRANSIENT_TAG_INITIAL_VALUE = 301;
         protected int variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
-
-        protected const int INTERACTIONS_TABLE_VIEW_TAG = 400;
 
         protected const int NOTES_VIEW_TAG = 500;
         protected const int NOTES_TEXT_VIEW_TAG = 501;
@@ -86,10 +88,21 @@ namespace NachoClient.iOS
 
         protected List<TapGesturePair> tapGestures = new List<TapGesturePair> ();
 
+        public ContactDetailViewController () : base ()
+        {
+        }
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
-            messageSource = new MessageTableViewSource (this);
-            MultiSelect = new HashSet<int> ();
+        }
+
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            base.ViewDidLoad ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -133,8 +146,8 @@ namespace NachoClient.iOS
             if (null != contact) {
                 contact = McContact.QueryById<McContact> (contact.Id);
             }
-            RefreshData ();
             ConfigureAndLayout ();
+            RefreshData ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -171,64 +184,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void EditContact ()
         {
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelector")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
-                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
-                destinationController.SetContact (c);
-                destinationController.viewType = type;
-                destinationController.owner = this;
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactToNotes")) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactToContactEdit")) {
-                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
-                destinationViewController.contact = contact;
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessagePriority") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
-            if (segue.Identifier == "MessageListToFolders") {
-                var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var h = (SegueHolder)sender;
-                vc.SetOwner (this, true, h);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (INachoMessageViewer)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;  
-                vc.SetSingleMessageThread (thread);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var c = (McCalendar)holder.value;
-                vc.SetCalendarItem (c);
-                vc.SetOwner (this);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var destinationViewController = new ContactEditViewController ();
+            destinationViewController.contact = contact;
+            FadeCustomSegue.Transition (this, destinationViewController);
         }
 
         protected override void CreateViewHierarchy ()
@@ -384,13 +344,15 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (contactInfoScrollView);
 
             //INTERACTIONS
-            UITableView interactionsTableView = new UITableView (new CGRect (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
-            interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
-            interactionsTableView.Hidden = true;
-            interactionsTableView.BackgroundColor = UIColor.White;
-            interactionsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
-            interactionsTableView.AccessibilityLabel = "Contact interaction";
-            segmentedViewHolder.AddSubview (interactionsTableView);
+            InteractionsTableView = new UITableView (new CGRect (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            InteractionsTableView.WeakDelegate = this;
+            InteractionsTableView.WeakDataSource = this;
+            InteractionsTableView.Hidden = true;
+            InteractionsTableView.BackgroundColor = UIColor.White;
+            InteractionsTableView.RowHeight = MessageCell.PreferredHeight (3, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+            InteractionsTableView.AccessibilityLabel = "Contact interaction";
+            InteractionsTableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            segmentedViewHolder.AddSubview (InteractionsTableView);
 
             //NOTES
             UIView notesView = new UIView (new CGRect (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
@@ -411,22 +373,28 @@ namespace NachoClient.iOS
         {
             switch (selectedSegment) {
             case 0:
-                PerformSegue ("ContactToContactEdit", this);
+                EditContact ();
                 break;
             case 1:
                 //TODO: Multi-Select
                 break;
             case 2:
-                PerformSegue ("ContactToNotes", new SegueHolder (contact));
+                ShowNotes ();
                 break;
             }
+        }
+
+        void ShowNotes ()
+        {
+            var dc = new NotesViewController ();
+            dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
+            NavigationController.PushViewController (dc, true);
         }
 
         protected void LayoutView ()
         {
             UIView segmentedViewHolder = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
             UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             switch (selectedSegment) {
@@ -434,7 +402,7 @@ namespace NachoClient.iOS
                 SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoScrollView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 1:
-                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + interactionsTableView.Frame.Height + VERTICAL_PADDING / 2);
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + InteractionsTableView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 2:
                 SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + notesView.Frame.Height + VERTICAL_PADDING / 2);
@@ -514,7 +482,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            contact.PhoneNumbers.Sort (new Util.PhoneAttributeComparer ());
+            contact.PhoneNumbers.Sort (new ContactsHelper.PhoneAttributeComparer ());
            
             if (contact.PhoneNumbers.Count > 0) {
                 foreach (var p in contact.PhoneNumbers) {
@@ -578,7 +546,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            foreach (var t in contactHelper.GetTakenMiscNames(contact)) {
+            foreach (var t in ContactsHelper.GetTakenMiscNames(contact)) {
                 contactInfoHeight += AddMiscInfo (t, contactInfoHeight, contactInfoScrollView);
             }
 
@@ -595,10 +563,7 @@ namespace NachoClient.iOS
             contactInfoScrollView.ContentSize = new CGSize (contactInfoScrollView.Frame.Width, contactInfoHeight);
 
             //CONFIGURE INTERACTIONS VIEW
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-            interactionsTableView.Source = messageSource.GetTableViewSource ();
-            MultiSelectToggle (messageSource, false);
-            SetEmailMessages (new UserInteractionEmailMessages (contact));
+            InteractionMessages = new UserInteractionEmailMessages (contact);
 
             // CONFIGURE NOTES VIEW
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
@@ -625,7 +590,6 @@ namespace NachoClient.iOS
         protected void SegmentedControlHandler (Object sender, EventArgs e)
         {
             UIView contactInfoScrollView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
@@ -633,19 +597,19 @@ namespace NachoClient.iOS
             case 0:
                 editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = false;
-                interactionsTableView.Hidden = true;
+                InteractionsTableView.Hidden = true;
                 notesView.Hidden = true;
                 break;
             case 1:
                 editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = true;
-                interactionsTableView.Hidden = false;
+                InteractionsTableView.Hidden = false;
                 notesView.Hidden = true;
                 RefreshData ();
                 break;
             case 2:
                 editContact.Enabled = (null != contact) && contact.CanUserEdit ();
-                interactionsTableView.Hidden = true;
+                InteractionsTableView.Hidden = true;
                 contactInfoScrollView.Hidden = true;
                 notesView.Hidden = false;
                 break;
@@ -700,12 +664,40 @@ namespace NachoClient.iOS
 
         protected void DefaultEmailTapHandler ()
         {
-            Util.EmailContact ("SegueToContactDefaultSelector", contact, this);
+            if (contact == null) {
+                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+            } else {
+                var address = Util.GetContactDefaultEmail (contact);
+                if (address == null) {
+                    if (contact.EmailAddresses.Count == 0) {
+                        if (contact.CanUserEdit ()) {
+                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
+                        } else {
+                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                        }
+                    } else {
+                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
+                    }
+                } else {
+                    ComposeMessage (address);
+                }
+            }
         }
 
         protected void DefaultCallTapHandler ()
         {
-            Util.CallContact ("SegueToContactDefaultSelector", contact, this);
+            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
+                SelectDefault(contact, type);
+            });
+        }
+            
+        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
+        {
+            var destinationController = new ContactDefaultSelectionViewController ();
+            destinationController.SetContact (contact);
+            destinationController.viewType = type;
+            destinationController.owner = this;
+            PresentViewController (destinationController, true, null);
         }
 
         protected nfloat AddEmailAddress (McContactEmailAddressAttribute email, nfloat yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
@@ -931,7 +923,7 @@ namespace NachoClient.iOS
 
         protected void SetViewProperties (string whatType, ref string label, ref string value, ref string icon)
         {
-            label = contactHelper.ExchangeNameToLabel (whatType).ToUpperInvariant ();
+            label = ContactsHelper.ExchangeNameToLabel (whatType).ToUpperInvariant ();
 
             switch (whatType) {
             //Address names
@@ -997,7 +989,7 @@ namespace NachoClient.iOS
                 icon = "contacts-icn-url";
                 break;
             default:
-                value = contactHelper.MiscContactAttributeNameToValue (whatType, contact);
+                value = ContactsHelper.MiscContactAttributeNameToValue (whatType, contact);
                 icon = "contacts-description";
                 break;
             }
@@ -1041,7 +1033,12 @@ namespace NachoClient.iOS
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            PerformSegue ("SegueToMessageCompose", new SegueHolder (address));
+            var account = McAccount.EmailAccountForContact (contact);
+            var message = McEmailMessage.MessageWithSubject (account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Message = message;
+            composeViewController.Present ();
         }
 
         protected void TouchedCallButton (string number)
@@ -1051,15 +1048,14 @@ namespace NachoClient.iOS
                 return;
             }
             if (!PerformAction ("tel", number)) {
-                ComplainAbout ("Cannot dial", "The phone number seems to be invalid");
+                ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
             }
         }
 
         protected bool PerformAction (string action, string number)
         {
             try {
-                UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
-                return true;
+                return Util.PerformAction (action, number);
             } catch (Exception e) {
                 Log.Warn (Log.LOG_UI, "Cannot perform action {0} ({1})", action, e);
                 return false;
@@ -1092,14 +1088,37 @@ namespace NachoClient.iOS
 
         ////////InteractionsTableViewStuff
 
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        [Export ("numberOfSectionsInTableView:")]
+        public nint NumberOfSections (UIKit.UITableView tableView)
         {
-            PerformSegue (identifier, sender);
+            return 1;
         }
 
-        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        [Foundation.Export("tableView:numberOfRowsInSection:")]
+        public nint RowsInSection (UITableView tableView, nint section)
         {
-            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+            return InteractionMessages.Count ();
+        }
+
+        [Foundation.Export("tableView:cellForRowAtIndexPath:")]
+        public UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = InteractionMessages.GetCachedMessage (indexPath.Row);
+            var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+            cell.SetMessage (message);
+            return cell;
+        }
+
+        [Foundation.Export("tableView:didSelectRowAtIndexPath:")]
+        public void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = InteractionMessages.GetCachedMessage (indexPath.Row);
+            var thread = new McEmailMessageThread ();
+            thread.MessageCount = 1;
+            thread.FirstMessageId = message.Id;
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (thread);
+            NavigationController.PushViewController (messageViewController, true);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -1122,88 +1141,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
+            InteractionMessages.BackgroundRefresh ((bool changed, List<int> adds, List<int> deletes) => {
+                InteractionsTableView.ReloadData();
+            });
 
-            NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
-            List<int> adds;
-            List<int> deletes;
-            messageSource.RefreshEmailMessages (out adds, out deletes);
-            interactionsTableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
-        }
-
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (true, null);
-        }
-
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new Action (delegate {
-                this.DismissViewController (true, null);
-            }));
-        }
-
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var t = CalendarHelper.CreateTask (m);
-                vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("", new SegueHolder (t));
-                }));
-            }
-        }
-
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-                }));
-            }
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            vc.SetOwner (null, false, null);
-            vc.DismissFolderChooser (false, null);
-        }
-
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
-        {
-            if (null != messageSource) {
-                messageSource.FolderSelected (vc, folder, cookie);
-            }
-            vc.DismissFolderChooser (true, null);
-        }
-
-        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
-        {
-        }
-
-        public void MultiSelectChange (IMessageTableViewSource source, int count)
-        {
-        }
-
-        public void SetEmailMessages (INachoEmailMessages messageThreads)
-        {
-            this.messageSource.SetEmailMessages (messageThreads, "No interactions");
         }
 
         public void SaveNote (string noteText)
@@ -1236,9 +1177,19 @@ namespace NachoClient.iOS
             }
         }
 
-        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
+        public void ContactDefaultSelectorComposeMessage (string address)
         {
-            PerformSegue (identifier, sender);
+            ComposeMessage (address);
+        }
+
+        private void ComposeMessage (string address)
+        {
+            var account = McAccount.EmailAccountForContact (contact);
+            var message = McEmailMessage.MessageWithSubject (account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Message = message;
+            composeViewController.Present ();
         }
 
         public class LongPressCopyData
@@ -1270,6 +1221,21 @@ namespace NachoClient.iOS
                 longPress.RemoveTarget (longPressToken);
                 longPress.ShouldRecognizeSimultaneously = null;
             }
+        }
+
+        public void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action)
+        {
+            ComposeResponse (thread, action);
+        }
+
+        private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
+        {
+            var messsage = thread.FirstMessageSpecialCase ();
+            var account = McAccount.EmailAccountForMessage (messsage);
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Kind = action;
+            composeViewController.Composer.RelatedThread = thread;
+            composeViewController.Present ();
         }
 
     }

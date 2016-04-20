@@ -176,7 +176,7 @@ namespace NachoClient.iOS
                 }
 
                 UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
-                eventIndicator.Hidden = UpdateEventIndicator (this.ViewDate.AddDays (dayOffset));
+                eventIndicator.Hidden = HideEventIndicatorForDate (this.ViewDate.AddDays (dayOffset));
 
                 i++;
                 dayOffset++;
@@ -191,7 +191,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = Pretty.PrettyMonthLabel (this.ViewDate);
+            monthLabelView.Text = Pretty.LongMonthYear (this.ViewDate);
         }
 
         public DateTime GetFirstDay (DateTime date)
@@ -247,7 +247,7 @@ namespace NachoClient.iOS
                 button.Font = A.Font_AvenirNextDemiBold17;
 
                 UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
-                eventIndicator.Hidden = UpdateEventIndicator (firstDate.AddDays (dayIncrement));
+                eventIndicator.Hidden = HideEventIndicatorForDate (firstDate.AddDays (dayIncrement));
 
                 i++;
                 dayIncrement++;
@@ -271,7 +271,7 @@ namespace NachoClient.iOS
                 button.Font = A.Font_AvenirNextDemiBold17;
 
                 UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
-                eventIndicator.Hidden = UpdateEventIndicator (firstDate.AddDays (dayIncrement));
+                eventIndicator.Hidden = HideEventIndicatorForDate (firstDate.AddDays (dayIncrement));
 
                 i++;
                 dayOffset++;
@@ -295,7 +295,7 @@ namespace NachoClient.iOS
                 button.Font = A.Font_AvenirNextDemiBold17;
 
                 UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
-                eventIndicator.Hidden = UpdateEventIndicator (firstDate.AddDays (dayIncrement));
+                eventIndicator.Hidden = HideEventIndicatorForDate (firstDate.AddDays (dayIncrement));
 
                 i++;
                 dayIncrement++;
@@ -441,12 +441,12 @@ namespace NachoClient.iOS
             return dayOffset + date.Day + 99;
         }
 
-        public bool UpdateEventIndicator (DateTime date)
+        public bool HideEventIndicatorForDate (DateTime date)
         {
             if ((date.Month >= DateTime.UtcNow.Month && date.Year == DateTime.UtcNow.Year) || date.Year > DateTime.UtcNow.Year) {
                 var index = calendar.IndexOfDate (date);
-                if ((calendar.NumberOfDays () - 1) >= index) {
-                    return !(0 < calendar.NumberOfItemsForDay (index));
+                if (0 <= index) {
+                    return 0 == calendar.NumberOfItemsForDay (index);
                 }
             }
             return true;

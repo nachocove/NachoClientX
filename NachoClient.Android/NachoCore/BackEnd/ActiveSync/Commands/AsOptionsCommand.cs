@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -28,7 +26,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             if (ProcessOptionsHeaders (response.Headers, BEContext)) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsOptionsSuccess));
@@ -56,7 +54,7 @@ namespace NachoCore.ActiveSync
         {
             McProtocolState protocolState = beContext.ProtocolState;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)protocolState;
+                var target = (McProtocolState)record;
                 target.AsProtocolVersion = "12.0";
                 return true;
             });
@@ -66,7 +64,7 @@ namespace NachoCore.ActiveSync
         // (or from most preferred to least preferred).
         private static string[] SupportedVersions = new string[] { "14.1", "14.0", "12.1", "12.0" };
 
-        internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
+        internal static bool ProcessOptionsHeaders (NcHttpHeaders headers, IBEContext beContext)
         {
             IEnumerable<string> values = null;
             McProtocolState protocolState = beContext.ProtocolState;

@@ -50,10 +50,11 @@ namespace NachoCore.Model
         public const string ICloud_Suffix = "icloud.com";
         public const string ICloud_Suffix2 = "me.com";
         public const string ICloud_Suffix3 = "mac.com";
-        public const string Yahoo_Suffix = "yahoo.com";
-        public const string Yahoo_Suffix2 = "yahoo.net";
-        public const string Yahoo_Suffix3 = "ymail.com";
-        public const string Yahoo_Suffix4 = "rocketmail.com";
+        public static string[] Yahoo_Suffixes {
+            get {
+                return new []{ "yahoo.com", "yahoo.ca", "yahoo.net", "ymail.com", "rocketmail.com" };
+            }
+        }
         public const string Aol_Suffix = "aol.com";
 
         public string Path { get; set; }
@@ -114,6 +115,7 @@ namespace NachoCore.Model
         {
             // Includes s.outlook.com, blu403-m.outlook.com, etc.
             var domain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Host);
+            // TODO should this use the large list of hotmail/outlook/live/msn domains in NcServiceHelper?
             return domain.Equals (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
                 domain.Equals (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase);
         }

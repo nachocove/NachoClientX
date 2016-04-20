@@ -1,122 +1,159 @@
-﻿using System;
-
-using Android.App;
-using Android.Content;
-using Android.Runtime;
+﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
+//
+using System;
 using Android.OS;
-using Android.Support.V4.View;
-using Android.Support.V4.Widget;
 using Android.Support.V7.App;
-using Android.Support.Design.Widget;
-using Android.Graphics;
+using NachoClient.Build;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NcActivity")]            
+    /// <summary>
+    /// Activity base class that (1) logs state transitions, and (2) checks with HockeyApp for updates.
+    /// </summary>
     public class NcActivity : AppCompatActivity
     {
-        MoreFragment moreFragment = new MoreFragment ();
-        SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
+        private string ClassName;
 
-        protected void OnCreate (Bundle bundle, int layoutId)
+        private const string TELEMETRY_ON_CREATE = "ON_CREATE";
+        private const string TELEMETRY_ON_START = "ON_START";
+        private const string TELEMETRY_ON_RESUME = "ON_RESUME";
+        private const string TELEMETRY_ON_PAUSE = "ON_PAUSE";
+        private const string TELEMETRY_ON_STOP = "ON_STOP";
+        private const string TELEMETRY_ON_DESTROY = "ON_DESTROY";
+        private const string TELEMETRY_ON_RESTART = "ON_RESTART";
+        private const string TELEMETRY_ON_NEWINTENT = "ON_NEWINTENT";
+
+        bool updateRegistered;
+
+        protected override void OnCreate (Bundle savedInstanceState)
         {
-            base.OnCreate (bundle);
-
-            SetContentView (layoutId);
+            ClassName = this.GetType ().Name;
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_CREATE);
+            base.OnCreate (savedInstanceState);
         }
 
-        public void HookNavigationToolbar(Android.Views.View view)
+        protected override void OnStart ()
         {
-            var hotButton = view.FindViewById<Android.Views.View> (Resource.Id.hot);
-            hotButton.Click += HotButton_Click;
-
-            var inboxButton = view.FindViewById<Android.Views.View> (Resource.Id.inbox);
-            inboxButton.Click += InboxButton_Click;
-
-            var calendarButton = view.FindViewById<Android.Views.View> (Resource.Id.calendar);
-            calendarButton.Click += CalendarButton_Click;
-
-            var contactsButton = view.FindViewById<Android.Views.View> (Resource.Id.contacts);
-            contactsButton.Click += ContactsButton_Click;
-
-            var moreButton = view.FindViewById<Android.Views.View> (Resource.Id.more);
-            moreButton.Click += MoreButton_Click;
-
-            HookSwitchAccountView (view);
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_START);
+            base.OnStart ();
         }
 
-        public void HookSwitchAccountView(Android.Views.View view)
+        protected override void OnNewIntent (Android.Content.Intent intent)
         {
-            var switchAccountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
-            switchAccountButton.Click += SwitchAccountButton_Click;
-            switchAccountButton.SetImageResource (Resource.Drawable.avatar_gmail);
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_NEWINTENT);
+            base.OnNewIntent (intent);
         }
 
-        void SwitchAccountButton_Click (object sender, EventArgs e)
+        protected override void OnResume ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is SwitchAccountFragment) {
-                FragmentManager.PopBackStack ();
-            } else {
-                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, switchAccountFragment).AddToBackStack (null).Commit ();
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_RESUME);
+            base.OnResume ();
+
+            if (MainApplication.CheckOnceForUpdates ()) {
+                updateRegistered = true;
+                HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
+            }
+
+        }
+
+        protected override void OnPause ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_PAUSE);
+            base.OnPause ();
+
+            if (updateRegistered) {
+                HockeyApp.UpdateManager.Unregister ();
             }
         }
 
-        protected bool MaybePopMoreFragment ()
+        protected override void OnStop ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MoreFragment) {
-                FragmentManager.PopBackStack ();
-                return true;
-            } else {
-                return false;
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_STOP);
+            base.OnStop ();
+        }
+
+        protected override void OnDestroy ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_DESTROY);
+            base.OnDestroy ();
+        }
+
+        protected override void OnRestart ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_RESTART);
+            base.OnRestart ();
+        }
+
+        public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
+        {
+            public override void OnUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnUpdateAvailable");
+                base.OnUpdateAvailable ();
+            }
+
+            public override void OnNoUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnNoUpdateAvailable");
+                base.OnNoUpdateAvailable ();
             }
         }
+    }
 
-        void MoreButton_Click (object sender, EventArgs e)
+    /// <summary>
+    /// Store an object within a fragment.  This class cannot be generic, which means it cannot
+    /// be nested inside NcActivityWithData&lt;T&gt;, which is the only place that should use
+    /// this class.  (See https://developer.xamarin.com/guides/android/advanced_topics/limitations/
+    /// for an explatation.  In particular: "Instances of Generic types must not be created from
+    /// Java code. They can only safely be created from managed code.")
+    /// </summary>
+    public class DataFragment : Android.App.Fragment
+    {
+        public override void OnCreate (Bundle savedInstanceState)
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MoreFragment) {
-                // Already displayed
-                return;
+            base.OnCreate (savedInstanceState);
+            this.RetainInstance = true;
+        }
+
+        private object data = null;
+
+        public T GetData<T> () where T : class
+        {
+            return (T)data;
+        }
+
+        public void SetData<T> (T data) where T : class
+        {
+            this.data = data;
+        }
+    }
+
+    /// <summary>
+    /// Activity base class on top of NcActivity that provides a way for activities to save data
+    /// that must survive across a configuration change such as rotating the device.  Preserving
+    /// the data is not automatic.  Derived classes must call RetainedData at the appropriate time.
+    /// </summary>
+    public class NcActivityWithData<T> : NcActivity where T : class
+    {
+        private const string DATA_FRAGMENT_TAG = "DataFragment";
+
+        public T RetainedData {
+            get {
+                var fragment = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
+                if (null == fragment) {
+                    return null;
+                }
+                return fragment.GetData<T> ();
             }
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, moreFragment).AddToBackStack (null).Commit ();
+            set {
+                var fragment = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
+                if (null == fragment) {
+                    fragment = new DataFragment ();
+                    FragmentManager.BeginTransaction ().Add (fragment, DATA_FRAGMENT_TAG).Commit ();
+                }
+                fragment.SetData (value);
+            }
         }
-
-        void HotButton_Click (object sender, EventArgs e)
-        {
-            MaybePopMoreFragment ();
-
-            if (this is NowActivity) {
-                return;
-            } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
-            StartActivity (intent);
-        }
-
-        void InboxButton_Click (object sender, EventArgs e)
-        {
-            MaybePopMoreFragment ();
-
-            if (this is InboxActivity) {
-                return;
-            } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(InboxActivity));
-            StartActivity (intent);
-        }
-
-        void ContactsButton_Click (object sender, EventArgs e)
-        {
-
-        }
-
-        void CalendarButton_Click (object sender, EventArgs e)
-        {
-
-        }
-
     }
 }
-

@@ -28,15 +28,14 @@ namespace NachoCore.Model
             // We are not using generic or journal.
             Journal = 101,
             Generic = 102,
+            Chat = 103
         };
 
         [Indexed]
         public string ServerId { get; set; }
 
-        [Indexed]
         public bool IsAwaitingDelete { get; set; }
 
-        [Indexed]
         public bool IsAwaitingCreate { get; set; }
 
         public virtual ClassCodeEnum GetClassCode ()

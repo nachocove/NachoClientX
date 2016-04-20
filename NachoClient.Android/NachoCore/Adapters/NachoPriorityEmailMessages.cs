@@ -3,14 +3,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NachoCore;
 using NachoCore.Model;
 using NachoCore.Brain;
 using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoPriorityEmailMessages : INachoEmailMessages
+    public class NachoPriorityEmailMessages : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
         McFolder folder;
@@ -20,10 +19,11 @@ namespace NachoCore
             this.folder = folder;
             List<int> adds;
             List<int> deletes;
+            threadList = new List<McEmailMessageThread> ();
             Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
@@ -37,12 +37,12 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             t.Source = this;
@@ -50,7 +50,7 @@ namespace NachoCore
         }
 
         // Add messages, not just hot ones
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
@@ -61,22 +61,12 @@ namespace NachoCore
             }
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Hot List";
         }
 
-        public bool HasOutboxSemantics ()
-        {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
+        public override NcResult StartSync ()
         {
             if (null != folder) {
                 return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
@@ -85,14 +75,30 @@ namespace NachoCore
             }
         }
 
-        public INachoEmailMessages GetAdapterForThread (string threadId)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
-            return new NachoThreadedEmailMessages (folder, threadId);
+            return new NachoThreadedEmailMessages (folder, thread.GetThreadId ());
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == folder.AccountId;
+        }
+
+        public override DateTime? LastSuccessfulSyncTime ()
+        {
+            if (folder == null) {
+                return null;
+            }
+            if (folder.IsClientOwned) {
+                return null;
+            }
+            return folder.LastSyncAttempt;
+        }
+
+        public override void RefetchSyncTime ()
+        {
+            folder = McFolder.QueryById<McFolder> (folder.Id);
         }
     }
 }

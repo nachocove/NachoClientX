@@ -13,19 +13,14 @@ namespace NachoCore.IMAP
 {
     public class ImapDiscoverCommand : ImapCommand
     {
-        public ImapDiscoverCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapDiscoverCommand (IBEContext beContext) : base (beContext)
         {
-            RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // Redaction is done in the base class, since it's more complicated than just string replacement
-            return logData;
+            DontReportCommResult = !BEContext.ProtocolState.ImapDiscoveryDone;
         }
 
         public override void Execute (NcStateMachine sm)
         {
+            Sm = sm;
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
                 if (!Cts.Token.IsCancellationRequested) {
@@ -36,66 +31,108 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
-            var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-            errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
+            bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
+            Tuple<ResolveAction, string> action = new Tuple<ResolveAction, string> (ResolveAction.None, null);
+
+            Log.Info (Log.LOG_IMAP, "{0}: Started", CmdNameWithAccount);
             Event evt;
+            bool serverFailedGenerally = false;
             try {
-                return TryLock (Client.SyncRoot, KLockTimeout, () => {
+                Cts.Token.ThrowIfCancellationRequested ();
+                evt = TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
-                    return base.ExecuteConnectAndAuthEvent ();
+                    return ExecuteConnectAndAuthEvent ();
                 });
+                Cts.Token.ThrowIfCancellationRequested ();
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
-                ResolveAllDeferred ();
+                action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
-                errResult.Message = ex.Message;
+                Client.DOA = true;
             } catch (OperationCanceledException ex) {
-                ResolveAllDeferred ();
-                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
-                errResult.Message = ex.Message;
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
+                action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
             } catch (UriFormatException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);
-                errResult.Message = ex.Message;
+                // this can't (shouldn't?) really happen except if Initial=true
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPURICONF", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotFindServer;
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPURLTEMP1");
+                }
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (SocketException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
-                errResult.Message = ex.Message;
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
+                }
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
+                serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: AuthenticationException {0}", ex.Message);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ServiceNotAuthenticatedException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ServiceNotAuthenticatedException: {0}", ex.Message);
-                evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
-                errResult.Message = ex.Message;
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (InvalidOperationException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
-                evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
-                errResult.Message = ex.Message;
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ImapProtocolException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOEXTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
+                serverFailedGenerally = true;
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
+                serverFailedGenerally = true;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
-                errResult.Message = ex.Message;
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL", BackEnd.AutoDFailureReasonEnum.Unknown);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPUNKTEMP");
+                }
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
+                serverFailedGenerally = true;
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
+                Log.Info (Log.LOG_IMAP, "{0}: Finished", CmdNameWithAccount);
             }
-            StatusInd (errResult);
+
+            if (Cts.Token.IsCancellationRequested) {
+                Log.Info (Log.LOG_IMAP, "{0}: Cancelled", CmdNameWithAccount);
+                return Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
+            }
+            ReportCommResult (serverFailedGenerally);
+            switch (action.Item1) {
+            case ResolveAction.None:
+                break;
+            case ResolveAction.DeferAll:
+                ResolveAllDeferred ();
+                break;
+            case ResolveAction.FailAll:
+                if (Initial) {
+                    var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                    errResult.Message = action.Item2; // gets filled in by the various exceptions.
+                    StatusInd (errResult);
+                }
+                break;
+            }
             return evt;
         }
 
@@ -156,15 +193,14 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), McServer.ICloud_Suffix)) {
+                    var domain = parts [1].ToLowerInvariant ();
+                    if (DomainIsOrEndsWith (domain, McServer.ICloud_Suffix) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix2) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix3)) {
                         username = parts [0];
                     }
                 }
                 break;
-
-            default:
-                break;
-
             }
             if (BEContext.Cred.Username != username) {
                 BEContext.Cred.UpdateWithOCApply<McCred> ((record) => {
@@ -201,11 +237,10 @@ namespace NachoCore.IMAP
             // new discovery statemachine. We'll see if this gets us far enough along.
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
-                if (DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix) ||
-                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix2) ||
-                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix3) ||
-                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix4)) {
-                    return true;
+                foreach (var suffix in McServer.Yahoo_Suffixes) {
+                    if (DomainIsOrEndsWith (domain, suffix)) {
+                        return true;
+                    }
                 }
             }
             return false;

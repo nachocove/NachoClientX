@@ -80,6 +80,7 @@ def create_buildinfo(options):
     aws = project['aws']
     pinger = project['pinger']
     google = project['google']
+    hockeyapp = project[options.architecture].get('hockeyapp')
 
     # Get the pinger pinned root cert
     with open(os.path.join('..', 'Resources', pinger['root_cert'])) as f:
@@ -93,7 +94,8 @@ def create_buildinfo(options):
         build_info.add('Source', '')
     else:
         build_info.add('Source', source)
-    build_info.add('HockeyAppAppId', project['hockeyapp']['app_id'])
+    if hockeyapp is not None:
+        build_info.add('HockeyAppAppId', hockeyapp['app_id'])
     build_info.add('AwsPrefix', aws['prefix'])
     build_info.add('AwsAccountId', aws['account_id'])
     build_info.add('AwsIdentityPoolId', aws['identity_pool_id'])
@@ -105,6 +107,10 @@ def create_buildinfo(options):
     build_info.add('GoogleClientSecret', google['client_secret'])
     build_info.add('S3Bucket', aws['s3_bucket'])
     build_info.add('SupportS3Bucket', aws['support_s3_bucket'])
+    if options.architecture in ('ios', 'ios_share'):
+        build_info.add('AppGroup', project[options.architecture].get('app_group', ''))
+    if options.architecture == 'android':
+        build_info.add('FileProvider', project[options.architecture]['fileprovider'])
     build_info.write(path)
 
 
@@ -171,7 +177,12 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--csproj-file', help='Xamarin project file', default=None)
     parser.add_argument('--root', help='Root directory of the project', default=None)
+    parser.add_argument('--architecture', help='Target architecture', default=None, choices=('ios', 'android'))
     options = parser.parse_args()
+
+    if not options.csproj_file or not options.root or not options.architecture:
+        print "ERROR: Missing arguments\n%s" % parser.format_help()
+        exit(1)
 
     create_buildinfo(options)
 

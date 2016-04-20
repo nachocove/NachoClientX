@@ -10,20 +10,10 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailMarkReadCommand : ImapCommand
     {
-        public ImapEmailMarkReadCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailMarkReadCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             PendingSingle = pending;
-            pending.MarkDispached ();
-            RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // No additional redaction necessary
-            //2015-06-22T17:26:07.601Z: IMAP C: A00000062 UID STORE 8728 FLAGS.SILENT (\Seen)
-            //2015-06-22T17:26:08.028Z: IMAP S: * 60 FETCH (UID 8728 MODSEQ (953644) FLAGS (\Seen))
-            //A00000062 OK Success
-            return logData;
+            pending.MarkDispatched ();
         }
 
         protected override Event ExecuteCommand ()
@@ -34,12 +24,26 @@ namespace NachoCore.IMAP
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
             }
-            mailKitFolder.SetFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
-            PendingResolveApply ((pending) => {
-                pending.ResolveAsSuccess (BEContext.ProtoControl, 
-                    NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
-            });
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
+            UpdateImapSetting (mailKitFolder, ref folder);
+            try {
+                if (PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag) {
+                    mailKitFolder.SetFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                } else {
+                    mailKitFolder.RemoveFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                }
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, 
+                        NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
+                });
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
+            } catch (MessageNotFoundException) {
+                email.Delete ();
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMarkedReadFailed, NcResult.WhyEnum.MissingOnServer));
+                });
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADMISS");
+            }
         }
     }
 }

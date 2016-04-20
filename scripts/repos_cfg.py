@@ -17,13 +17,17 @@ repos = (
     'CSharp-Name-Parser',
     'Telemetry',
     'aws-sdk-xamarin',
-    'ModernHttpClient',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
     'Google.iOS',
     'Xamarin.Auth',
     'Portable.Text.Encoding',
     'JetBlack.Caching',
+    'TokenAutoComplete',
+    'TokenAutoCompleteBinding',
+    'rtfparserkit',
+    'rtfparserkitBinding',
+    'OkHttp-Xamarin',
     # This is always the last one
     'NachoClientX'
 )
@@ -32,7 +36,7 @@ branch_exceptions = {
     'bc-csharp': {
         # bc-csharp is fixed to this branch no matter what
         'fixed-branch': 'visual-studio-2010'
-    }
+    },
 }
 
 # You can run this script:

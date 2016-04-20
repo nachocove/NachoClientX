@@ -33,6 +33,7 @@
 		<string>Icon-Small@2x</string>
 		<string>Icon-Small-40</string>
 		<string>Icon-Small-40@2x</string>
+		<string>Icon-83.5@2x</string>
 	</array>
 	<key>CFBundleIdentifier</key>
 	<string>com.nachocove.nachomail</string>
@@ -64,7 +65,7 @@
 	<key>CFBundleVersion</key>
 	<string>0</string>
 	<key>MinimumOSVersion</key>
-	<string>7.0</string>
+	<string>8.0</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
@@ -75,10 +76,6 @@
 		<integer>1</integer>
 		<integer>2</integer>
 	</array>
-	<key>UIMainStoryboardFile</key>
-	<string>MainStoryboard_iPhone</string>
-	<key>UIMainStoryboardFile~ipad</key>
-	<string>MainStoryboard_iPhone</string>
 	<key>UIPrerenderedIcon</key>
 	<true/>
 	<key>UISupportedInterfaceOrientations</key>
@@ -94,14 +91,18 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>UTImportedTypeDeclarations</key>
-	<array>
-		<dict>
-		</dict>
-	</array>
 	<key>XSLaunchImageAssets</key>
 	<string>Resources/Images.xcassets/LaunchImage.launchimage</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

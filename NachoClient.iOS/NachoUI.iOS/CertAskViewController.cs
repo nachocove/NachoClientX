@@ -15,8 +15,13 @@ namespace NachoClient.iOS
     {
         McAccount account;
         McAccount.AccountCapabilityEnum capability;
+        public INachoCertificateResponderParent CertificateDelegate;
 
         CertificateView certificateView;
+
+        public CertAskViewController () : base ()
+        {
+        }
 
         public CertAskViewController (IntPtr handle) : base (handle)
         {
@@ -35,7 +40,12 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoGreen;
 
-            certificateView = new CertificateView (View.Frame, this);
+            INachoCertificateResponderParent owner = CertificateDelegate;
+            if (owner == null) {
+                owner = this;
+            }
+            certificateView = new CertificateView (View.Bounds, owner);
+            certificateView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
             ViewFramer.Create (certificateView).Y (0);
             View.Add (certificateView);
 

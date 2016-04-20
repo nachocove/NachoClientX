@@ -35,7 +35,7 @@ namespace NachoClient.iOS
             switchButton.Layer.AllowsEdgeAntialiasing = true;
             switchButton.TouchUpInside += SwitchButton_TouchUpInside;
             switchButton.AccessibilityLabel = "Switch account";
-            switchButton.ImageView.ContentMode = UIViewContentMode.Center;
+            switchButton.ImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
 
             switchButton.AdjustsImageWhenHighlighted = false;
 
@@ -122,6 +122,47 @@ namespace NachoClient.iOS
         }
 
         void NewAccountButton_TouchUpInside (object sender, EventArgs e)
+        {
+            if (null != callback) {
+                callback ();
+            }
+        }
+
+    }
+
+    public class ConnectToSalesforceCell : UIView
+    {
+        public delegate void ConnectToSalesforceCallback ();
+
+        ConnectToSalesforceCallback callback;
+
+        public ConnectToSalesforceCell (CGRect rect, ConnectToSalesforceCallback connectToSalesforceCallback) : base (rect)
+        {
+            callback = connectToSalesforceCallback;
+
+            this.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            var newAccountButton = UIButton.FromType (UIButtonType.System);
+            newAccountButton.Layer.CornerRadius = A.Card_Corner_Radius;
+            newAccountButton.Frame = Util.CardContentRectangle (rect.Width, 40);
+            newAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+
+            newAccountButton.BackgroundColor = UIColor.White;
+            newAccountButton.Font = A.Font_AvenirNextRegular14;
+            newAccountButton.SetTitle ("Connect to Salesforce", UIControlState.Normal);
+            newAccountButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+
+            Util.SetOriginalImagesForButton (newAccountButton, "email-add");
+            newAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 12, 0, 36);
+            newAccountButton.ImageEdgeInsets = new UIEdgeInsets (0, newAccountButton.Frame.Width - 36, 0, 0);
+            newAccountButton.ContentEdgeInsets = new UIEdgeInsets ();
+
+            newAccountButton.TouchUpInside += ConnectAccountButton_TouchUpInside;
+
+            this.AddSubview (newAccountButton);
+        }
+
+        void ConnectAccountButton_TouchUpInside (object sender, EventArgs e)
         {
             if (null != callback) {
                 callback ();

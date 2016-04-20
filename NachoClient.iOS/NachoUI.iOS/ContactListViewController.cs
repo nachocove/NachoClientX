@@ -28,11 +28,12 @@ namespace NachoClient.iOS
         protected bool contactsNeedsRefresh;
 
         ContactsTableViewSource contactTableViewSource;
+        ContactsGeneralSearch searcher;
 
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
-        public ContactListViewController (IntPtr handle) : base (handle)
+        public ContactListViewController () : base ()
         {
             // iOS 8 bug sez stack overflow
             //  var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(ContactListViewController));
@@ -44,7 +45,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            View.BackgroundColor = UIColor.White;
 
             ReloadCaptureName = "ContactListViewController.Reload";
             NcCapture.AddKind (ReloadCaptureName);
@@ -106,7 +107,7 @@ namespace NachoClient.iOS
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
                 if (NcApplication.Instance.Account.CanAddContact ()) {
-                    PerformSegue ("ContactsToContactEdit", new SegueHolder (NcApplication.Instance.Account));
+                    AddContact (NcApplication.Instance.Account);
                 } else {
                     var canAddAccounts = McAccount.GetCanAddContactAccounts ();
                     var actions = new NcAlertAction[canAddAccounts.Count];
@@ -114,10 +115,10 @@ namespace NachoClient.iOS
                         var account = canAddAccounts [n];
                         var displayName = account.DisplayName + ": " + account.EmailAddr;
                         actions [n] = new NcAlertAction (displayName, () => {
-                            PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
+                            AddContact (account);
                         });
                     }
-                    NcActionSheet.Show (this.View, this, null,
+                    NcActionSheet.Show (addContactButton, this, null,
                         "Cannot add contacts to the current account. Select other account for the new contact.", actions);
                 }
             };
@@ -146,6 +147,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            searcher = new ContactsGeneralSearch (UpdateSearchResultsUi);
+            SearchDisplayController.Delegate = new ContactsSearchDisplayDelegate (searcher);
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             MaybeRefreshContacts ();
         }
@@ -159,6 +163,10 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
+            SearchDisplayController.Delegate = null;
         }
 
         void SwitchAccountButtonPressed ()
@@ -180,62 +188,20 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 RefreshContactsIfVisible ();
             }
-            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
-                RefreshContactsIfVisible ();
-                var sb = SearchDisplayController.SearchBar;
-                contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-            }
-            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
-                RefreshContactsIfVisible ();
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-            }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void UpdateSearchResultsUi (string searchString, List<McContactEmailAddressAttribute> results)
         {
-            if (segue.Identifier.Equals ("ContactsToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
-                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
-                destinationController.SetContact (c);
-                destinationController.viewType = type;
-                destinationController.owner = this;
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactsToContactEdit")) {
-                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
-                destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
-                var h = sender as SegueHolder;
-                var a = (McAccount)h.value;
-                destinationViewController.account = a;
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
-                return;
-            }
-            if (segue.Identifier.Equals ("ContactsToQuickMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            contactTableViewSource.SetSearchResults (results);
+            SearchDisplayController.SearchResultsTableView.ReloadData ();
+        }
+
+        void AddContact (McAccount account)
+        {
+            var destinationViewController = new ContactEditViewController ();
+            destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
+            destinationViewController.account = account;
+            NavigationController.PushViewController (destinationViewController, true);
         }
 
         protected void RefreshContactsIfVisible ()
@@ -252,44 +218,73 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshContacts ()
         {
-            if (contactsNeedsRefresh) {
-                contactsNeedsRefresh = false;
-                ReloadCapture.Start ();
-                NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacts");
-                // RIC -- only highlight recents from the current account
-                var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
-                var contacts = McContact.AllContactsSortedByName (true);
-                contactTableViewSource.SetContacts (recents, contacts, true);
-                TableView.ReloadData ();
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacts");
-                ReloadCapture.Stop ();
-            } else {
-                contactTableViewSource.ReconfigureVisibleCells (TableView);
+            using (NcAbate.UIAbatement ()) {
+                if (contactsNeedsRefresh) {
+                    contactsNeedsRefresh = false;
+                    ReloadCapture.Start ();
+                    // RIC -- only highlight recents from the current account
+                    var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
+                    var contacts = McContact.AllContactsSortedByName (true);
+                    contactTableViewSource.SetContacts (recents, contacts, true);
+                    TableView.ReloadData ();
+                    ReloadCapture.Stop ();
+                } else {
+                    contactTableViewSource.ReconfigureVisibleCells (TableView);
+                }
             }
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
         }
 
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
-            PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
+            ShowContact (contact);
+        }
+
+        void ShowContact (McContact contact)
+        {
+            var destinationController = new ContactDetailViewController ();
+            destinationController.contact = contact;
+            NavigationController.PushViewController (destinationController, true);
         }
 
         /// IContactsTableViewSourceDelegate
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailContact ("SegueToContactDefaultSelection", contact, this);
+            if (contact == null) {
+                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+            } else {
+                var address = Util.GetContactDefaultEmail (contact);
+                if (address == null) {
+                    if (contact.EmailAddresses.Count == 0) {
+                        if (contact.CanUserEdit ()) {
+                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
+                        } else {
+                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                        }
+                    } else {
+                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
+                    }
+                } else {
+                    ComposeMessage (address);
+                }
+            }
+        }
+
+        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
+        {
+            var destinationController = new ContactDefaultSelectionViewController ();
+            destinationController.SetContact (contact);
+            destinationController.viewType = type;
+            destinationController.owner = this;
+            PresentViewController (destinationController, true, null);
         }
 
         /// IContactsTableViewSourceDelegate
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallContact ("SegueToContactDefaultSelection", contact, this);
+            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
+                SelectDefault(contact, type);
+            });
         }
 
         public void SelectSectionIncludingRecent (int index)
@@ -297,9 +292,19 @@ namespace NachoClient.iOS
             contactTableViewSource.ScrollToSectionIncludingRecent (TableView, index);
         }
 
-        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
+        public void ContactDefaultSelectorComposeMessage (string address)
         {
-            PerformSegue (identifier, sender);
+            ComposeMessage (address);
+        }
+
+        public void ComposeMessage (string address)
+        {
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            var message = McEmailMessage.MessageWithSubject (account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Message = message;
+            composeViewController.Present ();
         }
 
         public class LettersSwipeViewDelegate : SwipeViewDelegate

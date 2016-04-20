@@ -62,7 +62,7 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
                     var application = UIApplication.SharedApplication;
                     if (application.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
-                        var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound, new NSSet ());
+                        var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge, new NSSet ());
                         application.RegisterUserNotificationSettings (settings);
                     }
                 } else {
@@ -103,6 +103,7 @@ namespace NachoClient.iOS
                         Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
                         Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
                         if (granted) {
+                            // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
                             BackEnd.Instance.Start (accountId);
                         }
                     });
@@ -145,6 +146,7 @@ namespace NachoClient.iOS
                         Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
                         if (granted) {
                             // Trigger a Sync.
+                            // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
                             BackEnd.Instance.Start (accountId);
                         }
                     });

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout
+        android:id="@+id/advanced_exchange_view"
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/server"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/exchange_server" />
+            <EditText
+                android:id="@+id/exchange_server"
+                android:inputType="textUri"
+                android:textSize="17dp"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/server"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/domain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/exchange_server" />
+            <EditText
+                android:id="@+id/exchange_domain"
+                android:inputType="textEmailAddress"
+                android:textSize="17dp"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/domain"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white">
+            <TextView
+                android:text="@string/username"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dip"
+                android:textColor="@android:color/black"
+                android:textSize="17dp"
+                android:layout_toLeftOf="@+id/exchange_server" />
+            <EditText
+                android:id="@+id/exchange_username"
+                android:inputType="textEmailAddress"
+                android:textSize="17dp"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:hint="@string/username"
+                android:drawablePadding="10dp"
+                android:background="@android:color/white"
+                android:padding="5dp"
+                android:minHeight="40dp"
+                android:maxHeight="40dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+    </LinearLayout>
+</merge>

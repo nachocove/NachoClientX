@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Foundation;
 using UIKit;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoPlatform
 {
@@ -51,45 +52,44 @@ namespace NachoPlatform
         /// is not scheduled; this method just creates the object. This may only be called on
         /// the UI thread.
         /// </summary>
-        private UILocalNotification CreateUILocalNotification (int handle, DateTime when, string message)
+        private UILocalNotification CreateUILocalNotification (McEvent ev)
         {
+            string title;
+            string body;
+            Pretty.EventNotification (ev, out title, out body);
             return new UILocalNotification () {
                 AlertAction = null,
-                AlertBody = message,
-                FireDate = when.ToNSDate (),
+                AlertTitle = title,
+                AlertBody = string.Format("{0}: {1}", title, body),
+                FireDate = ev.ReminderTime.ToNSDate (),
                 TimeZone = null,
                 SoundName = UILocalNotification.DefaultSoundName,
-                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NachoClient.iOS.AppDelegate.EventNotificationKey),
+                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (ev.Id), NachoClient.iOS.AppDelegate.EventNotificationKey),
             };
         }
 
-        public void ImmediateNotification (int handle, string message)
+        public void ImmediateNotification (McEvent ev)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                UIApplication.SharedApplication.PresentLocalNotificationNow (CreateUILocalNotification (handle, DateTime.UtcNow, message));
+                UIApplication.SharedApplication.PresentLocalNotificationNow (CreateUILocalNotification (ev));
             });
         }
 
-        public void ScheduleNotification (int handle, DateTime when, string message)
+        public void ScheduleNotification (McEvent ev)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                DoCancelNotification (handle);
-                UIApplication.SharedApplication.ScheduleLocalNotification (CreateUILocalNotification (handle, when, message));
+                DoCancelNotification (ev.Id);
+                UIApplication.SharedApplication.ScheduleLocalNotification (CreateUILocalNotification (ev));
             });
         }
 
-        public void ScheduleNotification (NotificationInfo notification)
-        {
-            ScheduleNotification (notification.Handle, notification.When, notification.Message);
-        }
-
-        public void ScheduleNotifications (List<NotificationInfo> notifications)
+        public void ScheduleNotifications (List<McEvent> events)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                UILocalNotification[] iosNotifications = new UILocalNotification[notifications.Count];
+                UILocalNotification[] iosNotifications = new UILocalNotification[events.Count];
                 int index = 0;
-                foreach (var notification in notifications) {
-                    iosNotifications [index++] = CreateUILocalNotification (notification.Handle, notification.When, notification.Message);
+                foreach (var ev in events) {
+                    iosNotifications [index++] = CreateUILocalNotification (ev);
                 }
                 // This gets rid of all existing local notifications, replacing them with the new ones.
                 UIApplication.SharedApplication.ScheduledLocalNotifications = iosNotifications;

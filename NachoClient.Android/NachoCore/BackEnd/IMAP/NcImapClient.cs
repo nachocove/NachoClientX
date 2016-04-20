@@ -16,13 +16,12 @@ using System.Runtime.InteropServices;
 
 namespace NachoCore.IMAP
 {
-    public class NcImapClient : MailKit.Net.Imap.ImapClient
+    public class NcImapClient : ImapClient
     {
-        public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
+        public bool DOA { get; set; }
 
-        public NcImapClient () : base(getLogger())
+        public NcImapClient () : base (getLogger ())
         {
-            MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
         }
 
         protected override ImapFolder CreateImapFolder (ImapFolderConstructorArgs args)
@@ -32,7 +31,6 @@ namespace NachoCore.IMAP
 
         private static IProtocolLogger getLogger ()
         {
-            //return new NcMailKitProtocolLogger ("IMAP");
             //return new NcDebugProtocolLogger (Log.LOG_IMAP);
             return new NullProtocolLogger ();
         }
@@ -93,37 +91,42 @@ namespace NachoCore.IMAP
 
     public class NcImapFolder : ImapFolder
     {
-        public NcImapFolder (ImapFolderConstructorArgs args) : base(args) {}
-
-        private NcImapFolderStreamContext StreamContext { get; set; }
-        public void SetStreamContext (UniqueId uid, string filePath)
+        public NcImapFolder (ImapFolderConstructorArgs args) : base (args)
         {
-            StreamContext = new NcImapFolderStreamContext() {
-                uid = uid,
-                FilePath = filePath,
-            };
         }
 
-        public void UnsetStreamContext()
+        NcImapFolderStreamContext _StreamContext;
+
+        NcImapFolderStreamContext StreamContext {
+            get {
+                return _StreamContext;
+            }
+            set {
+                if (null != _StreamContext) {
+                    _StreamContext.Dispose ();
+                }
+                _StreamContext = value;
+            }
+        }
+
+        public void SetStreamContext (UniqueId uid, string filePath, bool deleteFile = true)
+        {
+            StreamContext = new NcImapFolderStreamContext (uid, filePath, deleteFile);
+        }
+
+        public void UnsetStreamContext ()
         {
             StreamContext = null;
         }
 
         protected override Stream CreateStream (UniqueId? uid, string section, int offset, int length)
         {
-            // TODO Use a file-base stream, instead of memory. Need to figure out which file to open, and how
-            // to pass that information in here.
-            string uidString;
-            if (uid.HasValue) {
-                uidString = uid.Value.ToString ();
-            } else {
-                uidString = "none";
-            }
-            if (null != StreamContext && StreamContext.uid.ToString () != uidString) {
-                Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.uid, uidString);
+            // a sanity check. Don't bother with the sanity check if we're not passed a valid uid. Some servers just don't seem to.
+            if (null != StreamContext && uid.HasValue && uid.Value.ToString () != StreamContext.Uid.ToString ()) {
+                Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.Uid, uid.Value.ToString ());
             }
             Stream stream;
-            if (null == StreamContext || StreamContext.uid.ToString () != uidString) {
+            if (null == StreamContext) {
                 stream = base.CreateStream (uid, section, offset, length);
             } else {
                 stream = new FileStream (StreamContext.FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
@@ -141,13 +144,31 @@ namespace NachoCore.IMAP
             }
         }
 
-        public class NcImapFolderStreamContext
+        public class NcImapFolderStreamContext : IDisposable
         {
-            public UniqueId uid;
-            public string FilePath;
+            public UniqueId Uid { get; protected set; }
 
-            public NcImapFolderStreamContext ()
-            {}
+            public string FilePath { get; protected set; }
+
+            public bool DeleteFile { get; set; }
+
+            public NcImapFolderStreamContext (UniqueId uid, string filePath, bool deleteFile)
+            {
+                Uid = uid;
+                FilePath = filePath;
+                DeleteFile = deleteFile;
+            }
+
+            #region IDisposable implementation
+
+            public void Dispose ()
+            {
+                if (DeleteFile && !string.IsNullOrEmpty (FilePath)) {
+                    File.Delete (FilePath);
+                }
+            }
+
+            #endregion
         }
     }
 }

@@ -14,11 +14,11 @@ namespace NachoCore
         private IEnumerator<PlatformContactRecord> DeviceContacts = null;
         private IEnumerator<McMapFolderFolderEntry> Stale = null;
         private List<McMapFolderFolderEntry> Present;
-        private int InsertCount = 0, UpdateCount = 0, PresentCount = 0;
+        private int InsertCount = 0, UpdateCount = 0, PresentCount = 0, RemovedCount = 0;
 
         public NcDeviceContacts ()
         {
-            var deviceContacts = Contacts.Instance.GetContacts ();
+            var deviceContacts = NachoPlatform.Contacts.Instance.GetContacts ();
             if (null == deviceContacts) {
                 return;
             }
@@ -112,15 +112,16 @@ namespace NachoCore
                     contact.Delete ();
                 }
             });
+            RemovedCount++;
             return false;
         }
 
         public void Report ()
         {
-            if ((0 < InsertCount) || (0 < UpdateCount)) {
+            if ((0 < InsertCount) || (0 < UpdateCount) || (0 < RemovedCount)) {
                 NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_ContactSetChanged);
             }
-            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, cleaning up {2} dead links.", InsertCount, UpdateCount, PresentCount);
+            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, {2} deleted (cleaning up {3} dead links.)", InsertCount, UpdateCount, RemovedCount, PresentCount);
         }
     }
 }

@@ -101,6 +101,16 @@ namespace NachoCore.Brain
             return ClearMessageThreadFlags (thread);
         }
 
+        static public NcResult RemoveDueDate (McEmailMessage message)
+        {
+            return ClearMessageFlags (message);
+        }
+
+        static public NcResult RemoveDueDate (McEmailMessageThread thread)
+        {
+            return ClearMessageThreadFlags (thread);
+        }
+
         static public NcResult SetDueDate (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime dueOn)
         {
             if (MessageDeferralType.Custom != deferralType) {
@@ -113,7 +123,11 @@ namespace NachoCore.Brain
             foreach (var message in thread) {
                 if (null != message) {
                     var start = DateTime.UtcNow;
-                    BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
+                    if (MessageDeferralType.None == deferralType) {
+                        BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
+                    } else {
+                        BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
+                    }
                     NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
                 }
             }
@@ -186,14 +200,17 @@ namespace NachoCore.Brain
                 break;
             case MessageDeferralType.MonthEnd:
                 // Last day
+                from = from.ToLocalTime ();
+                from = from.AddDays (1.0 - from.Day); // Day is 1..31
                 from = from.AddMonths (1);
-                from = from.AddDays (-from.Day); // Day is 1..31
+                from = from.AddDays (-1);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextMonth:
                 // First day
-                from = from.AddMonths (1);
+                from = from.ToLocalTime();
                 from = from.AddDays (1.0 - from.Day); // Day is 1..32
+                from = from.AddMonths (1);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.Forever:

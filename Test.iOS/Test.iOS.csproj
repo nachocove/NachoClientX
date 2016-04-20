@@ -150,7 +150,7 @@
     </Compile>
     <Compile Include="AsTimeZoneTest.cs" />
     <Compile Include="..\Test.Android\Common\CommonUtils.cs">
-      <Link>CommonUtils.cs</Link>
+      <Link>Common\CommonUtils.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\AsHttpOperationTest.cs">
       <Link>AsHttpOperationTest.cs</Link>
@@ -165,7 +165,7 @@
       <Link>AsAutodiscoverCommandTest.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\Common\CommonMocks.cs">
-      <Link>CommonMocks.cs</Link>
+      <Link>Common\CommonMocks.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\McMutablesTest.cs">
       <Link>McMutablesTest.cs</Link>
@@ -245,7 +245,6 @@
     <Compile Include="..\Test.Android\McAttachmentTest.cs">
       <Link>McAttachmentTest.cs</Link>
     </Compile>
-    <Compile Include="McContactTest.cs" />
     <Compile Include="..\Test.Android\McEmailMessageTest.cs">
       <Link>McEmailMessageTest.cs</Link>
     </Compile>
@@ -280,9 +279,6 @@
     </Compile>
     <Compile Include="..\Test.Android\McEventTest.cs">
       <Link>McEventTest.cs</Link>
-    </Compile>
-    <Compile Include="..\Test.Android\PushAssistTest.cs">
-      <Link>PushAssistTest.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\HashHelperTest.cs">
       <Link>HashHelperTest.cs</Link>
@@ -332,6 +328,34 @@
     <Compile Include="..\Test.Android\NcPreFetchHintsTest.cs">
       <Link>NcPreFetchHintsTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\LoginEventsTest.cs">
+      <Link>LoginEventsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\Oauth2RefreshTest.cs">
+      <Link>Oauth2RefreshTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\McCredTest.cs">
+      <Link>McCredTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\KeyChainAccessTest.cs">
+      <Link>KeyChainAccessTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\NcBase64Test.cs">
+      <Link>NcBase64Test.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\McContactTest.cs">
+      <Link>McContactTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\NcHttpUtilTest.cs">
+      <Link>NcHttpUtilTest.cs</Link>
+    </Compile>
+    <Compile Include="PushAssistTestiOS.cs" />
+    <Compile Include="..\Test.Android\NcQueueTests.cs">
+      <Link>NcQueueTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\NcXmlFilterTest.cs">
+      <Link>NcXmlFilterTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -339,7 +363,6 @@
     <Folder Include="Resources\xsd\response\" />
     <Folder Include="Resources\xsd\request\" />
     <Folder Include="Resources\xsd\common\" />
-    <Folder Include="Test.Android\" />
   </ItemGroup>
   <ItemGroup>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
@@ -372,20 +395,14 @@
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
       <Link>Resources\xsd\common\tasks.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">
-      <Link>Resources\xsd\request\Ping.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\Response\Ping.xsd">
-      <Link>Resources\xsd\response\Ping.xsd</Link>
-    </BundleResource>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
       <Link>Resources\xsd\common\contacts.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\Test.Android\Resources\utopiasystems.cer">
-      <Link>Resources\utopiasystems.cer</Link>
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
+      <Link>Resources\xsd\request\Ping.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\Test.Android\Resources\nco9.com.crt">
-      <Link>Resources\nco9.com.crt</Link>
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
+      <Link>Resources\xsd\response\Ping.xsd</Link>
     </BundleResource>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
@@ -393,10 +410,6 @@
     <ProjectReference Include="..\NachoClient.iOS\NachoClient.iOS.csproj">
       <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>
       <Name>NachoClient.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS64.csproj">
-      <Project>{6941F069-AC02-40EE-BBF3-9FE3331030EF}</Project>
-      <Name>ModernHttpClient.iOS64</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>

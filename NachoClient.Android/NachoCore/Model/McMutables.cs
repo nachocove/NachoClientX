@@ -1,5 +1,6 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
+using SQLite;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -20,8 +21,10 @@ namespace NachoCore.Model
          */
 
         // Use a class name as the Module name to avoid conflict.
+        [Indexed]
         public string Module { set; get; }
 
+        [Indexed]
         public string Key { set; get; }
 
         public string Value { set; get; }
@@ -47,22 +50,49 @@ namespace NachoCore.Model
             }
         }
 
+        private static McMutables GetExistingItem (int accountId, string module, string key)
+        {
+            try {
+
+                return NcModel.Instance.Db.Table<McMutables> ().Where (
+                    x => x.AccountId == accountId && x.Key == key && x.Module == module
+                ).SingleOrDefault ();
+
+            } catch (InvalidOperationException) {
+                McMutables result = null;
+                NcModel.Instance.RunInTransaction (() => {
+                    var allMatching = NcModel.Instance.Db.Table<McMutables> ().Where (
+                                          x => x.AccountId == accountId && x.Key == key && x.Module == module
+                                      );
+                    Log.Error (Log.LOG_DB, "The database has {3} McMutables items for [{0}, {1}, {2}]. One will be picked at random and the others will be deleted.",
+                        accountId, module, key, allMatching.Count ());
+                    foreach (var item in allMatching) {
+                        if (null == result) {
+                            result = item;
+                        } else {
+                            item.Delete ();
+                        }
+                    }
+                });
+                return result;
+            }
+        }
+
         public static void Set (int accountId, string module, string key, string value)
         {
-            var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
-                x.AccountId == accountId &&
-                         x.Key == key &&
-                         x.Module == module).SingleOrDefault ();
-            if (null == exists) {
-                exists = new McMutables (accountId);
-                exists.Module = module;
-                exists.Key = key;
-                exists.Value = value;
-                exists.Insert ();
-            } else {
-                exists.Value = value;
-                exists.Update ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                var existing = GetExistingItem (accountId, module, key);
+                if (null == existing) {
+                    new McMutables (accountId) {
+                        Module = module,
+                        Key = key,
+                        Value = value,
+                    }.Insert ();
+                } else {
+                    existing.Value = value;
+                    existing.Update ();
+                }
+            });
         }
 
         // TODO: Eliminate "Bool" suffix and just use overloads.
@@ -76,41 +106,49 @@ namespace NachoCore.Model
 
         public static string GetOrCreate (int accountId, string module, string key, string defaultValue)
         {
-            var exists = Get (accountId, module, key);
-            if (null != exists) {
-                return exists;
+            string result = null;
+            var existing = GetExistingItem (accountId, module, key);
+            if (null != existing) {
+                result = existing.Value;
             } else {
-                Set (accountId, module, key, defaultValue);
-                return defaultValue;
+                NcModel.Instance.RunInTransaction (() => {
+                    existing = GetExistingItem (accountId, module, key);
+                    if (null != existing) {
+                        result = existing.Value;
+                    } else {
+                        new McMutables (accountId) {
+                            Module = module,
+                            Key = key,
+                            Value = defaultValue,
+                        }.Insert ();
+                        result = defaultValue;
+                    }
+                });
             }
+            return result;
         }
 
         public static string Get (int accountId, string module, string key)
         {
-            var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
-                x.AccountId == accountId &&
-                         x.Key == key &&
-                         x.Module == module).SingleOrDefault ();
-            if (null == exists) {
+            var existing = GetExistingItem (accountId, module, key);
+            if (null == existing) {
                 return null;
             }
-            return exists.Value;
+            return existing.Value;
         }
 
         public static List<McMutables> Get (int accountId, string module)
         {
-            return NcModel.Instance.Db.Table<McMutables> ().Where (x =>
-                x.AccountId == accountId && x.Module == module).ToList ();
+            return NcModel.Instance.Db.Table<McMutables> ().Where (
+                x => x.AccountId == accountId && x.Module == module
+            ).ToList ();
         }
 
         public static void Delete (int accountId, string module, string key)
         {
-            var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
-                x.AccountId == accountId &&
-                         x.Key == key &&
-                         x.Module == module).SingleOrDefault ();
-            if (null != exists) {
-                exists.Delete ();
+            var existing = GetExistingItem (accountId, module, key);
+            if (null != existing) {
+                existing.Delete ();
             }
         }
 
@@ -118,6 +156,16 @@ namespace NachoCore.Model
         {
             var value = Get (accountId, module, key);
             return "1" == value;
+        }
+
+        public static bool GetBoolDefault (int accountId, string module, string key, bool defaultValue)
+        {
+            var value = Get (accountId, module, key);
+            if (null == value) {
+                return defaultValue;
+            } else {
+                return "1" == value;
+            }
         }
 
         public static void SetBool (int accountId, string module, string key, bool value)
@@ -137,19 +185,15 @@ namespace NachoCore.Model
 
         public static int GetOrCreateInt (int accountId, string module, string key, int defaultValue)
         {
-            var existing = Get (accountId, module, key);
+            string valueString = GetOrCreate (accountId, module, key, defaultValue.ToString ());
             int value;
-            if (int.TryParse (existing, out value)) {
+            if (int.TryParse (valueString, out value)) {
                 return value;
-            }
-            if (null == existing) {
-                Set (accountId, module, key, defaultValue.ToString ());
             } else {
-                // There is an exiting value for this key, but it is not a number.
-                // Leave the value unchanged (though it is not clear that that is
-                // the correct behavior.)
+                // There is an existing value for this key, but it is not a number.
+                // The correct behavior in this case is unclear.
+                return defaultValue;
             }
-            return defaultValue;
         }
 
         public static void SetInt (int accountId, string module, string key, int value)

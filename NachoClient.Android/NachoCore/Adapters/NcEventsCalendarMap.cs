@@ -31,28 +31,45 @@ namespace NachoCore
         private DateTime firstDay;
         private DateTime finalDay;
 
-        private bool isActive = false;
+        private Action refreshAction = null;
 
         private object thisLock = new object ();
 
-        private const int startingOffsetInDays = 30;
+        private int refreshCount = 0;
+        private object refreshCountLock = new object ();
 
         /// <summary>
         /// Get the events that should be displayed.  The list of events must be in chronological
         /// order.
         /// </summary>
-        protected abstract List<McEvent> GetEvents ();
+        protected abstract List<McEvent> GetEventsWithDuplicates (DateTime start, DateTime end);
 
-        protected NcEventsCalendarMapCommon ()
+        protected NcEventsCalendarMapCommon (DateTime end)
         {
             events = new List<McEvent> ();
             days = new int[1] { 0 };
-            firstDay = DateTime.Today.AddDays (-startingOffsetInDays);
+            firstDay = NcEventManager.BeginningOfEventsOfInterest.ToLocalTime ().Date;
             finalDay = firstDay;
-            ExtendEventMap (firstDay.AddDays (6 * startingOffsetInDays));
+            ExtendEventMap (end.ToLocalTime ());
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public Action UiRefresh {
+            set {
+                refreshAction = value;
+            }
         }
 
         public int IndexOfDate (DateTime date)
+        {
+            if (firstDay <= date && date < finalDay) {
+                return UnsafeIndexOfDate (date);
+            } else {
+                return -1;
+            }
+        }
+
+        private int UnsafeIndexOfDate (DateTime date)
         {
             return (date.ToLocalTime () - firstDay).Days;
         }
@@ -69,11 +86,9 @@ namespace NachoCore
             // new days will be filled in on a background thread, and an EventSetChanged status will be
             // fired when everything is ready.
 
-            if (isActive) {
-                NcEventManager.AddEventWindow (this, untilDate.ToUniversalTime ());
-            }
+            NcEventManager.AddEventWindow (this, untilDate.ToUniversalTime ());
 
-            int numDays = IndexOfDate (untilDate);
+            int numDays = UnsafeIndexOfDate (untilDate);
             int numNewDays = numDays - NumberOfDays ();
 
             int[] newDays = new int[numDays + 1];
@@ -89,7 +104,7 @@ namespace NachoCore
                     break;
                 }
                 if (firstDay <= start) {
-                    for (int day = IndexOfDate (start); 0 <= day && int.MaxValue == newDays [day]; --day) {
+                    for (int day = UnsafeIndexOfDate (start); 0 <= day && int.MaxValue == newDays [day]; --day) {
                         newDays [day] = e;
                     }
                 }
@@ -100,6 +115,8 @@ namespace NachoCore
 
             finalDay = untilDate;
             days = newDays;
+
+            Refresh ();
 
             return numNewDays;
         }
@@ -114,6 +131,31 @@ namespace NachoCore
             return days [day + 1] - days [day];
         }
 
+        public void IndexToDayItem (int index, out int day, out int item)
+        {
+            index += days [0];
+            for (int i = 0; i < days.Length - 1; ++i) {
+                if (index <= i + days [i + 1]) {
+                    day = i;
+                    item = index - (i + days [i] + 1);
+                    return;
+                }
+            }
+            day = 0;
+            item = -1;
+        }
+
+        public int IndexFromDayItem (int day, int item)
+        {
+            return day + days [day] + item + 1 - days [0];
+        }
+
+        public int NumberOfEvents()
+        {
+            // Events before the starting date or after the ending date are not counted.
+            return days [days.Length - 1] - days [0];
+        }
+
         public DateTime GetDateUsingDayIndex (int day)
         {
             return firstDay.AddDays (day);
@@ -124,28 +166,20 @@ namespace NachoCore
             return events [days [day] + item];
         }
 
-        public McAbstrCalendarRoot GetEventDetail (int day, int item)
-        {
-            var evt = GetEvent (day, item);
-            if (0 == evt.ExceptionId) {
-                return McCalendar.QueryById<McCalendar> (evt.CalendarId);
-            } else {
-                return McException.QueryById<McException> (evt.ExceptionId);
-            }
-        }
-
         public bool FindEventNearestTo (DateTime date, out int item, out int section)
         {
             date = date.ToLocalTime ();
             int day = IndexOfDate (date);
-            for (int i = days [day]; i < events.Count; ++i) {
-                if (date <= events [i].GetStartTimeLocal ()) {
-                    while (days [day + 1] <= i) {
-                        ++day;
+            if (0 <= day) {
+                for (int i = days [day]; i < events.Count; ++i) {
+                    if (date <= events [i].GetStartTimeLocal ()) {
+                        while (days [day + 1] <= i) {
+                            ++day;
+                        }
+                        section = day;
+                        item = i - days [day];
+                        return true;
                     }
-                    section = day;
-                    item = i - days [day];
-                    return true;
                 }
             }
             section = -1;
@@ -153,17 +187,15 @@ namespace NachoCore
             return false;
         }
 
-        public void StopTrackingEventChanges ()
+        private void Refresh ()
         {
-            NcEventManager.RemoveEventWindow (this);
-            isActive = false;
-        }
-
-        public void Refresh (Action completionAction)
-        {
-            if (!isActive) {
-                NcEventManager.AddEventWindow (this, finalDay.ToUniversalTime ());
-                isActive = true;
+            lock (refreshCountLock) {
+                if (2 <= refreshCount) {
+                    // There is already one refresh running and one queued up to start.
+                    // There is no point in starting yet another one.
+                    return;
+                }
+                ++refreshCount;
             }
 
             // Most of the work needs to happen on a background thread, because GetEvents() can
@@ -172,107 +204,103 @@ namespace NachoCore
 
                 lock (thisLock) {
 
-                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                    try {
+                        // Make a copy of the end date, in case it changes while the events are being processed.
+                        DateTime untilDate = finalDay;
 
-                    // Find all the events that are to be displayed.
-                    var newEvents = GetEvents ();
+                        PauseOrCancel ();
 
-                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                        // Find all the events that are to be displayed.
+                        var newEvents = GetEvents (firstDay, untilDate);
 
-                    // The start times for all-day events are stored differently from the start times
-                    // for regular events.  This can result in the database returning the events in a
-                    // slightly different order than what we want.  So the events need to be sorted.
-                    // Hopefully this is fast, since the events should be in almost the correct order.
-                    newEvents.Sort ((McEvent x, McEvent y) => {
-                        TimeSpan diff = x.GetStartTimeUtc () - y.GetStartTimeUtc ();
-                        if (0 > diff.Ticks) {
-                            return -1;
-                        } else if (0 < diff.Ticks) {
-                            return 1;
-                        } else {
-                            return 0;
+                        PauseOrCancel ();
+
+                        // The start times for all-day events are stored differently from the start times
+                        // for regular events.  This can result in the database returning the events in a
+                        // slightly different order than what we want.  So the events need to be sorted.
+                        // Hopefully this is fast, since the events should be in almost the correct order.
+                        newEvents.Sort ((McEvent x, McEvent y) => {
+                            TimeSpan diff = x.GetStartTimeUtc () - y.GetStartTimeUtc ();
+                            if (0 > diff.Ticks) {
+                                return -1;
+                            } else if (0 < diff.Ticks) {
+                                return 1;
+                            } else {
+                                return 0;
+                            }
+                        });
+
+                        PauseOrCancel ();
+
+                        int numDays = UnsafeIndexOfDate (untilDate);
+                        int[] newDays = new int[numDays + 1];
+                        for (int day = 0; day < newDays.Length; ++day) {
+                            newDays [day] = int.MaxValue;
                         }
-                    });
+                        int endEvent = newEvents.Count;
 
-                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
-
-                    // Make a copy of the end date, in case it changes while the events are being processed.
-                    DateTime untilDate = finalDay;
-
-                    int numDays = IndexOfDate (untilDate);
-                    int[] newDays = new int[numDays + 1];
-                    for (int day = 0; day < newDays.Length; ++day) {
-                        newDays [day] = int.MaxValue;
-                    }
-                    int endEvent = newEvents.Count;
-
-                    // Iterate over all the events, figuring out on which day they occur.
-                    for (int e = 0; e < newEvents.Count; ++e) {
-                        DateTime start = newEvents [e].GetStartTimeLocal ();
-                        if (start >= untilDate) {
-                            // This event is after our end date.  We can stop processing.
-                            endEvent = e;
-                            break;
-                        }
-                        if (firstDay <= start) {
-                            // If this is the first event of the day, set the day's entry to this event.
-                            // And also set the entry for any previous day that hasn't already been set
-                            // to this event.
-                            for (int day = IndexOfDate (start); 0 <= day && int.MaxValue == newDays [day]; --day) {
-                                newDays [day] = e;
+                        // Iterate over all the events, figuring out on which day they occur.
+                        for (int e = 0; e < newEvents.Count; ++e) {
+                            DateTime start = newEvents [e].GetStartTimeLocal ();
+                            if (start >= untilDate) {
+                                // This event is after our end date.  We can stop processing.
+                                endEvent = e;
+                                break;
+                            }
+                            if (firstDay <= start) {
+                                // If this is the first event of the day, set the day's entry to this event.
+                                // And also set the entry for any previous day that hasn't already been set
+                                // to this event.
+                                for (int day = IndexOfDate (start); 0 <= day && int.MaxValue == newDays [day]; --day) {
+                                    newDays [day] = e;
+                                }
                             }
                         }
-                    }
-                    // Take care of days at the very end that don't have an event yet.
-                    for (int day = numDays; 0 <= day && int.MaxValue == newDays [day]; --day) {
-                        newDays [day] = endEvent;
-                    }
-
-                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
-
-                    // To avoid race conditions, updating "this" with the new values has to happen on the UI thread.
-                    // The completion action also has to be run on the UI thread.
-                    NachoPlatform.InvokeOnUIThread.Instance.Invoke (delegate {
-                        if (untilDate != finalDay) {
-                            // ExtendEventMap was called while Refresh's task was in progress.
-                            // The whole Refresh operation has to be redone.
-                            Refresh (completionAction);
-                        } else {
-                            events = newEvents;
-                            days = newDays;
-                            if (null != completionAction) {
-                                completionAction ();
-                            }
+                        // Take care of days at the very end that don't have an event yet.
+                        for (int day = numDays; 0 <= day && int.MaxValue == newDays [day]; --day) {
+                            newDays [day] = endEvent;
                         }
-                    });
+
+                        PauseOrCancel ();
+
+                        // To avoid race conditions, updating "this" with the new values has to happen on the UI thread.
+                        // The completion action also has to be run on the UI thread.
+                        NachoPlatform.InvokeOnUIThread.Instance.Invoke (delegate {
+                            if (untilDate != finalDay) {
+                                // ExtendEventMap was called while Refresh's task was in progress.
+                                // The whole Refresh operation has to be redone.
+                                Refresh ();
+                            } else {
+                                events = newEvents;
+                                days = newDays;
+                                if (null != refreshAction) {
+                                    refreshAction ();
+                                }
+                            }
+                        });
+                    } finally {
+                        lock (refreshCountLock) {
+                            --refreshCount;
+                        }
+                    }
                 }
             }, "NcEventsCalendarMapCommonRefresh");
         }
 
-        /// <summary>
-        /// Return the midnight that is the same or later than the given date/time
-        /// </summary>
-        private DateTime NextMidnight (DateTime time)
+        private void PauseOrCancel ()
         {
-            DateTime midnight = time.ToLocalTime ().Date;
-            if (midnight != time) {
-                midnight = midnight.AddDays (1);
+            NcTask.Cts.Token.ThrowIfCancellationRequested ();
+            if (null == refreshAction) {
+                NcAbate.PauseWhileAbated ();
             }
-            return midnight;
         }
-    }
 
-    /// <summary>
-    /// A mapping between events and days on a calendar where all events are displayed.
-    /// </summary>
-    public class NcAllEventsCalendarMap : NcEventsCalendarMapCommon
-    {
-        protected override List<McEvent> GetEvents ()
+        private List<McEvent> GetEvents (DateTime start, DateTime end)
         {
             var deviceAccount = McAccount.GetDeviceAccount ().Id;
             var currentAccount = NcApplication.Instance.Account.Id;
 
-            var result = McEvent.QueryAllEventsInOrder ();
+            var result = GetEventsWithDuplicates (start, end);
 
             // Go through the list of events, removing duplicates.  In the initial pass, set any duplicate events
             // to null.  Then remove any null events in a single call to RemoveAll().  This two pass approach
@@ -307,6 +335,47 @@ namespace NachoCore
             });
 
             return result;
+        }
+
+        private void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                Refresh ();
+                break;
+            }
+        }
+
+        /// <summary>
+        /// Return the midnight that is the same or later than the given date/time
+        /// </summary>
+        private DateTime NextMidnight (DateTime time)
+        {
+            DateTime midnight = time.ToLocalTime ().Date;
+            if (midnight != time) {
+                midnight = midnight.AddDays (1);
+            }
+            return midnight;
+        }
+    }
+
+    /// <summary>
+    /// A mapping between events and days on a calendar where all events are displayed.
+    /// </summary>
+    public class NcAllEventsCalendarMap : NcEventsCalendarMapCommon
+    {
+        public NcAllEventsCalendarMap (DateTime end)
+            : base(end)
+        {
+        }
+
+        protected override List<McEvent> GetEventsWithDuplicates (DateTime start, DateTime end)
+        {
+            return McEvent.QueryEventsInRangeInOrder (start, end);
         }
     }
 }

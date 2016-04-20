@@ -126,7 +126,7 @@ namespace NachoClient.iOS
                 NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
-            owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
+            owner.ContactSelectedCallback (contact);
         }
 
         UIView ViewWithImageName (string imageName)
@@ -416,7 +416,7 @@ namespace NachoClient.iOS
                 textLabel.TextColor = A.Color_0B3239;
                 textLabel.Font = A.Font_AvenirNextDemiBold17;
                 labelView.Hidden = hasImage;
-                labelView.Text = Util.NameToLetters (displayEmailAddress);
+                labelView.Text = ContactsHelper.NameToLetters (displayEmailAddress);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
             }
@@ -430,7 +430,7 @@ namespace NachoClient.iOS
                 detailTextLabel.TextColor = UIColor.LightGray;
                 detailTextLabel.Font = A.Font_AvenirNextRegular12;
                 labelView.Hidden = hasImage;
-                labelView.Text = Util.NameToLetters (displayName);
+                labelView.Text = ContactsHelper.NameToLetters (displayName);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
             }
@@ -444,7 +444,7 @@ namespace NachoClient.iOS
             detailTextLabel.Font = A.Font_AvenirNextRegular14;
 
             labelView.Hidden = hasImage;
-            labelView.Text = Util.NameToLetters (displayName);
+            labelView.Text = ContactsHelper.NameToLetters (displayName);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
 
             // Attendee Meeting Status
@@ -589,23 +589,6 @@ namespace NachoClient.iOS
             attendeeResponseView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
             attendeeResponseView.Layer.BorderWidth = 1;
             parentView.Add (attendeeResponseView);
-        }
-
-        public override void DraggingStarted (UIScrollView scrollView)
-        {
-            NachoCore.Utils.NcAbate.HighPriority ("AttendeeTableViewSource DraggingStarted");
-        }
-
-        public override void DecelerationEnded (UIScrollView scrollView)
-        {
-            NachoCore.Utils.NcAbate.RegularPriority ("AttendeeTableViewSource DecelerationEnded");
-        }
-
-        public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
-        {
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("AttendeeTableViewSource Draggingended");
-            }
         }
     }
 }

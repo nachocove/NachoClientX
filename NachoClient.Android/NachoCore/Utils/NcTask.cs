@@ -13,8 +13,8 @@ namespace NachoCore.Utils
     public class NcTask
     {
         public const int MaxCancellationTestInterval = 100;
-        private static ConcurrentDictionary<WeakReference,string> TaskMap;
-        private static ConcurrentDictionary<string,string> UniqueList;
+        private static ConcurrentDictionary<WeakReference,string> TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+        private static ConcurrentDictionary<string,string> UniqueList = new ConcurrentDictionary<string, string> ();
         private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
 
@@ -26,12 +26,6 @@ namespace NachoCore.Utils
 
         public static void StartService ()
         {
-            if (null == TaskMap) {
-                TaskMap = new ConcurrentDictionary<WeakReference, string> ();
-            }
-            if (null == UniqueList) {
-                UniqueList = new ConcurrentDictionary<string, string> ();
-            }
             Dump (true);
             Cts = new CancellationTokenSource ();
         }
@@ -65,7 +59,6 @@ namespace NachoCore.Utils
         }
 
         static string[] LoginRunningTasks = new string[] {
-            "AttemptHttp",
             "Brain",
             "CheckNotified",
             "DeviceProtoControl:DeviceDbChange",
@@ -100,6 +93,7 @@ namespace NachoCore.Utils
             "Telemetry",
             "UpdateUnreadMessageCount",
             "UpdateUnreadMessageView",
+            "MessageListViewController_RefreshMessages"
         };
 
         struct tracer
@@ -110,6 +104,7 @@ namespace NachoCore.Utils
 
         public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None)
         {
+            NcAssert.NotNull (TaskMap);
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
@@ -125,8 +120,9 @@ namespace NachoCore.Utils
                 return null; // an entry exists
             }
 
-            if (LoginRunningTasks.Contains (name)) {
-                Log.Warn (Log.LOG_SYS, "NcTask {0} will be long running", name);
+            bool longRunning = LoginRunningTasks.Contains (name);
+            if (longRunning) {
+                Log.Info (Log.LOG_SYS, "NcTask {0} will be long running", name);
                 option = TaskCreationOptions.LongRunning;
             }
 
@@ -136,6 +132,14 @@ namespace NachoCore.Utils
 
             var spawningId = Thread.CurrentThread.ManagedThreadId;
             var task = Task.Factory.StartNew (delegate {
+                #if __ANDROID__
+                if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
+                    Log.Error (Log.LOG_UTILS, "StartNew running on main thread.");
+                    new NcTimer ("StartNew workaround", TryAgain, action, 100, 0);
+                    return;
+                }
+                Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+                #endif
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;
                 if (200 < latency) {
@@ -146,18 +150,14 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread (parent={1})", taskName, tracer.parent);
                 }
                 if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
+                    Log.Info (Log.LOG_SYS, "NcTask {0} started on ManagedThreadId {2}, {1} running", taskName, TaskMap.Count, Thread.CurrentThread.ManagedThreadId);
                 }
                 try {
                     action.Invoke ();
                 } catch (OperationCanceledException) {
                     Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
                 } finally {
-                    var count = NcModel.Instance.NumberDbConnections;
-                    if (15 < count) {
-                        NcModel.Instance.Db = null;
-                        Log.Warn (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
-                    }
+                    NcModel.Instance.Db = null;
                 }
                 if (!stfu) {
                     var finishTime = DateTime.UtcNow;
@@ -187,6 +187,21 @@ namespace NachoCore.Utils
 
         }
 
+        #if __ANDROID__
+        static void TryAgain (Object o)
+        {
+            if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
+                Log.Error (Log.LOG_UTILS, "TryAgain running on main thread.");
+            }
+            var action = (Action)o;
+            try {
+                action.Invoke ();
+            } catch (OperationCanceledException) {
+                Log.Info (Log.LOG_SYS, "NcTask cancelled in TryAgain.");
+            } 
+        }
+        #endif
+
         public static void StopService ()
         {
             Log.Info (Log.LOG_SYS, "NcTask: Stopping all NCTasks...");
@@ -213,9 +228,6 @@ namespace NachoCore.Utils
 
         public static void Dump (bool warnLivedTasks = false)
         {
-            if (null == TaskMap) {
-                return;
-            }
             foreach (var pair in TaskMap) {
                 try {
                     var taskName = pair.Value;

@@ -35,7 +35,7 @@ namespace NachoClient.iOS
         UIButton showPrivacyPolicyButton;
         SwitchAccountButton switchAccountButton;
 
-        public AboutUsViewController (IntPtr handle) : base (handle)
+        public AboutUsViewController () : base ()
         {
         }
 
@@ -49,6 +49,7 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             scrollView = new UIScrollView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             View.AddSubview (scrollView);
 
@@ -186,7 +187,7 @@ namespace NachoClient.iOS
             title = "Privacy Policy";
             key = PRIVACY_POLICY_KEY;
             loadFromWeb = true;
-            PerformSegue ("SegueToSettingsLegal", this);
+            ShowLegal ();
         }
 
         void ShowReleaseNotesButton_TouchUpInside (object sender, EventArgs e)
@@ -194,7 +195,7 @@ namespace NachoClient.iOS
             url = NSBundle.MainBundle.PathForResource ("ReleaseNotes", "txt", "", "").ToString ();
             title = "Release Notes";
             loadFromWeb = false;
-            PerformSegue ("SegueToSettingsLegal", this);
+            ShowLegal ();
         }
 
         void ShowOpenSourceButton_TouchUpInside (object sender, EventArgs e)
@@ -202,7 +203,7 @@ namespace NachoClient.iOS
             url = NSBundle.MainBundle.PathForResource ("LegalInfo", "txt", "", "").ToString ();
             title = "Open Source Contributions";
             loadFromWeb = false;
-            PerformSegue ("SegueToSettingsLegal", this);
+            ShowLegal ();
         }
 
         void ShowLicenseButton_TouchUpInside (object sender, EventArgs e)
@@ -211,7 +212,14 @@ namespace NachoClient.iOS
             title = "License Agreement";
             key = LICENSE_AGREEMENT_KEY;
             loadFromWeb = true;
-            PerformSegue ("SegueToSettingsLegal", this);
+            ShowLegal ();
+        }
+
+        void ShowLegal ()
+        {
+            var vc = new SettingsLegalViewController ();
+            vc.SetProperties (url, title, key, loadFromWeb);
+            NavigationController.PushViewController (vc, true);
         }
 
         void SwitchAccountButtonPressed ()
@@ -245,17 +253,6 @@ namespace NachoClient.iOS
             showPrivacyPolicyButton = null;
 
             versionLabel = null;
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToSettingsLegal")) {
-                var vc = (SettingsLegalViewController)segue.DestinationViewController;
-                vc.SetProperties (url, title, key, loadFromWeb);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
     }
 }

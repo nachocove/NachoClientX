@@ -14,13 +14,11 @@ namespace NachoCore.Model
         [Indexed]
         public string ClientId { get; set; }
 
-        [Indexed]
         // The "owner" can record a value here that idicates the conditions under which the entry
         // was created. The owner can then know that later enhancements weren't available when the the
         // entry was created, and take actions. For example, adding street address to device contacts.
         public int OwnerEpoch { get; set; }
 
-        [Indexed]
         public int HasBeenGleaned { get; set; }
 
         /// Index of Body container
@@ -50,6 +48,7 @@ namespace NachoCore.Model
             Device,
             User,
             Internal,
+            SalesForce,
         };
 
         public virtual void DeleteAncillary ()
@@ -118,11 +117,17 @@ namespace NachoCore.Model
                         returnVal = result;
                     } else {
                         if (this is McEmailMessage) {
-                            UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var message = UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
                                 target.IsAwaitingDelete = true;
                                 return true;
                             });
+                            if (message.IsChat){
+                                var chatMessages = McChatMessage.QueryByMessageId (Id);
+                                foreach (var chatMessage in chatMessages) {
+                                    chatMessage.UpdateLatestDuplicate ();
+                                }
+                            }
                         } else {
                             IsAwaitingDelete = true;
                             Update ();

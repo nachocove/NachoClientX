@@ -8,44 +8,63 @@ using System.Threading;
 using MailKit.Net.Imap;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
     public class ImapEmailMoveCommand : ImapCommand
     {
-        private List<Regex> RegexList;
-
-        public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailMoveCommand (IBEContext beContext, List<McPending> pendingList) : base (beContext)
         {
-            PendingSingle = pending;
-            PendingSingle.MarkDispached ();
-            RedactProtocolLogFunc = RedactProtocolLog;
-
-            RegexList = new List<Regex> ();
-            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+ )(?<redact>.*)(?<end>[\r\n]+)$", NcMailKitProtocolLogger.rxOptions));
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            //2015-06-22T17:27:03.854Z: IMAP C: A00000082 UID MOVE 8728 REDACTED
-            //2015-06-22T17:27:04.326Z: IMAP S: * 60 EXPUNGE
-            //* 59 EXISTS
-            //A00000082 OK [COPYUID 5 8728 8648] (Success)
-            return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
+            PendingList = pendingList;
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in pendingList) {
+                    pending.MarkDispatched ();
+                }
+            });
         }
 
         protected override Event ExecuteCommand ()
         {
-            var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
-            NcAssert.NotNull (emailMessage);
-            McFolder src = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.ParentId);
-            NcAssert.NotNull (src);
-            McFolder dst = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.DestParentId);
-            NcAssert.NotNull (dst);
+            // All pendings are assumed to be for the same folders.
+            var first = PendingList.FirstOrDefault ();
+            if (null == first) {
+                Log.Error (Log.LOG_IMAP, "No pendings");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGMOVNONE");
+            }
+            McFolder src = McFolder.QueryByServerId (AccountId, first.ParentId);
+            if (null == src) {
+                Log.Error (Log.LOG_IMAP, "No src folder for {0}", first.ParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL1");
+            }
+            McFolder dst = McFolder.QueryByServerId (AccountId, first.DestParentId);
+            if (null == dst) {
+                Log.Error (Log.LOG_IMAP, "No dst folder for {0}", first.DestParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL2");
+            }
 
-            var result = MoveEmail (emailMessage, src, dst, Cts.Token);
+            var emails = new List<McEmailMessage> ();
+            var removeList = new List<McPending> ();
+            foreach (var pending in PendingList) {
+                var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
+                if (null == emailMessage) {
+                    Log.Error (Log.LOG_IMAP, "Could not find email message {0}", pending.ServerId);
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMoveFailed, NcResult.WhyEnum.BadOrMalformed));
+                    removeList.Add (pending);
+                    continue;
+                }
+                emails.Add (emailMessage);
+            }
+            foreach (var pending in removeList) {
+                PendingList.Remove (pending);
+            }
+
+            if (!emails.Any ()) {
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
+
+            }
+            var result = MoveEmails (emails, src, dst, Cts.Token);
             if (result.isOK ()) {
-                // FIXME Need to do fixup stuff in pending. Are there API's for that?
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded));
                 });
@@ -53,31 +72,68 @@ namespace NachoCore.IMAP
                 return evt;
             } else {
                 ResolveAllFailed (NcResult.WhyEnum.Unsupported);
-                return Event.Create((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
             }
         }
 
-        public NcResult MoveEmail(McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
+        public NcResult MoveEmails (List<McEmailMessage> emails, McFolder src, McFolder dst, CancellationToken Token)
         {
             NcResult result;
-            UniqueId? newUid;
             var srcFolder = Client.GetFolder (src.ServerId, Token);
             NcAssert.NotNull (srcFolder);
             var dstFolder = Client.GetFolder (dst.ServerId, Token);
             NcAssert.NotNull (dstFolder);
 
+            var emailUidMapping = new Dictionary<uint, McEmailMessage> ();
+            var uids = new List<UniqueId> ();
+            foreach (var email in emails) {
+                uids.Add (new UniqueId (email.ImapUid));
+                emailUidMapping [email.ImapUid] = email;
+            }
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
-                newUid = srcFolder.MoveTo (new UniqueId(emailMessage.ImapUid), dstFolder, Token);
-                if (null != newUid && newUid.HasValue && 0 != newUid.Value.Id) {
-                    emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                        var target = (McEmailMessage)record;
-                        target.ServerId = ImapProtoControl.MessageServerId (dst, newUid.Value);
-                        target.ImapUid = newUid.Value.Id;
-                        return true;
-                    });
-                } else {
-                    // FIXME How do we determine the new ID? This can happen with servers that don't support UIDPLUS.
+                // in order to protect against messages having been deleted, let's get a list of messages
+                // that exist in the folder, based on the list of uid's we want to move.
+                var summaries = srcFolder.Fetch (uids, MessageSummaryItems.UniqueId, Token);
+                var existingUids = new List<UniqueId> ();
+                foreach (var sum in summaries) {
+                    existingUids.Add (sum.UniqueId);
+                }
+                // then move the ones we know exist
+                // Note: There's still a tiny window where something might have deleted
+                // one of these messages, too. We can't prevent it. MailKit doesn't pass back 
+                // the necessary information we need from the COPYUID response to accomplish this.
+                var uidMapping = srcFolder.MoveTo (existingUids, dstFolder, Token);
+                if (existingUids.Count != uidMapping.Count) {
+                    Log.Warn (Log.LOG_IMAP, "Messages seem to have disappeared during move! Wanted to move: {0}, found existing UIDS {1}, and new UIDS {2}", uids, existingUids, uidMapping);
+                }
+
+                NcModel.Instance.RunInTransaction (() => {
+                    foreach (var pair in uidMapping) {
+                        McEmailMessage email;
+                        if (emailUidMapping.TryGetValue (pair.Key.Id, out email)) {
+                            email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.ServerId = ImapProtoControl.MessageServerId (dst, pair.Value);
+                                target.ImapUid = pair.Value.Id;
+                                return true;
+                            });
+                        } else {
+                            Log.Error (Log.LOG_IMAP, "Could not match UID {0} to email", pair.Key);
+                        }
+                    }
+                });
+
+                // deal with the deleted emails
+                var toDelete = uids.Except (existingUids).ToList ();
+                if (toDelete.Any ()) {
+                    foreach (var uid in toDelete) {
+                        McEmailMessage email;
+                        if (emailUidMapping.TryGetValue (uid.Id, out email)) {
+                            email.Delete ();
+                        }
+                    }
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
                 result = NcResult.OK ();
                 result.Value = Event.Create ((uint)SmEvt.E.Success, "IMAPMOVSUC");

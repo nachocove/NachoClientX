@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -67,7 +65,7 @@ namespace NachoCore.ActiveSync
             });
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             McProtocolState protocolState;
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
@@ -130,24 +128,16 @@ namespace NachoCore.ActiveSync
             return ServerUri (Op).ToString ();
         }
 
-        public HttpRequestHeaders PushAssistRequestHeaders ()
+        public NcHttpHeaders PushAssistRequestHeaders ()
         {
             Op = new AsHttpOperation (CommandName, this, BEContext);
-            HttpRequestMessage request;
-            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+            NcHttpRequest request;
+            if (!Op.CreateHttpRequest (out request, CancellationToken.None)) {
                 return null;
             }
-            return request.Headers;
-        }
-
-        public HttpContentHeaders PushAssistContentHeaders ()
-        {
-            Op = new AsHttpOperation (CommandName, this, BEContext);
-            HttpRequestMessage request;
-            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
-                return null;
-            }
-            return request.Content.Headers;
+            var headers = request.Headers;
+            request.Dispose ();
+            return headers;
         }
 
         public byte[] PushAssistRequestData ()
@@ -156,7 +146,7 @@ namespace NachoCore.ActiveSync
             return ToXDocument (Op).ToWbxml (doFiltering: false);
         }
 
-        public byte[] PushAssistResponseData ()
+        public byte[] PushAssistNoChangeResponseData ()
         {
             var response = ToEmptyXDocument ();
             response.Add (new XElement (m_ns + Xml.Ping.Ns,

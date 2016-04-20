@@ -3,24 +3,21 @@
 
 using System;
 using System.Linq;
-using System.Net.Http;
 using NachoCore.Utils;
-using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using NachoCore.ActiveSync;
 using NachoCore;
 using NachoCore.Model;
 using NachoPlatform;
 using System.Xml.Linq;
-using SQLite;
-using System.Text;
 using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
-using System.Net;
 using NUnit.Framework;
 using System.Collections.Generic;
-using ModernHttpClient;
+using System.Net;
+using System.Net.Security;
+using System.IO;
+using System.Text;
+
 
 
 namespace Test.iOS
@@ -36,7 +33,7 @@ namespace Test.iOS
     };
 
     // reusable request/response data
-    public class CommonMockData
+    public static class CommonMockData
     {
         // utopiasystems is used because they have an Autodiscover SRV response
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
@@ -70,15 +67,15 @@ namespace Test.iOS
         public const string AutodPhony601Response = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Autodiscover\nxmlns:autodiscover=\"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006\">\n   <autodiscover:Response>\n      <autodiscover:Error Time=\"16:56:32.6164027\" Id=\"1054084152\">\n          <autodiscover:ErrorCode>601</autodiscover:ErrorCode>\n          <autodiscover:Message>Requested schema version not supported</autodiscover:Message>\n          <autodiscover:DebugData />\n      </autodiscover:Error>\n   </autodiscover:Response>\n</Autodiscover>";
     }
 
-    public class MockHttpClient : IHttpClient
+    public class MockHttpClient : INcHttpClient
     {
         // TODO: do we need to go the factory route and get rid of the statics?
-        public delegate void ExamineHttpRequestMessageDelegate (HttpRequestMessage request);
+        public delegate void ExamineHttpRequestMessageDelegate (NcHttpRequest request);
 
         public static ExamineHttpRequestMessageDelegate ExamineHttpRequestMessage { set; get; }
 
         // Provide the request message so that the type of auto-d can be checked
-        public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate (HttpRequestMessage request);
+        public delegate NcHttpResponse ProvideHttpResponseMessageDelegate (NcHttpRequest request);
 
         public static ProvideHttpResponseMessageDelegate ProvideHttpResponseMessage { set; get; }
 
@@ -91,27 +88,44 @@ namespace Test.iOS
 
         public TimeSpan Timeout { get; set; }
 
-        public MockHttpClient (NativeMessageHandler handler)
+        private MockHttpClient ()
         {
+            
         }
 
-        public MockHttpClient (NativeMessageHandler handler, bool doDispose)
-        {
+        private static object LockObj = new object ();
+        static MockHttpClient _Instance { get; set; }
+        public static MockHttpClient Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new MockHttpClient ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
         }
 
-        public MockHttpClient (HttpClientHandler handler)
+        void doRequest (NcHttpRequest request, NcHttpResponse response, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
+            if (response != null) {
+                success (response, cancellationToken);
+            } else {
+                error (new Exception ("FOO"), cancellationToken);
+            }
         }
 
-        public MockHttpClient (HttpClientHandler handler, bool doDispose)
+        #region INcHttpClient implementation
+
+        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
         {
+            GetRequest (request, timeout, success, error, null, cancellationToken);
         }
 
-        public void Dispose ()
-        {
-        }
-
-        public Task<HttpResponseMessage> GetAsync (Uri uri)
+        string utopiasystems_cer = "-----BEGIN CERTIFICATE-----\nMIICCzCCAXQCCQDoS8XUL9bSozANBgkqhkiG9w0BAQUFADBKMQswCQYDVQQGEwJV\nUzELMAkGA1UECBMCQ0ExFTATBgNVBAcTDFNvbGFuYSBCZWFjaDEXMBUGA1UEChMO\nVXRvcGlhIFN5c3RlbXMwHhcNMTQwNTIyMTkwOTM1WhcNMTUwNTIyMTkwOTM1WjBK\nMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFTATBgNVBAcTDFNvbGFuYSBCZWFj\naDEXMBUGA1UEChMOVXRvcGlhIFN5c3RlbXMwgZ8wDQYJKoZIhvcNAQEBBQADgY0A\nMIGJAoGBAMhoMLiT0Vk11Q4piLMnDfR5CyssqMKDxyBkQwNbmDboneJhXpxASDpT\nRjASXUWrbIJ0pcvIFcpSr/Cxa1jNy1dhPiQQHfkocWzrIu1mloHAIqQBKSsMapJV\nN+9PcmfZXdkU6VAhcXpb/WPsIP08/2tT+r134ss4KWniY48kV1IvAgMBAAEwDQYJ\nKoZIhvcNAQEFBQADgYEAjfcBGi1A5FAqDmBzhIfqkfHblnQNo7ehlDUGx0yAzzcw\nmBL3+awMzcYgSa3X1z6GQ8DzQ1Jy6eCiGjWal0bWR+gJSQAo9q/IwuHFe1Sa6fEa\nfhWL+g9yNN9EFPwWzWUXRO6lrM3jCMGLX/pDC2mqyMCSBGniT8BX5bmQaFo1ZQU=\n-----END CERTIFICATE-----";
+        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             // provide validated certificate
             var webRequest = WebRequest.Create (CommonMockData.RedirectionUrl);
@@ -121,34 +135,40 @@ namespace Test.iOS
                 hasCert = HasServerCertificate ();
             }
 
-            // cert is under resources in Test.iOS and Test.Android
-            X509Certificate mockCert = new X509Certificate ("utopiasystems.cer");
+            X509Certificate mockCert = new X509Certificate (Encoding.ASCII.GetBytes(utopiasystems_cer));
 
             if (hasCert) {
                 ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
             }
 
-            // Create and return a mock response
-            var mockResponse = new HttpResponseMessage () { };
-            return Task.Run<HttpResponseMessage> (delegate {
-                return mockResponse;
-            });
+            var response = new NcHttpResponse (request.Method, HttpStatusCode.OK);
+            NcTask.Run (() => doRequest (request, response, timeout, success, error, progress, cancellationToken), "MockHttpClient.GetRequest");
         }
 
-        public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
-                                                    HttpCompletionOption completionOption,
-                                                    CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
+        {
+            SendRequest (request, timeout, success, error, null, cancellationToken);
+        }
+
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             AsyncCalledCount++;
 
             if (null != ExamineHttpRequestMessage) {
                 ExamineHttpRequestMessage (request);
             }
-
-            return Task.Run<HttpResponseMessage> (delegate {
-                return ProvideHttpResponseMessage (request);
-            });
+            NcTask.Run (() => {
+                try {
+                    using (var response = ProvideHttpResponseMessage (request)) {
+                        doRequest (request, response, timeout, success, error, progress, cancellationToken);
+                    }
+                } catch (Exception ex) {
+                    error (ex, cancellationToken);
+                }
+            }, "MockHttpClient.SendRequest");
         }
+
+        #endregion
     }
 
     public class MockContext : IBEContext
@@ -201,6 +221,7 @@ namespace Test.iOS
                 Username = "dummy",
             };
             Cred.Insert ();
+            Cred.UpdatePassword ("DummyPassword");
         }
     }
 
@@ -241,7 +262,7 @@ namespace Test.iOS
         {
         }
 
-        public void ServConfReq (NcProtoControl sender, object arg)
+        public void ServConfReq (NcProtoControl sender, NachoCore.BackEnd.AutoDFailureReasonEnum arg)
         {
         }
 
@@ -256,6 +277,16 @@ namespace Test.iOS
         public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
         {
         }
+
+        public void BackendAbateStart ()
+        {
+        }
+
+
+        public void BackendAbateStop ()
+        {
+        }
+
     }
 
     public class MockNcCommStatus : INcCommStatus
@@ -265,6 +296,10 @@ namespace Test.iOS
         private MockNcCommStatus ()
         {
         }
+
+        public NetStatusStatusEnum Status { get; set; }
+
+        public NetStatusSpeedEnum Speed { get; set; }
 
         public static MockNcCommStatus Instance { 
             get {
@@ -308,6 +343,13 @@ namespace Test.iOS
         {
         }
 
+        public void ReportCommResult (int accountId, McAccount.AccountCapabilityEnum capabilities, bool didFailGenerally)
+        {
+            AccountId = accountId;
+            Capabilities = capabilities;
+            DidFailGenerally = didFailGenerally;
+        }
+
         public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
             AccountId = accountId;
@@ -318,6 +360,8 @@ namespace Test.iOS
         public int AccountId { get; set; }
 
         public string Host { get; set; }
+
+        public McAccount.AccountCapabilityEnum Capabilities { get; set; }
 
         public bool DidFailGenerally { get; set; }
 
@@ -384,6 +428,11 @@ namespace Test.iOS
                 MaxHeartbeatInterval = 600,
                 Folders = new List<McFolder> (),
             };
+        }
+
+        public SyncKit GenSyncKitFromPingKit (McProtocolState protocolState, PingKit pingKit)
+        {
+            throw new NotImplementedException ();
         }
 
         public Tuple<PickActionEnum, AsCommand> PickUserDemand ()

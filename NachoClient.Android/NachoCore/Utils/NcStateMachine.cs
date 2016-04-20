@@ -125,9 +125,13 @@ namespace NachoCore.Utils
 
         public object Arg { set; get; }
 
+        public object Context { private set; get; }
+
         public string Message { set; get; }
 
         public Action StateChangeIndication { set; get; }
+
+        public Action TransIndication { set; get; }
 
         private string PseudoKlass;
         private Dictionary<string,uint> EventCode;
@@ -142,7 +146,7 @@ namespace NachoCore.Utils
             new ConcurrentDictionary<Type, Tuple<Dictionary<string,uint>, Dictionary<uint,string>>> ();
         private static ConcurrentDictionary<string, bool> IsValidated = new ConcurrentDictionary<string, bool> ();
 
-        public NcStateMachine (string pseudoKlass)
+        public NcStateMachine (string pseudoKlass, object context = null)
         {
             lock (StaticLockObj) {
                 Id = ++NextId;
@@ -151,6 +155,7 @@ namespace NachoCore.Utils
             EventQ = new BlockingCollection<Event> ();
             State = (uint)St.Start;
             LockObj = new Object ();
+            Context = context;
         }
 
         public string NameAndId ()
@@ -246,7 +251,12 @@ namespace NachoCore.Utils
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         goto PossiblyLeave;
                     }
-                    var hotNode = TransTable.Where (x => State == x.State).Single ();
+                    var hotNode = TransTable.Where (x => State == x.State).SingleOrDefault ();
+                    if (null == hotNode) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID TRANSITION",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        NcAssert.True (false);
+                    }
                     if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
                         Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
@@ -275,13 +285,17 @@ namespace NachoCore.Utils
                     } else {
                         State = NextState;
                     }
+                    if (null != TransIndication) {
+                        TransIndication ();
+                    }
                     if (oldState != State && null != StateChangeIndication) {
                         StateChangeIndication ();
                     }
-                } catch {
+                } catch (Exception ex) {
                     lock (LockObj) {
                         InProcess = false;
                     }
+                    Log.Error (Log.LOG_SYS, "FireLoop Exception: {0}", ex);
                     throw;
                 }
                 PossiblyLeave:
@@ -308,6 +322,19 @@ namespace NachoCore.Utils
             foreach (var stateNode in TransTable) {
                 foreach (var nameNCode in EventCode) {
                     var eventCode = nameNCode.Value;
+                    foreach (var target in stateNode.On) {
+                        if (target.ActSetsState || target.State == (uint)St.Stop) {
+                            continue; // can't check
+                        }
+                        var targetNode = TransTable.Where (x => target.State == x.State).SingleOrDefault ();
+                        if (null == targetNode) {
+                            errors.Add (string.Format ("{0}: State {1}, event code {2} has invalid target state {3}",
+                                PseudoKlass,
+                                StateName (stateNode.State),
+                                EventName [eventCode],
+                                StateName (target.State)));
+                        }
+                    }
                     var forEventCode = stateNode.On.Where (x => eventCode == x.Event).ToList ();
                     switch (forEventCode.Count) {
                     case 1:
@@ -316,13 +343,13 @@ namespace NachoCore.Utils
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Drop and Node.", 
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         }
                         if (null != stateNode.Invalid && Array.Exists (stateNode.Invalid, y => eventCode == y)) {
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Node.", 
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         }
                         break;
                     case 0:
@@ -338,12 +365,12 @@ namespace NachoCore.Utils
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Drop.",
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         } else if (!inDrop && !inInvalid) {
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         }
                         break;
                     default:
@@ -351,7 +378,7 @@ namespace NachoCore.Utils
                         errors.Add (string.Format ("{2}: State {0}, event code {1} exists in multiple Trans in same Node.",
                             StateName (stateNode.State),
                             EventName [eventCode],
-                            Name));
+                            PseudoKlass));
                         break;
                     }
                 }

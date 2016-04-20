@@ -61,6 +61,9 @@ namespace NachoClient.iOS
         private string downloadToken = null;
         private bool statusIndicatorIsRegistered = false;
         private bool waitingForAppInForeground = false;
+        private bool disposed = false;
+
+        NcEmailMessageBundle Bundle;
 
         /// <summary>
         /// Create a BodyView that will be displayed in a fixed sized view. The BodyView
@@ -164,23 +167,18 @@ namespace NachoClient.iOS
                 RenderCalendarPart ();
             }
 
-            switch (body.BodyType) {
-            case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                RenderTextString (body.GetContentsString ());
-                break;
-            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                RenderHtmlString (body.GetContentsString ());
-                break;
-            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
-                RenderRtfString (AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ()));
-                break;
-            case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                RenderMime (body);
-                break;
-            default:
-                Log.Error (Log.LOG_UI, "Body {0} has an unknown body type {1}.", body.Id, (int)body.BodyType);
-                RenderTextString (body.GetContentsString ());
-                break;
+            Bundle = new NcEmailMessageBundle (body);
+            if (Bundle.NeedsUpdate) {
+                NcTask.Run (delegate {
+                    Bundle.Update ();
+                    // While Bundle.Update() was running, the user may have closed the view,
+                    // causing this BodyView object to be disposed.
+                    if (!disposed) {
+                        InvokeOnUIThread.Instance.Invoke (RenderBundle);
+                    }
+                }, "BodyView_UpdateBundle");
+            } else {
+                RenderBundle ();
             }
 
             LayoutQuietly ();
@@ -249,6 +247,7 @@ namespace NachoClient.iOS
                     "Unhandled abstract item type {0}", item.GetType ().Name));
             }
             if (nr.isError ()) {
+                Log.Warn (Log.LOG_UI, "DnldEmailBodyCmd({0}:{1}) failed with error: {2}", item.Id, item.AccountId, nr);
                 downloadToken = null;
             } else {
                 downloadToken = nr.GetValue<string> ();
@@ -419,6 +418,7 @@ namespace NachoClient.iOS
 
         protected override void Dispose (bool disposing)
         {
+            disposed = true;
             if (statusIndicatorIsRegistered) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                 statusIndicatorIsRegistered = false;
@@ -442,13 +442,14 @@ namespace NachoClient.iOS
             if (!ErrorHelper.ExtractErrorString (nr, out message)) {
                 message = "Download failed.";
             }
-            if (UserInteractionEnabled) {
+            bool isUnrecoverableError = nr.Why == NcResult.WhyEnum.MissingOnServer;
+            if (UserInteractionEnabled && !isUnrecoverableError) {
                 message += " Tap here to retry.";
             }
             if (hasPreview) {
                 message += " Showing message preview only.";
             }
-            RenderDownloadFailure (message);
+            RenderDownloadFailure (message, isUnrecoverableError);
             if (hasPreview) {
                 RenderTextString (preview);
             }
@@ -512,7 +513,7 @@ namespace NachoClient.iOS
 
                     } else {
                         // The download really did fail.  Let the user know.
-                        ShowErrorMessage (NcResult.Error (statusEvent.Status.SubKind));
+                        ShowErrorMessage (NcResult.Error (statusEvent.Status.SubKind, statusEvent.Status.Why));
                     }
                     break;
                 }
@@ -529,70 +530,44 @@ namespace NachoClient.iOS
             owner.DismissView ();
         }
 
-        private void RenderTextString (string text)
+        void  RenderBundle ()
         {
-            if (string.IsNullOrWhiteSpace (text)) {
+            if (disposed) {
                 return;
             }
-            var webView = new BodyPlainWebView (
-                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                              text, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
-            AddSubview (webView);
-            childViews.Add (webView);
-            yOffset += webView.ContentSize.Height;
-        }
-
-        private void RenderRtfString (string rtf)
-        {
-            if (string.IsNullOrEmpty (rtf)) {
-                return;
+            if (Bundle.NeedsUpdate) {
+                ShowErrorMessage (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed, NcResult.WhyEnum.Unknown));
+            } else {
+                var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
+                webView.OnLinkSelected = onLinkSelected;
+                webView.LoadBundle (Bundle, LayoutAndNotifyParent);
+                AddSubview (webView);
+                childViews.Add (webView);
+                yOffset += webView.ContentSize.Height;
             }
-            var webView = new BodyRtfWebView (
-                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                              rtf, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
-            AddSubview (webView);
-            childViews.Add (webView);
-            yOffset += webView.ContentSize.Height;
         }
 
-        private void RenderHtmlString (string html)
+        void RenderTextString (string text)
         {
-            var webView = new BodyHtmlWebView (
-                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                              html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
-            AddSubview (webView);
-            childViews.Add (webView);
-            yOffset += webView.ContentSize.Height;
-        }
-
-        private void RenderTextPart (MimePart part)
-        {
-            RenderTextString ((part as TextPart).Text);
-        }
-
-        private void RenderRtfPart (MimePart part)
-        {
-            RenderRtfString ((part as TextPart).Text);
-        }
-
-        private void RenderHtmlPart (MimePart part)
-        {
-            RenderHtmlString ((part as TextPart).Text);
-        }
-
-        private void RenderImagePart (MimePart part)
-        {
-            using (var image = PlatformHelpers.RenderImage (part)) {
-                if (null == image) {
-                    Log.Error (Log.LOG_UI, "Unable to render image {0}", part.ContentType);
-                    RenderTextString ("[ Unable to display image ]");
-                } else {
-                    var imageView = new BodyImageView (yOffset, preferredWidth, image);
-                    AddSubview (imageView);
-                    childViews.Add (imageView);
-                    yOffset += imageView.Frame.Height;
-                }
+            var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
+            var serializer = new NachoCore.Utils.HtmlTextDeserializer ();
+            var doc = serializer.Deserialize (text);
+            var head = doc.DocumentNode.Element ("html").Element ("head");
+            var style = doc.CreateElement ("link");
+            style.SetAttributeValue ("rel", "stylesheet");
+            style.SetAttributeValue ("type", "text/css");
+            style.SetAttributeValue ("href", "nacho.css");
+            head.AppendChild (style);
+            var baseUrl = new NSUrl (String.Format ("file://{0}/", Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments)));
+            var html = "";
+            using (var writer = new StringWriter ()) {
+                doc.Save (writer);
+                html = writer.ToString ();
             }
+            webView.LoadHtmlString (html, baseUrl);
+            AddSubview (webView);
+            childViews.Add (webView);
+            yOffset += webView.ContentSize.Height;
         }
 
         private void RenderCalendarPart ()
@@ -603,41 +578,7 @@ namespace NachoClient.iOS
             yOffset += calView.Frame.Height;
         }
 
-        private void RenderMime (McBody body)
-        {
-            NcAssert.NotNull (body);
-
-            try {
-                var path = body.GetFilePath ();
-                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
-                    var message = MimeMessage.Load (fileStream, true);
-                    var list = new List<MimeEntity> ();
-                    int nativeBodyType = 0;
-                    if (item is McEmailMessage) {
-                        nativeBodyType = ((McEmailMessage)item).NativeBodyType;
-                    } else if (item is McAbstrCalendarRoot) {
-                        nativeBodyType = ((McAbstrCalendarRoot)item).NativeBodyType;
-                    }
-                    MimeHelpers.MimeDisplayList (message, list, MimeHelpers.MimeTypeFromNativeBodyType (nativeBodyType));
-                    foreach (var entity in list) {
-                        var part = (MimePart)entity;
-                        if (part.ContentType.Matches ("text", "html")) {
-                            RenderHtmlPart (part);
-                        } else if (part.ContentType.Matches ("text", "rtf")) {
-                            RenderRtfPart (part);
-                        } else if (part.ContentType.Matches ("text", "*")) {
-                            RenderTextPart (part);
-                        } else if (part.ContentType.Matches ("image", "*")) {
-                            RenderImagePart (part);
-                        }
-                    }
-                }
-            } catch {
-                RenderTextString ("");
-            }
-        }
-
-        private void RenderDownloadFailure (string message)
+        private void RenderDownloadFailure (string message, bool isUnrecoverableError)
         {
             var attributedString = new NSAttributedString (message);
             errorMessage.Lines = 0;
@@ -647,15 +588,18 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom;
 
-            if (UserInteractionEnabled && null == retryDownloadGestureRecognizer) {
-                errorMessage.UserInteractionEnabled = true;
-                retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
-                retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
-                retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownloadWhenInForeground);
-                retryDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                    return false;
-                };
-                errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
+            if (UserInteractionEnabled) {
+                if (retryDownloadGestureRecognizer == null) {
+                    errorMessage.UserInteractionEnabled = true;
+                    retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
+                    retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
+                    retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownloadWhenInForeground);
+                    retryDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                        return false;
+                    };
+                    errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
+                }
+                retryDownloadGestureRecognizer.Enabled = !isUnrecoverableError;
             }
         }
 

@@ -50,7 +50,7 @@ namespace NachoClient.iOS
         protected nfloat parentWidth;
         protected string openTopLeftString;
         protected string alternateTopLeftString;
-        protected IUcAddressBlockDelegate owner;
+        public IUcAddressBlockDelegate owner;
 
         protected int suppliedCount;
         protected UILabel moreLabel;
@@ -90,7 +90,6 @@ namespace NachoClient.iOS
             this.list = new List<UcAddressField> ();
             this.isEditable = true;
 
-            this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
             this.currentAddressField = null;
 
@@ -276,9 +275,6 @@ namespace NachoClient.iOS
             if (!isEditable) {
                 return;
             }
-            if (null != owner) {
-                owner.AddressBlockWillBecomeActive (this);
-            }
             entryTextField.BecomeFirstResponder ();
             ConfigureView ();
         }
@@ -289,6 +285,8 @@ namespace NachoClient.iOS
             if (isCompact && showAlternateTopLeftLabel) {
                 topLeftLabelString = alternateTopLeftString;
             }
+
+            chooserButton.Hidden = isCompact || (0 == isActive);
 
             topLeftLabel.Text = topLeftLabelString;
             var topLeftLabelSize = topLeftLabelString.StringSize (topLeftLabel.Font);
@@ -308,6 +306,11 @@ namespace NachoClient.iOS
         protected void AdjustXY (UIView view, nfloat X, nfloat Y)
         {
             view.Center = new CGPoint (X + (view.Frame.Width / 2), Y + lineHeight / 2);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            Layout ();
         }
 
         public void Layout ()
@@ -332,8 +335,6 @@ namespace NachoClient.iOS
                 AdjustXY (topLeftLabel, xOffset, yOffset);
                 xOffset += topLeftLabel.Frame.Width;
             }
-
-            chooserButton.Hidden = true;
 
             for (int i = 1; i < list.Count; i++) {
                 list [i].Hidden = true;
@@ -399,8 +400,7 @@ namespace NachoClient.iOS
                 AdjustXY (topLeftLabel, xOffset, yOffset);
                 xOffset += topLeftLabel.Frame.Width;
             }
-
-            chooserButton.Hidden = (0 == isActive);
+                
             xLimit = chooserButton.Frame.X;
 
             bool firstLine = true;
@@ -558,6 +558,9 @@ namespace NachoClient.iOS
                 address.Hidden = true;
                 outer.list.Remove (address);
                 address.RemoveFromSuperview ();
+                if (address.address != null) {
+                    outer.owner.AddressBlockRemovedAddress (outer, address.address);
+                }
             }
 
             protected void ProcessDeleteKey (UcAddressField addressField)

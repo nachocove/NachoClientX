@@ -11,7 +11,7 @@ namespace NachoCore.Brain
         UNKNOWN = 0,
         PERIODIC_GLEAN,
         UI,
-        STATE_MACHINE,
+        STATE_MACHINE_OBSOLETE,
         TERMINATE,
         TEST,
         MESSAGE_FLAGS,
@@ -25,6 +25,8 @@ namespace NachoCore.Brain
         UPDATE_MESSAGE_NOTIFICATION_STATUS,
         UPDATE_MESSAGE_READ_STATUS,
         UPDATE_MESSAGE_REPLY_STATUS,
+        PAUSE_OBSOLETE,
+        INDEX_MESSAGE,
     };
 
     [Serializable]
@@ -200,6 +202,15 @@ namespace NachoCore.Brain
     }
 
     [Serializable]
+    public class NcBrainIndexMessageEvent : NcBrainMessageEvent
+    {
+        public NcBrainIndexMessageEvent (Int64 accountId, Int64 emailMessageId)
+            : base (NcBrainEventType.INDEX_MESSAGE, accountId, emailMessageId)
+        {
+        }
+    }
+
+    [Serializable]
     public class NcBrainUnindexMessageEvent : NcBrainMessageEvent
     {
         public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
@@ -287,38 +298,16 @@ namespace NachoCore.Brain
         }
     }
 
-    [Serializable]
-    public class NcBrainStateMachineEvent : NcBrainEvent
-    {
-        public Int64 AccountId;
-
-        public NcBrainStateMachineEvent (Int64 accountId) : base (NcBrainEventType.STATE_MACHINE)
-        {
-            AccountId = accountId;
-        }
-
-        public override string ToString ()
-        {
-            return String.Format ("[NcBrainStateMachineEvent: type={0} accountId={1}", GetEventType (), AccountId);
-        }
-    }
-
     // This event is for kickstart processing in the persistent queue. Do not insert this into db.
     public class NcBrainPersistentQueueEvent : NcBrainEvent
     {
-        public int EventCount;
-
-        public NcBrainPersistentQueueEvent (int eventCount = -1) : base (NcBrainEventType.PERSISTENT_QUEUE)
+        public NcBrainPersistentQueueEvent () : base (NcBrainEventType.PERSISTENT_QUEUE)
         {
-            if (-1 == eventCount) {
-                eventCount = McBrainEvent.Count ();
-            }
-            EventCount = eventCount;
         }
 
         public override string ToString ()
         {
-            return String.Format ("[NcBrainPersistentQueueEvent: type={0} eventCount={1}", GetEventType (), EventCount);
+            return String.Format ("[NcBrainPersistentQueueEvent: type={0}", GetEventType ());
         }
     }
 }

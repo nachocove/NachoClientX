@@ -13,6 +13,8 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
+
+
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
         public enum GleanPhaseEnum
@@ -41,6 +43,7 @@ namespace NachoCore.Model
                         { 6, AnalyzeHeaders },
                         { 7, AnalyzeReplies },
                         { 8, AnalyzeYahooBulkEmails },
+                        // Version 9 - Just need to re-compute so that Score2 gets set ... at the end of Analyze().
                     };
                 }
                 return _AnalysisFunctions;
@@ -71,7 +74,12 @@ namespace NachoCore.Model
         public int TimeVarianceState { get; set; }
 
         [Indexed]
+        // We use this for Hot.
         public double Score { get; set; }
+
+        [Indexed]
+        // We use this for likely-to-read.
+        public double Score2 { get; set; }
 
         [Indexed]
         public int NeedUpdate { get; set; }
@@ -115,7 +123,8 @@ namespace NachoCore.Model
 
         public bool ShouldUpdate ()
         {
-            return (0 < NeedUpdate);
+            var needsUpdate = McEmailMessageNeedsUpdate.Get (this);
+            return (0 < needsUpdate);
         }
 
         protected double BayesianLikelihood ()
@@ -190,9 +199,19 @@ namespace NachoCore.Model
             return score;
         }
 
-        public double Classify ()
+        delegate double classifier (McEmailMessage emailMessage);
+
+        public Tuple<double,double> Classify ()
         {
-            double score =
+            double? memoized = null;
+            classifier bayLike = (McEmailMessage emailMessage) => {
+                if (null == memoized) {
+                    memoized = emailMessage.BayesianLikelihood ();
+                }
+                return (double)memoized;
+            };
+
+            var score =
                 QualifiersCombiner.Combine (this,
                     // Qualifiers are evaluated first so qualification can cause early exit and avoid excessive compute
                     VipQualifier.Classify,
@@ -204,12 +223,26 @@ namespace NachoCore.Model
                         MarketingMailDisqualifier.Classify,
                         YahooBulkEmailDisqualifier.Classify,
                         // The probablistic score is computed last because it is the most expensive.
-                        (emailMessage2) => emailMessage2.BayesianLikelihood ()
+                        (emailMessage2) => bayLike (emailMessage2)
                         // TODO - incorporate content score
                     )
                 );
-            Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score);
-            return score;
+            var ltrScore = 
+                QualifiersCombiner.Combine (this,
+                    // A hot Score makes Score2 not matter currently, and any one qualifier match currently makes
+                    // a message hot.
+                    // VipQualifier.Classify,
+                    // UserActionQualifier.Classify,
+                    // RepliesToMyEmailsQualifier.Classify,
+                    (emailMessage1) => DisqualifiersCombiner.Combine (emailMessage1,
+                        // Disqualifiers are evaluated next. Again, can cause early exit and avoid excessive compute
+                        // The probablistic score is computed last because it is the most expensive.
+                        (emailMessage2) => bayLike (emailMessage2)
+                        // TODO - incorporate content score
+                    )
+                );
+            Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}, ltrScore = {2:F6}", Id, score, ltrScore);
+            return new Tuple<double, double> (score, ltrScore);
         }
 
         public void AnalyzeFromAddress ()
@@ -224,7 +257,9 @@ namespace NachoCore.Model
                     if (IsRead) {
                         emailAddress.IncrementEmailsRead ();
                     }
-                    emailAddress.Score = emailAddress.Classify ();
+                    var newScores = emailAddress.Classify ();
+                    emailAddress.Score = newScores.Item1;
+                    emailAddress.Score2 = newScores.Item2;
                     NcModel.Instance.RunInTransaction (() => {
                         emailAddress.ScoreStates.Update ();
                         emailAddress.UpdateByBrain ();
@@ -258,7 +293,9 @@ namespace NachoCore.Model
                             emailAddress.IncrementEmailsRead (-1);
                         }
                         emailAddress.IncrementEmailsReplied ();
-                        emailAddress.Score = emailAddress.Classify ();
+                        var newScores = emailAddress.Classify ();
+                        emailAddress.Score = newScores.Item1;
+                        emailAddress.Score2 = newScores.Item2;
                         NcModel.Instance.RunInTransaction (() => {
                             emailAddress.ScoreStates.Update ();
                             emailAddress.UpdateByBrain ();
@@ -378,22 +415,25 @@ namespace NachoCore.Model
                     var em = (McEmailMessage)item;
                     em.ScoreVersion = newScoreVersion;
                     // If we scoring the last version, need to mark for update to recompute the score later
-                    em.NeedUpdate = (Scoring.Version == newScoreVersion ? 1 : 0);
+                    McEmailMessageNeedsUpdate.Update (em, (Scoring.Version == newScoreVersion ? 1 : 0));
                     return true;
                 });
                 return;
             }
             InitializeTimeVariance ();
-            var newScore = Classify ();
+            var scores = Classify ();
+            var newScore = scores.Item1;
+            var newLtrScore = scores.Item2;
             var newState = TimeVarianceState;
             var newTYpe = TimeVarianceType;
             UpdateByBrain ((item) => {
                 var em = (McEmailMessage)item;
                 em.Score = newScore;
+                em.Score2 = newLtrScore;
                 em.ScoreVersion = newScoreVersion;
-                em.NeedUpdate = 0;
                 em.TimeVarianceState = newState;
                 em.TimeVarianceType = newTYpe;
+                McEmailMessageNeedsUpdate.Update (em, 0);
                 return true;
             });
         }
@@ -455,15 +495,20 @@ namespace NachoCore.Model
             if (above) {
                 query = String.Format (
                     "SELECT e.* FROM McEmailMessage AS e " +
-                    " WHERE e.NeedUpdate > ? AND e.ScoreVersion = ? " +
+                    " JOIN McEmailMessageNeedsUpdate AS n ON e.Id = n.EmailMessageId " +
+                    " WHERE n.NeedsUpdate > ? AND e.ScoreVersion = ? " +
+                    " ORDER BY e.DateReceived DESC " +
                     " LIMIT ?");
             } else {
                 query = String.Format (
                     "SELECT e.* FROM McEmailMessage AS e " +
-                    " WHERE e.NeedUpdate <= ? AND e.NeedUpdate > 0 AND e.ScoreVersion = ? " +
+                    " JOIN McEmailMessageNeedsUpdate AS n ON e.Id = n.EmailMessageId " +
+                    " WHERE n.NeedsUpdate <= ? AND n.NeedsUpdate > 0 AND e.ScoreVersion = ? " +
+                    " ORDER BY e.DateReceived DESC " +
                     " LIMIT ?");
             }
-            return NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
+            var list = NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
+            return list;
         }
 
         public static List<object> QueryNeedUpdateObjectsAbove (int count)
@@ -476,12 +521,13 @@ namespace NachoCore.Model
             return new List<object> (QueryNeedUpdate (count, above: false));
         }
 
+        // All messages that haven't been fully scored
         public static List<McEmailMessage> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
-                " WHERE e.ScoreVersion < ? AND e.HasBeenGleaned > 0 " +
-                " ORDER BY Id DESC " +
+                " WHERE e.ScoreVersion < ? " +
+                " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?", version, count);
         }
 
@@ -490,40 +536,19 @@ namespace NachoCore.Model
             return new List<object> (QueryNeedAnalysis (count));
         }
 
-        public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
+        public static List<McEmailMessage> QueryRecentNeedQuickScoring (int count)
         {
-            var query = "SELECT e.* FROM McEmailMessage AS e " +
-                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                        " WHERE likelihood (HasBeenGleaned < ?, 0.1) ";
-            var sqlSet = McFolder.GleaningExemptedFolderListSqlString (); 
-            if (null != sqlSet) {
-                query += String.Format (" AND likelihood (m.FolderId NOT IN {0}, 0.9) ", sqlSet);
-            }
-            if (0 <= accountId) {
-                query += " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?";
-                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
-            } else {
-                query += " LIMIT ?";
-                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, count);
-            }
-        }
-
-        public static List<McEmailMessage> QueryNeedQuickScoring (int accountId, int count)
-        {
+            DateTime cutoff = DateTime.UtcNow - TimeSpan.FromDays (2);
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
-                " WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.AccountId = ? " +
-                " LIMIT ?", accountId, count);
+                "WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.DateReceived > ? " +
+                "ORDER BY e.DateReceived DESC LIMIT ?",
+                cutoff, count);
         }
 
-        public static int CountByVersion (int version)
+        public static List<object> QueryRecentNeedQuickScoringObjects (int count)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion == version).Count ();
-        }
-
-        public static int Count ()
-        {
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Count ();
+            return new List<object> (QueryRecentNeedQuickScoring (count));
         }
 
 
@@ -619,16 +644,20 @@ namespace NachoCore.Model
                     tv.Start ();
                 }
             } else {
-                Score = Classify ();
+                var scores = Classify ();
+                Score = scores.Item1;
+                Score2 = scores.Item2;
             }
 
             if (UpdateTimeVarianceStates (tvList, now)) {
                 var newScore = Score;
+                var newLtrScore = Score2;
                 var newState = TimeVarianceState;
                 var newType = TimeVarianceType;
                 UpdateByBrain ((item) => {
                     var em = (McEmailMessage)item;
                     em.Score = newScore;
+                    em.Score2 = newLtrScore;
                     em.TimeVarianceState = newState;
                     em.TimeVarianceType = newType;
                     return true;
@@ -671,13 +700,13 @@ namespace NachoCore.Model
             }
         }
 
-        public void UpdateScoreAndNeedUpdate ()
+        public void UpdateScores ()
         {
             int rc = NcModel.Instance.BusyProtect (() => {
                 return NcModel.Instance.Db.Execute (
                     "UPDATE McEmailMessage " +
-                    "SET Score = ?,  NeedUpdate = ? " +
-                    "WHERE Id = ?", Score, NeedUpdate, Id);
+                    "SET Score = ?,  Score2 = ? " +
+                    "WHERE Id = ?", Score, Score2, Id);
             });
             if (0 < rc) {
                 NcBrain brain = NcBrain.SharedInstance;
@@ -712,33 +741,35 @@ namespace NachoCore.Model
 
             // Recompute a new score and update it in the cache
             bool scoreChanged = false;
-            double newScore = emailMessage.Classify ();
-            if (newScore != emailMessage.Score) {
-                emailMessage.Score = newScore;
+            var newScores = emailMessage.Classify ();
+            if (newScores.Item1 != emailMessage.Score || newScores.Item2 != emailMessage.Score2) {
+                emailMessage.Score = newScores.Item1;
+                emailMessage.Score2 = newScores.Item2;
                 scoreChanged = true;
             }
             if (fullUpdateNeeded || scoreChanged) {
-                emailMessage.NeedUpdate = 0;
+                McEmailMessageNeedsUpdate.Update (emailMessage, 0);
                 if (fullUpdateNeeded) {
                     var newState = emailMessage.TimeVarianceState;
                     var newType = emailMessage.TimeVarianceType;
                     emailMessage.UpdateByBrain ((item) => {
                         var em = (McEmailMessage)item;
-                        em.Score = newScore;
+                        em.Score = newScores.Item1;
+                        em.Score2 = newScores.Item2;
                         em.TimeVarianceState = newState;
                         em.TimeVarianceType = newType;
                         return true;
                     });
                 } else {
-                    emailMessage.UpdateScoreAndNeedUpdate ();
+                    emailMessage.UpdateScores ();
                 }
             }
         }
 
         public static void StartTimeVariance (CancellationToken token)
         {
-            /// Look for all email messages that are:
-            ///
+            // Look for all email messages that are:
+            //
             // 1. ScoreVersion is non-zero
             // 2. TimeVarianceType is not DONE
             List<NcEmailMessageIndex> emailMessageIdList = 
@@ -746,7 +777,7 @@ namespace NachoCore.Model
                 "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ? ORDER BY DateReceived ASC", NcTimeVarianceType.DONE);
             int n = 0;
             int numStarted = 0;
-            Log.Info (Log.LOG_BRAIN, "Starting all time variances");
+            Log.Info (Log.LOG_BRAIN, "Starting all time variances ({0} emails)", emailMessageIdList.Count);
             foreach (var emailMessageId in emailMessageIdList) {
                 if (token.IsCancellationRequested) {
                     return;
@@ -758,7 +789,7 @@ namespace NachoCore.Model
                 emailMessage.UpdateTimeVariance ();
                 numStarted++;
 
-                /// Throttle
+                // Throttle
                 n = (n + 1) % 8;
                 if (0 == n) {
                     if (!NcTask.CancelableSleep (500, token)) {
@@ -848,9 +879,11 @@ namespace NachoCore.Model
                         }
                     }
                     if (Scoring.Version == ScoreVersion) {
-                        Score = Classify ();
-                        NeedUpdate = 0;
-                        UpdateScoreAndNeedUpdate ();
+                        var scores = Classify ();
+                        Score = scores.Item1;
+                        Score2 = scores.Item2;
+                        UpdateScores ();
+                        McEmailMessageNeedsUpdate.Update (this, 0);
                     }
                 }
             });

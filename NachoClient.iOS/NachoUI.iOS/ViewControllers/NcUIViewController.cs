@@ -15,6 +15,9 @@ namespace NachoClient.iOS
 
         protected nfloat keyboardHeight;
 
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
+
         public NcUIViewController () : base ()
         {
             Initialize ();
@@ -35,54 +38,42 @@ namespace NachoClient.iOS
             ClassName = this.GetType ().Name;
         }
 
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            NachoCore.Utils.NcAbate.HighPriority ("NcUIViewController ViewDidLoad");
-        }
-
         public override void ViewWillAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+                KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
             base.ViewWillAppear (animated);
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_END");
         }
 
         public override void ViewDidAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR);
             base.ViewDidAppear (animated);
-            NachoCore.Utils.NcAbate.RegularPriority ("NcUIViewController ViewDidAppear");
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_END");
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
             base.ViewWillDisappear (animated);
             if (null != ViewDisappearing) {
                 ViewDisappearing (this, EventArgs.Empty);
             }
             if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
             }
             if (ShouldEndEditing) {
                 View.EndEditing (true);
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("NcUIViewController ViewWillDisappear");
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
 
         public override void ViewDidDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
             base.ViewDidDisappear (animated);
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_END");
         }
 
         public virtual bool ShouldEndEditing {
@@ -99,7 +90,7 @@ namespace NachoClient.iOS
 
         private void OnKeyboardNotification (NSNotification notification)
         {
-            if (IsViewLoaded) {
+            if (IsViewLoaded && View.Window != null) {
                 //Check if the keyboard is becoming visible
                 bool visible = notification.Name == UIKeyboard.WillShowNotification;
                 //Start an animation, using values from the keyboard
@@ -108,11 +99,12 @@ namespace NachoClient.iOS
                 UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
                 UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
                 //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
                 var oldHeight = keyboardHeight;
                 if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    keyboardHeight = landscape ? keyboardFrame.Width : keyboardFrame.Height;
+                    var keyboardFrameInScreen = UIKeyboard.FrameEndFromNotification (notification);
+                    var keyboardFrameInWindow = View.Window.ConvertRectFromWindow (keyboardFrameInScreen, null);
+                    var keyboardFrameInView = View.ConvertRectFromView (keyboardFrameInWindow, View.Window);
+                    keyboardHeight = View.Frame.Height - keyboardFrameInView.Top;
                 } else {
                     keyboardHeight = 0;
                 }

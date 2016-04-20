@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         UcIconLabelPair deadlineMessages;
         UcIconLabelPair deferredMessages;
 
+        // FIXME - add LTR.
         public UnreadMessagesView (CGRect rect, Action<NSObject> onUnreadSelected, Action<NSObject> onDeadlineSelected, Action<NSObject> onDeferredSelected) : base (rect)
         {
             var cellHeight = rect.Height;
@@ -54,14 +55,16 @@ namespace NachoClient.iOS
         public void Update (McAccount account)
         {
             NcTask.Run (() => {
-                int unreadMessageCount;
-                int deferredMessageCount;
-                int deadlineMessageCount;
-                EmailHelper.GetMessageCounts (account, out unreadMessageCount, out deferredMessageCount, out deadlineMessageCount);
+                int unreadCount;
+                int likelyCount;
+                int deferredCount;
+                int deadlineCount;
+                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    unreadMessages.SetValue (String.Format("Go to Inbox ({0:N0} unread)", unreadMessageCount));
-                    deadlineMessages.SetValue (String.Format("Go to Deadlines ({0:N0})", deadlineMessageCount));
-                    deferredMessages.SetValue (String.Format("Go to Deferred Messages ({0:N0})", deferredMessageCount));
+                    unreadMessages.SetValue (String.Format ("Go to Inbox ({0:N0} unread)", unreadCount));
+                    deadlineMessages.SetValue (String.Format ("Go to Deadlines ({0:N0})", deadlineCount));
+                    deferredMessages.SetValue (String.Format ("Go to Deferred Messages ({0:N0})", deferredCount));
+                    // FIMXE LTR.
                 });
             }, "UpdateUnreadMessageView");
         }

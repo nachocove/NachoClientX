@@ -8,33 +8,33 @@ namespace NachoCore.IMAP
 {
     public class ImapDisconnectCommand : ImapCommand
     {
-        public ImapDisconnectCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapDisconnectCommand (IBEContext beContext) : base (beContext)
         {
+            // The disconnect command runs alongside the shutdown of the ProtoContoller. As such,
+            // we don't want the command linked to the ProtoController's Cts, so replace it with
+            // one simply linked to the InternalCts.
+            Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token);
         }
 
-        public override void Execute (NcStateMachine sm)
+        /// <summary>
+        /// We don't need the normal 'ExecuteConnectAndAuthEvent()' functionality, since we don't care
+        /// here if we're connected or auth'd, since we're disconnecting. So we override the ExecuteConnectAndAuthEvent
+        /// method, and just disconnect.
+        /// </summary>
+        /// <returns>The connect and auth event.</returns>
+        public override Event ExecuteConnectAndAuthEvent ()
         {
-            // Disconnect is different than the other IMAP commands.  It is run when parking
-            // the ProtoControl, which usually happens when shutting down the app.  Because
-            // it is run during the shutdown process, it can't block.  But it needs to wait
-            // until any other command is done using the ImapClient.  If the ImapClient's lock
-            // is available, disconnect it right away.  If the lock is not available, then
-            // start a background task that will wait as long as necessary to get the lock.
-            // The state machine is not waiting for the command to complete, so there is no
-            // need to post an event when done.
-            if (Monitor.TryEnter (Client.SyncRoot)) {
-                try {
-                    Client.Disconnect (true, Cts.Token);
-                } finally {
-                    Monitor.Exit (Client.SyncRoot);
-                }
-            } else {
-                NcTask.Run (() => {
-                    lock (Client.SyncRoot) {
-                        Client.Disconnect (true, Cts.Token);
-                    }
-                }, "ImapDisconnectCommand");
-            }
+            return TryLock (Client.SyncRoot, KLockTimeout, () => {
+                // don't bother with a cancellation token here. We're just disconnecting.
+                // If we set the first parameter to true, then we MUST use a cancellation token.
+                Client.Disconnect (false);
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUCC");
+            });
+        }
+
+        protected override Event ExecuteCommand ()
+        {
+            throw new NotImplementedException ();
         }
     }
 }

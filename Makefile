@@ -37,9 +37,13 @@ clean:
 endif
 
 release:
-	./scripts/configure_ios.py ./NachoClient.iOS/Info.plist
+	(cd ./NachoClient.Android; ../scripts/configure_android.py ./Properties/AndroidManifest.xml)
+	(cd ./NachoClient.iOS; ../scripts/configure_ios.py ./Info.plist)
 	$(MDTOOL) build --target:Build --configuration:"Ad-Hoc|iPhone" NachoClient.sln
+	$(XBUILD) /p:Configuration=Release NachoClient.Android/NachoClient.Android.csproj /t:SignAndroidPackage
 
 appstore:
-	./scripts/configure_ios.py ./NachoClient.iOS/Info.plist
+	(cd ./NachoClient.Android; ../scripts/configure_android.py ./Properties/AndroidManifest.xml)
+	(cd ./NachoClient.iOS; ../scripts/configure_ios.py ./Info.plist)
 	$(MDTOOL) build --target:Build --configuration:"AppStore|iPhone" NachoClient.sln
+	$(XBUILD) /p:Configuration=Release NachoClient.Android/NachoClient.Android.csproj /t:SignAndroidPackage

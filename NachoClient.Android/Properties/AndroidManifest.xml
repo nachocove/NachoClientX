@@ -1,7 +1,49 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="1.0" package="com.nachocove.nachomail">
-	<uses-sdk android:minSdkVersion="16" android:targetSdkVersion="21" />
-	<application android:label="Nacho Mail" android:theme="@style/Theme.NachoMail" android:icon="@drawable/icon">
-	</application>
-	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:versionCode="1"
+    android:versionName="1.0"
+    package="com.nachocove.nachomail.dev">
+    <uses-sdk
+        android:minSdkVersion="16"
+        android:targetSdkVersion="21" />
+    <application
+        android:name="nachoclient.androidclient.MainApplication"
+        android:label="Nacho Mail"
+        android:theme="@style/Theme.NachoMail"
+        android:icon="@drawable/icon">
+        <meta-data
+            android:name="android.content.APP_RESTRICTIONS"
+            android:resource="@xml/app_restrictions" />
+        <activity
+            android:name="net.hockeyapp.android.UpdateActivity" />
+        <meta-data
+            android:name="com.google.android.backup.api_key"
+            android:value="AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw" />
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.nachocove.dev.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/exported_paths" />
+        </provider>
+    </application>
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission
+        android:name="android.permission.INTERNET" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH" />
+    <uses-permission
+        android:name="android.permission.READ_CONTACTS" />
+    <uses-permission
+        android:name="android.permission.CAMERA" />
+    <uses-permission
+        android:name="android.permission.READ_CALENDAR" />
+    <uses-permission
+        android:name="android.permission.WRITE_CALENDAR" />
 </manifest>

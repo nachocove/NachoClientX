@@ -21,7 +21,8 @@ namespace NachoCore.Utils
         // Version 6 - Message header filtering.
         // Version 7 - Reply-to-me and marked hot qualifiers. Marked not hot disqualifier.
         // Version 8 - Yahoo bulk mails disqualifier.
-        public const int Version = 8;
+        // Version 9 - Two scores: Hot and Likely-To-Read.
+        public const int Version = 9;
 
         public const double Max = 1.0;
 

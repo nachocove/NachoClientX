@@ -42,7 +42,7 @@ namespace NachoClient.iOS
             accountImageView.Center = new CGPoint (accountImageView.Center.X, accountInfoView.Frame.Height / 2);
             accountImageView.Layer.CornerRadius = 25;
             accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.Center;
+            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
             accountImageView.Hidden = true;
             accountInfoView.AddSubview (accountImageView);
 
@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                 accountEmailAddress.Text = account.EmailAddr;
 
                 if (showUnreadCount) {
-                    UpdateUnreadMessageCount (account.Id);
+                    UpdateUnreadMessageCount (account);
                 } else if (LoginHelpers.ShouldAlertUser (account.Id)) {
                     HighlightError ();
                 } else {
@@ -109,7 +109,7 @@ namespace NachoClient.iOS
             }
         }
 
-        void UpdateUnreadMessageCount (int accountId)
+        void UpdateUnreadMessageCount (McAccount account)
         {
             unreadCountLabel.Hidden = false;
             unreadCountLabel.Layer.CornerRadius = 4;
@@ -117,19 +117,16 @@ namespace NachoClient.iOS
             SetUnreadCountWidth (UNREAD_COUNT_HEIGHT);
 
             NcTask.Run (() => {
-                var inboxFolder = NcEmailManager.InboxFolder (accountId);
-                var unreadMessageCount = 0;
-                if (null != inboxFolder) {
-                    unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
-                }
+                int unreadMessageCount;
+                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     if (100000 > unreadMessageCount) {
-                        unreadCountLabel.Text = String.Format("{0:N0}", unreadMessageCount);
+                        unreadCountLabel.Text = String.Format ("{0:N0}", unreadMessageCount);
                     } else {
                         unreadCountLabel.Text = "> 100K";
                     }
-                    unreadCountLabel.SizeToFit();
-                    SetUnreadCountWidth((nfloat)Math.Max((double)UNREAD_COUNT_HEIGHT, (double)(unreadCountLabel.Frame.Width + 2.0f * UNREAD_COUNT_PADDING)));
+                    unreadCountLabel.SizeToFit ();
+                    SetUnreadCountWidth ((nfloat)Math.Max ((double)UNREAD_COUNT_HEIGHT, (double)(unreadCountLabel.Frame.Width + 2.0f * UNREAD_COUNT_PADDING)));
                 });
             }, "UpdateUnreadMessageCount");
         }

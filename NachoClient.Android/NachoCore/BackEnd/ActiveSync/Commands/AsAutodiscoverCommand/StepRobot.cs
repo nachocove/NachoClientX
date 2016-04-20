@@ -16,11 +16,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using ModernHttpClient;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
+using NachoCore.Wbxml;
 
 namespace NachoCore.ActiveSync
 {
@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
             // A pointer to the cmd's event Q.
             private ConcurrentQueue<Event> RobotEventsQ;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUserSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -131,7 +131,7 @@ namespace NachoCore.ActiveSync
 
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                IsUserSpecifiedDomain = isUerSpecifiedDomain;
+                IsUserSpecifiedDomain = isUserSpecifiedDomain;
                 RobotEventsQ = robotEventsQ;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {
@@ -547,7 +547,7 @@ namespace NachoCore.ActiveSync
                                                        SslPolicyErrors sslPolicyErrors, 
                                                        EventArgs e)
             {
-                if (sender.RequestUri.Equals (ReDirUri)) {
+                if (sender.RequestUri.Host.Equals (ReDirUri.Host)) {
                     // Capture the server cert.
                     ServerCertificate = certificate;
                 }
@@ -572,14 +572,19 @@ namespace NachoCore.ActiveSync
                     DontReportCommResult = true,
                     TriesLeft = 2,
                     TimeoutExpander = KDefaultTimeoutExpander,
-                    DontReUseHttpClient = true,
                 };
             }
 
             private void DoRobotHttp ()
             {
-                var currentUri = CurrentServerUri ();
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
+                Uri currentUri;
+                try {
+                    currentUri = CurrentServerUri ();
+                } catch (UriFormatException) {
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRHHARDURI");
+                    return;
+                }
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP {2} request to {1}", Step, currentUri, MethodToUse);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
                     LastUri = currentUri;
@@ -621,7 +626,13 @@ namespace NachoCore.ActiveSync
             private void DoRobot302 ()
             {
                 // NOTE: this handles the 302 case, NOT the <Redirect> in XML after 200 case.
-                var currentUri = CurrentServerUri ();
+                Uri currentUri;
+                try {
+                    currentUri = CurrentServerUri ();
+                } catch (UriFormatException) {
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDR302HARDURI");
+                    return;
+                }
                 if (IsNotReDirLoop (currentUri) && 0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = HttpOpFactory ();
@@ -651,11 +662,18 @@ namespace NachoCore.ActiveSync
                 // Make the successful SRV lookup seem like a 302 so that the code for
                 // the remaining flow is unified for both paths (GET/DNS).
                 IsReDir = true;
-                ReDirUri = new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml", SrDomain));
+                try {
+                    ReDirUri = new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml", SrDomain));
+                }
+                catch (UriFormatException) {
+                    Log.Warn (Log.LOG_AS, "SRV record does not look like a hostname: {0}", SrDomain);
+                    StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRD2RD");
+                    return;
+                }
                 DoRobot2ReDir ();
             }
 
-            private async void DoRobotGetServerCert ()
+            private void DoRobotGetServerCert ()
             {
                 X509Certificate2 cached;
                 if (ServerCertificatePeek.Instance.Cache.TryGetValue (ReDirUri.Host, out cached)) {
@@ -665,36 +683,35 @@ namespace NachoCore.ActiveSync
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var handler = new HttpClientHandler () { AllowAutoRedirect = false };
-                    var client = (IHttpClient)Activator.CreateInstance (AsHttpOperation.HttpClientType, handler);
-                    client.Timeout = CertTimeout;
+                    var request = new NcHttpRequest (HttpMethod.Get, ReDirUri);
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
-                    try {
-                        LastUri = ReDirUri;
-                        await client.GetAsync (ReDirUri).ConfigureAwait (false);
-                    } catch (Exception ex) {
-                        // Exceptions don't matter - only the cert matters.
-                        Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
-                    } finally {
-                        client.Dispose ();
-                        handler.Dispose ();
-                    }
-                    ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
-                    if (null == ServerCertificate) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
-                        return;
-                    }
-                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
-                    return;
+                    LastUri = ReDirUri;
+                    Command.ProtoControl.HttpClient.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRGSC3");
                     return;
                 }
             }
 
+            void GetServerCertSuccess (NcHttpResponse response, CancellationToken token)
+            {
+                ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
+                if (null == ServerCertificate) {
+                    StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
+                } else {
+                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
+                }
+            }
+
+            void GetServerCertError (Exception exception, CancellationToken token)
+            {
+                Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", exception.ToString ());
+                GetServerCertSuccess (null, token);
+            }
+
             private void DoRobotGotCert ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Retrieved sever SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Retrieved server SSL cert.", Step);
                 DoRobotUiCertAsk ();
             }
 
@@ -710,8 +727,13 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotAuthFail ()
             {
-                var currentUri = CurrentServerUri ();
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUri);
+                string currentUriString;
+                try {
+                    currentUriString = CurrentServerUri ().ToString ();
+                } catch (UriFormatException) {
+                    currentUriString = string.Format ("Could not format Uri, SrDomain: {0}", SrDomain);
+                }
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {2}:{1}.", Step, currentUriString, MethodToUse);
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 
@@ -825,7 +847,7 @@ namespace NachoCore.ActiveSync
                 throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
-            public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
+            public virtual bool SafeToMime (AsHttpOperation Sender, out FileStream mime)
             {
                 // We don't generate MIME.
                 mime = null;
@@ -885,11 +907,6 @@ namespace NachoCore.ActiveSync
                 return false;
             }
 
-            public bool IsContentLarge (AsHttpOperation Sender)
-            {
-                return false;
-            }
-
             public bool DoSendPolicyKey (AsHttpOperation Sender)
             {
                 return false;
@@ -909,7 +926,7 @@ namespace NachoCore.ActiveSync
                 return true;
             }
 
-            public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            public Event PreProcessResponse (AsHttpOperation Sender, NcHttpResponse response)
             {
                 switch (response.StatusCode) {
                 case HttpStatusCode.Found:
@@ -933,14 +950,15 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+            public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
             {
                 // We should never get back content that isn't XML.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR0HARD");
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+            public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
             {
+                LogRedactedXml ("Autodiscover.xml", doc, cToken);
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
                 if (null != xmlUser) {
@@ -969,17 +987,51 @@ namespace NachoCore.ActiveSync
                     if (null != xmlError) {
                         return ProcessXmlError (Sender, xmlError);
                     }
+                    bool circularRedirect = false;
+                    Event redirectEvt = null;
                     var xmlRedirect = xmlAction.ElementAnyNs (Xml.Autodisco.Redirect);
                     if (null != xmlRedirect) {
-                        return ProcessXmlRedirect (Sender, xmlRedirect);
+                        // if we get a circular redirect, but we have settings, let's see if we can process the
+                        // settings, ignoring the circular redirect.
+                        redirectEvt = ProcessXmlRedirect (Sender, xmlRedirect, out circularRedirect);
+                        if (!circularRedirect) {
+                            return redirectEvt;
+                        } else {
+                            Log.Warn (Log.LOG_AS, "Circular Redirect detected. Checking Settings.");
+                        }
                     }
+                    Event settingsEvt = null;
+                    bool settingsError = false;
                     var xmlSettings = xmlAction.ElementAnyNs (Xml.Autodisco.Settings);
                     if (null != xmlSettings) {
-                        return ProcessXmlSettings (Sender, xmlSettings);
+                        settingsEvt = ProcessXmlSettings (Sender, xmlSettings, out settingsError);
+                        if (settingsError && null != redirectEvt && circularRedirect) {
+                            // settings failed, but redirect failed first, so return that error instead.
+                            Log.Warn (Log.LOG_AS, "Settings Failed. Going with Redirect response.");
+                            return redirectEvt;
+                        } else {
+                            if (null != redirectEvt && circularRedirect) {
+                                // settings worked, so continue with those, ignoring the circular redirect
+                                Log.Warn (Log.LOG_AS, "Settings Succeeded. Ignoring Redirect response.");
+                            }
+                            return settingsEvt;
+                        }
+                    } else if (null != redirectEvt) {
+                        // there were no settings, and we have a redirect event, so return that.
+                        return redirectEvt;
                     }
                 }
                 // We should never get here. The XML response is missing both Error and Action.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR1HARD");
+            }
+
+            void LogRedactedXml (string tag, XDocument doc, CancellationToken cToken)
+            {
+                cToken.ThrowIfCancellationRequested ();
+                NcXmlFilterSet filter = new NcXmlFilterSet ();
+                filter.Add (new AutoDiscoverXmlFilter ());
+                XDocument docOut = filter.Filter (doc, cToken);
+                Log.Info (Log.LOG_AS, "{0}:\n{1}", tag, docOut.ToString ());
             }
 
             public void PostProcessEvent (Event evt)
@@ -1047,22 +1099,25 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
             }
 
-            private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect)
+            private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect, out bool circularRedirect)
             {
+                circularRedirect = false;
                 // if email address changed, restart Auto discovery
                 if (!SrEmailAddr.Equals (xmlRedirect.Value, StringComparison.Ordinal)) {
                     SrEmailAddr = xmlRedirect.Value;
                     SrDomain = DomainFromEmailAddr (SrEmailAddr);
                     return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
                 } else { // else fail hard
-                    Log.Error (Log.LOG_AS, "Redirected email address is the same as before so there's no point running auto discovery again. Step = {0}",Step);
+                    Log.Info (Log.LOG_AS, "Circular Redirect Action. Step = {0}",Step);
+                    circularRedirect = true;
                     return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
                 }
             }
 
-            private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings)
+            private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings, out bool error)
             {
                 bool haveServerSettings = false;
+                error = false;
                 var xmlServers = xmlSettings.ElementsAnyNs (Xml.Autodisco.Server);
                 foreach (var xmlServer in xmlServers) {
                     var xmlType = xmlServer.ElementAnyNs (Xml.Autodisco.Type);
@@ -1082,9 +1137,11 @@ namespace NachoCore.ActiveSync
                             serverUri = new Uri (xmlUrlValue);
                         } catch (ArgumentNullException) {
                             Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
+                            error = true;
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD0");
                         } catch (UriFormatException) {
                             Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
+                            error = true;
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
@@ -1114,6 +1171,7 @@ namespace NachoCore.ActiveSync
                 if (haveServerSettings) {
                     return Event.Create ((uint)SmEvt.E.Success, "SRPXRSUCCESS");
                 } else {
+                    error = true;
                     return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                 }
             }

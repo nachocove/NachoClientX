@@ -54,8 +54,6 @@ namespace NachoClient.iOS
 
         private const UIUserNotificationType KNotificationSettings = 
             UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound;
-        // iOS kills us after 30, so make sure we dont get there
-        private const int KPerformFetchTimeoutSeconds = 25;
         private nint BackgroundIosTaskId = -1;
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
         #pragma warning disable 414
@@ -67,6 +65,13 @@ namespace NachoClient.iOS
         private bool FinalShutdownHasHappened = false;
         private bool FirstLaunchInitialization = false;
         private bool DidEnterBackgroundCalled = false;
+
+        private const string NotificationActionIdentifierReply = "reply";
+        private const string NotificationActionIdentifierMark = "mark";
+        private const string NotificationActionIdentifierDelete = "delete";
+        private const string NotificationActionIdentifierArchive = "archive";
+        private const string NotificationCategoryIdentifierMessage = "message";
+        private const string NotificationCategoryIdentifierChat = "chat";
 
         private ulong UserNotificationSettings {
             get {
@@ -124,12 +129,11 @@ namespace NachoClient.iOS
                 var manager = BITHockeyManager.SharedHockeyManager;
 
                 //Configure it to use our APP_ID
-                manager.Configure (BuildInfo.HockeyAppAppId);
+                manager.Configure (BuildInfo.HockeyAppAppId, new HockeyAppCrashDelegate ());
 
                 // Enable automatic reporting
                 manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
                 manager.CrashManager.EnableOnDeviceSymbolication = false;
-                manager.CrashManager.Delegate = new HockeyAppCrashDelegate ();
                 if (BuildInfo.Version.StartsWith ("DEV")) {
                     manager.DebugLogEnabled = true;
                 }
@@ -291,7 +295,6 @@ namespace NachoClient.iOS
                 StartCrashReporting ();
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
 
-                PushAssist.Initialize ();
                 ServerCertificatePeek.Initialize ();
                 StartUIMonitor ();
 
@@ -299,8 +302,9 @@ namespace NachoClient.iOS
                 NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
                 NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
                 MdmConfig.Instance.ExtractValues ();
-                ScoringHelpers.InitTestMode ();
             }
+
+            CopyResourcesToDocuments ();
 
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
@@ -317,10 +321,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
-            const uint MB = 1000 * 1000; // MB not MiB
-            WebCache.Configure (1 * MB, 50 * MB);
-            // end of one-time initialization
-
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartBasalServices complete");
 
@@ -329,35 +329,62 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
+            UINavigationBar.Appearance.ShadowImage = new UIImage ();
+            UINavigationBar.Appearance.TintColor = A.Color_NachoBlue;
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
-            UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
+            UIToolbar.Appearance.TintColor = A.Color_NachoGreen;
 
             var navigationTitleTextAttributes = new UITextAttributes ();
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
             navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
-            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
+            using (var arrow = UIImage.FromFile ("nav-backarrow")) {
+                UINavigationBar.Appearance.BackIndicatorImage = arrow;
+                UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
+            }
+            var navigationButtonTextAttibutes = new UITextAttributes ();
+            navigationButtonTextAttibutes.Font = A.Font_AvenirNextRegular17;
+            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationButtonTextAttibutes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (KNotificationSettings, null);
+                var replyAction = new UIMutableUserNotificationAction ();
+                replyAction.ActivationMode = UIUserNotificationActivationMode.Foreground;
+                replyAction.Identifier = NotificationActionIdentifierReply;
+                replyAction.Title = "Reply";
+                var markAction = new UIMutableUserNotificationAction ();
+                markAction.ActivationMode = UIUserNotificationActivationMode.Background;
+                markAction.Identifier = NotificationActionIdentifierMark;
+                markAction.Title = "Mark as Read";
+                var archiveAction = new UIMutableUserNotificationAction ();
+                archiveAction.ActivationMode = UIUserNotificationActivationMode.Background;
+                archiveAction.Identifier = NotificationActionIdentifierArchive;
+                archiveAction.Title = "Archive";
+                var deleteAction = new UIMutableUserNotificationAction ();
+                deleteAction.ActivationMode = UIUserNotificationActivationMode.Background;
+                deleteAction.Identifier = NotificationActionIdentifierDelete;
+                deleteAction.Title = "Delete";
+                deleteAction.Destructive = true;
+                var defaultActions = new UIUserNotificationAction[] { replyAction, markAction, archiveAction, deleteAction };
+                var minimalActions = new UIUserNotificationAction[] { replyAction, markAction };
+                var messageCategory = new UIMutableUserNotificationCategory ();
+                messageCategory.Identifier = NotificationCategoryIdentifierMessage;
+                messageCategory.SetActions (defaultActions, UIUserNotificationActionContext.Default);
+                messageCategory.SetActions (minimalActions, UIUserNotificationActionContext.Minimal);
+                var categories = new NSSet (messageCategory);
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (KNotificationSettings, categories);
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
-                // iOS 7 and before
-                // TODO: revist why we need the sound.
-                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
-                    UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (UIRemoteNotificationType.NewsstandContentAvailability);
             } else {
                 Log.Error (Log.LOG_PUSH, "notification not registered!");
             }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
-            // Set up webview to handle html with embedded custom types (curtesy of Exchange)
-            NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(CidImageProtocol)));
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
@@ -379,6 +406,12 @@ namespace NachoClient.iOS
                     var eventId = ((NSNumber)eventNotificationDictionary).NIntValue;
                     SaveNotification ("FinishedLaunching", EventNotificationKey, eventId);
                 }
+                var chatNotificationDictionary = (NSArray)localNotification.UserInfo.ObjectForKey (ChatNotificationKey);
+                if (null != chatNotificationDictionary) {
+                    var chatId = (chatNotificationDictionary.GetItem<NSNumber> (0)).NIntValue;
+                    var messageId = (chatNotificationDictionary.GetItem<NSNumber> (1)).NIntValue;
+                    SaveNotification ("FinishedLaunching", ChatNotificationKey, new nint[] {chatId, messageId});
+                }
                 if (localNotification != null) {
                     // reset badge
                     UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
@@ -387,21 +420,61 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
+//            if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
+//                application.ShortcutItems = new UIApplicationShortcutItem[] {
+//                    new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
+//                };
+//            }
+
+            // I don't know where to put this.  It can't go in NcApplication.MonitorReport(), because
+            // C#'s TimeZoneInfo.Local has an ID and name of "Local", which is not helpful.  It has
+            // to be in iOS-specific code.
+            Log.Info (Log.LOG_LIFECYCLE, "Current time zone: {0}", NSTimeZone.LocalTimeZone.Description);
+
+            Window = new UIWindow (UIScreen.MainScreen.Bounds);
             if (NcApplication.ReadyToStartUI ()) {
-                var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                if (null == vc) {
-                    // Might get null if we're running in background
-                    Log.Info (Log.LOG_UI, "fast path view controller is null");
-                } else {
-                    Log.Info (Log.LOG_UI, "fast path to tab bar controller");
-                    Window.RootViewController = (UIViewController)vc;
-                }
+                Window.RootViewController = new NachoTabBarController ();
+            } else {
+                var storyboard = UIStoryboard.FromName ("Startup", null);
+                Window.RootViewController = storyboard.InstantiateInitialViewController ();
             }
+            Window.MakeKeyAndVisible ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;
+        }
+
+        public void CopyResourcesToDocuments ()
+        {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            string[] resources = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
+            foreach (var resourceName in resources) {
+                var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
+                var destinationPath = Path.Combine (documentsPath, resourceName);
+                if (!File.Exists (destinationPath) || File.GetLastWriteTime (destinationPath) < File.GetLastWriteTime (resourcePath)) {
+                    if (File.Exists (destinationPath)) {
+                        File.Delete (destinationPath);
+                    }
+                    File.Copy (resourcePath, destinationPath);
+                    NcFileHandler.Instance.MarkFileForSkipBackup (destinationPath);
+                }
+            }
+        }
+
+        public override void PerformActionForShortcutItem (UIApplication application, UIApplicationShortcutItem shortcutItem, UIOperationHandler completionHandler)
+        {
+            if (shortcutItem.Type.Equals ("com.nachocove.nachomail.newmessage")) {
+                // TODO: verify that we're not setting up an account
+                // TODO: check if another compose is already up
+                var composeViewController = new MessageComposeViewController (NcApplication.Instance.DefaultEmailAccount);
+                composeViewController.Present (false, () => {
+                    completionHandler (true);
+                });
+            } else {
+                Log.Error (Log.LOG_UI, "Application received unknown shortcut action: {0}", shortcutItem.Type);
+                completionHandler (false);
+            }
         }
 
         /// <Docs>Reference to the UIApplication that invoked this delegate method.</Docs>
@@ -411,16 +484,52 @@ namespace NachoClient.iOS
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
+            var nachoSchemeObject = NSBundle.MainBundle.InfoDictionary.ObjectForKey (new NSString ("CFBundleIdentifier"));
+            var nachoScheme = nachoSchemeObject.ToString ();
 
-            if (!url.IsFileUrl) {
-                return false;
+            if (url.IsFileUrl) {
+                OpenFiles (new string[] { url.Path }, sourceApplication);
+                return true;
+            } else if (url.Scheme.Equals (nachoScheme)) {
+                var components = url.PathComponents;
+                if (components.Length > 1) {
+                    if (components [1].Equals ("share") && components.Length > 2) {
+                        var stashName = components [2];
+                        var containerUrl = NSFileManager.DefaultManager.GetContainerUrl (BuildInfo.AppGroup);
+                        if (containerUrl != null) {
+                            var stashUrl = containerUrl.Append (stashName, true);
+                            var paths = Directory.GetFiles (stashUrl.Path);
+                            OpenFiles (paths, sourceApplication);
+                            return true;
+                        }
+                    }
+                }
             }
-            // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
-            var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
-            document.SetDisplayName (Path.GetFileName (url.Path));
-            document.SourceApplication = sourceApplication;
-            document.UpdateFileMove (url.Path);
-            return true;
+            return false;
+        }
+
+        void OpenFiles (string[] paths, string source = null)
+        {
+            if (NcApplication.ReadyToStartUI ()) {
+                var account = NcApplication.Instance.DefaultEmailAccount;
+                var attachments = new List<McAttachment> ();
+                foreach (var path in paths) {
+                    // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
+                    var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
+                    document.SetDisplayName (Path.GetFileName (path));
+                    document.SourceApplication = source;
+                    document.UpdateFileMove (path);
+                    var attachment = McAttachment.InsertSaveStart (account.Id);
+                    attachment.SetDisplayName (document.DisplayName);
+                    attachment.UpdateFileCopy (document.GetFilePath ());
+                    attachments.Add (attachment);
+                }
+                if (attachments.Count > 0) {
+                    var composeViewController = new MessageComposeViewController (account);
+                    composeViewController.Composer.InitialAttachments = attachments;
+                    composeViewController.Present ();
+                }
+            }
         }
 
         // OnActivated AND OnResignActivation ARE MIRROR IMAGE (except for BeginBackgroundTask).
@@ -433,7 +542,8 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
-            BadgeNotifClear ();
+            NotifyAllowed = false;
+            UpdateBadgeCount ();
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
@@ -466,7 +576,9 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Called");
             bool isInitializing = NcApplication.Instance.IsInitializing;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
-            BadgeNotifGoInactive ();
+            UpdateGoInactiveTime ();
+            UpdateBadgeCount ();
+            NotifyAllowed = true;
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
             if (DateTime.MinValue != foregroundTime) {
@@ -498,8 +610,8 @@ namespace NachoClient.iOS
                 BackgroundIosTaskId = -1;
             }
             FinalShutdownHasHappened = true;
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Exit");
             Log.Info (Log.LOG_PUSH, "[PA] finalshutdown: client_id={0}", NcApplication.Instance.ClientId);
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Exit");
         }
 
         private void ReverseFinalShutdown ()
@@ -527,6 +639,10 @@ namespace NachoClient.iOS
                 FinalShutdown (null);
             } else {
                 var didShutdown = false;
+                TimeSpan initialTimerDelay = TimeSpan.FromSeconds (1);
+                if (35 < timeRemaining && timeRemaining < 1000) {
+                    initialTimerDelay = TimeSpan.FromSeconds (timeRemaining - 30);
+                }
                 ShutdownTimer = new Timer ((opaque) => {
                     InvokeOnUIThread.Instance.Invoke (delegate {
                         // check remaining background time. If too little, shut us down.
@@ -535,8 +651,7 @@ namespace NachoClient.iOS
                         var remaining = application.BackgroundTimeRemaining;
                         Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0:n2}", remaining);
                         if (!didShutdown && 25.0 > remaining) {
-                            didShutdown = true;
-                            FinalShutdown (opaque);
+                            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: Background time is running low. Shutting down the app.");
                             try {
                                 // This seems to work, but we do get some extra callbacks after Change().
                                 ShutdownTimer.Change (Timeout.Infinite, Timeout.Infinite);
@@ -544,9 +659,11 @@ namespace NachoClient.iOS
                                 // Wrapper to protect against unknown C# timer stupidity.
                                 Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer exception: {0}", ex);
                             }
+                            didShutdown = true;
+                            FinalShutdown (opaque);
                         }
                     });
-                }, ShutdownCounter, 1000, 1000);
+                }, ShutdownCounter, initialTimerDelay, TimeSpan.FromSeconds (1));
                 Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: ShutdownTimer");
             }
             var imageView = new UIImageView (Window.Frame);
@@ -560,6 +677,11 @@ namespace NachoClient.iOS
 
             UIApplication.SharedApplication.KeyWindow.AddSubview (imageView);
             UIApplication.SharedApplication.KeyWindow.BringSubviewToFront (imageView);
+
+            NcTask.Run (() => {
+                NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20);
+            }, "CleanupOldDbConnections");
+
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: Exit");
         }
 
@@ -599,7 +721,13 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Exit");
         }
 
+
+        private enum PerformFetchState { None, Active, Finishing, Done };
+        private int performFetchCount = 0;
         private bool doingPerformFetch = false;
+        private PerformFetchState badgeCountState = PerformFetchState.None;
+        private PerformFetchState backEndState = PerformFetchState.None;
+        private bool fetchStatusHandlerRegistered = false;
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
         private Timer performFetchTimer = null;
@@ -610,6 +738,12 @@ namespace NachoClient.iOS
         private List<int> pushAccounts;
         // PushAssist is active only when the app is registered for remote notifications
         private bool hasRegisteredForRemoteNotifications = false;
+
+        private class PerformFetchCountObject
+        {
+            public int count;
+            public PerformFetchCountObject (int count) { this.count = count; }
+        }
 
         private bool fetchComplete {
             get {
@@ -623,8 +757,30 @@ namespace NachoClient.iOS
             }
         }
 
+        private void FinalQuickSyncBadgeNotifications ()
+        {
+            int savedPerformFetchCount = performFetchCount;
+            badgeCountState = PerformFetchState.Finishing;
+            BadgeCountAndMessageNotifications (() => {
+                // The BadgeCountAndMessageNotifications() might survive across a shutdown and complete when the next
+                // PerformFetch is running.  Only finalize the PerformFetch if it is the same one
+                // as when the call was started.
+                if (performFetchCount == savedPerformFetchCount) {
+                    badgeCountState = PerformFetchState.Done;
+                    if (PerformFetchState.Done == backEndState) {
+                        FinalizePerformFetch (fetchResult);
+                        NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+                    }
+                }
+            });
+        }
+
         private void FetchStatusHandler (object sender, EventArgs e)
         {
+            if (!doingPerformFetch) {
+                // The delivery of the event was delayed.  PerformFetch is no longer active.
+                return;
+            }
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             int accountId = (null != statusEvent.Account) ? statusEvent.Account.Id : -1;
             switch (statusEvent.Status.SubKind) {
@@ -643,9 +799,9 @@ namespace NachoClient.iOS
                     accountId, fetchAccounts.Count, pushAccounts.Count);
                 if (fetchComplete) {
                     // There will sometimes be duplicate Info_SyncSucceeded for an account.
-                    // Only call BadgeNotifUpdate once.
+                    // Only call BadgeCountAndMessageNotifications once.
                     if (!fetchWasComplete) {
-                        BadgeNotifUpdate ();
+                        FinalQuickSyncBadgeNotifications ();
                     }
                     if (pushAssistArmComplete) {
                         CompletePerformFetch ();
@@ -678,20 +834,11 @@ namespace NachoClient.iOS
                     fetchResult = UIBackgroundFetchResult.Failed;
                 }
                 if (fetchComplete) {
-                    BadgeNotifUpdate ();
+                    FinalQuickSyncBadgeNotifications ();
                     if (pushAssistArmComplete) {
                         CompletePerformFetch ();
                     }
                 }
-                break;
-
-            case NcResult.SubKindEnum.Error_SyncFailedToComplete:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
-                // Stop the back end first, so that any accounts still running will give up the CPU
-                // as soon as possible.
-                BackEnd.Instance.Stop ();
-                BadgeNotifUpdate ();
-                CompletePerformFetch ();
                 break;
             }
         }
@@ -706,32 +853,41 @@ namespace NachoClient.iOS
 
         protected void FinalizePerformFetch (UIBackgroundFetchResult result)
         {
+            Log.Info (Log.LOG_LIFECYCLE, "Finalize PerformFetch ({0})", result.ToString ());
+            if (null != performFetchTimer) {
+                performFetchTimer.Dispose ();
+                performFetchTimer = null;
+            }
+            if (fetchStatusHandlerRegistered) {
+                NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
+                fetchStatusHandlerRegistered = false;
+            }
             var handler = CompletionHandler;
             CompletionHandler = null;
             fetchCause = null;
-            handler (result);
-        }
-
-        protected void CleanupPerformFetchStates ()
-        {
-            performFetchTimer.Dispose ();
-            performFetchTimer = null;
-            NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
+            ++performFetchCount;
             doingPerformFetch = false;
+            badgeCountState = PerformFetchState.None;
+            backEndState = PerformFetchState.None;
+            handler (result);
         }
 
         protected void CompletePerformFetchWithoutShutdown ()
         {
-            CleanupPerformFetchStates ();
             FinalizePerformFetch (fetchResult);
         }
 
         protected void CompletePerformFetch ()
         {
-            CleanupPerformFetchStates ();
+            NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
+            fetchStatusHandlerRegistered = false;
+            backEndState = PerformFetchState.Finishing;
             FinalShutdown (null);
-            FinalizePerformFetch (fetchResult);
-            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+            backEndState = PerformFetchState.Done;
+            if (PerformFetchState.Done == badgeCountState) {
+                FinalizePerformFetch (fetchResult);
+                NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+            }
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
@@ -743,15 +899,49 @@ namespace NachoClient.iOS
         protected void StartFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler, string cause)
         {
             if (doingPerformFetch) {
-                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
+                if ("RN" == fetchCause && "PF" == cause) {
+                    // iOS often starts a PerformFetch while a remote notification is still in progress.
+                    // This is not desirable, but it is normal.
+                    Log.Info (Log.LOG_LIFECYCLE, "RemoteNotification was immediately followed by PerformFetch.");
+                } else {
+                    Log.Warn (Log.LOG_LIFECYCLE, "PerformFetch ({0}) was called while a previous PerformFetch ({1}) was still running.", cause, fetchCause);
+                }
                 CompletePerformFetchWithoutShutdown ();
             }
+
+            // Crashes while launching in the background shouldn't increment the safe mode counter.
+            // (It would be nice if background launches could simply not increment the counter rather
+            // than clear it completely, but that is not worth the effort.)
+            NcApplication.Instance.UnmarkStartup ();
+
             CompletionHandler = completionHandler;
+            // check to see if migrations need to run. If so, we shouldn't let the PerformFetch proceed!
+            NcMigration.Setup ();
+            if (NcMigration.WillStartService ()) {
+                Log.Error (Log.LOG_SYS, "PerformFetch called while migrations still need to run.");
+                FinalizePerformFetch (UIBackgroundFetchResult.NoData);
+                return;
+            }
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
-            fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+
+            if (8.0 > application.BackgroundTimeRemaining) {
+                // Launching the app took up most of the perform fetch window.  There isn't enough
+                // time left to run a full quick sync.
+                Log.Warn (Log.LOG_LIFECYCLE, "Skipping quick sync {0} because only {1:n2} seconds are left.", cause, application.BackgroundTimeRemaining);
+                FinalizePerformFetch (UIBackgroundFetchResult.NoData);
+                return;
+            }
+
+            fetchAccounts = McAccount.GetAllConfiguredNormalAccountIds ();
             if (hasRegisteredForRemoteNotifications) {
-                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+                // Info_PushAssistArmed event will never be sent for accounts that have fast
+                // notification disabled, so those accounts can't be in the list of accounts
+                // to wait for.
+                pushAccounts = McAccount.GetAllConfiguredNormalAccountIds ().Where (accountId => {
+                    var account = McAccount.QueryById<McAccount> (accountId);
+                    return null != account && account.FastNotificationEnabled;
+                }).ToList ();
             } else {
                 pushAccounts = new List<int> ();
             }
@@ -760,22 +950,53 @@ namespace NachoClient.iOS
             NcApplication.Instance.UnmarkStartup ();
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
+                BackEnd.Instance.Start ();
+                NcBrain.StartService ();
+                NcApplicationMonitor.Instance.Start (1, 60);
+            } else {
+                NcCommStatus.Instance.Reset ("StartFetch");
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
+            fetchStatusHandlerRegistered = true;
+
+            ++performFetchCount;
+            doingPerformFetch = true;
+            badgeCountState = 0 == fetchAccounts.Count ? PerformFetchState.Done : PerformFetchState.Active;
+            backEndState = PerformFetchState.Active;
+
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
+            // The timer should fire once per second starting when the app has about
+            // ten seconds left.
+            var performFetchTime = application.BackgroundTimeRemaining;
+            Log.Info (Log.LOG_LIFECYCLE, "Starting PerformFetch timer: {0:n2} seconds of background time remaining.", performFetchTime);
             performFetchTimer = new Timer (((object state) => {
-                // Just fire an event.  The listener for the event will take care of
-                // shutting things down.  (The UI thread is the synchronization method
-                // for lifecycle events, so the timer expiration needs to be channelled
-                // through the UI thread.)
-                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired. Shutting down the app.");
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Account = NcApplication.Instance.Account,
-                    Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    var remaining = application.BackgroundTimeRemaining;
+                    Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer: {0:n2} seconds remaining.", remaining);
+                    if (((PerformFetchCountObject)state).count == performFetchCount) {
+                        if (10.0 >= remaining && PerformFetchState.Active == backEndState) {
+                            Log.Info (Log.LOG_LIFECYCLE, "PerformFetch ran out of time. Shutting down the app.");
+                            if (PerformFetchState.Active == badgeCountState) {
+                                FinalQuickSyncBadgeNotifications ();
+                            }
+                            CompletePerformFetch ();
+                        }
+                        if (4.0 >= remaining) {
+                            Log.Error (Log.LOG_LIFECYCLE, "PerformFetch didn't shut down in time. Calling the completion handler now.");
+                            FinalizePerformFetch (fetchResult);
+                        }
+                    } else if (null != performFetchTimer) {
+                        Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired after perform fetch completed. Disabling the timer.");
+                        try {
+                            performFetchTimer.Change (Timeout.Infinite, Timeout.Infinite);
+                        } catch (Exception ex) {
+                            // Wrapper to protect against unknown C# timer stupidity.
+                            Log.Error (Log.LOG_LIFECYCLE, "PerformFetch timer exception: {0}", ex);
+                        }
+                    }
                 });
-            }), null, KPerformFetchTimeoutSeconds * 1000, Timeout.Infinite);
-            doingPerformFetch = true;
+            }), new PerformFetchCountObject (performFetchCount), TimeSpan.FromSeconds (5), TimeSpan.FromSeconds (1));
         }
 
         protected void SaveNotification (string traceMessage, string key, nint id)
@@ -788,41 +1009,42 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void SaveNotification (string traceMessage, string key, nint[] id)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
+
+            var devAccount = McAccount.GetDeviceAccount ();
+            if (null != devAccount) {
+                McMutables.Set (devAccount.Id, key, key, String.Join<nint>(",", id));
+            }
+        }
+
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
             var emailMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey);
             var eventMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
+            var chatMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.ChatNotificationKey);
 
             var emailNotification = (NSNumber)notification.UserInfo.ObjectForKey (EmailNotificationKey);
             var eventNotification = (NSNumber)notification.UserInfo.ObjectForKey (EventNotificationKey);
+            var chatNotification = (NSArray)notification.UserInfo.ObjectForKey (ChatNotificationKey);
 
             // The app is 'active' if it is already running when the local notification
             // arrives or if the app is started when a local notification is delivered.
             // When the app is started by a notification, FinishedLauching adds mutables.
             if (UIApplicationState.Active == UIApplication.SharedApplication.ApplicationState) {
                 // If the app is started by FinishedLaunching, it adds some mutables
-                if ((0 == emailMutables.Count) && (0 == eventMutables.Count)) {
+                if ((0 == emailMutables.Count) && (0 == eventMutables.Count) && (0 == chatMutables.Count)) {
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
-                    if (null != eventNotification) {
-                        var eventId = eventNotification.ToMcModelIndex ();
-                        var eventItem = McEvent.QueryById<McEvent> (eventId);
-                        if (null != eventItem) {
-                            var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
-                            if (null != calendarItem) {
-                                var subject = Pretty.SubjectString (calendarItem.Subject);
-                                if (!String.IsNullOrEmpty (subject)) {
-                                    subject += " ";
-                                } else {
-                                    subject = "Event at ";
-                                }
-                                var msg = subject + Pretty.FullDateTimeString (eventItem.GetStartTimeUtc ());
-                                UIAlertView alert = new UIAlertView ("Reminder", msg, null, "OK", null);
-
-                                alert.Show ();
-                            }
-                        }
+                    string title = notification.AlertTitle;
+                    string body = notification.AlertBody;
+                    if (string.IsNullOrEmpty (title)) {
+                        title = "Reminder";
+                    } else if (body.StartsWith (title + ": ")) {
+                        body = body.Substring (title.Length + 2);
                     }
+                    new UIAlertView (title, body, null, "OK").Show ();
                     return;
                 }
             }
@@ -858,9 +1080,54 @@ namespace NachoClient.iOS
                     nachoTabBarController.SwitchToNachoNow ();
                 }
             }
-            if ((null == emailNotification) && (null == eventNotification)) {
+            if (null != chatNotification) {
+                var chatId = ((NSNumber)chatNotification.GetItem<NSNumber>(0)).ToMcModelIndex ();
+                var messageId = ((NSNumber)chatNotification.GetItem<NSNumber>(1)).ToMcModelIndex ();
+                SaveNotification ("ReceivedLocalNotification", ChatNotificationKey, new nint[]{chatId, messageId});
+                if (null != nachoTabBarController) {
+                    nachoTabBarController.SwitchToNachoNow ();
+                }
+            }
+            if ((null == emailNotification) && (null == eventNotification) && (null == chatNotification)) {
                 Log.Error (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: received unknown notification");
             }
+        }
+
+        public override void HandleAction (UIApplication application, string actionIdentifier, UILocalNotification localNotification, Action completionHandler)
+        {
+            var emailNotification = (NSNumber)localNotification.UserInfo.ObjectForKey (EmailNotificationKey);
+            if (emailNotification != null) {
+                var emailMessageId = emailNotification.ToMcModelIndex ();
+                var thread = new McEmailMessageThread ();
+                thread.FirstMessageId = emailMessageId;
+                thread.MessageCount = 1;
+                var message = thread.FirstMessageSpecialCase ();
+                if (null != message) {
+                    if (actionIdentifier == NotificationActionIdentifierReply) {
+                        if (Window.RootViewController is NachoTabBarController) {
+                            var account = McAccount.EmailAccountForMessage (message);
+                            EmailHelper.MarkAsRead (thread, force: true);
+                            var composeViewController = new MessageComposeViewController (account);
+                            composeViewController.Composer.RelatedThread = thread;
+                            composeViewController.Composer.Kind = EmailHelper.Action.Reply;
+                            composeViewController.Present (false, null);
+                        }
+                    } else if (actionIdentifier == NotificationActionIdentifierArchive) {
+                        NcEmailArchiver.Archive (message);
+                        BadgeCountAndMessageNotifications ();
+                    } else if (actionIdentifier == NotificationActionIdentifierMark) {
+                        // Bypassing EmailHelper becuase it runs the command in a task and the message notifications code doesn't see the change
+                        BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                        BadgeCountAndMessageNotifications ();
+                    } else if (actionIdentifier == NotificationActionIdentifierDelete) {
+                        NcEmailArchiver.Delete (message);
+                        BadgeCountAndMessageNotifications ();
+                    } else {
+                        NcAssert.CaseError ("Unknown notification action");
+                    }
+                }
+            }
+            completionHandler ();
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
@@ -868,11 +1135,11 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            // When the app is in QuickSync mode, BadgeNotifUpdate will be called when
+            // When the app is in QuickSync mode, BadgeCountAndMessageNotifications will be called when
             // QuickSync is done.  There isn't a need to call it when each account's sync
             // completes.
             if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
-                BadgeNotifUpdate ();
+                BadgeCountAndMessageNotifications ();
             }
         }
 
@@ -923,22 +1190,15 @@ namespace NachoClient.iOS
          * NOTE: This code will need to get a little smarter when we are doing many types of notification.
          */
         static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
+        static public NSString ChatNotificationKey = new NSString ("McChat.Id,McChatMessage.MessageId");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
-        private bool BadgeNotifAllowed = true;
+        private bool NotifyAllowed = true;
 
-        private void BadgeNotifClear ()
-        {
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
-            BadgeNotifAllowed = false;
-            Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
-        }
-
-        private void BadgeNotifGoInactive ()
+        private void UpdateGoInactiveTime ()
         {
             McMutables.Set (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            BadgeNotifAllowed = true;
-            Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
+            Log.Info (Log.LOG_UI, "UpdateGoInactiveTime: exit");
         }
 
         private bool NotifyEmailMessage (McEmailMessage message, McAccount account, bool withSound)
@@ -954,6 +1214,7 @@ namespace NachoClient.iOS
 
             var fromString = Pretty.SenderString (message.From);
             var subjectString = Pretty.SubjectString (message.Subject);
+            var previewString = Pretty.PreviewString (message.BodyPreview);
             if (!String.IsNullOrEmpty (subjectString)) {
                 subjectString += " ";
             }
@@ -967,54 +1228,155 @@ namespace NachoClient.iOS
                     NcApplication.Instance.ClientId, message.Id, cause, latency);
             }
 
-            if (NotificationCanAlert) {
-                var notif = new UILocalNotification ();
-                if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
-                    notif.AlertTitle = fromString;
-                    notif.AlertBody = subjectString;
-                } else {
-                    notif.AlertBody = subjectString + " from " + fromString;
-                }
-                notif.AlertAction = null;
-                notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
-                if (withSound) {
-                    if (NotificationCanSound) {
-                        notif.SoundName = UILocalNotification.DefaultSoundName;
-                    } else {
-                        Log.Warn (Log.LOG_UI, "No permission to play sound. (emailMessageId={0})", message.Id);
+            InvokeOnUIThread.Instance.Invoke (() => {
+                if (NotificationCanAlert) {
+                    var notif = new UILocalNotification ();
+                    notif.Category = NotificationCategoryIdentifierMessage;
+                    notif.AlertBody = String.Format ("{0}\n{1}\n{2}", fromString, subjectString, previewString);
+                    if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
+                        notif.AlertTitle = "New Email";
                     }
+                    notif.AlertAction = null;
+                    notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
+                    if (withSound) {
+                        if (NotificationCanSound) {
+                            notif.SoundName = UILocalNotification.DefaultSoundName;
+                        } else {
+                            Log.Warn (Log.LOG_UI, "No permission to play sound. (emailMessageId={0})", message.Id);
+                        }
+                    }
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                } else {
+                    Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
                 }
-                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
-            } else {
-                Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
-            }
+            });
 
             return true;
         }
 
-        // It is okay if this function is called more than it needs to be.
-        private void BadgeNotifUpdate ()
+        private bool NotifyChatMessage (NcChatMessage message, McChat chat, McAccount account, bool withSound)
         {
-            Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
-            if (!BadgeNotifAllowed) {
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: early exit");
+            var fromString = Pretty.SenderString (message.From);
+            var bundle = new NcEmailMessageBundle (message);
+            string preview = bundle.TopText;
+            if (String.IsNullOrWhiteSpace (preview)) {
+                preview = message.BodyPreview;
+            }
+            if (String.IsNullOrWhiteSpace (preview)) {
+                return false;
+            }
+
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                // Add debugging info for dev & alpha
+                var latency = (DateTime.UtcNow - message.DateReceived).TotalSeconds;
+                var cause = (null == fetchCause ? "BG" : fetchCause);
+                preview = String.Format ("[{0}:{1:N1}s] {2}", cause, latency, preview);
+
+                Log.Info (Log.LOG_PUSH, "[PA] notify email message: client_id={0}, message_id={1}, cause={2}, delay={3}",
+                    NcApplication.Instance.ClientId, message.Id, cause, latency);
+            }
+
+            InvokeOnUIThread.Instance.Invoke (() => {
+                if (NotificationCanAlert) {
+                    var notif = new UILocalNotification ();
+                    notif.Category = NotificationCategoryIdentifierChat;
+                    notif.AlertBody = String.Format ("{0}\n{1}", fromString, preview);
+                    if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
+                        notif.AlertTitle = "New Chat Message";
+                    }
+                    notif.AlertAction = null;
+                    notif.UserInfo = NSDictionary.FromObjectAndKey (NSArray.FromNSObjects (NSNumber.FromInt32 (message.ChatId), NSNumber.FromInt32 (message.Id)), ChatNotificationKey);
+                    if (withSound) {
+                        if (NotificationCanSound) {
+                            notif.SoundName = UILocalNotification.DefaultSoundName;
+                        } else {
+                            Log.Warn (Log.LOG_UI, "No permission to play sound. (emailMessageId={0})", message.Id);
+                        }
+                    }
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                } else {
+                    Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
+                }
+            });
+            return true;
+        }
+
+        public void UpdateBadgeCount ()
+        {
+            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
+                // Calculating the badge count requires database queries that are sometimes very slow.
+                // Slow enough that they should not be run on the UI thread.
+                NcTask.Run (() => {
+                    UpdateBadgeCountTask ();
+                }, "UpdateBadgeCount");
+            } else {
+                UpdateBadgeCountTask ();
+            }
+        }
+
+        private void UpdateBadgeCountTask ()
+        {
+            int badgeCount;
+            bool shouldClearBadge = EmailHelper.HowToDisplayUnreadCount () == EmailHelper.ShowUnreadEnum.RecentMessages && !NotifyAllowed;
+            if (shouldClearBadge) {
+                badgeCount = 0;
+            } else {
+                badgeCount = EmailHelper.GetUnreadMessageCountForBadge();
+                badgeCount += McChat.UnreadMessageCountForBadge ();
+                Log.Info (Log.LOG_UI, "UpdateBadgeCount: badge count = {0}", badgeCount);
+            }
+            InvokeOnUIThread.Instance.Invoke (() => {
+                UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
+            });
+        }
+
+        private void BadgeCountAndMessageNotifications (Action updateDone = null)
+        {
+            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
+                // NotificationCanBadge must be called on the UI thread, so it must be called before starting
+                // the task.
+                bool canBadge = NotificationCanBadge;
+                NcTask.Run (() => {
+                    BadgeNotificationsTask (canBadge, updateDone);
+                }, "BadgeCountAndMessageNotifications");
+            } else {
+                BadgeNotificationsTask (true, updateDone);
+            }
+        }
+
+        private void BadgeNotificationsTask (bool canBadge, Action updateDone)
+        {
+            if (canBadge) {
+                UpdateBadgeCountTask ();
+            } else {
+                Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
+            }
+
+            Log.Info (Log.LOG_UI, "Message notifications: called");
+            if (!NotifyAllowed) {
+                Log.Info (Log.LOG_UI, "Message notifications: early exit");
+                if (null != updateDone) {
+                    InvokeOnUIThread.Instance.Invoke (updateDone);
+                }
                 return;
             }
 
             var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
-            var badgeCount = unreadAndHot.Count ();
+            var unreadChatMessages = McChat.UnreadMessagesSince (since);
             var soundExpressed = false;
             int remainingVisibleSlots = 10;
             var accountTable = new Dictionary<int, McAccount> ();
+            var chatTable = new Dictionary<int, McChat> ();
+            McAccount account = null;
+            McChat chat = null;
 
             var notifiedMessageIDs = new HashSet<string> ();
 
             foreach (var message in unreadAndHot) {
                 if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
-                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
-                    --badgeCount;
+                    Log.Info (Log.LOG_UI, "Message notifications: Skipping message {0} because a message with that message ID has already been processed", message.Id);
                     message.MarkHasBeenNotified (true);
                     continue;
                 }
@@ -1024,7 +1386,6 @@ namespace NachoClient.iOS
                     }
                     continue;
                 }
-                McAccount account = null;
                 if (!accountTable.TryGetValue (message.AccountId, out account)) {
                     var newAccount = McAccount.QueryById<McAccount> (message.AccountId);
                     if (null == newAccount) {
@@ -1035,14 +1396,12 @@ namespace NachoClient.iOS
                     accountTable.Add (message.AccountId, newAccount);
                     account = newAccount;
                 }
-                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
-                    --badgeCount;
+                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message)) {
                     message.MarkHasBeenNotified (false);
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
-                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
-                    --badgeCount;
+                    Log.Info (Log.LOG_UI, "Message notifications: Notification attempt for message {0} failed.", message.Id);
                     continue;
                 } else {
                     soundExpressed = true;
@@ -1052,19 +1411,56 @@ namespace NachoClient.iOS
                 if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
                     notifiedMessageIDs.Add (updatedMessage.MessageID);
                 }
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", updatedMessage.Id);
+                Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", updatedMessage.Id);
                 --remainingVisibleSlots;
                 if (0 >= remainingVisibleSlots) {
                     break;
                 }
             }
-            accountTable.Clear ();
 
-            if (NotificationCanBadge) {
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: badge count = {0}", badgeCount);
-                UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
-            } else {
-                Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
+            if (remainingVisibleSlots > 0){
+                foreach (var message in unreadChatMessages) {
+                    if (!accountTable.TryGetValue (message.AccountId, out account)) {
+                        account = McAccount.QueryById<McAccount> (message.AccountId);
+                        if (null == account) {
+                            Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown account (accoundId={0}, emailMessageId={1})", message.AccountId, message.Id);
+                        }
+                        accountTable.Add (message.AccountId, account);
+                    }
+                    if (!chatTable.TryGetValue (message.ChatId, out chat)) {
+                        chat = McChat.QueryById<McChat> (message.ChatId);
+                        if (null == chat) {
+                            Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown chat (chatId={0}, emailMessageId={1})", message.ChatId, message.Id);
+                        }
+                        chatTable.Add (message.ChatId, chat);
+                    }
+                    if (message.HasBeenNotified) {
+                        continue;
+                    }
+                    if ((null == account) || (null == chat) || !NotificationHelper.ShouldNotifyChatMessage (message)) {
+                        // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
+                        McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (false);
+                        continue;
+                    }
+                    if (!NotifyChatMessage (message, chat, account, !soundExpressed)) {
+                        Log.Info (Log.LOG_UI, "Message notifications: Notification attempt for message {0} failed.", message.Id);
+                        continue;
+                    } else {
+                        soundExpressed = true;
+                    }
+                    // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
+                    McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (true);
+                    Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", message.Id);
+                    --remainingVisibleSlots;
+                    if (0 >= remainingVisibleSlots) {
+                        break;
+                    }
+                }
+            }
+
+            accountTable.Clear ();
+            if (null != updateDone) {
+                InvokeOnUIThread.Instance.Invoke (updateDone);
             }
         }
 
@@ -1102,7 +1498,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning;");
             Log.Info (Log.LOG_SYS, "Monitor: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
-            NcApplication.Instance.MonitorReport ();
+            NcApplicationMonitor.Instance.Report ();
         }
 
         public override void ApplicationSignificantTimeChange (UIApplication application)
@@ -1125,26 +1521,13 @@ namespace NachoClient.iOS
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
     {
-        private bool IsDevelopmentBuild {
-            get {
-                return BuildInfo.Version.StartsWith ("DEV");
-            }
-        }
-
         public HockeyAppCrashDelegate () : base ()
         {
         }
 
         public override string ApplicationLogForCrashManager (BITCrashManager crashManager)
         {
-            string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
-            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}\n",
-                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
-            if (IsDevelopmentBuild) {
-                log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
-                "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
-            }
-            return log;
+            return NcApplication.ApplicationLogForCrashManager ();
         }
 
         /// For some reason, UserName in HockeyApp web portal has a UUID prefixing the user name.
@@ -1153,7 +1536,7 @@ namespace NachoClient.iOS
         private string UserName ()
         {
             string userName = null;
-            if (IsDevelopmentBuild) {
+            if (BuildInfoHelper.IsDev) {
                 userName = BuildInfo.User;
             }
             return userName;
@@ -1192,7 +1575,4 @@ namespace NachoClient.iOS
             });
         }
     }
-
-   
 }
-

@@ -45,7 +45,7 @@ namespace Test.Common
             {
             }
 
-            public void ServConfReq (NcProtoControl sender, object arg)
+            public void ServConfReq (NcProtoControl sender, NachoCore.BackEnd.AutoDFailureReasonEnum arg)
             {
             }
 
@@ -66,6 +66,14 @@ namespace Test.Common
             }
 
             public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
+            {
+            }
+
+            public void BackendAbateStart ()
+            {
+            }
+
+            public void BackendAbateStop ()
             {
             }
         }

@@ -18,7 +18,6 @@ namespace NachoClient.iOS
         protected const float X_INDENT = 30;
 
         public string selectedName;
-        protected ContactsHelper contactHelper = new ContactsHelper ();
 
         protected const int SELECTED_BUTTON_IMAGE_TAG = 88;
         protected const int NOT_SELECTED_BUTTON_IMAGE_TAG = 99;
@@ -36,6 +35,10 @@ namespace NachoClient.iOS
         UIView contentView = new UIView ();
         nfloat yOffset = 0;
 
+        public LabelSelectionViewController () : base()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
 
         public LabelSelectionViewController (IntPtr handle) : base (handle)
         {
@@ -102,7 +105,7 @@ namespace NachoClient.iOS
             int i = 0;
             yOffset = 2;
             foreach (string name in labelList) {
-                ListSelectionButton selectionButton = new ListSelectionButton (contactHelper.ExchangeNameToLabel (name), SELECTION_BUTTON_STARTING_TAG + i);
+                ListSelectionButton selectionButton = new ListSelectionButton (ContactsHelper.ExchangeNameToLabel (name), SELECTION_BUTTON_STARTING_TAG + i);
                 UIButton button = selectionButton.GetButton (View, yOffset);
                 button.TouchUpInside += SelectionButtonClicked;
                 contentView.AddSubview (button);

@@ -9,8 +9,7 @@ using CoreGraphics;
 
 using NachoCore.Model;
 using NachoCore.Utils;
-
-using Prompt = NachoCore.Utils.LoginProtocolControl.Prompt;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -31,8 +30,6 @@ namespace NachoClient.iOS
         UILabel imapLabel;
         UILabel smtpLabel;
         UIButton connectButton;
-        UIButton advancedButton;
-        UIButton startOverButton;
         UIButton customerSupportButton;
 
         UIScrollView scrollView;
@@ -59,19 +56,15 @@ namespace NachoClient.iOS
             get { return scrollView; }
         }
 
-        Prompt prompt;
         McAccount account;
-        AdvancedLoginViewController.onConnectCallback onConnect;
-        AdvancedLoginViewController.onValidateCallback onValidate;
+        AdvancedSettingsViewController.onValidateCallback onValidate;
 
-        public IMapFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, string buttonText)
+        public IMapFields (McAccount account, string initialEmail, string initialPassword, CGRect rect, string buttonText)
         {
             this.account = account;
-            this.prompt = prompt;
 
             showAdvancedSettings = true;
             CreateView (rect, buttonText);
-            UpdatePrompt (prompt);
             Layout (rect.Height);
 
             if (null != account) {
@@ -83,14 +76,8 @@ namespace NachoClient.iOS
             MaybeEnableConnect (emailView.textField);
         }
 
-        public IMapFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
-            : this (account, prompt, initialEmail, initialPassword, rect, "Connect")
-        {
-            this.onConnect = onConnect;
-        }
-
-        public IMapFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
-            : this (account, prompt, initialEmail, initialPassword, rect, "Save")
+        public IMapFields (McAccount account, string initialEmail, string initialPassword, CGRect rect, AdvancedSettingsViewController.onValidateCallback onValidate)
+            : this (account, initialEmail, initialPassword, rect, "Save")
         {
             this.onValidate = onValidate;
         }
@@ -110,7 +97,7 @@ namespace NachoClient.iOS
             accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
             accountImageView.Layer.CornerRadius = 25;
             accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.Center;
+            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
             contentView.AddSubview (accountImageView);
 
             accountEmailAddr = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));
@@ -131,6 +118,8 @@ namespace NachoClient.iOS
             infoLabel.TextColor = A.Color_NachoRed;
             infoLabel.Lines = 2;
             infoLabel.TextAlignment = UITextAlignment.Center;
+            infoLabel.Text = "Please fill out the required credentials.";
+            infoLabel.TextColor = A.Color_NachoGreen;
             contentView.AddSubview (infoLabel);
             yOffset = infoLabel.Frame.Bottom + 15;
 
@@ -218,17 +207,6 @@ namespace NachoClient.iOS
 
             yOffset = connectButton.Frame.Bottom + 20;
 
-            advancedButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
-            advancedButton.AccessibilityLabel = "Advanced Sign In";
-            advancedButton.BackgroundColor = A.Color_NachoNowBackground;
-            advancedButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
-            advancedButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            advancedButton.TouchUpInside += AdvancedButton_TouchUpInside;
-            contentView.AddSubview (advancedButton);
-            yOffset = advancedButton.Frame.Bottom + 20;
-
             customerSupportButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
             customerSupportButton.AccessibilityLabel = "Customer Support";
             customerSupportButton.BackgroundColor = A.Color_NachoNowBackground;
@@ -239,17 +217,6 @@ namespace NachoClient.iOS
             customerSupportButton.TouchUpInside += CustomerSupportButton_TouchUpInside;
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom + 20;
-
-            startOverButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
-            startOverButton.AccessibilityLabel = "Start Over";
-            startOverButton.BackgroundColor = A.Color_NachoNowBackground;
-            startOverButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            startOverButton.SetTitle ("Start Over", UIControlState.Normal);
-            startOverButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            startOverButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            startOverButton.TouchUpInside += StartOverButton_TouchUpInside;
-            contentView.AddSubview (startOverButton);
-            yOffset = startOverButton.Frame.Bottom + 20;
 
             basicInputViews = new AdvancedTextField[] {
                 emailView,
@@ -264,35 +231,15 @@ namespace NachoClient.iOS
             };
         }
 
-        void CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum connect)
-        {
-            if (null != onConnect) {
-                onConnect (connect, account, emailView.textField.Text, passwordView.textField.Text);
-            }
-        }
-
-        void StartOverButton_TouchUpInside (object sender, EventArgs e)
-        {
-            scrollView.EndEditing (true);
-            CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.StartOver);
-        }
-
         void CustomerSupportButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-            CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Support);
         }
 
         void ConnectButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-
-            if (Prompt.EditInfo == prompt) {
-                Validate ();
-            } else {
-                var action = SaveUserSettings ();
-                CallOnConnect (action);
-            }
+            Validate ();
         }
 
         void AdvancedButton_TouchUpInside (object sender, EventArgs e)
@@ -305,7 +252,7 @@ namespace NachoClient.iOS
         {
             nfloat yOffset = 0;
 
-            var editInfo = (NachoCore.Utils.LoginProtocolControl.Prompt.EditInfo == prompt);
+            var editInfo = true;
 
             if (editInfo) {
                 yOffset = NMath.Max (accountImageView.Frame.Bottom, accountEmailAddr.Frame.Bottom);
@@ -366,19 +313,8 @@ namespace NachoClient.iOS
             ViewFramer.Create (connectButton).Y (yOffset);
             yOffset = connectButton.Frame.Bottom + 20;
 
-            if (!showAdvancedSettings) {
-                ViewFramer.Create (advancedButton).Y (yOffset);
-                yOffset = advancedButton.Frame.Bottom + 20;
-            }
-            advancedButton.Hidden = showAdvancedSettings;
-
             ViewFramer.Create (customerSupportButton).Y (yOffset);
             yOffset = customerSupportButton.Frame.Bottom + 20;
-
-            ViewFramer.Create (startOverButton).Y (yOffset);
-            yOffset = startOverButton.Frame.Bottom + 20;
-
-            startOverButton.Hidden = editInfo;
 
             // Padding
             yOffset += 20;
@@ -389,24 +325,6 @@ namespace NachoClient.iOS
             ViewFramer.Create (scrollView).Height (height);
             scrollView.ContentSize = new CGSize (scrollView.Frame.Width, yOffset);
             ViewFramer.Create (contentView).Height (yOffset);
-        }
-
-        void UpdatePrompt (Prompt prompt)
-        {
-            switch (prompt) {
-            case Prompt.EnterInfo:
-                infoLabel.Text = "Please fill out the required credentials.";
-                infoLabel.TextColor = A.Color_NachoGreen;
-                break;
-            case Prompt.ServerConf:
-                infoLabel.Text = GetServerConfMessage ();
-                infoLabel.TextColor = A.Color_NachoRed;
-                break;
-            case Prompt.CredRequest:
-                infoLabel.Text = "There seems to be a problem with your credentials.";
-                infoLabel.TextColor = A.Color_NachoRed;
-                break;
-            }
         }
 
         string GetServerConfMessage ()
@@ -446,7 +364,11 @@ namespace NachoClient.iOS
             NcAssert.NotNull (creds);
 
             emailView.textField.Text = account.EmailAddr;
-            passwordView.textField.Text = creds.GetPassword ();
+            try {
+                passwordView.textField.Text = creds.GetPassword ();
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_UI, "Imap LoadAccount: KeychainItemNotFoundException {0}", ex.Message);
+            }
 
             usernameView.textField.Text = creds.Username;
 
@@ -459,97 +381,6 @@ namespace NachoClient.iOS
             if (null != smtpServer) {
                 smtpServerView.textField.Text = smtpServer.Host;
                 smtpPortNumberView.textField.Text = smtpServer.Port.ToString ();
-            }
-        }
-
-        /// <summary>
-        /// Updates McCred and McAccount from the UI
-        /// in both theAccount and the database.
-        /// </summary>
-        public AdvancedLoginViewController.ConnectCallbackStatusEnum SaveUserSettings ()
-        {
-            if (!CanUserConnect ()) {
-                infoLabel.TextColor = UIColor.Red;
-                return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
-            }
-            var email = emailView.textField.Text.Trim ();
-            var password = passwordView.textField.Text;
-            var username = usernameView.textField.Text;
-
-            // TODO: Ask jeff
-            // Stop/Start did not recover from 2nd wrong password or wrong username
-            if (null != account) {
-                NcAccountHandler.Instance.RemoveAccount (account.Id);
-                account = null;
-            }
-
-            if (null == account) {
-                if (LoginHelpers.ConfiguredAccountExists (email)) {
-                    // Already have this one.
-                    Log.Info (Log.LOG_UI, "avl: SaveUserSettings existing account: {0}", email);
-                    return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
-                }
-                account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.IMAP_SMTP, email, password);
-            }
-            var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
-
-            account.EmailAddr = email;
-            account.Update ();
-
-            cred.Username = username;
-            cred.UserSpecifiedUsername = true;
-            cred.UpdatePassword (password);
-            cred.Update ();
-
-            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", account.Id, cred.Id, cred.UserSpecifiedUsername);
-
-            if (showAdvancedSettings) {
-                return SaveServerSettings ();
-            }
-
-            return AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect;
-        }
-
-        /// <summary>
-        /// Saves the server settings.
-        /// </summary>
-        private AdvancedLoginViewController.ConnectCallbackStatusEnum SaveServerSettings ()
-        {
-            DeleteTheServers ("SaveServerSettings");
-
-            if (FieldsAreEmpty (advancedInputViews)) {
-                return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
-            }
-
-            var imapServerName = imapServerView.textField.Text;
-            var smtpServerName = smtpServerView.textField.Text;
-
-            int imapServerPort;
-            var imapPortTryParse = int.TryParse (imapPortNumberView.textField.Text, out imapServerPort);
-            NcAssert.True (imapPortTryParse);
-
-            int smtpServerPort;
-            var smtpPortTryParse = int.TryParse (smtpPortNumberView.textField.Text, out smtpServerPort);
-            NcAssert.True (smtpPortTryParse);
-
-            var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
-            var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
-            NcModel.Instance.RunInTransaction (() => {
-                imapServer.Insert ();
-                smtpServer.Insert ();
-            });
-            Log.Info (Log.LOG_UI, "avl CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
-            return AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect;
-        }
-
-        void DeleteTheServers (string message)
-        {
-            Log.Info (Log.LOG_UI, "avl delete the server {0}", message);
-            // FIXME: Only the email servers should be deleted
-            var servers = McServer.QueryByAccountId<McServer> (account.Id);
-            foreach (var server in servers) {
-                server.Delete ();
-                Log.Info (Log.LOG_UI, "avl: delete server {0}", server.BaseUriString ());
             }
         }
 
@@ -652,13 +483,8 @@ namespace NachoClient.iOS
 
         void Complain (AdvancedTextField field, string text)
         {
-            if (Prompt.EditInfo == prompt) {
-                var vc = Util.FindOutermostViewController ();
-                NcAlertView.ShowMessage (vc, "Settings", text);
-            } else {
-                infoLabel.Text = text;
-                infoLabel.TextColor = A.Color_NachoRed;
-            }
+            var vc = Util.FindOutermostViewController ();
+            NcAlertView.ShowMessage (vc, "Settings", text);
             if (null != field) {
                 field.textField.TextColor = A.Color_NachoRed;
             }

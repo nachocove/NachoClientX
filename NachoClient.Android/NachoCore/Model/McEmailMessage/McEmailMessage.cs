@@ -14,6 +14,7 @@ using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Brain;
 using NachoCore.Index;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
@@ -51,7 +52,7 @@ namespace NachoCore.Model
         FORWARD = 3,
     }
 
-    public class NcEmailMessageIndex
+    public class NcEmailMessageIndex : IComparable
     {
         public int Id { set; get; }
 
@@ -69,6 +70,16 @@ namespace NachoCore.Model
             return McEmailMessage.QueryById<McEmailMessage> (Id);
         }
 
+        #region IComparable implementation
+
+        public int CompareTo (object obj)
+        {
+            var other = obj as NcEmailMessageIndex;
+            NcAssert.NotNull (other, string.Format ("CompareTo object is not NcEmailMessageIndex: {0}", obj.GetType ().Name));
+            return other.Id.CompareTo (Id);
+        }
+
+        #endregion
     }
 
     public class NcEmailMessageIndexComparer : IEqualityComparer<NcEmailMessageIndex>
@@ -152,7 +163,6 @@ namespace NachoCore.Model
         /// 0..2, increasing priority (optional)
         public NcImportance Importance { set; get; }
 
-        [Indexed]
         /// Has the message been read? (optional)
         public bool IsRead { set; get; }
 
@@ -169,9 +179,11 @@ namespace NachoCore.Model
         public bool ReceivedAsBcc { set; get; }
 
         /// Conversation id, from Exchange
+        [Indexed]
         public string ConversationId { set; get; }
 
         /// MIME header Message-ID: unique message identifier (optional)
+        [Indexed]
         public string MessageID { set; get; }
 
         /// MIME header In-Reply-To: message ids, crlf separated (optional)
@@ -223,6 +235,9 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// Must be set when Insert()ing a to-be-send message into the DB.
+        public bool ClientIsSender { set; get; }
+
         /// IMAP Stuff
         [Indexed]       
         public uint ImapUid { get; set; }
@@ -233,9 +248,19 @@ namespace NachoCore.Model
         /// <value>The headers.</value>
         public string Headers { get; set; }
 
-        /// True if the message header matches some of the fields. A match can cause a 
-        /// message from being removed from the hot list.
+        /// If true, the message headers match a disqualifying
+        /// pattern and this message will be disqualified by brain.
         public bool HeadersFiltered { get; set; }
+
+        /// If true, this message is in a junk folder or has been
+        /// classified as junk and will be disqualified by brain.
+        public bool IsJunk { get; set; }
+
+        /// <summary>
+        /// The Imap BODYSTRUCTURE.
+        /// </summary>
+        /// <value>The imap body structure.</value>
+        public string ImapBodyStructure { get; set; }
 
         ///
         /// <Flag> STUFF.
@@ -307,10 +332,57 @@ namespace NachoCore.Model
         /// address matches one of the McAccount. Set by brain.
         public bool IsReply { get; set; }
 
+        public bool IsChat { get; set; }
+
         /// Attachments are separate
 
+        [Ignore]
+        public bool IsMeetingRelated {
+            get {
+                return null != MessageClass && MessageClass.StartsWith ("IPM.Schedule.Meeting.");
+            }
+        }
+
+        [Ignore]
+        public bool IsMeetingRequest {
+            get {
+                return "IPM.Schedule.Meeting.Request" == MessageClass;
+            }
+        }
+
+        [Ignore]
+        public bool IsMeetingCancelation {
+            get {
+                return "IPM.Schedule.Meeting.Canceled" == MessageClass;
+            }
+        }
+
+        [Ignore]
+        public bool IsMeetingResponse {
+            get {
+                return null != MessageClass && MessageClass.StartsWith ("IPM.Schedule.Meeting.Resp.");
+            }
+        }
+
+        [Ignore]
+        public NcResponseType MeetingResponseValue {
+            get {
+                if (IsMeetingResponse) {
+                    switch (MessageClass) {
+                    case "IPM.Schedule.Meeting.Resp.Pos":
+                        return NcResponseType.Accepted;
+                    case "IPM.Schedule.Meeting.Resp.Tent":
+                        return NcResponseType.Tentative;
+                    case "IPM.Schedule.Meeting.Resp.Neg":
+                        return NcResponseType.Declined;
+                    }
+                }
+                return NcResponseType.None;
+            }
+        }
+
         /// TODO: Support other types besides mime!
-        public Stream ToMime (out long length)
+        public FileStream ToMime (out long length)
         {
             length = 0;
             var bodyPath = MimePath ();
@@ -343,10 +415,19 @@ namespace NachoCore.Model
                 // Attachments, if any, are already taken care of.
                 return;
             }
-            var originalAttachments = McAttachment.QueryByItemId (AccountId, ReferencedEmailId, this.GetClassCode ());
+            var pendingAttachments = new List<McAttachment> ();
+            var attachments = McAttachment.QueryByItem (this);
+            foreach (var attachment in attachments) {
+                var mapItem = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (AccountId, attachment.Id, Id, GetClassCode ());
+                if (!mapItem.IncludedInBody) {
+                    mapItem.IncludedInBody = true;
+                    mapItem.Update ();
+                    pendingAttachments.Add (attachment);
+                }
+            }
             var body = McBody.QueryById<McBody> (BodyId);
             MimeMessage mime = MimeHelpers.LoadMessage (body);
-            MimeHelpers.AddAttachments (mime, originalAttachments);
+            MimeHelpers.AddAttachments (mime, pendingAttachments);
             body.UpdateData ((FileStream stream) => {
                 mime.WriteTo (stream);
             });
@@ -376,11 +457,12 @@ namespace NachoCore.Model
                 // TODO Be smart about formatting.  Right now everything is forced to plain text.
                 string originalBodyText = MimeHelpers.ExtractTextPart (originalMessage);
                 string outgoingBodyText = MimeHelpers.ExtractTextPart (outgoingMime);
-                MimeHelpers.SetPlainText (outgoingMime, outgoingBodyText + originalBodyText);
+                string originalHeaderText = EmailHelper.FormatBasicHeaders (originalMessage);
+                MimeHelpers.SetPlainText (outgoingMime, outgoingBodyText + "\n\n" + originalHeaderText + originalBodyText);
             }
             if (ReferencedIsForward && (!ReferencedBodyIsIncluded || WaitingForAttachmentsToDownload)) {
                 // Add all the attachments from the original message.
-                var originalAttachments = McAttachment.QueryByItemId (originalMessage);
+                var originalAttachments = McAttachment.QueryByItem (originalMessage);
                 MimeHelpers.AddAttachments (outgoingMime, originalAttachments);
             }
             body.UpdateData ((FileStream stream) => {
@@ -398,9 +480,33 @@ namespace NachoCore.Model
 
         public void DeleteAttachments ()
         {
-            var atts = McAttachment.QueryByItemId (this);
+            var atts = McAttachment.QueryByItem (this);
             foreach (var toNix in atts) {
-                toNix.Delete ();
+                NcModel.Instance.RunInTransaction (() => {
+                    toNix.Unlink (this);
+                    if (0 == McMapAttachmentItem.QueryItemCount (toNix.Id)) {
+                        toNix.Delete ();
+                    }
+                });
+            }
+        }
+
+        public static McEmailMessage MessageWithSubject (McAccount account, string subject)
+        {
+            var message = new McEmailMessage () {
+                ClientIsSender = true,
+            };
+            message.AccountId = account.Id;
+            message.Subject = subject;
+            return message;
+        }
+
+        public static string SingleAccountString (string formatString, int accountId)
+        {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return String.Empty;
+            } else {
+                return String.Format (formatString, accountId);
             }
         }
 
@@ -416,108 +522,190 @@ namespace NachoCore.Model
             McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
             var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
 
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+            var queryFormat = 
                 "SELECT DISTINCT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McFolder AS f ON m.FolderId = f.Id " +
                 " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
+                "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (f.IsClientOwned != 1, 0.9) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
+                "{1}" +
                 " likelihood (m.FolderId != ?, 0.5) AND " +
-                " likelihood (e.[From] LIKE ?, 0.05) OR " +
-                " likelihood (e.[To] Like ?, 0.05) " +
-                " ORDER BY e.DateReceived DESC",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
+                " (likelihood (e.[From] LIKE ?, 0.05) OR " +
+                "  likelihood (e.[To] Like ?, 0.05) ) " +
+                " ORDER BY e.DateReceived DESC";
+
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
 
         public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+            var queryFormat = 
                 "SELECT e.Id as FirstMessageId, " +
                 (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
                 " as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
+                "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
-                " likelihood (m.FolderId = ?, 0.5) AND " +
-                " e.FlagUtcStartDate < ? " +
+                " likelihood (m.FolderId = ?, 0.5) " +
                 (groupBy ? " GROUP BY e.ConversationId " : "") +
-                " ORDER BY e.DateReceived DESC ",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                " ORDER BY e.DateReceived DESC ";
+
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
+        }
+
+        public static List<McEmailMessageThread> QueryUnreadMessageItems (int accountId, int folderId, bool groupBy = true)
+        {
+            var queryFormat = 
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                "{0}" +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsRead = 0, 0.05) AND " +
+                "{1}" +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.5) " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
+                " ORDER BY e.DateReceived DESC ";
+
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
+        }
+
+        public static List<McEmailMessageThread> QueryUnifiedInboxItems (bool groupBy = true)
+        {
+            var query =
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                " WHERE " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (f.Type = ?, 0.2) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
+                " ORDER BY e.DateReceived DESC ";
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, Xml.FolderHierarchy.TypeCode.DefaultInbox_2, McAbstrFolderEntry.ClassCodeEnum.Email);
+        }
+
+        public static List<McEmailMessageThread> QueryUnreadUnifiedInboxItems (bool groupBy = true)
+        {
+            var query =
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                " WHERE " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsRead = 0, 0.05) AND " +
+                " likelihood (f.Type = ?, 0.2) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
+                " ORDER BY e.DateReceived DESC ";
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, Xml.FolderHierarchy.TypeCode.DefaultInbox_2, McAbstrFolderEntry.ClassCodeEnum.Email);
         }
 
         public static List<McEmailMessageThread> QueryActiveMessageItemsByThreadId (int accountId, int folderId, string threadId)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+            var queryFormat =
                 "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " e.ConversationId = ? AND " +
-                " e.AccountId = ? AND " +
+                " likelihood( e.ConversationId = ?, 0.01 ) AND " +
+                "{0}" +
                 " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
+                "{1}" +
                 " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
-                " e.FlagUtcStartDate < ? " +
-                " ORDER BY e.DateReceived DESC",
-                threadId, accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                " m.FolderId = ? " +
+                " ORDER BY e.DateReceived DESC";
+
+            var account0 = SingleAccountString (" e.AccountId = {0} AND ", accountId);
+            var account1 = SingleAccountString (" m.AccountId = {0} AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, threadId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
-        public static int CountOfUnreadMessageItems (int accountId, int folderId)
+        public static int CountOfUnreadMessageItems (int accountId, int folderId, DateTime newSince)
         {
-            return NcModel.Instance.Db.ExecuteScalar<int> (
+            var queryFormat =
                 "SELECT COUNT(*) FROM McEmailMessage AS e " +
                 "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 "WHERE " +
-                " likelihood (e.AccountId = ?, 1.0)  AND " +
+                "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " e.FlagUtcStartDate < ? AND " +
-                "e.IsRead = 0", 
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                " e.DateReceived >= ? AND " +
+                "e.IsRead = 0";
+
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, newSince);
         }
 
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int limit, double minScore)
         {
+            var queryFormat =
+                "SELECT e.* FROM McEmailMessage AS e " +
+                "LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId " +
+                "WHERE {0} " +
+                "  likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                "  likelihood (e.UserAction > -1, 0.05) AND " +
+                "  (e.Score > ? OR e.UserAction = 1) AND " +
+                "  ((b.FilePresence != ? AND b.FilePresence != ? AND b.FilePresence != ?) OR e.BodyId = 0) " +
+                "ORDER BY e.DateReceived DESC LIMIT ?";
+
+            var accountString = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, accountString);
+
             return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
-                " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " e.FlagUtcStartDate < ? AND " +
-                " e.UserAction > -1 AND " +
-                " (e.Score > ? OR e.UserAction = 1) AND " +
-                " ((b.FilePresence != ? AND " +
-                "   b.FilePresence != ? AND " +
-                "   b.FilePresence != ?) OR " +
-                "  e.BodyId = 0) " +
-                "UNION " +
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
-                " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
-                " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) AND " +
-                " ((b.FilePresence != ? AND " +
-                "   b.FilePresence != ? AND " +
-                "   b.FilePresence != ?) OR " +
-                "  e.BodyId = 0) " +
-                " ORDER BY e.DateReceived DESC LIMIT ?",
-                accountId, DateTime.UtcNow, minScore,
-                (int)McAbstrFileDesc.FilePresenceEnum.Complete,
-                (int)McAbstrFileDesc.FilePresenceEnum.Partial,
-                (int)McAbstrFileDesc.FilePresenceEnum.Error,
-                accountId,
+                query, minScore,
                 (int)McAbstrFileDesc.FilePresenceEnum.Complete,
                 (int)McAbstrFileDesc.FilePresenceEnum.Partial,
                 (int)McAbstrFileDesc.FilePresenceEnum.Error,
@@ -526,102 +714,114 @@ namespace NachoCore.Model
 
         public static List<McEmailMessageThread> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+            var queryFormat =
                 "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
                 " ( " +
                 " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
+                "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
                 " likelihood (e.UserAction > -1, 0.99) AND " +
                 " (likelihood (e.Score >= ?, 0.1) OR likelihood (e.UserAction = 1, 0.01)) " +
-                "UNION " +
-                "SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
-                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
-                " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
-                " likelihood (m.ClassCode = ?, 0.2) AND " +
-                " likelihood (m.FolderId = ?, 0.05) AND " +
-                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE likelihood (a.IsVip != 0, 0.01)) " +
                 " ) " +
                 " GROUP BY ConversationId " +
-                " ORDER BY DateReceived DESC",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, hotScore,
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
+                " ORDER BY DateReceived DESC";
+
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query,
+                McAbstrFolderEntry.ClassCodeEnum.Email, folderId, hotScore);
         }
 
-        /// TODO: Delete needs to clean up deferred
-        public static List<McEmailMessageThread> QueryDeferredMessageItems (int accountId)
+
+        public static List<McEmailMessageThread> QueryUnifiedInboxItemsByScore (double hotScore)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+            var queryFormat =
+                "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
+                " ( " +
+                " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON f.Id = m.FolderId " +
                 " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (e.FlagStatus <> 0, 0.001) AND " +
-                " e.FlagUtcStartDate > ? " +
-                " ORDER BY e.DateReceived DESC",
-                accountId, DateTime.UtcNow);
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (f.Type = ?, 0.05) AND " +
+                " likelihood (e.UserAction > -1, 0.99) AND " +
+                " (likelihood (e.Score >= ?, 0.1) OR likelihood (e.UserAction = 1, 0.01)) " +
+                " ) " +
+                " GROUP BY ConversationId " +
+                " ORDER BY DateReceived DESC";
+
+            var query = String.Format (queryFormat);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query,
+                McAbstrFolderEntry.ClassCodeEnum.Email, Xml.FolderHierarchy.TypeCode.DefaultInbox_2, hotScore);
         }
 
-        /// TODO: Delete needs to clean up deferred
-        public static List<McEmailMessageThread> QueryDeferredMessageItemsByThreadId (int accountId, string threadId)
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByScore2 (int accountId, int folderId, double hotScore, double ltrScore)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+            var queryFormat =
+                "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
+                " ( " +
+                " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " likelihood (e.ConversationId = ?, 0.01) AND " +
+                "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (e.FlagStatus <> 0, 0.001) AND " +
-                " e.FlagUtcStartDate > ? " +
-                " ORDER BY e.DateReceived DESC",
-                accountId, threadId, DateTime.UtcNow);
-        }
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                "{1}" +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
+                " likelihood (e.Score < ? AND e.Score2 >= ?, 0.1) AND " +
+                " likelihood (e.UserAction <= 0, 0.99) " +
+                " ) " +
+                " GROUP BY ConversationId " +
+                " ORDER BY DateReceived DESC";
 
-        public static List<McEmailMessageThread> QueryDueDateMessageItems (int accountId)
-        {
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
-                " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
-                " likelihood (e.FlagStatus <> 0, 0.001) AND" +
-                " e.FlagType <> ?", 
-                accountId, "Defer until");
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, hotScore, ltrScore);
         }
 
-        public static List<McEmailMessageThread> QueryDueDateMessageItemsByThreadId (int accountId, string threadId)
+
+        public static List<McEmailMessageThread> QueryUnifiedItemsByScore2 (double hotScore, double ltrScore)
         {
+            var queryFormat =
+                "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
+                " ( " +
+                " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                " WHERE " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (f.Type = ?, 0.2) AND " +
+                " likelihood (e.Score < ? AND e.Score2 >= ?, 0.1) AND " +
+                " likelihood (e.UserAction <= 0, 0.99) " +
+                " ) " +
+                " GROUP BY ConversationId " +
+                " ORDER BY DateReceived DESC";
+
+            var query = String.Format (queryFormat);
+
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
-                " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " e.ConversationId = ? AND" +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
-                " likelihood (e.FlagStatus <> 0, 0.001) AND" +
-                " e.FlagType <> ?", 
-                accountId, threadId, "Defer until");
-        }
-
-        public static List<McEmailMessageThread> QueryForMessageThreadSet(List<int> indexList)
-        {
-            var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
-            var cmd = String.Format (
-                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
-                "WHERE " +
-                "e.ID IN {0} " +
-                " ORDER BY e.DateReceived DESC ",
-                set);
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (cmd); 
+                query, McAbstrFolderEntry.ClassCodeEnum.Email,  Xml.FolderHierarchy.TypeCode.DefaultInbox_2, hotScore, ltrScore);
         }
 
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)
@@ -652,21 +852,13 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (cmd);
         }
 
-        public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
-        {
-            return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
-            " likelihood (AccountId = ?, 1.0) AND " +
-            " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
-            " likelihood (ThreadTopic = ?, 0.01) ",
-                accountId, false, topic);
-        }
-
         public static List<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
         {
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
             " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
             " likelihood (IsRead = 0, 0.5) AND " +
+            " likelihood (IsChat = 0, 0.8) AND " +
             " CreatedAt > ? AND " +
             " likelihood (DateReceived > ?, 0.01) " +
             " ORDER BY DateReceived ASC ",
@@ -675,29 +867,40 @@ namespace NachoCore.Model
 
         public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+            var queryFormat =
                 "SELECT e.Id as Id FROM McEmailMessage AS e WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
+                "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.DateReceived = ?, 0.01) AND " +
-                " likelihood (e.[From] = ?, 0.01) ",
-                accountId, dateRecv, from);
+                " likelihood (e.[From] = ?, 0.01) ";
+            
+            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0);
+
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (query, dateRecv, from);
         }
 
         public static List<NcEmailMessageIndex> QueryByServerIdList (int accountId, List<string> serverIds)
         {
-            string sql = string.Format ("SELECT f.Id FROM McEmailMessage AS f WHERE " +
-                         " likelihood (f.AccountId = ?, 1.0) AND " +
-                         " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                         " likelihood (f.ServerId IN ({0}), 0.001) ", String.Join (",", serverIds));
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (sql, accountId);
+            var queryFormat =
+                "SELECT f.Id FROM McEmailMessage AS f WHERE " +
+                "{0}" +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.ServerId IN ('{1}'), 0.001) ";
+
+            var account0 = SingleAccountString (" likelihood (f.AccountId = {0}, 0.2) AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, String.Join ("','", serverIds));
+
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (query);
         }
 
 
         public static List<McEmailMessage> QueryUnnotified (int accountId = 0)
         {
             var emailMessageList = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified);
-            if (0 != accountId) {
+            if ((0 != accountId) && (McAccount.GetUnifiedAccount ().Id != accountId)) {
                 emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
             }
             return emailMessageList.ToList ();
@@ -711,19 +914,26 @@ namespace NachoCore.Model
             using (var cap = NcCapture.CreateAndStart (KCapQueryByImapUidRange)) {
                 // We'll just reuse NcEmailMessageIndex instead of making a new fake class to fetch the Uid's. It would
                 // look identical except for the Id argument, so what the heck.
-                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                var queryFormat =
                     "SELECT e.ImapUid as Id FROM McEmailMessage as e " +
                     " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                     " JOIN McFolder AS f ON m.FolderId = f.Id " +
                     " WHERE " +
-                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    "{0}" +
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    "{1}" +
                     " likelihood (m.ClassCode = ?, 0.2) AND " +
                     " likelihood (e.ImapUid <> 0 AND e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
                     " likelihood (m.FolderId = ?, 0.5) " +
-                    " ORDER BY e.ImapUid DESC LIMIT ?",
-                    accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                    " ORDER BY e.ImapUid DESC LIMIT ?";
+
+                var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+                var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+                var query = String.Format (queryFormat, account0, account1);
+
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    query, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
                     min, max, folderId, limit);
             }
         }
@@ -734,19 +944,26 @@ namespace NachoCore.Model
         {
             NcCapture.AddKind (KCapQueryImapMessagesToSend);
             using (var cap = NcCapture.CreateAndStart (KCapQueryImapMessagesToSend)) {
-                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                var queryFormat =
                     "SELECT e.Id FROM McEmailMessage as e " +
                     " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                     " JOIN McFolder AS f ON m.FolderId = f.Id " +
                     " WHERE " +
-                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    "{0}" +
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    "{1}" +
                     " likelihood (m.ClassCode = ?, 0.2) AND " +
                     " likelihood (e.ImapUid = 0, 0.1) AND " +
                     " likelihood (m.FolderId = ?, 0.5) " +
-                    " LIMIT ?",
-                    accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                    " LIMIT ?";
+
+                var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
+                var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
+
+                var query = String.Format (queryFormat, account0, account1);
+
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    query, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
                     folderId, limit);
             }
         }
@@ -757,6 +974,7 @@ namespace NachoCore.Model
         }
 
         public const double minHotScore = 0.5;
+        public const double minLikelyToReadScore = 0.3;
 
         /// <summary>
         /// Returns true if this message is hot or if the user has said it is hot.
@@ -777,6 +995,9 @@ namespace NachoCore.Model
 
         public bool IsDeferred ()
         {
+            if (((int)FlagStatusValue.Cleared) == FlagStatus) {
+                return false;
+            }
             if ((DateTime.MinValue == FlagStartDate) && (DateTime.MinValue == FlagUtcStartDate)) {
                 return false;
             }
@@ -792,6 +1013,9 @@ namespace NachoCore.Model
 
         public bool HasDueDate ()
         {
+            if (((int)FlagStatusValue.Cleared) == FlagStatus) {
+                return false;
+            }
             if ((DateTime.MinValue == FlagDue) && (DateTime.MinValue == FlagUtcDue)) {
                 return false;
             }
@@ -881,6 +1105,20 @@ namespace NachoCore.Model
                 return false;
             }
         }
+
+        public void DeleteMatchingOutboxMessage ()
+        {
+            if (IsChat && !String.IsNullOrEmpty(MessageID)) {
+                var outbox = McFolder.GetClientOwnedOutboxFolder (AccountId);
+                var outboxMessages = NcModel.Instance.Db.Query<McEmailMessage> (
+                    "SELECT m.* FROM McEmailMessage m JOIN McMapFolderFolderEntry e ON m.Id = e.FolderEntryId " +
+                    "WHERE m.AccountId = ? AND likelihood(m.MessageID = ?, 0.01) AND m.Id != ? AND e.FolderId = ?",
+                    AccountId, MessageID, Id, outbox.Id);
+                foreach (var message in outboxMessages){
+                    message.Delete ();
+                }
+            }
+        }
     }
 
     public class McEmailMessageThread
@@ -889,13 +1127,18 @@ namespace NachoCore.Model
 
         public int FirstMessageId { set; get; }
 
-        public INachoEmailMessages Source;
+        public NachoEmailMessages Source;
 
         // Filled on demand
         List<McEmailMessageThread> thread;
 
+        public McEmailMessage FirstMessage ()
+        { 
+            return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
+        }
+
         public McEmailMessage FirstMessageSpecialCase ()
-        {
+        { 
             return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
         }
 
@@ -926,12 +1169,14 @@ namespace NachoCore.Model
 
         public string GetThreadId ()
         {
-            return FirstMessageSpecialCase ().ConversationId;
+            var message = FirstMessageSpecialCase ();
+            return (null == message) ? null : message.ConversationId;
         }
 
         public string GetSubject ()
         {
-            return FirstMessageSpecialCase ().Subject;
+            var message = FirstMessageSpecialCase ();
+            return (null == message) ? null : message.Subject;
         }
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
@@ -1205,6 +1450,7 @@ namespace NachoCore.Model
                     InsertMeetingRequest ();
                     InsertCategories ();
                     InsertScoreStates ();
+                    McEmailMessageNeedsUpdate.Insert(this, 0);
                 });
               
                 return returnVal;
@@ -1260,6 +1506,15 @@ namespace NachoCore.Model
             });
         }
 
+        void DeleteChatMessages ()
+        {
+            var messages = McChatMessage.QueryByMessageId (Id);
+            foreach (var message in messages) {
+                message.Delete ();
+                message.UpdateLatestDuplicate ();
+            }
+        }
+
         public override void DeleteAncillary ()
         {
             NcAssert.True (0 != Id);
@@ -1278,6 +1533,7 @@ namespace NachoCore.Model
             DeleteDbCategories ();
             DeleteAttachments ();
             DeleteAddressMaps ();
+            DeleteChatMessages ();
         }
 
         public override int Delete ()
@@ -1286,8 +1542,10 @@ namespace NachoCore.Model
                 int returnVal = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Delete ();
+                    // FIXME: Do we need to delete associated records like Attachments?
                     NcBrain.UnindexEmailMessage (this);
                     DeleteScoreStates ();
+                    McEmailMessageNeedsUpdate.Delete(this);
                 });
                 return returnVal;
             }
@@ -1298,11 +1556,11 @@ namespace NachoCore.Model
             McEmailAddress emailAddress = null;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
             if (null == address) {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address", Id);
             } else {
                 bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
                 if (!found) {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
             }
             return emailAddress;
@@ -1326,14 +1584,19 @@ namespace NachoCore.Model
         public int SetIndexVersion ()
         {
             int newIsIndexed;
-            if (0 == BodyId) {
-                // No body to index. This message is fully indexed.
+            if (IsJunk) {
+                // Don't index junk
+                newIsIndexed = EmailMessageIndexDocument.Version;
+            } else if (0 == BodyId) {
+                // No body to index. Try again later.
                 newIsIndexed = EmailMessageIndexDocument.Version - 1;
             } else {
                 var body = GetBody ();
                 if ((null != body) && body.IsComplete ()) {
+                    // Message is fully indexed
                     newIsIndexed = EmailMessageIndexDocument.Version;
                 } else {
+                    // Body not downloaded; try again later
                     newIsIndexed = EmailMessageIndexDocument.Version - 1;
                 }
             }
@@ -1342,8 +1605,27 @@ namespace NachoCore.Model
 
         public static McEmailMessage QueryByMessageId (int accountId, string messageId)
         {
-            return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT * FROM McEmailMessage WHERE AccountId = ? AND MessageID = ?", accountId, messageId).FirstOrDefault ();
+            var queryFormat = "SELECT * FROM McEmailMessage WHERE {0} likelihood(MessageID = ?, 0.01)";
+            
+            var account0 = SingleAccountString (" AccountId = {0} AND ", accountId);
+
+            var query = String.Format (queryFormat, account0);
+
+            return NcModel.Instance.Db.Query<McEmailMessage> (query, messageId).FirstOrDefault ();
+        }
+
+        public void DetermineIfIsChat ()
+        {
+            if (!String.IsNullOrEmpty (MessageID)) {
+                IsChat = MessageID.StartsWith ("NachoChat.");
+            }
+            if (!IsChat && !String.IsNullOrEmpty (Subject)) {
+                IsChat = Subject.EndsWith ("[Nacho Chat]");
+            }
+            if (!IsChat && !String.IsNullOrEmpty (ConversationId)) {
+                var query = "SELECT COUNT(*) FROM McEmailMessage WHERE AccountId = ? AND likelihood(ConversationId = ?, 0.01) AND IsChat = 1";
+                IsChat = NcModel.Instance.Db.ExecuteScalar<int> (query, AccountId, ConversationId) > 0;
+            }
         }
 
         public McEmailMessage MarkHasBeenNotified (bool shouldNotify)

@@ -4,6 +4,9 @@ using System.IO;
 using SQLite;
 using NachoCore.Model;
 using NachoCore.Utils;
+using DnDns.Query;
+using DnDns.Enums;
+using System.Threading;
 
 namespace NachoPlatform
 {
@@ -24,9 +27,8 @@ namespace NachoPlatform
     public enum OsCode
     {
         iOS,
-        Android}
-
-    ;
+        Android,
+    };
 
     public interface IPlatformDevice
     {
@@ -56,8 +58,6 @@ namespace NachoPlatform
         string UserAgent ();
 
         bool IsSimulator ();
-
-        bool Wipe (string username, string password, string url, string protoVersion);
 
         SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action);
     }
@@ -104,23 +104,6 @@ namespace NachoPlatform
     }
 
     /// <summary>
-    /// Information necessary for a notification of an upcoming event.
-    /// </summary>
-    public struct NotificationInfo
-    {
-        public int Handle;
-        public DateTime When;
-        public string Message;
-
-        public NotificationInfo (int handle, DateTime when, string message)
-        {
-            Handle = handle;
-            When = when;
-            Message = message;
-        }
-    }
-
-    /// <summary>
     /// Local notifications.  Used to inform the user about events in the near future.
     /// </summary>
     public interface IPlatformNotif
@@ -128,20 +111,12 @@ namespace NachoPlatform
         /// <summary>
         /// Notify the user right away.
         /// </summary>
-        void ImmediateNotification (int handle, string message);
+        void ImmediateNotification (McEvent ev);
 
         /// <summary>
         /// Schedule a notification some time in the future.
         /// </summary>
-        /// <param name="handle">An identifier that can be used to cancel the notification.</param>
-        /// <param name="when">When the notification should happen.</param>
-        /// <param name="message">The message to display to the user.</param>
-        void ScheduleNotification (int handle, DateTime when, string message);
-
-        /// <summary>
-        /// Schedule a notification some time in the future.
-        /// </summary>
-        void ScheduleNotification (NotificationInfo notification);
+        void ScheduleNotification (McEvent ev);
 
         /// <summary>
         /// Schedule a set of notifications. This might replace all existing
@@ -151,12 +126,12 @@ namespace NachoPlatform
         /// <remarks>iOS and Android have very different capabilities for
         /// local notifications, which makes it difficult to nail down the
         /// exact behavior of this method.</remarks>
-        void ScheduleNotifications (List<NotificationInfo> notifications);
+        void ScheduleNotifications (List<McEvent> events);
 
         /// <summary>
-        /// Cancel the scheduled notification with the given handle.
+        /// Cancel the scheduled notification with the given ID.
         /// </summary>
-        void CancelNotification (int handle);
+        void CancelNotification (int eventId);
     }
 
     public abstract class PlatformContactRecord
@@ -191,15 +166,25 @@ namespace NachoPlatform
     {
         public abstract string ServerId { get; }
 
+        public abstract PlatformCalendarFolderRecord ParentFolder { get; }
+
         public abstract DateTime LastUpdate { get; }
 
         public abstract NcResult ToMcCalendar ();
     }
 
+    public abstract class PlatformCalendarFolderRecord
+    {
+        public abstract string ServerId { get; }
+
+        public abstract string DisplayName { get; }
+
+        public abstract NcResult ToMcFolder ();
+    }
+
     public interface IPlatformCalendars
     {
-        // Can be called from any thread.
-        IEnumerable<PlatformCalendarRecord> GetCalendars ();
+        void GetCalendars (out IEnumerable<PlatformCalendarFolderRecord> folders, out IEnumerable<PlatformCalendarRecord> events);
 
         event EventHandler ChangeIndicator;
 
@@ -213,6 +198,8 @@ namespace NachoPlatform
         NcResult Change (McCalendar contact);
 
         bool AuthorizationStatus { get; }
+
+        NachoCore.INcEventProvider EventProviderInstance { get; }
     }
 
     public enum PowerStateEnum
@@ -236,10 +223,24 @@ namespace NachoPlatform
         bool PowerStateIsPlugged ();
     }
 
+    public class KeychainItemNotFoundException : Exception
+    {
+        public KeychainItemNotFoundException (string Message) : base (Message)
+        {
+
+        }
+    }
+
+    public class KeychainDecryptionException : Exception
+    {
+        public KeychainDecryptionException (string Message) : base (Message)
+        {
+
+        }
+    }
+
     public interface IPlatformKeychain
     {
-        bool HasKeychain ();
-
         string GetPassword (int handle);
 
         bool SetPassword (int handle, string password);
@@ -267,6 +268,11 @@ namespace NachoPlatform
         bool SetLogSalt (int handle, string logSalt);
 
         bool DeleteLogSalt (int handle);
+
+        string GetDeviceId ();
+
+        bool SetDeviceId (string deviceId);
+
     }
 
     public interface IPlatformUIRedirector
@@ -313,10 +319,82 @@ namespace NachoPlatform
     public interface IPlatformFileHandler
     {
         void MarkFileForSkipBackup (string filename);
+        bool SkipFile (string filename);
     }
 
     public interface IPlatformMdmConfig
     {
         void ExtractValues ();
     }
+
+    public interface IPlatformRtfConverter {
+
+        string ToHtml (string rtf);
+        string ToTxt (string rtf);
+
+    }
+
+    public interface IPlatformImage : IDisposable {
+        
+        Tuple<float, float> Size { get; }
+        Stream ResizedData (float width, float height);
+
+    }
+
+    public interface IPlatformImageFactory {
+        IPlatformImage FromStream (Stream stream);
+        IPlatformImage FromPath (string path);
+    }
+
+    public interface IDnsLockObject
+    {
+        object lockObject { get; }
+        bool complete { get; }
+    }
+
+    public interface IPlatformDns
+    {
+        DnsQueryResponse ResQuery (IDnsLockObject op, string host, NsClass dnsClass, NsType dnsType);
+    }
+
+    #region INcHttpClient
+
+    /// <summary>
+    /// Progress delegate. Note that the totalBytesExpected is frequently wrong. -1 means 'unknown'.
+    /// </summary>
+    public delegate void ProgressDelegate (bool isRequest, string taskDescription, long bytes, long totalBytes, long totalBytesExpected);
+    /// <summary>
+    /// Success delete. Called when the request (and response) are done.
+    /// </summary>
+    public delegate void SuccessDelegate (NcHttpResponse response, CancellationToken token);
+    /// <summary>
+    /// Error delegate. Called on error.
+    /// </summary>
+    public delegate void ErrorDelegate (Exception exception, CancellationToken token);
+
+    public interface INcHttpClient
+    {
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken);
+
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken);
+
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+    }
+
+    #endregion
+
+    #region platform pushassist
+
+    public interface IPushAssist
+    {
+        void Dispose ();
+        void Execute ();
+        void Stop ();
+        void Park ();
+        bool IsStartOrParked ();
+    }
+
+    #endregion
 }

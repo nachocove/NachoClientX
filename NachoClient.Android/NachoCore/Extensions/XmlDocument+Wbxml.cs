@@ -17,33 +17,17 @@ namespace NachoCore.Utils
             return encoder.GetBytes (doFiltering);
         }
 
-        public static Stream ToWbxmlStream (this XDocument doc, int accountId, bool isLarge, CancellationToken cToken)
+        public static FileStream ToWbxmlStream (this XDocument doc, int accountId, CancellationToken cToken)
         {
             ASWBXML encoder = new ASWBXML (cToken);
             encoder.XmlDoc = doc;
-            if (isLarge) {
-                var tmp = NcModel.Instance.TmpPath (accountId);
-                var fileStream = new FileStream (tmp, FileMode.Create);
-                var writer = new BinaryWriter (fileStream);
-                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream(L) (#1313)");
-                encoder.EmitToStream (writer);
-                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream(L) done (#1313)");
-                writer.Close ();
-                return new FileStream (tmp, FileMode.Open);
-            } else {
-                var writer = new BinaryWriter (new MemoryStream ());
-                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream (#1313)");
-                encoder.EmitToStream (writer);
-                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream done (#1313)");
-                writer.Flush ();
-                writer.BaseStream.Seek (0, SeekOrigin.Begin);
-                var encoded = new MemoryStream ();
-                writer.BaseStream.CopyTo (encoded);
-                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: CopyTo done (#1313)");
-                writer.Close ();
-                encoded.Seek (0, SeekOrigin.Begin);
-                return encoded;
+            var tmp = NcModel.Instance.TmpPath (accountId, "wbxml-stream");
+            using (var fileStream = new FileStream (tmp, FileMode.Create, FileAccess.Write, FileShare.None)) {
+                using (var writer = new BinaryWriter (fileStream)) {
+                    encoder.EmitToStream (writer);
+                }
             }
+            return new FileStream (tmp, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
     }
 }

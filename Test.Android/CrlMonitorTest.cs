@@ -2,6 +2,9 @@
 //
 using System;
 using NUnit.Framework;
+using NachoCore.Utils;
+using NachoPlatform;
+using Test.iOS;
 
 namespace Test.Common
 {
@@ -36,14 +39,29 @@ WcBGtev/8VsUijyjsM072C6Ut5TwNyrrthb952+eKlmxLNgT0o5hVYxjXhtwLQsL
 7QZhrypAM1DLYqQjkiDI7hlvt7QuDGTJ
 -----END X509 CRL-----
 ";
-            var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (crl);
-            Assert.AreEqual (5, snList.Length);
-            Assert.AreEqual ("147947", snList [0]);
-            Assert.AreEqual ("147948", snList [1]);
-            Assert.AreEqual ("147949", snList [2]);
-            Assert.AreEqual ("14794A", snList [3]);
-            Assert.AreEqual ("14794B", snList [4]);
+            
+            var snList = WrappedCrlMonitor.CrlGetRevoked (crl);
+            Assert.AreEqual (5, snList.Count);
+            //SN List: 14794A, 147947, 147948, 147949, 14794B
+            Assert.IsTrue (snList.Contains ("14794A"));
+            Assert.IsTrue (snList.Contains ("147947"));
+            Assert.IsTrue (snList.Contains ("147948"));
+            Assert.IsTrue (snList.Contains ("147949"));
+            Assert.IsTrue (snList.Contains ("14794B"));
         }
+    }
+
+    public class WrappedCrlMonitor : CrlMonitor
+    {
+        public WrappedCrlMonitor (string url) : base (url)
+        {}
+
+        public override INcHttpClient HttpClient {
+            get {
+                return MockHttpClient.Instance;
+            }
+        }
+
     }
 }
 

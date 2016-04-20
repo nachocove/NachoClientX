@@ -33,6 +33,10 @@ namespace NachoClient.iOS
         protected const int INTERIOR_VIEW_TAG = 101;
         protected const int TEXT_VIEW_TAG = 102;
 
+        public SettingsLegalViewController () : base ()
+        {
+        }
+
         public SettingsLegalViewController (IntPtr handle) : base (handle)
         {
         }
@@ -81,7 +85,8 @@ namespace NachoClient.iOS
                     try {
                         urlSourceCode = new WebClient ().DownloadString (url);
                         webView.LoadHtmlString (urlSourceCode, new NSUrl ("about:blank"));
-                    } catch {
+                    } catch (Exception ex) {
+                        Log.Info (Log.LOG_SYS, "Could not download data from {0}: {1}", url, ex);
                         HandleLoadError (this, null);
                     }
                 } else {

@@ -10,6 +10,8 @@ using NachoCore.Utils;
 public class SwitchAccountCustomSegue : UIStoryboardSegue
 {
 
+    public static nint ShadeViewTag = 200; 
+
     public  SwitchAccountCustomSegue (IntPtr i) : base (i)
     {
     }
@@ -24,29 +26,49 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
             Log.Error (Log.LOG_UI, "SwitchAccountCustomSegue: SourceViewController is null.");
             return;
         }
-        if (null == this.SourceViewController.NavigationController) {
-            Log.Error (Log.LOG_UI, "SwitchAccountCustomSegue: SourceViewController.NavigationController is null.");
-            return;
-        }
         if ((null == SourceViewController.View) || (null == SourceViewController.View.Window)) {
             Log.Error (Log.LOG_UI, "SwitchAccountCustomSegue: SourceViewController {0} is null.", (null == SourceViewController.View ? "view" : "window"));
-            this.SourceViewController.NavigationController.PushViewController (this.DestinationViewController, false);
+            this.SourceViewController.PresentViewController (this.DestinationViewController, true, null);
             return;
         }
-            
-        var outermostView = NachoClient.Util.FindOutermostView(this.SourceViewController.View);
-        var screenLocation = this.SourceViewController.View.Superview.ConvertPointToView (this.SourceViewController.View.Frame.Location, outermostView);
 
-        // Capture the outermost view & adjust the bounds so it appears that
-        // the original view is still around as the account view animates down.
-        // Keep in mind the in-call and navigation status bars.
-        using (var image = NachoClient.Util.captureView (outermostView)) {
-            var imageView = new UIImageView (image);
-            ViewFramer.Create (imageView).Y (-screenLocation.Y);
-            this.DestinationViewController.View.AddSubview (imageView);
-            this.DestinationViewController.View.SendSubviewToBack (imageView);
-        }
+        var sourceSnapshot = SourceViewController.View.Window.SnapshotView (false);
+        // taking a second snapshot and adding it to the source window to prevent a button flicker
+        var sourceSnapshot2 = SourceViewController.View.Window.SnapshotView (false);
+        SourceViewController.View.Window.AddSubview (sourceSnapshot2);
+        var sourceNavbarSnapshot = SourceViewController.NavigationController.NavigationBar.SnapshotView (false);
+        var sourceNavbarFrame = SourceViewController.NavigationController.View.ConvertRectToView (SourceViewController.NavigationController.NavigationBar.Frame, SourceViewController.View.Window); 
+        var shadeView = new UIView (DestinationViewController.View.Frame);
+        shadeView.BackgroundColor = UIColor.Black;
+        shadeView.Alpha = 0.0f;
+        shadeView.Tag = ShadeViewTag;
+        sourceNavbarSnapshot.Frame = sourceNavbarFrame;
+        DestinationViewController.View.AddSubview (sourceSnapshot);
+        DestinationViewController.View.AddSubview (shadeView);
+        DestinationViewController.View.SendSubviewToBack(shadeView);
+        DestinationViewController.View.SendSubviewToBack(sourceSnapshot);
+        DestinationViewController.View.AddSubview (sourceNavbarSnapshot);
+        ViewFramer.Create (sourceSnapshot).Y (-DestinationViewController.View.Frame.Top);
+        ViewFramer.Create (sourceNavbarSnapshot).Y (sourceNavbarFrame.Top - DestinationViewController.View.Frame.Top);
+        // Assuming destination is a navbar controller
+        UINavigationController destinationNav = (UINavigationController)DestinationViewController;
+        UIView destinationView = destinationNav.TopViewController.View;
+        destinationView.Alpha = 0.0f;
+        destinationView.Layer.ShadowColor = UIColor.Black.CGColor;
+        destinationView.Layer.ShadowOpacity = 0.4f;
+        destinationView.Layer.ShadowRadius = 10.0f;
+        SourceViewController.PresentViewController (this.DestinationViewController, false, () => {
+            sourceSnapshot2.RemoveFromSuperview ();
+            destinationView.Transform = CGAffineTransform.MakeTranslation (0, -destinationView.Frame.Height);
+            destinationView.Alpha = 1.0f;
+            UIView.Animate (0.3, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
+                shadeView.Alpha = 0.6f;
+                destinationView.Transform = CGAffineTransform.MakeTranslation (0, 0);
+            }, () => {
+                sourceNavbarSnapshot.RemoveFromSuperview ();
+                destinationView.Layer.ShadowColor = UIColor.Clear.CGColor;
+            });
+        });
 
-        this.SourceViewController.NavigationController.PushViewController (this.DestinationViewController, false);
     }
 }

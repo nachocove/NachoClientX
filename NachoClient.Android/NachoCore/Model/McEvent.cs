@@ -49,6 +49,14 @@ namespace NachoCore.Model
         /// </summary>
         public string UID { get; set; }
 
+        /// <summary>
+        /// The identifier of the calendar item in the device calendar for this instance.  This field is used
+        /// only for transitory McEvent objects that represent device calendar items.  This field is not stored
+        /// in the database.  If it is non-zero, then this McEvent is an in-memory object only.
+        /// </summary>
+        [Ignore]
+        public long DeviceEventId { get; set; }
+
         static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, string UID, bool allDayEvent, int calendarId, int exceptionId)
         {
             // Save the event
@@ -111,7 +119,7 @@ namespace NachoCore.Model
             // Don't set a reminder if the event came from a device calendar.  The device's calendar app should handle those notifications.
             // A notification from Nacho Mail would probably be a duplicate.
             if (AccountId != McAccount.GetDeviceAccount ().Id) {
-                ReminderTime = GetStartTimeUtc () - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
+                ReminderTime = GetStartTimeUtc () - TimeSpan.FromMinutes (reminderMinutes);
                 Update ();
                 LocalNotificationManager.ScheduleNotification (this);
             }
@@ -145,6 +153,26 @@ namespace NachoCore.Model
         public static List<McEvent> QueryAllEventsInOrder ()
         {
             return NcModel.Instance.Db.Table<McEvent> ().OrderBy (v => v.StartTime).ToList ();
+        }
+
+        /// <summary>
+        /// All events where at least part of the event is within the given range.  The events are returned in random order.
+        /// </summary>
+        public static List<McEvent> QueryEventsInRange (DateTime start, DateTime end)
+        {
+            start = start.ToUniversalTime ();
+            end = end.ToUniversalTime ();
+            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= start || x.StartTime < end).ToList ();
+        }
+
+        /// <summary>
+        /// All events where at least part of the event is within the given range.  The events are returned in order of starting time.
+        /// </summary>
+        public static List<McEvent> QueryEventsInRangeInOrder (DateTime start, DateTime end)
+        {
+            start = start.ToUniversalTime ();
+            end = end.ToUniversalTime ();
+            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= start || x.StartTime < end).OrderBy (x => x.StartTime).ToList ();
         }
 
         /// <summary>
@@ -183,6 +211,7 @@ namespace NachoCore.Model
         /// <returns>The number of McEvents that were deleted.</returns>
         public static int DeleteEventsForCalendarItem (int calendarId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             return NcModel.Instance.Db.Execute (
                 "DELETE FROM McEvent WHERE CalendarId = ?", calendarId);
         }

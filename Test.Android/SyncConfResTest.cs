@@ -91,7 +91,7 @@ namespace Test.iOS
             public static AsSyncCommand CreateSyncCmd (MockContext context)
             {
                 var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).Strategy.GenSyncKit (context.ProtocolState));
-                AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+                NcProtoControl.TestHttpClient = MockHttpClient.Instance;
                 return syncCmd;
             }
 
@@ -311,6 +311,7 @@ namespace Test.iOS
                 // If the pending's ServerId dominates the command's ServerId, then drop the command.
                 var inbox = new Inbox (() => FolderOps.CreateUniqueItem<McEmailMessage> ());
                 var att = FolderOps.CreateAttachment (item: inbox.Item, displayName: "My-Attachment");
+                att.Link (inbox.Item);
 
                 bool[] statusIndsPosted = {false};
                 MockOwner.StatusIndCallback += (result) => {

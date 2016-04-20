@@ -46,11 +46,9 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (int accountId, Stream byteWBXML, Boolean? doFiltering = null)
+        NcXmlFilterState LoadBytesInit (Boolean? doFiltering = null)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
-            int level = 0;
-
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
                 filter = new NcXmlFilterState (AsXmlFilterSet.Responses, CToken);
@@ -58,15 +56,32 @@ namespace NachoCore.Wbxml
                 filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
+            return filter;
+        }
+        public void LoadBytes (int accountId, FileStream stream, Boolean? doFiltering = null)
+        {
+            var filter = LoadBytesInit (doFiltering);
+            using (ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (stream, filter.WbxmlBuffer)) {
+                LoadBytesProcess (accountId, filter, bytes, doFiltering);
+            }
+        }
 
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML, filter.WbxmlBuffer);
+        public void LoadBytes (int accountId, byte[] rawBytes, Boolean? doFiltering = null)
+        {
+            var filter = LoadBytesInit (doFiltering);
+            using (ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (rawBytes, filter.WbxmlBuffer)) {
+                LoadBytesProcess (accountId, filter, bytes, doFiltering);
+            }
+        }
 
+        void LoadBytesProcess (int accountId, NcXmlFilterState filter, ASWBXMLByteQueue bytes, Boolean? doFiltering = null)
+        {
+            int level = 0;
             // Version is ignored
             byte version = bytes.Dequeue ();
             if (versionByte != version) {
                 Log.Warn (Log.LOG_AS, "Unexpected version {0}", (int)version);
             }
-
 
             // Public Identifier is ignored
             bytes.DequeueMultibyteInt ();
@@ -112,7 +127,6 @@ namespace NachoCore.Wbxml
                         level--;
                         if (null != filter) {
                             filter.WbxmlBuffer.ReadAll ();
-                            filter.WbxmlBuffer.Mode = GatedMemoryStream.WriteMode.NORMAL;
                         }
                     } else {
                         //throw new InvalidDataException("END global token encountered out of sequence");
@@ -142,7 +156,7 @@ namespace NachoCore.Wbxml
                             #if (!WBXMLTOOL)
                             // We don't need to save the body to a file in the redacted XML case.
                             if (0 < accountId) {
-                                var data = McBody.InsertFile(accountId, 0, ((FileStream stream) => {
+                                var data = McBody.InsertFile (accountId, 0, ((FileStream stream) => {
                                     bytes.DequeueStringToStream (stream, CToken);
                                 }));
                                 currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
@@ -158,11 +172,8 @@ namespace NachoCore.Wbxml
                             if (0 < accountId) {
                                 var tmpPath = NcModel.Instance.TmpPath (accountId);
                                 using (var fileStream = File.OpenWrite (tmpPath)) {
-                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
-                                        new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                        bytes.DequeueStringToStream (cryptoStream, CToken);
-                                        currentNode.Add (new XAttribute ("nacho-attachment-file", tmpPath));
-                                    }
+                                    bytes.DequeueStringToStream (fileStream, CToken, true);
+                                    currentNode.Add (new XAttribute ("nacho-attachment-file", tmpPath));
                                 }
                             }
                             #else
@@ -268,16 +279,13 @@ namespace NachoCore.Wbxml
             writer.Write (publicIdentifierByte);
             writer.Write (characterSetByte);
             writer.Write (stringTableLengthByte);
-            Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitNode (#1313)");
             EmitNode (writer, XmlDoc.Root, 0, filter);
-            Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitNode done (#1313)");
 
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
                 Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
-                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: RecordWbxmlEvent (#1313)");
                 Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }
         }

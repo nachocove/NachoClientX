@@ -14,18 +14,8 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderSyncCommand : ImapCommand
     {
-        private List<Regex> RegexList;
-
-        public ImapFolderSyncCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapFolderSyncCommand (IBEContext beContext) : base (beContext)
         {
-            RedactProtocolLogFunc = RedactProtocolLog;
-            RegexList = new List<Regex> ();
-            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+)(?<space1>\s)(?<redact>.*)$", NcMailKitProtocolLogger.rxOptions));
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
         }
 
         private bool FindAndCreateFolder(ref IList<IMailFolder> folderList, ref List<string> foldernames, string debugTag,
@@ -49,9 +39,9 @@ namespace NachoCore.IMAP
                             // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                             // Strategy will notice that modseq and/or noselect etc has changed, and resync.
                         }
+                        foldernames.Add (mailKitFolder.FullName);
+                        toRemoveIndexList.Add (i);
                     }
-                    foldernames.Add (mailKitFolder.FullName);
-                    toRemoveIndexList.Add (i);
                 }
             }
             // remove from the end of the list, otherwise the index changes

@@ -13,6 +13,8 @@ namespace NachoCore.Model
     {
         public int Id { set; get; }
 
+        public int AccountId { set; get; }
+
         public string DisplayName { set; get; }
 
         public int FileType { set; get; }
@@ -28,7 +30,6 @@ namespace NachoCore.Model
     public class McAbstrFileDesc : McAbstrObjectPerAcc
     {
 
-        [Indexed]
         public bool IsValid { get; set; }
 
         public DateTime FileGCOkAfter { get; set; }
@@ -68,14 +69,19 @@ namespace NachoCore.Model
         public string GetFilePath ()
         {
             NcAssert.True (0 != Id);
-            var dirPath = DirPath ();
+            var dirPath = GetFileDirectory ();
             if (!Directory.Exists (dirPath)) {
                 Directory.CreateDirectory (dirPath);
             }
+            return Path.Combine (dirPath, GetFileName ());
+        }
+
+        public string GetFileName ()
+        {
             if (null == LocalFileName) {
-                return Path.Combine (dirPath, Id.ToString ());
+                return Id.ToString ();
             } else {
-                return Path.Combine (dirPath, LocalFileName);
+                return LocalFileName;
             }
         }
 
@@ -104,7 +110,7 @@ namespace NachoCore.Model
             MIME_4 = 4,
         }
 
-        private string DirPath ()
+        public string GetFileDirectory ()
         {
             return Path.Combine (NcModel.Instance.GetFileDirPath (AccountId, GetFilePathSegment ()), Id.ToString ());
         }
@@ -112,7 +118,7 @@ namespace NachoCore.Model
         private void Prep ()
         {
             Insert ();
-            Directory.CreateDirectory (DirPath ());
+            Directory.CreateDirectory (GetFileDirectory ());
         }
 
         protected void CompleteInsertSaveStart ()
@@ -304,25 +310,52 @@ namespace NachoCore.Model
 
         public static List<NcFileIndex> GetAllFiles (int accountId)
         {
-            return (NcModel.Instance.Db.Query<NcFileIndex> (
-                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
-                "FROM(SELECT a.Id, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
-                "FROM McAttachment a, McEmailMessage e " +
-                "WHERE a.ItemId=e.Id AND a.AccountId=? AND a.IsInline = 0 AND a.ClassCode = ?" +
-                "UNION " +
-                "SELECT a.Id, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
-                "FROM McAttachment a, McCalendar c " +
-                "WHERE a.ItemId=c.Id AND a.AccountId=? AND a.IsInline = 0 AND a.ClassCode = ? " +
-                "UNION " +
-                "SELECT Id, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
-                "FROM McNote " +
-                "UNION " +
-                "SELECT Id, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
-                "FROM McDocument " +
-                "WHERE AccountId=?) " +
-                "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
-                accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar
-            ));
+            var unified = McAccount.GetUnifiedAccount ();
+            if (accountId == unified.Id) {
+                return (NcModel.Instance.Db.Query<NcFileIndex> (
+                    "SELECT t1.Id, t1.AccountId, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
+                    "FROM(SELECT a.Id, a.AccountId, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
+                    "FROM McAttachment a, McEmailMessage e, McMapAttachmentItem m " +
+                    "WHERE m.ItemId=e.Id AND m.AttachmentId=a.Id AND a.IsInline = 0 AND m.ClassCode = ?" +
+                    "UNION " +
+                    "SELECT a.Id, a.AccountId, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
+                    "FROM McAttachment a, McCalendar c, McMapAttachmentItem m " +
+                    "WHERE m.ItemId=c.Id AND m.AttachmentId=a.Id AND a.IsInline = 0 AND m.ClassCode = ? " +
+                    "UNION " +
+                    "SELECT Id, AccountId, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
+                    "FROM McNote " +
+                    "UNION " +
+                    "SELECT Id, AccountId, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
+                    "FROM McDocument " +
+                    ") t1 WHERE t1.DisplayName NOT LIKE 'ATT00%' ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
+                    (int)McAbstrFolderEntry.ClassCodeEnum.Email, 
+                    (int)McAbstrFolderEntry.ClassCodeEnum.Calendar
+                ));
+            } else {
+                return (NcModel.Instance.Db.Query<NcFileIndex> (
+                    "SELECT t1.Id, t1.AccountId, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
+                    "FROM(SELECT a.Id, a.AccountId, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
+                    "FROM McAttachment a, McEmailMessage e, McMapAttachmentItem m " +
+                    "WHERE m.ItemId=e.Id AND m.AttachmentId=a.Id AND a.AccountId=? AND a.IsInline = 0 AND m.ClassCode = ?" +
+                    "UNION " +
+                    "SELECT a.Id, a.AccountId, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
+                    "FROM McAttachment a, McCalendar c, McMapAttachmentItem m " +
+                    "WHERE m.ItemId=c.Id AND m.AttachmentId=a.Id AND a.AccountId=? AND a.IsInline = 0 AND m.ClassCode = ? " +
+                    "UNION " +
+                    "SELECT Id, AccountId, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
+                    "FROM McNote " +
+                    "WHERE AccountId = ? " +
+                    "UNION " +
+                    "SELECT Id, AccountId, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
+                    "FROM McDocument " +
+                    "WHERE AccountId=?) " +
+                    "t1 WHERE t1.DisplayName NOT LIKE 'ATT00%' ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
+                    accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email, 
+                    accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar,
+                    accountId,
+                    accountId
+                ));
+            }
         }
 
         public override int Delete ()
@@ -330,7 +363,7 @@ namespace NachoCore.Model
             // We Must delete the file first. Complete the delete even if something goes wrong with the file delete.
             DeleteFile ();
             try {
-                Directory.Delete (DirPath (), true);
+                Directory.Delete (GetFileDirectory (), true);
             } catch (Exception ex) {
                 Log.Error (Log.LOG_DB, "McAbstrFileDesc: Exception trying to delete DirPath: {0}", ex);
             }
@@ -381,6 +414,30 @@ namespace NachoCore.Model
         public static bool IsNontruncatedBodyComplete (McAbstrFileDesc file)
         {
             return (IsComplete (file) && !file.Truncated);
+        }
+
+        public virtual bool IsImageFile ()
+        {
+            string[] subtype = {
+                ".tiff",
+                ".jpeg",
+                ".jpg",
+                ".gif",
+                ".png",
+            };
+
+            var extension = Pretty.GetExtension (DisplayName);
+
+            if (String.IsNullOrEmpty (extension) && !String.IsNullOrEmpty (LocalFileName)) {
+                extension = Pretty.GetExtension (LocalFileName);
+            }
+
+            foreach (var s in subtype) {
+                if (String.Equals (s, extension, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

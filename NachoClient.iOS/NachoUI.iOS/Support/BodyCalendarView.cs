@@ -65,14 +65,13 @@ namespace NachoClient.iOS
 
             // The contents of the action/info bar depends on whether this is a request,
             // response, or cancellation.
-            string messageKind = parentMessage.MessageClass;
-            if (null != messageKind && messageKind.StartsWith ("IPM.Schedule.Meeting.Resp.")) {
+            if (parentMessage.IsMeetingResponse) {
                 ShowAttendeeResponseBar ();
-            } else if ("IPM.Schedule.Meeting.Canceled" == messageKind) {
+            } else if (parentMessage.IsMeetingCancelation) {
                 ShowCancellationBar (isOnHot);
             } else {
-                if ("IPM.Schedule.Meeting.Request" != messageKind) {
-                    Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar kind: {0}. It will be treated as a meeting request.", messageKind);
+                if (!parentMessage.IsMeetingRequest) {
+                    Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar kind: {0}. It will be treated as a meeting request.", parentMessage.MessageClass);
                 }
                 ShowRequestChoicesBar (isOnHot);
             }
@@ -183,27 +182,15 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowEventInfo ()
         {
-            DateTime start = meetingInfo.StartTime;
-            DateTime end = meetingInfo.EndTime;
-            string location = meetingInfo.Location;
-            // When label, image, and detail
-            whenLabel.Text = Pretty.ExtendedDateString (start);
-            if (meetingInfo.AllDayEvent) {
-                durationLabel.Text = "all day event";
-                if ((start.LocalT ().DayOfYear) + 1 != end.LocalT ().DayOfYear) {
-                    durationLabel.Text = string.Format ("All day from {0} \nuntil {1}",
-                        Pretty.FullDateYearString (start), Pretty.FullDateYearString (end));
-                }
+            whenLabel.Text = NcEventDetail.GetDateString (meetingInfo);
+            durationLabel.Text = NcEventDetail.GetDurationString (meetingInfo);
+            if (0 == meetingInfo.recurrences.Count) {
+                durationLabel.Text = NcEventDetail.GetDurationString (meetingInfo);
             } else {
-                if (start.LocalT ().DayOfYear == end.LocalT ().DayOfYear) {
-                    durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (start), Pretty.FullTimeString (end));
-                } else {
-                    durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (start), Pretty.FullDateTimeString (end));
-                }
+                durationLabel.Text = string.Format ("{0}\n{1}", NcEventDetail.GetDurationString (meetingInfo), NcEventDetail.GetRecurrenceString (meetingInfo));
             }
 
+            string location = meetingInfo.Location;
             if (!string.IsNullOrEmpty (location)) {
                 locationHeadingView.Hidden = false;
                 locationView.Hidden = false;
@@ -244,7 +231,7 @@ namespace NachoClient.iOS
                         organizerPhotoFallbackView.Hidden = false;
                         organizerPhotoFallbackView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
                         var nameString = (null != organizerName ? organizerName : organizerEmail);
-                        organizerPhotoFallbackView.Text = Util.NameToLetters (nameString);
+                        organizerPhotoFallbackView.Text = ContactsHelper.NameToLetters (nameString);
                     }
 
                 }
@@ -253,7 +240,7 @@ namespace NachoClient.iOS
             }
 
             // Only display the attendees when it is a meeting request
-            if ("IPM.Schedule.Meeting.Request" == parentMessage.MessageClass) {
+            if (parentMessage.IsMeetingRequest) {
                 attendeesView.Hidden = false;
                 for (int i = attendessListView.Subviews.Length - 1; i >= 0; --i) {
                     attendeesView.Subviews [i].RemoveFromSuperview ();
@@ -327,7 +314,7 @@ namespace NachoClient.iOS
             // Ideally the subview would be made into a class and take care of its own layout, but this works for now
             if (!organizerView.Hidden) {
                 nfloat emailOffset = 46f;
-                if (organizerNameLabel.Text.Equals ("")) {
+                if (string.IsNullOrEmpty (organizerNameLabel.Text)) {
                     emailOffset = (organizerView.Bounds.Height / 2) - 3;
                 }
                 if (emailOffset != organizerEmailLabel.Frame.Y) {
@@ -343,7 +330,7 @@ namespace NachoClient.iOS
             }
             var layoutHeight = subview.Frame.Height;
             if (maxHeight.HasValue) {
-                layoutHeight = subview.SizeThatFits (new CGSize (durationLabel.Frame.Width, maxHeight.Value)).Height;
+                layoutHeight = subview.SizeThatFits (new CGSize (subview.Frame.Width, maxHeight.Value)).Height;
             }
             if (layoutHeight < minHeight) {
                 layoutHeight = minHeight;
@@ -568,16 +555,16 @@ namespace NachoClient.iOS
 
             UIButton displayedButton = null;
             string messageFormat;
-            switch (parentMessage.MessageClass) {
-            case "IPM.Schedule.Meeting.Resp.Pos":
+            switch (parentMessage.MeetingResponseValue) {
+            case NcResponseType.Accepted:
                 displayedButton = acceptButton;
                 messageFormat = "{0} has accepted the meeting.";
                 break;
-            case "IPM.Schedule.Meeting.Resp.Tent":
+            case NcResponseType.Tentative:
                 displayedButton = tentativeButton;
                 messageFormat = "{0} has tentatively accepted the meeting.";
                 break;
-            case "IPM.Schedule.Meeting.Resp.Neg":
+            case NcResponseType.Declined:
                 displayedButton = declineButton;
                 messageFormat = "{0} has declined the meeting.";
                 break;

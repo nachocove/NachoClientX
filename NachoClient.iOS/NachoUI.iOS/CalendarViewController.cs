@@ -13,12 +13,13 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
+    public partial class CalendarViewController : NcUIViewController, ICalendarTableViewSourceDelegate
     {
         protected CalendarTableViewSource calendarSource;
         protected INcEventProvider eventCalendarMap;
         protected UITableView calendarTableView;
         SwitchAccountButton switchAccountButton;
+        NcUIBarButtonItem todayButton;
         protected DateTime todayButtonDate;
         public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
@@ -38,15 +39,12 @@ namespace NachoClient.iOS
         public static bool BasicView = false;
         protected bool firstTime = true;
 
-        public CalendarViewController (IntPtr handle) : base (handle)
+        public CalendarViewController () : base ()
         {
             var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
             a.TextColor = UIColor.LightGray;
 
-            // Start populating the event table, so the data will hopefully be ready when this view
-            // first becomes visible.
-            eventCalendarMap = new NcAllEventsCalendarMap ();
-            eventCalendarMap.Refresh (completionAction: null);
+            eventCalendarMap = NachoPlatform.Calendars.Instance.EventProviderInstance;
         }
 
         public override void ViewDidLoad ()
@@ -70,7 +68,7 @@ namespace NachoClient.iOS
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
             addEventButton.AccessibilityLabel = "New meeting";
             addEventButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
+                CreateEvent ();
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
@@ -98,12 +96,13 @@ namespace NachoClient.iOS
 
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
 
-            // Start a background refresh, which will update the UI when it is done.
-            calendarSource.Refresh (delegate {
+            eventCalendarMap.UiRefresh = () => {
                 ReloadDataWithoutScrolling ();
                 UpdateDateDotView ();
-            });
+            };
 
+            ReloadDataWithoutScrolling ();
+            UpdateDateDotView ();
             UpdateDateInTodayButton ();
 
             if (firstTime) {
@@ -122,55 +121,33 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            calendarSource.StopTrackingEventChanges ();
+            eventCalendarMap.UiRefresh = null;
         }
 
-        /// <summary>
-        /// Prepares for segue.
-        /// </summary>
-        /// <param name="segue">Segue in charge</param>
-        /// <param name="sender">Typically the cell that was clicked.</param>
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        public void CreateEvent (DateTime startDate)
         {
-            if (segue.Identifier == "NachoNowToEventView") {
-                var vc = (EventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var e = holder.value as McEvent;
-                vc.SetCalendarItem (e);
-                return;
-            }
+            var vc = new EditEventViewController ();
+            vc.SetStartingDate (startDate);
+            vc.SetCalendarItem (null);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
+        }
 
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
-                // Nothing to do
-                return;
-            }  
+        void CreateEvent ()
+        {
+            var vc = new EditEventViewController ();
+            vc.SetCalendarItem (null);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
+        }
 
-            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                if ((bool)holder.value2) {
-                    dc.SetCalendarInvite (c);
-                    dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
-                } else {
-                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
-                }
-                return;
-            }
-
-            if (segue.Identifier == "CalendarToEditEventView") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                if (holder.value != null) {
-                    var dt = (DateTime)holder.value;
-                    vc.SetStartingDate (dt);
-                }
-                vc.SetCalendarItem (null);
-                vc.SetOwner (this);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+        public void ShowEvent (McEvent calendarEvent)
+        {
+            var vc = new EventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            NavigationController.PushViewController (vc, true);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -178,15 +155,6 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
-
-            // When the events change, or when the time zone changes, refresh the UI to reflect the changes.
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                calendarSource.Refresh (delegate {
-                    ReloadDataWithoutScrolling ();
-                    UpdateDateDotView ();
-                });
-                break;
 
             case NcResult.SubKindEnum.Info_ExecutionContextChanged:
                 if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
@@ -209,7 +177,9 @@ namespace NachoClient.iOS
 
                 // No actual events are visible.  Section headers only.  Figure out which section
                 // is at the top (which is not trivial), then scroll that section to the top
-                // after reloading the data.
+                // after reloading the data.  (With the zero-height dummy row that has been added
+                // to each day, there should always be visible rows, so this code isn't needed
+                // anymore.  But I am leaving it here just in case.)
                 nint topSection = 0;
                 var visibleArea = calendarTableView.Bounds;
                 nint numSections = calendarSource.NumberOfSections (calendarTableView);
@@ -256,17 +226,6 @@ namespace NachoClient.iOS
             } else {
                 DateDotView.UpdateButtonsMonth ();
             }
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
         }
 
         protected void ConfigureBasicView ()
@@ -962,18 +921,28 @@ namespace NachoClient.iOS
         // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int eventId)
         {
-            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-            if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, false));
+            var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != calendarInvite) {
+                var account = McAccount.EmailAccountForCalendar (calendarInvite);
+                var message = McEmailMessage.MessageWithSubject (account, calendarInvite.Subject);
+                message.To = calendarInvite.OrganizerEmail;
+                var composeViewController = new MessageComposeViewController (account);
+                composeViewController.Composer.InitialText = "Running late";
+                composeViewController.Composer.Message = message;
+                composeViewController.Present ();
             }
         }
 
         // ICalendarTableViewSourceDelegate
         public void ForwardInvite (int eventId)
         {
-            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-            if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, true));
+            var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != calendarInvite) {
+                var account = McAccount.EmailAccountForCalendar (calendarInvite);
+                var composeViewController = new MessageComposeViewController (account);
+                composeViewController.Composer.RelatedCalendarItem  = calendarInvite;
+                composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (account, "Fwd: " + calendarInvite.Subject);
+                composeViewController.Present ();
             }
         }
 

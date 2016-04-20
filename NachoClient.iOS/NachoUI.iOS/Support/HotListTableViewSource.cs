@@ -12,21 +12,23 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public class HotListTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent, IBodyViewOwner
+
+    public class HotListTableViewSource : UITableViewSource, INachoFolderChooserParent, IBodyViewOwner
     {
-        INachoEmailMessages messageThreads;
+        NachoEmailMessages messageThreads;
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected const string AccountReuseIdentifier = "Account";
 
-        protected IMessageTableViewSourceDelegate owner;
+        protected MessageTableViewSourceDelegate owner;
 
         bool scrolling;
         // to control whether swiping is allowed or not
 
+        IDisposable abatementRequest = null;
+
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
-        private const int DEFER_TAG = 4;
 
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor ARCHIVE_BUTTON =
@@ -38,9 +40,6 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDelete),
                 "Delete", A.Color_NachoSwipeEmailDelete);
-        private static SwipeActionDescriptor DEFER_BUTTON =
-            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
-                "Defer", A.Color_NachoSwipeEmailDefer);
 
         protected const int SWIPE_TAG = 99100;
         protected const int USER_IMAGE_TAG = 99101;
@@ -51,7 +50,7 @@ namespace NachoClient.iOS
         protected const int MESSAGE_HEADER_TAG = 99107;
         protected const int TOOLBAR_TAG = 99109;
         protected const int USER_MORE_TAG = 99110;
-        protected const int UNREAD_IMAGE_TAG = 99111;
+        public const int UNREAD_IMAGE_TAG = 99111;
         protected const int CARD_VIEW_TAG = 99112;
 
         protected const int UNREAD_MESSAGES_VIEW = 99115;
@@ -62,13 +61,13 @@ namespace NachoClient.iOS
         protected CGPoint? expectedScrollEndOffset;
         protected int cardIndexAtScrollStart;
 
-        public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
+        public HotListTableViewSource (MessageTableViewSourceDelegate owner, NachoEmailMessages messageThreads)
         {
             this.owner = owner;
             this.messageThreads = messageThreads;
         }
 
-        public void SetMessageThreads(INachoEmailMessages messageThreads)
+        public void SetMessageThreads(NachoEmailMessages messageThreads)
         {
             this.messageThreads = messageThreads;
         }
@@ -163,7 +162,6 @@ namespace NachoClient.iOS
             view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
-            view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
 
             view.ContentMode = UIViewContentMode.Center;
 
@@ -186,13 +184,15 @@ namespace NachoClient.iOS
             view.AddSubview (userLabelView);
 
             // Unread message dot
-            var unreadMessageView = new UIImageView (new CGRect (5, 30, 9, 9));
-            using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
-                unreadMessageView.Image = image;
-            }
+            var unreadMessageView = new UnreadMessageIndicator (new CGRect (15, 60, 40, 27));
             unreadMessageView.BackgroundColor = UIColor.White;
             unreadMessageView.Tag = UNREAD_IMAGE_TAG;
+            unreadMessageView.UserInteractionEnabled = true;
             view.AddSubview (unreadMessageView);
+            var unreadTap = new UITapGestureRecognizer ();
+            unreadTap.CancelsTouchesInView = true;
+            unreadTap.AddTarget (this, new ObjCRuntime.Selector ("UnreadViewTapped:"));
+            unreadMessageView.AddGestureRecognizer (unreadTap);
 
             var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, frame.Width - 65, 75));
             messageHeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -216,7 +216,6 @@ namespace NachoClient.iOS
             view.AddSubview (reminderLabelView);
 
             var toolbar = new MessageToolbar (new CGRect (0, frame.Height - 44, frame.Width, 44));
-            toolbar.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
             toolbar.Tag = TOOLBAR_TAG;
             view.AddSubview (toolbar);
 
@@ -368,9 +367,6 @@ namespace NachoClient.iOS
                 case SAVE_TAG:
                     onSaveButtonClicked (messageThread);
                     break;
-                case DEFER_TAG:
-                    onDeferButtonClicked (messageThread);
-                    break;
                 case ARCHIVE_TAG:
                     onArchiveButtonClicked (messageThread);
                     break;
@@ -404,13 +400,13 @@ namespace NachoClient.iOS
                 var toolbarEventArgs = e as MessageToolbarEventArgs;
                 switch (toolbarEventArgs.Action) {
                 case MessageToolbar.ActionType.REPLY:
-                    onReplyButtonClicked (messageThread, MessageComposeViewController.REPLY_ACTION);
+                    onReplyButtonClicked (messageThread, EmailHelper.Action.Reply);
                     break;
                 case MessageToolbar.ActionType.REPLY_ALL:
-                    onReplyButtonClicked (messageThread, MessageComposeViewController.REPLY_ALL_ACTION);
+                    onReplyButtonClicked (messageThread, EmailHelper.Action.ReplyAll);
                     break;
                 case MessageToolbar.ActionType.FORWARD:
-                    onReplyButtonClicked (messageThread, MessageComposeViewController.FORWARD_ACTION);
+                    onReplyButtonClicked (messageThread, EmailHelper.Action.Forward);
                     break;
                 case MessageToolbar.ActionType.ARCHIVE:
                     onArchiveButtonClicked (messageThread);
@@ -440,8 +436,10 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
-            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
-            unreadMessageView.Hidden = message.IsRead;
+            var unreadMessageView = (UnreadMessageIndicator)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            unreadMessageView.Hidden = false;
+            unreadMessageView.State = message.IsRead ? UnreadMessageIndicator.MessageState.Read : UnreadMessageIndicator.MessageState.Unread;
+            unreadMessageView.Color = Util.ColorForAccount (message.AccountId);
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureMessageView (messageThread, message);
@@ -454,14 +452,8 @@ namespace NachoClient.iOS
             // Reminder image view and label
             var reminderImageView = view.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = view.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            if (message.HasDueDate () || message.IsDeferred ()) {
-                reminderImageView.Hidden = false;
-                reminderLabelView.Hidden = false;
-                reminderLabelView.Text = Pretty.ReminderText (message);
-            } else {
-                reminderImageView.Hidden = true;
-                reminderLabelView.Hidden = true;
-            }
+            reminderImageView.Hidden = true;
+            reminderLabelView.Hidden = true;
 
             var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
             previewView.Frame = PreviewFrame (cell);
@@ -471,6 +463,31 @@ namespace NachoClient.iOS
         public bool ShouldSwipeCell ()
         {
             return !scrolling;
+        }
+
+        [Foundation.Export ("UnreadViewTapped:")]
+        public void UnreadViewTapped (UIGestureRecognizer sender)
+        {
+            var view = sender.View;
+            while (view != null && !(view is UITableViewCell)) {
+                view = view.Superview;
+            }
+            if (view != null) {
+                var cell = view as UITableViewCell;
+                while (view != null && !(view is UITableView)) {
+                    view = view.Superview;
+                }
+                if (view != null) {
+                    var tableView = view as UITableView;
+                    var indexPath = tableView.IndexPathForCell (cell);
+                    var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+                    var message = messageThread.FirstMessageSpecialCase ();
+                    EmailHelper.ToggleRead (message);
+
+                    var unreadMessageView = (UnreadMessageIndicator)cell.ContentView.ViewWithTag (HotListTableViewSource.UNREAD_IMAGE_TAG);
+                    unreadMessageView.State = message.IsRead ? UnreadMessageIndicator.MessageState.Read : UnreadMessageIndicator.MessageState.Unread;
+                }
+            }
         }
 
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
@@ -494,10 +511,10 @@ namespace NachoClient.iOS
             }
             if (messageThread.HasMultipleMessages ()) {
                 Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
-                owner.PerformSegueForDelegate ("SegueToMessageThreadView", new SegueHolder (messageThread));
+                owner.MessageThreadSelected (messageThread);
             } else {
                 Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
-                owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+                owner.MessageThreadSelected (messageThread);
             }
         }
 
@@ -509,39 +526,18 @@ namespace NachoClient.iOS
 
         private void DeferredClicked (object sender)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id)));
         }
 
         private void DeadlinesClicked (object sender)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id)));
-        }
-
-        /// INachoMessageEditorParent delegate
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.DismissMessageEditor (true, null);
-        }
-
-        /// INachoMessageEditorParent delegate
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateTaskForEmailMessage");
-        }
-
-        /// INachoMessageEditorParent delegate
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateMeetingEmailForMessage");
         }
 
         /// INachoFolderChooserParent delegate
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            NcAssert.True (cookie is SegueHolder);
-            var h = cookie as SegueHolder;
+            NcAssert.True (cookie is McEmailMessageThread);
 
-            var messageThread = (McEmailMessageThread)h.value;
+            var messageThread = (McEmailMessageThread)cookie;
             NcAssert.NotNull (messageThread);
             NcEmailArchiver.Move (messageThread, folder);
         }
@@ -552,12 +548,12 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
-        void onReplyButtonClicked (McEmailMessageThread messageThread, string action)
+        void onReplyButtonClicked (McEmailMessageThread messageThread, EmailHelper.Action action)
         {
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (action, messageThread));
+            owner.RespondToMessageThread (messageThread, action);
         }
 
         void onChiliButtonClicked (McEmailMessageThread messageThread)
@@ -568,20 +564,12 @@ namespace NachoClient.iOS
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (messageThread);
         }
 
-        void onDeferButtonClicked (McEmailMessageThread messageThread)
-        {
-            if (null == messageThread) {
-                return;
-            }
-            owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
-        }
-
         void onSaveButtonClicked (McEmailMessageThread messageThread)
         {
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToFolders", new SegueHolder (messageThread));
+            owner.MoveThread (messageThread);
         }
 
         void onArchiveButtonClicked (McEmailMessageThread messageThread)
@@ -604,22 +592,30 @@ namespace NachoClient.iOS
         {
             cardIndexAtScrollStart = CardIndexNearestOffset ((UITableView)scrollView, scrollView.ContentOffset);
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
             scrolling = false;
             EnsureScrollEndIsAsExpected (scrollView);
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
+                if (null != abatementRequest) {
+                    abatementRequest.Dispose ();
+                    abatementRequest = null;
+                }
                 scrolling = false;
                 EnsureScrollEndIsAsExpected (scrollView);
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
 
@@ -703,7 +699,13 @@ namespace NachoClient.iOS
         void IBodyViewOwner.LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
-                owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+                string body;
+                // would be best to use the account from the message that was selected, but we don't have that info here
+                var account = NcApplication.Instance.DefaultEmailAccount;
+                var composeViewController = new MessageComposeViewController (account);
+                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
+                composeViewController.Composer.InitialText = body;
+                composeViewController.Present ();
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
             }

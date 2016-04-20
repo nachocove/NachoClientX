@@ -116,7 +116,7 @@ namespace NachoClient.iOS
             return ((Count - 1) == i);
         }
 
-        public new void Clear()
+        public new void Clear ()
         {
             NcAssert.CaseError ("invalid operation; call ClearActions instead");
         }
@@ -273,19 +273,35 @@ namespace NachoClient.iOS
             if (0.0 == movePercentage) {
                 ViewFramer.Create (snapshotView).X (0);
             } else if (0.0 > movePercentage) {
-                ViewFramer.Create (snapshotView).X (clippedPercentage * rightOffsets [0]);
+                if (rightOffsets.Length == 0) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no rightOffsets");
+                } else {
+                    ViewFramer.Create (snapshotView).X (clippedPercentage * rightOffsets [0]);
+                }
             } else {
-                ViewFramer.Create (snapshotView).X (clippedPercentage * leftOffsets [0]);
+                if (leftOffsets.Length == 0) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no leftOffsets");
+                } else {
+                    ViewFramer.Create (snapshotView).X (clippedPercentage * leftOffsets [0]);
+                }
             }
 
             for (int i = 0; i < leftActionButtons.Count; i++) {
                 button = leftActionButtons [i];
-                ViewFramer.Create (button).X (-button.Frame.Width + (clippedPercentage * leftOffsets [i]));
+                if (leftOffsets.Length <= i) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no leftOffset for button index {0}", i);
+                } else {
+                    ViewFramer.Create (button).X (-button.Frame.Width + (clippedPercentage * leftOffsets [i]));
+                }
             }
 
             for (int i = 0; i < rightActionButtons.Count; i++) {
                 button = rightActionButtons [i];
-                ViewFramer.Create (button).X (Frame.Width + (clippedPercentage * rightOffsets [i]));
+                if (rightOffsets.Length <= i) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no rightOffset for button index {0}", i);
+                } else {
+                    ViewFramer.Create (button).X (Frame.Width + (clippedPercentage * rightOffsets [i]));
+                }
             }
 
             //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
@@ -506,7 +522,7 @@ namespace NachoClient.iOS
                 return true;
             };
             swipeRecognizer.ShouldBegin = delegate(UIGestureRecognizer obj) {
-                if (ShouldSwipe != null && !ShouldSwipe()){
+                if (ShouldSwipe != null && !ShouldSwipe ()) {
                     return false;
                 }
                 var recognizer = (UIPanGestureRecognizer)obj;
@@ -534,26 +550,31 @@ namespace NachoClient.iOS
                         swipingView = new SwipeActionSwipingView (this, LeftSwipeActionButtons,
                             RightSwipeActionButtons,
                             () => {
-                                if (!isPanning){
-                                    swipingView.SnapToAllButtonsHidden (() => {
-                                        RemoveSwipingView ();
-                                        TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
-                                    });
+                                if (!isPanning) {
+                                    if (null != swipingView) {
+                                        swipingView.SnapToAllButtonsHidden (() => {
+                                            RemoveSwipingView ();
+                                            TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                                        });
+                                    }
                                 }
                             });
                         // Where is swiping view on the  screen?
                         var topView = Util.FindOutermostView (this);
+                        NcAssert.NotNull (topView, "PanHandler: topView is null");
                         var screenLocation = this.ConvertPointToView (this.Frame.Location, null);
                         var adjustedFrame = new CGRect (screenLocation.X, screenLocation.Y, this.Frame.Width, this.Frame.Height);
                         coverView = new CoverView (topView, adjustedFrame);
                         topView.AddSubview (coverView);
                         this.AddSubview (swipingView);
                         coverRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer tap) => {
-                            if (!isPanning){
-                                swipingView.SnapToAllButtonsHidden (() => {
-                                    RemoveSwipingView ();
-                                    TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
-                                });
+                            if (!isPanning) {
+                                if (null != swipingView) {
+                                    swipingView.SnapToAllButtonsHidden (() => {
+                                        RemoveSwipingView ();
+                                        TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                                    });
+                                }
                             }
                         });
                         coverView.AddGestureRecognizer (coverRecognizer);
@@ -571,7 +592,7 @@ namespace NachoClient.iOS
             default:
                 {
                     NcAssert.True ((UIGestureRecognizerState.Ended == obj.State) ||
-                        (UIGestureRecognizerState.Cancelled == obj.State));
+                    (UIGestureRecognizerState.Cancelled == obj.State));
                     isPanning = false;
                     if (!MayRemoveSwipingView ()) {
                         MayCompletePullOut ();
@@ -615,7 +636,7 @@ namespace NachoClient.iOS
             if (null != descriptor) {
                 newButton = new SwipeActionButton (descriptor, this);
                 newButton.TouchUpInside += (object sender, EventArgs e) => {
-                    if (!isPanning){
+                    if (!isPanning) {
                         int tag = newButton.Config.Tag;
                         RemoveSwipingView ();
                         TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);

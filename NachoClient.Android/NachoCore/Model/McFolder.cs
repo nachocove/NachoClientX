@@ -5,15 +5,24 @@ using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using Portable.Text;
+using System.Security.Cryptography;
 
 namespace NachoCore.Model
 {
+    [Flags]
+    public enum FolderFilterOptions
+    {
+        All = 0,
+        Hot = 1,
+        Focused = 2,
+        Unread = 4,
+    }
+
     public class McFolder : McAbstrFolderEntry
     {
-        [Indexed]
         public bool IsClientOwned { get; set; }
 
-        [Indexed]
         public bool IsHidden { get; set; }
 
         [Indexed]
@@ -44,13 +53,13 @@ namespace NachoCore.Model
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
 
-
         #region IMAP Folder metadata
+
         // Nacho Mail Code requires the McEmailMessage.ServerId to be unique across all folders. In IMAP,
         // the UID is unique only within a folder (otehr folders may have messages with the same UID).
         // In order to make the ServerId for a message unique, we create this ImapGuid, and prepend it to
         // the UID to create the McEmailMessgae.ServerId. See ImapProtoControl.ImapMessageFolderGuid(),
-        // ImapProtoControl.ImapMessageUid() and ImapProtoControl.MessageServerId() for functions that 
+        // ImapProtoControl.ImapMessageUid() and ImapProtoControl.MessageServerId() for functions that
         // Convert to and from the McEmailMessage.ServerId to the various pieces of information.
         //
         // The ImapGuid will not change if the folder is moved or renamed.
@@ -74,18 +83,41 @@ namespace NachoCore.Model
 
         #region IMAP Sync helper variables
 
-        // DateTime we last examined the folder.
+        /// <summary>
+        /// DateTime we last examined the folder.
+        /// </summary>
+        /// <value>DateTime we last examined the folder.</value>
         public DateTime ImapLastExamine { get; set; }
 
+        /// <summary>
+        /// Tells us that we need to start at the top and work our way down again. This usually gets set
+        /// if we detect a new message or a change in HighestModSeq.
+        /// </summary>
+        /// <value><c>true</c> if imap need full sync; otherwise, <c>false</c>.</value>
         public bool ImapNeedFullSync { get; set; }
 
-        // The lowest UID we've synced in the current round of syncing
+        /// <summary>
+        /// The lowest UID we've synced in the current round of syncing
+        /// </summary>
+        /// <value>The lowest uid synced.</value>
         public uint ImapUidLowestUidSynced { get; set; }
-        // The highest UID we've synced in the current round of syncing
+
+        /// <summary>
+        /// The highest UID we've synced in the current round of syncing
+        /// </summary>
+        /// <value>The highest uid synced.</value>
         public uint ImapUidHighestUidSynced { get; set; }
-        // The current sync-point in the current round of syncing
+
+        /// <summary>
+        /// The current sync-point in the current round of syncing
+        /// </summary>
+        /// <value>The last uid synced.</value>
         public uint ImapLastUidSynced { get; set; }
-        // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+
+        /// <summary>
+        /// The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+        /// </summary>
+        /// <value>The imap uid set.</value>
         public string ImapUidSet { get; set; }
 
         #endregion
@@ -101,15 +133,28 @@ namespace NachoCore.Model
         public bool IsDistinguished { get; set; }
 
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
+
+        public FolderFilterOptions FilterSetting { get; set; }
+
         // Client-owned distinguised folders.
-        public const string ClientOwned_Outbox = "Outbox2";
-        public const string ClientOwned_EmailDrafts = "EmailDrafts2";
-        public const string ClientOwned_CalDrafts = "CalDrafts2";
-        public const string ClientOwned_GalCache = "GAL";
-        public const string ClientOwned_Gleaned = "GLEANED";
-        public const string ClientOwned_LostAndFound = "LAF";
-        public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
-        public const string ClientOwned_DeviceCalendars = "DEVCALENDARS";
+        public const string ClientOwned_Outbox = "f6a01521-a763-4522-8a13-3df0545f4bdb";
+        public const string ClientOwned_EmailDrafts = "568e8b03-3e40-468a-ab65-7a5c20e360c1";
+        public const string ClientOwned_CalDrafts = "910bfa36-c005-4091-8053-39811ca43b03";
+        public const string ClientOwned_GalCache = "246568ef-9747-4248-829f-577a03d27585";
+        public const string ClientOwned_Gleaned = "ff34dbdb-07d2-4410-81e3-982af89ada6d";
+        public const string ClientOwned_LostAndFound = "02b061f1-c074-425b-aa7e-d9b491d52a35";
+        public const string ClientOwned_DeviceContacts = "161b18ba-c9fe-4421-930d-6f90655c21c6";
+        public const string ClientOwned_DeviceCalendars = "a40af78a-583e-4b25-9e49-a341df6b3b4d";
+
+        // Old names for the folders
+        public const string ClientOwned_Outbox_Deprecated = "Outbox2";
+        public const string ClientOwned_EmailDrafts_Deprecated = "EmailDrafts2";
+        public const string ClientOwned_CalDrafts_Deprecated = "CalDrafts2";
+        public const string ClientOwned_GalCache_Deprecated = "GAL";
+        public const string ClientOwned_Gleaned_Deprecated = "GLEANED";
+        public const string ClientOwned_LostAndFound_Deprecated = "LAF";
+        public const string ClientOwned_DeviceContacts_Deprecated = "DEVCONTACTS";
+        public const string ClientOwned_DeviceCalendars_Deprecated = "DEVCALENDARS";
 
         public const string GMail_All_ServerId = "Mail:^all";
 
@@ -137,7 +182,17 @@ namespace NachoCore.Model
 
         public string ImapFolderNameRedacted ()
         {
-            return string.Format ("{0}<{1}>", ImapGuid, IsDistinguished ? ServerId : "User Folder");
+            bool obfuscate = IsDistinguished || ServerId.StartsWith ("[Gmail]/") ? false : true;
+            return string.Format ("{0}<{1}>", ImapGuid, !obfuscate ? ServerId : "User Folder");
+        }
+
+        public string ServerIdHashString ()
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes (ServerId);
+            SHA256Managed hashstring = new SHA256Managed ();
+            byte[] hash = hashstring.ComputeHash (bytes);
+            string hex = BitConverter.ToString (hash);
+            return hex.Replace ("-", "");
         }
 
         // "factory" to create folders.
@@ -664,6 +719,10 @@ namespace NachoCore.Model
                         }
                         this.DisplayColor = nextColor;
                     }
+                    // Make sure there's no other folder with the same ServerId in this account.
+                    if (McFolder.QueryByServerIdMult<McFolder> (AccountId, ServerId).Any ()) {
+                        throw new ArgumentException ("Trying to insert duplicate serverid");
+                    }
                     result = base.Insert ();
                     if (MaybeJunkFolder (DisplayName)) {
                         JunkFolderIds.TryAdd (Id, DisplayName);
@@ -1102,7 +1161,7 @@ namespace NachoCore.Model
             NcAssert.True (tags.Any ());
             var folderLower = folderName.ToLowerInvariant ();
             foreach (var tag in tags) {
-                if (folderLower.Contains (tag.ToLowerInvariant())) {
+                if (folderLower.Contains (tag.ToLowerInvariant ())) {
                     return true;
                 }
             }
@@ -1146,6 +1205,34 @@ namespace NachoCore.Model
                 return null;
             }
             return "(" + string.Join (",", folderList) + ")";
+        }
+
+        public const int HOT_FAKE_FOLDER_ID = -1;
+        public const int LTR_FAKE_FOLDER_ID = -2;
+        public const int INBOX_FAKE_FOLDER_ID = -5;
+
+        public static McFolder GetHotFakeFolder ()
+        {
+            return  new McFolder () {
+                Id = HOT_FAKE_FOLDER_ID,
+                DisplayName = "Hot List",
+            };
+        }
+
+        public static McFolder GetLtrFakeFolder ()
+        {
+            return new McFolder () {
+                Id = LTR_FAKE_FOLDER_ID,
+                DisplayName = "Focused",
+            };
+        }
+
+        public static McFolder GetInboxFakeFolder ()
+        {
+            return new McFolder () {
+                Id = INBOX_FAKE_FOLDER_ID,
+                DisplayName = "Inbox",
+            };
         }
     }
 }

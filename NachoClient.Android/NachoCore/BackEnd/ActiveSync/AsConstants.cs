@@ -195,7 +195,9 @@ namespace NachoCore.ActiveSync
             public const string SyncKey = "SyncKey";
             public const string Type = "Type";
             public const string WindowSize = "WindowSize";
-
+            public const string Wait = "Wait";
+            public const string HeartbeatInterval = "HeartbeatInterval";
+           
             public class ClassCode
             {
                 public const string Tasks = "Tasks";

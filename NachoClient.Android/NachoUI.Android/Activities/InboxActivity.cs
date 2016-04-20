@@ -12,76 +12,25 @@ using Android.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "InboxActivity")]            
-    public class InboxActivity : NcActivity
+    public class InboxActivity : NcMessageListActivity
     {
-        MessageViewFragment messageViewFragment;
-        MessageListFragment messageListFragment;
-        MessageThreadFragment threadListFragment;
-
-        protected override void OnCreate (Bundle bundle)
+        protected override NachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            base.OnCreate (bundle, Resource.Layout.InboxActivity);
-
-            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
-
-            List<int> adds;
-            List<int> deletes;
-            messages.Refresh (out adds, out deletes);
-
-            messageListFragment = MessageListFragment.newInstance (messages);
-            messageListFragment.onMessageClick += MessageListFragment_onThreadClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
+            var messages = NcEmailSingleton.InboxSingleton (NcApplication.Instance.Account.Id);
+            NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes);
+            return messages;
         }
 
-        void MessageListFragment_onThreadClick (object sender, McEmailMessageThread thread)
+        public override void SetActiveImage (View view)
         {
-            Console.WriteLine ("MessageListFragment_onMessageClick: {0}", thread);
-
-            if (1 == thread.MessageCount) {
-                var message = thread.FirstMessageSpecialCase ();
-                MessageThreadFragment_onMessageClick (sender, message);
-                return;
-            }
-
-            threadListFragment = MessageThreadFragment.newInstance (thread);
-            threadListFragment.onMessageClick += MessageThreadFragment_onMessageClick;
-
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, threadListFragment).AddToBackStack ("Inbox").Commit ();
-        }
-
-        void MessageThreadFragment_onMessageClick (object sender, McEmailMessage message)
-        {
-            Console.WriteLine ("MessageThreadFragment_onMessageClick: {0}", message);
-            messageViewFragment = MessageViewFragment.newInstance (message);
-            this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
-        }
-
-        public void DoneWithMessage ()
-        {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
-            }
-        }
-
-        public override void OnBackPressed ()
-        {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
-            }
-            if (f is MessageThreadFragment) {
-                this.FragmentManager.PopBackStack ();
-            }
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            base.OnSaveInstanceState (outState);
+            // Highlight the tab bar icon of this activity
+            var tabImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.inbox_image);
+            tabImage.SetImageResource (Resource.Drawable.nav_mail_active);
         }
     }
 }

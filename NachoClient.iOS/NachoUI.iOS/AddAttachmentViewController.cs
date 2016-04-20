@@ -10,11 +10,226 @@ using System.IO;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using MobileCoreServices;
+using Photos;
+using AVFoundation;
 
 namespace NachoClient.iOS
 {
     public partial class AddAttachmentViewController : NcUIViewControllerNoLeaks
     {
+
+        public class MenuHelper : NSObject, IUIDocumentMenuDelegate, IUIDocumentPickerDelegate
+        {
+            public UIDocumentMenuViewController MenuViewController { get; private set; }
+            INachoFileChooserParent owner;
+            McAccount account;
+
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIBarButtonItem parentButton, UIView parentView)
+            {
+                this.owner = owner;
+                this.account = account;
+
+                MenuViewController = new UIDocumentMenuViewController(new string[] {
+                    UTType.Data,
+                    UTType.Package
+                }, UIDocumentPickerMode.Import);
+                MenuViewController.Delegate = this;
+                MenuViewController.AddOption ("Browse Attachments", UIImage.FromBundle("calendar-add-files"), UIDocumentMenuOrder.First, ShowBrowseAttachments);
+                MenuViewController.AddOption ("Take a Photo", UIImage.FromBundle("calendar-take-photo"), UIDocumentMenuOrder.First, ShowTakePhoto);
+                MenuViewController.AddOption ("Browse Photos", UIImage.FromBundle("calendar-add-photo"), UIDocumentMenuOrder.First, ShowBrowsePhotos);
+                var ppc = MenuViewController.PopoverPresentationController;
+                if (null != ppc) {
+                    if (null != parentButton) {
+                        ppc.BarButtonItem = parentButton;
+                    } else {
+                        ppc.SourceView = parentView;
+                        ppc.SourceRect = parentView.Bounds;
+                    }
+                }
+            }
+
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIBarButtonItem parentButton)
+                : this (owner, account, parentButton, null)
+            {
+            }
+
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIView parentView)
+                : this (owner, account, null, parentView)
+            {
+            }
+
+            void ShowBrowsePhotos ()
+            {
+                ShowPhotoPicker (false);
+            }
+
+            void ShowTakePhoto ()
+            {
+                ShowPhotoPicker (true);
+            }
+
+            void ShowBrowseAttachments ()
+            {
+                var fileListViewController = new FileListViewController ();
+                fileListViewController.SetOwner (owner, account);
+                fileListViewController.SetModal (true);
+                owner.PresentFileChooserViewController (fileListViewController);
+            }
+
+            public void DidPickDocumentPicker (UIDocumentMenuViewController documentMenu, UIDocumentPickerViewController documentPicker)
+            {
+                documentPicker.Delegate = this;
+                owner.PresentFileChooserViewController (documentPicker);
+            }
+
+            public void WasCancelled (UIDocumentMenuViewController documentMenu)
+            {
+            }
+
+            public void DidPickDocument (UIDocumentPickerViewController controller, NSUrl url)
+            {
+                if (url.IsFileUrl) {
+                    var path = url.Path;
+                    if (Directory.Exists (path)) {
+                        url = url.AppendPathExtension ("zip");
+                        System.IO.Compression.ZipFile.CreateFromDirectory (path, url.Path);
+                        Directory.Delete (path, true);
+                        path = url.Path;
+                    }
+                    var attachment = McAttachment.InsertSaveStart (account.Id);
+                    attachment.SetDisplayName (url.LastPathComponent);
+                    attachment.UpdateFileMove (path);
+                    owner.Append (attachment);
+                } else {
+                    Log.Error (Log.LOG_UI, "DidPickDocument received non-file URL: {0}", url);
+                }
+            }
+
+            public void ShowPhotoPicker (bool useCamera, UIViewController fromViewController = null)
+            {
+                var imagePicker = new UIImagePickerController ();
+                imagePicker.NavigationBar.Translucent = false;
+                imagePicker.NavigationBar.BarTintColor = A.Color_NachoGreen;
+                imagePicker.NavigationBar.TintColor = A.Color_NachoBlue;
+
+                if (useCamera) {
+                    if (UIImagePickerController.IsSourceTypeAvailable (UIImagePickerControllerSourceType.Camera)) {
+                        imagePicker.SourceType = UIImagePickerControllerSourceType.Camera;
+                    } else {
+                        Util.ComplainAbout ("Error", "Your device does not have a camera");
+                    }
+                } else {
+                    imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
+                }
+
+                imagePicker.FinishedPickingMedia += HandleFinishedPickingMedia;
+                imagePicker.Canceled += HandleCanceled;
+                imagePicker.MediaTypes = new string[]{ UTType.Image.ToString (), UTType.Movie.ToString () };
+
+                imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
+
+                if (fromViewController != null) {
+                    fromViewController.PresentViewController (imagePicker, true, null);
+                } else {
+                    owner.PresentFileChooserViewController (imagePicker);
+                }
+            }
+
+            protected void HandleCanceled (object sender, EventArgs e)
+            {
+                var imagePicker = sender as UIImagePickerController;
+                imagePicker.DismissViewController (true, null);
+            }
+
+            protected void HandleFinishedPickingMedia (object sender, UIImagePickerMediaPickedEventArgs e)
+            {
+                var type = e.Info [UIImagePickerController.MediaType].ToString ();
+                if (type.Equals (UTType.Image) || type.Equals (UTType.Movie)) {
+                    var referenceUrl = e.Info [UIImagePickerController.ReferenceUrl] as NSUrl;
+                    var metadata = e.Info [UIImagePickerController.MediaMetadata] as NSDictionary;
+                    if (referenceUrl != null) {
+                        // picked an image or movie
+                        var options = new PHFetchOptions ();
+                        var assets = PHAsset.FetchAssets (new NSUrl[] { referenceUrl }, options);
+                        if (assets.Count > 0){
+                            var asset = assets.firstObject as PHAsset;
+                            if (asset != null) {
+                                var attachment = McAttachment.InsertSaveStart (account.Id);
+                                var filenameObj = asset.ValueForKey (new NSString ("filename")) as NSString;
+                                var filename = filenameObj != null ? filenameObj.ToString () : null;
+                                if (type.Equals (UTType.Image)) {
+                                    if (filename == null) {
+                                        filename = "attachment.jpg";
+                                    }
+                                    var imageOptions = new PHImageRequestOptions ();
+                                    imageOptions.Version = PHImageRequestOptionsVersion.Current;
+                                    imageOptions.DeliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat;
+                                    imageOptions.NetworkAccessAllowed = true;
+                                    PHImageManager.DefaultManager.RequestImageData (asset, imageOptions, (NSData data, NSString dataUti, UIImageOrientation orientation, NSDictionary info) => {
+                                        var error = info.ObjectForKey (PHImageKeys.Error);
+                                        if (error == null) {
+                                            attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
+                                            attachment.UpdateData (data.ToArray ());
+                                            attachment.UpdateSaveFinish ();
+                                            owner.AttachmentUpdated (attachment);
+                                        } else {
+                                            Log.Error (Log.LOG_UI, "AddAttachmentViewController error obtaining image data: {0}", error);
+                                            attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
+                                            attachment.FilePresence = McAbstrFileDesc.FilePresenceEnum.Error;
+                                            attachment.Update ();
+                                            owner.AttachmentUpdated (attachment);
+                                        }
+                                    });
+                                } else if (type.Equals (UTType.Movie)) {
+                                    var movieUrl = e.Info [UIImagePickerController.MediaURL] as NSUrl;
+                                    if (filename == null) {
+                                        filename = movieUrl.LastPathComponent;
+                                    }
+                                    attachment.UpdateFileCopy (movieUrl.Path);
+                                    attachment.UpdateSaveFinish ();
+                                }
+                                attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
+                                attachment.SetDisplayName (filename);
+                                attachment.Update ();
+                                owner.Append (attachment);
+                            } else {
+                                Log.Error (Log.LOG_UI, "AddAttachmentViewController first result is not a PHAsset");
+                            }
+                        }else{
+                            Log.Error (Log.LOG_UI, "AddAttachmentViewController could not find asset: {0}", referenceUrl);
+                        }
+                    } else if (metadata != null) {
+                        // Took a picture with the camera.
+                        var image = e.Info [UIImagePickerController.EditedImage] as UIImage;
+                        if (image == null) {
+                            image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
+                        }
+                        var attachment = McAttachment.InsertSaveStart (account.Id);
+                        attachment.SetDisplayName ("attachment.jpg");
+                        attachment.ContentType = "image/jpeg";
+                        attachment.Update ();
+                        using (var jpg = image.AsJPEG ()) {
+                            attachment.UpdateData (jpg.ToArray ());
+                        }
+                        PHPhotoLibrary.SharedPhotoLibrary.PerformChanges (() => {
+                            PHAssetChangeRequest.FromImage (image);
+                        }, (bool success, NSError error) => {
+                            if (!success){
+                                Log.Error (Log.LOG_UI, "AddAttachmentViewController could not add to photos: {0}", error);
+                            }
+                        });
+                        owner.Append (attachment);
+                    } else {
+                        Log.Error (Log.LOG_UI, "AddAttachmentViewController no reference or metadata: {0}", e.Info);
+                    }
+                }else{
+                    Log.Error (Log.LOG_UI, "AddAttachmentViewController unknown media type selected: {0}", type);
+                }
+                e.Info.Dispose ();
+                owner.DismissPhotoPicker ();
+            }
+        }
 
         const float BUTTON_SIZE = 64;
         const float BUTTON_LABEL_HEIGHT = 40;
@@ -48,18 +263,6 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("AddAttachmentToAttachments")) {
-                var dc = (FileListViewController)segue.DestinationViewController;
-                dc.SetOwner (owner);
-                dc.SetModal (true);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         protected const int DISMISS_TAG = 1000;
@@ -151,6 +354,12 @@ namespace NachoClient.iOS
             View.AddSubview (priorityView);
         }
 
+        void SetupPhotoPicker (bool useCamera)
+        {
+            var helper = new MenuHelper (owner, account, View);
+            helper.ShowPhotoPicker (useCamera, this);
+        }
+
         public void dismissClicked (object sender, EventArgs e)
         {
             DismissViewController (true, null);
@@ -172,84 +381,19 @@ namespace NachoClient.iOS
 
         public void SetupAttachmentChooser ()
         {
-            PerformSegue ("AddAttachmentToAttachments", this);
+            ShowFiles ();
+        }
+
+        void ShowFiles ()
+        {
+            var dc = new FileListViewController ();
+            dc.SetOwner (owner, account);
+            dc.SetModal (true);
+            PresentViewController (dc, true, null);
         }
 
         protected override void ConfigureAndLayout ()
         {
-        }
-
-        //source is true if using camera
-        //source is false if using photo library
-        public void SetupPhotoPicker (bool source)
-        {
-            var imagePicker = new UIImagePickerController ();
-            imagePicker.NavigationBar.Translucent = false;
-            imagePicker.NavigationBar.BarTintColor = A.Color_NachoGreen;
-            imagePicker.NavigationBar.TintColor = A.Color_NachoBlue;
-
-            if (source) {
-                if (UIImagePickerController.IsSourceTypeAvailable (UIImagePickerControllerSourceType.Camera)) {
-                    imagePicker.SourceType = UIImagePickerControllerSourceType.Camera;
-                } else {
-                    Util.ComplainAbout ("Error", "Your device does not have a camera");
-                }
-            } else {
-                imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
-            }
-
-            imagePicker.FinishedPickingMedia += HandleFinishedPickingMedia;
-            imagePicker.Canceled += HandleCanceled;
-
-            imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
-            this.PresentViewController (imagePicker, true, null);
-            MaintainLightStyleStatusBar ();
-        }
-
-        protected void HandleCanceled (object sender, EventArgs e)
-        {
-            var imagePicker = sender as UIImagePickerController;
-            imagePicker.DismissViewController (true, null);
-            MaintainLightStyleStatusBar ();
-        }
-
-        protected void HandleFinishedPickingMedia (object sender, UIImagePickerMediaPickedEventArgs e)
-        {
-
-            bool isImage = false;
-            switch (e.Info [UIImagePickerController.MediaType].ToString ()) {
-            case "public.image":
-                isImage = true;
-                break;
-            case "public.video":
-                // TODO: Implement videos
-                Log.Info (Log.LOG_UI, "video ignored");
-                break;
-            default:
-                // TODO: Implement videos
-                Log.Error (Log.LOG_UI, "unknown media type selected");
-                break;
-            }
-
-            if (isImage) {
-                var image = e.Info [UIImagePickerController.EditedImage] as UIImage;
-                if (null == image) {
-                    image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
-                }
-                NcAssert.True (null != image);
-                var attachment = McAttachment.InsertFile (account.Id, ((FileStream stream) => {
-                    using (var jpg = image.AsJPEG ().AsStream ()) {
-                        jpg.CopyTo (stream);
-                    }
-                }));
-                attachment.SetDisplayName (attachment.Id.ToString () + ".jpg");
-                attachment.UpdateSaveFinish ();
-                owner.Append (attachment);
-            }
-
-            e.Info.Dispose ();
-            owner.DismissPhotoPicker ();
-            MaintainLightStyleStatusBar ();
         }
 
         protected class ButtonInfo
@@ -272,11 +416,6 @@ namespace NachoClient.iOS
         protected void MaintainLightStyleStatusBar ()
         {
             UIApplication.SharedApplication.SetStatusBarStyle (UIStatusBarStyle.LightContent, false);
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
         }
 
         public void RemoveAttachment (McAttachment attachment)

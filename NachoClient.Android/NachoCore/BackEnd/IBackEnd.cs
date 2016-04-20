@@ -43,6 +43,7 @@ namespace NachoCore
         void Stop (int accountId);
         // remove service for an account.
         void Remove (int accountId);
+        NcProtoControl GetService (int accountId, McAccount.AccountCapabilityEnum capability);
         // let the BE know that the asked-about server cert is/not okay to trust.
         void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay);
         // let the BE know that the server info has been updated for this account.
@@ -79,7 +80,7 @@ namespace NachoCore
         NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
         List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
-        NcResult MarkEmailReadCmd (int accountId, int emailMessageId);
+        NcResult MarkEmailReadCmd (int accountId, int emailMessageId, bool read);
         // set the flag value on the email.
         NcResult SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
                           DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
@@ -141,10 +142,14 @@ namespace NachoCore
         NcResult ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);
         // state, including auto-d.
+        List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> BackEndStates (int accountId);
         BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities);
+        BackEnd.AutoDFailureReasonEnum AutoDFailureReason (int accountId, McAccount.AccountCapabilityEnum capabilities);
         AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities);
         X509Certificate2 ServerCertToBeExamined (int accountId, McAccount.AccountCapabilityEnum capabilities);
         void SendEmailBodyFetchHint (int accountId, int emailMessageId);
+        // Sync Contacts.
+        NcResult SyncContactsCmd (int accountId);
     }
 }
 

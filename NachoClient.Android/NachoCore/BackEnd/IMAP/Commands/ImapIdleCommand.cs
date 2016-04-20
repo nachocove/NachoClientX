@@ -14,23 +14,15 @@ namespace NachoCore.IMAP
     public class ImapIdleCommand : ImapCommand
     {
         McFolder IdleFolder;
-        bool ENABLED = true;
         CancellationTokenSource Done { get; set; }
 
-        public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapIdleCommand (IBEContext beContext, McFolder folder) : base (beContext)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
-            IdleFolder = McFolder.GetDefaultInboxFolder(AccountId);
-            NcAssert.NotNull (IdleFolder);
-            RedactProtocolLogFunc = RedactProtocolLog;
+            IdleFolder = folder;
             Done = new CancellationTokenSource ();
             Cts.Token.Register (() => Done.Cancel ());
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return logData;
         }
 
         private bool mailArrived = false;
@@ -46,10 +38,16 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             var mailKitFolder = GetOpenMailkitFolder (IdleFolder);
+            var changed = UpdateImapSetting (mailKitFolder, ref IdleFolder);
+            if (changed) {
+                GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEBEFORE");
+            }
+
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
-            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
+            if (Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
                 IdleIdle(mailKitFolder);
             } else {
                 NoopIdle(mailKitFolder);
@@ -70,9 +68,7 @@ namespace NachoCore.IMAP
                 StatusItems.Unread);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
             if (mailArrived || mailDeleted || needResync) {
-                if (!GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
-                    Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", IdleFolder.ImapFolderNameRedacted ());
-                }
+                GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
             }
 
             var protocolState = BEContext.ProtocolState;
@@ -82,6 +78,15 @@ namespace NachoCore.IMAP
                 return true;
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
+        }
+
+        bool isGoogle ()
+        {
+            if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault ||
+                (Client.Capabilities & ImapCapabilities.GMailExt1) == ImapCapabilities.GMailExt1) {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -128,6 +133,19 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
+                TimeSpan timeout;
+                if (isGoogle()) {
+                    // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
+                    // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
+                    // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
+                    // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
+                    //var timeout = new TimeSpan(0, 9, 0);
+                    timeout = new TimeSpan(0, 9, 0);
+                } else {
+                    timeout = new TimeSpan(0, 30, 0);
+                }
+                Log.Info (Log.LOG_IMAP, "Setting IDLE timeout to {0} on folder {1}", timeout, IdleFolder.ImapFolderNameRedacted ());
+                done.CancelAfter (timeout);
                 Client.Idle (Done.Token, Cts.Token);
                 Cts.Token.ThrowIfCancellationRequested ();
             } finally {
@@ -137,8 +155,25 @@ namespace NachoCore.IMAP
             }
         }
 
-        // TODO: Should be tied into power-state
-        uint kNoopSleepTime = 20;
+        /// <summary>
+        /// Number of seconds to sleep between NOOP calls in Foreground
+        /// </summary>
+        const uint kNoopSleepTimeFG = 20;
+
+        /// <summary>
+        /// Number of seconds to sleep between NOOP calls in Background
+        /// </summary>
+        const uint kNoopSleepTimeBG = 300;
+
+        /// <summary>
+        /// Get the Noop Sleep time, depending on ExecutionContext
+        /// </summary>
+        /// <value>The k noop sleep time.</value>
+        uint kNoopSleepTime {
+            get {
+                return NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Foreground ? kNoopSleepTimeFG : kNoopSleepTimeBG;
+            }
+        }
 
         /// <summary>
         /// Servers that do not support Idle need to be polled. We sleep for kNoopSleepTime seconds, and then
@@ -184,7 +219,7 @@ namespace NachoCore.IMAP
                 mailKitFolder.CountChanged += MessageCountChangedHandler;
                 var timerSource = CancellationTokenSource.CreateLinkedTokenSource (Done.Token, Cts.Token);
                 while (!Cts.Token.IsCancellationRequested) {
-                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: waiting {0}s to call Noop", kNoopSleepTime);
+                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: waiting {0}s to call Noop on folder {1}", kNoopSleepTime, IdleFolder.ImapFolderNameRedacted ());
                     var cancelled = timerSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
                     if (cancelled) {
                         break;

@@ -32,6 +32,12 @@ namespace Test.Common
             NcAssert.True (0 < Folder.Id);
         }
 
+        [TearDown]
+        public new void TearDown ()
+        {
+            NcModel.Instance.Db.DeleteAll<McEmailMessage> ();
+        }
+
         private McEmailAddress SetupAddress (string canonicalAddress, int received, int read, bool isVip)
         {
             McEmailAddress address = new McEmailAddress ();
@@ -167,7 +173,7 @@ namespace Test.Common
                 return true;
             });
 
-            // included with late DateRecieved. HasBeenNotified == true && ShouldNotify == true.
+            // included with late DateReceived. HasBeenNotified == true && ShouldNotify == true.
             var late = new McEmailMessage ();
             late.AccountId = 1;
             late.IsRead = false;
@@ -196,16 +202,16 @@ namespace Test.Common
             // emails have scores below 0.5. 1 email is delete pending. 1 email
             // has a start date in the future.
             McEmailAddress[] addresses = new McEmailAddress[10];
-            addresses [0] = SetupAddress ("aaron@company.net", 4, 2, false);
-            addresses [1] = SetupAddress ("bob@company.net", 5, 1, false);
-            addresses [2] = SetupAddress ("charles@compnay.net", 3, 3, false);
-            addresses [3] = SetupAddress ("david@company.net", 2, 0, false);
-            addresses [4] = SetupAddress ("ellen@company.net", 5, 3, true);
-            addresses [5] = SetupAddress ("fred@company.net", 3, 1, true);
-            addresses [6] = SetupAddress ("gary@company.net", 6, 6, false);
-            addresses [7] = SetupAddress ("harry@company.net", 7, 7, false);
-            addresses [8] = SetupAddress ("ivan@company.net", 3, 1, false);
-            addresses [9] = SetupAddress ("jolene@company.net", 5, 5, false);
+            addresses [0] = SetupAddress ("aaron@company.net", 4, 2, false); // 0.5
+            addresses [1] = SetupAddress ("bob@company.net", 5, 1, false); // 0.2
+            addresses [2] = SetupAddress ("charles@compnay.net", 3, 3, false); // 1.0
+            addresses [3] = SetupAddress ("david@company.net", 2, 0, false); // 0.0
+            addresses [4] = SetupAddress ("ellen@company.net", 5, 3, true); // 0.8
+            addresses [5] = SetupAddress ("fred@company.net", 3, 1, true); // 0.33...
+            addresses [6] = SetupAddress ("gary@company.net", 6, 6, false); // 1.0
+            addresses [7] = SetupAddress ("harry@company.net", 7, 7, false); // 1.0
+            addresses [8] = SetupAddress ("ivan@company.net", 3, 1, false); // 0.33...
+            addresses [9] = SetupAddress ("jolene@company.net", 5, 5, false); // 1.0...
 
             McEmailMessage[] messages = new McEmailMessage[10];
             messages [0] = SetupMessage (addresses [0], new DateTime (2014, 8, 15, 1, 23, 0));
@@ -247,10 +253,13 @@ namespace Test.Common
 
             List<McEmailMessageThread> messageList =
                 McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.6);
-            CheckMessages (messages, messageList, 8, 5, 4, 2);
+            CheckMessages (messages, messageList, 8, 4, 2);
 
             messageList = McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.4);
-            CheckMessages (messages, messageList, 8, 5, 4, 0, 2);
+            CheckMessages (messages, messageList, 8, 4, 0, 2);
+
+            messageList = McEmailMessage.QueryActiveMessageItemsByScore2 (defaultAccountId, Folder.Id, 0.4, 0.1);
+            CheckMessages (messages, messageList);
         }
 
         [Test]
@@ -312,139 +321,8 @@ namespace Test.Common
             message3.Insert ();
             Folder.Link (message3);
 
-            var count = McEmailMessage.CountOfUnreadMessageItems (1, Folder.Id);
+            var count = McEmailMessage.CountOfUnreadMessageItems (1, Folder.Id, default(DateTime));
             Assert.AreEqual (3, count);
-        }
-
-        [Test]
-        public void TestQueryDueDateMessageItems ()
-        {
-            McEmailMessage message = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "Defer until",
-                FlagStatus = 1,
-            };
-            message.Insert ();
-
-            McEmailMessage message1 = new McEmailMessage () {
-                AccountId = 2,
-                FlagType = "Defer until",
-                FlagStatus = 1,
-            };
-            message1.Insert ();
-
-            McEmailMessage message2 = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "For follow up by",
-                FlagStatus = 2,
-            };
-            message2.Insert ();
-
-            McEmailMessage message3 = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "For follow up by",
-                FlagStatus = 1,
-            };
-            message3.Insert ();
-
-            McEmailMessage message4 = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "For follow up by",
-                FlagStatus = 0,
-            };
-            message4.Insert ();
-
-            McEmailMessage message5 = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "For follow up by",
-                FlagStatus = 1,
-                IsAwaitingDelete = true,
-            };
-            message5.Insert ();
-
-            var deadlines = McEmailMessage.QueryDueDateMessageItems (1);
-            foreach (var deadline in deadlines) {
-                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (deadline.FirstMessageId).FlagStatus);
-                Assert.AreNotEqual ("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.FirstMessageId).FlagType);
-                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (deadline.FirstMessageId).IsAwaitingDelete);
-            }
-            Assert.AreEqual (2, deadlines.Count);
-        }
-
-        [Test]
-        public void TestQueryDeferredMessageItems ()
-        {
-            McEmailMessage message = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "Defer until",
-                FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
-
-            };
-            message.Insert ();
-
-            McEmailMessage message1 = new McEmailMessage () {
-                AccountId = 2,
-                FlagType = "Defer until",
-                FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
-            };
-            message1.Insert ();
-
-            McEmailMessage message2 = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "Defer until",
-                FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours (-1),
-            };
-            message2.Insert ();
-
-            McEmailMessage message3 = new McEmailMessage () {
-                AccountId = 1,
-                FlagType = "Defer until",
-                FlagStatus = 0,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
-            };
-            message3.Insert ();
-
-            McEmailMessage message4 = new McEmailMessage () {
-                AccountId = 2,
-                FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
-                IsAwaitingDelete = true,
-            };
-            message4.Insert ();
-
-            McEmailMessage message5 = new McEmailMessage () {
-                AccountId = 3,
-                FlagStatus = 2,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours (100),
-            };
-            message5.Insert ();
-
-            var deferred = McEmailMessage.QueryDeferredMessageItems (1);
-            foreach (var d in deferred) {
-                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
-                NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
-                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).IsAwaitingDelete);
-            }
-            Assert.AreEqual (1, deferred.Count);
-
-            deferred = McEmailMessage.QueryDeferredMessageItems (2);
-            foreach (var d in deferred) {
-                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
-                NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
-                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).IsAwaitingDelete);
-            }
-            Assert.AreEqual (1, deferred.Count);
-
-            deferred = McEmailMessage.QueryDeferredMessageItems (3);
-            foreach (var d in deferred) {
-                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
-                NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
-                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).IsAwaitingDelete);
-            }
-            Assert.AreEqual (1, deferred.Count);
         }
 
         private void CheckScoreAndUpdate (int id, double expectedScore, int expectedNeedUpdate)
@@ -453,7 +331,9 @@ namespace Test.Common
             Assert.True (null != message);
 
             Assert.AreEqual (expectedScore, message.Score);
-            Assert.AreEqual (expectedNeedUpdate, message.NeedUpdate);
+
+            var needsUpdate = McEmailMessageNeedsUpdate.Get (message);
+            Assert.AreEqual (expectedNeedUpdate, needsUpdate);
         }
 
         [Test]
@@ -466,19 +346,19 @@ namespace Test.Common
             NcAssert.True (0 < message.Id);
 
             Assert.AreEqual (0.0, message.Score);
-            Assert.AreEqual (0, message.NeedUpdate);
+            Assert.AreEqual (0, McEmailMessageNeedsUpdate.Get (message));
 
             message.Score = 1.0;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScores ();
             CheckScoreAndUpdate (message.Id, 1.0, 0);
 
-            message.NeedUpdate = 1;
-            message.UpdateScoreAndNeedUpdate ();
+            McEmailMessageNeedsUpdate.Update (message, 1);
+            message.UpdateScores ();
             CheckScoreAndUpdate (message.Id, 1.0, 1);
 
             message.Score = 0.5;
-            message.NeedUpdate = 0;
-            message.UpdateScoreAndNeedUpdate ();
+            McEmailMessageNeedsUpdate.Update (message, 0);
+            message.UpdateScores ();
             CheckScoreAndUpdate (message.Id, 0.5, 0);
         }
 
@@ -808,109 +688,9 @@ namespace Test.Common
         }
 
         [Test]
-        public void TestQueryNeedGleaning ()
-        {
-            // Set up a junk, a spam and an inbox folders.
-            var junkFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Junk");
-            Assert.True (0 != junkFolder.Id);
-            var spamFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "spam");
-            Assert.True (0 != spamFolder.Id);
-            var inboxFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Inbox");
-            Assert.True (0 != inboxFolder.Id);
-
-            // Set up emails in each to be gleaned
-            var junkEmail = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "junk@company.net",
-                Subject = "Junk email",
-            };
-            junkEmail.Insert ();
-            Assert.True (0 != junkEmail.Id);
-            junkFolder.Link (junkEmail);
-
-            var spamEmail = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "spam@company.net",
-                Subject = "Spam email",
-            };
-            spamEmail.Insert ();
-            Assert.True (0 != spamEmail.Id);
-            spamFolder.Link (spamEmail);
-
-            var email1 = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "bob@company.net",
-                Subject = "Hello",
-            };
-            email1.Insert ();
-            Assert.True (0 != email1.Id);
-            inboxFolder.Link (email1);
-              
-            var email2 = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "john@company.net",
-                Subject = "Hello again",
-            };
-            email2.Insert ();
-            Assert.True (0 != email2.Id);
-            inboxFolder.Link (email2);
-
-            // Query for up to 1 email that need gleaning. Should return email1 or email2
-            var emailMessageList1 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 1);
-            Assert.AreEqual (1, emailMessageList1.Count);
-            Assert.True ((email1.Id == emailMessageList1 [0].Id) || (email2.Id == emailMessageList1 [1].Id));
-
-            var emailMessageList2 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 10);
-            Assert.AreEqual (2, emailMessageList2.Count);
-            Assert.True (
-                ((email1.Id == emailMessageList2 [0].Id) && (email2.Id == emailMessageList2 [1].Id)) ||
-                ((email2.Id == emailMessageList2 [1].Id) && (email1.Id == emailMessageList2 [0].Id))
-            );
-
-            // Mark one of the email gleaned. The gleaning functions are unit tested in NcContactGleanerTest
-            email1.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
-            var emailMessageList3 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
-            Assert.AreEqual (1, emailMessageList3.Count);
-            Assert.AreEqual (email2.Id, emailMessageList3 [0].Id);
-
-            // Query a different account id and all accounts
-            var emailMessageList4 = McEmailMessage.QueryNeedGleaning (-1, 2);
-            Assert.AreEqual (1, emailMessageList4.Count);
-            Assert.AreEqual (email2.Id, emailMessageList4 [0].Id);
-
-            var emailMessageList5 = McEmailMessage.QueryNeedGleaning (defaultAccountId + 1, 2);
-            Assert.AreEqual (0, emailMessageList5.Count);
-
-            // Mark the other email in inbox as phase1 gleaned.
-            email2.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
-            var emailMessageList6 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
-            Assert.AreEqual (1, emailMessageList6.Count);
-            Assert.AreEqual (email2.Id, emailMessageList6 [0].Id);
-            email2.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
-            var emailMessageList7 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
-            Assert.AreEqual (0, emailMessageList7.Count);
-
-            // Move the junk email back to inbox
-            inboxFolder.Link (junkEmail);
-            junkFolder.Unlink (junkEmail);
-            var emailMessageList8 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
-            Assert.AreEqual (1, emailMessageList8.Count);
-            Assert.AreEqual (junkEmail.Id, emailMessageList8 [0].Id);
-
-            junkEmail.Delete ();
-            spamEmail.Delete ();
-            email1.Delete ();
-            email2.Delete ();
-
-            junkFolder.Delete ();
-            spamFolder.Delete ();
-            inboxFolder.Delete ();
-        }
-
-        [Test]
         public void TestQueryNeedAnalysis ()
         {
-            var messages = new McEmailMessage[4];
+            var messages = new McEmailMessage[3];
 
             messages [0] = new McEmailMessage () {
                 Subject = "Do not need analysis",
@@ -926,11 +706,6 @@ namespace Test.Common
                 Subject = "Is analyzed for all versions",
                 ScoreVersion = 0,
                 HasBeenGleaned = 1,
-            };
-            messages [3] = new McEmailMessage () {
-                Subject = "Is not analyzed coz not gleaned",
-                ScoreVersion = 0,
-                HasBeenGleaned = 0,
             };
 
             foreach (var message in messages) {
@@ -997,9 +772,12 @@ namespace Test.Common
             foreach (var message in messages) {
                 message.AccountId = 1;
                 message.From = "bob@company.net";
+                int needsUpdate = message.NeedUpdate;
+                message.NeedUpdate = 0;
                 int rows = message.Insert ();
                 Assert.AreEqual (1, rows);
                 Assert.True (0 < message.Id);
+                McEmailMessageNeedsUpdate.Update (message, needsUpdate);
             }
 
             // Query for 5 above. Should get 2
@@ -1087,13 +865,13 @@ namespace Test.Common
                 Assert.AreEqual (1, message.Insert ());
                 Assert.AreEqual (i, message.Id);
                 Folder.Link (message);
-                messages.Add (new NcEmailMessageIndex(message.Id));
+                messages.Add (new NcEmailMessageIndex (message.Id));
             }
             var results1 = McEmailMessage.QueryImapMessagesToSend (Folder.AccountId, Folder.Id, 30);
             Assert.AreEqual (messages.Count, results1.Count);
-            var SortedList = messages.OrderBy(x=>x.Id).ToList();
+            var SortedList = messages.OrderBy (x => x.Id).ToList ();
             for (int i = 0; i < messages.Count; i++) {
-                Assert.AreEqual (SortedList [i].Id, results1[i].Id);
+                Assert.AreEqual (SortedList [i].Id, results1 [i].Id);
             }
         }
 
@@ -1142,6 +920,28 @@ namespace Test.Common
                 Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
                 Assert.AreEqual (NcImportance.High_2, i);
             }
+        }
+
+        [Test]
+        public void TestQueryByServerIdList ()
+        {
+            List<McEmailMessage> messages = new List<McEmailMessage> ();
+            List<string> idList = new List<string> ();
+            for (uint i = 1; i <= 10; i++) { 
+                var message = new McEmailMessage () {
+                    AccountId = Folder.AccountId,
+                    ServerId = string.Format ("EmailServerId{0}", i),
+                    Subject = string.Format ("Subject {0}", i),
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.AreEqual (i, message.Id);
+                messages.Add (message);
+                idList.Add (message.ServerId);
+            }
+
+            var mailList = McEmailMessage.QueryByServerIdList (Folder.AccountId, idList);
+            Assert.AreEqual (messages.Count, mailList.Count);
         }
     }
 }

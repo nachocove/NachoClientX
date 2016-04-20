@@ -522,114 +522,13 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
         }
 
-        // TODO: replace this code with data that gets pushed to the app.
         private string KnownServer (string domain)
         {
-            switch (domain.ToLower ()) {
-            case "outlook.com":
-            case "live.com":
-            case "hotmail.com":
-            case "msn.com":
-            case "outlook.sa":
-            case "hotmail.com.ar":
-            case "outlook.com.ar":
-            case "live.com.ar":
-            case "hotmail.com.au":
-            case "outlook.com.au":
-            case "live.com.au":
-            case "windowslive.com":
-            case "outlook.at":
-            case "live.at":
-            case "hotmail.be":
-            case "outlook.be":
-            case "live.be":
-            case "hotmail.com.br":
-            case "outlook.com.br":
-            case "hotmail.ca":
-            case "live.ca":
-            case "hotmail.cz":
-            case "outlook.cz":
-            case "hotmail.cl":
-            case "outlook.cl":
-            case "live.cl":
-            case "live.cn":
-            case "hotmail.dk":
-            case "outlook.dk":
-            case "live.dk":
-            case "hotmail.fi":
-            case "live.fi":
-            case "hotmail.fr":
-            case "outlook.fr":
-            case "live.fr":
-            case "hotmail.gr":
-            case "outlook.com.gr":
-            case "hotmail.de":
-            case "outlook.de":
-            case "live.de":
-            case "hotmail.com.hk":
-            case "live.hk":
-            case "hotmail.hu":
-            case "outlook.hu":
-            case "hotmail.co.in":
-            case "outlook.in":
-            case "live.in":
-            case "hotmail.co.id":
-            case "outlook.co.id":
-            case "outlook.ie":
-            case "live.ie":
-            case "hotmail.co.il":
-            case "outlook.co.il":
-            case "hotmail.it":
-            case "outlook.it":
-            case "live.it":
-            case "hotmail.co.jp":
-            case "outlook.jp":
-            case "live.jp":
-            case "hotmail.co.kr":
-            case "outlook.kr":
-            case "live.co.kr":
-            case "hotmail.lv":
-            case "outlook.lv":
-            case "hotmail.lt":
-            case "hotmail.my":
-            case "outlook.my":
-            case "live.com.my":
-            case "live.com.mx":
-            case "hotmail.nl":
-            case "live.nl":
-            case "hotmail.no":
-            case "live.no":
-            case "hotmail.ph":
-            case "outlook.ph":
-            case "live.com.ph":
-            case "outlook.pt":
-            case "live.com.pt":
-            case "live.ru":
-            case "hotmail.rs":
-            case "hotmail.sg":
-            case "outlook.sg":
-            case "live.com.sg":
-            case "hotmail.sk":
-            case "outlook.sk":
-            case "hotmail.co.za":
-            case "live.co.za":
-            case "hotmail.es":
-            case "outlook.es":
-            case "hotmail.se":
-            case "live.se":
-            case "hotmail.com.tw":
-            case "livemail.tw":
-            case "hotmail.co.th":
-            case "outlook.co.th":
-            case "hotmail.com.tr":
-            case "outlook.com.tr":
-            case "hotmail.com.vn":
-            case "outlook.com.vn":
-            case "hotmail.co.uk":
-            case "live.co.uk":
+            if (new NcServiceHelper.HotmailOutLookVerifier().validSuffixes.Contains (domain)) {
                 return McServer.AS_HotMail_Host;
+            } else {
+                return null;
             }
-            return null;
         }
 
         public override void Execute (NcStateMachine ownerSm)
@@ -772,7 +671,7 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "AUTOD::Restart event doesn't have Sm.Arg value.");  
                 // Didn't do a hard fail since it doesn't report an error back to user. Posted a cannot connect to server. 
                 // Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODRESTARTFAIL");
-                OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODRESTARTFAIL", AutoDFailureReason.CannotConnectToServer);
+                OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODRESTARTFAIL", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
 
             }
         }
@@ -983,12 +882,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", AutoDFailureReason.CannotFindServer);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
         }
 
         private void DoUiGetServerTempFail ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", AutoDFailureReason.CannotConnectToServer);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
         }
 
         private void DoUiServerCertAsk ()
@@ -1038,7 +937,6 @@ namespace NachoCore.ActiveSync
 
         public McProtocolState ProtocolState {
             get { return BEContext.ProtocolState; }
-            set { BEContext.ProtocolState = value; }
         }
 
         public McServer Server {

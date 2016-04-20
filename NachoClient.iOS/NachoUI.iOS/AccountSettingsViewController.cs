@@ -34,6 +34,8 @@ namespace NachoClient.iOS
         UcNameValuePair DaysToSyncBlock;
         UcNameValuePair NotificationsBlock;
         UISwitch FastNotificationSwitch;
+        UISwitch DefaultEmailSwitch;
+        UISwitch DefaultCalendarSwitch;
         UIButton FixAccountButton;
         UIButton DeleteAccountButton;
         UIView DeleteAccountBackgroundView;
@@ -47,6 +49,10 @@ namespace NachoClient.iOS
         public void SetAccount (McAccount account)
         {
             this.account = account;
+        }
+
+        public AccountSettingsViewController () : base ()
+        {
         }
 
         public AccountSettingsViewController (IntPtr handle) : base (handle)
@@ -95,6 +101,7 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             scrollView = new UIScrollView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.ScrollEnabled = true;
             scrollView.AlwaysBounceVertical = true;
@@ -109,7 +116,7 @@ namespace NachoClient.iOS
             accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
             accountImageView.Layer.CornerRadius = 25;
             accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.Center;
+            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
             contentView.AddSubview (accountImageView);
 
             using (var image = Util.ImageForAccount (account)) {
@@ -131,7 +138,7 @@ namespace NachoClient.iOS
             yOffset = DisplayNameTextBlock.Frame.Bottom;
 
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
+            if ((null != creds) && ((McCred.CredTypeEnum.Password == creds.CredType) || (McCred.CredTypeEnum.OAuth2 == creds.CredType))) {
                 Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
                 ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Update Password", INDENT, 15, ChangePasswordTapHandler);
                 contentView.AddSubview (ChangePasswordBlock);
@@ -183,6 +190,52 @@ namespace NachoClient.iOS
             contentView.AddSubview (FastNotificationSwitch);
 
             yOffset = fastNotificationLabel.Frame.Bottom;
+
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+
+                var defaultEmailLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
+                defaultEmailLabel.Font = A.Font_AvenirNextRegular14;
+                defaultEmailLabel.TextAlignment = UITextAlignment.Left;
+                defaultEmailLabel.TextColor = A.Color_NachoDarkText;
+                defaultEmailLabel.Text = "Default Email Account";
+                defaultEmailLabel.SizeToFit ();
+                ViewFramer.Create (defaultEmailLabel).Height (HEIGHT);
+
+                DefaultEmailSwitch = new UISwitch ();
+                ViewFramer.Create (DefaultEmailSwitch).RightAlignX (contentView.Frame.Width - INDENT);
+                ViewFramer.Create (DefaultEmailSwitch).CenterY (yOffset, HEIGHT);
+
+                DefaultEmailSwitch.ValueChanged += DefaultEmailSwitchChangedHandler;
+
+                contentView.AddSubview (defaultEmailLabel);
+                contentView.AddSubview (DefaultEmailSwitch);
+
+                yOffset = defaultEmailLabel.Frame.Bottom;
+            }
+
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+
+                var defaultCalendarLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
+                defaultCalendarLabel.Font = A.Font_AvenirNextRegular14;
+                defaultCalendarLabel.TextAlignment = UITextAlignment.Left;
+                defaultCalendarLabel.TextColor = A.Color_NachoDarkText;
+                defaultCalendarLabel.Text = "Default Calendar Account";
+                defaultCalendarLabel.SizeToFit ();
+                ViewFramer.Create (defaultCalendarLabel).Height (HEIGHT);
+
+                DefaultCalendarSwitch = new UISwitch ();
+                ViewFramer.Create (DefaultCalendarSwitch).RightAlignX (contentView.Frame.Width - INDENT);
+                ViewFramer.Create (DefaultCalendarSwitch).CenterY (yOffset, HEIGHT);
+
+                DefaultCalendarSwitch.ValueChanged += DefaultCalendarSwitchChangedHandler;
+
+                contentView.AddSubview (defaultCalendarLabel);
+                contentView.AddSubview (DefaultCalendarSwitch);
+
+                yOffset = defaultCalendarLabel.Frame.Bottom;
+            }
 
             var filler1 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
             filler1.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -287,11 +340,25 @@ namespace NachoClient.iOS
         {
             DisplayNameTextBlock.SetValue (account.DisplayName);
 
-            SignatureBlock.SetValue (account.Signature);
+            UpdateSignatureBlock ();
 
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (account.DaysToSyncEmail));
 
             FastNotificationSwitch.SetState (account.FastNotificationEnabled, false);
+
+            if (DefaultEmailSwitch != null) {
+                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                bool isDefaultEmail = defaultEmailAccount != null && account.Id == defaultEmailAccount.Id;
+                DefaultEmailSwitch.SetState (isDefaultEmail, false);
+                DefaultEmailSwitch.Enabled = !isDefaultEmail;
+            }
+
+            if (DefaultCalendarSwitch != null) {
+                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                bool isDefaultCalendar = defaultCalendarAccount != null && account.Id == defaultCalendarAccount.Id;
+                DefaultCalendarSwitch.SetState (isDefaultCalendar, false);
+                DefaultCalendarSwitch.Enabled = !isDefaultCalendar;
+            }
 
             NotificationsBlock.SetValue (Pretty.NotificationConfiguration (account.NotificationConfiguration));
 
@@ -300,6 +367,17 @@ namespace NachoClient.iOS
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, contentViewWidth, contentViewHeight);
             scrollView.ContentSize = new CGSize (contentView.Frame.Width + 2 * A.Card_Horizontal_Indent, contentView.Frame.Height + 2 * A.Card_Vertical_Indent);
+        }
+
+        void UpdateSignatureBlock ()
+        {
+            if (!string.IsNullOrEmpty (account.HtmlSignature)) {
+                var serializer = new HtmlTextSerializer (account.HtmlSignature);
+                var text = serializer.Serialize ();
+                SignatureBlock.SetValue (text);
+            } else {
+                SignatureBlock.SetValue (account.Signature);
+            }
         }
 
         protected override void OnKeyboardChanged ()
@@ -318,10 +396,19 @@ namespace NachoClient.iOS
             }
             DeleteAccountButton.TouchUpInside -= onDeleteAccount;
             FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
+            if (DefaultEmailSwitch != null) {
+                DefaultEmailSwitch.ValueChanged -= DefaultEmailSwitchChangedHandler;
+            }
+            if (DefaultCalendarSwitch != null) {
+                DefaultCalendarSwitch.ValueChanged -= DefaultCalendarSwitchChangedHandler;
+            }
         }
 
         void BackButton_Clicked (object sender, EventArgs e)
         {
+            if (account.Id == NcApplication.Instance.Account.Id) {
+                NcApplication.Instance.Account = McAccount.QueryById<McAccount> (account.Id);
+            }
             NavigationController.PopViewController (true);
         }
 
@@ -331,53 +418,28 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowAdvancedSettings ()
         {
-            if (segue.Identifier == "SettingsToNotificationChooser") {
-                var vc = (NotificationChooserViewController)segue.DestinationViewController;
-                vc.Setup (this, account.Id, account.NotificationConfiguration);
-                return;
-            }
-            if (segue.Identifier == "SegueToSignatureEdit") {
-                var vc = (SignatureEditViewController)segue.DestinationViewController;
-                var tag = "Create a signature that will appear at the end of every email that you send.";
-                vc.Setup ("Signature", tag, account.Signature);
-                vc.OnSave = OnSaveSignature;
-                return;
-            }
-            if (segue.Identifier == "SegueToDescriptionEdit") {
-                var vc = (SignatureEditViewController)segue.DestinationViewController;
-                var tag = "Create a descriptive label for this account.";
-                vc.Setup ("Description", tag, account.DisplayName);
-                vc.OnSave = OnSaveDescription;
-                return;
-            }
-            if (segue.Identifier == "SegueToAdvancedSettings") {
-                var vc = (AdvancedSettingsViewController)segue.DestinationViewController;
-                vc.Setup (account);
-                return;
-            }
-            if (segue.Identifier == "SegueToCertAsk") {
-                var vc = (CertAskViewController)segue.DestinationViewController;
-                var h = (SegueHolder)sender;
-                var capabililty = (McAccount.AccountCapabilityEnum)h.value;
-                vc.Setup (account, capabililty);
-                return;
-            }
-            if (segue.Identifier == "SegueToAccountValidation") {
-                var vc = (AccountValidationViewController)segue.DestinationViewController;
-                vc.ChangePassword (account);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var vc = new AdvancedSettingsViewController ();
+            vc.Setup (account);
+            NavigationController.PushViewController (vc, true);
+        }
+
+        void ShowAccountValidation ()
+        {
+            var vc = new AccountValidationViewController ();
+            vc.ChangePassword (account);
+            NavigationController.PushViewController (vc, true);
         }
 
         protected void ChangeDescriptionTapHandler (NSObject sender)
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToDescriptionEdit", this);
+                var descriptionViewController = new SettingsTextPropertyViewController ();
+                var tag = "Create a descriptive label for this account.";
+                descriptionViewController.Setup ("Description", tag, account.DisplayName, OnSaveDescription);
+                NavigationController.PushViewController (descriptionViewController, true);
             }
         }
 
@@ -385,7 +447,9 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToAccountValidation", this);
+                if (!MaybeStartGmailAuth (account)) {
+                    ShowAccountValidation ();
+                }
             }
         }
 
@@ -393,7 +457,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                NcActionSheet.Show (DaysToSyncBlock, this,
+                NcActionSheet.Show (ExpiredPasswordBlock, this,
                     new NcAlertAction ("Clear Notification", () => {
                         LoginHelpers.ClearPasswordExpiration (account.Id);
                         ExpiredPasswordBlock.SetLabel ("Password expiration cleared");
@@ -424,7 +488,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToAdvancedSettings", this);
+                ShowAdvancedSettings (); 
             }
         }
 
@@ -432,7 +496,10 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToSignatureEdit", this);
+                var signatureController = new SignatureEditViewController ();
+                signatureController.Account = account;
+                signatureController.OnSave = OnSaveSignature;
+                NavigationController.PushViewController (signatureController, true);
             }
         }
 
@@ -453,8 +520,15 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SettingsToNotificationChooser", this);
+                ShowNotificationChooser ();
             }
+        }
+
+        void ShowNotificationChooser ()
+        {
+            var vc = new NotificationChooserViewController ();
+            vc.Setup (this, account.Id, account.NotificationConfiguration);
+            NavigationController.PushViewController (vc, true);
         }
 
         protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
@@ -462,6 +536,24 @@ namespace NachoClient.iOS
             account.FastNotificationEnabled = FastNotificationSwitch.On;
             account.Update ();
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+        }
+
+        protected void DefaultEmailSwitchChangedHandler (object sender, EventArgs e)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+            DefaultEmailSwitch.Enabled = false;
+        }
+
+        protected void DefaultCalendarSwitchChangedHandler (object sender, EventArgs e)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+            DefaultCalendarSwitch.Enabled = false;
         }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
@@ -479,11 +571,12 @@ namespace NachoClient.iOS
             account.Update ();
         }
 
-        void OnSaveSignature (string text)
+        void OnSaveSignature (SignatureEditViewController signatureController)
         {
-            SignatureBlock.SetValue (text);
-            account.Signature = text;
+            account.Signature = signatureController.EditedPlainSignature;
+            account.HtmlSignature = signatureController.EditedHtmlSignature;
             account.Update ();
+            UpdateSignatureBlock ();
         }
 
         void OnSaveDescription (string text)
@@ -501,17 +594,29 @@ namespace NachoClient.iOS
                 switch (serverIssue) {
                 case BackEndStateEnum.CredWait:
                     if (!MaybeStartGmailAuth (account)) {
-                        PerformSegue ("SegueToAccountValidation", this);
+                        ShowAccountValidation ();
                     }
                     break;
                 case BackEndStateEnum.CertAskWait:
-                    PerformSegue ("SegueToCertAsk", new SegueHolder (McAccount.AccountCapabilityEnum.EmailSender));
+                    CertAsk (McAccount.AccountCapabilityEnum.EmailSender);
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    PerformSegue ("SegueToAdvancedSettings", this);
+                    if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
+                        ShowAdvancedSettings ();
+                    } else {
+                        BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
+                        NavigationController.PopViewController (true);
+                    }
                     break;
                 }
             }
+        }
+
+        void CertAsk (McAccount.AccountCapabilityEnum capability)
+        {
+            var vc = new CertAskViewController ();
+            vc.Setup (account, capability);
+            NavigationController.PushViewController (vc, true);
         }
 
         void onDeleteAccount (object sender, EventArgs e)
@@ -567,20 +672,7 @@ namespace NachoClient.iOS
 
         public void StartGoogleLogin ()
         {
-            var scopes = new List<string> ();
-            scopes.Add ("email");
-            scopes.Add ("profile");
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
-                           clientId: GoogleOAuthConstants.ClientId,
-                           clientSecret: GoogleOAuthConstants.ClientSecret,
-                           scope: String.Join (" ", scopes.ToArray ()),
-                           accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
-                           authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),
-                           redirectUrl: new Uri ("http://www.nachocove.com/authorization_callback"),
-                           loginHint: account.EmailAddr);
+            var auth = new GoogleOAuth2Authenticator (account.EmailAddr);
 
             auth.AllowCancel = true;
 
@@ -597,20 +689,26 @@ namespace NachoClient.iOS
                     string refresh_token;
                     e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-                    int expires = 0;
                     string expiresString = "0";
-                    DateTime expirationDateTime = DateTime.UtcNow;
-                    if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
-                        if (int.TryParse (expiresString, out expires)) {
-                            expirationDateTime = expirationDateTime.AddSeconds (expires);
+                    uint expirationSecs = 0;
+                    if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
+                        if (!uint.TryParse (expiresString, out expirationSecs)) {
+                            Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
                         }
                     }
 
-                    var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
-                    var userInfoString = new WebClient ().DownloadString (url);
+                    var source = "https://www.googleapis.com/oauth2/v1/userinfo";
+                    var url = String.Format ("{0}?access_token={1}", source, access_token);
+                    Newtonsoft.Json.Linq.JObject userInfo;
+                    try {
+                        var userInfoString = new WebClient ().DownloadString (url);
+                        userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                    } catch (Exception ex) {
+                        Log.Info (Log.LOG_HTTP, "Could not download or parse userInfoString from {0}: {1}", source, ex);
+                        NcAlertView.ShowMessage (this, "Settings", string.Format ("Could not download user details. Please try again. ({0})", ex.Message));
+                        return;
+                    }
 
-                    var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
-                   
                     if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
                         // Can't change your email address
                         NcAlertView.ShowMessage (this, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
@@ -618,8 +716,7 @@ namespace NachoClient.iOS
                     }
 
                     var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-                    cred.UpdateOauth2 (access_token, refresh_token, expirationDateTime);
-                    cred.Update ();
+                    cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
 
                     BackEnd.Instance.CredResp (account.Id);
 
@@ -639,7 +736,6 @@ namespace NachoClient.iOS
             UIViewController vc = auth.GetUI ();
             this.PresentViewController (vc, true, null);
         }
-
 
     }
 }

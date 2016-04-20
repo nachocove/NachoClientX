@@ -135,21 +135,21 @@ namespace NachoClient.iOS
 
             // Subject label view
             var subjectLabelView = this.ViewWithTag (SUBJECT_TAG) as UILabel;
-            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
-            if (String.IsNullOrEmpty (message.Subject)) {
+            string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
+            if (String.IsNullOrEmpty (subject)) {
                 subjectLabelView.Text = Pretty.NoSubjectString ();
                 subjectLabelView.TextColor = A.Color_9B9B9B;
                 subjectLabelView.Font = A.Font_AvenirNextRegular17;
             } else {
                 subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+                subjectLabelView.Text = subject;
                 subjectLabelView.Font = A.Font_AvenirNextRegular17;
             }
             subjectLabelView.Hidden = false;
 
             // Received label view
             var receivedLabelView = this.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
             receivedLabelView.SizeToFit ();
             receivedLabelView.Hidden = false;
 
@@ -182,21 +182,21 @@ namespace NachoClient.iOS
 
             // Subject label view
             var subjectLabelView = this.ViewWithTag (SUBJECT_TAG) as UILabel;
-            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
-            if (String.IsNullOrEmpty (message.Subject)) {
+            string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
+            if (String.IsNullOrEmpty (subject)) {
                 subjectLabelView.Text = Pretty.NoSubjectString ();
                 subjectLabelView.TextColor = A.Color_9B9B9B;
                 subjectLabelView.Font = A.Font_AvenirNextRegular17;
             } else {
                 subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+                subjectLabelView.Text = subject;
                 subjectLabelView.Font = A.Font_AvenirNextRegular17;
             }
             subjectLabelView.Hidden = false;
 
             // Received label view
             var receivedLabelView = this.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
             receivedLabelView.SizeToFit ();
             receivedLabelView.Hidden = false;
 

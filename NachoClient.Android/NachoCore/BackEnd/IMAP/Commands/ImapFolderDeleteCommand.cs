@@ -9,16 +9,10 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderDeleteCommand : ImapCommand
     {
-        public ImapFolderDeleteCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFolderDeleteCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
-            //RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return logData;
+            PendingSingle.MarkDispatched ();
         }
 
         protected override Event ExecuteCommand ()

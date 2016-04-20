@@ -1,0 +1,55 @@
+html {
+}
+
+body {
+    font: 400 17px/24px "Avenir", "Helvetica", sans-serif;
+    word-wrap: break-word;
+    margin: 8px;
+    min-height: calc(100vh - 16px);
+}
+
+body[contenteditable="true"]{
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+a:link {
+    color: rgb(12,66,75);
+}
+
+a:visited {
+    color: inherit;
+}
+
+/* Apple-style blockquotes */
+blockquote[type="cite"] {
+    border-width: 0 0 0 2px;
+    border-style: solid;
+    margin: 0;
+    padding: 0 0 0 10px;
+    border-color: rgb(1,178,205);
+    color: rgb(1,178,205);
+}
+
+blockquote[type="cite"] a:link {
+    color: inherit;
+}
+
+blockquote[type="cite"]
+blockquote[type="cite"]
+{
+    border-color: rgb(245,152,39);
+    color: rgb(245,152,39);
+}
+
+blockquote[type="cite"]
+blockquote[type="cite"]
+blockquote[type="cite"]
+{
+    border-color: rgb(43,217,178);
+    color: rgb(43,217,178);
+}
+
+img[nacho-resize] {
+    max-width: 100%;
+    height: auto;
+}

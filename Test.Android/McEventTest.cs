@@ -291,11 +291,15 @@ namespace Test.Common
             e2.Insert ();
             e3.Insert ();
 
-            int numDeleted = McEvent.DeleteEventsForCalendarItem (200);
+            int numDeleted = -1;
+            NcModel.Instance.RunInTransaction (() => {
+                numDeleted = McEvent.DeleteEventsForCalendarItem (200);
+            });
             Assert.AreEqual (0, numDeleted,
                 "DeletEventsForCalendarItem(200) deleted {0} events when it shouldn't have deleted any.", numDeleted);
-
-            numDeleted = McEvent.DeleteEventsForCalendarItem (100);
+            NcModel.Instance.RunInTransaction (() => {
+                numDeleted = McEvent.DeleteEventsForCalendarItem (100);
+            });
             Assert.AreEqual (2, numDeleted, "DeleteEventsForCalendarItem(100) deleted {0} events when it should have deleted 2.", numDeleted);
             var notDeletedEvents = McEvent.QueryAllEventsInOrder ();
             Assert.AreEqual (e2.Id, notDeletedEvents [0].Id,

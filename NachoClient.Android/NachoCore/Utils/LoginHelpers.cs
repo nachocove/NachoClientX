@@ -5,6 +5,7 @@ using System.Linq;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using System.Globalization;
 
 namespace NachoCore.Utils
 {
@@ -44,7 +45,7 @@ namespace NachoCore.Utils
 
         static public bool ShouldAlertUser ()
         {
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds()) {
                 if (ShouldAlertUser (accountId)) {
                     return true;
                 }
@@ -140,42 +141,58 @@ namespace NachoCore.Utils
             }
         }
 
+        static public bool ShowHotCards ()
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            return McMutables.GetBoolDefault (accountId, "GlobalSettings", "ShowHotCards", true);
+        }
+
+        static public void SetShowHotCards (bool show)
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            McMutables.SetBool (accountId, "GlobalSettings", "ShowHotCards", show);
+        }
+
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }
-
-        static public void SetSwitchToTime (McAccount account)
+            
+        static public void SetSwitchAwayTime (int accountId)
         {
-            // Save most recently used
-            SetMostRecentAccount (account);
-            var time = DateTime.UtcNow.ToString ();
-            McMutables.Set (account.Id, "AccountSwitcher", "SwitchTo", time);
+            var time = DateTime.UtcNow.ToString ("O");
+            McMutables.Set (accountId, "AccountSwitcher", "SwitchAway", time);
         }
 
-        static public DateTime GetSwitchToTime (McAccount account)
+        static public DateTime GetSwitchAwayTime (int accountId)
         {
-            var defaultTime = DateTime.UtcNow.ToString ();
-            var switchToTime = McMutables.GetOrCreate (account.Id, "AccountSwitcher", "SwitchTo", defaultTime);
-            return DateTime.Parse (switchToTime);
+            var defaultTime = default(DateTime).ToString ("O");
+            var switchAwayTime = McMutables.GetOrCreate (accountId, "AccountSwitcher", "SwitchAway", defaultTime);
+
+            DateTime result;
+            if (!DateTime.TryParseExact (switchAwayTime, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
+                if (!DateTime.TryParse (switchAwayTime, out result)) {
+                    Log.Warn (Log.LOG_UTILS, "Could not parse switch-away time for account {0}: {1}", accountId, switchAwayTime);
+                    result = default(DateTime);
+                }
+            }
+            return result;
         }
 
-        static public void SetMostRecentAccount (McAccount account)
+        static public void SetMostRecentAccount (int accountId)
         {
             var deviceId = McAccount.GetDeviceAccount ().Id;
-            McMutables.SetInt (deviceId, "AccountSwitcher", "MostRecent", account.Id);
+            McMutables.SetInt (deviceId, "AccountSwitcher", "MostRecent", accountId);
         }
 
-        static public McAccount GetMostRecentAccount ()
+        static McAccount GetMostRecentAccount ()
         {
+            var accounts = McAccount.GetAllAccounts ();
             var deviceAccount = McAccount.GetDeviceAccount ();
-            if (null == deviceAccount) {
-                return null;
-            }
             var recentAccountId = McMutables.GetInt (deviceAccount.Id, "AccountSwitcher", "MostRecent", 0);
             if ((0 == recentAccountId) || (deviceAccount.Id == recentAccountId)) {
                 return null;
             }
-            return McAccount.QueryById<McAccount> (recentAccountId);
+            return accounts.Where (x => x.Id == recentAccountId).FirstOrDefault ();
         }
 
         // Look for a configured account
@@ -194,22 +211,25 @@ namespace NachoCore.Utils
                 if (McAccount.AccountTypeEnum.Device == a.AccountType) {
                     continue;
                 }
+                if (McAccount.AccountTypeEnum.Unified == a.AccountType) {
+                    var normalAccounts = McAccount.GetAllConfiguredNormalAccounts ();
+                    if (1 != normalAccounts.Count) {
+                        continue;
+                    }
+                }
                 return a;
             }
             // Default to device account
             return McAccount.GetDeviceAccount ();
         }
 
-        public static string GetPassword (McAccount account)
+        public static bool ConfiguredAccountExists (string emailAddress, McAccount.AccountServiceEnum service)
         {
-            if (McAccount.AccountServiceEnum.GoogleDefault == account.AccountService) {
-                return "";
-            }
-            var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if (null == creds) {
-                return "";
+            var existingAccount = McAccount.QueryByEmailAddrAndService (emailAddress, service).SingleOrDefault ();
+            if (null != existingAccount) {
+                return (McAccount.ConfigurationInProgressEnum.Done == existingAccount.ConfigurationInProgress);
             } else {
-                return creds.GetPassword ();
+                return false;
             }
         }
 
@@ -231,6 +251,26 @@ namespace NachoCore.Utils
         public static bool GetGoogleSignInCallbackArrived ()
         {
             return McMutables.GetOrCreateBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", false);
+        }
+
+        // Sorry about the android, this is for iOS too.
+        public static void SetBackgroundTime (DateTime backgroundTime)
+        {
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", backgroundTime.ToString ("O"));
+        }
+
+        // Sorry about the android, this is for iOS too.
+        public static DateTime GetBackgroundTime ()
+        {
+            DateTime result;
+            var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ("O"));
+            if (!DateTime.TryParseExact (datestring, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
+                if (!DateTime.TryParse (datestring, out result)) {
+                    Log.Warn (Log.LOG_UTILS, "Could not parse background time for account: {0}", datestring);
+                    result = DateTime.UtcNow;
+                }
+            }
+            return result;
         }
     }
 }

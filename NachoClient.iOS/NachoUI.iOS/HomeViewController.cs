@@ -10,8 +10,16 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
+
+    public interface HomeViewControllerDelegate {
+        void HomeViewControllerDidAppear (HomeViewController vc);
+    }
+
     public partial class HomeViewController : NcUIViewController
     {
+
+        public McAccount.AccountServiceEnum Service;
+        public HomeViewControllerDelegate AccountDelegate; 
         public UIPageControl pageDots;
         public UIButton closeTutorial;
 
@@ -19,6 +27,7 @@ namespace NachoClient.iOS
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
+            NavigationItem.HidesBackButton = true;
         }
 
         public override bool ShouldAutorotate ()
@@ -32,36 +41,32 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            View.BackgroundColor = A.Color_NachoGreen;
-            NavigationController.NavigationBarHidden = true;
-
             CreateInitialView ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            tv.Center = new CGPoint (View.Frame.Width / 2.0f, View.Frame.Height / 2.0f - 32.0f);
+        }
 
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.NavigationBar.Hidden = true;
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            if (AccountDelegate != null) {
+                AccountDelegate.HomeViewControllerDidAppear (this);
             }
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.NavigationBar.Hidden = false;
-            }
         }
 
         public void InitializePageViewController ()
         {
             UIView dotsAndDismissContainerView = new UIView (); // contain pageDots and the dismiss button
-            dotsAndDismissContainerView.Frame = new CoreGraphics.CGRect (0, this.View.Frame.Bottom - 35, this.View.Frame.Width, 35);
+            dotsAndDismissContainerView.Frame = new CoreGraphics.CGRect (0, this.View.Bounds.Bottom - 35, this.View.Bounds.Width, 35);
             dotsAndDismissContainerView.BackgroundColor = UIColor.White;
 
             pageDots = new UIPageControl (); // page indicators; will get updates as datasource updates
@@ -137,6 +142,7 @@ namespace NachoClient.iOS
             tv.Layer.CornerRadius = A.Card_Corner_Radius;
             tv.Layer.BorderColor = A.Card_Border_Color;
             tv.Layer.BorderWidth = A.Card_Border_Width;
+            tv.ClipsToBounds = true;
 
             nfloat yOffset = 0;
 
@@ -203,7 +209,7 @@ namespace NachoClient.iOS
         protected void ContinueButtonTouchUpInside (object sender, EventArgs e)
         {
 
-            UIView.Animate (.5, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
+            UIView.Animate (.2, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
                 tv.Alpha = 0;
             }, () => {
                 InitializePageViewController ();
@@ -213,6 +219,7 @@ namespace NachoClient.iOS
         public void NavigateForward (int i)
         {
             HomePageController forwardPageController = new HomePageController (1);
+            forwardPageController.Service = Service;
 
             this.pageController.SetViewControllers (new UIViewController[] { forwardPageController }, UIPageViewControllerNavigationDirection.Forward, false,
                 s => {
@@ -252,6 +259,7 @@ namespace NachoClient.iOS
                     int previousPageIndex = currentPageController.PageIndex - 1;
                     var newPage = new HomePageController (previousPageIndex);
                     newPage.owner = this.parentController;
+                    newPage.Service = parentController.Service;
                     return newPage;
                 }
             }
@@ -267,6 +275,7 @@ namespace NachoClient.iOS
                     int nextPageIndex = currentPageController.PageIndex + 1;
                     var newPage = new HomePageController (nextPageIndex);
                     newPage.owner = this.parentController;
+                    newPage.Service = parentController.Service;
                     return newPage;
                 }
 

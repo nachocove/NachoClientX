@@ -66,57 +66,7 @@ namespace NachoCore.ActiveSync
                 }
                 body.Update ();
 
-                // Now that we have a body, see if it is possible to fill in the contents of any attachments.
-                if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
-                    var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
-                    if (0 < bodyAttachments.Count) {
-
-                        foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
-                            if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
-                                // Attachment already downloaded.
-                                continue;
-                            }
-
-                            // There isn't a field that is guaranteed to be in both places and is guaranteed to be
-                            // unique.  Match on content ID or display name, but make sure the match is unique.
-                            // Any attachment that isn't matched will just be downloaded later, which is just a
-                            // performance issue, not a correctness issue.
-                            bool duplicateContentId = false;
-                            bool duplicateDisplayName = false;
-                            MimeKit.MimeEntity contentIdMatch = null;
-                            MimeKit.MimeEntity displayNameMatch = null;
-                            foreach (var bodyAttachment in bodyAttachments) {
-                                if (null != bodyAttachment.ContentId && null != itemAttachment.ContentId &&
-                                    bodyAttachment.ContentId == itemAttachment.ContentId)
-                                {
-                                    if (null == contentIdMatch) {
-                                        contentIdMatch = bodyAttachment;
-                                    } else {
-                                        duplicateContentId = true;
-                                    }
-                                }
-                                if (null != itemAttachment.DisplayName && null != bodyAttachment.ContentDisposition.FileName &&
-                                    itemAttachment.DisplayName == bodyAttachment.ContentDisposition.FileName)
-                                {
-                                    if (null == displayNameMatch) {
-                                        displayNameMatch = bodyAttachment;
-                                    } else {
-                                        duplicateDisplayName = true;
-                                    }
-                                }
-                            }
-                            MimeKit.MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
-                            if (null != match) {
-                                itemAttachment.UpdateData ((stream) => {
-                                    ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
-                                });
-                                itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
-                                itemAttachment.Truncated = false;
-                                itemAttachment.Update ();
-                            }
-                        }
-                    }
-                }
+                MimeHelpers.PossiblyExtractAttachmentsFromBody (body, item);
             } else {
                 item.BodyId = 0;
             }
@@ -151,6 +101,14 @@ namespace NachoCore.ActiveSync
                 }
                 if (null == xmlPreview) {
                     item.BodyPreview = bodyText;
+                }
+            }
+            if (null != item.BodyPreview) {
+                const int TruncationSize = 500;
+                // AWS ignores trunc size & returns the full body
+                if ((2*TruncationSize) < item.BodyPreview.Length) {
+                    Log.Warn (Log.LOG_AS, "Body preview too big: {0}", item.BodyPreview.Length);
+                    item.BodyPreview = item.BodyPreview.Substring (0, TruncationSize);
                 }
             }
         }
@@ -638,8 +596,22 @@ namespace NachoCore.ActiveSync
 
             var l = new List<McException> ();
 
+            DateTime oldExceptionCutoff = DateTime.UtcNow - TimeSpan.FromDays (31);
+
             foreach (var exception in exceptions.Elements()) {
-                NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
+                if (Xml.Calendar.Exceptions.Exception != exception.Name.LocalName) {
+                    Log.Warn (Log.LOG_AS, "ParseExceptions: Unexpected XML element <{0}>. Should be <{1}>.",
+                        exception.Name.LocalName, Xml.Calendar.Exceptions.Exception);
+                    continue;
+                }
+                var startTimeXml = exception.ElementAnyNs (Xml.Calendar.Exception.ExceptionStartTime);
+                if (null != startTimeXml) {
+                    var startTime = ParseAsCompactDateTime (startTimeXml.Value);
+                    if (startTime < oldExceptionCutoff && startTime != DateTime.MinValue) {
+                        // This exception is too old to be shown on the calendar.  Ignore it.
+                        continue;
+                    }
+                }
                 var e = new McException ();
                 e.AccountId = accountId;
                 var attendees = new List<McAttendee> ();
@@ -709,7 +681,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.CaseError (); // Docs claim this doesn't exist
                         break;
                     default:
-                        Log.Warn (Log.LOG_AS, "CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                        Log.Warn (Log.LOG_AS, "ParseExceptions: Unhandled element <{0}> with value={1}", child.Name.LocalName, child.Value);
                         break;
                     }
                 }
@@ -845,6 +817,15 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+
+            if (null == c.OrganizerEmail) {
+                // AWS leaves out the OrganizerEmail field for calendar items owned by the current user.
+                // Other servers always include the OrganizerEmail field.  The code assumes that OrganizerEmail
+                // is always set (since AWS is the most recent server to be supported).  So make sure it
+                // is always set.
+                c.OrganizerEmail = McAccount.QueryById<McAccount>(accountId).EmailAddr;
+            }
+
             c.attendees = attendees;
             c.categories = categories;
             c.recurrences = recurrences;
@@ -1171,6 +1152,26 @@ namespace NachoCore.ActiveSync
             if (null == emailMessage.ConversationId) {
                 emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
             }
+            if (null != emailMessage.MeetingRequest) {
+                // AWS Exchange servers include several flags in all meeting request messages.
+                // Those flags mess up the app's handling of the messages, causing the messages
+                // to not show up in the inbox if the meeting is in the future.  (And having the
+                // meeting request message appear only after the meeting is over is not user-friendly
+                // behavior.)  To work around this quirky server behavior, ignore the flags in all
+                // messages that have a MeetingRequest element.
+                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                emailMessage.FlagType = null;
+                emailMessage.FlagStartDate = DateTime.MinValue;
+                emailMessage.FlagUtcStartDate = DateTime.MinValue;
+                emailMessage.FlagDue = DateTime.MinValue;
+                emailMessage.FlagUtcDue = DateTime.MinValue;
+                emailMessage.FlagReminderSet = false;
+                emailMessage.FlagReminderTime = DateTime.MinValue;
+                emailMessage.FlagCompleteTime = DateTime.MinValue;
+                emailMessage.FlagDateCompleted = DateTime.MinValue;
+                emailMessage.FlagOrdinalDate = DateTime.MinValue;
+                emailMessage.FlagSubOrdinalDate = DateTime.MinValue;
+            }
             return NcResult.OK (emailMessage);
         }
 
@@ -1209,8 +1210,6 @@ namespace NachoCore.ActiveSync
                     // Create & save the attachment record.
                     var attachment = new McAttachment {
                         AccountId = msg.AccountId,
-                        ItemId = msg.Id,
-                        ClassCode = msg.GetClassCode (),
                         FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
@@ -1228,6 +1227,12 @@ namespace NachoCore.ActiveSync
                     if (null != contentId) {
                         attachment.ContentId = contentId.Value;
                     }
+                    var contentType = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentType);
+                    if (null != contentType) {
+                        attachment.ContentType = contentType.Value;
+                    } else if (displayName != null) {
+                        attachment.ContentType = MimeKit.MimeTypes.GetMimeType (displayName.Value);
+                    }
                     var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
                     if (null != isInline) {
                         attachment.IsInline = ParseXmlBoolean (isInline);
@@ -1240,7 +1245,10 @@ namespace NachoCore.ActiveSync
                     if (null != xmlUmAttOrder) {
                         attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
                     }
-                    attachment.Insert ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        attachment.Insert ();
+                        attachment.Link (msg);
+                    });
                 }
             }
         }

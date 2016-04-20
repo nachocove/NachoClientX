@@ -73,7 +73,6 @@ namespace NachoCore.SMTP
 
         public McProtocolState ProtocolState {
             get { return BEContext.ProtocolState; }
-            set { BEContext.ProtocolState = value; }
         }
 
         public McServer Server {

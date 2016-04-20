@@ -7,76 +7,25 @@
     android:background="@android:color/white">
     <include
         layout="@layout/ButtonBar" />
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:padding="5dp">
-        <TextView
-            android:id="@+id/to_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/to"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white" />
-        <EditText
+    <ScrollView
+        android:fillViewport="false"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent">
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white"
-            android:inputType="textEmailAddress"
-            android:id="@+id/to_list" />
-    </LinearLayout>
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:padding="5dp">
-        <TextView
-            android:id="@+id/cc_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/cc"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white" />
-        <EditText
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white"
-            android:inputType="textEmailAddress"
-            android:id="@+id/cc_list" />
-    </LinearLayout>
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:padding="5dp">
-        <TextView
-            android:id="@+id/subject_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/subject"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white" />
-        <EditText
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white"
-            android:inputType="textEmailSubject"
-            android:id="@+id/subject" />
-    </LinearLayout>
-    <View
-        android:layout_width="fill_parent"
-        android:layout_height="1dp"
-        android:background="@color/NachoLightGray" />
-    <EditText
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@android:color/black"
-        android:inputType="textLongMessage"
-        android:background="@android:color/white"
-        android:id="@+id/message"
-        android:padding="5dp" />
+            android:background="@android:color/white">
+            <NachoClient.AndroidClient.MessageComposeHeaderView
+                android:id="@+id/header"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <WebView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:id="@+id/message" />
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

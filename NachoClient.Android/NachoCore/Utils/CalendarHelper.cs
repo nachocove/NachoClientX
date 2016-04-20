@@ -80,11 +80,7 @@ namespace NachoCore.Utils
             if (null == e) {
                 return null;  // may be deleted
             }
-            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            if (null == c) {
-                return null; // may be deleted
-            }
-            return c;
+            return McCalendar.QueryById<McCalendar> (e.CalendarId);
         }
 
         public static void CancelOccurrence (McCalendar cal, DateTime occurrence)
@@ -393,11 +389,6 @@ namespace NachoCore.Utils
 
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
-            // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
-            // BE goes to reference the object later on, and it is missing.
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         //Used to send a single invite to one attendee at a time rather than all attendees of an event
@@ -414,8 +405,6 @@ namespace NachoCore.Utils
 
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         public static void SendMeetingResponse (McAccount account, McCalendar c, MimeEntity mimeBody, NcResponseType response)
@@ -431,8 +420,6 @@ namespace NachoCore.Utils
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         public static void SendMeetingResponse (McAccount account, MailboxAddress to, string subject, string token, MimeEntity mimeBody, NcResponseType response)
@@ -445,8 +432,6 @@ namespace NachoCore.Utils
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         public static void SendMeetingCancelations (McAccount account, McCalendar c, string subjectOverride, MimeEntity mimeBody)
@@ -461,8 +446,6 @@ namespace NachoCore.Utils
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         private static iCalendar iCalendarCommon (McAbstrCalendarRoot cal)
@@ -737,9 +720,9 @@ namespace NachoCore.Utils
             return attendeeList;
         }
 
-        public static McCalendar CreateMeeting (McEmailMessage message)
+        public static McCalendar CreateMeeting (McEmailMessage message, DateTime startDate = default(DateTime))
         {
-            var c = DefaultMeeting ();
+            var c = DefaultMeeting (startDate);
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
@@ -1061,6 +1044,11 @@ namespace NachoCore.Utils
             if (!ValidateRecurrence (c, r)) {
                 return DateTime.MinValue;
             }
+            if (startingTime < NcEventManager.BeginningOfEventsOfInterest) {
+                // Don't bother creating McEvents for times in the past that will never show up on the calendar.
+                startingTime = NcEventManager.BeginningOfEventsOfInterest;
+            }
+
             // All date/time calculations must be done in the event's original time zone.
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
             DateTime eventStart = ConvertTimeFromUtc (c.StartTime, timeZone);
@@ -1076,6 +1064,12 @@ namespace NachoCore.Utils
                 DateTime eventStartUtc = ConvertTimeToUtc (eventStart, timeZone);
                 if (eventStartUtc > startingTime) {
                     DateTime eventEndUtc = ConvertTimeToUtc (eventStart + duration, timeZone);
+                    if (eventStartUtc > eventEndUtc) {
+                        // This can happen when the start falls within the missing hour at the transition from
+                        // standard time to daylight time, but the end time is outside that window.  The start
+                        // time gets pushed forward an hour in that case, possibly beyond the end time.
+                        eventEndUtc = eventStartUtc + duration;
+                    }
                     if (c.AllDayEvent) {
                         ExpandAllDayEvent (c, eventStartUtc, eventEndUtc);
                     } else {
@@ -1180,8 +1174,7 @@ namespace NachoCore.Utils
                             } else {
                                 CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
                             }
-                            calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
-                            calendarItem.Update ();
+                            calendarItem.UpdateRecurrencesGeneratedUntil (DateTime.MaxValue);
 
                         } else {
 
@@ -1194,8 +1187,7 @@ namespace NachoCore.Utils
                                     lastOneGeneratedAggregate = lastOneGenerated;
                                 }
                             }
-                            calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
-                            calendarItem.Update ();
+                            calendarItem.UpdateRecurrencesGeneratedUntil (lastOneGeneratedAggregate);
                         }
                     }
                 }
@@ -1611,20 +1603,32 @@ namespace NachoCore.Utils
         /// </summary>
         public static DateTime ConvertTimeToUtc (DateTime local, TimeZoneInfo timeZone)
         {
-            if (daylightSavingIsCorrect || !timeZone.SupportsDaylightSavingTime) {
-                return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+            try {
+                if (daylightSavingIsCorrect || !timeZone.SupportsDaylightSavingTime) {
+                    return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+                }
+                TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
+                if (null == adjustment ||
+                    (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
+                        !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd)))
+                {
+                    return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+                }
+                DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
+                if (IsDaylightTime (local, adjustment)) {
+                    utc = utc.Subtract (adjustment.DaylightDelta);
+                }
+                return utc;
+            } catch (ArgumentException) {
+                if (timeZone.IsInvalidTime (local)) {
+                    // The time is within the missing hour at the transition from standard time to daylight time.
+                    // Try with a time that is an hour later.
+                    return ConvertTimeToUtc (local.AddHours (1), timeZone);
+                } else {
+                    // Something else is wrong, which can't be handled here.
+                    throw;
+                }
             }
-            TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
-            if (null == adjustment ||
-                (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
-                !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
-                return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
-            }
-            DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
-            if (IsDaylightTime (local, adjustment)) {
-                utc = utc.Subtract (adjustment.DaylightDelta);
-            }
-            return utc;
         }
 
         /// <summary>
@@ -1674,6 +1678,18 @@ namespace NachoCore.Utils
         {
             return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
             (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
+        }
+
+        public static string GetFirstName (string displayName)
+        {
+            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (0 == names.Length || names [0] == null) {
+                return "";
+            }
+            if (names [0].Length > 1) {
+                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
+            }
+            return names [0].ToUpper ();
         }
     }
 }

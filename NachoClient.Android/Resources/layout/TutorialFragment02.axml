@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/NachoGreen">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/tutorial_footer">
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight=".2"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:src="@drawable/bg_s03left"
+            android:scaleType="fitEnd"
+            android:adjustViewBounds="true" />
+        <FrameLayout
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight=".6">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|bottom"
+                android:scaleType="fitEnd"
+                android:adjustViewBounds="true"
+                android:src="@drawable/slide02bg" />
+            <ImageView
+                android:id="@+id/message_up"
+                android:layout_marginTop="120dp"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_gravity="top|center_horizontal"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:src="@drawable/slide02messageup"
+                android:alpha="0" />
+            <ImageView
+                android:id="@+id/message_down"
+                android:layout_marginBottom="30dp"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:src="@drawable/slide02messagedown"
+                android:alpha="0" />
+        </FrameLayout>
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight=".2"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:src="@drawable/bg_s03right"
+            android:scaleType="fitEnd"
+            android:adjustViewBounds="true" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/tutorial_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true">
+        <TextView
+            android:text="@string/tut2_title"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textSize="17dp"
+            android:maxLines="1"
+            android:padding="10dp"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white" />
+        <TextView
+            android:id="@+id/subject"
+            android:text="@string/tut2_message"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center|top"
+            android:textSize="17dp"
+            android:paddingBottom="10dp"
+            android:textStyle="normal"
+            android:lines="2"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white" />
+    </LinearLayout>
+</RelativeLayout>

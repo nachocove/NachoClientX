@@ -7,7 +7,7 @@ using UIKit;
 using CoreGraphics;
 using CoreAnimation;
 using System.Collections.Generic;
-
+using NachoCore.Model;
 using NachoCore.Utils;
 
 // Animation guide http://developer.xamarin.com/guides/cross-platform/application_fundamentals/touch/part_1_touch_in_ios/
@@ -95,6 +95,8 @@ namespace NachoClient.iOS
         protected NSTimer swipeRightTimer;
         protected NSTimer revertRightToCenterTimer;
         protected NSTimer moveDotsTimer;
+
+        public McAccount.AccountServiceEnum Service = McAccount.AccountServiceEnum.None;
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -324,6 +326,35 @@ namespace NachoClient.iOS
                 "</body>" +
                 "</html>", new NSUrl ("about:blank"));
             helperTextContainer.Add (helperWebView);
+        }
+
+        // Can't get this to look good with green navbar on green background...keeping code in case we want to revisit
+        protected void CreateFakeNavbar ()
+        {
+            if (Service != McAccount.AccountServiceEnum.None) {
+                var width = imageContainer.Frame.Width;
+                var scale = width / 320.0f;
+                var height = scale * 64.0f;
+                var navbar = new UIView (new CGRect (imageContainer.Frame.X, imageContainer.Frame.Y - height, width, height));
+                navbar.BackgroundColor = A.Color_NachoGreen;
+                var accountButton = new UIView (new CGRect (0, 0, scale * 44.0f, scale * 44.0f));
+                accountButton.BackgroundColor = A.Color_NachoGreen;
+                accountButton.Layer.CornerRadius = accountButton.Frame.Width / 2.0f;
+                accountButton.ClipsToBounds = true;
+                var avatar = new UIImageView (new CGRect (0, 0, scale * 40.0f, scale * 40.0f));
+                avatar.Layer.CornerRadius = avatar.Frame.Width / 2.0f;
+                avatar.ClipsToBounds = true;
+                avatar.ContentMode = UIViewContentMode.ScaleAspectFill;
+                var imageName = Util.GetAccountServiceImageName (Service);
+                using (var image = UIImage.FromBundle (imageName)) {
+                    avatar.Image = image;
+                }
+                accountButton.AddSubview (avatar);
+                avatar.Center = new CGPoint (accountButton.Frame.Width / 2.0f, accountButton.Frame.Height / 2.0f);
+                navbar.AddSubview (accountButton);
+                accountButton.Center = new CGPoint (width / 2.0f, navbar.Frame.Height - 20.0f * scale);
+                pageContainerView.AddSubview (navbar);
+            }
         }
 
         protected void CreateViewZero ()

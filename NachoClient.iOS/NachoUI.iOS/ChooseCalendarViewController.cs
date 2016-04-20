@@ -11,39 +11,53 @@ using System.Collections.Generic;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
     public partial class ChooseCalendarViewController : NcUIViewControllerNoLeaks
     {
+        private List<Tuple<McAccount, NachoFolders>> calendars;
+        private int selectedAccountIndex;
+        private int selectedFolderIndex;
 
-        protected NachoFolders Calendars;
-        protected int selectedCalIndex = 0;
-        List<McFolder> calFolderList = new List<McFolder> ();
+        private UITableView tableView;
+
+        public ChooseCalendarViewController () : base ()
+        {
+        }
 
         public ChooseCalendarViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void SetCalendars (NachoFolders calendars)
+        public void SetCalendars (List<Tuple<McAccount, NachoFolders>> calendars, McFolder selectedCalendar)
         {
-            this.Calendars = calendars;
-            int i = 0;
-            while (i < this.Calendars.Count ()) {
-                McFolder c = Calendars.GetFolder (i);
-                calFolderList.Add (c);
-                i++;
+            this.calendars = calendars;
+
+            for (int a = 0; a < calendars.Count; ++a) {
+                var accountCalendars = calendars [a].Item2;
+                for (int f = 0; f < accountCalendars.Count(); ++f) {
+                    if (accountCalendars.GetFolder(f).Id == selectedCalendar.Id) {
+                        selectedAccountIndex = a;
+                        selectedFolderIndex = f;
+                        return;
+                    }
+                }
             }
+
+            Log.Info (Log.LOG_UI,
+                "The selected calendar that was passed to ChooseCalendarViewController.SetCalendars is not in the set of candidate calendars.");
+            selectedAccountIndex = -1;
+            selectedFolderIndex = -1;
         }
 
-        public int GetCalIndex ()
+        public McFolder GetSelectedCalendar ()
         {
-            return this.selectedCalIndex;
-        }
-
-        public void SetSelectedCalIndex (int selectedIndex)
-        {
-            this.selectedCalIndex = selectedIndex;
+            if (0 > selectedAccountIndex) {
+                return null;
+            }
+            return calendars [selectedAccountIndex].Item2.GetFolder (selectedFolderIndex);
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -52,71 +66,60 @@ namespace NachoClient.iOS
             }
         }
 
-        UITableView tableView;
-        CalendarChoicesSource source;
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            CreateViewHierarchy ();
-        }
-
         protected override void CreateViewHierarchy ()
         {
             NavigationItem.Title = "Calendars";
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
+            tableView = new UITableView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), UITableViewStyle.Grouped);
+            tableView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             tableView.ScrollEnabled = true;
-            source = new CalendarChoicesSource (this, calFolderList);
-            tableView.Source = source;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
             tableView.AccessibilityLabel = "Choose calendar";
-
-            View.Add (tableView);
-        }
-
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
+            View.AddSubview (tableView);
         }
 
         protected override void ConfigureAndLayout ()
         {
+            tableView.Source = new CalendarChoicesSource (this);
         }
 
         protected override void Cleanup ()
         {
             tableView.Source = null;
-            tableView.Dispose ();
             tableView = null;
-            source = null;
         }
 
-        public void Done ()
+        public override void ViewDidAppear (bool animated)
         {
-            NavigationController.PopViewController (true);
+            base.ViewDidAppear (animated);
+            if (0 <= selectedAccountIndex) {
+                tableView.ScrollToRow (NSIndexPath.FromRowSection (selectedFolderIndex, selectedAccountIndex), UITableViewScrollPosition.Middle, true);
+            }
         }
 
-        protected class CalendarChoicesSource : UITableViewSource
+        private class CalendarChoicesSource : UITableViewSource
         {
-            ChooseCalendarViewController owner;
-            List<McFolder> calFolderList = new List<McFolder> ();
+            private ChooseCalendarViewController owner;
 
-            public CalendarChoicesSource (ChooseCalendarViewController owner, List<McFolder> calFolderList)
+            public CalendarChoicesSource (ChooseCalendarViewController owner)
             {
                 this.owner = owner;
-                this.calFolderList = calFolderList;
             }
 
             public override nint NumberOfSections (UITableView tableView)
             {
-                return 1;
+                return owner.calendars.Count;
             }
 
             public override nint RowsInSection (UITableView tableview, nint section)
             {
-                return this.calFolderList.Count;
+                return owner.calendars [(int)section].Item2.Count ();
+            }
+
+            public override string TitleForHeader (UITableView tableView, nint section)
+            {
+                return owner.calendars [(int)section].Item1.DisplayName;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -126,28 +129,29 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (cellId);
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, cellId);
-                    if (indexPath.Row == owner.selectedCalIndex) {
-                        using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
-                            cell.ImageView.Image = image;
-                        }
-                    } else {
-                        using (var image = UIImage.FromBundle ("gen-checkbox")) {
-                            cell.ImageView.Image = image;
-                        }
-                    }
                     cell.TextLabel.TextColor = A.Color_NachoDarkText;
                     cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                     cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 }
-                cell.TextLabel.Text = calFolderList [indexPath.Row].DisplayName;
+                cell.TextLabel.Text = owner.calendars [indexPath.Section].Item2.GetFolder (indexPath.Row).DisplayName;
+                if (indexPath.Section == owner.selectedAccountIndex && indexPath.Row == owner.selectedFolderIndex) {
+                    using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
+                        cell.ImageView.Image = image;
+                    }
+                } else {
+                    using (var image = UIImage.FromBundle ("gen-checkbox")) {
+                        cell.ImageView.Image = image;
+                    }
+                }
                 return cell;
             }
 
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
-                owner.SetSelectedCalIndex (indexPath.Row);
+                owner.selectedAccountIndex = indexPath.Section;
+                owner.selectedFolderIndex = indexPath.Row;
                 tableView.DeselectRow (indexPath, true);
-                owner.Done ();
+                owner.NavigationController.PopViewController (true);
             }
         }
     }

@@ -28,6 +28,20 @@ namespace NachoCore.Model
         }
 
         /// <summary>
+        /// Create a new McBody with the given byte array as the contents
+        /// </summary>
+        /// <returns>A new McBody object that has been added to the database</returns>
+        public static McBody InsertFile (int accountId, McAbstrFileDesc.BodyTypeEnum bodyType, byte[] content)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+                BodyType = bodyType,
+            };
+            body.CompleteInsertFile (content);
+            return body;
+        }
+
+        /// <summary>
         /// Create a new McBody. The contents are filled in by passing a FileStream for the McBody's file to a delegate.
         /// </summary>
         /// <returns>A new McBody object that has been added to the database</returns>
@@ -62,6 +76,16 @@ namespace NachoCore.Model
             return body;
         }
 
+        public static McBody InsertPlaceholder (int accountId)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+                FilePresence = FilePresenceEnum.None,
+            };
+            body.CompleteInsertSaveStart ();
+            return body;
+        }
+
         public static string GetContentsString (int bodyId)
         {
             var body = QueryById<McBody> (bodyId);
@@ -73,8 +97,27 @@ namespace NachoCore.Model
 
         public void Touch()
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             LastModified = DateTime.UtcNow;
             NcModel.Instance.Db.Query<McBody> ("UPDATE McBody SET LastModified = ?", LastModified);
+        }
+
+        public override int Delete ()
+        {
+            DeleteFileStoredBundle ();
+            return base.Delete ();
+        }
+
+        void DeleteFileStoredBundle ()
+        {
+            var path = NcEmailMessageBundle.FileStoragePathForBodyId (AccountId, Id);
+            if (Directory.Exists (path)) {
+                try {
+                    Directory.Delete (path, true);
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_DB, "McBody: Exception trying to delete bundle: {0}", ex);
+                }
+            }
         }
 
     }

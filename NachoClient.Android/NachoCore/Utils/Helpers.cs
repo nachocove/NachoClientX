@@ -63,6 +63,40 @@ namespace NachoCore.Utils
             typesAsString += string.Join (",", typesToStringArray) + ")";
             return typesAsString;
         }
+
+        public static string FilterShortString (FolderFilterOptions filterSetting)
+        {
+            switch (filterSetting) {
+            case FolderFilterOptions.All:
+                return "All";
+            case FolderFilterOptions.Hot:
+                return "Hot";
+            case FolderFilterOptions.Focused:
+                return "Focused";
+            case FolderFilterOptions.Unread:
+                return "Unread";
+            default:
+                Log.Error (Log.LOG_UTILS, "Unexpected value for FolderFilterOptions: {0} ({1})", filterSetting.ToString (), (int)filterSetting);
+                return "Unknown";
+            }
+        }
+
+        public static string FilterString (FolderFilterOptions filterSetting)
+        {
+            switch (filterSetting) {
+            case FolderFilterOptions.All:
+                return "All messages";
+            case FolderFilterOptions.Hot:
+                return "Hot messages";
+            case FolderFilterOptions.Focused:
+                return "Focused messages";
+            case FolderFilterOptions.Unread:
+                return "Unread messages";
+            default:
+                Log.Error (Log.LOG_UTILS, "Unexpected value for FolderFilterOptions: {0} ({1})", filterSetting.ToString (), (int)filterSetting);
+                return "Unknown set of messages";
+            }
+        }
     }
 
     public static class DateTime_Helpers
@@ -86,6 +120,30 @@ namespace NachoCore.Utils
             }
             NcAssert.CaseError ("C# compiler cannot do proper flow analysis.");
             return date;
+        }
+    }
+
+    public static class PortNumber_Helpers
+    {
+        public static string CheckPortValidity (string postString, string inOrOut)
+        {
+            int port;
+            if (!int.TryParse (postString, out port)) {
+                return string.Format ("Invalid {0} port number. It must be a number.", inOrOut);
+            }
+            if (!IsValidPort(port)) {
+                return string.Format ("Invalid {0} port number. it must be > 0 and < 65536.", inOrOut);
+            }
+            return null;
+        }
+
+        public static bool IsValidPort (int port)
+        {
+            if (port <= 0 || port > 65535) {
+                return false;
+            } else {
+                return true;
+            }
         }
     }
 }

@@ -44,24 +44,6 @@ namespace NachoCore.Model
             AccountId = accountId;
         }
 
-        // Get all McEmailMessage given a contact id
-        public static List<McEmailMessage> QueryNonUpdatedDependenciesByEmailAddressId (Int64 emailAddressId)
-        {
-            return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT m.* FROM McEmailMessage AS m " +
-            "INNER JOIN McEmailMessageDependency AS d " +
-            "ON m.Id = d.EmailMessageId " +
-            "WHERE d.EmailAddressId = ? AND m.NeedUpdate = 0", emailAddressId);
-        }
-
-        // Get all McContact given an email message id
-        public static List<McEmailAddress> QueryNonUpdatedDependenciesByEmailMessageId (Int64 emailMessageId)
-        {
-            return NcModel.Instance.Db.Query<McEmailAddress> ("SELECT c.* FROM McEmailAddress AS c " +
-            "INNER JOIN McEmailMessageDependency AS d " +
-            "ON c.Id = d.EmailAddressId " +
-            "WHERE d.EmailMessageId = ? AND c.NeedUpdate = 0", emailMessageId);
-        }
-
         private bool ValidType ()
         {
             return ((int)AddressType.SENDER == EmailAddressType);
@@ -79,11 +61,13 @@ namespace NachoCore.Model
 
         public static void DeleteByEmailMessageId (Int64 emailMessageid)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE EmailMessageId == ?", emailMessageid);
         }
 
         public static void DeleteByEmailAddressId (Int64 emailAddressId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE EmailAddressId == ?", emailAddressId);
         }
 

@@ -78,7 +78,6 @@ namespace NachoCore.Model
 
         public int RowVersion { get; set; }
 
-        [Indexed]
         public int MigrationVersion { get; set; }
 
         protected Boolean isDeleted;
@@ -144,7 +143,7 @@ namespace NachoCore.Model
         /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
-        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100) where T : McAbstrObject, new()
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 50) where T : McAbstrObject, new()
         {
             NcAssert.True (typeof(T) == this.GetType ());
             var record = this;
@@ -162,6 +161,7 @@ namespace NachoCore.Model
                 } catch (SQLiteException ex) {
                     if (ex.Result == SQLite3.Result.Busy) {
                         Log.Warn (Log.LOG_DB, "UpdateWithOCApply: Busy");
+                        Thread.Sleep (100);
                         count = 0;
                     } else {
                         throw;
@@ -189,14 +189,13 @@ namespace NachoCore.Model
         /// </summary>
         /// <returns>The the value of the latest record we successfuly wrote or pulled from the DB, otherwise, this</returns>
         /// <param name="mutator">Mutator must return false if it can't apply change.</param>
-        /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
         public virtual T UpdateWithOCApply<T> (Mutator mutator, int tries = 100) where T : McAbstrObject, new()
         {
             int count = 0;
             var record = UpdateWithOCApply<T> (mutator, out count, tries);
-            NcAssert.True (0 < count || null == record);
+            NcAssert.True (0 < count || null == record, string.Format ("UpdateWithOCApply count={0} record={1}", count, record));
             return record;
         }
 

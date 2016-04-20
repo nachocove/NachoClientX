@@ -12,138 +12,120 @@ using CoreGraphics;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountTypeViewController : NcUIViewControllerNoLeaks
+
+    #region Delegate
+
+    public interface AccountTypeViewControllerDelegate
     {
-        const float BUTTON_SIZE = 60;
-        const float BUTTON_LABEL_HEIGHT = 40;
-        const float BUTTON_PADDING_HEIGHT = 15;
-        const float BUTTON_PADDING_WIDTH = 35;
 
-        public delegate void ServiceSelectedCallback (UIViewController vc, McAccount.AccountServiceEnum service);
+        void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service);
 
-        public ServiceSelectedCallback ServiceSelected;
+    }
+
+    #endregion
+
+    public partial class AccountTypeViewController : UICollectionViewController
+    {
+
+        #region Properties
+
+        public AccountTypeViewControllerDelegate AccountDelegate;
+
+        private static NSString AccountTypeCellIdentifier = (NSString)"Account";
+
+        protected static McAccount.AccountServiceEnum[] DefaultAccountTypes = new McAccount.AccountServiceEnum[] {
+            McAccount.AccountServiceEnum.Exchange,
+            McAccount.AccountServiceEnum.GoogleDefault,
+            McAccount.AccountServiceEnum.GoogleExchange,
+            McAccount.AccountServiceEnum.HotmailExchange,
+            McAccount.AccountServiceEnum.iCloud,
+            McAccount.AccountServiceEnum.IMAP_SMTP,
+            McAccount.AccountServiceEnum.Office365Exchange,
+            McAccount.AccountServiceEnum.OutlookExchange,
+            McAccount.AccountServiceEnum.Yahoo,
+        };
+
+        private McAccount.AccountServiceEnum[] accountTypes;
+
+        #endregion
+
+        #region Constructors
 
         public AccountTypeViewController (IntPtr handle) : base (handle)
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
+            accountTypes = DefaultAccountTypes;
         }
 
-        protected override void CreateViewHierarchy ()
+        #endregion
+
+        #region Collection View Delegate & Data Source
+
+        public override nint NumberOfSections (UICollectionView collectionView)
         {
-            View.BackgroundColor = A.Color_NachoGreen;
+            return 1;
+        }
 
-            var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
-            navBar.BarStyle = UIBarStyle.Default;
-            navBar.Translucent = false;
-            navBar.Opaque = true;
+        public override nint GetItemsCount (UICollectionView collectionView, nint section)
+        {
+            return accountTypes.Length;
+        }
 
-            var navItem = new UINavigationItem ();
-            navItem.Title = "Choose Service";
-
-            using (var image = UIImage.FromBundle ("modal-close")) {
-                var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
-                dismissButton.AccessibilityLabel = "Dismiss";
-                dismissButton.Clicked += DismissButton_Clicked;
-                navItem.LeftBarButtonItem = dismissButton;
+        public override UICollectionViewCell GetCell (UICollectionView collectionView, NSIndexPath indexPath)
+        {
+            var cell = (NcAccountTypeCollectionViewCell)collectionView.DequeueReusableCell (AccountTypeCellIdentifier, indexPath);
+            var accountType = accountTypes [indexPath.Item];
+            var imageName = Util.GetAccountServiceImageName (accountType);
+            using (var image = UIImage.FromBundle (imageName)) {
+                cell.iconView.Image = image;
             }
-            navBar.Items = new UINavigationItem[] { navItem };
+            cell.label.Text = NcServiceHelper.AccountServiceName (accountType);
+            cell.AccessibilityLabel = cell.label.Text;
+            return cell;
+        }
 
-            View.AddSubview (navBar);
+        public override void ItemHighlighted (UICollectionView collectionView, NSIndexPath indexPath)
+        {
+            var cell = (NcAccountTypeCollectionViewCell)collectionView.CellForItem (indexPath);
+            cell.iconView.Alpha = 0.5f;
+        }
 
-            nfloat yOffset = 64;
+        public override void ItemUnhighlighted (UICollectionView collectionView, NSIndexPath indexPath)
+        {
+            var cell = (NcAccountTypeCollectionViewCell)collectionView.CellForItem (indexPath);
+            cell.iconView.Alpha = 1.0f;
+        }
 
-            UIView sectionSeparator = new UIView (new CGRect (0, yOffset, View.Frame.Width, .5f));
-            sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.6f);
-            View.AddSubview (sectionSeparator);
-
-            yOffset = sectionSeparator.Frame.Bottom + 20;
-
-            McAccount.AccountServiceEnum[] buttonInfoList = new McAccount.AccountServiceEnum[] {
-                McAccount.AccountServiceEnum.Exchange,
-                McAccount.AccountServiceEnum.GoogleDefault,
-                McAccount.AccountServiceEnum.GoogleExchange,
-                McAccount.AccountServiceEnum.None,    
-                McAccount.AccountServiceEnum.HotmailExchange,
-                McAccount.AccountServiceEnum.iCloud,
-                McAccount.AccountServiceEnum.IMAP_SMTP,
-                McAccount.AccountServiceEnum.None,
-                McAccount.AccountServiceEnum.Office365Exchange,
-                McAccount.AccountServiceEnum.OutlookExchange,
-                McAccount.AccountServiceEnum.Yahoo,
-                McAccount.AccountServiceEnum.None,
-            };
-
-            var center = View.Center;
-            center.X = (View.Frame.Width / 2);
-            center.Y = center.Y;
-
-            var xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
-
-            yOffset += (BUTTON_SIZE / 2);
-
-            foreach (var service in buttonInfoList) {
-                if (McAccount.AccountServiceEnum.None == service) {
-                    xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
-                    yOffset += BUTTON_SIZE + BUTTON_LABEL_HEIGHT + BUTTON_PADDING_HEIGHT;
-                    continue;
-                }
-
-                var buttonRect = UIButton.FromType (UIButtonType.RoundedRect);
-                buttonRect.Layer.CornerRadius = BUTTON_SIZE / 2;
-                buttonRect.Layer.MasksToBounds = true;
-                buttonRect.Layer.BorderColor = UIColor.LightGray.CGColor;
-                buttonRect.Layer.BorderWidth = .5f;                 
-                buttonRect.Frame = new CGRect (0, 0, BUTTON_SIZE, BUTTON_SIZE);
-                buttonRect.Center = new CGPoint (xOffset, yOffset);
-                var imageName = Util.GetAccountServiceImageName (service);
-                using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                    buttonRect.SetImage (image, UIControlState.Normal);
-                }
-                buttonRect.AccessibilityLabel = NcServiceHelper.AccountServiceName (service);
-                buttonRect.TouchUpInside += (object sender, EventArgs e) => {
-                    ServiceSelected_Clicked (service);
-                };
-                View.Add (buttonRect);
-
-                var label = new UILabel ();
-                label.TextColor = UIColor.White;
-                label.Text = NcServiceHelper.AccountServiceName (service);
-                label.Font = A.Font_AvenirNextMedium14;
-                label.TextAlignment = UITextAlignment.Center;
-                label.SizeToFit ();
-                label.Center = new CGPoint (xOffset, yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
-                View.Add (label);
-
-                xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
+        public override void ItemSelected (UICollectionView collectionView, NSIndexPath indexPath)
+        {
+            if (AccountDelegate != null) {
+                var accountType = accountTypes [indexPath.Item];
+                Log.Info (Log.LOG_UI, "AccountTypeViewController selected {0}", accountType);
+                AccountDelegate.AccountTypeViewControllerDidSelectService (this, accountType);
             }
         }
 
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                return true;
+        #endregion
+
+        #region Public Helpers
+
+        public AccountCredentialsViewController SuggestedCredentialsViewController (McAccount.AccountServiceEnum service)
+        {
+            if (service == McAccount.AccountServiceEnum.GoogleDefault) {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController need google credentials");
+                return (GoogleCredentialsViewController)Storyboard.InstantiateViewController ("GoogleCredentialsViewController");
+            } else if (service == McAccount.AccountServiceEnum.SalesForce) {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController need salesforce credentials");
+                return (SalesforceCredentialsViewController)Storyboard.InstantiateViewController ("SalesforceCredentialsViewController");
+            } else {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController prompting for credentials for {0}", service);
+                return (AccountCredentialsViewController)Storyboard.InstantiateViewController ("AccountCredentialsViewController");
             }
         }
 
-        protected override void ConfigureAndLayout ()
-        {
-            // Static view doesn't need layout
-        }
-
-        protected override void Cleanup ()
-        {
-            ServiceSelected = null;
-        }
-
-        void DismissButton_Clicked (object sender, EventArgs e)
-        {
-            ServiceSelected (this, McAccount.AccountServiceEnum.None);
-        }
-
-        void ServiceSelected_Clicked (McAccount.AccountServiceEnum service)
-        {
-            if (null != ServiceSelected) {
-                ServiceSelected (this, service);
-            }
-        }
+        #endregion
 
     }
+
 }

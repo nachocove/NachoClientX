@@ -2,100 +2,248 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using NachoCore;
 using NachoCore.Model;
-using NachoCore.Brain;
 using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoEmailMessages : INachoEmailMessages
+    public delegate void NachoMessagesRefreshCompletionDelegate (bool changed, List<int> adds, List<int> deletes);
+
+    public class NachoEmailMessages
     {
-        List<McEmailMessageThread> threadList;
-        McFolder folder;
 
-        public NachoEmailMessages (McFolder folder)
+        public virtual int Count ()
         {
-            this.folder = folder;
-            threadList = new List<McEmailMessageThread> ();
+            return 0;
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public virtual bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
-            var threads = NcMessageThreads.ThreadByConversation (list);
-            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
-                threadList = threads;
-                return true;
-            }
+            adds = null;
+            deletes = null;
             return false;
         }
 
-        public int Count ()
+        public virtual bool HasBackgroundRefresh ()
         {
-            return threadList.Count;
+            return false;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public virtual void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
         {
-            if (0 > i) {
-                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
-                return null;
+            if (null != completionAction) {
+                completionAction (false, null, null);
             }
-            if (threadList.Count <= i) {
-                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
-                return null;
-            }
-            var t = threadList.ElementAt (i);
-            t.Source = this;
-            return t;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public virtual McEmailMessageThread GetEmailThread (int i)
         {
-            var message = McEmailMessage.QueryById<McEmailMessage> (id);
-            if (null == message) {
-                return new List<McEmailMessageThread> ();
+            NcAssert.CaseError ();
+            return null;
+        }
+
+        public virtual List<McEmailMessageThread> GetEmailThreadMessages (int i)
+        {
+            NcAssert.CaseError ();
+            return null;
+        }
+
+        public virtual string DisplayName ()
+        {
+            return "";
+        }
+
+        public virtual NcResult StartSync ()
+        {
+            return NachoSyncResult.DoesNotSync ();
+        }
+
+        public virtual void RefetchSyncTime ()
+        {
+        }
+
+        public virtual DateTime? LastSuccessfulSyncTime ()
+        {
+            return null;
+        }
+
+        public virtual NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        {
+            return null;
+        }
+
+        public virtual bool HasFilterSemantics ()
+        {
+            return false;
+        }
+
+        public virtual FolderFilterOptions FilterSetting {
+            get {
+                return FolderFilterOptions.All;
+            }
+            set {
+                NcAssert.CaseError (string.Format ("Attempting to set filter setting to {0} when the view doesn't support filtering.", value.ToString ()));
+            }
+        }
+
+        public virtual FolderFilterOptions[] PossibleFilterSettings {
+            get {
+                return new FolderFilterOptions[] { FolderFilterOptions.All };
+            }
+        }
+
+        public virtual FolderFilterOptions PossibleFilterSettingsMask {
+            get {
+                FolderFilterOptions mask = 0;
+                foreach (var option in PossibleFilterSettings) {
+                    mask |= option;
+                }
+                return mask;
+            }
+        }
+
+        public virtual bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public virtual bool HasDraftsSemantics ()
+        {
+            return false;
+        }
+
+        public virtual bool HasSentSemantics ()
+        {
+            return false;
+        }
+
+        public virtual bool IsCompatibleWithAccount (McAccount account)
+        {
+            return false;
+        }
+
+        public virtual bool IncludesMultipleAccounts ()
+        {
+            return false;
+        }
+
+        #region Message Caching
+
+        int[] first = new int[3] { -1, -1, -1 };
+        List<McEmailMessage>[] cache = new List<McEmailMessage>[3];
+        const int CACHEBLOCKSIZE = 32;
+
+        public void ClearCache ()
+        {
+            for (var i = 0; i < first.Length; i++) {
+                first [i] = -1;
+            }
+        }
+
+        public McEmailMessage GetCachedMessage (int i)
+        {
+            var block = i / CACHEBLOCKSIZE;
+            var cacheIndex = block % 3;
+
+            if (block != first [cacheIndex]) {
+                MaybeReadBlock (block);
             } else {
-                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, message.ConversationId);
-                return thread;
+                MaybeReadBlock (block - 1);
+                MaybeReadBlock (block + 1);
+            }
+
+            var index = i % CACHEBLOCKSIZE;
+            return cache [cacheIndex] [index];
+        }
+
+        void MaybeReadBlock (int block)
+        {
+            if (0 > block) {
+                return;
+            }
+            var cacheIndex = block % 3;
+            if (block == first [cacheIndex]) {
+                return;
+            }
+            var start = block * CACHEBLOCKSIZE;
+            var finish = (Count () < (start + CACHEBLOCKSIZE)) ? Count () : start + CACHEBLOCKSIZE;
+            var indexList = new List<int> ();
+            for (var i = start; i < finish; i++) {
+                var thread = GetEmailThread (i);
+                if (thread == null) {
+                    indexList.Add (0);
+                } else {
+                    indexList.Add (thread.FirstMessageSpecialCaseIndex ());
+                }
+            }
+            cache [cacheIndex] = new List<McEmailMessage> ();
+            var resultList = McEmailMessage.QueryForSet (indexList);
+            // Reorder the list, add in nulls for missing entries
+            foreach (var i in indexList) {
+                var result = resultList.Find (x => x.Id == i);
+                cache [cacheIndex].Add (result);
+            }
+            first [cacheIndex] = block;
+            UpdateCachedPropertiesForBlock (cache [cacheIndex]);
+        }
+
+        void UpdateCachedPropertiesForBlock (List<McEmailMessage> messages)
+        {
+            // Get portraits
+            var fromAddressIdList = new List<int> ();
+            foreach (var message in messages) {
+                if (null != message) {
+                    if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
+                        fromAddressIdList.Add (message.FromEmailAddressId);
+                    }
+                }
+            }
+            // Assign matching portrait ids to email messages
+            var portraitIndexList = McContact.QueryForPortraits (fromAddressIdList);
+            foreach (var portraitIndex in portraitIndexList) {
+                foreach (var message in messages) {
+                    if (null != message) {
+                        if (portraitIndex.EmailAddress == message.FromEmailAddressId) {
+                            message.cachedPortraitId = portraitIndex.PortraitId;
+                        }
+                    }
+                }
             }
         }
 
-        public string DisplayName ()
+        public bool MaybeUpdateMessageInCache (int id)
         {
-            return folder.DisplayName;
-        }
-
-        public bool HasOutboxSemantics ()
-        {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
-        {
-            if (null != folder) {
-                return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
-            } else {
-                return NachoSyncResult.DoesNotSync ();
+            foreach (var c in cache) {
+                if (null == c) {
+                    continue;
+                }
+                for (int i = 0; i < c.Count; i++) {
+                    var m = c [i];
+                    if (null != m) {
+                        if (m.Id == id) {
+                            c [i] = McEmailMessage.QueryById<McEmailMessage> (id);
+                            return true;
+                        }
+                    }
+                }
             }
+            return false;
         }
 
-        public INachoEmailMessages GetAdapterForThread (string threadId)
+        #endregion
+
+    }
+
+    public static class NachoSyncResult
+    {
+        public static NcResult DoesNotSync ()
         {
-            return new NachoThreadedEmailMessages (folder, threadId);
+            return NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public static bool DoesNotSync (NcResult nr)
         {
-            return account.Id == folder.AccountId;
+            return nr.isError () && (NcResult.SubKindEnum.Error_ClientOwned == nr.SubKind);
         }
-
     }
 }

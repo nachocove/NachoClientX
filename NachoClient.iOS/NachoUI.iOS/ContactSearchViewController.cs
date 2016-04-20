@@ -30,9 +30,14 @@ namespace NachoClient.iOS
         protected string initialSearchString;
         // Internal state
         ContactsTableViewSource contactTableViewSource;
+        ContactsGeneralSearch searcher;
 
         UIBarButtonItem cancelButton;
         UIBarButtonItem searchButton;
+
+        public ContactSearchViewController () : base ()
+        {
+        }
 
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
@@ -57,6 +62,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            NavigationItem.Title = "Contacts";
+
+            var searchController = new UISearchDisplayController (new UISearchBar (), this);
+
+            TableView.TableHeaderView = searchController.SearchBar;
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
             contactTableViewSource.SetOwner (this, account, false, SearchDisplayController);
@@ -94,6 +104,8 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            searcher = new ContactsGeneralSearch (UpdateSearchResultsUi);
+            SearchDisplayController.Delegate = new ContactsSearchDisplayDelegate (searcher);
 
             LoadContacts ();
         }
@@ -102,6 +114,9 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
+            SearchDisplayController.Delegate = null;
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -116,16 +131,6 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 LoadContacts ();
             }
-            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
-                LoadContacts ();
-                var sb = SearchDisplayController.SearchBar;
-                if (contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false)) {
-                    SearchDisplayController.SearchResultsTableView.ReloadData ();
-                }
-            }
-            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -135,32 +140,26 @@ namespace NachoClient.iOS
             PermissionManager.DealWithContactsPermission ();
         }
 
+        void UpdateSearchResultsUi (string searchString, List<McContactEmailAddressAttribute> results)
+        {
+            contactTableViewSource.SetSearchResults (results);
+            SearchDisplayController.SearchResultsTableView.ReloadData ();
+        }
+
         protected void LoadContacts ()
         {
-            NachoCore.Utils.NcAbate.HighPriority ("ContactSearchViewController LoadContacts");
-            var contacts = McContact.AllContactsSortedByName (true);
-            contactTableViewSource.SetContacts (null, contacts, false);
-            TableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactSearchViewController LoadContacts");
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("ContactsToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
+            using (NcAbate.UIAbatement ()) {
+                var contacts = McContact.AllContactsSortedByName (true);
+                contactTableViewSource.SetContacts (null, contacts, false);
+                TableView.ReloadData ();
             }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
-        /// IContactsTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        void ShowContact (McContact contact)
         {
-            PerformSegue (identifier, sender);
+            var destinationController = new ContactDetailViewController ();
+            destinationController.contact = contact;
+            NavigationController.PushViewController (destinationController, true);
         }
 
         /// IContactsTableViewSourceDelegate
@@ -169,7 +168,7 @@ namespace NachoClient.iOS
             address.contact = contact;
             address.address = contact.GetEmailAddress ();
             owner.UpdateEmailAddress (this, address);
-            if (null != owner) {
+            if (null != owner && PresentedViewController == null) {
                 owner.DismissINachoContactChooser (this);
             }
         }

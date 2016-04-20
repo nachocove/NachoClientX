@@ -53,7 +53,7 @@ namespace Test.Common
             {
             }
 
-            public void ServConfReq (NcProtoControl sender, object arg)
+            public void ServConfReq (NcProtoControl sender, NachoCore.BackEnd.AutoDFailureReasonEnum arg)
             {
             }
 
@@ -74,6 +74,14 @@ namespace Test.Common
             }
 
             public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
+            {
+            }
+
+            public void BackendAbateStart ()
+            {
+            }
+
+            public void BackendAbateStop ()
             {
             }
         }
@@ -550,7 +558,9 @@ namespace Test.Common
             CreateMcBody (mds, 1);
             var body = McBody.QueryById<McBody> (1);
             Assert.IsNotNull (body);
-            body.Touch ();
+            NcModel.Instance.RunInTransaction (() => {
+                body.Touch ();
+            });
         }
 
         [Test]
@@ -578,36 +588,39 @@ namespace Test.Common
             Assert.IsNotNull (f.MeetingRequest);
         }
 
+        const int Account1 = 1000;
+        const int Account2 = 1001;
+
         [Test]
         public void TestQueryNeedsFetch ()
         {
             var bodyMissing_1 = new McBody () {
-                AccountId = 1,
+                AccountId = Account1,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             bodyMissing_1.Insert ();
             var bodyMissing_2 = new McBody () {
-                AccountId = 2,
+                AccountId = Account2,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             bodyMissing_2.Insert ();
             var bodyPartial_1 = new McBody () {
-                AccountId = 1,
+                AccountId = Account1,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Partial,
             };
             bodyPartial_1.Insert ();
             var bodyComplete_1 = new McBody () {
-                AccountId = 1,
+                AccountId = Account1,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
             };
             bodyComplete_1.Insert ();
             var bodyError_1 = new McBody () {
-                AccountId = 1,
+                AccountId = Account1,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Error,
             };
             bodyError_1.Insert ();
             var keeper1 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper1",
                 IsAwaitingDelete = false,
                 Score = 0.98,
@@ -616,7 +629,7 @@ namespace Test.Common
             };
             keeper1.Insert ();
             var keeper3 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper2",
                 IsAwaitingDelete = false,
                 Score = 0.97,
@@ -625,7 +638,7 @@ namespace Test.Common
             };
             keeper3.Insert ();
             var trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "mid_download",
                 IsAwaitingDelete = false,
                 Score = 0.98,
@@ -634,7 +647,7 @@ namespace Test.Common
             };
             trash.Insert ();
             trash = new McEmailMessage () {
-                AccountId = 2,
+                AccountId = Account2,
                 ServerId = "other_account",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -643,7 +656,7 @@ namespace Test.Common
             };
             trash.Insert ();
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "is_deleted",
                 IsAwaitingDelete = true,
                 Score = 0.99,
@@ -652,7 +665,7 @@ namespace Test.Common
             };
             trash.Insert ();
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "low_score",
                 IsAwaitingDelete = false,
                 Score = 0.69,
@@ -661,7 +674,7 @@ namespace Test.Common
             };
             trash.Insert ();
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "downloaded",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -670,7 +683,7 @@ namespace Test.Common
             };
             trash.Insert ();
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "error",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -678,7 +691,7 @@ namespace Test.Common
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
-            var result = McEmailMessage.QueryNeedsFetch (1, 2, 0.9);
+            var result = McEmailMessage.QueryNeedsFetch (Account1, 2, 0.9);
             Assert.AreEqual (2, result.Count ());
             Assert.True (result.Any (x => "keeper1" == x.ServerId));
             Assert.True (result.Any (x => "keeper2" == x.ServerId));

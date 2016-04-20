@@ -241,7 +241,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                Telemetry.ENABLED = false;
+                Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
                 NcTask.StartService ();
 
                 // Set up credential
@@ -267,7 +267,6 @@ namespace Test.iOS
             public void TearDown ()
             {
                 NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
-                Telemetry.ENABLED = true;
             }
 
             [Test]
@@ -369,9 +368,9 @@ namespace Test.iOS
             {
                 int accountId = 1;
 
-                McFolder folder1 = FolderOps.CreateFolder (accountId);
-                McFolder folder2 = FolderOps.CreateFolder (accountId);
-                McFolder folder3 = FolderOps.CreateFolder (accountId);
+                McFolder folder1 = FolderOps.CreateFolder (accountId, serverId: "1");
+                McFolder folder2 = FolderOps.CreateFolder (accountId, serverId: "2");
+                McFolder folder3 = FolderOps.CreateFolder (accountId, serverId: "3");
                 DateTime now1 = DateTime.UtcNow;
                 DateTime now2 = DateTime.UtcNow.AddHours (-2);
                 DateTime now3 = DateTime.UtcNow.AddDays (-3);
@@ -381,9 +380,9 @@ namespace Test.iOS
                 folder3 = folder3.UpdateSet_LastAccessed (now3);
 
                 List<McFolder> recentlyAccessed = McFolder.QueryByMostRecentlyAccessedVisibleFolders (accountId);
-                FoldersAreEqual (folder3, recentlyAccessed [0], "folder3 should be the first folder in the list");
+                FoldersAreEqual (folder1, recentlyAccessed [0], "folder1 should be the first folder in the list");
                 FoldersAreEqual (folder2, recentlyAccessed [1], "folder2 should be the second folder in the list");
-                FoldersAreEqual (folder1, recentlyAccessed [2], "folder1 should be the last folder in the list");
+                FoldersAreEqual (folder3, recentlyAccessed [2], "folder3 should be the last folder in the list");
             }
         }
 

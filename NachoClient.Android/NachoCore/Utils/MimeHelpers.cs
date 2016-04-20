@@ -8,6 +8,8 @@ using System.Linq;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.Utils
 {
@@ -143,7 +145,7 @@ namespace NachoCore.Utils
                 var mimeMessage = ConvertTnefToMessage (tnef);
                 return FindTextPartWithSubtype (mimeMessage.Body, subtype);
             }
-            if (entity is TextPart && entity.ContentType.Matches ("text", subtype)) {
+            if (entity is TextPart && entity.ContentType.IsMimeType ("text", subtype)) {
                 TextPart textPart = entity as TextPart;
                 if (null != textPart && null != textPart.ContentObject) {
                     return textPart;
@@ -356,7 +358,7 @@ namespace NachoCore.Utils
                 if (null == message.Body) {
                     // It's the only thing in the message.
                     message.Body = newTextPart;
-                } else if (message.Body.ContentType.Matches ("multipart", "mixed")) {
+                } else if (message.Body.ContentType.IsMimeType ("multipart", "mixed")) {
                     // The top-level entity is already a "multipart/mixed". Just add the "text/plain" to it.
                     ((Multipart)message.Body).Add (newTextPart);
                 } else {
@@ -375,11 +377,11 @@ namespace NachoCore.Utils
             MimeEntity entity, Multipart parent, MimeMessage message,
             string text, bool alreadyReplaced)
         {
-            if (entity.ContentType.Matches ("text", "plain") && !alreadyReplaced) {
+            if (entity.ContentType.IsMimeType ("text", "plain") && !alreadyReplaced) {
                 ((TextPart)entity).Text = text;
                 return true;
             }
-            if (entity.ContentType.Matches ("text", "*")) {
+            if (entity.ContentType.IsMimeType ("text", "*")) {
                 RemoveEntity (entity, parent, message);
                 return false;
             }
@@ -399,8 +401,8 @@ namespace NachoCore.Utils
                     bool didReplacement = SetPlainTextHelper (subpart, multipart, message, text, alreadyReplaced);
                     alreadyReplaced = alreadyReplaced || didReplacement;
                 }
-                if (multipart.ContentType.Matches ("multipart", "mixed") ||
-                    multipart.ContentType.Matches ("multipart", "alternative")) {
+                if (multipart.ContentType.IsMimeType ("multipart", "mixed") ||
+                    multipart.ContentType.IsMimeType ("multipart", "alternative")) {
                     // Get rid of any multipart entities that are no longer necessary now that
                     // some entities may have been removed.
                     if (0 == multipart.Count) {
@@ -451,7 +453,9 @@ namespace NachoCore.Utils
             // Don't let 0 into the db
             NcAssert.True (AccountId > 0);
 
-            var msg = new McEmailMessage ();
+            var msg = new McEmailMessage () {
+                ClientIsSender = true,
+            };
             msg.AccountId = AccountId;
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);
@@ -507,11 +511,11 @@ namespace NachoCore.Utils
             }
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
-                if (multipart.ContentType.Matches ("multipart", "alternative")) {
+                if (multipart.ContentType.IsMimeType ("multipart", "alternative")) {
                     MimeBestAlternativeDisplayList (multipart, list, preferredType);
                     return;
                 }
-                if (multipart.ContentType.Matches ("multipart", "related") && 0 < multipart.Count) {
+                if (multipart.ContentType.IsMimeType ("multipart", "related") && 0 < multipart.Count) {
                     // See https://tools.ietf.org/html/rfc2387
                     // This isn't entirely correct. The multipart/related could have a "start"
                     // parameter that points to the root entity that is not the first one.
@@ -542,7 +546,7 @@ namespace NachoCore.Utils
             if (part is TextPart) {
                 if (null == part.ContentObject) {
                     Log.Info (Log.LOG_EMAIL, "Discarding a {0} MIME section that has a null ContentObject.", part.ContentType);
-                } else if (!part.ContentType.Matches("text", "calendar")) {
+                } else if (!part.ContentType.IsMimeType("text", "calendar")) {
                     list.Add (part);
                 }
                 return;
@@ -557,7 +561,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            if (entity.ContentType.Matches ("image", "*")) {
+            if (entity.ContentType.IsMimeType ("image", "*")) {
                 list.Add (part);
                 return;
             }
@@ -590,7 +594,7 @@ namespace NachoCore.Utils
                 // in the type of the first child of the multipart/related rather than the multipart/related
                 // itself, because we ultimately want to show the HTML part instead of the plain text part.
                 var effectiveEntity = entity;
-                while (effectiveEntity.ContentType.Matches ("multipart", "related") && effectiveEntity is Multipart && 0 < ((Multipart)effectiveEntity).Count) {
+                while (effectiveEntity.ContentType.IsMimeType ("multipart", "related") && effectiveEntity is Multipart && 0 < ((Multipart)effectiveEntity).Count) {
                     effectiveEntity = ((Multipart)effectiveEntity) [0];
                 }
                 var effectiveType = effectiveEntity.ContentType;
@@ -598,16 +602,16 @@ namespace NachoCore.Utils
                 if (null != preferredType && effectiveType.MimeType == preferredType) {
                     preferred = entity;
                 }
-                if (effectiveType.Matches("text", "html")) {
+                if (effectiveType.IsMimeType("text", "html")) {
                     html = entity;
                 }
-                if (effectiveType.Matches("text", "rtf")) {
+                if (effectiveType.IsMimeType("text", "rtf")) {
                     rtf = entity;
                 }
-                if (effectiveType.Matches("text", "plain")) {
+                if (effectiveType.IsMimeType("text", "plain")) {
                     plain = entity;
                 }
-                if (!effectiveType.Matches("text", "calendar")) {
+                if (!effectiveType.IsMimeType("text", "calendar")) {
                     lastNonCalendar = entity;
                 }
             }
@@ -617,11 +621,13 @@ namespace NachoCore.Utils
             }
         }
 
-        private static void FixTnefMessage (MimeMessage tnefMessage)
+        /// <summary>
+        /// If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
+        /// instead of a multipart/alternative.  Fix that.
+        /// </summary>
+        public static void FixTnefMessage (MimeMessage tnefMessage)
         {
-            // If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
-            // instead of a multipart/alternative.  Fix that.
-            if (null == tnefMessage.Body || !tnefMessage.Body.ContentType.Matches ("multipart", "mixed")) {
+            if (null == tnefMessage.Body || !tnefMessage.Body.ContentType.IsMimeType ("multipart", "mixed")) {
                 return;
             }
             bool allText = true;
@@ -653,6 +659,32 @@ namespace NachoCore.Utils
                     }
                     mixed.Add (alternative);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Remove any TNEF parts that are within a top-level multipart/mixed part of the given message.
+        /// This should only be used when the MIME message was itself converted from a TNEF part; it is
+        /// not intended to be used for a full MIME message.  When a recurring meeting has exceptions,
+        /// information about the exceptions are included in TNEF parts nested within the main TNEF part
+        /// of the description for the meeting series.  Information about the exceptions also appears
+        /// elsewhere in the Exchange metadata, so these nested TNEF sections just get in the way and
+        /// should be ignored.
+        /// </summary>
+        public static void RemoveNestedTnefParts (MimeMessage tnefMessage)
+        {
+            if (null == tnefMessage.Body || !tnefMessage.Body.ContentType.IsMimeType ("multipart", "mixed")) {
+                return;
+            }
+            var multipart = (Multipart)tnefMessage.Body;
+            var tnefParts = new List<MimeEntity> ();
+            foreach (var part in multipart) {
+                if (part is MimeKit.Tnef.TnefPart) {
+                    tnefParts.Add (part);
+                }
+            }
+            foreach (var tnefPart in tnefParts) {
+                multipart.Remove (tnefPart);
             }
         }
        
@@ -688,7 +720,7 @@ namespace NachoCore.Utils
             if (null != entity.ContentDisposition &&
                 ((includeInline && ContentDisposition.Inline == entity.ContentDisposition.Disposition) ||
                     entity.ContentDisposition.IsAttachment) &&
-                (!insideTnef || !entity.ContentType.Matches ("application", "vnd.ms-tnef")))
+                (!insideTnef || !entity.ContentType.IsMimeType ("application", "vnd.ms-tnef")))
             {
                 // It's an attachment that we are interested in.
                 result.Add (entity);
@@ -732,7 +764,7 @@ namespace NachoCore.Utils
         {
             Multipart attachmentsParent = null; // Where to put the attachments
             MimeEntity existingBody = message.Body;
-            if (existingBody.ContentType.Matches ("multipart", "mixed")) {
+            if (existingBody.ContentType.IsMimeType ("multipart", "mixed")) {
                 // Attachments can be added directly into the existing body.
                 attachmentsParent = existingBody as Multipart;
             } else {
@@ -779,6 +811,75 @@ namespace NachoCore.Utils
                     RemoveEntities (subpart, entities);
                 }
             }
+        }
+
+        public static void PossiblyExtractAttachmentsFromBody (McBody body, McAbstrItem item, CancellationToken Token = default(CancellationToken))
+        {
+            // Now that we have a body, see if it is possible to fill in the contents of any attachments.
+            if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
+                var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
+                if (0 < bodyAttachments.Count) {
+
+                    foreach (var itemAttachment in McAttachment.QueryByItem(item)) {
+                        Token.ThrowIfCancellationRequested ();
+                        if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
+                            // Attachment already downloaded.
+                            continue;
+                        }
+
+                        // There isn't a field that is guaranteed to be in both places and is guaranteed to be
+                        // unique.  Match on content ID or display name, but make sure the match is unique.
+                        // Any attachment that isn't matched will just be downloaded later, which is just a
+                        // performance issue, not a correctness issue.
+                        bool duplicateContentId = false;
+                        bool duplicateDisplayName = false;
+                        MimeEntity contentIdMatch = null;
+                        MimeEntity displayNameMatch = null;
+                        foreach (var bodyAttachment in bodyAttachments) {
+                            Token.ThrowIfCancellationRequested ();
+                            if (null != bodyAttachment.ContentId && null != itemAttachment.ContentId &&
+                                bodyAttachment.ContentId == itemAttachment.ContentId)
+                            {
+                                if (null == contentIdMatch) {
+                                    contentIdMatch = bodyAttachment;
+                                } else {
+                                    duplicateContentId = true;
+                                }
+                            }
+                            if (null != itemAttachment.DisplayName && null != bodyAttachment.ContentDisposition.FileName &&
+                                itemAttachment.DisplayName == bodyAttachment.ContentDisposition.FileName)
+                            {
+                                if (null == displayNameMatch) {
+                                    displayNameMatch = bodyAttachment;
+                                } else {
+                                    duplicateDisplayName = true;
+                                }
+                            }
+                        }
+                        MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
+                        if (null != match) {
+                            Token.ThrowIfCancellationRequested ();
+                            if (match.ContentDisposition.Size > 0) {
+                                itemAttachment.UpdateData ((stream) => {
+                                    ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
+                                });
+                                itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
+                                itemAttachment.Truncated = false;
+                                itemAttachment.Update ();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public static bool isExchangeATTFilename (string filename)
+        {
+            var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
+            if (regex.IsMatch (filename)) {
+                return true;
+            }
+            return false;
         }
     }
 

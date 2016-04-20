@@ -30,7 +30,7 @@ namespace Test.Common
         protected new void SetUp ()
         {
             base.SetUp ();
-            Telemetry.ENABLED = false;
+            Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
             // Drain the telemetry event tables
             var dbEventList = McTelemetryEvent.QueryMultiple (1);
             while (0 < dbEventList.Count) {
@@ -46,12 +46,6 @@ namespace Test.Common
                 }
                 dbEventList2 = McTelemetrySupportEvent.QueryOne ();
             }
-        }
-
-        [TearDown]
-        protected void TearDown ()
-        {
-            Telemetry.ENABLED = true;
         }
 
         [Test]

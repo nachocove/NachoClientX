@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿// Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -6,19 +6,19 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.IO;
+using NachoClient.Build;
 using NachoCore.Utils;
 using NachoPlatform;
+using System.Linq;
 
 namespace NachoCore.Model
 {
     public class NcSQLiteConnection : SQLiteConnection
     {
+        public const int KGCSeconds = 60;
         private object LockObj;
-        private DateTime LastAccess;
         private bool DidDispose;
 
         public NcSQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) :
@@ -26,6 +26,7 @@ namespace NachoCore.Model
         {
             LockObj = new object ();
             LastAccess = DateTime.UtcNow;
+            GCSeconds = KGCSeconds;
         }
 
         public NcSQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false) :
@@ -33,17 +34,17 @@ namespace NachoCore.Model
         {
             LockObj = new object ();
             LastAccess = DateTime.UtcNow;
+            GCSeconds = KGCSeconds;
         }
 
-        public bool SetLastAccess ()
+        public override bool SetLastAccess ()
         {
             lock (LockObj) {
                 if (DidDispose) {
-                    Log.Info (Log.LOG_DB, "NcSQLiteConnection.SetLastAccess: found DidDispose");
+                    Log.Error (Log.LOG_DB, "NcSQLiteConnection.SetLastAccess: found DidDispose");
                     return false;
                 }
-                LastAccess = DateTime.UtcNow;
-                return true;
+                return base.SetLastAccess ();
             }
         }
 
@@ -72,20 +73,95 @@ namespace NachoCore.Model
             }
         }
 
-        public void EliminateIfStale (Action action)
+        public void EliminateIfStale (DateTime cutoff, Action action)
         {
             lock (LockObj) {
-                var wayBack = DateTime.UtcNow.AddMinutes (-1);
-                if (LastAccess < wayBack) {
+                if (LastAccess < cutoff) {
                     action ();
                     Eliminate ();
                 }
             }
         }
+
+        // To learn more about how the database plans and executes queries, define QUERY_DEBUG,
+        // and then call NcModel.Instance.ExplainQuery(query) for the problematic queries.
+        // The query string can have '?' in it without passing any actual arguments.
+        #if QUERY_DEBUG
+
+        private class QueryPlan {
+            public int selectid { get; set; }
+            public int order { get; set; }
+            public int from { get; set; }
+            public string detail { get; set; }
+        }
+
+        public string ExplainQuery (string query)
+        {
+            var plan = this.Query<QueryPlan> (string.Format ("EXPLAIN QUERY PLAN {0}", query));
+            StringBuilder result = new StringBuilder ();
+            foreach (var row in plan) {
+                result.AppendFormat ("|{0}|{1}|{2}| {3}\n", row.selectid, row.order, row.from, row.detail);
+            }
+            return result.ToString ();
+        }
+
+        #endif
     }
 
     public sealed class NcModel
     {
+        List<Type> AllTables {
+            get {
+                return new List<Type> () {
+                    typeof(McAccount),
+                    typeof(McConference),
+                    typeof(McCred),
+                    typeof(McMapFolderFolderEntry),
+                    typeof(McFolder),
+                    typeof(McEmailAddress),
+                    typeof(McEmailMessage),
+                    typeof(McEmailMessageCategory),
+                    typeof(McEmailMessageDependency),
+                    typeof(McMeetingRequest),
+                    typeof(McAttachment),
+                    typeof(McMapAttachmentItem),
+                    typeof(McContact),
+                    typeof(McContactDateAttribute),
+                    typeof(McContactStringAttribute),
+                    typeof(McContactAddressAttribute),
+                    typeof(McContactEmailAddressAttribute),
+                    typeof(McPolicy),
+                    typeof(McProtocolState),
+                    typeof(McServer),
+                    typeof(McPending),
+                    typeof(McPendDep),
+                    typeof(McCalendar),
+                    typeof(McException),
+                    typeof(McAttendee),
+                    typeof(McCalendarCategory),
+                    typeof(McRecurrence),
+                    typeof(McEvent),
+                    typeof(McTask),
+                    typeof(McBody),
+                    typeof(McDocument),
+                    typeof(McMutables),
+                    typeof(McPath),
+                    typeof(McNote),
+                    typeof(McPortrait),
+                    typeof(McMapEmailAddressEntry),
+                    typeof(McMigration),
+                    typeof(McLicenseInformation),
+                    typeof(McBrainEvent),
+                    typeof(McEmailAddressScore),
+                    typeof(McEmailMessageScore),
+                    typeof(McEmailMessageNeedsUpdate),
+                    typeof(McChat),
+                    typeof(McChatMessage),
+                    typeof(McChatParticipant)
+                };
+            }
+        }
+
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
@@ -95,7 +171,7 @@ namespace NachoCore.Model
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
         public static string[] ExemptTables = new string[] { 
-            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation",
+            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation", "McBuildInfo",
         };
 
         public string DbFileName { set; get; }
@@ -113,17 +189,24 @@ namespace NachoCore.Model
 
         public AutoVacuumEnum AutoVacuum { set; get; }
 
+        private ConcurrentQueue<NcSQLiteConnection> ConnectionPool;
+
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 NcSQLiteConnection db = null;
                 while (true) {
                     if (!DbConns.TryGetValue (threadId, out db)) {
-                        db = new NcSQLiteConnection (DbFileName, 
-                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
-                            storeDateTimeAsTicks: true);
-                        db.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                        db.TraceThreshold = 150;
+                        if (!ConnectionPool.TryDequeue (out db)) {
+                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} + connection", threadId);
+                            db = new NcSQLiteConnection (DbFileName, 
+                                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
+                                storeDateTimeAsTicks: true);
+                            db.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                            db.TraceThreshold = 500;
+                        } else {
+                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} > connection", threadId);
+                        }
                         NcAssert.True (DbConns.TryAdd (threadId, db));
                     }
                     if (db.SetLastAccess ()) {
@@ -138,7 +221,8 @@ namespace NachoCore.Model
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 NcSQLiteConnection db = null;
                 if (DbConns.TryRemove (threadId, out db)) {
-                    db.Eliminate (); 
+                    Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < connection", threadId);
+                    ConnectionPool.Enqueue (db);
                 }
             }
         }
@@ -169,6 +253,52 @@ namespace NachoCore.Model
             get {
                 return DbConns.Count;
             }
+        }
+
+        public void CleanupOldDbConnections (TimeSpan staleInterval, int maxCached)
+        {
+            Log.Info (Log.LOG_DB, "Cleaning DB connections older than {0:n0} sec, caching at most {1} connections.", staleInterval.TotalSeconds, maxCached);
+            DateTime staleCuttoff = DateTime.UtcNow - staleInterval;
+            int uiThreadId = NcApplication.Instance.UiThreadId;
+            foreach (var kvp in DbConns) {
+                if (uiThreadId != kvp.Key && kvp.Value.GetLastAccess() < staleCuttoff) {
+                    NcSQLiteConnection staleConnection;
+                    if (DbConns.TryRemove (kvp.Key, out staleConnection)) {
+                        Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < recycling stale connection ({1:N0} sec)",
+                            kvp.Key, (DateTime.UtcNow - staleConnection.GetLastAccess ()).TotalSeconds);
+                        ConnectionPool.Enqueue (staleConnection);
+                    } else {
+                        Log.Error (Log.LOG_DB, "Internal error: Can't remove connection {0} from DbConns.", kvp.Key);
+                    }
+                }
+            }
+            int originalCacheCount = ConnectionPool.Count;
+            while (ConnectionPool.Count > maxCached) {
+                NcSQLiteConnection db;
+                if (ConnectionPool.TryDequeue (out db)) {
+                    db.Eliminate ();
+                } else {
+                    Log.Error (Log.LOG_DB, "Internal error: Can't remove a connection from the cached connection pool with size {0}", ConnectionPool.Count);
+                    break;
+                }
+            }
+            int finalCacheCount = ConnectionPool.Count;
+            if (originalCacheCount != finalCacheCount) {
+                Log.Info (Log.LOG_DB, "Removed {0} DB connections from the cache, leaving {1} connections.", originalCacheCount - finalCacheCount, finalCacheCount);
+            }
+        }
+
+        public Dictionary<string, long> AllTableRowCounts (bool includeZeroCounts = false)
+        {
+            Dictionary<string, long> tableCounts = new Dictionary<string, long> ();
+            foreach (var tableType in AllTables) {
+                string name = tableType.Name;
+                var n = Db.ExecuteScalar<long> (string.Format ("SELECT COUNT(Id) FROM {0};", name));
+                if (includeZeroCounts || n > 0) {
+                    tableCounts [name] = n;
+                }
+            }
+            return tableCounts;
         }
 
         public string GetDataDirPath ()
@@ -254,6 +384,8 @@ namespace NachoCore.Model
 
         private void ConfigureDb (SQLiteConnection db)
         {
+            // everything except synchronous seems to persist across re-launch.
+            // TODO we can remove the checking to speed up launch.
             NcAssert.NotNull (db);
             var auto_vacuum = db.ExecuteScalar<int> ("PRAGMA auto_vacuum");
             QueueLogInfo (string.Format ("PRAGMA auto_vacuum: {0}", auto_vacuum));
@@ -290,56 +422,44 @@ namespace NachoCore.Model
             }
         }
 
+        private McBuildInfo _StoredBuildInfo = null;
+
+        public McBuildInfo StoredBuildInfo {
+            get {
+                if (null == _StoredBuildInfo) {
+                    Db.CreateTable<McBuildInfo> ();
+                    _StoredBuildInfo = Db.Table<McBuildInfo> ().FirstOrDefault ();
+                }
+                return _StoredBuildInfo;
+            }
+        }
+
         private void InitializeDb ()
         {
             RateLimiter = new NcRateLimter (16, 0.250);
             DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
+            ConnectionPool = new ConcurrentQueue<NcSQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
             AutoVacuum = AutoVacuumEnum.NONE;
             var watch = Stopwatch.StartNew ();
             // Use the SQLite.NET "raw" version of RunInTransaction while initializing NcModel.
-            Db.RunInTransaction (() => {
-                Db.CreateTable<McAccount> ();
-                Db.CreateTable<McConference> ();
-                Db.CreateTable<McCred> ();
-                Db.CreateTable<McMapFolderFolderEntry> ();
-                Db.CreateTable<McFolder> ();
-                Db.CreateTable<McEmailAddress> ();
-                Db.CreateTable<McEmailMessage> ();
-                Db.CreateTable<McEmailMessageCategory> ();
-                Db.CreateTable<McEmailMessageDependency> ();
-                Db.CreateTable<McMeetingRequest> ();
-                Db.CreateTable<McAttachment> ();
-                Db.CreateTable<McContact> ();
-                Db.CreateTable<McContactDateAttribute> ();
-                Db.CreateTable<McContactStringAttribute> ();
-                Db.CreateTable<McContactAddressAttribute> ();
-                Db.CreateTable<McContactEmailAddressAttribute> ();
-                Db.CreateTable<McPolicy> ();
-                Db.CreateTable<McProtocolState> ();
-                Db.CreateTable<McServer> ();
-                Db.CreateTable<McPending> ();
-                Db.CreateTable<McPendDep> ();
-                Db.CreateTable<McCalendar> ();
-                Db.CreateTable<McException> ();
-                Db.CreateTable<McAttendee> ();
-                Db.CreateTable<McCalendarCategory> ();
-                Db.CreateTable<McRecurrence> ();
-                Db.CreateTable<McEvent> ();
-                Db.CreateTable<McTask> ();
-                Db.CreateTable<McBody> ();
-                Db.CreateTable<McDocument> ();
-                Db.CreateTable<McMutables> ();
-                Db.CreateTable<McPath> ();
-                Db.CreateTable<McNote> ();
-                Db.CreateTable<McPortrait> ();
-                Db.CreateTable<McMapEmailAddressEntry> ();
-                Db.CreateTable<McMigration> ();
-                Db.CreateTable<McLicenseInformation> ();
-                Db.CreateTable<McBrainEvent> ();
-                Db.CreateTable<McEmailAddressScore> ();
-                Db.CreateTable<McEmailMessageScore> ();
-            });
+            var storedBuildInfo = StoredBuildInfo;
+            if (null == storedBuildInfo ||
+                storedBuildInfo.BuildNumber != BuildInfo.BuildNumber ||
+                storedBuildInfo.Time != BuildInfo.Time ||
+                storedBuildInfo.Version != BuildInfo.Version) {
+                Db.RunInTransaction (() => {
+                    foreach (var tableType in AllTables) {
+                        Db.CreateTable(tableType);
+                    }
+                });
+                var current = new McBuildInfo () {
+                    Version = BuildInfo.Version,
+                    BuildNumber = BuildInfo.BuildNumber,
+                    Time = BuildInfo.Time,
+                };
+                NcAssert.AreEqual (1, Db.InsertOrReplace (current));
+            }
             watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
             ConfigureDb (Db);
@@ -396,9 +516,7 @@ namespace NachoCore.Model
             InitializeDb ();
             TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
             InitializeTeleDb ();
-            NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
-                Scrub ();
-            };
+            NcApplicationMonitor.Instance.MonitorEvent += (sender, e) => Scrub ();
             //mark all the files for skip backup
             MarkDataDirForSkipBackup ();
         }
@@ -427,77 +545,17 @@ namespace NachoCore.Model
             }
         }
 
-        private NcTimer CheckPointTimer;
-        private NcTimer DbConnGCTimer;
+        #if QUERY_DEBUG
 
-        private class CheckpointResult
+        public void ExplainQuery (string query)
         {
-            // Note: these property names can't be changed - they are hard-coded in the SQLite C code.
-            public int busy { set; get; }
-
-            public int log { set; get; }
-
-            public int checkpointed { set; get; }
+            Log.Info (Log.LOG_DB, "Query: {0}\n{1}", query, ((NcSQLiteConnection)Db).ExplainQuery (query));
         }
 
-        private void DbConnGCTimerCallback (Object state)
-        {
-            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
-            foreach (var kvp in DbConns) {
-                NcSQLiteConnection dummy;
-                if (kvp.Key == NcApplication.Instance.UiThreadId) {
-                    continue;
-                }
-                kvp.Value.EliminateIfStale (() => {
-                    if (!DbConns.TryRemove (kvp.Key, out dummy)) {
-                        Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
-                    } else {
-                        Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
-                    }
-                });
-            }
-            // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
-            DbConnGCTimer.Stfu = true;
-        }
+        #endif
 
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
-            DbConnGCTimer.Stfu = true;
-
-            CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
-                var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
-                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                foreach (var idx in new int[] { 0, 1 }) {
-                    // Integrity check is slow but it was useful when we were tracking
-                    // down integrity problem. Comment it out for future reuse
-//                    if (0 == walCheckpointCount) {
-//                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
-//                        if ("ok" != ok) {
-//                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
-//                            if (TeleDbFileName == db.DatabasePath) {
-//                                NcModel.Instance.ResetTeleDb ();
-//                                thisDb = TeleDb;
-//                            }
-//                        }
-//                    }
-//                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
-
-                    lock (WriteNTransLockObj) {
-                        if (NcApplication.Instance.IsQuickSync) {
-                            return;
-                        }
-                        var thisDb = (0 == idx) ? Db : TeleDb;
-                        List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
-                        if ((0 < results.Count) && (0 != results [0].busy)) {
-                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", thisDb.DatabasePath);
-                        }
-                    }
-                }
-            }, null, 10000, 2000);
-            CheckPointTimer.Stfu = true;
-
             NcTask.Run (() => {
                 McFolder.InitializeJunkFolders ();
             }, "InitializeJunkFolders");
@@ -505,14 +563,6 @@ namespace NachoCore.Model
 
         public void Stop ()
         {
-            if (null != CheckPointTimer) {
-                CheckPointTimer.Dispose ();
-                CheckPointTimer = null;
-            }
-            if (null != DbConnGCTimer) {
-                DbConnGCTimer.Dispose ();
-                DbConnGCTimer = null;
-            }
         }
 
         public bool IsInTransaction ()
@@ -521,9 +571,17 @@ namespace NachoCore.Model
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
+        void LogWriteFromUIThread(string tag)
+        {
+            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
+                // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, NachoPlatformBinding.PlatformProcess.GetStackTrace ());
+            }
+        }
+
         public int Update (object obj, Type objType, bool performOC = false, int priorVersion = 0)
         {
             lock (WriteNTransLockObj) {
+                LogWriteFromUIThread ("Update");
                 return Db.Update (obj, objType, performOC, priorVersion);
             }
         }
@@ -541,6 +599,7 @@ namespace NachoCore.Model
             do {
                 try {
                     lock (WriteNTransLockObj) {
+                        LogWriteFromUIThread ("BusyProtect");
                         rc = action ();
                     }
                     return rc;
@@ -571,6 +630,7 @@ namespace NachoCore.Model
         public void RunInLock (Action action)
         {
             lock (WriteNTransLockObj) {
+                LogWriteFromUIThread ("RunInLock");
                 action ();
             }
         }
@@ -607,6 +667,7 @@ namespace NachoCore.Model
                     try {
                         lockWatch.Start ();
                         lock (WriteNTransLockObj) {
+                            LogWriteFromUIThread ("RunInTransaction");
                             lockWatch.Stop ();
                             Db.CommandRecord = new List<string> ();
                             workWatch.Start ();
@@ -691,16 +752,21 @@ namespace NachoCore.Model
             */
         }
 
+        // Test use only.
         public void Reset (string dbFileName)
         {
+            _StoredBuildInfo = null;
             DbFileName = dbFileName;
             InitializeDb ();
-            GarbageCollectFiles ();
+            GarbageCollectFiles (false);
         }
 
-        public string TmpPath (int accountId)
+        public string TmpPath (int accountId, string suffix = null)
         {
             var guidString = Guid.NewGuid ().ToString ("N");
+            if (!string.IsNullOrEmpty (suffix)) {
+                guidString += suffix;
+            }
             return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
         }
 
@@ -717,7 +783,7 @@ namespace NachoCore.Model
         }
 
         // To be run synchronously only on app boot.
-        public void GarbageCollectFiles ()
+        public void GarbageCollectFiles (bool deleteGlobalTmp = true)
         {
             // Find any top-level file dir not backed by McAccount. Delete it.
             var acctLevelDirs = Directory.GetDirectories (GetDataDirPath ());
@@ -725,32 +791,40 @@ namespace NachoCore.Model
             foreach (var acctDir in acctLevelDirs) {
                 int accountId;
                 var suffix = Path.GetFileName (acctDir);
-                try {
-                    accountId = (int)uint.Parse (suffix);
+                if (int.TryParse (suffix, out accountId)) {
                     if (null == McAccount.QueryById<McAccount> (accountId)) {
                         try {
                             Directory.Delete (acctDir, true);
                         } catch (Exception ex) {
                             Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception deleting account-level dir: {0}", ex);
                         }
-                        continue;
+                    } else {
+                        // Remove any tmp files/dirs.
+                        DeleteDirContent (GetFileDirPath (accountId, KTmpPathSegment));
                     }
-                } catch {
-                    // Must not be a number, so we're not interested in it. Loop.
-                    continue;
                 }
-                var tmpTop = GetFileDirPath (accountId, KTmpPathSegment);
-                try {
-                    // Remove any tmp files/dirs.
-                    foreach (var dir in Directory.GetDirectories (tmpTop)) {
-                        Directory.Delete (dir, true);
-                    }
-                    foreach (var file in Directory.GetFiles (tmpTop)) {
-                        File.Delete (file);
-                    }
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception cleaning up tmp files: {0}", ex);
+            }
+            if (deleteGlobalTmp) {
+                // Remove any global tmp files/dirs.
+                DeleteDirContent (Path.GetTempPath ());
+            }
+        }
+
+        static void DeleteDirContent (string dirname, bool logFiles = true)
+        {
+            try {
+                // Remove any tmp files/dirs.
+                foreach (var dir in Directory.GetDirectories (dirname)) {
+                    Directory.Delete (dir, true);
                 }
+                foreach (var file in Directory.GetFiles (dirname)) {
+                    if (logFiles) {
+                        Log.Info (Log.LOG_SYS, "DeleteDirContent: Removing left-over file {0}", file);
+                    }
+                    File.Delete (file);
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_DB, "DeleteDirContent: Exception cleaning up files: {0}", ex);
             }
         }
 

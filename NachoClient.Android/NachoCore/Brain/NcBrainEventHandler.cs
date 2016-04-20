@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Threading;
 
 namespace NachoCore.Brain
 {
@@ -12,19 +13,25 @@ namespace NachoCore.Brain
         private NcQueue<NcBrainEvent> EventQueue;
         protected OpenedIndexSet OpenedIndexes;
         private long BytesIndexed;
-        private RoundRobinList Scheduler;
-        private RoundRobinSource ContactIndexingSource;
+
+        private BrainQueryAndProcess QuickScore;
+        private BrainQueryAndProcess UpdateScoreHigh;
+        private BrainQueryAndProcess UpdateScoreLow;
+        private BrainQueryAndProcess AnalyzeEmail;
+        private BrainQueryAndProcess IndexEmail;
+        private BrainQueryAndProcess IndexContacts;
 
         private void InitializeEventHandler ()
         {
             EventQueue = new NcQueue<NcBrainEvent> ();
             OpenedIndexes = new OpenedIndexSet (this);
-            Scheduler = new RoundRobinList ();
-            Scheduler.Add ("update hi priority email messages", new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScore, 5), 3);
-            ContactIndexingSource = new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5);
-            Scheduler.Add ("index contacts", ContactIndexingSource, 10);
-            Scheduler.Add ("analyze email messages", new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
-            Scheduler.Add ("index email messages", new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
+
+            QuickScore = new BrainQueryAndProcess (McEmailMessage.QueryRecentNeedQuickScoringObjects, QuickScoreEmailMessage, 50);
+            UpdateScoreHigh = new BrainQueryAndProcess (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScores, 50);
+            UpdateScoreLow = new BrainQueryAndProcess (McEmailMessage.QueryNeedUpdateObjectsBelow, UpdateEmailMessageScores, 50);
+            AnalyzeEmail = new BrainQueryAndProcess (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 50);
+            IndexEmail = new BrainQueryAndProcess (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 50);
+            IndexContacts = new BrainQueryAndProcess (McContact.QueryNeedIndexingObjects, IndexContact, 50);
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
@@ -32,207 +39,149 @@ namespace NachoCore.Brain
             EventQueue.Enqueue (brainEvent);
         }
 
+        public void EnqueueIfNotAlreadyThere (NcBrainEvent brainEvent)
+        {
+            EventQueue.EnqueueIfNot (brainEvent, (obj) => {
+                return obj.Type == brainEvent.Type;
+            });
+        }
+
+        public void EnqueueIfNotAtTail (NcBrainEvent brainEvent)
+        {
+            EventQueue.EnqueueIfNotTail (brainEvent, (obj) => {
+                return obj.Type == brainEvent.Type;
+            });
+        }
+
         public bool IsQueueEmpty ()
         {
             return EventQueue.IsEmpty ();
         }
 
-        private bool IsInterrupted ()
+        public void QueueClear ()
         {
-            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
+            while (EventQueue.Count () > 0) {
+                // It is possible that EventQueue could have been emptied on another thread in between
+                // the call to Count() above and this point.  EventQueue.Dequeue() will block indefinitely
+                // if the queue is empty.  EventQueue.DequeueIf() returns immediately if the queue is
+                // empty.  So use DequeueIf().
+                EventQueue.DequeueIf ((NcBrainEvent obj1) => {
+                    return true;
+                });
+            }
+        }
+
+        private bool KeepGoing ()
+        {
+            NcAbate.PauseWhileAbated ();
+            return IsRunning && !EventQueue.Token.IsCancellationRequested;
         }
 
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
-            Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
+            NcAbate.PauseWhileAbated ();
+
+            Log.Info (Log.LOG_BRAIN, "Brain event: {0}", brainEvent.Type.ToString ());
 
             switch (brainEvent.Type) {
+
             case NcBrainEventType.PERIODIC_GLEAN:
-                if (!NcApplication.Instance.IsBackgroundAbateRequired) {
-                    LastPeriodicGlean = DateTime.Now;
-                }
-                NotificationRateLimiter.Running = false;
-                var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
-                ProcessPeriodic (runTill);
-                NotificationRateLimiter.Running = true;
+                // Used to wake up the brain from time to time, in case new work became
+                // available while it was sleeping.
                 break;
-            case NcBrainEventType.STATE_MACHINE:
-                var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
-                /// FIXME - Should get the number from the event arg
-                var accountId = (int)stateMachineEvent.AccountId;
-                QuickScoreEmailMessages (accountId, 100);
-                GleanEmailMessages (100, stateMachineEvent.AccountId);
-                break;
+
             case NcBrainEventType.UI:
                 ProcessUIEvent (brainEvent as NcBrainUIEvent);
                 break;
+
             case NcBrainEventType.MESSAGE_FLAGS:
                 ProcessMessageFlagsEvent (brainEvent as NcBrainMessageFlagEvent);
                 break;
+
             case NcBrainEventType.INITIAL_RIC:
                 ProcessInitialRicEvent (brainEvent as NcBrainInitialRicEvent);
                 break;
+
             case NcBrainEventType.PERSISTENT_QUEUE:
-                var persistentQueueVent = (NcBrainPersistentQueueEvent)brainEvent;
-                ProcessPersistedRequests (persistentQueueVent.EventCount);
+                // Used to wake up the brain whenever an persistent event is added to the database.
                 break;
-            case NcBrainEventType.UNINDEX_CONTACT:
+
+            case NcBrainEventType.INDEX_MESSAGE:
+                IndexEmailMessage (McEmailMessage.QueryById<McEmailMessage> ((int)((NcBrainIndexMessageEvent)brainEvent).EmailMessageId));
+                break;
+
             case NcBrainEventType.UNINDEX_MESSAGE:
+                var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
+                UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
+                break;
+
+            case NcBrainEventType.UNINDEX_CONTACT:
+                var contactEvent = brainEvent as NcBrainUnindexContactEvent;
+                UnindexContact ((int)contactEvent.AccountId, (int)contactEvent.ContactId);
+                break;
+
+            case NcBrainEventType.REINDEX_CONTACT:
+                var reindexEvent = brainEvent as NcBrainReindexContactEvent;
+                var contact = McContact.QueryById<McContact> ((int)reindexEvent.ContactId);
+                UnindexContact ((int)reindexEvent.AccountId, (int)reindexEvent.ContactId);
+                if (null != contact) {
+                    IndexContact (contact);
+                }
+                break;
+
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
+                var updateAddressEvent = brainEvent as NcBrainUpdateAddressScoreEvent;
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> ((int)updateAddressEvent.EmailAddressId);
+                UpdateEmailAddressScores (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
+                break;
+
             case NcBrainEventType.UPDATE_MESSAGE_SCORE:
+                long emailMesasgeId;
+                int action = 0;
+                if (brainEvent is NcBrainUpdateUserActionEvent) {
+                    var updateActionEvent = brainEvent as NcBrainUpdateUserActionEvent;
+                    emailMesasgeId = updateActionEvent.EmailMessageId;
+                    action = updateActionEvent.Action;
+                } else {
+                    var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
+                    emailMesasgeId = updatedMessageEvent.EmailMessageId;
+                }
+                NcModel.Instance.RunInTransaction (() => {
+                    var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
+                    if (UpdateEmailMessageScores (emailMessage)) {
+                        if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
+                            var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
+                            UpdateAddressUserAction (fromEmailAddress, action);
+                        }
+                    }
+                });
+                break;
+
+            case NcBrainEventType.UPDATE_MESSAGE_NOTIFICATION_STATUS:
+                var notifiedEvent = (NcBrainUpdateMessageNotificationStatusEvent)brainEvent;
+                NcModel.Instance.RunInTransaction (() => {
+                    var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)notifiedEvent.EmailMessageId);
+                    if (null != emailMessage) {
+                        emailMessage.ScoreStates.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
+                    }
+                });
+                break;
+
             case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+                ProcessMessageReadStatusUpdated ((NcBrainUpdateMessageReadStatusEvent)brainEvent);
+                break;
+
             case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
-                var errMesg = String.Format ("Event type {0} should go to persistent queue instead", brainEvent.Type);
-                throw new NotSupportedException (errMesg);
+                ProcessMessageReplyStatusUpdated ((NcBrainUpdateMessageReplyStatusEvent)brainEvent);
+                break;
+
             case NcBrainEventType.TEST:
                 // This is a no op. Serve as a synchronization barrier.
                 break;
+
             default:
                 throw new NcAssert.NachoDefaultCaseFailure ("unknown brain event type");
             }
-        }
-
-        private int ProcessLoop (int count, string message, Func<bool> action)
-        {
-            int numProcessed = 0;
-            while (numProcessed < count && !IsInterrupted ()) {
-                if (!action ()) {
-                    break;
-                }
-                numProcessed++;
-            }
-            if (0 != numProcessed) {
-                Log.Info (Log.LOG_BRAIN, "{0} {1}", numProcessed, message);
-            }
-            return numProcessed;
-        }
-
-        private void ProcessPeriodic (DateTime runTill)
-        {
-            try {
-                bool ranOnce = false;
-                while (DateTime.UtcNow < runTill) {
-                    if (IsInterrupted ()) {
-                        break;
-                    }
-
-                    // Process all events in the persistent queue first
-                    if (0 < ProcessPersistedRequests (100)) {
-                        continue;
-                    }
-                    // Handle all other events
-                    if (!ranOnce) {
-                        Scheduler.Initialize ();
-                        ranOnce = true;
-                    }
-                    bool result;
-                    if (!Scheduler.Run (out result)) {
-                        break;
-                    }
-                }
-                while (DateTime.UtcNow < runTill) {
-                    if (IsInterrupted ()) {
-                        break;
-                    }
-
-                    var emailMessages = McEmailMessage.QueryNeedUpdate (5, above: false);
-                    if (0 == emailMessages.Count) {
-                        break;
-                    }
-                    foreach (var emailMessage in emailMessages) {
-                        if (IsInterrupted ()) {
-                            break;
-                        }
-                        UpdateEmailMessageScore (emailMessage);
-                    }
-                }
-            } finally {
-                OpenedIndexes.Cleanup ();
-                Scheduler.DumpRunCounts ();
-            }
-        }
-
-        private int ProcessPersistedRequests (int count)
-        {
-            bool sourceReset = false;
-            return ProcessLoop (count, "persisted requests processed", () => {
-                var dbEvent = McBrainEvent.QueryNext ();
-                if (null == dbEvent) {
-                    return false;
-                }
-                var brainEvent = dbEvent.BrainEvent ();
-                switch (brainEvent.Type) {
-                case NcBrainEventType.UNINDEX_MESSAGE:
-                    var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
-                    UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
-                    break;
-                case NcBrainEventType.UNINDEX_CONTACT:
-                    var contactEvent = brainEvent as NcBrainUnindexContactEvent;
-                    UnindexContact ((int)contactEvent.AccountId, (int)contactEvent.ContactId);
-                    break;
-                case NcBrainEventType.REINDEX_CONTACT:
-                    var reindexEvent = brainEvent as NcBrainReindexContactEvent;
-                    var contact = McContact.QueryById<McContact> ((int)reindexEvent.ContactId);
-                    UnindexContact ((int)reindexEvent.AccountId, (int)reindexEvent.ContactId);
-                    if (null != contact) {
-                        IndexContact (contact);
-                    }
-                    if (!sourceReset) {
-                        // The contact is already indexed but it may already be sitting
-                        // in contact indexing source's object list. Then, it will be
-                        // indexed twice. So, we manually clears that source's object list
-                        ContactIndexingSource.Reset ();
-                        sourceReset = true;
-                    }
-                    break;
-                case NcBrainEventType.UPDATE_ADDRESS_SCORE:
-                    var updateAddressEvent = brainEvent as NcBrainUpdateAddressScoreEvent;
-                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> ((int)updateAddressEvent.EmailAddressId);
-                    UpdateEmailAddressScore (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
-                    break;
-                case NcBrainEventType.UPDATE_MESSAGE_SCORE:
-                    long emailMesasgeId;
-                    int action = 0;
-                    if (brainEvent is NcBrainUpdateUserActionEvent) {
-                        var updateActionEvent = brainEvent as NcBrainUpdateUserActionEvent;
-                        emailMesasgeId = updateActionEvent.EmailMessageId;
-                        action = updateActionEvent.Action;
-                    } else {
-                        var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
-                        emailMesasgeId = updatedMessageEvent.EmailMessageId;
-                    }
-                    NcModel.Instance.RunInTransaction (() => {
-                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
-                        if (UpdateEmailMessageScore (emailMessage)) {
-                            if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
-                                var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
-                                UpdateAddressUserAction (fromEmailAddress, action);
-                            }
-                        }
-                    });
-                    break;
-                case NcBrainEventType.UPDATE_MESSAGE_NOTIFICATION_STATUS:
-                    var notifiedEvent = (NcBrainUpdateMessageNotificationStatusEvent)brainEvent;
-                    NcModel.Instance.RunInTransaction (() => {
-                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)notifiedEvent.EmailMessageId);
-                        if (null != emailMessage) {
-                            emailMessage.ScoreStates.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
-                        }
-                    });
-                    break;
-                case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
-                    ProcessMessageReadStatusUpdated ((NcBrainUpdateMessageReadStatusEvent)brainEvent);
-                    break;
-                case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
-                    ProcessMessageReplyStatusUpdated ((NcBrainUpdateMessageReplyStatusEvent)brainEvent);
-                    break;
-                default:
-                    Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
-                    break;
-                }
-                dbEvent.Delete ();
-                return true;
-            });
         }
 
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
@@ -293,47 +242,21 @@ namespace NachoCore.Brain
             }
         }
 
-        private int QuickScoreEmailMessages (int accountId, int count)
+        private void QuickScoreEmailMessage (McEmailMessage emailMessage)
         {
-            int numScored = 0;
-            var emailMessages = McEmailMessage.QueryNeedQuickScoring (accountId, count);
-            foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
-                    break;
-                }
-                var newScore = emailMessage.Classify ();
-                emailMessage.UpdateByBrain ((item) => {
-                    var em = (McEmailMessage)item;
-                    em.Score = newScore;
-                    return true;
-                });
-                numScored++;
-            }
-            if (0 != numScored) {
-                Log.Info (Log.LOG_BRAIN, "{0} email message quick scored", numScored);
-                NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
-            }
-            return numScored;
+            var newScores = emailMessage.Classify ();
+            emailMessage.UpdateByBrain ((item) => {
+                var em = (McEmailMessage)item;
+                em.Score = newScores.Item1;
+                em.Score2 = newScores.Item2;
+                return true;
+            });
         }
 
-        private int GleanEmailMessages (int count, Int64 accountId)
+        private bool QuickScoreEmailMessage (object message)
         {
-            int numGleaned = 0;
-            var emailMessages = McEmailMessage.QueryNeedGleaning (accountId, count);
-            foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
-                    break;
-                }
-                if (!GleanEmailMessage (emailMessages [numGleaned])) {
-                    break;
-                }
-                numGleaned++;
-            }
-            if (0 != numGleaned) {
-                Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
-                NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
-            }
-            return numGleaned;
+            QuickScoreEmailMessage ((McEmailMessage)message);
+            return true;
         }
 
         private void ProcessMessageReadStatusUpdated (NcBrainUpdateMessageReadStatusEvent readEvent)
@@ -353,4 +276,3 @@ namespace NachoCore.Brain
         }
     }
 }
-

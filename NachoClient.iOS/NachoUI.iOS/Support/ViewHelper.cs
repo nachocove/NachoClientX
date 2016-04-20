@@ -108,6 +108,9 @@ namespace NachoClient.iOS
             }
             result += string.Format (": Origin {0} Size {1} Tag {2}",
                 Util.PrettyPointF (view.Frame.Location), Util.PrettySizeF (view.Frame.Size), view.Tag);
+            if (null != view.AccessibilityLabel) {
+                result += string.Format (" Label '{0}'", view.AccessibilityLabel);
+            }
             if (view is UIScrollView) {
                 var scroll = (UIScrollView)view;
                 result += string.Format (" Scrollable content: Offset {0} Size {1} ZoomScale {2}",
@@ -115,6 +118,20 @@ namespace NachoClient.iOS
             }
             if (!view.Transform.IsIdentity) {
                 result += string.Format (" Transform {0}", view.Transform.ToString ());
+            }
+            string text = null;
+            if (view is UITextView) {
+                text = ((UITextView)view).Text;
+            }
+            if (view is UILabel) {
+                text = ((UILabel)view).Text;
+            }
+            if (null != text) {
+                bool truncated = 10 < text.Length;
+                if (truncated) {
+                    text = text.Substring (0, 10);
+                }
+                result += string.Format (" Text '{0}'{1}", text, truncated ? "..." : "");
             }
             return result;
         }
@@ -247,6 +264,9 @@ namespace NachoClient.iOS
                             DisposeViewHierarchy(cell);
                         }
                     }
+                } else if (view is BodyWebView) {
+                    (view as BodyWebView).EnqueueAsReusable ();
+                    skipDispose = true;
                 } else if (view is UIWebView) {
                     var webView = view as UIWebView;
                     if (webView.IsLoading) {

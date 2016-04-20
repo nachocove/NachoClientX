@@ -37,6 +37,16 @@ namespace NachoCore.Utils
             Telemetry = settings.Telemetry;
         }
 
+        public void EnableConsole (ulong subsystem = ulong.MaxValue)
+        {
+            Console |= subsystem;
+        }
+
+        public void EnableTelemetry (ulong subsystem = ulong.MaxValue)
+        {
+            Telemetry |= subsystem;
+        }
+
         public void DisableConsole (ulong subsystem = ulong.MaxValue)
         {
             Console &= ~subsystem;
@@ -225,21 +235,22 @@ namespace NachoCore.Utils
             int maxIndirect = 5;
             while (0 < maxIndirect && Log.IndirectQ.TryDequeue (out elem)) {
                 var message = "@" + String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}", elem.Occurred) + ": " + elem.Message;
+                var parms = new object[1] { message };
                 switch (elem.Level) {
                 case LogElement.LevelEnum.Debug:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Debug, TelemetryEventType.DEBUG, message, "Debug");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Debug, TelemetryEventType.DEBUG, "{0}", "Debug", parms);
                     break;
 
                 case LogElement.LevelEnum.Info:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Info, TelemetryEventType.INFO, message, "Info");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Info, TelemetryEventType.INFO, "{0}", "Info", parms);
                     break;
 
                 case LogElement.LevelEnum.Warn:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Warn, TelemetryEventType.WARN, message, "Warn");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Warn, TelemetryEventType.WARN, "{0}", "Warn", parms);
                     break;
 
                 case LogElement.LevelEnum.Error:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Error, TelemetryEventType.ERROR, message, "Error");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Error, TelemetryEventType.ERROR, "{0}", "Error", parms);
                     break;
                 }
                 --maxIndirect;
@@ -257,10 +268,15 @@ namespace NachoCore.Utils
             });
         }
 
+        static bool ReadyToLog ()
+        {
+            return NachoCore.Model.NcModel.IsInitialized && Telemetry.Initialized;
+        }
+
         private void _TryLog (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,
                               string fmt, string level, LogElement.LevelEnum queueLevel, params object[] list)
         {
-            if (NachoCore.Model.NcModel.IsInitialized) {
+            if (ReadyToLog ()) {
                 _Log (threadId, subsystem, settings, teleType, fmt, level, list);
             } else {
                 QueueLog (threadId, subsystem, queueLevel, String.Format (fmt, list));
@@ -356,6 +372,9 @@ namespace NachoCore.Utils
         public const ulong LOG_BACKEND = (1 << 22);
         public const ulong LOG_SMTP = (1 << 23);
         public const ulong LOG_IMAP = (1 << 24);
+        public const ulong LOG_SEARCH = (1 << 25);
+        public const ulong LOG_SFDC = (1 << 26);
+        public const ulong LOG_CHAT = (1 << 27);
 
         public static string ModuleString (ulong subsystem)
         {
@@ -410,6 +429,12 @@ namespace NachoCore.Utils
                 return "SMTP";
             case LOG_IMAP:
                 return "IMAP";
+            case LOG_SEARCH:
+                return "SEARCH";
+            case LOG_SFDC:
+                return "SFDC";
+            case LOG_CHAT:
+                return "CHAT";
             default:
                 throw new Exception (string.Format ("Unknown Log subsystem {0}", subsystem));
             }
@@ -450,18 +475,10 @@ namespace NachoCore.Utils
             Log.SharedInstance.Error (subsystem, fmt, list);
         }
 
-        public static void DumpFileDescriptors ()
+
+        public static String ReplaceFormatting (String s)
         {
-            int numFd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
-            int numOpenFd = PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ();
-            Log.Info (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", numOpenFd);
-            for (int fd = 0; fd < numFd; fd++) {
-                var path = PlatformProcess.GetFileNameForDescriptor (fd);
-                if (null == path) {
-                    continue;
-                }
-                Log.Warn (Log.LOG_SYS, "fd {0}: {1}", fd, path);
-            }
+            return s.Replace ("{", "[").Replace ("}", "]");
         }
 
         // This is for testing only

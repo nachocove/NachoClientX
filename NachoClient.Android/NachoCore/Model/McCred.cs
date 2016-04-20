@@ -1,14 +1,8 @@
 using System;
-using System.Net.Http;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using SQLite;
-using ModernHttpClient;
-using Newtonsoft.Json;
 using NachoCore.Utils;
-using NachoClient.Build;
 using NachoPlatform;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -44,6 +38,8 @@ namespace NachoCore.Model
         private string RefreshToken { get; set; }
         // General-use. When will the credential expire?
         public DateTime Expiry { get; set; }
+        // General-use. Seconds the credential will expire in (should be used to set Expiry)
+        public uint ExpirySecs { get; set; }
         // General-use. Where can a user manually refresh this credential?
         public string RectificationUrl { get; set; }
         // General-use. When we open the web view for web-based auth, where should we point it?
@@ -51,9 +47,25 @@ namespace NachoCore.Model
         // General-use. What substring in a URL will cause us to tear-down the web view?
         public string DoneSubstring { get; set; }
 
+        // General-use. The epoch of the Credentials.
+        public int Epoch { get; set; }
+
+        [SQLite.Ignore]
+        public bool IsExpired {
+            get {
+                return Expiry <= DateTime.UtcNow;
+            }
+        }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
+        }
+
+        private void UpdateCredential ()
+        {
+            Epoch += 1;
+            Update ();
         }
 
         /// <summary>
@@ -67,34 +79,33 @@ namespace NachoCore.Model
             NcAssert.AreEqual ((int)CredTypeEnum.Password, (int)CredType, string.Format ("UpdatePassword:CredType:{0}", CredType));
             Expiry = DateTime.MaxValue;
             RectificationUrl = null;
-            if (Keychain.Instance.HasKeychain ()) {
-                NcAssert.True (Keychain.Instance.SetPassword (Id, password));
-                Password = null;
-                Update ();
-            } else {
-                Password = password;
-                Update ();
-            }
+            NcAssert.True (Keychain.Instance.SetPassword (Id, password));
+            Password = null;
+            UpdateCredential ();
             var account = McAccount.QueryById<McAccount> (AccountId);
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
-        public void UpdateOauth2 (string accessToken, string refreshToken, DateTime expiry)
+        public void UpdateOauth2 (string accessToken, string refreshToken, uint expirySecs)
         {
             NcAssert.True (0 != Id);
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
-            Expiry = expiry;
-            if (Keychain.Instance.HasKeychain ()) {
-                NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
-                AccessToken = null;
-                NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
-                RefreshToken = null;
-                Update ();
-            } else {
-                AccessToken = accessToken;
-                RefreshToken = refreshToken;
-                Update ();
+            if (0 == expirySecs) {
+                expirySecs = 3600;
             }
+            Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
+            ExpirySecs = expirySecs;
+            NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
+            AccessToken = null;
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            if (string.IsNullOrEmpty (refreshToken)) {
+                var st = new System.Diagnostics.StackTrace ();
+                Log.Warn (Log.LOG_SYS, "UpdateOauth2({0}:{1}): No refreshToken!\n{2}", AccountId, account.AccountService, st.ToString ());
+            }
+            NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
+            RefreshToken = null;
+            UpdateCredential ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
         public void ClearExpiry ()
@@ -109,7 +120,7 @@ namespace NachoCore.Model
             if (String.IsNullOrEmpty (domain)) {
                 return username;
             } else {
-                return String.Join ("\\", new string[] { domain, username });
+                return String.Join ("\\", new [] { domain, username });
             }
         }
 
@@ -125,7 +136,7 @@ namespace NachoCore.Model
             if (-1 == slashIndex) {
                 user = username;
             } else if (username.Length == (slashIndex + 1)) {
-                user = username.Substring (0, slashIndex);
+                domain = username.Substring (0, slashIndex);
             } else {
                 domain = username.Substring (0, slashIndex);
                 user = username.Substring (slashIndex + 1);
@@ -150,7 +161,7 @@ namespace NachoCore.Model
 
         public string GetPassword ()
         {
-            if (Keychain.Instance.HasKeychain () && null == Password) {
+            if (null == Password) {
                 return Keychain.Instance.GetPassword (Id);
             } else {
                 return Password;
@@ -159,7 +170,7 @@ namespace NachoCore.Model
 
         public string GetAccessToken ()
         {
-            if (Keychain.Instance.HasKeychain () && null == AccessToken) {
+            if (null == AccessToken) {
                 return Keychain.Instance.GetAccessToken (Id);
             } else {
                 return AccessToken;
@@ -168,7 +179,7 @@ namespace NachoCore.Model
 
         public string GetRefreshToken ()
         {
-            if (Keychain.Instance.HasKeychain () && null == RefreshToken) {
+            if (null == RefreshToken) {
                 return Keychain.Instance.GetRefreshToken (Id);
             } else {
                 return RefreshToken;
@@ -177,87 +188,28 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.DeletePassword (Id);
-                Password = null;
-                Update ();
-            } 
+            Keychain.Instance.DeletePassword (Id);
+            Password = null;
+            Update ();
             return base.Delete ();
         }
 
-        public bool AttemptRefresh (Action<McCred> onSuccess, Action<McCred> onFailure)
+        public static List<McCred> QueryByCredType (CredTypeEnum credType)
+        {
+            return NcModel.Instance.Db.Query<McCred> (
+                "SELECT * FROM McCred WHERE CredType = ?", credType);
+        }
+
+        public bool CanRefresh ()
         {
             switch (CredType) {
             case CredTypeEnum.Password:
                 return false;
             case CredTypeEnum.OAuth2:
-                var account = McAccount.QueryById<McAccount> (AccountId);
-                if (account.AccountService == McAccount.AccountServiceEnum.GoogleDefault) {
-                    RefreshOAuth2Google (onSuccess, onFailure);
-                    return true;
-                }
-                Log.Error (Log.LOG_BACKEND, "Unable to do OAUTH2 refresh for {0}", account.AccountService.ToString ());
-                return false;
+                return true;
             default:
                 NcAssert.CaseError (CredType.ToString ());
                 return false;
-            }
-        }
-
-        public static Type HttpClientType = typeof(MockableHttpClient);
-
-        private class OAuth2RefreshRespose
-        {
-            public string access_token { get; set; }
-
-            public string expires_in { get; set; }
-
-            public string token_type { get; set; }
-        }
-
-        private async Task<bool> TryRefresh ()
-        {
-            var handler = new NativeMessageHandler ();
-            var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
-            var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
-                        "&grant_type=" + "refresh_token" +
-                        "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
-                        "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
-            var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
-            var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
-            try {
-                var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.OK) {
-                    var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
-                    var response = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (jsonResponse);
-                    if ("Bearer" != response.token_type) {
-                        Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", response.token_type);
-                    }
-                    if (null == response.access_token || null == response.expires_in) {
-                        Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", response.access_token, response.expires_in);
-                        return false;
-                    }
-                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
-                    UpdateOauth2 (response.access_token, GetRefreshToken (), 
-                        DateTime.UtcNow.AddSeconds (int.Parse (response.expires_in)));
-                    return true;
-                } else {
-                    Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", httpResponse.StatusCode.ToString ());
-                    return false;
-                }
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
-                return false;
-            }
-        }
-
-        private async void RefreshOAuth2Google (Action<McCred> onSuccess, Action<McCred> onFailure)
-        {    
-            bool result = await TryRefresh ();
-            if (result) {
-                onSuccess (this);
-            } else {
-                onFailure (this);
             }
         }
     }

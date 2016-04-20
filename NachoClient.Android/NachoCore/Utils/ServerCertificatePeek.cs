@@ -202,6 +202,8 @@ namespace NachoCore.Utils
                 var host = request.Address.Host;
                 Instance.Cache.AddOrUpdate (host, certificate2, (k, v) => certificate2);
                 return true;
+            } else {
+                Log.Info (Log.LOG_HTTP, "Certificate validation failed with: {0}", sslPolicyErrors);
             }
             return false;
         }

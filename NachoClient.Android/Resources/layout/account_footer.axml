@@ -2,33 +2,87 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:background="@color/NachoBackgroundGray"
     android:orientation="vertical"
-    android:padding="15dp"
+    android:paddingTop="15dp"
+    android:paddingLeft="15dp"
+    android:paddingRight="15dp"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content">
-    <LinearLayout
+    <android.support.v7.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/add_account"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="@android:color/white"
-        android:orientation="horizontal"
+        card_view:cardCornerRadius="6dp"
+        card_view:cardElevation="0dp">
+        <RelativeLayout
+            android:background="?attr/selectableItemBackground"
+            android:orientation="horizontal"
+            android:padding="15dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:text="@string/add_account"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="3dp"
+                android:textSize="14dp"
+                android:textStyle="normal"
+                android:textColor="@android:color/black"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true" />
+            <ImageView
+                android:src="@drawable/email_add"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:scaleType="fitXY"
+                android:padding="3dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true" />
+        </RelativeLayout>
+    </android.support.v7.widget.CardView>
+    <View
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
-        <TextView
-            android:text="@string/add_account"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:padding="3dp"
-            android:textSize="14dp"
-            android:textStyle="normal"
-            android:textColor="@android:color/black"
-            android:background="@android:color/white" />
-        <ImageView
-            android:src="@drawable/email_add"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:scaleType="fitXY"
-            android:layout_gravity="right|center_vertical"
-            android:padding="3dp"
-            android:background="@android:color/white" />
-    </LinearLayout>
+        android:layout_height="15dp"
+        android:background="@color/NachoLightGray" />
+    <android.support.v7.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/connect_to_salesforce"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        card_view:cardCornerRadius="6dp"
+        card_view:cardElevation="0dp">
+        <RelativeLayout
+            android:background="?attr/selectableItemBackground"
+            android:orientation="horizontal"
+            android:padding="15dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:text="@string/connect_to_salesforce"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="3dp"
+                android:textSize="14dp"
+                android:textStyle="normal"
+                android:textColor="@android:color/black"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true" />
+            <ImageView
+                android:src="@drawable/email_add"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:scaleType="fitXY"
+                android:padding="3dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true" />
+        </RelativeLayout>
+    </android.support.v7.widget.CardView>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="15dp"
+        android:background="@color/NachoLightGray" />
 </LinearLayout>

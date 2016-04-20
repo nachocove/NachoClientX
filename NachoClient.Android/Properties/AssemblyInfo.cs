@@ -7,9 +7,9 @@ using Android.App;
 [assembly: AssemblyTitle ("NachoClient.Android")]
 [assembly: AssemblyDescription ("")]
 [assembly: AssemblyConfiguration ("")]
-[assembly: AssemblyCompany ("")]
-[assembly: AssemblyProduct ("")]
-[assembly: AssemblyCopyright ("tje")]
+[assembly: AssemblyCompany ("Nacho Cove, Inc.")]
+[assembly: AssemblyProduct ("Nacho Mail")]
+[assembly: AssemblyCopyright ("Copyright 2015")]
 [assembly: AssemblyTrademark ("")]
 [assembly: AssemblyCulture ("")]
 // The assembly version has the format "{Major}.{Minor}.{Build}.{Revision}".

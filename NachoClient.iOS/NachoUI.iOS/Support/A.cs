@@ -400,7 +400,7 @@ namespace NachoClient.iOS
         public static UIColor Color_NachoGreen {
             get {
                 if (null == _Color_NachoGreen) {
-                    _Color_NachoGreen = UIColor.FromRGB (0x15, 0x47, 0x50);
+                    _Color_NachoGreen = UIColor.FromRGB (12, 66, 75);
                 }
                 return _Color_NachoGreen;
             }

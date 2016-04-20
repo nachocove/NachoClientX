@@ -195,18 +195,21 @@ namespace Test.iOS
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.None, false);
             Assert.AreEqual (0, result.Count);
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.RicInf, true);
-            Assert.AreEqual (0, result.Count);
+            Assert.AreEqual (1, result.Count);
+            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.Ric_19, result [0].Type);
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.RicInf, false);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.Ric_19, result [0].Type);
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.DefRicInf, true);
-            Assert.AreEqual (0, result.Count);
+            Assert.AreEqual (1, result.Count);
+            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultContacts_9, result [0].Type);
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.DefRicInf, false);
             Assert.AreEqual (2, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.AllInf, true);
-            Assert.AreEqual (0, result.Count);
+            Assert.AreEqual (1, result.Count);
+            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
             result = Strategy.ContactFolderListProvider (AsStrategy.Scope.ContactEnum.AllInf, false);
             Assert.AreEqual (3, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
@@ -351,9 +354,10 @@ namespace Test.iOS
             folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
             folder.Insert ();
             result = strat.FolderListProvider (6, true);
-            Assert.AreEqual (2, result.Count);
+            Assert.AreEqual (3, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
             result = strat.FolderListProvider (6, false);
             Assert.AreEqual (7, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
@@ -544,20 +548,26 @@ namespace Test.iOS
             folder.Insert ();
             result = strat.GenNarrowSyncKit (strat.FolderListProvider (0, true), 0, 50);
             Assert.AreEqual (50, result.OverallWindowSize);
-            Assert.AreEqual (2, result.PerFolders.Count);
+            Assert.AreEqual (3, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
             var inboxParms = result.PerFolders.Single (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type);
             var calParms = result.PerFolders.Single (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type);
+            var ricParms = result.PerFolders.Single (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type);
             // TODO: insert pending to prove that they are ignored.
             Assert.AreEqual (0, inboxParms.Commands.Count);
             Assert.AreEqual (0, calParms.Commands.Count);
+            Assert.AreEqual (0, ricParms.Commands.Count);
             Assert.AreEqual (inboxParms.WindowSize, AsStrategy.KBasePerFolderWindowSize * 3);
             Assert.AreEqual (calParms.WindowSize, AsStrategy.KBasePerFolderWindowSize * 3);
+            Assert.AreEqual (ricParms.WindowSize, AsStrategy.KBasePerFolderWindowSize * 3);
             Assert.AreEqual (inboxParms.FilterCode, Xml.Provision.MaxAgeFilterCode.OneDay_1);
             Assert.AreEqual (calParms.FilterCode, Xml.Provision.MaxAgeFilterCode.TwoWeeks_4);
+            Assert.AreEqual (ricParms.FilterCode, Xml.Provision.MaxAgeFilterCode.SyncAll_0);
             Assert.True (inboxParms.GetChanges);
             Assert.True (calParms.GetChanges);
+            Assert.True (ricParms.GetChanges);
             var check = McFolder.QueryById<McFolder> (inboxParms.Folder.Id);
             Assert.True (check.AsSyncMetaToClientExpected);
             check = McFolder.QueryById<McFolder> (calParms.Folder.Id);
@@ -634,7 +644,7 @@ namespace Test.iOS
                 return true;
             });
             result = strat.GenPingKit (context.ProtocolState, true, false, false);
-            Assert.AreEqual (2, result.Folders.Count);
+            Assert.AreEqual (3, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
             inbox.UpdateSet_AsSyncMetaToClientExpected (true);
@@ -663,8 +673,10 @@ namespace Test.iOS
 
         private void Fetch_InjectEmails (int accountId, int count)
         {
-            Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            Fetch_Folder.Insert ();
+            if (null == Fetch_Folder) {
+                Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+                Fetch_Folder.Insert ();
+            }
             Fetch_Emails = new List<McEmailMessage> ();
             for (int i = 0; i < count; i++) {
                 var body = new McBody () {
@@ -719,8 +731,6 @@ namespace Test.iOS
                 };
                 email.Insert ();
                 var att = new McAttachment () {
-                    ItemId = email.Id,
-                    ClassCode = email.GetClassCode (),
                     AccountId = email.AccountId,
                     FilePresenceFraction = 0,
                     FileSize = 50000,
@@ -728,6 +738,7 @@ namespace Test.iOS
                     FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
                 };
                 att.Insert ();
+                att.Link (email);
                 Fetch_Atts.Add (att);
                 Fetch_Folder.Link (email);
                 Fetch_Emails.Add (email);
@@ -738,7 +749,11 @@ namespace Test.iOS
         {
             foreach (var att in Fetch_Atts) {
                 if (null != Fetch_Emails) {
-                    var email = Fetch_Emails.SingleOrDefault (x => x.Id == att.ItemId);
+                    var attemails = McAttachment.QueryItems (accountId, att.Id).Where (x => x is McEmailMessage);
+                    var email = (from fetch_e in Fetch_Emails
+                        join att_e in attemails
+                        on fetch_e.Id equals att_e.Id
+                        select fetch_e).SingleOrDefault ();
                     if (null != email) {
                         Fetch_Folder.Unlink (email);
                         email.Delete ();
@@ -842,9 +857,10 @@ namespace Test.iOS
 
             // Test of narrow.
             result = strat.GenSyncKit (context.ProtocolState, AsStrategy.SyncMode.Narrow);
-            Assert.AreEqual (2, result.PerFolders.Count);
+            Assert.AreEqual (3, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Folder.Type));
             foreach (var rst in folders) {
                 rst.UpdateSet_AsSyncMetaToClientExpected (false);
             }

@@ -14,8 +14,6 @@ namespace NachoCore
     /// </summary>
     public interface INcEventProvider
     {
-        void Refresh (Action completionAction);
-
         int NumberOfDays ();
 
         int NumberOfItemsForDay (int i);
@@ -26,12 +24,16 @@ namespace NachoCore
 
         McEvent GetEvent (int day, int item);
 
-        McAbstrCalendarRoot GetEventDetail (int day, int item);
-
         int ExtendEventMap (DateTime untilDate);
 
         bool FindEventNearestTo (DateTime date, out int item, out int section);
 
-        void StopTrackingEventChanges ();
+        void IndexToDayItem (int index, out int day, out int item);
+
+        int IndexFromDayItem (int day, int item);
+
+        int NumberOfEvents();
+
+        Action UiRefresh { set; }
     }
 }

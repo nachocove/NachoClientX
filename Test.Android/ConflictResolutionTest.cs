@@ -55,7 +55,7 @@ namespace Test.iOS
             public static AsFolderSyncCommand CreateFolderSyncCmd (MockContext context)
             {
                 var folderCmd = new AsFolderSyncCommand (context);
-                AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+                NcProtoControl.TestHttpClient = MockHttpClient.Instance;
                 return folderCmd;
             }
 
@@ -516,6 +516,7 @@ namespace Test.iOS
                 topFolder.Link (email);
                 PathOps.CreatePath (defaultAccountId, email.ServerId, topFolder.ServerId);
                 var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+                att.Link (email);
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {

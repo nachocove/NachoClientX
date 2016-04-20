@@ -14,31 +14,16 @@ namespace NachoCore.IMAP
 {
     public class ImapSearchCommand : ImapCommand
     {
-        private List<Regex> RegexList;
-
-        public ImapSearchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapSearchCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
-
-            RedactProtocolLogFunc = RedactProtocolLog;
-
-            RegexList = new List<Regex> ();
-            RegexList.Add (new Regex (@"^" + NcMailKitProtocolLogger.ImapCommandNumRegexStr + @"(?<uidstr>UID SEARCH RETURN \(.*\) )(?<redact>.*)(?<end>[\r\n]+)$", NcMailKitProtocolLogger.rxOptions));
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            // Need to redact search strings
-            //2015-06-22T17:28:56.589Z: IMAP C: B00000006 UID SEARCH RETURN () REDACTED
-            //2015-06-22T17:28:57.190Z: IMAP S: * ESEARCH (TAG "B00000006") UID
-            //B00000006 OK SEARCH completed (Success)
-            return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
+            PendingSingle.MarkDispatched ();
         }
 
         public override void Execute (NcStateMachine sm)
         {
-            ExecuteNoTask(sm);
+            Sm = sm;
+            ExecuteNoTask();
         }
 
         protected override Event ExecuteCommand ()
@@ -52,7 +37,7 @@ namespace NachoCore.IMAP
                 .Or (SearchQuery.BccContains (PendingSingle.Search_Prefix))
                 .Or (SearchQuery.MessageContains (PendingSingle.Search_Prefix))
                 .Or (SearchQuery.CcContains (PendingSingle.Search_Prefix));
-            if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.GMailExt1)) {
+            if (Client.Capabilities.HasFlag (ImapCapabilities.GMailExt1)) {
                 query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
             }
             if (TimeSpan.Zero != timespan) {
@@ -66,9 +51,13 @@ namespace NachoCore.IMAP
                     continue;
                 }
                 var mailKitFolder = GetOpenMailkitFolder (folder);
+                var tmpFolder = folder;
+                // this code will soon be rewritten, so we won't worry about the possibly changed tmpFolder
+                UpdateImapSetting (mailKitFolder, ref tmpFolder);
+
                 if (mailKitFolder.Count > 0) {
                     IList<UniqueId> uids;
-                    if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
+                    if (Client.Capabilities.HasFlag (ImapCapabilities.Sort)) {
                         uids = mailKitFolder.Search (query, orderBy);
                     } else {
                         uids = mailKitFolder.Search (query);
@@ -76,7 +65,7 @@ namespace NachoCore.IMAP
                     if (uids.Any ()) {
                         List<string> serverIdList = new List<string> ();
                         foreach (var uid in uids) {
-                            serverIdList.Add ("\"" + ImapProtoControl.MessageServerId (folder, uid) + "\"");
+                            serverIdList.Add (ImapProtoControl.MessageServerId (folder, uid));
                         }
                         var idList = McEmailMessage.QueryByServerIdList (AccountId, serverIdList);
                         if (idList.Any ()) {

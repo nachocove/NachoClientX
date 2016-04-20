@@ -14,6 +14,11 @@ namespace NachoClient.iOS
 {
     public partial class SupportMessageViewController : NcUIViewControllerNoLeaks
     {
+
+        UIScrollView scrollView;
+        UIView contentView;
+        NcUIBarButtonItem sendButton;
+
         protected nfloat yOffset;
         protected static nfloat CELL_HEIGHT = 44f;
         protected static nfloat LINE_OFFSET = 30f;
@@ -31,6 +36,11 @@ namespace NachoClient.iOS
 
         protected NSTimer sendMessageTimer;
         protected bool hasDisplayedStatusMessage = false;
+        protected bool problemWasChanged = false;
+
+        public SupportMessageViewController () : base ()
+        {
+        }
 
         public SupportMessageViewController (IntPtr handle) : base (handle)
         {
@@ -62,19 +72,23 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            sendButton = new NcUIBarButtonItem ();
+            base.ViewDidLoad ();
+            NavigationItem.Title = "Contact Us";
+        }
+
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            navigationBar.Frame = new CGRect (0, 0, View.Frame.Width, 64);
-            navigationBar.Alpha = 1.0f;
-            navigationBar.Opaque = true;
-            navigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
-            navigationBar.BarTintColor = A.Color_NachoGreen;
-            navigationBar.Translucent = false;
-
-            yOffset = navigationBar.Frame.Bottom + VERTICAL_PADDING;
+            yOffset = VERTICAL_PADDING;
 
             UIView sectionOneView = new UIView (new CGRect (HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
             sectionOneView.Layer.BorderWidth = .5f;
@@ -127,7 +141,7 @@ namespace NachoClient.iOS
             UITextView sectionTwoTextView = new UITextView (new CGRect (INDENT - 4, sectionTwoHR.Frame.Bottom + 8, sectionTwoView.Frame.Width - INDENT, sectionTwoView.Frame.Height - CELL_HEIGHT - 8));
             sectionTwoTextView.Font = A.Font_AvenirNextMedium14;
             sectionTwoTextView.TextColor = UIColor.LightGray;
-            sectionTwoTextView.Text = "Briefly describe what's going on";
+            sectionTwoTextView.Text = "Briefly describe what's going on.";
             sectionTwoTextView.Tag = MESSAGEBODY_VIEW_TAG;
             sectionTwoTextView.BackgroundColor = UIColor.White;
             sectionTwoTextView.ScrollEnabled = true;
@@ -148,6 +162,7 @@ namespace NachoClient.iOS
                 if (textView.TextColor == UIColor.LightGray) {
                     textView.Text = "";
                     textView.TextColor = A.Color_NachoBlack;
+                    problemWasChanged = true;
                 }
                 return true;
             });
@@ -155,7 +170,8 @@ namespace NachoClient.iOS
             sectionTwoTextView.ShouldEndEditing += ((textView) => {
                 if (0 == textView.Text.Trim ().Length) {
                     sectionTwoTextView.TextColor = UIColor.LightGray;
-                    sectionTwoTextView.Text = "Briefly describe what's going on...";
+                    sectionTwoTextView.Text = "Briefly describe what's going on.";
+                    problemWasChanged = false;
                 }
                 textView.ResignFirstResponder ();
                 return true;
@@ -163,16 +179,14 @@ namespace NachoClient.iOS
 
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
 
-            UINavigationItem navItems = new UINavigationItem ("Support");
+            NavigationItem.Title = "Message Support";
 
-            using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                UIBarButtonItem backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                var DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     this.DismissViewController (true, null);
                 });
-                backButton.Title = "Back";
-                backButton.AccessibilityLabel = "Back";
-                backButton.TintColor = A.Color_NachoBlue;
-                navItems.SetLeftBarButtonItem (backButton, true);
+                DismissButton.AccessibilityLabel = "Dismiss";
+                NavigationItem.LeftBarButtonItem = DismissButton;
             }
           
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
@@ -180,9 +194,7 @@ namespace NachoClient.iOS
 
             sendButton.Clicked += SendButtonClicked;
 
-            navItems.RightBarButtonItem = sendButton;
-            navigationBar.Items = new UINavigationItem[]{ navItems };
-            View.AddSubview (navigationBar);
+            NavigationItem.RightBarButtonItem = sendButton;
 
             UIView grayBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             grayBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
@@ -224,6 +236,12 @@ namespace NachoClient.iOS
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 NcAlertView.ShowMessage (this, "Network Error",
                     "A networking issue prevents this message from being sent. Please try again when you have a network connection.");
+            } else if (string.IsNullOrEmpty (contactInfoTextField.Text)) {
+                NcAlertView.ShowMessage (this, "Missing Contact Info",
+                    "Please provide contact information, such as an email address.");
+            } else if (!problemWasChanged || string.IsNullOrEmpty(messageInfoTextView.Text)) {
+                NcAlertView.ShowMessage (this, "No Description",
+                    "Please describe your reason for contacting Nacho Cove support, such as the problem that you encountered.");
             } else {
                 sendMessageTimer = NSTimer.CreateScheduledTimer (WAIT_TIMER_LENGTH, delegate {
                     MessageReceived (false);
@@ -237,9 +255,9 @@ namespace NachoClient.iOS
 
                 Telemetry.StartService ();
                 // Close all JSON files so they can be immediately uploaded while the user enters the
-                Telemetry.JsonFileTable.FinalizeAll ();
+                Telemetry.Instance.FinalizeAll ();
                 Telemetry.RecordSupport (supportInfo, () => {
-                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
                         Account = ConstMcAccount.NotAccountSpecific,
                     });
@@ -284,9 +302,9 @@ namespace NachoClient.iOS
 
         protected string GetEmailAddress ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                return Account.EmailAddr;
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            if (account != null) {
+                return account.EmailAddr;
             } else {
                 return "";
             }

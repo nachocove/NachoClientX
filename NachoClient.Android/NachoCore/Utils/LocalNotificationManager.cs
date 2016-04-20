@@ -33,7 +33,7 @@ namespace NachoCore.Utils
 
         // The handles of all the scheduled notifications.  Keeping our own list
         // reduces the amount of work that needs to be done on the UI thread.
-        private static HashSet<Int32> scheduledEvents = null;
+        private static HashSet<int> scheduledEvents = null;
 
         // If a new event is created with a reminder before "scheduledThrough",
         // then the schedule of notifications needs to be redone.
@@ -46,8 +46,8 @@ namespace NachoCore.Utils
         {
             lock (lockObject) {
                 NcAssert.True (null == scheduledEvents, "LocalNotificationManager.InitializeLocalNotifications() was called twice.");
-                scheduledEvents = new HashSet<Int32> ();
-                var notifications = new List<NotificationInfo> ();
+                scheduledEvents = new HashSet<int> ();
+                var notifications = new List<McEvent> ();
                 int count = 0;
                 DateTime now = DateTime.UtcNow;
                 scheduledThrough = now + MAXIMUM_WINDOW;
@@ -59,7 +59,7 @@ namespace NachoCore.Utils
                         scheduledThrough = ev.ReminderTime;
                         break;
                     }
-                    notifications.Add (new NotificationInfo (ev.Id, ev.ReminderTime, NotificationMessage (ev)));
+                    notifications.Add (ev);
                     scheduledEvents.Add (ev.Id);
                     ++count;
                 }
@@ -108,7 +108,7 @@ namespace NachoCore.Utils
                     if (!limitReached) {
                         if (scheduledEvents.Add (ev.Id)) {
                             Log.Info (Log.LOG_CALENDAR, "Adding notification for event {0}", ev.Id);
-                            NachoPlatform.Notif.Instance.ScheduleNotification (ev.Id, ev.ReminderTime, NotificationMessage (ev));
+                            NachoPlatform.Notif.Instance.ScheduleNotification (ev);
                         }
                     } else {
                         if (scheduledEvents.Remove (ev.Id)) {
@@ -141,8 +141,7 @@ namespace NachoCore.Utils
                 if (ev.GetEndTimeUtc () > now) {
                     // The reminder time has passed, but the event isn't over yet.
                     // Notify the user right now.
-                    string message = Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.GetStartTimeUtc () - now));
-                    NachoPlatform.Notif.Instance.ImmediateNotification (ev.Id, message);
+                    NachoPlatform.Notif.Instance.ImmediateNotification (ev);
                 }
                 return;
             }
@@ -179,24 +178,6 @@ namespace NachoCore.Utils
         private static bool ShouldReschedule ()
         {
             return reschedulingNeeded || scheduledThrough - DateTime.UtcNow < MINIMUM_WINDOW;
-        }
-
-        // It is possible for a McEvent to be deleted or to have been orphaned while the local notification
-        // processing is happening.  The situation will get cleared up quickly by NcEventManager.  But in the
-        // meantime, this class needs to handle GetCalendarItemForEvent() returning null.
-        private static string EventSubject (McEvent ev)
-        {
-            var calendarItem = ev.GetCalendarItemforEvent ();
-            if (null == calendarItem) {
-                return "";
-            } else {
-                return calendarItem.GetSubject ();
-            }
-        }
-
-        private static string NotificationMessage (McEvent ev)
-        {
-            return Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.GetStartTimeUtc () - ev.ReminderTime));
         }
 
         private static void StatusIndicatorCallback (object sender, EventArgs e)

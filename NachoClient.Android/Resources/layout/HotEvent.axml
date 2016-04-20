@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout
+        android:id="@+id/hot_event"
+        android:background="@android:color/white"
+        android:orientation="vertical"
+        android:padding="10dp"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <NachoClient.AndroidClient.SwipeMenuListView
+            android:id="@+id/hotevent_listView"
+            android:scrollbars="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/NachoLightGray" />
+        <TextView
+            android:id="@+id/hot_event_empty"
+            android:layout_marginLeft="10dp"
+            android:layout_gravity="center_vertical"
+            android:text="@string/no_hot_event"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textStyle="normal"
+            android:visibility="gone"
+            android:textColor="@android:color/darker_gray"
+            android:background="@android:color/white" />
+    </LinearLayout>
+</merge>

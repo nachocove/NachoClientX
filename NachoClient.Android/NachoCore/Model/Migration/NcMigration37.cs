@@ -3,7 +3,7 @@
 using System;
 using NachoCore.Model;
 
-namespace NachoClient.AndroidClient
+namespace NachoCore.Model
 {
     public class NcMigration37 : NcMigration
     {

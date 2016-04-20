@@ -13,389 +13,166 @@ using NachoCore.Utils;
 using NachoCore;
 using NachoCore.Brain;
 using NachoPlatform;
+using NachoCore.Index;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
+    
+    public class MessageListViewController : NachoTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate
     {
-        IMessageTableViewSource messageSource;
-        IMessageTableViewSource searchResultsSource;
-        NachoMessageSearchResults searchResultsMessages;
-        protected UIBarButtonItem composeMailButton;
-        protected UIBarButtonItem multiSelectButton;
-        protected UIBarButtonItem cancelSelectedButton;
-        protected UIBarButtonItem archiveButton;
-        protected UIBarButtonItem deleteButton;
-        protected UIBarButtonItem searchButton;
-        protected UIBarButtonItem moveButton;
-        protected UIBarButtonItem backButton;
+        #region Constants
 
-        protected string searchToken;
-        protected UISearchBar searchBar;
-        protected UISearchDisplayController searchDisplayController;
+        const string MessageCellIdentifier = "MessageCellIdentifier";
+        const string UnavailableCellIdentifier = "UnavailableCellIdentifier";
 
-        SwitchAccountButton switchAccountButton;
+        public const string MessageRefreshTaskName = "MessageListViewController_RefreshMessages";
 
-        protected const string UICellReuseIdentifier = "UICell";
-        protected const string EmailMessageReuseIdentifier = "EmailMessage";
+        #endregion
 
-        protected bool threadsNeedsRefresh;
-        protected NcCapture ReloadCapture;
-        private string ReloadCaptureName;
+        #region Properties
 
-        protected SearchHelper searcher;
+        public bool PopsWhenEmpty;
 
-        bool StatusIndCallbackIsSet = false;
+        NachoEmailMessages Messages;
 
-        public void SetEmailMessages (INachoEmailMessages messageThreads)
-        {
-            this.messageSource.SetEmailMessages (messageThreads, "No messages");
+        UIBarButtonItem SearchButton;
+        UIBarButtonItem NewMessageButton;
+        UIBarButtonItem EditTableButton;
+        UIBarButtonItem DoneSwipingButton;
+        UIBarButtonItem CancelEditingButton;
+
+        UIBarButtonItem MoveButton;
+        UIBarButtonItem DeleteButton;
+        UIBarButtonItem ArchiveButton;
+        UIBarButtonItem MarkButton;
+
+        MessageListFilterBar FilterBar;
+        UITableView _TableView;
+
+        MessageSearchResultsViewController SearchResultsViewController;
+        NachoSearchController SearchController;
+
+        public override UITableView TableView {
+            get {
+                return _TableView;
+            }
+            set {
+                base.TableView = _TableView = value;
+            }
         }
 
-        public MessageListViewController (IntPtr handle) : base (handle)
+        int NumberOfPreviewLines = 3;
+        protected bool HasLoadedOnce;
+        bool HasAppearedOnce;
+        bool IsListeningForStatusInd;
+        List<string> SyncTokens;
+        int SyncTimeoutSeconds = 30;
+        NcTimer SyncTimeoutTimer;
+
+        Dictionary<int, int> SelectedAccounts;
+
+        #endregion
+
+        #region Constructors
+
+        public MessageListViewController () : base (UITableViewStyle.Plain)
         {
-            messageSource = new MessageTableViewSource (this);
-            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    searchResultsMessages.UpdateMatches (null);
-                    searchResultsMessages.UpdateServerMatches(null);
-                    return; 
-                }
-                // On-device index
-                int curVersion = searcher.Version;
-                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
-                var index = new NachoCore.Index.NcIndex (indexPath);
-                int maxResults = 1000;
-                if(String.IsNullOrEmpty(searchString) || (4 > searchString.Length)) {
-                    maxResults = 20;
-                }
-                var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
+            AutomaticallyAdjustsScrollViewInsets = false;
+            SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
+            using (var image = UIImage.FromBundle ("contact-newemail")) {
+                NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
+            }
+            using (var image = UIImage.FromBundle ("folder-edit")) {
+                EditTableButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, EditTable);
+                EditTableButton.AccessibilityLabel = "Folder edit";
+            }
+            CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
+            DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
 
-                // Cull low scores
-                var maxScore = 0f;
-                foreach (var m in matches) {
-                    maxScore = Math.Max (maxScore, m.Score);
-                }
-                matches.RemoveAll (x => x.Score < (maxScore / 2));
+            NavigationItem.LeftItemsSupplementBackButton = true;
+            NavigationItem.LeftBarButtonItem = SearchButton;
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
 
-                if (curVersion == searcher.Version) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResultsMessages.UpdateMatches (matches);
-                        List<int> adds;
-                        List<int> deletes;
-                        searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-                        if (null != searchDisplayController.SearchResultsTableView) {
-                            searchDisplayController.SearchResultsTableView.ReloadData ();
-                        }
-                    });
-                }
-            });
+            UpdateNavigationItem ();
+        }
+
+        #endregion
+
+        #region Public API
+
+        public void SetEmailMessages (NachoEmailMessages messages)
+        {
+            Messages = messages;
+        }
+
+        #endregion
+
+        #region View Lifecycle
+            
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+            TableView.AllowsMultipleSelectionDuringEditing = true;
+            TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
+            TableView.AccessibilityLabel = "Message list";
+            TableView.TintColor = A.Color_NachoGreen;
+            TableView.BackgroundColor = UIColor.White;
+
+            var view = new UIView (new CGRect (0.0f, 0.0f, 320.0f, 320.0f));
+            view.BackgroundColor = UIColor.White;
+
+            FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, view.Bounds.Width, MessageListFilterBar.PreferredHeight));
+            FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            FilterBar.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, view.Bounds.Width, view.Bounds.Height - FilterBar.Frame.Height);
+            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            _TableView = TableView;
+
+            view.AddSubview (TableView);
+            view.AddSubview (FilterBar);
+
+            View = view;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            NavigationController.NavigationBar.Translucent = false;
-
-            if (HasAccountSwitcher ()) {
-                switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-                NavigationItem.TitleView = switchAccountButton;
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            }
-
-            TableView.AccessibilityLabel = "Message list";
-
-            ReloadCaptureName = "MessageListViewController.Reload";
-            NcCapture.AddKind (ReloadCaptureName);
-            ReloadCapture = NcCapture.Create (ReloadCaptureName);
-
-            composeMailButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (composeMailButton, "contact-newemail");
-            composeMailButton.AccessibilityLabel = "New message";
-            composeMailButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageListToCompose", this);
-            };
-
-            multiSelectButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (multiSelectButton, "folder-edit");
-            multiSelectButton.AccessibilityLabel = "Folder edit";
-            multiSelectButton.Clicked += (object sender, EventArgs e) => {
-                messageSource.MultiSelectEnable (TableView);
-            };
-
-            cancelSelectedButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (cancelSelectedButton, "gen-close");
-            cancelSelectedButton.AccessibilityLabel = "Close";
-            cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
-                messageSource.MultiSelectCancel (TableView);
-            };
-
-            archiveButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (archiveButton, "gen-archive");
-            archiveButton.AccessibilityLabel = "Archive";
-            archiveButton.Clicked += (object sender, EventArgs e) => {
-                messageSource.MultiSelectArchive (TableView);
-            };
-
-            deleteButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (deleteButton, "gen-delete-all");
-            deleteButton.AccessibilityLabel = "Delete";
-            deleteButton.Clicked += (object sender, EventArgs e) => {
-                messageSource.MultiSelectDelete (TableView);
-            };
-
-            moveButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (moveButton, "folder-move");
-            moveButton.AccessibilityLabel = "Move";
-            moveButton.Clicked += (object sender, EventArgs e) => {
-                var h = new SegueHolder (TableView);
-                PerformSegue ("MessageListToFolders", h);
-            };
-
-            searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
-            searchButton.AccessibilityLabel = "Search";
-            searchButton.Clicked += onClickSearchButton;
-
-            TableView.SeparatorColor = A.Color_NachoBackgroundGray;
-
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            TableView.Source = messageSource.GetTableViewSource ();
-
-            CustomizeBackButton ();
-            MultiSelectToggle (messageSource, false);
-
-            TableView.TableHeaderView = null; // beta 1
-
-            RefreshControl = new UIRefreshControl ();
-            RefreshControl.Hidden = true;
-            RefreshControl.TintColor = A.Color_NachoGreen;
-            RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
-            RefreshControl.ValueChanged += (object sender, EventArgs e) => {
-                var nr = messageSource.GetNachoEmailMessages ().StartSync ();
-                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
-                RefreshControl.BeginRefreshing ();
-            };
-
-            searchBar = new UISearchBar ();
-            searchBar.Delegate = this;
-            searchDisplayController = new UISearchDisplayController (searchBar, this);
-            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account.Id);
-            searchResultsSource = new MessageTableViewSource (this);
-            searchResultsSource.SetEmailMessages (searchResultsMessages, "");
-            searchDisplayController.SearchResultsSource = searchResultsSource.GetTableViewSource ();
-            searchDisplayController.SearchResultsTableView.RowHeight = 126;
-            searchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            searchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            View.AddSubview (searchBar);
-
-            Util.ConfigureNavBar (false, this.NavigationController);
-
-            SetRowHeight ();
-
-            StatusIndCallbackIsSet = true;
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
-            // Load when view becomes visible
-            threadsNeedsRefresh = true;
-        }
-
-        protected virtual void SetRowHeight ()
-        {
-            TableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
-            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
-        }
-
-        protected void EndRefreshingOnUIThread (object sender)
-        {
-            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                if (RefreshControl.Refreshing){
-                    RefreshControl.EndRefreshing ();
-                }
-            });
-        }
-
-        NcTimer refreshTimer;
-
-        void rearmRefreshTimer (int seconds)
-        {
-            if (null != refreshTimer) {
-                refreshTimer.Dispose ();
-                refreshTimer = null;
-            }
-            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
-        }
-
-        void cancelRefreshTimer ()
-        {
-            if (RefreshControl.Refreshing) {
-                EndRefreshingOnUIThread (null);
-            }
-            if (null != refreshTimer) {
-                refreshTimer.Dispose ();
-                refreshTimer = null;
-            }
-        }
-
-        protected virtual void CustomizeBackButton ()
-        {
-        }
-
-        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
-        {
-            if (enabled) {
-                var msg = messageSource.GetNachoEmailMessages ();
-                if (msg.HasOutboxSemantics () || msg.HasDraftsSemantics ()) {
-                    NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                        deleteButton,
-                    };
-                } else {
-                    NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                        deleteButton,
-                        moveButton,
-                        archiveButton,
-                    };
-                }
-                NavigationItem.HidesBackButton = true;
-                NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
-            } else {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                    composeMailButton,
-                    multiSelectButton,
-                };
-                if (null == backButton) {
-                    NavigationItem.HidesBackButton = false;
-                    NavigationItem.LeftItemsSupplementBackButton = true;
-                    NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                        searchButton,
-                    };
-                } else {
-                    NavigationItem.HidesBackButton = true;
-                    NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                        backButton,
-                        searchButton,
-                    };
-                }
-            }
-        }
-
-        public void MultiSelectChange (IMessageTableViewSource source, int count)
-        {
-            archiveButton.Enabled = (count != 0);
-            deleteButton.Enabled = (count != 0);
-            moveButton.Enabled = (count != 0);
-        }
-
-        public int GetFirstVisibleRow ()
-        {       
-            var paths = TableView.IndexPathsForVisibleRows; // Must be on UI thread
-            if (null == paths) {
-                return -1;
-            }
-            var path = paths.FirstOrDefault ();
-            if (null == path) {
-                return -1;
-            }
-            return path.Row;
-        }
-
-        protected void RefreshMessage (int id)
-        {
-            messageSource.EmailMessageChanged (TableView, id);
-        }
-
-        protected void RefreshThreadsIfVisible ()
-        {
-            threadsNeedsRefresh = true;
-            if (!this.IsVisible ()) {
-                return;
-            }
-            if (searchDisplayController.Active) {
-                return;
-            }
-            MaybeRefreshThreads ();
-        }
-
-        protected void MaybeRefreshThreads ()
-        {
-            bool refreshVisibleCells = true;
-
-            if (threadsNeedsRefresh) {
-                threadsNeedsRefresh = false;
-                NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController MaybeRefreshThreads");
-                ReloadCapture.Start ();
-                List<int> adds;
-                List<int> deletes;
-                if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
-                    Util.UpdateTable (TableView, adds, deletes);
-                    refreshVisibleCells = false;
-                }
-                if (messageSource.NoMessageThreads ()) {
-                    refreshVisibleCells = !MaybeDismissView ();
-                }
-                if (searchDisplayController.Active) {
-                    UpdateSearchResults ();
-                    refreshVisibleCells = false;
-                }
-                ReloadCapture.Stop ();
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController MaybeRefreshThreads");
-            }
-            if (refreshVisibleCells) {
-                messageSource.ReconfigureVisibleCells (TableView);
-            }
-        }
-
-        public virtual bool MaybeDismissView ()
-        {
-            return false;
-        }
-
-        public virtual bool HasAccountSwitcher ()
-        {
-            return false;
+            UpdateFilterBar ();
+            Reload ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-
-            // Account switched
-            if (!messageSource.GetNachoEmailMessages ().IsCompatibleWithAccount (NcApplication.Instance.Account)) {
-                if (searchDisplayController.Active) {
-                    searchDisplayController.Active = false;
-                }
-                CancelSearchIfActive ();
-                if (HasAccountSwitcher ()) {
-                    SwitchToAccount (NcApplication.Instance.Account);
-                } else {
-                    NavigationController.PopViewController (true);
-                    return;
-                }
+            if (RefreshControl == null) {
+                EnableRefreshControl ();
+                ScheduleContentOffsetAdjustment ();
             }
-
-            if (!StatusIndCallbackIsSet) {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            if (SyncTokens != null) {
+                CheckForSyncComplete ();
             }
-
-            // TODO: Figure this out
-            // When this view is loaded directly from the tab bar,
-            // the first time the view is displayed, the content
-            // offset is set such that the refresh controller is
-            // visible.  The second time this view is presented
-            // the content offset is set to properly.
-            if (0 > TableView.ContentOffset.Y) {
-                TableView.ContentOffset = new CGPoint (0, 0);
+            if (HasAppearedOnce && !TableView.Editing) {
+                Reload ();
             }
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
+            StartListeningForStatusInd ();
+            HasAppearedOnce = true;
+        }
 
-            NavigationItem.Title = messageSource.GetNachoEmailMessages ().DisplayName ();
+        public void ScheduleContentOffsetAdjustment ()
+        {
+            var selector = new ObjCRuntime.Selector ("adjustContentOffset");
+            var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+            NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+        }
 
-            MaybeRefreshThreads ();
+        [Export ("adjustContentOffset")]
+        void AdjustContentOffset ()
+        {
+            TableView.ContentOffset = new CGPoint (0.0f, 0.0f);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -403,388 +180,1039 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
-            cancelRefreshTimer ();
-            CancelSearchIfActive ();
-            // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
-        }
-
         public override void ViewDidDisappear (bool animated)
         {
+            StopListeningForStatusInd ();
             base.ViewDidDisappear (animated);
-            if (this.IsViewLoaded && null == this.NavigationController) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                StatusIndCallbackIsSet = false;
-                threadsNeedsRefresh = true;
+        }
+
+        #endregion
+
+        #region User Actions (Except Table Delegate)
+
+        protected override void HandleRefreshControlEvent (object sender, EventArgs e)
+        {
+            StartSync ();
+        }
+
+        void ShowSearch (object sender, EventArgs e)
+        {
+            EndAllTableEdits ();
+            if (SearchController == null) {
+                SearchResultsViewController = new MessageSearchResultsViewController ();
+                SearchController = new NachoSearchController (SearchResultsViewController);
+                SearchController.Delegate = this;
+            }
+            SearchResultsViewController.PrepareForSearching ();
+            SearchResultsViewController.NumberOfPreviewLines = NumberOfPreviewLines;
+            SearchController.PresentOverViewController (this);
+        }
+
+        void NewMessage (object sender, EventArgs e)
+        {
+            ComposeMessage ();
+        }
+
+        void EditTable (object sender, EventArgs e)
+        {
+            StartEditingTable ();
+        }
+
+        void CancelEditingTable (object sender, EventArgs e)
+        {
+            CancelEditingTable ();
+        }
+
+        void EndSwiping (object sender, EventArgs e)
+        {
+            EndSwiping ();
+        }
+
+        void FilterAll ()
+        {
+            EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.All;
+            Reload ();
+        }
+
+        void FilterHot ()
+        {
+            EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.Hot;
+            Reload ();
+        }
+
+        void FilterUnread ()
+        {
+            EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.Unread;
+            Reload ();
+        }
+
+        void FilterFocus ()
+        {
+            EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.Focused;
+            Reload ();
+        }
+
+        void MarkMessageAsRead (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                EmailHelper.MarkAsRead (message, true);
+                message.IsRead = true;
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
             }
         }
 
-        public void StatusIndicatorCallback (object sender, EventArgs e)
+        void MarkMessageAsUnread (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                EmailHelper.MarkAsUnread (message, true);
+                message.IsRead = false;
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void MarkMessageAsHot (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void MarkMessageAsUnhot (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        void DeleteMessage (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
+            if (message != null) {
+                if (Messages.HasOutboxSemantics ()) {
+                    EmailHelper.DeleteEmailThreadFromOutbox (thread);
+                } else if (Messages.HasDraftsSemantics ()) {
+                    EmailHelper.DeleteEmailThreadFromDrafts (thread);
+                } else {
+                    NcAssert.NotNull (thread);
+                    Log.Debug (Log.LOG_UI, "DeleteMessage");
+                    NcEmailArchiver.Delete (thread);
+                }
+                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+            }
+        }
+
+        void ArchiveMessage (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
+            if (message != null) {
+                NcAssert.NotNull (thread);
+                NcEmailArchiver.Archive (thread);
+                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+            }
+        }
+
+        void ShowMoreActionsForMessage (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
+            if (message != null) {
+                var alertView = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
+                alertView.AddAction(UIAlertAction.Create("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove(thread, message); }));
+                alertView.AddAction (UIAlertAction.Create ("Create Event", UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Forward", UIAlertActionStyle.Default, (UIAlertAction action) => { Forward(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { Reply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply All", UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
+                PresentViewController (alertView, true, null);
+            }
+        }
+
+        void ShowFoldersForMove (McEmailMessageThread thread, McEmailMessage selectedMessage)
+        {
+            var vc = new FoldersViewController ();
+            var accountId = selectedMessage.AccountId;
+            NcAssert.False (0 == accountId);
+            vc.SetOwner (this, true, accountId, thread);
+            PresentViewController (vc, true, null);
+        }
+
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            var messageThread = cookie as McEmailMessageThread;
+            if (messageThread != null) {
+                NcAssert.NotNull (messageThread);
+                NcEmailArchiver.Move (messageThread, folder);
+                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+            } else {
+                NcEmailArchiver.Move (SelectedMessages (), folder);
+                CancelEditingTable ();
+            }
+        }
+
+        void QuickReply (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Reply, quickReply: true);
+        }
+
+        void Reply (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Reply);
+        }
+
+        void ReplyAll (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.ReplyAll);
+        }
+
+        void Forward (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Forward);
+        }
+
+        void CreateEvent (McEmailMessage message)
+        {
+            var c = CalendarHelper.CreateMeeting (message);
+            EditEvent (c);
+        }
+
+        void ShowFoldersForMovingSelectedMessages (object sender, EventArgs e)
+        {
+            var vc = new FoldersViewController ();
+            var accountId = SelectedAccounts.Keys.First ();
+            NcAssert.False (0 == accountId);
+            vc.SetOwner (this, true, accountId, null);
+            PresentViewController (vc, true, null);
+        }
+
+        void ArchiveSelectedMessages (object sender, EventArgs e)
+        {
+            NcEmailArchiver.Archive (SelectedMessages ());
+            CancelEditingTable ();
+        }
+
+        void DeleteSelectedMessages (object sender, EventArgs e)
+        {
+            NcEmailArchiver.Delete (SelectedMessages ());
+            CancelEditingTable ();
+        }
+
+        void MarkSelectedMessages (object sender, EventArgs e)
+        {
+            var alertView = UIAlertController.Create (String.Format ("Mark {0} messages", TableView.IndexPathsForSelectedRows.Length), null, UIAlertControllerStyle.ActionSheet);
+            alertView.AddAction(UIAlertAction.Create("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
+            alertView.AddAction(UIAlertAction.Create("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
+            alertView.AddAction (UIAlertAction.Create ("As Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsHot));
+            alertView.AddAction (UIAlertAction.Create ("As Not Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsNotHot));
+            alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
+            PresentViewController (alertView, true, null);
+        }
+
+        void MarkSelectedMessagesAsRead (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        void MarkSelectedMessagesAsUnread (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        void MarkSelectedMessagesAsHot (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        void MarkSelectedMessagesAsNotHot (UIAlertAction action)
+        {
+            // TODO:
+        }
+
+        #endregion
+
+        #region Search
+
+        public void DidChangeSearchText (NachoSearchController searchController, string text)
+        {
+            SearchResultsViewController.SearchForText (text);
+        }
+
+        public void DidSelectSearch (NachoSearchController searchController)
+        {
+            SearchResultsViewController.StartServerSearch ();
+        }
+
+        public void DidEndSearch (NachoSearchController searchController)
+        {
+            SearchResultsViewController.EndSearching ();
+        }
+
+        #endregion
+
+        #region Reloading Messages
+
+        protected void Reload ()
+        {
+            if (IsShowingRefreshIndicator) {
+                RefreshIndicator.StartAnimating ();
+            }
+            Messages.ClearCache ();
+            if (Messages.HasBackgroundRefresh ()) {
+                Messages.BackgroundRefresh (HandleReloadResults);
+            } else {
+                NcTask.Run (() => {
+                    List<int> adds;
+                    List<int> deletes;
+                    bool changed = Messages.Refresh (out adds, out deletes);
+                    BeginInvokeOnMainThread(() => {
+                        HandleReloadResults (changed, adds, deletes);
+                    });
+                }, MessageRefreshTaskName);
+            }
+        }
+
+        void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
+        {
+            if (IsShowingRefreshIndicator && SyncTokens == null) {
+                EndRefreshing ();
+            }
+            if (PopsWhenEmpty && Messages.Count () == 0 && this == NavigationController.TopViewController) {
+                NavigationController.PopViewController (true);
+            }else{
+                if (!HasLoadedOnce) {
+                    // If this is the first time we're showing messages, don't bother with any add/delete animations
+                    HasLoadedOnce = true;
+                    TableView.ReloadData ();
+                } else {
+                    if (changed) {
+                        // If the message set has changed, animate added and deleted rows
+                        Util.UpdateTable (TableView, adds, deletes);
+                    }
+                    // Regardless of whether messges have been added or deleted, existing rows may have new data, at least
+                    // for properties like read/unread.  To catch any of those changes, we'll refresh all visible rows.
+                    // Note that this may do a small amount of double work for any visible row that was just added.
+                    UpdateVisibleRows ();
+                }
+            }
+        }
+
+        void UpdateVisibleRows ()
+        {
+            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                var cell = TableView.CellAt (indexPath) as MessageCell;
+                if (cell != null && message != null) {
+                    cell.SetMessage (message);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Table Delegate & Data Source
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        public override nint RowsInSection (UITableView tableView, nint section)
+        {
+            if (Messages == null) {
+                return 0;
+            }
+            return Messages.Count ();
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message == null) {
+                return tableView.DequeueReusableCell (UnavailableCellIdentifier);
+            }
+            var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+            cell.UseRecipientName = Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics () || Messages.HasSentSemantics ();
+            cell.SetMessage (message);
+            cell.NumberOfPreviewLines = NumberOfPreviewLines;
+            if (Messages.IncludesMultipleAccounts ()) {
+                cell.IndicatorColor = Util.ColorForAccount (message.AccountId);
+            } else {
+                cell.IndicatorColor = null;
+            }
+            if (Messages.HasOutboxSemantics ()) {
+                var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+                if (pending != null && pending.ResultKind == NcResult.KindEnum.Error) {
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                } else {
+                    cell.AccessoryView = null;
+                }
+            }
+
+            // TODO: enable after merging David's brain scheduling fixes
+            // NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
+
+            if (message.BodyId == 0) {
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+                }, "MessageTableViewSource.SendEmailBodyFetchHint");
+            }
+            return cell;
+        }
+
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message == null) {
+                return null;
+            }
+            return base.WillSelectRow (tableView, indexPath);
+        }
+
+        public override bool ShouldHighlightRow (UITableView tableView, NSIndexPath rowIndexPath)
+        {
+            var message = Messages.GetCachedMessage (rowIndexPath.Row);
+            if (message == null) {
+                return false;
+            }
+            return base.ShouldHighlightRow (tableView, rowIndexPath);
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (TableView.Editing) {
+                if (!SelectedAccounts.ContainsKey (message.AccountId)) {
+                    SelectedAccounts [message.AccountId] = 0;
+                }
+                SelectedAccounts [message.AccountId] += 1;
+                UpdateToolbarEnabled ();
+            } else {
+                var thread = Messages.GetEmailThread (indexPath.Row);
+                if (thread != null) {
+                    if (Messages.HasDraftsSemantics ()) {
+                        ComposeDraft (message);
+                    } else if (Messages.HasOutboxSemantics ()) {
+                        ShowOutboxMessage (message);
+                    } else if (thread.HasMultipleMessages ()) {
+                        ShowThread (thread);
+                    } else {
+                        ShowMessage (thread);
+                    }
+                }
+            }
+        }
+
+        public override void RowDeselected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (TableView.Editing) {
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                SelectedAccounts [message.AccountId] -= 1;
+                if (SelectedAccounts [message.AccountId] == 0) {
+                    SelectedAccounts.Remove (message.AccountId);
+                }
+                UpdateToolbarEnabled ();
+            }
+        }
+
+        public override List<SwipeTableRowAction> ActionsForSwipingRightInRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                var actions = new List<SwipeTableRowAction> ();
+                if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
+                    if (message.IsRead) {
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                    }
+                    if (message.isHot ()) {
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
+                    }
+                }
+                return actions;
+            }
+            return null;
+        }
+
+        public override List<SwipeTableRowAction> ActionsForSwipingLeftInRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            if (message != null) {
+                var actions = new List<SwipeTableRowAction> ();
+                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
+                if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
+                    actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
+                    actions.Add (new SwipeTableRowAction ("More", UIImage.FromBundle ("gen-more-active"), UIColor.FromRGB (0x4F, 0x64, 0x6D), ShowMoreActionsForMessage));
+                }
+                return actions;
+            }
+            return null;
+        }
+
+        public override void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
+        {
+            base.WillBeginSwiping (tableView, indexPath);
+            UpdateNavigationItem ();
+        }
+
+        public override void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
+        {
+            base.DidEndSwiping (tableView, indexPath);
+            UpdateNavigationItem ();
+        }
+
+        #endregion
+
+        #region System Events
+
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd) {
+                IsListeningForStatusInd = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndCallback;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndCallback;
+                IsListeningForStatusInd = false;
+            }
+        }
+
+        void StatusIndCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
 
-            if (null != s.Account) {
-                var m = messageSource.GetNachoEmailMessages ();
-                if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
-                    return;
-                }
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName ());
+            if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
 
-            }
-            switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
-            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                RefreshThreadsIfVisible ();
-                break;
-            case NcResult.SubKindEnum.Info_EmailMessageChanged:
-                if (s.Status.Value is int) {
-                    RefreshMessage ((int)s.Status.Value);
+                bool isVisible = IsViewLoaded && View.Window != null;
+
+                switch (s.Status.SubKind) {
+                case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+                    if (isVisible) {
+                        Reload ();
+                    }
+                    break;
+                case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+                case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+                case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+                case NcResult.SubKindEnum.Info_EmailMessageChanged:
+                case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                    if (isVisible) {
+                        UpdateVisibleRows ();
+                    }
+                    break;
+                case NcResult.SubKindEnum.Error_SyncFailed:
+                case NcResult.SubKindEnum.Info_SyncSucceeded:
+                    Messages.RefetchSyncTime ();
+                    if (SyncTokens != null) {
+                        if (s.Tokens != null) {
+                            foreach (var token in s.Tokens) {
+                                SyncTokens.Remove (token);
+                            }
+                        }
+                        if (SyncTokens.Count == 0) {
+                            SyncTimeoutTimer.Dispose ();
+                            SyncTimeoutTimer = null;
+                            SyncTokens = null;
+                            EndRefreshing ();
+                        }
+                    }
+                    break;
                 }
-                break;
-            case NcResult.SubKindEnum.Error_SyncFailed:
-            case NcResult.SubKindEnum.Info_SyncSucceeded:
-                cancelRefreshTimer ();
-                break;
-            case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
-                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
-                break;
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void CheckForSyncComplete ()
         {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-            if (segue.Identifier == "NachoNowToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                if (null == h) {
-                    // Composing a message
-                    vc.SetAction (null, null);
-                } else {
-                    vc.SetAction ((McEmailMessageThread)h.value2, (string)h.value);
+            var tokens = new List<string> (SyncTokens);
+            foreach (var token in tokens) {
+                var pendings = McPending.QueryByToken (NcApplication.Instance.Account.Id, token);
+                if (pendings.Count() > 0) {
+                    var pending = pendings.First ();
+                    if (pending.State == McPending.StateEnum.Failed || pending.State == McPending.StateEnum.Deleted) {
+                        SyncTokens.Remove (token);
+                    }
                 }
-                vc.SetOwner (this);
-                return;
             }
-            if (segue.Identifier == "SegueToNachoNow") {
-                return;
+            if (SyncTokens.Count == 0) {
+                Messages.RefetchSyncTime ();
+                SyncTokens = null;
+                EndRefreshing ();
             }
-            if (segue.Identifier == "MessageListToCompose") {
-                return;
-            }
-            if (segue.Identifier == "DraftsToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                vc.SetDraft ((McEmailMessage)h.value);
-                vc.SetOwner (this);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (INachoMessageViewer)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var thread = holder.value as McEmailMessageThread;
-                vc.SetSingleMessageThread (thread);
-                return;
-            }
-            if (segue.Identifier == "SegueToMessageThreadView") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (MessageListViewController)segue.DestinationViewController;
-                vc.SetEmailMessages (messageSource.GetNachoEmailMessages ().GetAdapterForThread (thread.GetThreadId ()));
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessagePriority") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
-            if (segue.Identifier == "MessageListToFolders") {
-                var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                vc.SetOwner (this, true, h);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var e = holder.value as McCalendar;
-                vc.SetCalendarItem (e);
-                vc.SetOwner (this);
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
-        ///  IMessageTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        void HandleSyncTimeout (object state)
         {
-            PerformSegue (identifier, sender);
+            SyncTokens = null;
+            SyncTimeoutTimer = null;
+            BeginInvokeOnMainThread (() => {
+                EndRefreshing ();
+            });
         }
 
-   
-        ///  IMessageTableViewSourceDelegate
-        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        #endregion
+
+        #region Private Helpers
+
+        protected bool ShouldShowFilterBar {
+            get {
+                return Messages.HasFilterSemantics () && Messages.PossibleFilterSettings.Length > 1;
+            }
+        }
+
+        protected void UpdateFilterBar ()
         {
-            var msg = messageSource.GetNachoEmailMessages ();
-            if (msg.HasDraftsSemantics ()) {
-                PerformSegue ("DraftsToCompose", new SegueHolder (messageThread.SingleMessageSpecialCase ()));
-            } else if (msg.HasOutboxSemantics ()) {
-                DealWithThreadInOutbox (messageThread);
-            } else if (messageThread.HasMultipleMessages ()) {
-                PerformSegue ("SegueToMessageThreadView", new SegueHolder (messageThread));
+            if (ShouldShowFilterBar) {
+                ShowFilterBar ();
+
+                var items = new List<MessageFilterBarItem> ();
+                var filters = Messages.PossibleFilterSettingsMask;
+                MessageFilterBarItem selectedItem = null;
+
+                if (filters.HasFlag (FolderFilterOptions.All)) {
+                    items.Add (new MessageFilterBarItem ("All", UIImage.FromBundle ("email-filter-all"), FilterAll));
+                    if (Messages.FilterSetting == FolderFilterOptions.All) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Hot)) {
+                    items.Add (new MessageFilterBarItem ("Hot", UIImage.FromBundle ("email-hot"), FilterHot));
+                    if (Messages.FilterSetting == FolderFilterOptions.Hot) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Unread)) {
+                    items.Add (new MessageFilterBarItem ("Unread", UIImage.FromBundle ("email-filter-unread"), FilterUnread));
+                    if (Messages.FilterSetting == FolderFilterOptions.Unread) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Focused)) {
+                    items.Add (new MessageFilterBarItem ("Focus", UIImage.FromBundle ("email-filter-focus"), FilterFocus));
+                    if (Messages.FilterSetting == FolderFilterOptions.Focused) {
+                        selectedItem = items.Last ();
+                    }
+                }
+
+                FilterBar.SetItems (items.ToArray ());
+                FilterBar.SelectItem (selectedItem);
             } else {
-                PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+                HideFilterBar ();
             }
         }
 
-        public void DealWithThreadInOutbox (McEmailMessageThread messageThread)
+        protected void HideFilterBar ()
         {
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
+            FilterBar.Hidden = true;
+            TableView.Frame = View.Bounds;
+        }
 
+        protected void ShowFilterBar ()
+        {
+            FilterBar.Hidden = false;
+            TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, View.Bounds.Width, View.Bounds.Height - FilterBar.Frame.Height);
+        }
+
+        protected void EndAllTableEdits ()
+        {
+            if (TableView.Editing) {
+                CancelEditingTable ();
+            } else if (SwipingIndexPath != null) {
+                EndSwiping ();
+            }
+        }
+
+        protected void CancelSyncing ()
+        {
+            if (SyncTimeoutTimer != null) {
+                SyncTimeoutTimer.Dispose ();
+                SyncTimeoutTimer = null;
+            }
+            SyncTokens = null;
+            EndRefreshing ();
+        }
+
+        void ComposeMessage ()
+        {
+            var composeViewController = new MessageComposeViewController (NcApplication.Instance.DefaultEmailAccount);
+            composeViewController.Present ();
+        }
+
+        void ComposeDraft (McEmailMessage draft)
+        {
+            var account = McAccount.EmailAccountForMessage (draft);
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Message = draft;
+            composeViewController.Present ();
+        }
+
+        void ComposeReply (McEmailMessage message, EmailHelper.Action kind, bool quickReply = false)
+        {
+            var thread = new McEmailMessageThread ();
+            thread.FirstMessageId = message.Id;
+            var composeViewController = new MessageComposeViewController (McAccount.QueryById<McAccount> (message.AccountId));
+            composeViewController.Composer.RelatedThread = thread;
+            composeViewController.Composer.Kind = kind;
+            composeViewController.StartWithQuickResponse = quickReply;
+            composeViewController.Present ();
+        }
+
+        void EditEvent (McCalendar calendarEvent)
+        {
+            var vc = new EditEventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
+        }
+
+        void ShowThread (McEmailMessageThread thread)
+        {
+            var vc = new MessageThreadViewController ();
+            vc.SetEmailMessages (Messages.GetAdapterForThread (thread));
+            NavigationController.PushViewController (vc, true);
+        }
+
+        void ShowMessage (McEmailMessageThread thread)
+        {
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (thread);
+            NavigationController.PushViewController (messageViewController, true);
+        }
+
+        protected virtual void UpdateNavigationItem ()
+        {
+            NavigationItem.LeftBarButtonItem = SearchButton;
+            if (SwipingIndexPath != null) {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    DoneSwipingButton
+                };
+            } else if (IsViewLoaded && TableView.Editing) {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    CancelEditingButton
+                };
+            } else {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    NewMessageButton,
+                    EditTableButton
+                };
+            }
+        }
+
+        void UpdateToolbarEnabled ()
+        {
+            var paths = TableView.IndexPathsForSelectedRows;
+            var hasSelection = paths != null && paths.Length > 0;
+
+            MarkButton.Enabled = hasSelection;
+            MoveButton.Enabled = SelectedAccounts.Count == 1;
+            ArchiveButton.Enabled = hasSelection;
+            DeleteButton.Enabled = hasSelection;
+        }
+
+        List<McEmailMessage> SelectedMessages ()
+        {
+            var messages = new List<McEmailMessage> ();
+            foreach (var indexPath in TableView.IndexPathsForSelectedRows) {
+                var thread = Messages.GetEmailThread (indexPath.Row);
+                if (thread != null) {
+                    foreach (var message in thread) {
+                        messages.Add (message);
+                    }
+                }
+            }
+            return messages;
+        }
+
+        protected void CancelEditingTable (bool animated = true)
+        {
+            TableView.SetEditing (false, animated);
+            UpdateNavigationItem ();
+            NavigationController.SetToolbarHidden (true, true);
+        }
+
+        void StartEditingTable ()
+        {
+            SelectedAccounts = new Dictionary<int, int> ();
+            TableView.SetEditing(true, true);
+            UpdateNavigationItem ();
+            MoveButton = new UIBarButtonItem ("Move", UIBarButtonItemStyle.Plain, ShowFoldersForMovingSelectedMessages);
+            ArchiveButton = new UIBarButtonItem ("Archive", UIBarButtonItemStyle.Plain, ArchiveSelectedMessages);
+            DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedMessages);
+            MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
+            if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
+                ToolbarItems = new UIBarButtonItem[] {
+                    DeleteButton
+                };
+            } else {
+                ToolbarItems = new UIBarButtonItem[] {
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    // Mark multi select functionality not yet enabled
+                    // MarkButton,
+                    // new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    MoveButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    ArchiveButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    DeleteButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace)
+                };
+            }
+            UpdateToolbarEnabled ();
+            NavigationController.SetToolbarHidden (false, true);
+        }
+
+        void StartSync ()
+        {
+            var result = Messages.StartSync ();
+            if (result.isError ()) {
+                Reload ();
+            }else{
+                var tokens = result.Value as string;
+                if (tokens == null) {
+                    EndRefreshing ();
+                }else{
+                    RefreshIndicator.StartAnimating ();
+                    SyncTokens = new List<string> (tokens.Split (new char[] { ',' }));
+                    SyncTimeoutTimer = new NcTimer ("MessageListViewController_SyncTimeout", HandleSyncTimeout, null, SyncTimeoutSeconds * 1000, 0);
+                }
+            }
+        }
+
+        protected override void PrepareRefreshIndicator ()
+        {
+            UpdateLastSyncLabel ();
+        }
+
+        void UpdateLastSyncLabel ()
+        {
+            if (RefreshControl != null) {
+                DateTime? lastSyncDate = null;
+                if (Messages != null) {
+                    lastSyncDate = Messages.LastSuccessfulSyncTime ();
+                }
+                if (lastSyncDate.HasValue) {
+                    var diff = DateTime.UtcNow - lastSyncDate.Value;
+                    if (diff.TotalSeconds < 60) {
+                        RefreshLabel.Text = "Last updated just now";
+                    } else {
+                        RefreshLabel.Text = "Last updated " + Pretty.TimeWithDecreasingPrecision (lastSyncDate.Value);
+                    }
+                } else {
+                    RefreshLabel.Text = "";
+                }
+            }
+        }
+
+        void ComposeOutboxMessage (McEmailMessage message)
+        {
+            var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+            ComposeDraft (copy);
+        }
+
+        void ShowOutboxMessage (McEmailMessage message)
+        {
             var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
-            if ((null == pending) || (NcResult.KindEnum.Error != pending.ResultKind)) {
-                var copy = EmailHelper.MoveFromOutboxToDrafts (message);
-                PerformSegue ("DraftsToCompose", new SegueHolder (copy));
-                return;
+            if (pending != null && pending.ResultKind == NcResult.KindEnum.Error) {
+                ShowOutboxError (message, pending);
+            } else {
+                ComposeOutboxMessage (message);
             }
+        }
 
+        void ShowOutboxError (McEmailMessage message, McPending pending)
+        {
             string errorString;
             if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
                 errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
             }
             var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
             var alertString = String.Format ("{0}\n{1}", messageString, errorString);
-            NcAlertView.Show (this, "Edit Message", alertString,
-                new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                    var copy = EmailHelper.MoveFromOutboxToDrafts (message);
-                    PerformSegue ("DraftsToCompose", new SegueHolder (copy));
-                    return;
-                }));
+            var alert = UIAlertController.Create ("", alertString, UIAlertControllerStyle.Alert);
+            alert.AddAction (UIAlertAction.Create ("Edit Message", UIAlertActionStyle.Default, (UIAlertAction action) => {
+                ComposeOutboxMessage (message);
+            }));
+            PresentViewController (alert, true, null);
         }
 
+        #endregion
 
-        /// <summary>
-        /// INachoMessageControl delegate
-        /// </summary>
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, null);
-        }
+        #region Folder Chooser Parent (for Move)
 
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (false, null);
-        }
-
-        /// <summary>
-        /// INachoMessageControl delegate
-        /// </summary>
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var t = CalendarHelper.CreateTask (m);
-                vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("", new SegueHolder (t));
-                }));
-            }
-        }
-
-        /// <summary>
-        /// INachoMessageControl delegate
-        /// </summary>
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-                }));
-            }
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent Delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
-        /// <summary>
-        /// INachoFolderChooser Delegate
-        /// </summary>
+        // The folder chooser should really just close itself, but it's easier to just add this than change its interface
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
-            vc.SetOwner (null, false, null);
-            vc.DismissFolderChooser (false, null);
+            DismissViewController (true, null);
         }
 
-        /// <summary>
-        /// INachoFolderChooser Delegate
-        /// </summary>
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        #endregion
+
+    }
+
+
+    public class MessageSearchResultsViewController : NachoTableViewController
+    {
+
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
+
+        const string MessageCellIdentifier = "MessageCellIdentifier";
+        public int NumberOfPreviewLines = 3;
+
+        EmailSearch SearchResults;
+
+        public MessageSearchResultsViewController () : base (UITableViewStyle.Plain)
         {
-            if (null != messageSource) {
-                messageSource.FolderSelected (vc, folder, cookie);
+            SearchResults = new EmailSearch (UpdateResults);
+        }
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (!NavigationController.NavigationBarHidden) {
+                NavigationController.SetNavigationBarHidden (true, true);
             }
-            vc.DismissFolderChooser (true, null);
+            KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, KeyboardWillShow);
+            KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, KeyboardWillHide);
         }
 
-        protected void BackShouldSwitchToFolders ()
+        public override void ViewDidAppear (bool animated)
         {
-            using (var image = UIImage.FromBundle ("nav-backarrow")) {
-//                backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
-                var button = UIButton.FromType (UIButtonType.System);
-                button.Frame = new CGRect (0, 0, 70, 30);
-                button.SetTitle ("Mail", UIControlState.Normal);
-                button.AccessibilityLabel = "Back";
-                button.SetTitleColor (UIColor.White, UIControlState.Normal);
-                button.SetImage (image, UIControlState.Normal);
-                button.Font = UINavigationBar.Appearance.TitleTextAttributes.Font;
-                backButton = new UIBarButtonItem (button);
-                button.TouchUpInside += onClickBackButton;
-            }
-        }
-
-        protected void onClickBackButton (object sender, EventArgs e)
-        {
-            var nachoTabBar = Util.GetActiveTabBar ();
-            nachoTabBar.SwitchToFolders ();
-        }
-
-        protected void onClickSearchButton (object sender, EventArgs e)
-        {
-            searchBar.BecomeFirstResponder ();
-        }
-
-        [Export ("searchBar:textDidChange:")]
-        public void TextChanged (UISearchBar searchBar, string searchText)
-        {
-            Search (searchBar);
-        }
-
-        [Foundation.Export ("searchBarSearchButtonClicked:")]
-        public void SearchButtonClicked (UIKit.UISearchBar searchBar)
-        {
-            if (null == NcApplication.Instance.Account) {
-                return;
-            }
-            Search (searchBar);
-        }
-
-        protected void Search (UISearchBar searchBar)
-        {
-            if (String.IsNullOrEmpty (searchBar.Text)) {
-                searchResultsMessages.UpdateServerMatches (null);
-            } else {
-                // Ask the server
-                KickoffSearchApi (0, searchBar.Text);
-            }
-            searcher.Search (searchBar.Text);
-        }
-
-        protected void KickoffSearchApi (int forSearchOption, string forSearchString)
-        {
-            if(String.IsNullOrEmpty(forSearchString) || (4 > forSearchString.Length)) {
-                searchResultsMessages.UpdateServerMatches (null);
-                return;
-            }
-            if (String.IsNullOrEmpty (searchToken)) {
-                searchToken = BackEnd.Instance.StartSearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null).GetValue<string> ();
-            } else {
-                BackEnd.Instance.SearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null, searchToken);
+            base.ViewDidAppear (animated);
+            if (NcKeyboardSpy.Instance.keyboardShowing) {
+                AdjustInsetsForKeyboard ();
             }
         }
 
-        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> indexList)
+        void AdjustInsetsForKeyboard ()
         {
-            var threadList = new List<McEmailMessageThread> ();
-            foreach (var i in indexList) {
-                var thread = new McEmailMessageThread ();
-                thread.FirstMessageId = i.Id;
-                thread.MessageCount = 1;
-                threadList.Add (thread);
-            }
-            searchResultsMessages.UpdateServerMatches (threadList);
-            List<int> adds;
-            List<int> deletes;
-            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-            if (null != searchDisplayController.SearchResultsTableView) {
-                searchDisplayController.SearchResultsTableView.ReloadData ();
-            }
+            nfloat keyboardHeight = NcKeyboardSpy.Instance.KeyboardHeightInView (View);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, 0.0f, keyboardHeight, 0.0f);
+            TableView.ScrollIndicatorInsets = new UIEdgeInsets (TableView.ScrollIndicatorInsets.Top, TableView.ScrollIndicatorInsets.Left, keyboardHeight, TableView.ScrollIndicatorInsets.Right);
         }
 
-        // After status ind
-        protected void UpdateSearchResults ()
+        public override void ViewDidDisappear (bool animated)
         {
-            searchResultsMessages.UpdateResults ();
-            List<int> adds;
-            List<int> deletes;
-            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-            if (null != searchDisplayController.SearchResultsTableView) {
-                searchDisplayController.SearchResultsTableView.ReloadData ();
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+            base.ViewDidDisappear (animated);
+        }
+
+        void KeyboardWillShow (NSNotification notification)
+        {
+            if (IsViewLoaded && View.Window != null) {
+                AdjustInsetsForKeyboard ();
             }
         }
 
-        protected void CancelSearchIfActive ()
+        void KeyboardWillHide (NSNotification notification)
         {
-            if (!String.IsNullOrEmpty (searchToken)) {
-                McPending.Cancel (NcApplication.Instance.Account.Id, searchToken);
-                searchToken = null;
+            if (IsViewLoaded) {
+                AdjustInsetsForKeyboard ();
             }
         }
 
-        void SwitchAccountButtonPressed ()
+        public void PrepareForSearching ()
         {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
+            SearchResults.EnterSearchMode (NcApplication.Instance.Account);
         }
 
-        protected virtual INachoEmailMessages GetNachoEmailMessages (int accountId)
+        public void StartServerSearch ()
         {
-            return NcEmailManager.Inbox (accountId);
+            SearchResults.StartServerSearch ();
         }
 
-        void SwitchToAccount (McAccount account)
+        public void EndSearching ()
         {
-            if (searchDisplayController.Active) {
-                searchDisplayController.Active = false;
-            }
-            messageSource.MultiSelectCancel (TableView);
-            MultiSelectToggle (messageSource, false);
-            switchAccountButton.SetAccountImage (account);
-            SetEmailMessages (GetNachoEmailMessages (account.Id));
-            List<int> adds;
-            List<int> deletes;
-            messageSource.RefreshEmailMessages (out adds, out deletes);
-            threadsNeedsRefresh = false;
+            SearchResults.ExitSearchMode ();
+        }
+
+        public void SearchForText (string searchText)
+        {
+            SearchResults.ClearCache ();
+            SearchResults.SearchFor (searchText);
+        }
+
+        void UpdateResults (string searchString, List<McEmailMessageThread> results)
+        {
             TableView.ReloadData ();
         }
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        public override nint RowsInSection (UITableView tableView, nint section)
+        {
+            return SearchResults.Count ();
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+            var message = SearchResults.GetCachedMessage (indexPath.Row);
+            cell.SetMessage (message);
+            return cell;
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            var message = SearchResults.GetCachedMessage (indexPath.Row);
+            ShowMessage (message);
+        }
+
+        void ShowMessage (McEmailMessage message)
+        {
+            var thread = new McEmailMessageThread ();
+            thread.MessageCount = 1;
+            thread.FirstMessageId = message.Id;
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (thread);
+            NavigationController.PushViewController (messageViewController, true);
+            NavigationController.SetNavigationBarHidden (false, true);
+        }
+
     }
 
 }

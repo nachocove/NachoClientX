@@ -18,33 +18,45 @@ namespace NachoClient.iOS
 
         bool showAccessory;
         bool showUnreadCount;
+        bool showUnified;
+        bool showSalesforce;
         INachoAccountsTableDelegate owner;
 
         nfloat ROW_HEIGHT;
 
-        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount)
+        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount, bool showUnified = true, bool showSalesforce = false)
         {
             this.owner = owner;
             this.showAccessory = showAccessory;
             this.showUnreadCount = showUnreadCount;
+            this.showUnified = showUnified;
+            this.showSalesforce = showSalesforce;
 
             Refresh ();
         }
 
-        public void Refresh()
+        public void Refresh ()
         {
             accounts = new List<McAccount> ();
 
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
-                    accounts.Add (account);
-                }
+            McAccount unifiedAccount = McAccount.GetUnifiedAccount ();
+
+            foreach (var account in McAccount.GetAllConfiguredNormalAccounts ()) {
+                accounts.Add (account);
             }
 
-            // Remove the device account (for now)
-            var deviceAccount = McAccount.GetDeviceAccount();
-            if (null != deviceAccount) {
-                accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+            if (showUnified && accounts.Count > 1) {
+                if (unifiedAccount == null) {
+                    unifiedAccount = McAccount.GetUnifiedAccount ();
+                }
+                accounts.Insert (0, unifiedAccount);
+            }
+
+            if (showSalesforce) {
+                var salesforceAccount = McAccount.GetSalesForceAccount ();
+                if (null != salesforceAccount) {
+                    accounts.Add (salesforceAccount);
+                }
             }
 
             // Remove the current account from the switcher view.

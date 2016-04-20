@@ -37,6 +37,7 @@ namespace Test.iOS
 
             // create attachment
             var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+            att.Link (email);
             Assert.NotNull (att);
 
             // create cred
@@ -53,16 +54,14 @@ namespace Test.iOS
             Assert.NotNull (foundAccount);
             var foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, defaultServerId);
             Assert.NotNull (foundEmail);
-            List<McAttachment> foundAtts = McAttachment.QueryByItemId (foundEmail);
+            List<McAttachment> foundAtts = McAttachment.QueryByItem (foundEmail);
             Assert.IsTrue (foundAtts.Count > 0);
             string AccountDirPath = NcModel.Instance.GetAccountDirPath (account.Id);
             Assert.True (Directory.Exists (AccountDirPath));
 
             // check password in keychain
-            if (Keychain.Instance.HasKeychain ()) {
-                string retPassword = Keychain.Instance.GetPassword (cred.Id);
-                Assert.AreEqual (retPassword, Password);
-            }
+            string retPassword = Keychain.Instance.GetPassword (cred.Id);
+            Assert.AreEqual (retPassword, Password);
 
             // remove account
             NcAccountHandler.Instance.RemoveAccount (account.Id, stopStartServices: false);
@@ -72,15 +71,19 @@ namespace Test.iOS
             Assert.Null (foundAccount);
             foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, defaultServerId);
             Assert.Null (foundEmail);
-            foundAtts = McAttachment.QueryByItemId (email);
+            foundAtts = McAttachment.QueryByItem (email);
             Assert.IsTrue (foundAtts.Count == 0);
             Assert.False (Directory.Exists (AccountDirPath));
 
             // confirm that the password is deleted from the keychain
-            if (Keychain.Instance.HasKeychain ()) {
-                string retPassword = Keychain.Instance.GetPassword (cred.Id);
+            var gotEx = false;
+            try {
+                retPassword = Keychain.Instance.GetPassword (cred.Id);
                 Assert.Null (retPassword);
+            } catch (KeychainItemNotFoundException) {
+                gotEx = true;
             }
+            Assert.IsTrue (gotEx);
         }
 
         //Test that all tables have accountId

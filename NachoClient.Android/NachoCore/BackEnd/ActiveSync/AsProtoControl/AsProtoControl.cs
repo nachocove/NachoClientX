@@ -1,12 +1,8 @@
 // # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using System.Threading.Tasks;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -17,6 +13,8 @@ namespace NachoCore.ActiveSync
     public partial class AsProtoControl : NcProtoControl, IPushAssistOwner
     {
         private INcCommand Cmd;
+        private object CmdLockObject = new object ();
+
         private AsValidateConfig Validator;
 
         public enum Lst : uint
@@ -160,7 +158,7 @@ namespace NachoCore.ActiveSync
                 Name = string.Format ("ASPC({0})", AccountId),
                 LocalEventType = typeof(CtlEvt),
                 LocalStateType = typeof(Lst),
-                StateChangeIndication = UpdateSavedState,
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -705,7 +703,21 @@ namespace NachoCore.ActiveSync
                 }
             };
             Sm.Validate ();
-            Sm.State = ProtocolState.ProtoControlState;
+            var protocolState = ProtocolState;
+            if ((uint)Lst.Parked == protocolState.ProtoControlState) {
+                // 1.0 did not use OC with McProtocolState. 
+                // Our best guess for #1160 is that this allowed Parked to get saved to the DB.
+                // Remove this if () once the Error is no longer seen.
+                // If we keep seeing the error, then we have another problem ...
+                Log.Error (Log.LOG_AS, "ProtoControlState was Parked");
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    // Any PostPost state will do.
+                    target.ProtoControlState = (uint)Lst.IdleW;
+                    return true;
+                });
+            }
+            Sm.State = protocolState.ProtoControlState;
             LastBackEndState = BackEndState;
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
@@ -728,7 +740,7 @@ namespace NachoCore.ActiveSync
         }
         // Methods callable by the owner.
         // Keep Execute() harmless if it is called while already executing.
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;
@@ -780,11 +792,13 @@ namespace NachoCore.ActiveSync
                 // We never save Parked.
                 return;
             }
-            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)record;
-                target.ProtoControlState = stateToSave;
-                return true;
-            });
+            if (protocolState.ProtoControlState != stateToSave) {
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.ProtoControlState = stateToSave;
+                    return true;
+                });
+            }
             if (LastBackEndState != BackEndState) {
                 var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
                 res.Value = AccountId;
@@ -801,7 +815,8 @@ namespace NachoCore.ActiveSync
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
-            Owner.ServConfReq (this, Sm.Arg);
+            AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
+            Owner.ServConfReq (this, AutoDFailureReason);
         }
 
         private void DoSetServConf ()
@@ -814,8 +829,10 @@ namespace NachoCore.ActiveSync
 
         private void DoUiCredReq ()
         {
-            if (null != Cmd && !CmdIs (typeof(AsAutodiscoverCommand))) {
-                Cmd.Cancel ();
+            lock (CmdLockObject) {
+                if (null != Cmd && !CmdIs (typeof(AsAutodiscoverCommand))) {
+                    CancelCmd ();
+                }
             }
             BackEndStatePreset = BackEndStateEnum.CredWait;
             // Send the request toward the UI.
@@ -1012,11 +1029,10 @@ namespace NachoCore.ActiveSync
              * TODO: couple ClearEventQueue with PostEvent inside SM mutex, or that a cancelled op
              * cannot ever post an event after the Cancel.
              */
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
+            CancelCmd ();
             Sm.ClearEventQueue ();
             var pack = Strategy.Pick ();
+            NcAssert.NotNull (pack);
             var transition = pack.Item1;
             var cmd = pack.Item2;
             switch (transition) {
@@ -1049,6 +1065,7 @@ namespace NachoCore.ActiveSync
                 return Lst.FSyncW;
 
             default:
+                NcAssert.NotNull (cmd);
                 NcAssert.CaseError (cmd.ToString ());
                 return Lst.IdleW;
             }
@@ -1056,25 +1073,35 @@ namespace NachoCore.ActiveSync
 
         private void DoSync ()
         {
-            AsSyncCommand cmd = null;
             var syncKit = Strategy.GenSyncKit (ProtocolState);
             if (null != syncKit) {
-                cmd = new AsSyncCommand (this, syncKit);
+                SetCmd (new AsSyncCommand (this, syncKit));
+                ExecuteCmd ();
             } else {
                 // Something is wrong. Do a FolderSync, and hope it gets better.
                 Log.Error (Log.LOG_AS, "DoSync: got a null SyncKit.");
                 Sm.PostEvent ((uint)CtlEvt.E.ReFSync, "PCFSYNCNULL");
-                return;
             }
-            SetCmd (cmd);
-            ExecuteCmd ();
+        }
+
+        static bool isPingCommand (AsCommand cmd)
+        {
+            if (cmd is AsPingCommand) {
+                return true;
+            }
+            var sync = cmd as AsSyncCommand;
+            if (null != sync) {
+                return sync.IsPinging;
+            }
+            return false;
         }
 
         private void SetAndExecute (AsCommand cmd)
         {
-            if (null != cmd as AsPingCommand && null != PushAssist) {
+            if (isPingCommand(cmd) && null != PushAssist) {
                 PushAssist.Execute ();
             }
+            NcAssert.NotNull (cmd);
             SetCmd (cmd);
             ExecuteCmd ();
         }
@@ -1084,7 +1111,7 @@ namespace NachoCore.ActiveSync
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
-            SetCmd (null);
+            CancelCmd ();
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
@@ -1092,11 +1119,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDrive ()
         {
-            if (null != PushAssist) {
-                if (PushAssist.IsStartOrParked ()) {
-                    PushAssist.Execute ();
-                }
-            }
+            PossiblyKickPushAssist ();
             switch (ProtocolState.ProtoControlState) {
             case (uint)Lst.UiCertOkW:
             case (uint)Lst.UiDCrdW:
@@ -1112,34 +1135,43 @@ namespace NachoCore.ActiveSync
 
         private bool CmdIs (Type cmdType)
         {
-            return (null != Cmd && Cmd.GetType () == cmdType);
+            lock (CmdLockObject) {
+                return (null != Cmd && Cmd.GetType () == cmdType);
+            }
         }
 
+        private void CancelCmd ()
+        {
+            lock (CmdLockObject) {
+                if (null != Cmd) {
+                    Cmd.Cancel ();
+                    Cmd = null;
+                }
+            }
+        }
         private void SetCmd (INcCommand nextCmd)
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
+            lock (CmdLockObject) {
+                CancelCmd ();
+                Cmd = nextCmd;
             }
-            Cmd = nextCmd;
         }
 
         private void ExecuteCmd ()
         {
-            if (null != PushAssist) {
-                if (PushAssist.IsStartOrParked ()) {
-                    PushAssist.Execute ();
-                }
+            PossiblyKickPushAssist ();
+            lock (CmdLockObject) {
+                NcAssert.NotNull (Cmd);
+                Cmd.Execute (Sm);
             }
-            Cmd.Execute (Sm);
         }
 
-        public override void ForceStop ()
+        protected override void ForceStop ()
         {
             base.ForceStop ();
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
-            Sm.PostEvent ((uint)PcEvt.E.Park, "FORCESTOP");
         }
 
         public override void ValidateConfig (McServer server, McCred cred)
@@ -1175,32 +1207,60 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private bool CanStartPushAssist ()
+        {
+            return null != ProtoControl.Server;
+        }
+
+        private void PossiblyKickPushAssist ()
+        {
+            if (null != PushAssist && CanStartPushAssist ()) {
+                // uncomment for testing on the simulator
+                //PushAssist.SetDeviceToken ("SIMULATOR");
+                if (PushAssist.IsStartOrParked ()) {
+                    PushAssist.Execute ();
+                }
+            }
+        }
+
         // PushAssist support.
         public PushAssistParameters PushAssistParameters ()
         {
+            if (!CanStartPushAssist ()) {
+                Log.Error (Log.LOG_AS, "Can't set up protocol parameters yet");
+                return null;
+            }
+
             var pingKit = Strategy.GenPingKit (ProtocolState, true, false, true);
             if (null == pingKit) {
                 return null; // should never happen
             }
+            //if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+            Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
             var ping = new AsPingCommand (this, pingKit);
             if (null == ping) {
                 return null; // should never happen
             }
-            return new NachoCore.PushAssistParameters () {
-                RequestUrl = ping.PushAssistRequestUrl (),
-                Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                WaitBeforeUseMsec = 60 * 1000,
+            try {
+                return new PushAssistParameters () {
+                    RequestUrl = ping.PushAssistRequestUrl (),
+                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
+                    IsSyncRequest = false,
 
-                MailServerCredentials = new Credentials {
-                    Username = ProtoControl.Cred.Username,
-                    Password = ProtoControl.Cred.GetPassword ()
-                },
-                RequestData = ping.PushAssistRequestData (),
-                RequestHeaders = ping.PushAssistRequestHeaders (),
-                ContentHeaders = ping.PushAssistContentHeaders (),
-                NoChangeResponseData = ping.PushAssistResponseData (),
-            };
+                    MailServerCredentials = new Credentials {
+                        Username = ProtoControl.Cred.Username,
+                        Password = ProtoControl.Cred.GetPassword ()
+                    },
+                    RequestData = ping.PushAssistRequestData (),
+                    RequestHeaders = ping.PushAssistRequestHeaders (),
+                    NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
+                };
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                return null;
+            }
         }
     }
 }

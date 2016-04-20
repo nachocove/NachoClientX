@@ -1,8 +1,6 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -27,17 +25,17 @@ namespace NachoCore
 
         public byte[] RequestData;
 
-        public HttpRequestHeaders RequestHeaders;
+        public NcHttpHeaders RequestHeaders;
 
-        public HttpContentHeaders ContentHeaders;
-
-        public HttpResponseHeaders ResponseHeaders;
+        public NcHttpHeaders ResponseHeaders;
 
         public byte[] ExpectedResponseData;
 
         public byte[] NoChangeResponseData;
 
         public Credentials MailServerCredentials;
+
+        public bool IsSyncRequest;
 
 
         // IMAP elements

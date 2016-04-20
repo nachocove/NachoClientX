@@ -74,7 +74,7 @@ namespace Test.Common
             NcTask.StartService ();
             NcBrain.StartupDelayMsec = 0;
             NcBrain.StartService ();
-            Telemetry.ENABLED = false;
+            Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
 
             var bobCanonicalAddress = "bob@company.net";
             var bobEmailAddress = "Bob <bob@company.net>";
@@ -113,9 +113,7 @@ namespace Test.Common
                 Address.Delete ();
             }
             NcBrain.StopService ();
-            while (!NcBrain.SharedInstance.IsQueueEmpty ()) {
-                Thread.Sleep (50);
-            }
+            NcBrain.SharedInstance.QueueClear ();
             NcTask.StopService ();
 
             if (null != Brain) {
@@ -692,21 +690,6 @@ This is a MIME email");
             Assert.AreEqual (ContactIndexDocument.Version, contact3.IndexVersion);
             matches = index.SearchAllContactFields ("charles");
             CheckOneContact (contact3.Id, matches);
-        }
-
-        [Test]
-        public void TestQuickScore ()
-        {
-            var stateMachineEvent = new NcBrainStateMachineEvent (Message.AccountId);
-            Assert.AreEqual (0, Message.ScoreVersion);
-            Assert.AreEqual (0, Message.Score);
-
-            NcBrain.SharedInstance.Enqueue (stateMachineEvent);
-            WaitForBrain ();
-
-            var updatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
-            Assert.AreEqual (0, updatedMessage.ScoreVersion);
-            Assert.AreEqual (McEmailMessage.minHotScore, updatedMessage.Score);
         }
 
         [Test]

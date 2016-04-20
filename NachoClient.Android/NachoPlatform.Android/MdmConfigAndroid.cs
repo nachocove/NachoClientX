@@ -1,6 +1,9 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using Android.Content;
+using NachoClient.AndroidClient;
+using NachoCore;
 using NachoCore.Utils;
 
 namespace NachoPlatform
@@ -28,8 +31,53 @@ namespace NachoPlatform
 
         public void ExtractValues ()
         {
-            // FIXME.
-            NcAssert.True (false);
+            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.Lollipop) {
+                return;
+            }
+            Log.Info (Log.LOG_SYS, "MdmConfig:ExtractValues()");
+            var myRestrictionsMgr = (RestrictionsManager)MainApplication.Context.GetSystemService (Context.RestrictionsService);
+            ExtractValuesFromRestrictions (myRestrictionsMgr.ApplicationRestrictions);
+        }
+
+        public void ExtractValuesFromRestrictions (Android.OS.Bundle appRestrictions)
+        {
+            if (appRestrictions.IsEmpty) {
+                Log.Info (Log.LOG_SYS, "MdmConfig: no config");
+                return;
+            }
+
+            try {
+                NcMdmConfig.Instance.SetValues ((mdmConfig) => {
+                    mdmConfig.Host = appRestrictions.GetString ("AppServiceHost");
+                    var port = (uint)appRestrictions.GetInt ("AppServicePort");
+                    if (port != 0) {
+                        mdmConfig.Port = port;
+                    }
+                    mdmConfig.Username = appRestrictions.GetString ("UserName");
+                    mdmConfig.Domain = appRestrictions.GetString ("UserDomain");
+                    mdmConfig.EmailAddr = appRestrictions.GetString ("UserEmail");
+                    mdmConfig.BrandingName = appRestrictions.GetString ("BrandingName");
+                    mdmConfig.BrandingLogoUrl = appRestrictions.GetString ("BrandingLogo");
+                });
+                Log.Info (Log.LOG_SYS, "{0}", NcMdmConfig.Instance);
+            } catch (ArgumentException ex) {
+                Log.Error (Log.LOG_SYS, "Could not get app config: {0}", ex);
+            }
+        }
+
+        [BroadcastReceiver (Enabled = true)]
+        [Android.App.IntentFilter (new[] { Intent.ActionApplicationRestrictionsChanged })]
+        class RestrictionsChangedBroadcastReceiver : BroadcastReceiver
+        {
+            public override void OnReceive (Context context, Intent intent)
+            {
+                MainApplication.OneTimeStartup ("RestrictionsChangedBroadcastReceiverNotificationActivity");
+                if (intent.Action == Intent.ActionApplicationRestrictionsChanged) {
+                    Log.Info (Log.LOG_SYS, "MdmConfig: RestrictionsChangedBroadcastReceiver.OnReceive()");
+                    var myRestrictionsMgr = (RestrictionsManager)context.GetSystemService (Context.RestrictionsService);
+                    MdmConfig.Instance.ExtractValuesFromRestrictions (myRestrictionsMgr.ApplicationRestrictions);
+                }
+            }
         }
     }
 }

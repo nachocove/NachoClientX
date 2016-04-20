@@ -18,14 +18,18 @@ namespace NachoCore.IMAP
         {
             NcResult result = null;
             foreach (var attachment in fetchkit.FetchAttachments) {
-                McEmailMessage email = McEmailMessage.QueryById<McEmailMessage> (attachment.ItemId);
+                var emails = from item in McAttachment.QueryItems (attachment.AccountId, attachment.Id)
+                                         where item is McEmailMessage
+                                         select (McEmailMessage)item;
+                var email = emails.Where (x => !x.ClientIsSender).First ();
                 McFolder folder = FolderFromEmail (email);
                 if (null == folder) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
                 }
+                Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) for email {1} attachment {2}", AccountId, email.Id, attachment.Id);
                 var fetchResult = FetchAttachment (folder, attachment, email);
-                if (!fetchResult.isOK ()) {
-                    Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult.GetMessage ());
+                if (fetchResult.isError ()) {
+                    Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult);
                     result = fetchResult;
                 }
             }
@@ -51,19 +55,27 @@ namespace NachoCore.IMAP
             if (null == folder) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.ConflictWithServer);
             }
+            Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) {1} for email {2} attachment {3}", AccountId, pending, email.Id, attachment.Id);
             return FetchAttachment (folder, attachment, email);
         }
 
         private NcResult FetchAttachment (McFolder folder, McAttachment attachment, McEmailMessage email)
         {
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            var part = attachmentBodyPart (new UniqueId(email.ImapUid), mailKitFolder, attachment.FileReference);
+            UpdateImapSetting (mailKitFolder, ref folder);
+            BodyPartBasic part;
+            try {
+                part = attachmentBodyPart (new UniqueId(email.ImapUid), mailKitFolder, attachment.FileReference);
+            } catch (MessageNotFoundException) {
+                part = null;
+            }
             if (null == part) {
                 Log.Error (Log.LOG_IMAP, "Could not find part with PartSpecifier {0} in summary", attachment.FileReference);
+                email.Delete ();
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "attach");
             mailKitFolder.SetStreamContext (new UniqueId (email.ImapUid), tmp);
             try {
                 Stream st = mailKitFolder.GetStream (new UniqueId (email.ImapUid), attachment.FileReference, Cts.Token, this);
@@ -80,10 +92,10 @@ namespace NachoCore.IMAP
                 attachment.Truncated = false;
                 attachment.UpdateSaveFinish ();
                 return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
-            } catch (Exception e) {
-                Log.Error (Log.LOG_IMAP, "Could not GetBodyPart: {0}", e);
+            } catch (MessageNotFoundException) {
                 attachment.DeleteFile ();
-                throw;
+                email.Delete ();
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             } finally {
                 mailKitFolder.UnsetStreamContext ();
             }

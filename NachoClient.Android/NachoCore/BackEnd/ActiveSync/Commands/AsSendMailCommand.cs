@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.ActiveSync;
@@ -20,7 +18,7 @@ namespace NachoCore.ActiveSync
             base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }
 
@@ -61,7 +59,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        protected override Stream ToMime (AsHttpOperation Sender)
+        protected override FileStream ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 long length;
@@ -71,7 +69,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SMCANCEL0");
@@ -87,7 +85,7 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SMCANCEL1");
@@ -100,11 +98,6 @@ namespace NachoCore.ActiveSync
             });
             return Event.Create ((uint)SmEvt.E.HardFail, "SMHARD0", null, 
                 string.Format ("Server sent non-empty response to SendMail w/unrecognized TL Status: {0}", doc.ToString ()));
-        }
-
-        public override bool IsContentLarge (AsHttpOperation Sender)
-        {
-            return true;
         }
     }
 }

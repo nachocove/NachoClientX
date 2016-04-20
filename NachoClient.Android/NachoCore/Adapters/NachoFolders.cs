@@ -63,6 +63,13 @@ namespace NachoCore
             Refresh ();
         }
 
+        public NachoFolders (params McFolder[] folders)
+        {
+            this.accountId = 0;
+            this.types = new Xml.FolderHierarchy.TypeCode[0];
+            FoldersList = new List<McFolder> (folders);
+        }
+
         public void Refresh()
         {
             FoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, types);

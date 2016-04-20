@@ -63,10 +63,17 @@ namespace NachoCore.ActiveSync
                     emailMessage.AccountId = folder.AccountId;
                 }
                 if (justCreated) {
+                    emailMessage.IsJunk = folder.IsJunkFolder ();
+                    emailMessage.DetermineIfIsChat ();
                     emailMessage.Insert ();
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
-                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, folder.IsJunkFolder ());
+                    if (emailMessage.IsChat) {
+                        var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
+                        if (result.isError()){
+                            Log.Error(Log.LOG_AS, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                        }
+                    }
                 } else {
                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                         var target = (McEmailMessage)record;
@@ -75,11 +82,7 @@ namespace NachoCore.ActiveSync
                         return true;
                     });
                     folder.UpdateLink (emailMessage);
-                    if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
-                        // Another client has remotely read / unread this email.
-                        // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
-                        NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
-                    }
+
                 }
             });
 
@@ -87,9 +90,16 @@ namespace NachoCore.ActiveSync
 
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
 
+                if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                    // Another client has remotely read / unread this email.
+                    // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                    NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                }
+                NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+
                 // If this message is a cancellation notice, mark the event as cancelled.  (The server may
                 // have already done this, but some servers don't.)
-                if ("IPM.Schedule.Meeting.Canceled" == emailMessage.MessageClass && null != emailMessage.MeetingRequest) {
+                if (emailMessage.IsMeetingCancelation && null != emailMessage.MeetingRequest) {
                     CalendarHelper.MarkEventAsCancelled (emailMessage.MeetingRequest);
                 }
             }

@@ -118,6 +118,7 @@ namespace NachoPlatform
                 var cancellationToken = NcTask.Cts.Token;
                 foreach (var source in sources) {
                     cancellationToken.ThrowIfCancellationRequested ();
+                    NcAbate.PauseWhileAbated ();
                     switch (source.SourceType) {
                     // FIXME - exclude only those sources we cover in EAS.
                     case ABSourceType.Exchange:
@@ -145,7 +146,7 @@ namespace NachoPlatform
             try {
                 StringBuilder sb = new StringBuilder ();
                 sb.AppendFormat ("Error Code: {0}:", nsError.Code.ToString ());
-                sb.AppendFormat ("Description: {0}", nsError.LocalizedDescription);
+                sb.AppendFormat (" Description: {0}", nsError.LocalizedDescription);
                 var userInfo = nsError.UserInfo;
                 for (int i = 0; i < userInfo.Keys.Length; i++) {
                     sb.AppendFormat ("[{0}]: {1}\r\n", userInfo.Keys [i].ToString (), userInfo.Values [i].ToString ());
@@ -326,7 +327,7 @@ namespace NachoPlatform
             contact.ServerId = ServerId;
 
             if (Person.HasImage) {
-                var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
+                var data = Person.GetImage (ABPersonImageFormat.Thumbnail);
                 if (null != data) {
                     McPortrait portrait = null;
                     if (0 != contact.PortraitId) {

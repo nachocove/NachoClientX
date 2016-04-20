@@ -11,7 +11,7 @@ namespace NachoCore
 {
     public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
 
-    public class NcProtoControl
+    public class NcProtoControl: IBEContext
     {
         public class PcEvt : SmEvt
         {
@@ -67,10 +67,6 @@ namespace NachoCore
             get {
                 return McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
             }
-            set {
-                var update = value;
-                update.Update ();
-            }
         }
 
         public virtual BackEndStateEnum BackEndState {
@@ -89,22 +85,40 @@ namespace NachoCore
             }
         }
 
+        public virtual BackEnd.AutoDFailureReasonEnum AutoDFailureReason { get; protected set; }
+
         public virtual X509Certificate2 ServerCertToBeExamined {
             get {
                 return null;
             }
         }
 
-        public CancellationTokenSource Cts { get; protected set; }
         public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
-            Cts = new CancellationTokenSource ();
+            NewCancellation ();
             if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
+            }
+        }
+
+        public CancellationTokenSource Cts { get; protected set; }
+        private void NewCancellation ()
+        {
+            Cts = new CancellationTokenSource ();
+        }
+
+        static public INcHttpClient TestHttpClient { get; set; }
+        public INcHttpClient HttpClient {
+            get {
+                if (TestHttpClient != null) {
+                    return TestHttpClient;
+                } else {
+                    return NcHttpClient.Instance;
+                }
             }
         }
 
@@ -182,6 +196,8 @@ namespace NachoCore
             NcModel.Instance.InitializeDirs (AccountId);
         }
 
+        public bool IsStarted { get; protected set; }
+
         #region NcCommStatus
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
@@ -193,19 +209,17 @@ namespace NachoCore
             if (e.ServerId == Server.Id) {
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
-                    if (!Cts.IsCancellationRequested) {
-                        Execute ();
-                    }
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality OK.", Server.Id, Server.Host);
+                    Execute ();
                     break;
 
                 default:
                 case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality degraded.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality degraded.", Server.Id, Server.Host);
                     break;
 
                 case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality unusable.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality unusable.", Server.Id, Server.Host);
                     Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
                     break;
                 }
@@ -215,9 +229,7 @@ namespace NachoCore
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
             if (NetStatusStatusEnum.Up == e.Status) {
-                if (!Cts.IsCancellationRequested) {
-                    Execute ();
-                }
+                Execute ();
             } else {
                 // The "Down" case.
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
@@ -250,7 +262,7 @@ namespace NachoCore
 
         protected void ResolveDoNotDelayAsHardFail ()
         {
-            var pendings = McPending.QueryAllNonDispachedNonFailedDoNotDelay (AccountId, Capabilities);
+            var pendings = McPending.QueryAllNonDispatchedNonFailedDoNotDelay (AccountId, Capabilities);
             foreach (var pending in pendings) {
                 pending.ResolveAsHardFail (this, NcResult.Error (DoNotDelaySubKind));
             }
@@ -330,6 +342,7 @@ namespace NachoCore
                     if (null != emailMessage && !emailMessage.IsRead) {
                         markUpdate = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                             Operation = McPending.Operations.EmailMarkRead,
+                            EmailSetFlag_FlagType = McPending.MarkReadFlag,
                             ServerId = emailMessage.ServerId,
                             ParentId = srcFolder.ServerId,
                         };   
@@ -366,21 +379,54 @@ namespace NachoCore
 
         // Interface to owner.
         // Returns false if sub-class override should not continue.
-        public virtual bool Execute ()
+        public bool Start ()
         {
-            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
-                return false;
-            }
-            if (Cts.IsCancellationRequested) {
-                Cts = new CancellationTokenSource ();
-            }
-            return true;
+            IsStarted = true;
+            return Execute ();
         }
 
-        public virtual void ForceStop ()
+        object executeLock = new object();
+
+        protected virtual bool Execute ()
+        {
+            lock (executeLock) {
+                // don't allow us to execute, if the App/UI told us to stop.
+                if (!IsStarted) {
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of IsStarted=false.", AccountId, this.GetType ().Name);
+                    return false;
+                }
+                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of network (Status={2}).", AccountId, this.GetType ().Name, NcCommStatus.Instance.Status);
+                    return false;
+                }
+                if (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                    // network is down, or the server is bad. Don't start. Callbacks will trigger us
+                    // to start later.
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of server quality (ServerId={2}, Quality={3}).", AccountId, this.GetType ().Name,
+                        Server != null ? Server.Id.ToString () : "null", Server != null ? NcCommStatus.Instance.Quality (Server.Id).ToString () : "");
+                    return false;
+                }
+                if (Cts.IsCancellationRequested) {
+                    NewCancellation ();
+                }
+                return true;
+            }
+        }
+
+        // Interface to owner.
+        public void Stop ()
+        {
+            var name = this.GetType ().Name;
+            Log.Info (Log.LOG_BACKEND, "NcProtoControl.Stop({0}) called", name);
+            IsStarted = false;
+            ForceStop ();
+            Log.Info (Log.LOG_BACKEND, "NcProtoControl.Stop({0}) exited", name);
+        }
+
+        protected virtual void ForceStop ()
         {
             Cts.Cancel ();
+            Sm.PostEvent ((uint)PcEvt.E.Park, "PCFORCESTOP");
         }
 
         public virtual void Remove ()
@@ -461,6 +507,30 @@ namespace NachoCore
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSRCHC");
             }, "SearchContactsReq");
             return NcResult.OK (token);
+        }
+
+        public virtual NcResult SyncContactsCmd ()
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter) {
+                    Operation = McPending.Operations.Sync,
+                    ServerId = "0", // not used currently. Perhaps in the future?
+                };
+                McPending dup;
+                if (pending.IsDuplicate (out dup)) {
+                    Log.Info (Log.LOG_BACKEND, "SyncContactsCmd: IsDuplicate of Id/Token {0}", dup);
+                    result = NcResult.OK (dup.Token);
+                    return;
+                }
+                pending.DoNotDelay ();
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSYNCCONTACT");
+            }, "SyncContactsCmd");
+            return result;
         }
 
         public virtual NcResult SendEmailCmd (int emailMessageId)
@@ -585,19 +655,6 @@ namespace NachoCore
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-            if (originalEmailIsEmbedded) {
-                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
-                Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd: attachments = {0}", attachments.Count);
-                foreach (var attach in attachments) {
-                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
-                        var token = DnldAttCmd (attach.Id);
-                        if (null == token) {
-                            // FIXME - is this correct behavior in this case?
-                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
-                        }
-                    }
-                }
-            }
             return SmartEmailCmd (McPending.Operations.EmailForward,
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
@@ -672,7 +729,7 @@ namespace NachoCore
             return result;
         }
 
-        public virtual NcResult MarkEmailReadCmd (int emailMessageId)
+        public virtual NcResult MarkEmailReadCmd (int emailMessageId, bool read)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcResult.SubKindEnum subKind;
@@ -685,6 +742,7 @@ namespace NachoCore
                 }
                 var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.EmailMarkRead,
+                    EmailSetFlag_FlagType = read ? McPending.MarkReadFlag : McPending.MarkUnreadFlag,
                     ServerId = emailMessage.ServerId,
                     ParentId = folder.ServerId,
                 };   
@@ -692,7 +750,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
-                    target.IsRead = true;
+                    target.IsRead = read;
                     return true;
                 });
             });
@@ -739,6 +797,9 @@ namespace NachoCore
             NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
+            // make sure to delete any hint we may have.
+            Log.Info (Log.LOG_BACKEND, "Removing hint due to addition of pending");
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
                     result = NcResult.Error (subKind);
@@ -769,11 +830,15 @@ namespace NachoCore
                 }
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})-{1}/{2} for email id {3}", emailMessage.AccountId, pending.Id, pending.Token, emailMessage.Id);
+                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})- {1} for email id {2}", emailMessage.AccountId, pending, emailMessage.Id);
             });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");
-            }, "DnldEmailBodyCmd");
+            if (doNotDelay) {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD0");
+            } else {
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD1");
+                }, "DnldEmailBodyCmd");
+            }
             return result;
         }
 
@@ -790,7 +855,8 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
                     return;
                 }
-                var emailMessage = McEmailMessage.QueryById<McEmailMessage> (att.ItemId);
+                var emailMessage = McAttachment.QueryItems (att.AccountId, att.Id)
+                    .Where (x => x is McEmailMessage && !x.IsAwaitingCreate).FirstOrDefault ();
                 if (null == emailMessage) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
@@ -803,7 +869,7 @@ namespace NachoCore
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_BACKEND, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "DnldAttCmd: IsDuplicate of {0}", dup);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
@@ -1088,6 +1154,21 @@ namespace NachoCore
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             var serverId = DateTime.UtcNow.Ticks.ToString ();
+
+            // It seems exceedingly unlikely that this would fail, but we need to check anyway.
+            bool AOk = false;
+            for (var i = 0; i<3; i++) {
+                if (McFolder.QueryByServerId<McFolder> (AccountId, serverId) != null) {
+                    serverId = DateTime.UtcNow.Ticks.ToString ();
+                } else {
+                    AOk = true;
+                    break;
+                }
+            }
+            if (!AOk) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed, NcResult.WhyEnum.AlreadyExistsOnServer);
+            }
+
             string destFldServerId;
             NcModel.Instance.RunInTransaction (() => {
                 if (0 > destFolderId) {
@@ -1286,7 +1367,7 @@ namespace NachoCore
                 };
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
-                    Log.Info (Log.LOG_BACKEND, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "SyncCmd: IsDuplicate of Id/Token {0}", dup);
                     result = NcResult.OK (dup.Token);
                     return;
                 }

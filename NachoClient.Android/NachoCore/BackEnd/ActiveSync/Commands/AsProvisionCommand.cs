@@ -3,13 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -183,7 +179,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
             switch ((Xml.Provision.ProvisionStatusCode)uint.Parse (xmlStatus.Value)) {

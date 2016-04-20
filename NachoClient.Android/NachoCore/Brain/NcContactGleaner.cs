@@ -23,41 +23,8 @@ namespace NachoCore.Brain
 
     public class NcContactGleaner
     {
-        public const int GLEAN_PERIOD = 4;
+        public const int GLEAN_PERIOD = 5;
         private const uint MaxSaneAddressLength = 40;
-
-        #pragma warning disable 414
-        private static NcTimer Invoker;
-        #pragma warning restore 414
-        private static void InvokerCallback (Object state)
-        {
-            if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
-                NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
-                // TODO - This is a temporary solution. We should not process any event other 
-                return;
-            }
-            NcBrainEvent brainEvent = new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN);
-            NcBrain.SharedInstance.Enqueue (brainEvent);
-        }
-
-        public static void Start ()
-        {
-            if (NcBrain.ENABLED) {
-                Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
-                    TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
-                Invoker.Stfu = true;
-            }
-        }
-
-        public static void Stop ()
-        {
-            if (NcBrain.ENABLED) {
-                if (null != Invoker) {
-                    Invoker.Dispose ();
-                    Invoker = null;
-                }
-            }
-        }
 
         public NcContactGleaner ()
         {
@@ -131,7 +98,6 @@ namespace NachoCore.Brain
             });
         }
 
-
         public static void GleanContacts (string address, int accountId, bool obeyAbatement)
         {
             if (String.IsNullOrEmpty (address)) {
@@ -140,8 +106,8 @@ namespace NachoCore.Brain
             var addressList = NcEmailAddress.ParseAddressListString (address);
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);
             foreach (var mbAddr in addressList) {
-                if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
-                    throw new NcGleaningInterruptedException ();
+                if (obeyAbatement) {
+                    NcAbate.PauseWhileAbated ();
                 }
                 if (mbAddr is MailboxAddress) {
                     CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
@@ -149,73 +115,53 @@ namespace NachoCore.Brain
             }
         }
 
-        protected static bool InterruptibleGleaning (NcContactGleanerAction action, bool obeyAbatement)
-        {
-            try {
-                action (obeyAbatement);
-            } catch (NcGleaningInterruptedException) {
-                return false;
-            }
-            return true;
-        }
+        private static NcDisqualifier<McEmailMessage> marketingDisqualifier = new NcMarketingEmailDisqualifier ();
+        private static NcDisqualifier<McEmailMessage> yahooDisqualifier = new NcYahooBulkEmailDisqualifier ();
 
         protected static bool CheckDisqualification (McEmailMessage emailMessage)
         {
-            var disqualifiers = new List<NcDisqualifier<McEmailMessage>> () {
-                new NcMarketingEmailDisqualifier (),
-                new NcYahooBulkEmailDisqualifier (),
-            };
-            foreach (var dq in disqualifiers) {
-                if (dq.Analyze (emailMessage)) {
-                    return true;
-                }
+            return marketingDisqualifier.Analyze (emailMessage) || yahooDisqualifier.Analyze (emailMessage);
+        }
+
+        // Do not glean junk or marketing emails because they are usually junk
+        private static bool DoNotGlean (McEmailMessage emailMessage)
+        {
+            if (emailMessage.IsJunk) {
+                return true;
+            }
+            if (emailMessage.HeadersFiltered) {
+                return true;
+            }
+            if (CheckDisqualification (emailMessage)) {
+                return true;
             }
             return false;
         }
 
-        public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage, bool isJunk)
+        public static void GleanContactsHeaderPart1 (McEmailMessage emailMessage)
         {
-            // Caller is responsible for making sure that this is not in a junk folder.
-            // We do not check here in order to avoid a lot of db queries just for
-            // gleaning.
-            bool gleaned;
-            if (isJunk || emailMessage.HeadersFiltered || CheckDisqualification (emailMessage) ||
-                ((0 == emailMessage.FromEmailAddressId) && String.IsNullOrEmpty (emailMessage.To))) {
-                // Do not glean email addresses from marketing emails because they are usually junk
-                gleaned = true;
-            } else {
-                gleaned = InterruptibleGleaning ((obeyAbatement) => {
-                    GleanContacts (emailMessage.To, emailMessage.AccountId, obeyAbatement);
-                    GleanContacts (emailMessage.From, emailMessage.AccountId, obeyAbatement);
-                }, false);
+            if (!DoNotGlean(emailMessage)) {
+                GleanContacts (emailMessage.To, emailMessage.AccountId, false);
+                GleanContacts (emailMessage.From, emailMessage.AccountId, false);
             }
-            if (gleaned) {
-                emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
-            }
-            return gleaned;
+            emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
         }
 
-        public static bool GleanContactsHeaderPart2 (McEmailMessage emailMessage)
+        public static void GleanContactsHeader (McEmailMessage emailMessage)
         {
-            // McEmailMessage.QueryNeedGleaning() should filter out all ungleaned emails
-            // in any of the junk folders. So, we don't do the junk folder check again
-            // because it costs an additional query (on McMapFolderFolderEntry) per email.
-            bool gleaned = false;
-            if (emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
-                // Do not glean email addresses from marketing emails because they are usually junk
-                gleaned = true;
-            } else {
-                gleaned = InterruptibleGleaning ((obeyAbatement) => {
-                    GleanContacts (emailMessage.Cc, emailMessage.AccountId, obeyAbatement);
-                    GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId, obeyAbatement);
-                    GleanContacts (emailMessage.Sender, emailMessage.AccountId, obeyAbatement);
-                }, true);
-            }
-            if (gleaned) {
+            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2 > emailMessage.HasBeenGleaned) {
+                if (!DoNotGlean (emailMessage)) {
+                    int accountId = emailMessage.AccountId;
+                    if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 > emailMessage.HasBeenGleaned) {
+                        GleanContacts (emailMessage.To, accountId, true);
+                        GleanContacts (emailMessage.From, accountId, true);
+                    }
+                    GleanContacts (emailMessage.Cc, accountId, true);
+                    GleanContacts (emailMessage.ReplyTo, accountId, true);
+                    GleanContacts (emailMessage.Sender, accountId, true);
+                }
                 emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
             }
-            return gleaned;
         }
     }
 }
-

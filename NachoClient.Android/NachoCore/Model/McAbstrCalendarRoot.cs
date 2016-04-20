@@ -275,37 +275,44 @@ namespace NachoCore.Model
 
         private void GetDescription ()
         {
-            if (null == cachedDescription) {
-                if (0 == BodyId) {
-                    cachedDescription = "";
-                    cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
-                } else {
-                    McBody body = McBody.QueryById<McBody> (BodyId);
-                    switch (body.BodyType) {
-                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                        cachedDescription = body.GetContentsString ();
-                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                        break;
-                    case McAbstrFileDesc.BodyTypeEnum.RTF_3:
-                        cachedDescription = AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ());
-                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.RTF_3;
-                        break;
-                    case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                        if (!MimeHelpers.FindTextWithType (
+            if (null != cachedDescription) {
+                return;
+            }
+            if (0 == BodyId) {
+                cachedDescription = "";
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
+                return;
+            }
+            McBody body = McBody.QueryById<McBody> (BodyId);
+            if (null == body) {
+                Log.Error (Log.LOG_CALENDAR, "{0} has an invalid BodyId", this.GetType ().Name);
+                cachedDescription = "";
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
+                return;
+            }
+            switch (body.BodyType) {
+            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                cachedDescription = body.GetContentsString ();
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                cachedDescription = AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ());
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.RTF_3;
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.MIME_4:
+                if (!MimeHelpers.FindTextWithType (
                                 MimeHelpers.LoadMessage (body), out cachedDescription, out cachedDescriptionType,
                                 McAbstrFileDesc.BodyTypeEnum.PlainText_1, McAbstrFileDesc.BodyTypeEnum.HTML_2,
                                 McAbstrFileDesc.BodyTypeEnum.RTF_3)) {
-                            // Couldn't find anything in the message.  Set the description to empty plain text.
-                            cachedDescription = "";
-                            cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        }
-                        break;
-                    default:
-                        cachedDescription = body.GetContentsString ();
-                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        break;
-                    }
+                    // Couldn't find anything in the message.  Set the description to empty plain text.
+                    cachedDescription = "";
+                    cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                 }
+                break;
+            default:
+                cachedDescription = body.GetContentsString ();
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                break;
             }
             if (null == cachedDescription) {
                 Log.Error (Log.LOG_CALENDAR, "McAbstrCalendarRoot.GetDescription() completed without setting cachedDescription.");
@@ -353,12 +360,20 @@ namespace NachoCore.Model
 
         private List<McAttachment> ReadDbAttachments ()
         {
-            return McAttachment.QueryByItemId (this);
+            return McAttachment.QueryByItem (this);
         }
 
         private void DeleteDbAttachments ()
         {
-            DeleteAncillaryCollection (ref dbAttachments, ReadDbAttachments);
+            ReadAncillaryCollection (ref dbAttachments, ReadDbAttachments);
+            foreach (var att in dbAttachments) {
+                NcModel.Instance.RunInTransaction (() => {
+                    att.Unlink (this);
+                    if (0 == McMapAttachmentItem.QueryItemCount (att.Id)) {
+                        att.Delete ();
+                    }
+                });
+            }
         }
 
         private void SaveAttachments ()
@@ -377,41 +392,15 @@ namespace NachoCore.Model
                 cachedServerAttachments = null;
             }
             // Take ownership of any attachments that are unowned or owned by a different item.
-            var cleanAttachments = new List<McAttachment> (appAttachments.Count);
             foreach (var attachment in appAttachments) {
-                McAttachment cleanAttachment;
-                if (0 == attachment.ItemId) {
-                    // The attachment isn't owned by an item yet.  Claim it.
-                    attachment.AccountId = this.AccountId;
-                    attachment.ItemId = this.Id;
-                    attachment.ClassCode = this.GetClassCode ();
-                    attachment.Update ();
-                    cleanAttachment = attachment;
-                } else if (attachment.AccountId != this.AccountId || attachment.ItemId != this.Id || attachment.ClassCode != this.GetClassCode ()) {
-                    // The attachment is already owned by another item.  Make a copy.
-                    var copy = new McAttachment () {
-                        AccountId = this.AccountId,
-                        ItemId = this.Id,
-                        ClassCode = this.GetClassCode (),
-                        ContentId = attachment.ContentId,
-                        ContentType = attachment.ContentType,
-                    };
-                    copy.Insert ();
-                    copy.SetDisplayName (attachment.DisplayName);
-                    copy.UpdateFileCopy (attachment.GetFilePath ());
-                    copy.Update ();
-                    cleanAttachment = copy;
-                } else {
-                    // Already owned by this item.  Nothing to do.
-                    cleanAttachment = attachment;
-                }
-                cleanAttachments.Add (cleanAttachment);
+                // Why would attachment pre-exist in unclaimed state?
+                // Edit the event and add a photo as an attachment to the event. The UI saves the new McAttachment to the database, but it doesn't hook it up to the McCalendar. (If this is a new event, then the UI can't hook up the McAttachment to the McCalendar, because the McCalendar hasn't been saved yet.) Linking the McAttachment and the McCalendar has to happen here in SaveAttachments ().
+                attachment.Link (this);
             }
-            appAttachments = cleanAttachments;
             SaveAncillaryCollection (ref appAttachments, ref dbAttachments, ReadDbAttachments, (McAttachment attachment) => {
                 NcAssert.True (false);
             }, (McAttachment attachment) => {
-                return attachment.ItemId == this.Id && attachment.ClassCode == this.GetClassCode ();
+                return null != McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (AccountId, attachment.Id, Id, McAbstrFolderEntry.ClassCodeEnum.Calendar);
             });
         }
 
@@ -427,7 +416,6 @@ namespace NachoCore.Model
             foreach (var attachmentEntity in attachmentEntities) {
                 var serverAttachment = new McAttachment () {
                     AccountId = this.AccountId,
-                    ItemId = 0, // Will be set later
                     ContentId = attachmentEntity.ContentId ?? "fake@content.id",
                     ContentType = attachmentEntity.ContentType.ToString (),
                     IsInline = !attachmentEntity.ContentDisposition.IsAttachment,

@@ -16,8 +16,9 @@ namespace NachoClient.iOS
 {
     public partial class FileListViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
     {
-        public FileListViewController (IntPtr handle) : base (handle)
+        public FileListViewController () : base ()
         {
+            Account = NcApplication.Instance.Account;
         }
 
         INachoFileChooserParent Owner;
@@ -35,11 +36,6 @@ namespace NachoClient.iOS
 
         UILabel EmptyListLabel;
 
-        // segue id's
-        string FilesToComposeSegueId = "AttachmentsToCompose";
-        string FilesToNotesSegueId = "AttachmentsToNotes";
-        string FilesToNotesModalSegueId = "AttachmentsToNotesModal";
-
         // animation constants
         public nfloat AnimationDuration = 3.0f;
 
@@ -55,12 +51,15 @@ namespace NachoClient.iOS
 
         UINavigationBar navbar = new UINavigationBar ();
 
+        McAccount Account;
+
         /// <summary>
         /// INachoFileChooser delegate
         /// </summary>
-        public void SetOwner (INachoFileChooserParent owner)
+        public void SetOwner (INachoFileChooserParent owner, McAccount account)
         {
             this.Owner = owner;
+            Account = account;
         }
 
         /// <summary>
@@ -100,8 +99,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("FileListViewController ViewWillDisappear");
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -146,6 +143,7 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
             } else {
+                View.BackgroundColor = UIColor.White;
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton; 
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -182,7 +180,7 @@ namespace NachoClient.iOS
             tableView.AccessibilityLabel = "Attachments";
 
             InitializeSearchDisplayController ();
-            AttachmentsSource = new FilesTableViewSource (this, NcApplication.Instance.Account);
+            AttachmentsSource = new FilesTableViewSource (this, Account);
             AttachmentsSource.SetOwner (this, SearchDisplayController);
 
             View.AddSubview (tableView);
@@ -337,33 +335,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals (FilesToComposeSegueId)) {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var attachments = (List<McAttachment>)holder.value;
-                dc.SetEmailPresetFields (attachmentList: attachments);
-                return;
-            }
-            if (segue.Identifier.Equals (FilesToNotesSegueId)) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                selectedNote = (McNote)holder.value;
-                dc.SetOwner (this, null, insertDate: false);
-                return;
-            }
-            if (segue.Identifier.Equals (FilesToNotesModalSegueId)) {
-                var dc = (NotesViewerViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                selectedNote = (McNote)holder.value;
-                dc.SetOwner (this);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         void SwitchAccountButtonPressed ()
         {
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
@@ -371,6 +342,7 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
+            Account = account;
             switchAccountButton.SetAccountImage (account);
             RefreshTableSource ();
         }
@@ -404,7 +376,7 @@ namespace NachoClient.iOS
         {
             // show most recent attachments first
             AttachmentsSource.Items = new List<NcFileIndex> ();
-            AttachmentsSource.Items = McAbstrFileDesc.GetAllFiles (NcApplication.Instance.Account.Id);
+            AttachmentsSource.Items = McAbstrFileDesc.GetAllFiles (Account.Id);
 
             switch (segmentedControl.SelectedSegment) {
             case 0:
@@ -548,13 +520,18 @@ namespace NachoClient.iOS
         public void ForwardAttachment (McAttachment attachment, UITableViewCell cell)
         {
             DownloadAndDoAction (attachment.Id, cell, (a) => {
-                PerformSegue (FilesToComposeSegueId, new SegueHolder (a));
+                var attachments = new List<McAttachment>();
+                attachments.Add (a);
+                ForwardAttachments (attachments);
             });
         }
 
         public void ForwardAttachments (List<McAttachment> attachments)
         {
-            PerformSegue (FilesToComposeSegueId, new SegueHolder (attachments));
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.InitialAttachments = attachments;
+            composeViewController.Present ();
         }
 
         public void OpenInOtherApp (McAttachment attachment, UITableViewCell cell)
@@ -583,9 +560,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void FileChooserSheet (McAbstrObject file, Action displayAction)
+        public void FileChooserSheet (McAbstrObject file, UIView alertParentView, Action displayAction)
         {
-            NcActionSheet.Show (View, this,
+            NcActionSheet.Show (alertParentView, this,
                 new NcAlertAction ("Preview", () => {
                     displayAction ();
                 }),
@@ -602,30 +579,46 @@ namespace NachoClient.iOS
                 if (null == Owner) {
                     PlatformHelpers.DisplayAttachment (this, a);
                 } else {
-                    FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
+                    FileChooserSheet (a, cell, () => PlatformHelpers.DisplayAttachment (this, a));
                 }
             });
         }
 
-        public void DocumentAction (McDocument document)
+        public void DocumentAction (McDocument document, UIView alertParentView)
         {
             if (null == Owner) {
                 PlatformHelpers.DisplayFile (this, document);
             } else {
-                FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
+                FileChooserSheet (document, alertParentView, () => PlatformHelpers.DisplayFile (this, document));
             }
         }
 
-        public void NoteAction (McNote note)
+        public void NoteAction (McNote note, UIView alertParentView)
         {
             if (null == Owner) {
-                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+                ShowNote (note);
                 return;
             }
 
-            FileChooserSheet (note, () => {
-                PerformSegue (FilesToNotesModalSegueId, new SegueHolder (note));
+            FileChooserSheet (note, alertParentView, () => {
+                ShowNoteViewer (note);
             });
+        }
+
+        void ShowNoteViewer (McNote note)
+        {
+            var dc = new NotesViewerViewController ();
+            selectedNote = note;
+            dc.SetOwner (this);
+            PresentViewController (dc, true, null);
+        }
+
+        void ShowNote (McNote note)
+        {
+            var dc = new NotesViewController ();
+            selectedNote = note;
+            dc.SetOwner (this, null, insertDate: false);
+            NavigationController.PushViewController (dc, true);
         }
 
         private void searchClicked (object sender, EventArgs e)
@@ -738,11 +731,6 @@ namespace NachoClient.iOS
         }
 
         public void RemoveAttachment (McAttachment attachment)
-        {
-            NcAssert.CaseError ();
-        }
-
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             NcAssert.CaseError ();
         }

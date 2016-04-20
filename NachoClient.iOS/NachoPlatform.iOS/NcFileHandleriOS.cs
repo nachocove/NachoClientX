@@ -40,7 +40,11 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_DB, "Backup: File/Directory does not exist {0}", filename);
             }
         }
-
+        public bool SkipFile (string filename)
+        {
+            // Not used in iOS
+            throw new NotImplementedException ();
+        }
     }
 }
 

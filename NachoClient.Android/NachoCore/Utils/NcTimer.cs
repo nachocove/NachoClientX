@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace NachoCore.Utils
 {
-    public class NcTimer
+    public class NcTimer : IDisposable
     {
         public delegate DateTime CurrentTimeFunction ();
 
@@ -28,10 +28,12 @@ namespace NachoCore.Utils
         public int Id;
 
         private static int nextId = 0;
-        private static List<NcTimer> ActiveTimers;
-        private static Object StaticLockObj = new Object ();
-        // Used to prevent Dispose in the middle of a callback.
-        private Object InstanceLockObj;
+        private static List<NcTimer> ActiveTimers = new List<NcTimer> ();
+        private static object StaticLockObj = new object ();
+
+        private object InstanceLockObj = new object ();
+        private object CallbackLockObj = new object ();
+
         private bool HasFired = false;
 
         public static CurrentTimeFunction GetCurrentTime = DefaultGetCurrentTime;
@@ -48,67 +50,69 @@ namespace NachoCore.Utils
         {
             lock (StaticLockObj) {
                 Id = ++nextId;
-                if (null == ActiveTimers) {
-                    ActiveTimers = new List<NcTimer> ();
-                }
                 ActiveTimers.Add (this);
             }
-            InstanceLockObj = new object ();
             callback = c;
 
-            Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} created", Id, Who);
-
             return state => {
-                lock (InstanceLockObj) {
-                    if (DateTime.MinValue < DueTime) {
-                        DateTime now = GetCurrentTime ();
-                        if (DueTime > now) {
-                            /// We are not done with the current due time. See how much time to go
-                            Int64 due = (long)(DueTime - GetCurrentTime ()).TotalMilliseconds;
-                            Int64 period = Period;
-                            if (MAX_DURATION < due) {
-                                /// The remaining time is still too large. Fire another
-                                /// one-short MAX_DURATION timer.
-                                due = MAX_DURATION;
-                                period = Timeout.Infinite;
-                            }
-                            if (MAX_DURATION < period) {
-                                period = Timeout.Infinite;
-                            }
 
-                            Timer.Dispose ();
-                            Log.Debug (Log.LOG_TIMER, "callback set: due={0}, period={1}", due, period);
-                            Timer = (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback,
-                                Object_, due, period);
-                            return; // no callback yet
-                        } else if (0 < Period) {
-                            /// We are past due time. See if the period is too large
-                            Int64 due = Period;
-                            Int64 period = Period;
-                            if (MAX_DURATION < Period) {
-                                DueTime = now + new TimeSpan (Period * MSEC2TICKS);
-                                due = MAX_DURATION;
-                                period = Timeout.Infinite;
-                            } else {
-                                // don't need these anymore
-                                DueTime = DateTime.MinValue;
-                                Period = 0;
+                lock (CallbackLockObj) {
+
+                    TimerCallback localCallback;
+                    lock (InstanceLockObj) {
+
+                        if (DateTime.MinValue < DueTime) {
+                            DateTime now = GetCurrentTime ();
+                            if (DueTime > now) {
+                                // We are not done with the current due time. See how much time to go
+                                Int64 due = (long)(DueTime - GetCurrentTime ()).TotalMilliseconds;
+                                Int64 period = Period;
+                                if (MAX_DURATION < due) {
+                                    // The remaining time is still too large. Fire another
+                                    // one-short MAX_DURATION timer.
+                                    due = MAX_DURATION;
+                                    period = Timeout.Infinite;
+                                }
+                                if (MAX_DURATION < period) {
+                                    period = Timeout.Infinite;
+                                }
+
+                                Timer.Dispose ();
+                                Log.Debug (Log.LOG_TIMER, "callback set: due={0}, period={1}", due, period);
+                                Timer = (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback,
+                                    Object_, due, period);
+                                return; // no callback yet
+                            } else if (0 < Period) {
+                                // We are past due time. See if the period is too large
+                                Int64 due = Period;
+                                Int64 period = Period;
+                                if (MAX_DURATION < Period) {
+                                    DueTime = now + new TimeSpan (Period * MSEC2TICKS);
+                                    due = MAX_DURATION;
+                                    period = Timeout.Infinite;
+                                } else {
+                                    // don't need these anymore
+                                    DueTime = DateTime.MinValue;
+                                    Period = 0;
+                                }
+                                Timer.Dispose ();
+                                Log.Debug (Log.LOG_TIMER, "callback set2: due={0}, period={1}", due, period);
+                                Timer = (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback, Object_, due, period);
                             }
-                            Timer.Dispose ();
-                            Log.Debug (Log.LOG_TIMER, "callback set2: due={0}, period={1}", due, period);
-                            Timer = 
-                                (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback, 
-                                Object_, due, period);
                         }
+                        // Make a local copy of this.callback before releasing the lock.
+                        localCallback = callback;
                     }
-                    if (null == callback) {
+
+                    if (null == localCallback) {
                         Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} fired after Dispose.", Id, Who);
                     } else {
                         if (!Stfu) {
                             Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} fired.", Id, Who);
                         }
-                        callback (state);
+                        localCallback (state);
                         HasFired = true;
+                        NachoCore.Model.NcModel.Instance.Db = null;
                     }
                 }
             };
@@ -174,12 +178,12 @@ namespace NachoCore.Utils
                     Period = period;
 
                     if (MAX_DURATION < due) {
-                        /// The due time is larger than the timer can handle. We save
-                        /// The real due time and period and create a one-shot timer
-                        /// fired in 40 days. If the remaining time is still larger
-                        /// than 40 days, the callback will create another one-shot
-                        /// timer until the remaining time is less than 40 days.
-                        /// The actual callback (to c) will not happen until then.
+                        // The due time is larger than the timer can handle. We save
+                        // The real due time and period and create a one-shot timer
+                        // fired in 40 days. If the remaining time is still larger
+                        // than 40 days, the callback will create another one-shot
+                        // timer until the remaining time is less than 40 days.
+                        // The actual callback (to c) will not happen until then.
                         due = MAX_DURATION;
                         period = Timeout.Infinite;
                     }
@@ -206,13 +210,17 @@ namespace NachoCore.Utils
 
         public bool IsExpired ()
         {
-            return HasFired;
+            lock (CallbackLockObj) {
+                return HasFired;
+            }
         }
 
         public bool DisposeAndCheckHasFired ()
         {
             Dispose ();
-            return HasFired;
+            lock (CallbackLockObj) {
+                return HasFired;
+            }
         }
 
         public void Dispose ()

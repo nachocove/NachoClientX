@@ -20,18 +20,24 @@ namespace NachoCore
             return inboxFolder;
         }
 
-        public static INachoEmailMessages Inbox (int accountId)
+        public static NachoEmailMessages Inbox (int accountId)
         {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return new NachoUnifiedInbox ();
+            }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Inbox");
             } else {
-                return new NachoEmailMessages (inboxFolder);
+                return new NachoFolderMessages (inboxFolder);
             }
         }
 
-        public static INachoEmailMessages PriorityInbox (int accountId)
+        public static NachoEmailMessages PriorityInbox (int accountId)
         {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return new NachoUnifiedHotList ();
+            }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Hot List");
@@ -40,7 +46,20 @@ namespace NachoCore
             }
         }
 
-        protected class MissingFolder : INachoEmailMessages
+        public static NachoEmailMessages LikelyToReadInbox (int accountId)
+        {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return new NachoUnifiedLikelyToRead ();
+            }
+            var inboxFolder = InboxFolder (accountId);
+            if (null == inboxFolder) {
+                return new MissingFolder ("Focused");
+            } else {
+                return new NachoLikelyToReadEmailMessages (inboxFolder);
+            }
+        }
+
+        protected class MissingFolder : NachoEmailMessages
         {
             protected string displayName;
 
@@ -49,61 +68,10 @@ namespace NachoCore
                 this.displayName = displayName;
             }
 
-            public int Count ()
-            {
-                return 0;
-            }
-
-            public bool Refresh (out List<int> adds, out List<int> deletes)
-            {
-                adds = null;
-                deletes = null;
-                return false;
-            }
-
-            public McEmailMessageThread GetEmailThread (int i)
-            {
-                NcAssert.CaseError ();
-                return null;
-            }
-
-            public List<McEmailMessageThread> GetEmailThreadMessages (int id)
-            {
-                NcAssert.CaseError ();
-                return null;
-            }
-
-            public string DisplayName ()
+            public override string DisplayName ()
             {
                 return displayName;
             }
-
-            public bool HasOutboxSemantics ()
-            {
-                return false;
-            }
-
-            public bool HasDraftsSemantics ()
-            {
-                return false;
-            }
-
-            public NcResult StartSync ()
-            {
-                return NachoSyncResult.DoesNotSync ();
-            }
-
-            public INachoEmailMessages GetAdapterForThread (string threadId)
-            {
-                return null;
-            }
-
-            public bool IsCompatibleWithAccount (McAccount account)
-            {
-                return false;
-            }
-
         }
     }
 }
-

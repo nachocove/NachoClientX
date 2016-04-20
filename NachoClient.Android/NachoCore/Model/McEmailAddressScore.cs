@@ -85,6 +85,7 @@ namespace NachoCore.Model
 
         public static void DeleteByParentId (int parentId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Execute ("DELETE FROM McEmailAddressScore WHERE ParentId = ?", parentId);
         }
 

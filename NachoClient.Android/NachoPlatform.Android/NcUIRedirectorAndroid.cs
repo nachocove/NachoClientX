@@ -2,6 +2,8 @@
 //
 using System;
 using NachoCore.Utils;
+using Android.Content;
+using NachoClient.AndroidClient;
 
 namespace NachoPlatform
 {
@@ -29,7 +31,11 @@ namespace NachoPlatform
         public void GoBackToMainScreen ()
         {
             // go back to main screen
-            // TODO: implement
+            var context = MainApplication.Context;
+            var intent = new Intent (context, typeof(MainActivity));
+            intent.AddFlags (ActivityFlags.ClearTop | ActivityFlags.NewTask);
+            context.StartActivity (intent);
+
         }
 
     }

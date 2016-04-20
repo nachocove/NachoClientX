@@ -36,6 +36,10 @@ namespace NachoClient.iOS
 
         List<McServer> ServerList;
 
+        public AccountValidationViewController () : base ()
+        {
+        }
+
         public AccountValidationViewController (IntPtr handle) : base (handle)
         {
         }
@@ -303,7 +307,7 @@ namespace NachoClient.iOS
             }
             var testCred = new McCred ();
             testCred.SetTestPassword (passwordField.Text);
-            Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Testing new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
+            account.LogHashedPassword (Log.LOG_HTTP, "AccountValidationViewcontroller - Testing new password", passwordField.Text);
 
             testCred.Username = creds.Username;
             testCred.UserSpecifiedUsername = creds.UserSpecifiedUsername;
@@ -339,7 +343,7 @@ namespace NachoClient.iOS
                 HandleAccountIssue ("Validation Failed", "This account may not be able to send or receive emails. Save anyway?");
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                HandleAccountIssue ("Invalid Credentials", "User name or password is incorrect. No emails can be sent or recieved. Save anyway?");
+                HandleAccountIssue ("Invalid Credentials", "User name or password is incorrect. No emails can be sent or received. Save anyway?");
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
                 HandleAccountIssue ("Invalid Username", "User name is incorrect. No emails can be sent or received. Save anyway?");
@@ -361,7 +365,7 @@ namespace NachoClient.iOS
             HideStatusView ();
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
-                Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Saving new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
+                account.LogHashedPassword (Log.LOG_HTTP, "AccountValidationViewcontroller - Saving new password", passwordField.Text);
                 creds.UpdatePassword (passwordField.Text);
                 creds.Update ();
                 BackEnd.Instance.CredResp (account.Id);

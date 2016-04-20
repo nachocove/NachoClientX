@@ -6,11 +6,17 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
+    public interface IStatusIndEvent
+    {
+        event EventHandler StatusIndEvent;
+    }
+
     public class StatusIndEventArgs : EventArgs
     {
         public McAccount Account;
         public NcResult Status;
         public string[] Tokens;
+        public DateTime Stamp;
 
         public bool AppliesToAccount (McAccount account)
         {
@@ -20,7 +26,7 @@ namespace NachoCore
             if (null == account) {
                 return false;
             }
-            return (account.Id == Account.Id);
+            return account.ContainsAccount (Account.Id);
         }
     }
 }

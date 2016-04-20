@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -30,7 +29,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "FSYNCCANCEL");

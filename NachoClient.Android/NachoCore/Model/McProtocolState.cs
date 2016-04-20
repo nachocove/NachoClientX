@@ -19,6 +19,7 @@ namespace NachoCore.Model
             ActiveSync = (1 << 0),
             IMAP = (1 << 1),
             SMTP = (1 << 2),
+            SalesForce = (1 << 3),
         };
         // The protocol for this instance. Only one!
         public ProtocolEnum Protocol { get; set; }
@@ -129,11 +130,15 @@ namespace NachoCore.Model
 
         public int Consec401Count { get; set; }
 
-        public bool HasSyncedInbox { get; set; }
-
         public bool DisableProvisionCommand { get; set; }
 
         public bool HasBeenRateLimited { get; set; }
+
+        /*
+         * General properties
+         */
+        public bool HasSyncedInbox { get; set; }
+
         /*
          * "Imap" IMAP properties go here:
          */
@@ -156,10 +161,19 @@ namespace NachoCore.Model
         // The current sync type
         public uint ImapSyncRung { get; set; }
 
+        public bool ImapDiscoveryDone { get; set; }
+
         /*
          * "Smtp" SMTP properties go here:
          */
         public uint SmtpProtoControlState { get; set; }
+
+        public bool SmtpDiscoveryDone { get; set; }
+
+        /*
+         * SalesForce Properties go here
+         */
+        public DateTime SFDCLastContactsSynced { get; set; }
 
         /*
          * common methods go here:

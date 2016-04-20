@@ -13,6 +13,7 @@ using MimeKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using PassKit;
 
 namespace NachoClient
 {
@@ -48,6 +49,9 @@ namespace NachoClient
                 return "no value for cid";
             }
             value = cid.Substring (index + 3);
+            // MimeKit removes trailing dots from CIDs.  Pretty sure that's a MimeKit bug, and to
+            // workaround it, we'll trim trailing dots from our CID, too.
+            value = value.TrimEnd (new char[] { '.' });
             try {
                 bodyId = Convert.ToInt32 (cid.Substring (2, index));
             } catch (System.FormatException) {
@@ -144,6 +148,26 @@ namespace NachoClient
         public static void DisplayAttachment (UIViewController vc, McAttachment attachment)
         {
             var path = attachment.GetFilePath ();
+
+            // Add extension if there isn't one
+            var ext = Pretty.GetExtension (path);
+            if (String.IsNullOrEmpty (ext)) {
+                if (!String.IsNullOrEmpty (attachment.ContentType)) {
+                    var mimeInfo = attachment.ContentType.Split (new char[] { '/' });
+                    if (2 == mimeInfo.Length) {
+                        if (!String.IsNullOrEmpty (mimeInfo [1])) {
+                            var displayName = attachment.DisplayName;
+                            if (String.IsNullOrEmpty (displayName)) {
+                                displayName = "noname";
+                            }
+                            displayName += "." + mimeInfo [1].ToLower ();
+                            attachment.SetDisplayName(displayName);
+                            path = attachment.GetFilePath ();
+                        }
+                    }
+                }
+            }
+
             DisplayFile (vc, path);
         }
 
@@ -155,9 +179,28 @@ namespace NachoClient
 
         protected static void DisplayFile (UIViewController vc, string path)
         {
-            UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
-            Preview.Delegate = new DocumentInteractionControllerDelegate (vc);
-            Preview.PresentPreview (true);
+            var url = NSUrl.FromFilename (path);
+            if (url.PathExtension.ToLowerInvariant () == "pkpass") {
+                if (PKAddPassesViewController.CanAddPasses) {
+                    var data = NSData.FromUrl (url);
+                    NSError error;
+                    var pass = new PKPass (data, out error);
+                    if (error == null) {
+                        var addPassController = new PKAddPassesViewController (pass);
+                        vc.PresentViewController (addPassController, true, null);
+                    } else {
+                        NachoClient.iOS.NcAlertView.ShowMessage (vc, "Unsupported Pass", "Sorry, we are unable to open this pass");
+                    }
+                } else {
+                    NachoClient.iOS.NcAlertView.ShowMessage (vc, "Cannot Add Pass", "Sorry, passes cannot be added to Passbook on this device");
+                }
+            } else {
+                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (url);
+                Preview.Delegate = new DocumentInteractionControllerDelegate (vc);
+                if (!Preview.PresentPreview (true)) {
+                    NachoClient.iOS.NcAlertView.ShowMessage (vc, "Unsupported Attachment", "Sorry, we are unable to open this type of attachment");
+                }
+            }
         }
 
         public static NcResult DownloadAttachment (McAttachment attachment)

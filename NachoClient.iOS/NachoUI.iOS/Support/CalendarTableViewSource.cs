@@ -18,8 +18,12 @@ namespace NachoClient.iOS
         public ICalendarTableViewSourceDelegate owner;
         static List<UIButton> preventAddButtonGC;
 
+        IDisposable abatementRequest = null;
+
         protected const string EmptyCellReuseIdentifier = "EmptyCell";
+        protected const string DummyDayMarkerReuseIdentifier = "DayMarker";
         protected const string CalendarEventReuseIdentifier = "CalendarEvent";
+        protected static nfloat CALENDAR_CELL_HEIGHT = 87.0f;
 
         public CalendarTableViewSource ()
         {
@@ -29,20 +33,6 @@ namespace NachoClient.iOS
         public void SetCalendar (INcEventProvider calendar)
         {
             this.calendar = calendar;
-        }
-
-        public void Refresh (Action completionAction)
-        {
-            if (null != calendar) {
-                calendar.Refresh (completionAction);
-            }
-        }
-
-        public void StopTrackingEventChanges ()
-        {
-            if (null != calendar) {
-                calendar.StopTrackingEventChanges ();
-            }
         }
 
         protected bool NoCalendarEvents ()
@@ -70,30 +60,24 @@ namespace NachoClient.iOS
             if (null == calendar) {
                 return 1;
             } else {
-                return calendar.NumberOfItemsForDay (section.ToArrayIndex());
+                return 1 + calendar.NumberOfItemsForDay (section.ToArrayIndex ());
             }
-        }
-
-        protected float HeightForCalendarEvent (McAbstrCalendarRoot c)
-        {
-            return 87.0f;
         }
 
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            if (NoCalendarEvents ()) {
-                return 44.0f;
+            if (0 == indexPath.Row) {
+                return 0f;
             }
-            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
-            if (null == c) {
-                return 44.0f;
-            }
-            return HeightForCalendarEvent (c);
+            return CALENDAR_CELL_HEIGHT;
         }
 
         public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
         {
-            return 87.0f;
+            if (0 == indexPath.Row) {
+                return 0f;
+            }
+            return CALENDAR_CELL_HEIGHT;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
@@ -102,9 +86,11 @@ namespace NachoClient.iOS
             if (null != cell) {
                 cell.Selected = false;
             }
-            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
-            if (null != e) {
-                owner.PerformSegueForDelegate ("NachoNowToEventView", new SegueHolder (e));
+            if (0 != indexPath.Row) {
+                var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
+                if (null != e) {
+                    owner.ShowEvent (e);
+                }
             }
         }
 
@@ -151,6 +137,12 @@ namespace NachoClient.iOS
                 return cell;
             }
 
+            if (identifier.Equals (DummyDayMarkerReuseIdentifier)) {
+                var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+                return cell;
+            }
+
             if (identifier.Equals (CalendarEventReuseIdentifier)) {
                 var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
                 if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
@@ -162,7 +154,7 @@ namespace NachoClient.iOS
 
                 var cellWidth = tableView.Frame.Width;
 
-                var frame = new CGRect (0, 0, tableView.Frame.Width, 87);
+                var frame = new CGRect (0, 0, tableView.Frame.Width, CALENDAR_CELL_HEIGHT);
                 var view = new SwipeActionView (frame);
                 view.Tag = SWIPE_TAG;
 
@@ -221,13 +213,18 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            if (cell.ReuseIdentifier.ToString().Equals (EmptyCellReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString ().Equals (EmptyCellReuseIdentifier)) {
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.TextLabel.Text = "No messages";
                 return;
             }
 
-            if (cell.ReuseIdentifier.ToString().Equals (CalendarEventReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString ().Equals (DummyDayMarkerReuseIdentifier)) {
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+                return;
+            }
+
+            if (cell.ReuseIdentifier.ToString ().Equals (CalendarEventReuseIdentifier)) {
                 cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 ConfigureCalendarCell (tableView, cell, indexPath);
                 return;
@@ -240,9 +237,14 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCalendarCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
-            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
-            var cRoot =  CalendarHelper.GetMcCalendarRootForEvent (e.Id);
+            if (0 == indexPath.Row) {
+                cell.ContentView.ViewWithTag (SWIPE_TAG).Hidden = true;
+                cell.TextLabel.Hidden = true;
+                return;
+            }
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
+            var c = e.GetCalendarItemforEvent ();
+            var cRoot = CalendarHelper.GetMcCalendarRootForEvent (e.Id);
 
             if (null == c || null == cRoot) {
                 cell.ContentView.ViewWithTag (SWIPE_TAG).Hidden = true;
@@ -284,7 +286,7 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (e.GetStartTimeUtc ());
+                var start = Pretty.Time (e.GetStartTimeUtc ());
                 if (e.EndTime > e.StartTime) {
                     var duration = Pretty.CompactDuration (e.GetStartTimeUtc (), e.GetEndTimeUtc ());
                     startAndDuration = String.Join (" - ", new string[] { start, duration });
@@ -311,7 +313,7 @@ namespace NachoClient.iOS
             }
 
             var lineView = cell.ContentView.ViewWithTag (LINE_TAG);
-            lineView.Frame = new CGRect (34, 0, 1, HeightForCalendarEvent (c));
+            lineView.Frame = new CGRect (34, 0, 1, CALENDAR_CELL_HEIGHT);
 
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_TAG);
             view.EnableSwipe ((null != cRoot) && (!String.IsNullOrEmpty(cRoot.OrganizerEmail)));
@@ -371,7 +373,14 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            string cellIdentifier = (NoCalendarEvents () ? EmptyCellReuseIdentifier : CalendarEventReuseIdentifier);
+            string cellIdentifier;
+            if (NoCalendarEvents ()) {
+                cellIdentifier = EmptyCellReuseIdentifier;
+            } else if (0 == indexPath.Row) {
+                cellIdentifier = DummyDayMarkerReuseIdentifier;
+            } else {
+                cellIdentifier = CalendarEventReuseIdentifier;
+            }
 
             var cell = tableView.DequeueReusableCell (cellIdentifier);
             if (null == cell) {
@@ -421,14 +430,14 @@ namespace NachoClient.iOS
             addButton.TintColor = A.Color_NachoGreen;
             addButton.Frame = new CGRect (tableView.Frame.Width - 34, (view.Frame.Height / 2) - 8, 16, 16);
             addButton.TouchUpInside += (sender, e) => {
-                owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
+                owner.CreateEvent (date);
             };
 
             preventAddButtonGC.Add (addButton);
             view.AddSubview (addButton);
 
             dayLabelView.Text = date.ToString ("dddd");
-            dateLabelView.Text = date.ToString ("MMMMM d, yyyy");
+            dateLabelView.Text = Pretty.LongMonthDayYear (date);
             bigNumberView.Text = date.Day.ToString ();
 
             return view;
@@ -469,8 +478,8 @@ namespace NachoClient.iOS
             int section;
             if (calendar.FindEventNearestTo (date, out item, out section)) {
                 NcAssert.True (section < NumberOfSections (tableView));
-                NcAssert.True (item < RowsInSection (tableView, section));
-                var p = NSIndexPath.FromItemSection (item, section);
+                NcAssert.True (item + 1 < RowsInSection (tableView, section));
+                var p = NSIndexPath.FromItemSection (item + 1, section);
                 tableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
             }
         }
@@ -509,7 +518,7 @@ namespace NachoClient.iOS
 
         public void SendRunningLateMessage (NSIndexPath indexPath)
         {
-            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
             if (null != e) {
                 owner.SendRunningLateMessage (e.Id);
             }
@@ -517,7 +526,7 @@ namespace NachoClient.iOS
 
         public void ForwardInvite (NSIndexPath indexPath)
         {
-            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
             if (null != e) {
                 owner.ForwardInvite (e.Id);
             }
@@ -525,7 +534,9 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            NachoCore.Utils.NcAbate.HighPriority ("CalendarTableViewSource DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
@@ -533,7 +544,10 @@ namespace NachoClient.iOS
             if (null != owner) {
                 owner.CalendarTableViewScrollingEnded ();
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("CalendarTableViewSource DecelerationEnded");
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
@@ -542,7 +556,10 @@ namespace NachoClient.iOS
                 if (null != owner) {
                     owner.CalendarTableViewScrollingEnded ();
                 }
-                NachoCore.Utils.NcAbate.RegularPriority ("CalendarTableViewSource DraggingEnded");
+                if (null != abatementRequest) {
+                    abatementRequest.Dispose ();
+                    abatementRequest = null;
+                }
             }
         }
 

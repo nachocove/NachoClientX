@@ -18,7 +18,6 @@ namespace NachoClient.iOS
     {
         public INachoContactDefaultSelector owner;
 
-        protected ContactsHelper contactHelper = new ContactsHelper ();
         protected bool isDefaultSelected = false;
 
         protected static readonly nfloat X_INDENT = 20;
@@ -80,6 +79,11 @@ namespace NachoClient.iOS
         }
 
         public DefaultSelectionType viewType;
+
+        public ContactDefaultSelectionViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
 
         public ContactDefaultSelectionViewController (IntPtr handle) : base (handle)
         {
@@ -253,7 +257,7 @@ namespace NachoClient.iOS
             int i = 0;
             nfloat internalYOffset = 0;
             foreach (var p in contact.PhoneNumbers) {
-                LabelSelectionViewController.ListSelectionButton selectionButton = new LabelSelectionViewController.ListSelectionButton (contactHelper.ExchangeNameToLabel (p.Name), PHONE_SELECTION_STARTING_BUTTON_TAG + i);
+                LabelSelectionViewController.ListSelectionButton selectionButton = new LabelSelectionViewController.ListSelectionButton (ContactsHelper.ExchangeNameToLabel (p.Name), PHONE_SELECTION_STARTING_BUTTON_TAG + i);
                 UIButton button = selectionButton.GetButton (View, internalYOffset);
                 button.TouchUpInside += SelectionButtonClicked;
                 possiblePhones.Add (new LabelSelectionViewController.ExchangeLabel (p.Name, p.Label));
@@ -523,7 +527,16 @@ namespace NachoClient.iOS
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
             newPhoneString = phoneTextField.Text;
 
-            PerformSegue ("SegueToLabelSelection", this);
+            SelectLabel ();
+        }
+
+        void SelectLabel ()
+        {
+            var destinationController = new LabelSelectionViewController ();
+            destinationController.SetLabelList (ContactsHelper.GetAvailablePhoneNames (contact));
+            destinationController.SetSelectedName (ContactsHelper.GetAvailablePhoneNames (contact).First ());
+            destinationController.SetOwner (this, contact.AccountId);
+            PresentViewController (destinationController, true, null);
         }
 
         private void SaveAndCall (object sender, EventArgs e)
@@ -548,15 +561,15 @@ namespace NachoClient.iOS
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
             if (EmailHelper.IsValidEmail (emailTextField.Text)) {
                 if (isDefaultSelected) {
-                    contact.AddDefaultEmailAddressAttribute (contact.AccountId, Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
+                    contact.AddDefaultEmailAddressAttribute (contact.AccountId, Xml.Contacts.Email1Address, ContactsHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
                 } else {
-                    contact.AddEmailAddressAttribute (contact.AccountId, Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
+                    contact.AddEmailAddressAttribute (contact.AccountId, Xml.Contacts.Email1Address, ContactsHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
                 contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
                 DismissViewController (true, null);
-                owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (emailTextField.Text));
+                owner.ContactDefaultSelectorComposeMessage (emailTextField.Text);
             } else {
                 emailTextField.TextColor = A.Color_NachoRed;
             }
@@ -618,31 +631,17 @@ namespace NachoClient.iOS
 
             foreach (var em in contact.EmailAddresses) {
                 if (em.Name == selectedEmailName) {
-                    owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (em.Value));
+                    owner.ContactDefaultSelectorComposeMessage (em.Value);
                     DismissViewController (true, null);
                     return;
                 }
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToLabelSelection")) {
-                LabelSelectionViewController destinationController = (LabelSelectionViewController)segue.DestinationViewController;
-                ContactsHelper c = new ContactsHelper ();
-                destinationController.SetLabelList (c.GetAvailablePhoneNames (contact));
-                destinationController.SetSelectedName (c.GetAvailablePhoneNames (contact).First ());
-                destinationController.SetOwner (this, contact.AccountId);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         public void PrepareForDismissal (string selectedName)
         {
             UILabel phoneLabelLabel = (UILabel)View.ViewWithTag (PHONE_LABEL_TAG);
-            phoneLabelLabel.Text = contactHelper.ExchangeNameToLabel (selectedName);
+            phoneLabelLabel.Text = ContactsHelper.ExchangeNameToLabel (selectedName);
 
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
             phoneTextField.Text = newPhoneString; 

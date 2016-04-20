@@ -13,6 +13,7 @@ namespace NachoClient.iOS
 {
     public partial class SupportViewController : NcUIViewControllerNoLeaks
     {
+        public bool HideNavTitle = true;
         protected static readonly nfloat INDENT = 18;
 
         // SwitchAccountButton switchAccountButton;
@@ -27,7 +28,7 @@ namespace NachoClient.iOS
 
         protected UITapGestureRecognizer telemetryFlushGesture;
 
-        public SupportViewController (IntPtr handle) : base (handle)
+        public SupportViewController () : base ()
         {
         }
 
@@ -40,7 +41,9 @@ namespace NachoClient.iOS
             // If added back, because of crash when called at start up.
             // switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             // NavigationItem.TitleView = switchAccountButton;
-            NavigationItem.TitleView = new UIView ();
+            if (HideNavTitle) {
+                NavigationItem.TitleView = new UIView ();
+            }
 
             UIView supportView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
@@ -152,7 +155,7 @@ namespace NachoClient.iOS
 
             if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev) {
                 telemetryFlushGesture = new UITapGestureRecognizer (() => {
-                    Telemetry.JsonFileTable.FinalizeAll ();
+                    Telemetry.Instance.FinalizeAll ();
                     Console.WriteLine ("Flush all telemetry files");
                 });
                 telemetryFlushGesture.NumberOfTapsRequired = 3;
@@ -171,8 +174,16 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SupportToSupportMessage", this);
+                ShowMessage ();
             }
+        }
+
+        void ShowMessage ()
+        {
+            var vc = new SupportMessageViewController ();
+            var navController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navController);
+            PresentViewController (navController, true, null);
         }
 
         private void CallSingleTapHandler (NSObject sender)

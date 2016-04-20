@@ -1,10 +1,228 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using NachoCore;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
+    public interface ILoginEvents
+    {
+        void CredReq (int accountId);
+        void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, BackEnd.AutoDFailureReasonEnum arg);
+        void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, X509Certificate2 certificate);
+        void NetworkDown ();
+        // Note that PostAutoDPreInboxSync may fire > 1 time for multi-controller accounts.
+        void PostAutoDPreInboxSync (int accountId);
+        void PostAutoDPostInboxSync (int accountId);
+        // We can add a capabilities parameter if we need to indicate service.
+        void ServerIndTooManyDevices (int acccountId);
+        void ServerIndServerErrorRetryLater (int acccountId);
+    }
+
+    static public class LoginEvents
+    {
+        private static bool IsInitialized;
+        private static ILoginEvents _Owner;
+        private static string OwnerTypeName;
+        private static IBackEnd _BackEnd;
+        private static INcCommStatus _commStatus;
+        private static IStatusIndEvent _statusIndEvent;
+        private static int? _accountId;
+
+        public static ILoginEvents Owner {
+            set {
+                if (null == value) {
+                    if (null == _Owner) {
+                        Log.Info (Log.LOG_UI, "LoginEvents.Owner: set to null when already null.");
+                    }
+                    _Owner = null;
+                    _accountId = null;
+                } else {
+                    if (!IsInitialized) {
+                        Init ();
+                    }
+                    if (null != _Owner) {
+                        Log.Error (Log.LOG_UI, "LoginEvents.Owner: set when existing value not null.");
+                    }
+                    _Owner = value;
+                    OwnerTypeName = _Owner.GetType ().ToString ();
+                }
+            }
+        }
+
+        public static int? AccountId {
+            set {
+                _accountId = value;
+            }
+        }
+
+        public static void Init (IBackEnd backEnd = null,
+            IStatusIndEvent statusIndEvent = null,
+            INcCommStatus commStatus = null)
+        {
+            _BackEnd = backEnd ?? BackEnd.Instance;
+            _statusIndEvent = statusIndEvent ?? NcApplication.Instance;
+            _statusIndEvent.StatusIndEvent += StatusIndicatorCallback;
+            _commStatus = commStatus ?? NcCommStatus.Instance;
+            _commStatus.CommStatusNetEvent += NetStatusCallback;
+            IsInitialized = true;
+        }
+
+        private static void LogAndCall (string evtName, Action action)
+        {
+            if (null == _Owner) {
+                Log.Error (Log.LOG_UI, "LoginEvents: No Owner for {0}", evtName);
+            } else {
+                Log.Info (Log.LOG_UI, "LoginEvents: {0} => {1}", evtName, OwnerTypeName);
+                action ();
+            }
+        }
+
+        public static void CheckBackendState ()
+        {
+            if (_commStatus.Status == NachoPlatform.NetStatusStatusEnum.Down) {
+                LogAndCall (NachoPlatform.NetStatusStatusEnum.Down.ToString (), () => {
+                    _Owner.NetworkDown ();
+                });
+            }
+            var accounts = McAccount.GetAllAccounts ();
+            foreach (var account in accounts) {
+                if (_accountId.HasValue && _accountId.Value != account.Id) {
+                    continue;
+                }
+                var credReqCalled = false;
+                // if all controllers are in PostPost say so.
+                var allPostPost = true;
+                // otherwise, if all controllers are in PostPost or PostPre, then say so.
+                var allPostPreOrPost = true;
+                var states = _BackEnd.BackEndStates (account.Id);
+                foreach (var state in states) {
+                    switch (state.Item1) {
+                    case BackEndStateEnum.CredWait:
+                        if (!credReqCalled) {
+                            credReqCalled = true;
+                            LogAndCall (state.Item1.ToString (), () => {
+                                _Owner.CredReq (account.Id);
+                            });
+                        }
+                        break;
+                    case BackEndStateEnum.ServerConfWait:
+                        LogAndCall (state.Item1.ToString (), () => {
+                            _Owner.ServConfReq (account.Id, state.Item2, 
+                                _BackEnd.AutoDFailureReason (account.Id, state.Item2));
+                        });
+                        break;
+                    case BackEndStateEnum.CertAskWait:
+                        LogAndCall (state.Item1.ToString (), () => {
+                            _Owner.CertAskReq (account.Id, state.Item2,
+                                _BackEnd.ServerCertToBeExamined (account.Id, state.Item2));
+                        });
+                        break;
+                    }
+                }
+                foreach (var state in states) {
+                    if (state.Item1 != BackEndStateEnum.PostAutoDPostInboxSync) {
+                        allPostPost = false;
+                        if (state.Item1 != BackEndStateEnum.PostAutoDPreInboxSync) {
+                            allPostPreOrPost = false;
+                        }
+                    }
+                }
+                if (allPostPost) {
+                    LogAndCall (BackEndStateEnum.PostAutoDPostInboxSync.ToString (), () => {
+                        _Owner.PostAutoDPostInboxSync (account.Id);
+                    });
+                } else if (allPostPreOrPost) {
+                    LogAndCall (BackEndStateEnum.PostAutoDPreInboxSync.ToString (), () => {
+                        _Owner.PostAutoDPreInboxSync (account.Id);
+                    });
+                }
+            }
+        }
+
+        private static void NetStatusCallback (object sender, NachoPlatform.NetStatusEventArgs nsea)
+        {
+            if (nsea.Status == NachoPlatform.NetStatusStatusEnum.Down) {
+                // ILoginEvents methods need to be called on the UI thread because the event handler
+                // may manipulate UI objects.  Most of the time the caller is already on the UI thread,
+                // but this is the one place I have found where that is not the case.
+                NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                    LogAndCall (nsea.Status.ToString (), () => {
+                        _Owner.NetworkDown ();
+                    });
+                });
+            }
+        }
+
+        private static void StatusIndicatorCallback (object sender, EventArgs ea)
+        {
+            var siea = ea as StatusIndEventArgs;
+            var subKind = siea.Status.SubKind;
+            if (_accountId.HasValue) {
+                if (siea.Account != null && siea.Account.Id != _accountId.Value) {
+                    return;
+                }
+            }
+            switch (subKind) {
+            case NcResult.SubKindEnum.Info_CredReqCallback:
+                LogAndCall (subKind.ToString (), () => {
+                    _Owner.CredReq (siea.Account.Id);
+                });
+                break;
+            case NcResult.SubKindEnum.Info_ServerConfReqCallback:
+                LogAndCall (subKind.ToString (), () => {
+                    var tup = siea.Status.Value as Tuple<McAccount.AccountCapabilityEnum, BackEnd.AutoDFailureReasonEnum>;
+                    _Owner.ServConfReq (siea.Account.Id, tup.Item1, tup.Item2);
+                });
+                break;
+            case NcResult.SubKindEnum.Info_CertAskReqCallback:
+                LogAndCall (subKind.ToString (), () => {
+                    var tup = siea.Status.Value as Tuple<McAccount.AccountCapabilityEnum, X509Certificate2>;
+                    _Owner.CertAskReq (siea.Account.Id, tup.Item1, tup.Item2);
+                });
+                break;
+            case NcResult.SubKindEnum.Info_BackEndStateChanged:
+                var accountId = (int)siea.Status.Value;
+                var states = _BackEnd.BackEndStates (accountId);
+                if (states.All (state => BackEndStateEnum.PostAutoDPostInboxSync == state.Item1)) {
+                    // ensure all controllers are at PostAutoDPostInboxSync before calling.
+                    LogAndCall (BackEndStateEnum.PostAutoDPostInboxSync.ToString (), () => {
+                        _Owner.PostAutoDPostInboxSync (accountId);
+                    });
+                } else if (states.All (state => (BackEndStateEnum.PostAutoDPostInboxSync == state.Item1 ||
+                    BackEndStateEnum.PostAutoDPreInboxSync == state.Item1))) {
+                    // ensure that all controllers are at or past PostAutoDPreInboxSync before calling.
+                    LogAndCall (BackEndStateEnum.PostAutoDPreInboxSync.ToString (), () => {
+                        _Owner.PostAutoDPreInboxSync (accountId);
+                    });
+                }
+                break;
+            case NcResult.SubKindEnum.Info_ServerStatus:
+                var statusCode = (NachoCore.ActiveSync.Xml.StatusCode)(uint)(siea.Status.Value);
+                switch (statusCode) {
+                case NachoCore.ActiveSync.Xml.StatusCode.ServerErrorRetryLater_111:
+                    LogAndCall (statusCode.ToString (), () => {
+                        _Owner.ServerIndServerErrorRetryLater (siea.Account.Id);
+                    });
+                    break;
+                case NachoCore.ActiveSync.Xml.StatusCode.MaximumDevicesReached_177:
+                    LogAndCall (statusCode.ToString (), () => {
+                        _Owner.ServerIndTooManyDevices (siea.Account.Id);
+                    });
+                    break;
+                }
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Login protocol control - deprecated: use as a reference only. To be deleted, then file renamed.
+    /// </summary>
     public class LoginProtocolControl
     {
         public enum States : uint

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp">
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_gravity="left"
+        android:src="@drawable/contacts_icn_email" />
+    <TextView
+        android:id="@+id/label"
+        android:layout_toRightOf="@id/image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:textColor="@android:color/black"
+        android:textSize="14dp"
+        android:textStyle="normal"
+        android:text="@string/email"
+        android:paddingLeft="10dp" />
+    <TextView
+        android:id="@+id/value"
+        android:layout_below="@id/label"
+        android:layout_toRightOf="@id/image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/black"
+        android:textSize="17dp"
+        android:textStyle="normal"
+        android:text="@string/demo_email"
+        android:layout_gravity="center_vertical"
+        android:paddingLeft="10dp" />
+    <ImageView
+        android:id="@+id/button"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/contacts_email" />
+</RelativeLayout>

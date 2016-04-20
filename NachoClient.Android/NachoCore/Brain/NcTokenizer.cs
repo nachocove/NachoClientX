@@ -13,6 +13,7 @@ using Lucene.Net.Util;
 using HtmlAgilityPack;
 
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
@@ -23,14 +24,14 @@ namespace NachoCore.Brain
         // All these fields use lazy initialization pattern because we do not necessarily
         // do all the processing (indexing and all analyzers in one shot). So,
         // we only extract whatever as they are requested.
-        protected string _Content { get; set; }
+        protected System.Text.StringBuilder _Content = null;
 
         public string Content {
             get {
                 if (null == _Content) {
                     ExtractContent ();
                 }
-                return _Content;
+                return _Content.ToString ();
             }
         }
 
@@ -69,7 +70,7 @@ namespace NachoCore.Brain
 
         protected virtual void ExtractContent ()
         {
-            _Content = "";
+            _Content = new System.Text.StringBuilder ();
         }
 
         protected virtual void ExtractWords ()
@@ -119,10 +120,10 @@ namespace NachoCore.Brain
         {
             try {
                 var words = WordsFromString (plainText);
-                _Content += plainText + ". ";
+                _Content.Append (plainText).Append (' ');
                 foreach (var word in words) {
                     MayCancel ();
-                    if (IsAllUpperCase (word)) {
+                    if (2 < word.Length && IsAllUpperCase (word)) {
                         _Keywords.Add (word);
                     }
                 }
@@ -156,16 +157,59 @@ namespace NachoCore.Brain
                 html.LoadHtml (rawHtml);
                 WalkHtmlNodes (html.DocumentNode, (HtmlNode node) => {
                     MayCancel ();
-                    _Content += node.InnerText + ". ";
-                    var words = WordsFromString (node.InnerText);
-
-                    if (IsEmphasisHtmlTag (node.ParentNode.Name)) {
-                        _Keywords.AddRange (words);
+                    var innerText = node.InnerText.Trim ();
+                    if (!string.IsNullOrWhiteSpace (innerText)) {
+                        innerText = HtmlEntity.DeEntitize (innerText);
+                        _Content.Append(innerText).Append(' ');
+                        if (IsEmphasisHtmlTag (node.ParentNode.Name)) {
+                            _Keywords.AddRange (WordsFromString (innerText));
+                        }
                     }
                 });
+            } catch (OperationCanceledException) {
             } catch (Exception e) {
-                Log.Error (Log.LOG_BRAIN, "fail to parse HTML (execption={0})", e.Message);
+                Log.Error (Log.LOG_BRAIN, "failed to parse HTML (execption={0})", e.Message);
             }
+        }
+
+        public static bool CanProcessCharset (string charset)
+        {
+            if (String.IsNullOrEmpty (charset)) {
+                return true; // default is us-ascii
+            }
+            if (String.Equals (charset, "US-ASCII", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            if (String.Equals (charset, "ASCII", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            if (String.Equals (charset, "UTF-8", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool CanProcessMessage (McEmailMessage message)
+        {
+            if (String.IsNullOrEmpty (message.Headers)) {
+                return true;
+            }
+            var headers = message.Headers.Split (new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            if (null == headers) {
+                return true;
+            }
+            foreach (var header in headers) {
+                if (header.StartsWith ("Content-Type:", StringComparison.OrdinalIgnoreCase)) {
+                    ContentType contentType;
+                    if (ContentType.TryParse (header, out contentType)) {
+                        if (!CanProcessCharset (contentType.Charset)) {
+                            Log.Error (Log.LOG_SEARCH, "CanProcessMessage: not indexing {0}", contentType.Charset);
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
     }
 
@@ -181,6 +225,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
+            _Content = new System.Text.StringBuilder ();
             ExtractContentFromPlainText (Text);
         }
     }
@@ -197,6 +242,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
+            _Content = new System.Text.StringBuilder ();
             ExtractContentFromHtml (Html);
         }
     }
@@ -219,11 +265,11 @@ namespace NachoCore.Brain
             }
             if (part is Multipart) {
                 var multipart = (Multipart)part;
-                if (multipart.ContentType.Matches ("multipart", "alternative")) {
+                if (multipart.ContentType.IsMimeType ("multipart", "alternative")) {
                     return ProcessAlternativeMultipart (multipart);
-                } else if (multipart.ContentType.Matches ("multipart", "mixed")) {
+                } else if (multipart.ContentType.IsMimeType ("multipart", "mixed")) {
                     return ProcessMixedMultipart (multipart);
-                } else if (multipart.ContentType.Matches ("multipart", "related")) {
+                } else if (multipart.ContentType.IsMimeType ("multipart", "related")) {
                     // The handling of multipart/related is the same as multipart/mixed.
                     // Just iterate through all its subparts and add the ones that can be
                     // indexed.
@@ -263,12 +309,8 @@ namespace NachoCore.Brain
         private List<TextPart> ProcessMimePart (MimePart part)
         {
             var parts = new List<TextPart> ();
-            if ("text" == part.ContentType.MediaType) {
-                if (("plain" == part.ContentType.MediaSubtype) ||
-                    ("html" == part.ContentType.MediaSubtype)) {
-                    TextPart body = (TextPart)part;
-                    parts.Add (body);
-                }
+            if (part.ContentType.IsMimeType ("text", "plain") || part.ContentType.IsMimeType ("text", "html")) {
+                parts.Add ((TextPart)part);
             }
             return parts;
         }
@@ -285,7 +327,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
-            _Content = "";
+            _Content = new System.Text.StringBuilder ();
             _Keywords = new List<string> ();
             foreach (TextPart part in Parts) {
                 if (part.IsAttachment) {

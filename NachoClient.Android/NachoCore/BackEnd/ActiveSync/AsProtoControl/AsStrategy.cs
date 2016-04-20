@@ -101,12 +101,12 @@ namespace NachoCore.ActiveSync
                 // { Email, Cal, Contact, Action }
                 { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
                     (int)EmailEnum.Def1d,
-                    (int)CalEnum.Def2w,
+                    (int)CalEnum.None,
                     (int)ContactEnum.RicInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
                 }, {
                     (int)EmailEnum.Def3d,
-                    (int)CalEnum.Def2w,
+                    (int)CalEnum.None,
                     (int)ContactEnum.RicInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
                 }, {
@@ -440,15 +440,14 @@ namespace NachoCore.ActiveSync
 
         public List<McFolder> ContactFolderListProvider (Scope.ContactEnum scope, bool isNarrow)
         {
-            if (isNarrow) {
-                return new List<McFolder> ();
-            }
+            McFolder contacts = null;
+            McFolder ric = null;
             switch (scope) {
             case Scope.ContactEnum.None:
                 return new List<McFolder> ();
 
             case Scope.ContactEnum.RicInf:
-                var ric = McFolder.GetRicContactFolder (AccountId);
+                ric = McFolder.GetRicContactFolder (AccountId);
                 if (null != ric) {
                     return new List<McFolder> () { ric };
                 } else {
@@ -457,9 +456,9 @@ namespace NachoCore.ActiveSync
 
             case Scope.ContactEnum.DefRicInf:
                 ric = McFolder.GetRicContactFolder (AccountId);
-                McFolder contacts = McFolder.GetDefaultContactFolder (AccountId);
+                contacts = McFolder.GetDefaultContactFolder (AccountId);
                 var list = new List<McFolder> ();
-                if (null != ric) {
+                if (null != ric && !isNarrow) {
                     list.Add (ric);
                 }
                 if (null != contacts) {
@@ -468,9 +467,18 @@ namespace NachoCore.ActiveSync
                 return list;
 
             case Scope.ContactEnum.AllInf:
-                return McFolder.ServerEndQueryAll (AccountId).Where (f => 
+                if (isNarrow) {
+                    contacts = McFolder.GetDefaultContactFolder (AccountId);
+                    if (null != contacts) {
+                        return new List<McFolder> () { contacts };
+                    } else {
+                        return new List<McFolder> ();
+                    }
+                } else {
+                    return McFolder.ServerEndQueryAll (AccountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
-                McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                    McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                }
 
             default:
                 NcAssert.CaseError (string.Format ("{0}", scope));
@@ -602,6 +610,32 @@ namespace NachoCore.ActiveSync
             McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
         }
 
+        public SyncKit GenSyncKitFromPingKit(McProtocolState protocolState, PingKit pingKit)
+        {
+            var perFolders = new List<SyncKit.PerFolder> ();
+            foreach (var iterFolder in pingKit.Folders) {
+                var folder = iterFolder;
+                if (!folder.AsSyncMetaToClientExpected) {
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                }
+                var rung = Scope.StrategyRung (protocolState);
+                var parms = ParametersProvider (folder, rung, true);
+                perFolders.Add (new SyncKit.PerFolder () {
+                    Folder = folder,
+                    Commands = new List<McPending> (),
+                    FilterCode = parms.Item1,
+                    WindowSize = 1,
+                    GetChanges = true,
+                });
+            }
+            return new SyncKit () {
+                OverallWindowSize = pingKit.Folders.Count,
+                PerFolders = perFolders,
+                IsNarrow = pingKit.IsNarrow,
+                IsPinging = true,
+                WaitInterval = TimeSpan.FromSeconds((double) pingKit.MaxHeartbeatInterval)
+            };            
+        }
         public SyncKit GenSyncKit (McProtocolState protocolState)
         {
             return GenSyncKit (protocolState, SyncMode.Wide);
@@ -778,7 +812,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             if (protocolState.MaxFolders >= folders.Count) {
-                return new PingKit () { Folders = folders, MaxHeartbeatInterval = maxHeartbeatInterval };
+                return new PingKit () { Folders = folders, MaxHeartbeatInterval = maxHeartbeatInterval, IsNarrow = isNarrow };
             }
             // If we have too many folders, then whittle down the list, but keep default inbox & cal.
             List<McFolder> fewer = new List<McFolder> ();
@@ -795,7 +829,7 @@ namespace NachoCore.ActiveSync
             // Prefer the least-recently-ping'd.
             var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)protocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
-            return new PingKit () { Folders = fewer, MaxHeartbeatInterval = maxHeartbeatInterval };
+            return new PingKit () { Folders = fewer, MaxHeartbeatInterval = maxHeartbeatInterval, IsNarrow = isNarrow };
         }
 
         public MoveKit GenMoveKit ()
@@ -926,8 +960,13 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_AS, "McEmailMessage with an unknown native body type.");
                 return Xml.AirSync.TypeCode.Mime_4;
             }
+            if (message.IsChat) {
+                // Always download chat messages as mime so we get the mime headers and can populate MessageID, which
+                // is used to weed out duplicate copies of the same chat message
+                return Xml.AirSync.TypeCode.Mime_4;
+            }
             long totalAttachmentSize = 0;
-            foreach (var attachment in McAttachment.QueryByItemId (message)) {
+            foreach (var attachment in McAttachment.QueryByItem (message)) {
                 if (attachment.IsInline) {
                     // If there are any inline attachments, then the attachments need to be downloaded with the body.
                     return Xml.AirSync.TypeCode.Mime_4;
@@ -1044,7 +1083,10 @@ namespace NachoCore.ActiveSync
                                         BodyPref = BodyPref (fetch),
                                     },
                                 },
-                            }));
+                            }) {
+                            DelayNotAllowed = fetch.DelayNotAllowed && 
+                                fetch.Operation == McPending.Operations.EmailBodyDownload,
+                        });
                 }
             }
             return null;
@@ -1137,9 +1179,9 @@ namespace NachoCore.ActiveSync
                 var next = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     AsCommand cmd = null;
-                    var action = PickActionEnum.QOop;
+                    var action = next.DelayNotAllowed ? PickActionEnum.HotQOp : PickActionEnum.QOop;
                     switch (next.Operation) {
                     // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:
@@ -1237,9 +1279,16 @@ namespace NachoCore.ActiveSync
                     !BEContext.Server.HostIsAsGMail ()) {
                     var rlPingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
                     if (null != rlPingKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext, rlPingKit));
+                        if (BEContext.Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Ping");
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                                new AsPingCommand (BEContext, rlPingKit));
+                        } else { // use Sync
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Sync");
+                            SyncKit syncKit = GenSyncKitFromPingKit (protocolState, rlPingKit);
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                                new AsSyncCommand (BEContext, syncKit));
+                        }
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
@@ -1293,9 +1342,16 @@ namespace NachoCore.ActiveSync
                     pingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
                 }
                 if (null != pingKit) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
-                        new AsPingCommand (BEContext, pingKit));
+                    if (BEContext.Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Ping");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                            new AsPingCommand (BEContext, pingKit));
+                    } else { // use Sync
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Sync");
+                        SyncKit syncKit = GenSyncKitFromPingKit (protocolState, pingKit);
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                            new AsSyncCommand (BEContext, syncKit));
+                    }
                 }
                 Log.Info (Log.LOG_AS, "Strategy:FG/BG:Wait");
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,

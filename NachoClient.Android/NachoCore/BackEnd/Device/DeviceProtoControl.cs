@@ -269,31 +269,41 @@ namespace NachoCore
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoNop, State = (uint)Lst.Idle },
                         }
                     },
+                    new Node {
+                        State = (uint)Lst.Parked,
+                        Drop = new uint[] {
+                            (uint)DevEvt.E.AbateOn,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)DevEvt.E.SyncDone,
+                            (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)PcEvt.E.Park,
+                            (uint)DevEvt.E.SyncStart,
+                            (uint)DevEvt.E.AbateOff,
+                        },
+                        Invalid = new uint[] {
+                        },
+                        On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                        }
+                    } 
                 }
             };
             Sm.Validate ();
-            Contacts.Instance.ChangeIndicator += DeviceDbChange;
-            Calendars.Instance.ChangeIndicator += DeviceDbChange;
-            NcApplication.Instance.StatusIndEvent += AbateChange;
+            NachoPlatform.Contacts.Instance.ChangeIndicator += DeviceDbChange;
+            NachoPlatform.Calendars.Instance.ChangeIndicator += DeviceDbChange;
         }
 
         public override void Remove ()
         {
             NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
-            Contacts.Instance.ChangeIndicator -= DeviceDbChange;
+            NachoPlatform.Contacts.Instance.ChangeIndicator -= DeviceDbChange;
             Calendars.Instance.ChangeIndicator -= DeviceDbChange;
-            NcApplication.Instance.StatusIndEvent -= AbateChange;
             base.Remove ();
-        }
-
-        private void AbateChange (object sender, EventArgs ea)
-        {
-            var siea = (StatusIndEventArgs)ea;
-            if (NcResult.SubKindEnum.Info_BackgroundAbateStarted == siea.Status.SubKind) {
-                Sm.PostEvent ((uint)DevEvt.E.AbateOn, "DEVCABATEON");
-            } else if (NcResult.SubKindEnum.Info_BackgroundAbateStopped == siea.Status.SubKind) {
-                Sm.PostEvent ((uint)DevEvt.E.AbateOff, "DEVCABATEOFF");
-            }
         }
 
         private void DeviceDbChange (object sender, EventArgs ea)
@@ -341,10 +351,12 @@ namespace NachoCore
                                 while (!deviceContacts.ProcessNextContact ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                                 while (!deviceContacts.RemoveNextStale ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                             } finally {
                                 // Trigger status events and report progress both when the sync is complete
@@ -361,13 +373,25 @@ namespace NachoCore
                         lock (deviceCalendars) {
                             bool somethingHappened = false;
                             try {
-                                while (!deviceCalendars.ProcessNextCal ()) {
+                                while (!deviceCalendars.ProcessNextCalendarFolder ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
-                                while (!deviceCalendars.RemoveNextStale ()) {
+                                while (!deviceCalendars.ProcessNextCalendarEvent ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
+                                }
+                                while (!deviceCalendars.RemoveNextStaleEvent ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
+                                }
+                                while (!deviceCalendars.RemoveNextStaleFolder ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                             } finally {
                                 // Trigger status events and report progress both when the sync is complete
@@ -434,7 +458,7 @@ namespace NachoCore
             McContact contact = null;
             McCalendar cal = null;
             foreach (var pending in pendings) {
-                pending.MarkDispached ();
+                pending.MarkDispatched ();
                 switch (pending.Operation) {
                 case McPending.Operations.CalBodyDownload:
                 case McPending.Operations.CalMove:
@@ -472,7 +496,7 @@ namespace NachoCore
 
                 case McPending.Operations.ContactCreate:
                     contact = McContact.QueryById<McContact> (pending.ItemId);
-                    if (Contacts.Instance.Add (contact).isOK ()) {
+                    if (NachoPlatform.Contacts.Instance.Add (contact).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -480,7 +504,7 @@ namespace NachoCore
                     break;
 
                 case McPending.Operations.ContactDelete:
-                    if (Contacts.Instance.Delete (pending.ServerId).isOK ()) {
+                    if (NachoPlatform.Contacts.Instance.Delete (pending.ServerId).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -489,7 +513,7 @@ namespace NachoCore
 
                 case McPending.Operations.ContactUpdate:
                     contact = McContact.QueryById<McContact> (pending.ItemId);
-                    if (Contacts.Instance.Change (contact).isOK ()) {
+                    if (NachoPlatform.Contacts.Instance.Change (contact).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -504,9 +528,9 @@ namespace NachoCore
             }
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
-            // Ignore base.Execute() we don't care about the nextwork.
+            // Ignore base.Execute() we don't care about the network.
             // We're letting the app use Start() to trigger a re-sync. TODO - consider using Sync command.
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DEVICELAUNCH");
             return true;
