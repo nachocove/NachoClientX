@@ -11,6 +11,7 @@ namespace NachoCore.SMTP
     {
         public override NcResult MarkEmailAnswered (McPending pending, McEmailMessage email, bool answered)
         {
+            // create a pending that the EmailReaderWriter will pick up (i.e. IMAP).
             var answPending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                 Operation = McPending.Operations.EmailMarkAnswered,
                 EmailSetFlag_FlagType = answered ? McPending.MarkAnsweredFlag : McPending.MarkNotAnsweredFlag,
