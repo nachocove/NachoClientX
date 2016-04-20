@@ -546,8 +546,14 @@ namespace NachoCore.IMAP
             if (emailMessage.IsRead != before) {
                 changed = true;
             }
-            // FIXME Where do we set these flags?
             if ((Flags & MessageFlags.Answered) == MessageFlags.Answered) {
+                // we don't really know if this was ReplyAll or ReplyToSender. So just assume ReplyToSender,
+                // but don't overwrite any value REPLYTO<something> value we might have set previously.
+                if (emailMessage.LastVerbExecuted != (int)AsLastVerbExecutedType.REPLYTOALL &&
+                    emailMessage.LastVerbExecuted != (int)AsLastVerbExecutedType.REPLYTOSENDER) {
+                    emailMessage.LastVerbExecuted = (int)AsLastVerbExecutedType.REPLYTOSENDER;
+                    emailMessage.LastVerbExecutionTime = DateTime.UtcNow;
+                }
             }
             if ((Flags & MessageFlags.Flagged) == MessageFlags.Flagged) {
                 //emailMessage.UserAction = 1;
