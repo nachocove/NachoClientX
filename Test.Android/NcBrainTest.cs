@@ -693,21 +693,6 @@ This is a MIME email");
         }
 
         [Test]
-        public void TestQuickScore ()
-        {
-            var stateMachineEvent = new NcBrainStateMachineEvent (Message.AccountId, 100);
-            Assert.AreEqual (0, Message.ScoreVersion);
-            Assert.AreEqual (0, Message.Score);
-
-            NcBrain.SharedInstance.Enqueue (stateMachineEvent);
-            WaitForBrain ();
-
-            var updatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
-            Assert.AreEqual (0, updatedMessage.ScoreVersion);
-            Assert.AreEqual (McEmailMessage.minHotScore, updatedMessage.Score);
-        }
-
-        [Test]
         public void TestNotificationStatusUpdated ()
         {
             var message1 = new McEmailMessage () {

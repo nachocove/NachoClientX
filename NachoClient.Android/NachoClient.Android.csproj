@@ -319,7 +319,6 @@
     <Compile Include="NachoCore\Utils\RegexUtilities.cs" />
     <Compile Include="NachoCore\Model\McPortrait.cs" />
     <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
-    <Compile Include="NachoCore\Brain\NcBrainControl.cs" />
     <Compile Include="NachoCore\Model\McEvent.cs" />
     <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
     <Compile Include="NachoCore\Adapters\NcEventManager.cs" />

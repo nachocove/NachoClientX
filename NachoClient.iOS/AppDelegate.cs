@@ -951,6 +951,7 @@ namespace NachoClient.iOS
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
                 BackEnd.Instance.Start ();
+                NcBrain.StartService ();
                 NcApplicationMonitor.Instance.Start (1, 60);
             } else {
                 NcCommStatus.Instance.Reset ("StartFetch");

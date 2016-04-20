@@ -19,16 +19,7 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 > emailMessage.HasBeenGleaned) {
-                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage)) {
-                    return false;
-                }
-            }
-            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2 > emailMessage.HasBeenGleaned) {
-                if (!NcContactGleaner.GleanContactsHeaderPart2 (emailMessage)) {
-                    return false;
-                }
-            }
+            NcContactGleaner.GleanContactsHeader (emailMessage);
             return true;
         }
 
@@ -37,7 +28,6 @@ namespace NachoCore.Brain
             if (null == emailAddress) {
                 return false;
             }
-            Log.Debug (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
             emailAddress.Analyze ();
             return true;
         }
@@ -47,7 +37,6 @@ namespace NachoCore.Brain
             if (null == emailMessage) {
                 return false;
             }
-            Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
             if (!GleanEmailMessage (emailMessage)) {
                 return false;
             }
@@ -169,8 +158,6 @@ namespace NachoCore.Brain
                 return true;
             }
 
-            Log.Debug (Log.LOG_SEARCH, "IndexEmailMessage: index email message {0}", emailMessage.Id);
-
             var parameters = new EmailMessageIndexParameters () {
                 From = NcEmailAddress.ParseAddressListString (emailMessage.From),
                 To = NcEmailAddress.ParseAddressListString (emailMessage.To),
@@ -265,7 +252,6 @@ namespace NachoCore.Brain
             if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
                 return false;
             }
-            Log.Debug (Log.LOG_SEARCH, "IndexContact: index contact {0}", contact.Id);
             if (!IndexExists (contact.AccountId)) {
                 Log.Warn (Log.LOG_SEARCH, "Account {0} no longer exists. Ignore indexing contact {1}",
                     contact.AccountId, contact.Id);

@@ -241,7 +241,7 @@ namespace NachoCore.Model
                         // TODO - incorporate content score
                     )
                 );
-            Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score, ltrScore);
+            Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}, ltrScore = {2:F6}", Id, score, ltrScore);
             return new Tuple<double, double> (score, ltrScore);
         }
 
@@ -521,12 +521,12 @@ namespace NachoCore.Model
             return new List<object> (QueryNeedUpdate (count, above: false));
         }
 
-        // All messages with at least basic gleaning finished
+        // All messages that haven't been fully scored
         public static List<McEmailMessage> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
-                " WHERE e.ScoreVersion < ? AND e.HasBeenGleaned > 0 " +
+                " WHERE e.ScoreVersion < ? " +
                 " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?", version, count);
         }
@@ -536,35 +536,19 @@ namespace NachoCore.Model
             return new List<object> (QueryNeedAnalysis (count));
         }
 
-        public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
+        public static List<McEmailMessage> QueryRecentNeedQuickScoring (int count)
         {
+            DateTime cutoff = DateTime.UtcNow - TimeSpan.FromDays (2);
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
-                " WHERE " +
-                " likelihood (HasBeenGleaned < ?, 0.1) " +
-                " AND likelihood (e.AccountId = ?, 1.0) " +
-                " ORDER BY e.DateReceived DESC " +
-                " LIMIT ?",
-                GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
+                "WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.DateReceived > ? " +
+                "ORDER BY e.DateReceived DESC LIMIT ?",
+                cutoff, count);
         }
 
-        public static List<McEmailMessage> QueryNeedQuickScoring (int accountId, int count)
+        public static List<object> QueryRecentNeedQuickScoringObjects (int count)
         {
-            return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.AccountId = ? " +
-                " ORDER BY e.DateReceived DESC " +
-                " LIMIT ?", accountId, count);
-        }
-
-        public static int CountByVersion (int version)
-        {
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion == version).Count ();
-        }
-
-        public static int Count ()
-        {
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Count ();
+            return new List<object> (QueryRecentNeedQuickScoring (count));
         }
 
 

@@ -181,21 +181,18 @@ namespace NachoCore.IMAP
 
                         Cts.Token.ThrowIfCancellationRequested ();
 
-                        using (NcAbate.BackEndAbatement ()) {
+                        // Process any new or changed messages. This will also tell us any messages that vanished.
+                        UniqueIdSet vanished;
+                        UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, syncInst, out vanished);
 
-                            // Process any new or changed messages. This will also tell us any messages that vanished.
-                            UniqueIdSet vanished;
-                            UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, syncInst, out vanished);
+                        Cts.Token.ThrowIfCancellationRequested ();
 
-                            Cts.Token.ThrowIfCancellationRequested ();
+                        // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
+                        toDelete.AddRange (vanished);
+                        deleteEmails (toDelete);
 
-                            // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
-                            toDelete.AddRange (vanished);
-                            deleteEmails (toDelete);
-
-                            Cts.Token.ThrowIfCancellationRequested ();
-                            changed |= toDelete.Any () || newOrChanged.Any ();
-                        }
+                        Cts.Token.ThrowIfCancellationRequested ();
+                        changed |= toDelete.Any () || newOrChanged.Any ();
                     } finally {
                         sw.Stop ();
                         Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / syncInst.UidSet.Count);

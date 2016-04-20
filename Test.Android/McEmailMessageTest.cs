@@ -818,117 +818,10 @@ namespace Test.Common
             }
         }
 
-        void CheckQueryNeedGleaning (List<McEmailMessage> result, List<McEmailMessage> expected)
-        {
-            foreach (var message in result) {
-                var match = expected.Find (x => message.Id == x.Id);
-                Assert.NotNull (match);
-                expected.Remove (match);
-            }
-            Assert.True (0 == expected.Count);
-        }
-
-        [Test]
-        public void TestQueryNeedGleaning ()
-        {
-            // Set up a junk, a spam and an inbox folders.
-            var junkFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Junk");
-            Assert.True (0 != junkFolder.Id);
-            var spamFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "spam");
-            Assert.True (0 != spamFolder.Id);
-            var inboxFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Inbox");
-            Assert.True (0 != inboxFolder.Id);
-
-            // Set up emails in each to be gleaned
-            var junkEmail = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "junk@company.net",
-                Subject = "Junk email",
-                IsJunk = true,
-            };
-            junkEmail.Insert ();
-            Assert.True (0 != junkEmail.Id);
-            junkFolder.Link (junkEmail);
-
-            var spamEmail = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "spam@company.net",
-                Subject = "Spam email",
-                IsJunk = true,
-            };
-            spamEmail.Insert ();
-            Assert.True (0 != spamEmail.Id);
-            spamFolder.Link (spamEmail);
-
-            var email1 = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "bob@company.net",
-                Subject = "Hello",
-            };
-            email1.Insert ();
-            Assert.True (0 != email1.Id);
-            inboxFolder.Link (email1);
-              
-            var email2 = new McEmailMessage () {
-                AccountId = defaultAccountId,
-                From = "john@company.net",
-                Subject = "Hello again",
-            };
-            email2.Insert ();
-            Assert.True (0 != email2.Id);
-            inboxFolder.Link (email2);
-
-            var emailMessageList1 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 1);
-            Assert.AreEqual (1, emailMessageList1.Count);
-
-            var emailMessageList2 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 10);
-            Assert.AreEqual (4, emailMessageList2.Count);
-            CheckQueryNeedGleaning (emailMessageList2, new List<McEmailMessage> { email1, email2, junkEmail, spamEmail });
-
-            // Mark one of the email gleaned. The gleaning functions are unit tested in NcContactGleanerTest
-            email1.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
-            var emailMessageList3 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 4);
-            Assert.AreEqual (3, emailMessageList3.Count);
-            CheckQueryNeedGleaning (emailMessageList3, new List<McEmailMessage> { email2, junkEmail, spamEmail });
-
-            // Query a different account id and all accounts
-            var emailMessageList4 = McEmailMessage.QueryNeedGleaning (-1, 2);
-            Assert.AreEqual (0, emailMessageList4.Count);
-
-            var emailMessageList5 = McEmailMessage.QueryNeedGleaning (defaultAccountId + 1, 2);
-            Assert.AreEqual (0, emailMessageList5.Count);
-
-            // Mark the other email in inbox as phase1 gleaned.
-            email2.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
-            var emailMessageList6 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 10);
-            Assert.AreEqual (3, emailMessageList6.Count);
-            CheckQueryNeedGleaning (emailMessageList6, new List<McEmailMessage> { email2, junkEmail, spamEmail });
-
-            email2.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
-            var emailMessageList7 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
-            Assert.AreEqual (2, emailMessageList7.Count);
-            CheckQueryNeedGleaning (emailMessageList7, new List<McEmailMessage> { junkEmail, spamEmail });
-
-            // Move the junk email back to inbox, it's still junk
-            inboxFolder.Link (junkEmail);
-            junkFolder.Unlink (junkEmail);
-            var emailMessageList8 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
-            Assert.AreEqual (2, emailMessageList8.Count);
-
-            junkEmail.Delete ();
-            spamEmail.Delete ();
-            email1.Delete ();
-            email2.Delete ();
-
-            junkFolder.Delete ();
-            spamFolder.Delete ();
-            inboxFolder.Delete ();
-        }
-
         [Test]
         public void TestQueryNeedAnalysis ()
         {
-            var messages = new McEmailMessage[4];
+            var messages = new McEmailMessage[3];
 
             messages [0] = new McEmailMessage () {
                 Subject = "Do not need analysis",
@@ -944,11 +837,6 @@ namespace Test.Common
                 Subject = "Is analyzed for all versions",
                 ScoreVersion = 0,
                 HasBeenGleaned = 1,
-            };
-            messages [3] = new McEmailMessage () {
-                Subject = "Is not analyzed coz not gleaned",
-                ScoreVersion = 0,
-                HasBeenGleaned = 0,
             };
 
             foreach (var message in messages) {
