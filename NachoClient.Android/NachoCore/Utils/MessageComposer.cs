@@ -544,6 +544,7 @@ namespace NachoCore.Utils
                 message.BodyPreview = preview;
                 message.DateReceived = Mime.Date.DateTime;
                 message.MessageID = Mime.MessageId;
+                message.IsRead = true;
                 return true;
             });
             if (invalidateBundle) {

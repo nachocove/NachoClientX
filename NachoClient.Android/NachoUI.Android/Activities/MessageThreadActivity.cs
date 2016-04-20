@@ -19,11 +19,11 @@ namespace NachoClient.AndroidClient
 {
     public class MessageThreadActivityData
     {
-        public INachoEmailMessages ThreadMessages;
+        public NachoEmailMessages ThreadMessages;
     }
 
     [Activity (Label = "MessageThreadActivity")]
-    public class MessageThreadActivity : NcActivityWithData<INachoEmailMessages>, MessageListDelegate
+    public class MessageThreadActivity : NcActivityWithData<NachoEmailMessages>, MessageListDelegate
     {
         private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
 
@@ -31,7 +31,7 @@ namespace NachoClient.AndroidClient
 
         MessageListFragment messageListFragment;
 
-        public static Intent ShowThreadIntent (Context context, INachoEmailMessages threadMessages)
+        public static Intent ShowThreadIntent (Context context, NachoEmailMessages threadMessages)
         {
             var intent = new Intent (context, typeof(MessageThreadActivity));
             intent.SetAction (Intent.ActionView);
@@ -47,7 +47,7 @@ namespace NachoClient.AndroidClient
 
             var threadMessages = RetainedData;
             if (null == threadMessages) {
-                threadMessages = IntentHelper.RetrieveValue<INachoEmailMessages> (Intent.GetStringExtra (EXTRA_THREAD));
+                threadMessages = IntentHelper.RetrieveValue<NachoEmailMessages> (Intent.GetStringExtra (EXTRA_THREAD));
                 RetainedData = threadMessages;
             }
 

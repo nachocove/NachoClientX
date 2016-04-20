@@ -9,6 +9,10 @@ namespace NachoClient.iOS
 {
     public class NcUITableViewController : UITableViewController
     {
+
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
+
         private string ClassName;
         public event EventHandler ViewDisappearing;
 
@@ -38,8 +42,8 @@ namespace NachoClient.iOS
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             base.ViewWillAppear (animated);
-            NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-            NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+            KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -61,8 +65,8 @@ namespace NachoClient.iOS
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
             base.ViewDidDisappear (animated);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
         }
 
         private void OnKeyboardNotification (NSNotification notification)

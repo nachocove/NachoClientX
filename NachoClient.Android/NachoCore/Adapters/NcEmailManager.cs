@@ -20,7 +20,7 @@ namespace NachoCore
             return inboxFolder;
         }
 
-        public static INachoEmailMessages Inbox (int accountId)
+        public static NachoEmailMessages Inbox (int accountId)
         {
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
                 return new NachoUnifiedInbox ();
@@ -29,11 +29,11 @@ namespace NachoCore
             if (null == inboxFolder) {
                 return new MissingFolder ("Inbox");
             } else {
-                return new NachoEmailMessages (inboxFolder);
+                return new NachoFolderMessages (inboxFolder);
             }
         }
 
-        public static INachoEmailMessages PriorityInbox (int accountId)
+        public static NachoEmailMessages PriorityInbox (int accountId)
         {
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
                 return new NachoUnifiedHotList ();
@@ -46,7 +46,7 @@ namespace NachoCore
             }
         }
 
-        public static INachoEmailMessages LikelyToReadInbox (int accountId)
+        public static NachoEmailMessages LikelyToReadInbox (int accountId)
         {
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
                 return new NachoUnifiedLikelyToRead ();
@@ -59,7 +59,7 @@ namespace NachoCore
             }
         }
 
-        protected class MissingFolder : NachoEmailMessagesBase, INachoEmailMessages
+        protected class MissingFolder : NachoEmailMessages
         {
             protected string displayName;
 

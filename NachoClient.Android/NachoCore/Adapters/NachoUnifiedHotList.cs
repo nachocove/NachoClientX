@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoUnifiedHotList : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoUnifiedHotList : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
 
@@ -17,6 +17,7 @@ namespace NachoCore
         {
             List<int> adds;
             List<int> deletes;
+            threadList = new List<McEmailMessageThread> ();
             Refresh (out adds, out deletes);
         }
 
@@ -73,7 +74,7 @@ namespace NachoCore
             return EmailHelper.SyncUnified ();
         }
 
-        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
@@ -83,6 +84,11 @@ namespace NachoCore
         public override bool IsCompatibleWithAccount (McAccount account)
         {
             return McAccount.GetUnifiedAccount ().Id == account.Id;
+        }
+
+        public override bool IncludesMultipleAccounts ()
+        {
+            return true;
         }
     }
 }

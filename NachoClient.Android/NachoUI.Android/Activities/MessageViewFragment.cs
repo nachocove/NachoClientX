@@ -143,7 +143,7 @@ namespace NachoClient.AndroidClient
         McEmailMessageThread ThreadToView { get; }
     }
 
-    public class MessageViewFragment : Fragment, MessageDownloadDelegate, Android.Widget.PopupMenu.IOnMenuItemClickListener
+    public class MessageViewFragment : Fragment, MessageDownloadDelegate
     {
         McEmailMessage message;
         McEmailMessageThread thread;
@@ -179,9 +179,7 @@ namespace NachoClient.AndroidClient
             activityIndicatorView.Visibility = ViewStates.Invisible;
 
             buttonBar = new ButtonBar (view);
-            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.gen_more, MenuButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.email_defer, DeferButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.folder_move, SaveButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.cal_add, CreateEvent_Click);
 
             scrollView = view.FindViewById<MessageScrollView> (Resource.Id.message_scrollview);
             webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
@@ -264,6 +262,7 @@ namespace NachoClient.AndroidClient
         void AttachListeners (View view)
         {
             view.FindViewById (Resource.Id.reply).Click += ReplyButton_Click;
+            view.FindViewById (Resource.Id.quick_reply).Click += QuickReplyButton_Click;
             view.FindViewById (Resource.Id.reply_all).Click += ReplyAllButton_Click;
             view.FindViewById (Resource.Id.forward).Click += ForwardButton_Click;
             view.FindViewById (Resource.Id.archive).Click += ArchiveButton_Click;
@@ -280,6 +279,7 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.event_attendee_4).Click += Attendees_Click;
             view.FindViewById (Resource.Id.message_header).Click += Header_Click;
             view.FindViewById (Resource.Id.address_block).Click += Header_Click;
+            view.FindViewById (Resource.Id.move).Click += SaveButton_Click;
         }
 
         void DetachListeners (View view)
@@ -287,6 +287,7 @@ namespace NachoClient.AndroidClient
             buttonBar.ClearAllListeners ();
 
             view.FindViewById (Resource.Id.reply).Click -= ReplyButton_Click;
+            view.FindViewById (Resource.Id.quick_reply).Click -= QuickReplyButton_Click;
             view.FindViewById (Resource.Id.reply_all).Click -= ReplyAllButton_Click;
             view.FindViewById (Resource.Id.forward).Click -= ForwardButton_Click;
             view.FindViewById (Resource.Id.archive).Click -= ArchiveButton_Click;
@@ -303,6 +304,7 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.event_attendee_4).Click -= Attendees_Click;
             view.FindViewById (Resource.Id.message_header).Click -= Header_Click;
             view.FindViewById (Resource.Id.address_block).Click -= Header_Click;
+            view.FindViewById (Resource.Id.move).Click -= SaveButton_Click;
 
             if (removeFromCalendarEnabled) {
                 removeFromCalendarEnabled = false;
@@ -621,39 +623,6 @@ namespace NachoClient.AndroidClient
             ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
-        void MenuButton_Click (object sender, EventArgs e)
-        {
-            Log.Info (Log.LOG_UI, "MenuButton_Click");
-            var view = View.FindViewById (Resource.Id.right_button1);
-            var popup = new PopupMenu (Activity, view);
-            popup.SetOnMenuItemClickListener (this);
-            popup.Inflate (Resource.Menu.message_view);
-            popup.Show ();
-        }
-
-        bool Android.Widget.PopupMenu.IOnMenuItemClickListener.OnMenuItemClick (IMenuItem item)
-        {
-            switch (item.ItemId) {
-            case Resource.Id.quick_reply:
-                QuickReply_Click ();
-                return true;
-            case Resource.Id.create_deadline:
-                CreateDeadline_Click ();
-                return true;
-            case Resource.Id.create_event:
-                CreateEvent_Click ();
-                return true;
-            default:
-                return false;
-            }
-        }
-
-        void DeferButton_Click (object sender, EventArgs e)
-        {
-            Log.Info (Log.LOG_UI, "DeferButton_Click");
-            ShowDeferralChooser ();
-        }
-
         void SaveButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "SaveButton_Click");
@@ -691,6 +660,12 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "ReplyButton_Click");
             StartComposeActivity (EmailHelper.Action.Reply);
+        }
+
+        void QuickReplyButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "QuickReplyButton_Click");
+            StartComposeActivity (EmailHelper.Action.Reply, quickReply: true);
         }
 
         void ReplyAllButton_Click (object sender, EventArgs e)
@@ -765,7 +740,7 @@ namespace NachoClient.AndroidClient
             ShowDeadlineChooser ();
         }
 
-        void CreateEvent_Click ()
+        void CreateEvent_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "CreateEvent_Click");
             StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message));

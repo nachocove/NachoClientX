@@ -14,8 +14,8 @@ namespace NachoCore.Model
 
         public override void Run (CancellationToken token)
         {
-            NcModel.Instance.Db.Execute ("DROP TABLE McEmailMessageScoreSyncInfo");
-            NcModel.Instance.Db.Execute ("DROP TABLE McEmailAddressScoreSyncInfo");
+            NcModel.Instance.Db.Execute ("DROP TABLE IF EXISTS McEmailMessageScoreSyncInfo");
+            NcModel.Instance.Db.Execute ("DROP TABLE IF EXISTS McEmailAddressScoreSyncInfo");
         }
     }
 }

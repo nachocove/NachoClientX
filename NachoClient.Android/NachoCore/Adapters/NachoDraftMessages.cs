@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoDraftMessages : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoDraftMessages : NachoEmailMessages
     {
         McFolder folder;
 
@@ -21,6 +21,7 @@ namespace NachoCore
             this.folder = folder;
             List<int> adds;
             List<int> deletes;
+            threadList = new List<McEmailMessageThread> ();
             Refresh (out adds, out deletes);
         }
 

@@ -203,10 +203,6 @@ namespace NachoClient.AndroidClient
                     settingsButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.account_settings);
                     var inboxButton = view.FindViewById<View> (Resource.Id.go_to_inbox);
                     inboxButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_inbox);
-                    var deferredButton = view.FindViewById<View> (Resource.Id.go_to_deferred);
-                    deferredButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deferred);
-                    var deadlinesButton = view.FindViewById<View> (Resource.Id.go_to_deadlines);
-                    deadlinesButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deadlines);
                 }
 
                 if (FOOTER_TYPE == viewType) {
