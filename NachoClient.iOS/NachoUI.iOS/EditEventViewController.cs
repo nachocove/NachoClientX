@@ -27,7 +27,6 @@ namespace NachoClient.iOS
     public partial class EditEventViewController
         : NcUIViewControllerNoLeaks, INachoAttendeeListChooserDelegate, IUcAttachmentBlockDelegate, INachoFileChooserParent
     {
-        protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
         protected McCalendar item;
         protected McCalendar c;
@@ -301,7 +300,7 @@ namespace NachoClient.iOS
             if (calendarItemIsMissing) {
                 NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it was deleted.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                        NavigationController.PopViewController (true);
+                        DismissView ();
                     }));
             }
 
@@ -309,7 +308,7 @@ namespace NachoClient.iOS
                 NcAlertView.Show (this, "No Calendar Access",
                     "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                        NavigationController.PopViewController (true);
+                        DismissView ();
                     }));
             }
 
@@ -317,7 +316,7 @@ namespace NachoClient.iOS
                 NcAlertView.Show (this, "No device calendars",
                     "The Calendar app does not have any accessible calendars.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                        NavigationController.PopViewController (true);
+                        DismissView ();
                     }));
             }
         }
@@ -326,26 +325,6 @@ namespace NachoClient.iOS
             get {
                 return true;
             }
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="owner">Owner.</param>
-        public void SetOwner (INachoCalendarItemEditorParent owner)
-        {
-            this.owner = owner;
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="animated">If set to <c>true</c> animated.</param>
-        /// <param name="action">Action.</param>
-        public void DismissCalendarItemEditor (bool animated, Action action)
-        {
-            owner = null;
-            NavigationController.PopViewController (true);
         }
 
         protected override void OnKeyboardChanged ()
@@ -1037,7 +1016,7 @@ namespace NachoClient.iOS
 
         public void DismissView ()
         {
-            NavigationController.PopViewController (true);
+            DismissViewController (true, null);
         }
 
         protected void LayoutView ()

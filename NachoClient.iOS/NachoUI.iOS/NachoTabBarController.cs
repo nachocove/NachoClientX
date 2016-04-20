@@ -44,13 +44,7 @@ namespace NachoClient.iOS
             contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
 
             var foldersNavController = new UINavigationController (new FoldersViewController ());
-            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("Mail", "nav-mail");
-
-            var deferredNavController = new UINavigationController (new DeferredViewController ());
-            deferredItem = deferredNavController.TabBarItem = MakeTabBarItem ("Deferred", "nav-mail");
-
-            var deadlinesNavController = new UINavigationController (new DeadlinesViewController ());
-            deadlinesItem = deadlinesNavController.TabBarItem = MakeTabBarItem ("Deadlines", "nav-mail");
+            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
 
             var filesNavController = new UINavigationController (new FileListViewController ());
             filesNavController.TabBarItem = MakeTabBarItem ("Files", "more-files");
@@ -64,6 +58,8 @@ namespace NachoClient.iOS
             var aboutNavController = new UINavigationController (new AboutUsViewController ());
             aboutNavController.TabBarItem = MakeTabBarItem ("About Nacho Mail", "more-nachomail");
 
+            Util.ConfigureNavBar (false, inboxNavController);
+
             ViewControllers = new UIViewController[] {
                 nowNavController,
                 inboxNavController,
@@ -71,8 +67,6 @@ namespace NachoClient.iOS
                 calendarNavController,
                 contactsNavController,
                 foldersNavController,
-                deferredNavController,
-                deadlinesNavController,
                 filesNavController,
                 settingsNavController,
                 supportNavController,
@@ -458,6 +452,18 @@ namespace NachoClient.iOS
         void SwitchToAccount (McAccount account)
         {
             switchAccountButton.SetAccountImage (account);
+        }
+    }
+
+    public static class UIView_Debugging
+    {
+        [System.Runtime.InteropServices.DllImport(ObjCRuntime.Constants.ObjectiveCLibrary, EntryPoint="objc_msgSend")]
+        private static extern IntPtr IntPtr_objc_msgSend (IntPtr receiver, IntPtr selector);
+
+        public static string RecursiveDescription (this UIView view)
+        {
+            return ((NSString)ObjCRuntime.Runtime.GetNSObject(IntPtr_objc_msgSend(view.Handle, new ObjCRuntime.Selector ("recursiveDescription").Handle))).ToString ();
+
         }
     }
 }

@@ -13,7 +13,7 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
+    public partial class CalendarViewController : NcUIViewController, ICalendarTableViewSourceDelegate
     {
         protected CalendarTableViewSource calendarSource;
         protected INcEventProvider eventCalendarMap;
@@ -129,16 +129,18 @@ namespace NachoClient.iOS
             var vc = new EditEventViewController ();
             vc.SetStartingDate (startDate);
             vc.SetCalendarItem (null);
-            vc.SetOwner (this);
-            NavigationController.PushViewController (vc, true);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         void CreateEvent ()
         {
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (null);
-            vc.SetOwner (this);
-            NavigationController.PushViewController (vc, true);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         public void ShowEvent (McEvent calendarEvent)
@@ -224,12 +226,6 @@ namespace NachoClient.iOS
             } else {
                 DateDotView.UpdateButtonsMonth ();
             }
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
         }
 
         protected void ConfigureBasicView ()

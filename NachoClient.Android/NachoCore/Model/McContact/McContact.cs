@@ -872,6 +872,12 @@ namespace NachoCore.Model
                     CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
                 }
                 EvaluateSelfEclipsing ();
+
+                // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
+                if (this.IsGleaned()) {
+                    IndexVersion = ContactIndexDocument.Version;
+                }
+
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     retval = base.Insert ();
@@ -895,10 +901,10 @@ namespace NachoCore.Model
                     }
                     EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
 
-                    // Re-index the contact. Must do this after the contact update because
-                    // re-indexing has a contact update (for updating IndexVersion) and
-                    // doing this before contact update would set up a race.
-                    NcBrain.ReindexContact (this);
+                    if (!this.IsGleaned () && ContactIndexDocument.Version == this.IndexVersion) {
+                        // A non-gleaned contact that has already been indexed. Re-index the contact.
+                        NcBrain.ReindexContact (this);
+                    }
                 });
                 return retval;
             }

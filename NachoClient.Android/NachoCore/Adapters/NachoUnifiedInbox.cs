@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoUnifiedInbox : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoUnifiedInbox : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
 
@@ -147,7 +147,7 @@ namespace NachoCore
             return EmailHelper.SyncUnified ();
         }
 
-        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
@@ -156,7 +156,12 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return McAccount.GetUnifiedAccount ().Id == account.Id;
+            return true;
+        }
+
+        public override bool IncludesMultipleAccounts ()
+        {
+            return true;
         }
 
     }

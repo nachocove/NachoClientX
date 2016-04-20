@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
+        protected override NachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             var messages = NcEmailManager.LikelyToReadInbox (NcApplication.Instance.Account.Id);
             messages.Refresh (out adds, out deletes);

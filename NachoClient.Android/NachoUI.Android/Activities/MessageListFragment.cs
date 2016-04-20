@@ -62,7 +62,7 @@ namespace NachoClient.AndroidClient
         bool searching;
         EditText searchEditText;
 
-        INachoEmailMessages messages;
+        NachoEmailMessages messages;
         EmailSearch emailSearcher;
 
         public bool multiSelectActive = false;
@@ -76,10 +76,10 @@ namespace NachoClient.AndroidClient
         ImageView rightButton3;
 
         public event EventHandler<McEvent> onEventClick;
-        public event EventHandler<INachoEmailMessages> onThreadClick;
+        public event EventHandler<NachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        public void Initialize (INachoEmailMessages messages, EventHandler<McEvent> eventClickHandler, EventHandler<INachoEmailMessages> threadClickHandler, EventHandler<McEmailMessageThread> messageClickHandler)
+        public void Initialize (NachoEmailMessages messages, EventHandler<McEvent> eventClickHandler, EventHandler<NachoEmailMessages> threadClickHandler, EventHandler<McEmailMessageThread> messageClickHandler)
         {
             this.messages = messages;
             if (null != eventClickHandler) {
@@ -93,12 +93,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void Initialize (INachoEmailMessages messages, EventHandler<McEmailMessageThread> messageClickHandler)
+        public void Initialize (NachoEmailMessages messages, EventHandler<McEmailMessageThread> messageClickHandler)
         {
             Initialize (messages, null, null, messageClickHandler);
         }
 
-        public INachoEmailMessages CurrentMessages {
+        public NachoEmailMessages CurrentMessages {
             get {
                 return searching ? emailSearcher : messages;
             }
@@ -877,7 +877,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void SwitchAccount (INachoEmailMessages newMessages)
+        public void SwitchAccount (NachoEmailMessages newMessages)
         {
             ClearCache ();
             messages = newMessages;

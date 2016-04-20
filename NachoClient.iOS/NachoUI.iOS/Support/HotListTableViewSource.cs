@@ -15,11 +15,11 @@ namespace NachoClient.iOS
 
     public class HotListTableViewSource : UITableViewSource, INachoFolderChooserParent, IBodyViewOwner
     {
-        INachoEmailMessages messageThreads;
+        NachoEmailMessages messageThreads;
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected const string AccountReuseIdentifier = "Account";
 
-        protected IMessageTableViewSourceDelegate owner;
+        protected MessageTableViewSourceDelegate owner;
 
         bool scrolling;
         // to control whether swiping is allowed or not
@@ -29,7 +29,6 @@ namespace NachoClient.iOS
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
-        private const int DEFER_TAG = 4;
 
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor ARCHIVE_BUTTON =
@@ -41,9 +40,6 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDelete),
                 "Delete", A.Color_NachoSwipeEmailDelete);
-        private static SwipeActionDescriptor DEFER_BUTTON =
-            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
-                "Defer", A.Color_NachoSwipeEmailDefer);
 
         protected const int SWIPE_TAG = 99100;
         protected const int USER_IMAGE_TAG = 99101;
@@ -65,13 +61,13 @@ namespace NachoClient.iOS
         protected CGPoint? expectedScrollEndOffset;
         protected int cardIndexAtScrollStart;
 
-        public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
+        public HotListTableViewSource (MessageTableViewSourceDelegate owner, NachoEmailMessages messageThreads)
         {
             this.owner = owner;
             this.messageThreads = messageThreads;
         }
 
-        public void SetMessageThreads(INachoEmailMessages messageThreads)
+        public void SetMessageThreads(NachoEmailMessages messageThreads)
         {
             this.messageThreads = messageThreads;
         }
@@ -166,7 +162,6 @@ namespace NachoClient.iOS
             view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
-            view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
 
             view.ContentMode = UIViewContentMode.Center;
 
@@ -372,9 +367,6 @@ namespace NachoClient.iOS
                 case SAVE_TAG:
                     onSaveButtonClicked (messageThread);
                     break;
-                case DEFER_TAG:
-                    onDeferButtonClicked (messageThread);
-                    break;
                 case ARCHIVE_TAG:
                     onArchiveButtonClicked (messageThread);
                     break;
@@ -460,14 +452,8 @@ namespace NachoClient.iOS
             // Reminder image view and label
             var reminderImageView = view.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = view.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            if (message.HasDueDate () || message.IsDeferred ()) {
-                reminderImageView.Hidden = false;
-                reminderLabelView.Hidden = false;
-                reminderLabelView.Text = Pretty.ReminderText (message);
-            } else {
-                reminderImageView.Hidden = true;
-                reminderLabelView.Hidden = true;
-            }
+            reminderImageView.Hidden = true;
+            reminderLabelView.Hidden = true;
 
             var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
             previewView.Frame = PreviewFrame (cell);
@@ -540,20 +526,10 @@ namespace NachoClient.iOS
 
         private void DeferredClicked (object sender)
         {
-            var deferred = new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id);
-            var nowViewController = owner as NachoNowViewController;
-            if (nowViewController != null) {
-                nowViewController.ShowMessages (deferred);
-            }
         }
 
         private void DeadlinesClicked (object sender)
         {
-            var deadlines = new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id);
-            var nowViewController = owner as NachoNowViewController;
-            if (nowViewController != null) {
-                nowViewController.ShowMessages (deadlines);
-            }
         }
 
         /// INachoFolderChooserParent delegate
@@ -586,14 +562,6 @@ namespace NachoClient.iOS
                 return;
             }
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (messageThread);
-        }
-
-        void onDeferButtonClicked (McEmailMessageThread messageThread)
-        {
-            if (null == messageThread) {
-                return;
-            }
-            owner.DeferThread (messageThread);
         }
 
         void onSaveButtonClicked (McEmailMessageThread messageThread)

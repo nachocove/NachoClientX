@@ -53,7 +53,7 @@ namespace NachoClient.AndroidClient
 
         protected CurrentTab state;
 
-        public INachoEmailMessages messages;
+        public NachoEmailMessages messages;
 
         public override void OnCreate (Bundle savedInstanceState)
         {

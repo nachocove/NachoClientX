@@ -27,6 +27,8 @@ namespace NachoClient.iOS
 
         public FoldersViewController () : base ()
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         public FoldersViewController (IntPtr handle) : base (handle)
@@ -161,12 +163,6 @@ namespace NachoClient.iOS
             case McFolder.LTR_FAKE_FOLDER_ID:
                 ShowLikelyToRead ();
                 return;
-            case McFolder.DEFERRED_FAKE_FOLDER_ID:
-                ShowDeferred ();
-                return;
-            case McFolder.DEADLINE_FAKE_FOLDER_ID:
-                ShowDeadlines ();
-                return;
             }
 
             folder.UpdateSet_LastAccessed (DateTime.UtcNow);
@@ -189,32 +185,24 @@ namespace NachoClient.iOS
 
         void ShowHotList ()
         {
-            var viewController = new HotListViewController ();
-            NavigationController.PushViewController (viewController, true);
-        }
-
-        void ShowDeferred ()
-        {
-            var viewController = new DeferredViewController ();
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
             NavigationController.PushViewController (viewController, true);
         }
 
         void ShowLikelyToRead ()
         {
-            var viewController = new LikelyToReadViewController ();
-            NavigationController.PushViewController (viewController, true);
-        }
-
-        void ShowDeadlines ()
-        {
-            var viewController = new DeadlinesViewController ();
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.LikelyToReadInbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
             NavigationController.PushViewController (viewController, true);
         }
 
         void ShowDrafts (McFolder folder)
         {
             var draftsList = new NachoDraftMessages (folder);
-            var draftsListViewController = new DraftsViewController ();
+            var draftsListViewController = new MessageListViewController ();
             draftsListViewController.SetEmailMessages (draftsList);
             NavigationController.PushViewController (draftsListViewController, true);
         }
@@ -222,7 +210,7 @@ namespace NachoClient.iOS
         void ShowMessages (McFolder folder)
         {
             var viewController = new MessageListViewController ();
-            var messageList = new NachoEmailMessages (folder);
+            var messageList = new NachoFolderMessages (folder);
             viewController.SetEmailMessages (messageList);
             NavigationController.PushViewController (viewController, true);
         }

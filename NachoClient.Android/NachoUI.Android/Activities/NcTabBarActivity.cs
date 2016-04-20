@@ -205,20 +205,6 @@ namespace NachoClient.AndroidClient
                     StartActivity (intent);
                 }
                 break;
-            case Resource.Id.go_to_deferred:
-                {
-                    var folder = McFolder.GetDeferredFakeFolder ();
-                    var intent = DeferredActivity.ShowDeferredFolderIntent (this, folder);
-                    StartActivity (intent); 
-                }
-                break;
-            case Resource.Id.go_to_deadlines:
-                {
-                    var folder = McFolder.GetDeadlineFakeFolder ();
-                    var intent = DeadlineActivity.ShowDeadlineFolderIntent (this, folder);
-                    StartActivity (intent);
-                }
-                break;
             }
         }
 

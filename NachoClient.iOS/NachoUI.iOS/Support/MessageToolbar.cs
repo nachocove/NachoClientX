@@ -23,25 +23,33 @@ namespace NachoClient.iOS
     {
         public enum ActionType
         {
+            QUICK_REPLY,
             REPLY,
             REPLY_ALL,
             FORWARD,
+            MOVE,
             ARCHIVE,
-            DELETE}
-
-        ;
+            DELETE
+        };
 
         public EventHandler OnClick;
 
+        protected UIBarButtonItem quickReplyButton;
         protected UIBarButtonItem replyButton;
         protected UIBarButtonItem replyAllButton;
         protected UIBarButtonItem forwardButton;
+        protected UIBarButtonItem moveButton;
         protected UIBarButtonItem archiveButton;
         protected UIBarButtonItem deleteButton;
         protected UIBarButtonItem flexibleSpace;
         protected UIBarButtonItem fixedSpace;
 
         static UIColor BUTTON_COLOR = A.Color_NachoGreen;
+
+        private void QuickReplyButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.QUICK_REPLY));
+        }
 
         private void ReplyButtonClicked (object sender, EventArgs e)
         {
@@ -56,6 +64,11 @@ namespace NachoClient.iOS
         private void ForwardButtonClicked (object sender, EventArgs e)
         {
             OnClick (sender, new MessageToolbarEventArgs (ActionType.FORWARD));
+        }
+
+        private void MoveButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.MOVE));
         }
 
         private void ArchiveButtonClicked (object sender, EventArgs e)
@@ -76,6 +89,12 @@ namespace NachoClient.iOS
             Translucent = false;
             BarTintColor = UIColor.White;
 
+            quickReplyButton = new NcUIBarButtonItem ();
+            quickReplyButton.TintColor = BUTTON_COLOR;
+            Util.SetAutomaticImageForButton (quickReplyButton, "contact-quickemail");
+            quickReplyButton.AccessibilityLabel = "Quick Reply";
+            quickReplyButton.Clicked += QuickReplyButtonClicked;
+
             replyButton = new NcUIBarButtonItem ();
             replyButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
@@ -93,6 +112,12 @@ namespace NachoClient.iOS
             Util.SetAutomaticImageForButton (forwardButton, "toolbar-icn-fwd");
             forwardButton.AccessibilityLabel = "Forward";
             forwardButton.Clicked += ForwardButtonClicked;
+
+            moveButton = new NcUIBarButtonItem ();
+            moveButton.TintColor = BUTTON_COLOR;
+            Util.SetAutomaticImageForButton (moveButton, "email-move-swipe");
+            moveButton.AccessibilityLabel = "Move";
+            moveButton.Clicked += MoveButtonClicked;
 
             archiveButton = new NcUIBarButtonItem ();
             archiveButton.TintColor = BUTTON_COLOR;
@@ -112,12 +137,16 @@ namespace NachoClient.iOS
             deleteButton.Clicked += DeleteButtonClicked;
 
             SetItems (new UIBarButtonItem[] {
+                quickReplyButton,
+                fixedSpace,
                 replyButton,
                 fixedSpace,
                 replyAllButton,
                 fixedSpace,
                 forwardButton,
                 flexibleSpace,
+                moveButton,
+                fixedSpace,
                 archiveButton,
                 fixedSpace,
                 deleteButton
@@ -126,15 +155,19 @@ namespace NachoClient.iOS
 
         public void Cleanup ()
         {
+            quickReplyButton.Clicked -= QuickReplyButtonClicked;
             replyButton.Clicked -= ReplyButtonClicked;
             replyAllButton.Clicked -= ReplyAllButtonClicked;
             forwardButton.Clicked -= ForwardButtonClicked;
+            moveButton.Clicked -= MoveButtonClicked;
             archiveButton.Clicked -= ArchiveButtonClicked;
             deleteButton.Clicked -= DeleteButtonClicked;
 
+            quickReplyButton = null;
             replyButton = null;
             replyAllButton = null;
             forwardButton = null;
+            moveButton = null;
             archiveButton = null;
             deleteButton = null;
         }
