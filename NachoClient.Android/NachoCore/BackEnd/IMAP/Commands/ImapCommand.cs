@@ -17,6 +17,7 @@ using NachoClient.Build;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using NachoPlatform;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -546,7 +547,7 @@ namespace NachoCore.IMAP
         /// <param name="outCharSet">Output Char set (default "utf-8").</param>
         protected void CopyFilteredStream (Stream inStream, Stream outStream,
                                            string inCharSet, string TransferEncoding, Action<Stream, Stream, CancellationToken> func,
-                                           string outCharSet = "utf-8", CancellationToken Token)
+                                           string outCharSet, CancellationToken token)
         {
             using (var filtered = new FilteredStream (outStream)) {
                 filtered.Add (DecoderFilter.Create (TransferEncoding));
@@ -563,7 +564,7 @@ namespace NachoCore.IMAP
                         // continue without the filter
                     }
                 }
-                func (inStream, filtered, Token);
+                func (inStream, filtered, token);
             }
         }
 

@@ -285,7 +285,7 @@ namespace NachoCore.IMAP
                                 }
                                 // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
                                 // to the proper place and remove the headers while we're doing so.
-                                CopyFilteredStream (st, bodyFile, basic.ContentType.Charset, TransferEncoding, CopyBodyWithoutHeaderAction, Cts.Token);
+                                CopyFilteredStream (st, bodyFile, basic.ContentType.Charset, TransferEncoding, CopyBodyWithoutHeaderAction, "utf-8", Cts.Token);
                                 break;
                             }
                         }
