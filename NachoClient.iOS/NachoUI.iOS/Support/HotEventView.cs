@@ -50,6 +50,7 @@ namespace NachoClient.iOS
             ContentInsets = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 10.0f);
 
             SwipeView = new SwipeActionsView (Bounds);
+            SwipeView.BackgroundColor = UIColor.White;
             SwipeView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
 
             AddSubview (SwipeView);
@@ -91,7 +92,7 @@ namespace NachoClient.iOS
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
-            ContentView.AddGestureRecognizer (new UITapGestureRecognizer (Tap));
+            AddGestureRecognizer (new UITapGestureRecognizer (Tap));
         }
 
         void Tap ()

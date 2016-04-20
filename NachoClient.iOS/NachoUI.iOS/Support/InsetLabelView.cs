@@ -23,6 +23,12 @@ namespace NachoClient.iOS
             base.LayoutSubviews ();
             Label.Frame = new CGRect (LabelInsets.Left, LabelInsets.Top, Bounds.Width - LabelInsets.Left - LabelInsets.Right, Bounds.Height - LabelInsets.Top - LabelInsets.Bottom);
         }
+
+        public nfloat PreferredHeight {
+            get {
+                return Label.Font.RoundedLineHeight (1.0f) + LabelInsets.Top + LabelInsets.Bottom;
+            }
+        }
     }
 }
 
