@@ -15,6 +15,9 @@ namespace NachoClient.iOS
 
         protected nfloat keyboardHeight;
 
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
+
         public NcUIViewController () : base ()
         {
             Initialize ();
@@ -39,8 +42,8 @@ namespace NachoClient.iOS
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+                KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
             base.ViewWillAppear (animated);
         }
@@ -59,8 +62,8 @@ namespace NachoClient.iOS
                 ViewDisappearing (this, EventArgs.Empty);
             }
             if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
             }
             if (ShouldEndEditing) {
                 View.EndEditing (true);

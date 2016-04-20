@@ -13,10 +13,10 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoFolderChooserParent, INachoCalendarItemEditorParent, INachoDateControllerParent
+    public partial class NachoNowViewController : NcUIViewController, MessageTableViewSourceDelegate, INachoFolderChooserParent
     {
         protected bool priorityInboxNeedsRefresh;
-        protected INachoEmailMessages priorityInbox;
+        protected NachoEmailMessages priorityInbox;
         protected HotListTableViewSource hotListSource;
 
         protected UITableView hotListView;
@@ -311,9 +311,9 @@ namespace NachoClient.iOS
         {
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (calendarEvent);
-            vc.SetOwner (this);
-            skipNextLayout = vc.HidesBottomBarWhenPushed;
-            NavigationController.PushViewController (vc, true);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -479,7 +479,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void ShowMessages (INachoEmailMessages messages)
+        public void ShowMessages (NachoEmailMessages messages)
         {
             var messageListViewController = new MessageListViewController ();
             messageListViewController.SetEmailMessages (messages);
@@ -496,30 +496,13 @@ namespace NachoClient.iOS
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
+        public void MultiSelectChange (MessageTableViewSource source, int count, bool multipleAccounts)
         {
-        }
-
-        public void DeferThread (McEmailMessageThread thread)
-        {
-            var priorityViewController = new MessagePriorityViewController ();
-            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-            PresentViewController (priorityViewController, true, null);
-        }
-
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (false, null);
         }
 
         /// <summary>
@@ -539,15 +522,6 @@ namespace NachoClient.iOS
             var messageThread = (McEmailMessageThread)cookie;
             NcEmailArchiver.Move (messageThread, folder);
             vc.DismissFolderChooser (true, null);
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (false, null);
         }
 
         private void ComposeMessage ()

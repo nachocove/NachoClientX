@@ -3,13 +3,19 @@
 using System;
 using UIKit;
 using Foundation;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
     public class NcKeyboardSpy
     {
+
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
+
         public bool keyboardShowing;
         public nfloat keyboardHeight;
+        CGRect keyboardFrame;
 
         /// <summary>
         /// All view controllers, except for UITableViewControllers, are responsible
@@ -40,14 +46,24 @@ namespace NachoClient.iOS
 
         public void Init ()
         {
-            NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-            NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+            KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
         }
 
         public void Cleanup ()
         {
-            NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
+        }
+
+        public nfloat KeyboardHeightInView (UIView view)
+        {
+            if (view.Window != null) {
+                var keyboardFrameInWindow = view.Window.ConvertRectFromWindow (keyboardFrame, null);
+                var keyboardFrameInView = view.ConvertRectFromView (keyboardFrameInWindow, view.Window);
+                return view.Frame.Height - keyboardFrameInView.Top;
+            }
+            return 0.0f;
         }
 
         private void OnKeyboardNotification (NSNotification notification)
@@ -57,10 +73,12 @@ namespace NachoClient.iOS
 
             var orientation = UIApplication.SharedApplication.StatusBarOrientation;
             bool landscape = (orientation == UIInterfaceOrientation.LandscapeLeft) || (orientation == UIInterfaceOrientation.LandscapeRight);
+            keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
             if (keyboardVisible) {
-                var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                keyboardShowing = true;
                 keyboardHeight = (landscape ? keyboardFrame.Width : keyboardFrame.Height);
             } else {
+                keyboardShowing = false;
                 keyboardHeight = 0;
             }
         }

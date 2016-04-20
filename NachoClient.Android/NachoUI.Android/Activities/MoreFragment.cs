@@ -103,17 +103,11 @@ namespace NachoClient.AndroidClient
         }
 
         void DeadlineView_Click (object sender, EventArgs e)
-        {
-            var folder = McFolder.GetDeadlineFakeFolder ();
-            var intent = DeadlineActivity.ShowDeadlineFolderIntent (this.Activity, folder);
-            StartActivity (intent);  
+        { 
         }
 
         void DeferredView_Click (object sender, EventArgs e)
         {
-            var folder = McFolder.GetDeferredFakeFolder ();
-            var intent = DeferredActivity.ShowDeferredFolderIntent (this.Activity, folder);
-            StartActivity (intent); 
         }
 
         void FolderView_Click (object sender, EventArgs e)
@@ -139,8 +133,6 @@ namespace NachoClient.AndroidClient
 
         static public List<Type> moreTabActivities = new List<Type> () {
             typeof(AboutActivity),
-            typeof(DeadlineActivity),
-            typeof(DeferredActivity),
             typeof(FoldersActivity),
             typeof(FileListActivity),
             typeof(SettingsActivity),

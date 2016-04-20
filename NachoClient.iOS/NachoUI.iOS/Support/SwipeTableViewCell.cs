@@ -384,10 +384,10 @@ namespace NachoClient.iOS
         CALayer GroupedSeparator;
         CALayer GroupedTopBorder;
         CALayer GroupedBottomBorder;
-        GroupedTableCornerLayer GroupedTopLeftCorner;
-        GroupedTableCornerLayer GroupedTopRightCorner;
-        GroupedTableCornerLayer GroupedBottomLeftCorner;
-        GroupedTableCornerLayer GroupedBottomRightCorner;
+        CornerLayer GroupedTopLeftCorner;
+        CornerLayer GroupedTopRightCorner;
+        CornerLayer GroupedBottomLeftCorner;
+        CornerLayer GroupedBottomRightCorner;
 
         protected void ConfigureBordersForGroupPosition (GroupPosition position, UIColor tableBackgroundColor)
         {
@@ -474,20 +474,20 @@ namespace NachoClient.iOS
 
             if (roundTopCorners) {
                 if (GroupedTopLeftCorner == null) {
-                    GroupedTopLeftCorner = new GroupedTableCornerLayer ();
+                    GroupedTopLeftCorner = new CornerLayer ();
                     GroupedTopLeftCorner.ContentsScale = scale;
-                    GroupedTopLeftCorner.CellBorderColor = borderColor.CGColor;
-                    GroupedTopLeftCorner.TableBackgroundColor = tableBackgroundColor.CGColor;
-                    GroupedTopLeftCorner.CellBorderWidth = GroupBorderWidth;
+                    GroupedTopLeftCorner.CornerBorderColor = borderColor.CGColor;
+                    GroupedTopLeftCorner.CornerBackgroundColor = tableBackgroundColor.CGColor;
+                    GroupedTopLeftCorner.CornerBorderWidth = GroupBorderWidth;
                     GroupedTopLeftCorner.Frame = new CGRect (0.0f, 0.0f, GroupCornerRadius, GroupCornerRadius);
                 }
                 if (GroupedTopRightCorner == null) {
-                    GroupedTopRightCorner = new GroupedTableCornerLayer ();
+                    GroupedTopRightCorner = new CornerLayer ();
                     GroupedTopRightCorner.ContentsScale = scale;
                     GroupedTopRightCorner.AffineTransform = CGAffineTransform.MakeScale (-1.0f, 1.0f);
-                    GroupedTopRightCorner.CellBorderColor = borderColor.CGColor;
-                    GroupedTopRightCorner.TableBackgroundColor = tableBackgroundColor.CGColor;
-                    GroupedTopRightCorner.CellBorderWidth = GroupBorderWidth;
+                    GroupedTopRightCorner.CornerBorderColor = borderColor.CGColor;
+                    GroupedTopRightCorner.CornerBackgroundColor = tableBackgroundColor.CGColor;
+                    GroupedTopRightCorner.CornerBorderWidth = GroupBorderWidth;
                     GroupedTopRightCorner.Frame = new CGRect (0.0f, 0.0f, GroupCornerRadius, GroupCornerRadius);
                 }
                 if (GroupedTopLeftCorner.SuperLayer == null) {
@@ -507,21 +507,21 @@ namespace NachoClient.iOS
 
             if (roundBottomCorners) {
                 if (GroupedBottomLeftCorner == null) {
-                    GroupedBottomLeftCorner = new GroupedTableCornerLayer ();
+                    GroupedBottomLeftCorner = new CornerLayer ();
                     GroupedBottomLeftCorner.ContentsScale = scale;
                     GroupedBottomLeftCorner.AffineTransform = CGAffineTransform.MakeScale (1.0f, -1.0f);
-                    GroupedBottomLeftCorner.CellBorderColor = borderColor.CGColor;
-                    GroupedBottomLeftCorner.TableBackgroundColor = tableBackgroundColor.CGColor;
-                    GroupedBottomLeftCorner.CellBorderWidth = GroupBorderWidth;
+                    GroupedBottomLeftCorner.CornerBorderColor = borderColor.CGColor;
+                    GroupedBottomLeftCorner.CornerBackgroundColor = tableBackgroundColor.CGColor;
+                    GroupedBottomLeftCorner.CornerBorderWidth = GroupBorderWidth;
                     GroupedBottomLeftCorner.Frame = new CGRect (0.0f, 0.0f, GroupCornerRadius, GroupCornerRadius);
                 }
                 if (GroupedBottomRightCorner == null) {
-                    GroupedBottomRightCorner = new GroupedTableCornerLayer ();
+                    GroupedBottomRightCorner = new CornerLayer ();
                     GroupedBottomRightCorner.ContentsScale = scale;
                     GroupedBottomRightCorner.AffineTransform = CGAffineTransform.MakeScale (-1.0f, -1.0f);
-                    GroupedBottomRightCorner.CellBorderColor = borderColor.CGColor;
-                    GroupedBottomRightCorner.TableBackgroundColor = tableBackgroundColor.CGColor;
-                    GroupedBottomRightCorner.CellBorderWidth = GroupBorderWidth;
+                    GroupedBottomRightCorner.CornerBorderColor = borderColor.CGColor;
+                    GroupedBottomRightCorner.CornerBackgroundColor = tableBackgroundColor.CGColor;
+                    GroupedBottomRightCorner.CornerBorderWidth = GroupBorderWidth;
                     GroupedBottomRightCorner.Frame = new CGRect (0.0f, 0.0f, GroupCornerRadius, GroupCornerRadius);
                 }
                 if (GroupedBottomLeftCorner.SuperLayer == null) {
@@ -570,25 +570,29 @@ namespace NachoClient.iOS
 
         public override void SetHighlighted (bool highlighted, bool animated)
         {
-            if (highlighted) {
-                PreserveBackgroundColors ();
-            }
-            base.SetHighlighted (highlighted, animated);
-            if (highlighted) {
-                RestoreBackgroundColors ();
-                PreserveBackgroundColors ();
-            }
-            if (animated) {
-                UIView.BeginAnimations (null);
-                UIView.SetAnimationDuration (0.25f);
-            }
-            if (highlighted) {
-                ShowSelectedBackgroundColor ();
+            if (Selected) {
+                base.SetHighlighted (highlighted, animated);
             } else {
-                RestoreBackgroundColors ();
-            }
-            if (animated) {
-                UIView.CommitAnimations ();
+                if (highlighted) {
+                    PreserveBackgroundColors ();
+                }
+                base.SetHighlighted (highlighted, animated);
+                if (highlighted) {
+                    RestoreBackgroundColors ();
+                    PreserveBackgroundColors ();
+                }
+                if (animated) {
+                    UIView.BeginAnimations (null);
+                    UIView.SetAnimationDuration (0.25f);
+                }
+                if (highlighted) {
+                    ShowSelectedBackgroundColor ();
+                } else {
+                    RestoreBackgroundColors ();
+                }
+                if (animated) {
+                    UIView.CommitAnimations ();
+                }
             }
         }
 
@@ -689,78 +693,6 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region Private Helper Classes
-
-        private class GroupedTableCornerLayer : CALayer
-        {
-
-            private CGColor _TableBackgroundColor;
-            private CGColor _CellBorderColor;
-            private nfloat _CellBorderWidth = 0.0f;
-
-            public CGColor TableBackgroundColor {
-                get {
-                    return _TableBackgroundColor;
-                }
-                set {
-                    _TableBackgroundColor = value;
-                    SetNeedsDisplay ();
-                }
-            }
-
-            public CGColor CellBorderColor {
-                get {
-                    return _CellBorderColor;
-                }
-                set {
-                    _CellBorderColor = value;
-                    SetNeedsDisplay ();
-                }
-            }
-
-            public nfloat CellBorderWidth {
-                get {
-                    return _CellBorderWidth;
-                }
-                set {
-                    _CellBorderWidth = value;
-                    SetNeedsDisplay ();
-                }
-            }
-
-            public GroupedTableCornerLayer () : base ()
-            {
-                NeedsDisplayOnBoundsChange = true;
-            }
-
-            public override void DrawInContext (CGContext ctx)
-            {
-                var curveWidth = Bounds.Width - _CellBorderWidth / 2.0f;
-                var curveHeight = Bounds.Height - _CellBorderWidth / 2.0f;
-                var ellipseMagic = 0.5519f;
-                ctx.SaveState ();
-                ctx.ClearRect (Bounds);
-                ctx.SetFillColor (TableBackgroundColor);
-                ctx.SetStrokeColor (CellBorderColor);
-                ctx.SetLineWidth (_CellBorderWidth);
-                ctx.BeginPath ();
-                ctx.MoveTo (0.0f, 0.0f);
-                ctx.AddLineToPoint (0.0f, Bounds.Height);
-                ctx.AddLineToPoint (_CellBorderWidth / 2.0f, Bounds.Height);
-                ctx.AddCurveToPoint (_CellBorderWidth, _CellBorderWidth + curveHeight * (1.0f - ellipseMagic), _CellBorderWidth + curveWidth * (1.0f - ellipseMagic), _CellBorderWidth, Bounds.Width, _CellBorderWidth / 2.0f);
-                ctx.AddLineToPoint (Bounds.Width, 0.0f);
-                ctx.ClosePath ();
-                ctx.FillPath ();
-                ctx.BeginPath ();
-                ctx.MoveTo (_CellBorderWidth / 2.0f, Bounds.Height);
-                ctx.AddCurveToPoint (_CellBorderWidth, _CellBorderWidth + curveHeight * (1.0f - ellipseMagic), _CellBorderWidth + curveWidth * (1.0f - ellipseMagic), _CellBorderWidth, Bounds.Width, _CellBorderWidth / 2.0f);
-                ctx.StrokePath ();
-                ctx.RestoreState ();
-            }
-
-        }
-
-        #endregion
     }
 }
 

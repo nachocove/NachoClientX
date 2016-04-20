@@ -8,7 +8,7 @@ using NachoCore.Index;
 
 namespace NachoCore.Utils
 {
-    public class EmailSearch : NachoEmailMessagesBase, INachoEmailMessages
+    public class EmailSearch : NachoEmailMessages
     {
         public delegate void UpdateUiAction (string searchString, List<McEmailMessageThread> results);
 

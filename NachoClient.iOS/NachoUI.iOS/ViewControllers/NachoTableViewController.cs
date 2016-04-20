@@ -15,12 +15,12 @@ namespace NachoClient.iOS
     public partial class NachoTableViewController : UITableViewController, SwipeTableViewDelegate, IUIScrollViewDelegate
     {
         
-        NSIndexPath SwipingIndexPath;
-        NcActivityIndicatorView RefreshIndicator;
-        UILabel RefreshLabel;
+        protected NSIndexPath SwipingIndexPath { get ; private set; }
+        protected NcActivityIndicatorView RefreshIndicator { get ; private set; }
+        protected UILabel RefreshLabel { get; private set; }
         protected nfloat RefreshIndicatorSize = 40.0f;
         protected nfloat GroupedCellInset = 10.0f;
-        bool IsShowingRefreshIndicator;
+        protected bool IsShowingRefreshIndicator { get ; private set; }
         UITableViewStyle TableStyle;
         string ClassName;
 
@@ -74,7 +74,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        void EnableRefreshControl ()
+        protected void EnableRefreshControl ()
         {
             RefreshControl = new UIRefreshControl ();
             RefreshControl.AttributedTitle = new NSAttributedString ("test");
@@ -101,22 +101,23 @@ namespace NachoClient.iOS
             RefreshControl.AddSubview (refreshOverlay);
         }
 
-        void EndRefreshing ()
+        protected void EndRefreshing ()
         {
-            RefreshIndicator.StopAnimating ();
-            RefreshControl.EndRefreshing ();
+            if (RefreshControl != null) {
+                if (RefreshIndicator.IsAnimating) {
+                    RefreshIndicator.StopAnimating ();
+                }
+                if (RefreshControl.Refreshing) {
+                    RefreshControl.EndRefreshing ();
+                }
+            }
         }
 
-        void HandleRefreshControlEvent (object sender, EventArgs e)
-        {
-            Refresh ();
-        }
-
-        protected void Refresh ()
+        protected virtual void HandleRefreshControlEvent (object sender, EventArgs e)
         {
         }
 
-        void EndSwiping ()
+        protected virtual void EndSwiping ()
         {
             if (SwipingIndexPath != null) {
                 var cell = TableView.CellAt (SwipingIndexPath) as SwipeTableViewCell;
@@ -143,16 +144,24 @@ namespace NachoClient.iOS
         {
             if (RefreshControl != null) {
                 var distancePulled = (nfloat)Math.Max (0, -RefreshControl.Frame.Y);
-                if (distancePulled > 0.0f) {
+                if (distancePulled >= 1.0f) {
+                    if (!IsShowingRefreshIndicator) {
+                        PrepareRefreshIndicator ();
+                    }
                     UpdateRefreshIndicatorForPosition (distancePulled);
                     IsShowingRefreshIndicator = true;
                 } else {
                     if (IsShowingRefreshIndicator) {
+                        UpdateRefreshIndicatorForPosition (0.0f);
                         ClearRefreshIndicator ();
                         IsShowingRefreshIndicator = false;
                     }
                 }
             }
+        }
+
+        protected virtual void PrepareRefreshIndicator()
+        {
         }
 
         void UpdateRefreshIndicatorForPosition (nfloat distancePulled)
@@ -200,13 +209,16 @@ namespace NachoClient.iOS
             }
         }
 
-        public void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
+        public virtual void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
         {
-            EndSwiping ();
+
+            if (SwipingIndexPath != null) {
+                EndSwiping ();
+            }
             SwipingIndexPath = indexPath;
         }
 
-        public void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
+        public virtual void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
         {
             if (indexPath.IsEqual (SwipingIndexPath)) {
                 SwipingIndexPath = null;
