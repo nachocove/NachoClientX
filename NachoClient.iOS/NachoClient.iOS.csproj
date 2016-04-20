@@ -1676,6 +1676,12 @@
     <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
     <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

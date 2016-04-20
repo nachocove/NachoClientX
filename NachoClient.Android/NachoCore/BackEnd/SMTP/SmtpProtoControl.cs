@@ -9,7 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.SMTP
 {
-    public class SmtpProtoControl : NcProtoControl, IBEContext
+    public partial class SmtpProtoControl : NcProtoControl, IBEContext
     {
         private const int KDiscoveryMaxRetries = 5;
 

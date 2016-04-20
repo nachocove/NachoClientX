@@ -16,13 +16,13 @@ namespace NachoCore.ActiveSync
     {
         
         protected override NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
-                                      int folderId, bool originalEmailIsEmbedded)
+            int folderId, bool originalEmailIsEmbedded, bool markAnswered = false)
         {
             Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4})", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
             if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return SendEmailCmd (newEmailMessageId);
             }
-            return base.SmartEmailCmd (Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
+            return base.SmartEmailCmd (Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, markAnswered);
         }
 
         public override NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 

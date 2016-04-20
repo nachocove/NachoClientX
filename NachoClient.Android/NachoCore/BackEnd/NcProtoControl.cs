@@ -611,7 +611,7 @@ namespace NachoCore
         }
 
         protected virtual NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
-            int folderId, bool originalEmailIsEmbedded)
+            int folderId, bool originalEmailIsEmbedded, bool markAnswered = false)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McFolder folder;
@@ -634,6 +634,9 @@ namespace NachoCore
                     Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
                 };
                 pending.Insert ();
+                if (markAnswered) {
+                    MarkEmailAnswered(pending, true);
+                }
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
@@ -647,16 +650,19 @@ namespace NachoCore
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
-            return SmartEmailCmd (McPending.Operations.EmailReply,
-                newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
+            return SmartEmailCmd (McPending.Operations.EmailReply, newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded, true);
         }
 
         public virtual NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-            return SmartEmailCmd (McPending.Operations.EmailForward,
-                newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+            return SmartEmailCmd (McPending.Operations.EmailForward, newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+        }
+
+        public virtual NcResult MarkEmailAnswered (McPending pending, bool answered)
+        {
+            return NcResult.OK ();
         }
 
         /// <summary>
