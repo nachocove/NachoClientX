@@ -29,7 +29,7 @@ namespace NachoClient.iOS
         {
 
             var nowNavController = new UINavigationController (new NachoNowViewController ());
-            nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-nachonow");
+            nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
             var inboxNavController = new UINavigationController (new InboxViewController ());
             inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");

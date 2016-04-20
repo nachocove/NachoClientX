@@ -2715,6 +2715,12 @@
     <BundleResource Include="Resources\email-filter-unread.png" />
     <BundleResource Include="Resources\email-filter-unread%402x.png" />
     <BundleResource Include="Resources\email-filter-unread%403x.png" />
+    <BundleResource Include="Resources\nav-hot-active.png" />
+    <BundleResource Include="Resources\nav-hot-active%402x.png" />
+    <BundleResource Include="Resources\nav-hot-active%403x.png" />
+    <BundleResource Include="Resources\nav-hot.png" />
+    <BundleResource Include="Resources\nav-hot%402x.png" />
+    <BundleResource Include="Resources\nav-hot%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
