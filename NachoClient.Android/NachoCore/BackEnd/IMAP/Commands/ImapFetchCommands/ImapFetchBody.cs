@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 using System.Threading;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
