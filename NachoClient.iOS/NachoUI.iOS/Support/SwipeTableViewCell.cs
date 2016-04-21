@@ -237,22 +237,22 @@ namespace NachoClient.iOS
             combinedTextLabelRect.Width = ContentView.Bounds.Width - combinedTextLabelRect.X;
             combinedTextLabelRect.Height = 0.0f;
             if (_DetailTextLabel != null) {
-                combinedTextLabelRect.Height += _DetailTextLabel.Font.RoundedLineHeight (Window.Screen.Scale) + DetailTextSpacing;
+                combinedTextLabelRect.Height += _DetailTextLabel.Font.RoundedLineHeight (1.0f) + DetailTextSpacing;
             }
             if (_TextLabel != null) {
-                combinedTextLabelRect.Height += _TextLabel.Font.RoundedLineHeight (Window.Screen.Scale);
+                combinedTextLabelRect.Height += _TextLabel.Font.RoundedLineHeight (1.0f);
             }
             combinedTextLabelRect.Y = (ContentView.Bounds.Height - combinedTextLabelRect.Height) / 2.0f;
             // TextLabel
             if (_TextLabel != null) {
                 frame = combinedTextLabelRect.Inset (0.0f, 0.0f);
-                frame.Height = _TextLabel.Font.RoundedLineHeight (Window.Screen.Scale);
+                frame.Height = _TextLabel.Font.RoundedLineHeight (1.0f);
                 _TextLabel.Frame = frame;
             }
             // DetailTextLabel
             if (_DetailTextLabel != null) {
                 frame = combinedTextLabelRect.Inset (0.0f, 0.0f);
-                frame.Height = _DetailTextLabel.Font.RoundedLineHeight (Window.Screen.Scale);
+                frame.Height = _DetailTextLabel.Font.RoundedLineHeight (1.0f);
                 frame.Y = combinedTextLabelRect.Y + combinedTextLabelRect.Height - frame.Height;
                 _DetailTextLabel.Frame = frame;
             }
@@ -399,7 +399,7 @@ namespace NachoClient.iOS
             if (separatorColor == null) {
                 separatorColor = ContentView.BackgroundColor.ColorDarkenedByAmount (0.2f);
             }
-            nfloat scale = Window.Screen.Scale;
+            nfloat scale = Window != null ? Window.Screen.Scale : 1.0f;
             if (GroupedLeftBorder == null) {
                 GroupedLeftBorder = new CALayer ();
                 GroupedLeftBorder.Bounds = new CGRect (0.0f, 0.0f, GroupBorderWidth, GroupBorderWidth);

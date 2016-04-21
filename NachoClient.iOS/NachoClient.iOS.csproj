@@ -722,7 +722,6 @@
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\A.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
@@ -982,7 +981,6 @@
       <Link>NachoCore\Index\IndexDocument.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
-    <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
@@ -1666,6 +1664,9 @@
     <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageCell.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessagesSyncManager.cs">
+      <Link>NachoCore\Utils\MessagesSyncManager.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2714,6 +2715,15 @@
     <BundleResource Include="Resources\email-filter-unread.png" />
     <BundleResource Include="Resources\email-filter-unread%402x.png" />
     <BundleResource Include="Resources\email-filter-unread%403x.png" />
+    <BundleResource Include="Resources\nav-hot-active.png" />
+    <BundleResource Include="Resources\nav-hot-active%402x.png" />
+    <BundleResource Include="Resources\nav-hot-active%403x.png" />
+    <BundleResource Include="Resources\nav-hot.png" />
+    <BundleResource Include="Resources\nav-hot%402x.png" />
+    <BundleResource Include="Resources\nav-hot%403x.png" />
+    <BundleResource Include="Resources\empty-hot.png" />
+    <BundleResource Include="Resources\empty-hot%402x.png" />
+    <BundleResource Include="Resources\empty-hot%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
