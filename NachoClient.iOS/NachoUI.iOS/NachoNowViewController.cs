@@ -277,7 +277,7 @@ namespace NachoClient.iOS
         {
             DateTime nextUpdateTime;
             HotEvent = CalendarHelper.CurrentOrNextEvent (out nextUpdateTime);
-            if (!HotEvent.IsValid ()) {
+            if (null != HotEvent && !HotEvent.IsValid ()) {
                 HotEvent = null;
             }
             HotEventView.Event = HotEvent;
