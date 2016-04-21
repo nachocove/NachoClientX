@@ -158,6 +158,7 @@ namespace NachoClient.iOS
         {
             SyncManager.PauseEvents ();
             StopListeningForStatusInd ();
+            HotEventView.CancelAutomaticDateUpdate ();
             if (CalendarUpdateTimer != null) {
                 CalendarUpdateTimer.Dispose ();
                 CalendarUpdateTimer = null;
@@ -289,7 +290,7 @@ namespace NachoClient.iOS
             if (CalendarUpdateTimer != null) {
                 CalendarUpdateTimer.Dispose ();
             }
-            CalendarUpdateTimer = new NcTimer ("HotEventView", CalendarUpdateTimerFired, null, timeUntilNextUpdate, TimeSpan.Zero);
+            CalendarUpdateTimer = new NcTimer ("NachoNow_UpdateHotEventView", CalendarUpdateTimerFired, null, timeUntilNextUpdate, TimeSpan.Zero);
         }
 
         void CalendarUpdateTimerFired (object state)

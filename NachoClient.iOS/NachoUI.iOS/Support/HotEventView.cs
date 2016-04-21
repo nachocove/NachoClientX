@@ -39,6 +39,7 @@ namespace NachoClient.iOS
         UILabel EmptyLabel;
         UIImageView IconView;
         nfloat IconSize = 16.0f;
+        NcTimer ChangeDateLabelTimer;
 
         private UIView ContentView {
             get {
@@ -97,6 +98,14 @@ namespace NachoClient.iOS
             AddGestureRecognizer (new UITapGestureRecognizer (Tap));
         }
 
+        public void CancelAutomaticDateUpdate ()
+        {
+            if (ChangeDateLabelTimer != null) {
+                ChangeDateLabelTimer.Dispose ();
+                ChangeDateLabelTimer = null;
+            }
+        }
+
         void Tap ()
         {
             if (Event != null) {
@@ -114,6 +123,10 @@ namespace NachoClient.iOS
             EmptyLabel.Hidden = enabled;
             SwipeView.Enabled = enabled;
 
+            if (ChangeDateLabelTimer != null) {
+                ChangeDateLabelTimer.Dispose ();
+            }
+
             if (Event != null) {
                 TitleLabel.Text = Pretty.SubjectString (Event.Subject);
                 DetailLabel.Text = Event.Location ?? "";
@@ -125,20 +138,25 @@ namespace NachoClient.iOS
                     iconColor = Util.CalendarColor (colorIndex);
                 }
                 IconView.TintColor = iconColor;
-
+                TimeSpan labelValidSpan = TimeSpan.FromSeconds(-2);
                 var start = Event.GetStartTimeUtc ();
                 if (Event.AllDayEvent) {
-                    DateLabel.Text = Pretty.LongFullDate (start);
+                    DateLabel.Text = Pretty.EventDay (start, out labelValidSpan);
                 } else {
-                    var diff = start - DateTime.UtcNow;
-                    if (diff.TotalHours < 12) {
-                        DateLabel.Text = Pretty.Time (start);
-                    } else {
-                        DateLabel.Text = Pretty.LongDayTime (start);
-                    }
+                    DateLabel.Text = Pretty.EventTime (start, out labelValidSpan);
+                }
+                // adjust by one second so we're always on the under side of a Ceiling operation
+                labelValidSpan = labelValidSpan + TimeSpan.FromSeconds (1);
+                if (labelValidSpan.TotalSeconds > 0.0) {
+                    ChangeDateLabelTimer = new NcTimer ("HotEventView_UpdateDateLabel", ChangeDateLabelTimerFired, null, labelValidSpan, TimeSpan.Zero);
                 }
             }
             SetNeedsLayout ();
+        }
+
+        void ChangeDateLabelTimerFired (object state)
+        {
+            BeginInvokeOnMainThread (Update);
         }
 
         public override void LayoutSubviews ()
