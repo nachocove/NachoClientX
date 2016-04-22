@@ -116,32 +116,32 @@ namespace Test.iOS
 
             TestFolder = resetFolder (TestFolder);
 
-            syncSet = ImapStrategy.QuickSyncSet (1, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (1, TestFolder, 10);
             Assert.Null (syncSet); // nothing to sync. empty folder.
 
             // completely new sync. 5 messages (5 less than span), nothing synced yet.
-            syncSet = ImapStrategy.QuickSyncSet (6, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (6, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (5, syncSet.Count);
             Assert.AreEqual (5, syncSet.Max ().Id);
             Assert.AreEqual (1, syncSet.Min ().Id);
 
             // completely new sync. 9 new messages (1 less than span), nothing synced yet.
-            syncSet = ImapStrategy.QuickSyncSet (10, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (10, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (9, syncSet.Count);
             Assert.AreEqual (9, syncSet.Max ().Id);
             Assert.AreEqual (1, syncSet.Min ().Id);
 
             // completely new sync. 10 new messages (== span), nothing synced yet.
-            syncSet = ImapStrategy.QuickSyncSet (11, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (11, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (10, syncSet.Count);
             Assert.AreEqual (10, syncSet.Max ().Id);
             Assert.AreEqual (1, syncSet.Min ().Id);
 
             // completely new sync. 15 new messages (5 more than span), nothing synced yet.
-            syncSet = ImapStrategy.QuickSyncSet (16, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (16, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (10, syncSet.Count);
             Assert.AreEqual (15, syncSet.Max ().Id);
@@ -151,7 +151,7 @@ namespace Test.iOS
             var syncKit = new SyncKit (TestFolder, new List<SyncInstruction> () { syncInst });
             TestFolder = DoFakeSync (TestFolder, syncKit);
             // Highest sync'd is 10. 1 new message.
-            syncSet = ImapStrategy.QuickSyncSet (12, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (12, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (1, syncSet.Count);
             Assert.AreEqual (11, syncSet.Max ().Id);
@@ -160,7 +160,7 @@ namespace Test.iOS
             // Highest sync'd is 10. 5 new messages, ImapLastUidSynced reset to UidNext
             TestFolder.ImapUidNext = TestFolder.ImapLastUidSynced = 16;
             TestFolder.ImapUidHighestUidSynced = 10;
-            syncSet = ImapStrategy.QuickSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (5, syncSet.Count);
             Assert.AreEqual (15, syncSet.Max ().Id);
@@ -169,7 +169,7 @@ namespace Test.iOS
             // Highest sync'd is 10. 20 new messages, ImapLastUidSynced reset to UidNext
             TestFolder.ImapUidNext = TestFolder.ImapLastUidSynced = 31;
             TestFolder.ImapUidHighestUidSynced = 10;
-            syncInst = ImapStrategy.SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet(ImapStrategy.QuickSyncSet (TestFolder.ImapUidNext, TestFolder, 10)));
+            syncInst = ImapStrategy.SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet(ImapStrategy.FastSyncSet (TestFolder.ImapUidNext, TestFolder, 10)));
             Assert.NotNull (syncInst);
             Assert.AreEqual (10, syncInst.UidSet.Count);
             Assert.AreEqual (30, syncInst.UidSet.Max ().Id);
@@ -180,7 +180,7 @@ namespace Test.iOS
             Assert.AreEqual (21, TestFolder.ImapLastUidSynced);
 
             // proceed with sync. Since there's no new mail, QuickSync will return a null.
-            syncSet = ImapStrategy.QuickSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
             Assert.Null (syncSet);
 
             DeleteAllTestMail ();
@@ -193,7 +193,7 @@ namespace Test.iOS
             TestFolder = DoFakeSync (TestFolder, syncKit); // creates emails 1-9
 
             TestFolder = DoFakeFolderOpen (TestFolder, 15);
-            syncSet = ImapStrategy.QuickSyncSet (15, TestFolder, 10);
+            syncSet = ImapStrategy.FastSyncSet (15, TestFolder, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (5, syncSet.Count);
             Assert.AreEqual (14, syncSet.Max ().Id);
@@ -201,7 +201,7 @@ namespace Test.iOS
             // don't sync. Try another set
 
             TestFolder = DoFakeFolderOpen (TestFolder, 25);
-            syncInst = ImapStrategy.SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet(ImapStrategy.QuickSyncSet (25, TestFolder, 10)));
+            syncInst = ImapStrategy.SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet(ImapStrategy.FastSyncSet (25, TestFolder, 10)));
             Assert.NotNull (syncInst);
             Assert.AreEqual (10, syncInst.UidSet.Count);
             Assert.AreEqual (24, syncInst.UidSet.Max ().Id);
@@ -238,7 +238,7 @@ namespace Test.iOS
             TestFolder = DoFakeFolderOpen (TestFolder, 10);
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (SyncKit.MethodEnum.QuickSync, syncKit.Method);
+            Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
 
             // create some emails, simulating an initial sync
             TestFolder = resetFolder (TestFolder);
@@ -262,7 +262,7 @@ namespace Test.iOS
             pending.Insert ();
             syncKit = Strategy.GenSyncKit (ref protocolState, pending);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (SyncKit.MethodEnum.QuickSync, syncKit.Method);
+            Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
         }
 
         [Test]
@@ -296,7 +296,7 @@ namespace Test.iOS
             TestFolder = DoFakeFolderOpen (TestFolder, 1, DateTime.UtcNow.AddMinutes (-(6*60)));
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (SyncKit.MethodEnum.QuickSync, syncKit.Method);
+            Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
 
@@ -349,7 +349,7 @@ namespace Test.iOS
 
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (SyncKit.MethodEnum.QuickSync, syncKit.Method);
+            Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
             ImapStrategy.FillInQuickSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
@@ -442,7 +442,7 @@ namespace Test.iOS
 
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (SyncKit.MethodEnum.QuickSync, syncKit.Method);
+            Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
             ImapStrategy.FillInQuickSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
