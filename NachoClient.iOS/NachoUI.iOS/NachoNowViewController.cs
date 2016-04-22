@@ -796,11 +796,8 @@ namespace NachoClient.iOS
 
         void ShowMessage (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.FirstMessageId = message.Id;
-            thread.MessageCount = 1;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 

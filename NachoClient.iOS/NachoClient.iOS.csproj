@@ -1052,7 +1052,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoThreadedEmailMessages.cs">
       <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration7.cs">
       <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
     </Compile>
@@ -1666,6 +1665,11 @@
     <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessagesSyncManager.cs">
       <Link>NachoCore\Utils\MessagesSyncManager.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SubjectAttachment.cs" />
+    <Compile Include="NachoUI.iOS\Support\AttachmentsView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\AttachmentDownloader.cs">
+      <Link>NachoCore\Utils\AttachmentDownloader.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2724,6 +2728,12 @@
     <BundleResource Include="Resources\empty-hot.png" />
     <BundleResource Include="Resources\empty-hot%402x.png" />
     <BundleResource Include="Resources\empty-hot%403x.png" />
+    <BundleResource Include="Resources\subject-hot.png" />
+    <BundleResource Include="Resources\subject-hot%402x.png" />
+    <BundleResource Include="Resources\subject-hot%403x.png" />
+    <BundleResource Include="Resources\subject-attach.png" />
+    <BundleResource Include="Resources\subject-attach%402x.png" />
+    <BundleResource Include="Resources\subject-attach%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

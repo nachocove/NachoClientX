@@ -598,7 +598,7 @@ namespace NachoClient.iOS
                     } else if (thread.HasMultipleMessages ()) {
                         ShowThread (thread);
                     } else {
-                        ShowMessage (thread);
+                        ShowMessage (message);
                     }
                 }
             }
@@ -845,10 +845,10 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
-        void ShowMessage (McEmailMessageThread thread)
+        void ShowMessage (McEmailMessage message)
         {
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 
@@ -1137,11 +1137,8 @@ namespace NachoClient.iOS
 
         void ShowMessage (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.MessageCount = 1;
-            thread.FirstMessageId = message.Id;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
             NavigationController.SetNavigationBarHidden (false, true);
         }

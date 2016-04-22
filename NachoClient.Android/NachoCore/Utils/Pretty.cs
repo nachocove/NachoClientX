@@ -894,6 +894,21 @@ namespace NachoCore.Utils
             return System.IO.Path.GetExtension (path).ToUpper ();
         }
 
+        public static string GetAttachmentDetail (McAttachment attachment)
+        {
+            string extension = Pretty.GetExtension (attachment.DisplayName);
+            var detailText = "";
+            if (attachment.IsInline) {
+                detailText += "Inline ";
+            }
+            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+            detailText += "file";
+            if (0 != attachment.FileSize) {
+                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
+            } 
+            return detailText;
+        }
+
         public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             switch (code) {

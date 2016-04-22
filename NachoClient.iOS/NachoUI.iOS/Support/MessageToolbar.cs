@@ -83,9 +83,6 @@ namespace NachoClient.iOS
 
         public MessageToolbar (CGRect frame) : base (frame)
         {
-            // Keep the toolbar at the bottom of its parent view.
-            this.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
-
             Translucent = false;
             BarTintColor = UIColor.White;
 

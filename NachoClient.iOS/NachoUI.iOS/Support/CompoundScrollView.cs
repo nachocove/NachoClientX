@@ -96,16 +96,18 @@ namespace NachoClient.iOS
             {
                 var size = new CGSize (Bounds.Width, 0.0f);
                 foreach (var subview in CompoundViews) {
-                    var scrollView = ScrollViewForCompoundScrollView (subview);
-                    if (scrollView != null) {
-                        size.Height += scrollView.ContentSize.Height;
-                        if (scrollView.ContentSize.Width > size.Width) {
-                            size.Width = scrollView.ContentSize.Width;
-                        }
-                    } else {
-                        size.Height += subview.Frame.Height;
-                        if (subview.Frame.Width > size.Width) {
-                            size.Width = subview.Frame.Width;
+                    if (!subview.Hidden) {
+                        var scrollView = ScrollViewForCompoundScrollView (subview);
+                        if (scrollView != null) {
+                            size.Height += scrollView.ContentSize.Height;
+                            if (scrollView.ContentSize.Width > size.Width) {
+                                size.Width = scrollView.ContentSize.Width;
+                            }
+                        } else {
+                            size.Height += subview.Frame.Height;
+                            if (subview.Frame.Width > size.Width) {
+                                size.Width = subview.Frame.Width;
+                            }
                         }
                     }
                 }
@@ -126,7 +128,9 @@ namespace NachoClient.iOS
                 IsLayingOutSubviews = true;
                 foreach (UIView subview in CompoundViews){
                     UIScrollView scrollView = ScrollViewForCompoundScrollView (subview);
-                    if (scrollView != null){
+                    if (subview.Hidden) {
+                        contentHeight = 0;
+                    }else if (scrollView != null){
                         contentHeight = scrollView.ContentSize.Height;
                         if (subview != ZoomingView){
                             // Start with a default frame that assumes the inner view is out of bounds and therefore gets 0 height

@@ -1113,11 +1113,8 @@ namespace NachoClient.iOS
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             var message = InteractionMessages.GetCachedMessage (indexPath.Row);
-            var thread = new McEmailMessageThread ();
-            thread.MessageCount = 1;
-            thread.FirstMessageId = message.Id;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 

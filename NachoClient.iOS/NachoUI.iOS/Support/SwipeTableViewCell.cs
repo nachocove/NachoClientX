@@ -133,12 +133,13 @@ namespace NachoClient.iOS
                 return _AccessoryView;
             }
             set {
-                if (value == null && _AccessoryView != null) {
+                if (_AccessoryView != null) {
                     _AccessoryView.RemoveFromSuperview ();
                 }
                 _AccessoryView = value;
                 if (_AccessoryView != null) {
                     SwipeView.ContentView.AddSubview (AccessoryView);
+                    SetNeedsLayout ();
                 }
             }
         }

@@ -491,6 +491,11 @@ namespace NachoCore.Model
             }
         }
 
+        public bool StillExists ()
+        {
+            return McEmailMessage.QueryById<McEmailMessage> (Id) != null;
+        }
+
         public static McEmailMessage MessageWithSubject (McAccount account, string subject)
         {
             var message = new McEmailMessage () {

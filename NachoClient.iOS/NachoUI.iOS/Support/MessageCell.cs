@@ -57,7 +57,7 @@ namespace NachoClient.iOS
         static NSAttributedString HotAttachmentString {
             get {
                 if (_HotAttachmentString == null) {
-                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment());
+                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(A.Font_AvenirNextRegular14));
                 }
                 return _HotAttachmentString;
             }
@@ -67,7 +67,7 @@ namespace NachoClient.iOS
         static NSAttributedString AttachAttachmentString {
             get {
                 if (_AttachAttachmentString == null) {
-                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment());
+                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment(A.Font_AvenirNextRegular14));
                 }
                 return _AttachAttachmentString;
             }
@@ -198,37 +198,6 @@ namespace NachoClient.iOS
             var textHeight = mainFont.RoundedLineHeight (1.0f);
             var detailHeight = (nfloat)Math.Ceiling (previewFont.LineHeight * numberOfPreviewLines);
             return textHeight + detailHeight + detailSpacing + topPadding * 2.0f;
-        }
-
-        private class SubjectAttachment : NSTextAttachment
-        {
-            public SubjectAttachment () : base ()
-            {
-            }
-
-            public override CGRect GetAttachmentBounds (NSTextContainer textContainer, CGRect proposedLineFragment, CGPoint glyphPosition, nuint characterIndex)
-            {
-                var font = A.Font_AvenirNextRegular14;
-                nfloat offset = 2.0f;
-                nfloat size = proposedLineFragment.Size.Height - 2.0f * offset;
-                return new CGRect (0.0f, font.Descender + offset, size, size);
-            }
-        }
-
-        private class HotAttachment : SubjectAttachment
-        {
-            public HotAttachment () : base ()
-            {
-                Image = UIImage.FromBundle("email-hot");
-            }
-        }
-
-        private class AttachAttachment : SubjectAttachment
-        {
-            public AttachAttachment () : base ()
-            {
-                Image = UIImage.FromBundle("email-icn-attachment");
-            }
         }
 
     }
