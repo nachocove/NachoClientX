@@ -352,7 +352,7 @@ namespace Test.iOS
             Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
-            ImapStrategy.FillInQuickSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
+            ImapStrategy.FillInFastSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
             Assert.AreEqual (2, syncKit.SyncInstructions.Count); // 1 for new mails, 1 for resyncs
 
             // check the new mails
@@ -445,7 +445,7 @@ namespace Test.iOS
             Assert.AreEqual (SyncKit.MethodEnum.FastSync, syncKit.Method);
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
-            ImapStrategy.FillInQuickSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
+            ImapStrategy.FillInFastSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
             Assert.AreEqual (1, syncKit.SyncInstructions.Count); // 1 for new mails
             syncInst = syncKit.SyncInstructions.First ();
             Assert.AreEqual (quickSyncSpan, syncInst.UidSet.Count);
