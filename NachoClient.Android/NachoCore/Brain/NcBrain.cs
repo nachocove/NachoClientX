@@ -223,6 +223,11 @@ namespace NachoCore.Brain
 
                 bool didSomething = true;
                 while (true) {
+
+                    if (didSomething) {
+                        OpenedIndexes.Cleanup ();
+                    }
+
                     if (!tvStarted && !IsInUnitTest () && NcApplication.Instance.IsForeground) {
                         McEmailMessage.StartTimeVariance (EventQueue.Token);
                         tvStarted = true;
