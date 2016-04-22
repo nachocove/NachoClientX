@@ -381,20 +381,6 @@ namespace NachoCore.IMAP
             return instructions.Any () ? instructions : null;
         }
 
-        protected static UniqueIdSet newEmailSet (McFolder folder, uint startingPoint, uint span)
-        {
-            UniqueIdSet newMails;
-            // Get the list of emails we have locally in the range (0-startingPoint) over span.
-            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span);
-            if (currentMails.Any () && currentMails.Max ().Id + 1 <= startingPoint) {
-                // Get the list of emails on the server in the range (currentMails.Max+1-startingPoint) over span.
-                newMails = getCurrentUIDSet (folder, currentMails.Max ().Id + 1, startingPoint, span);
-            } else {
-                newMails = new UniqueIdSet ();
-            }
-            return newMails;
-        }
-
         /// <summary>
         /// Generate the set of Sync Instructions that we need to look at.
         /// </summary>
@@ -614,17 +600,11 @@ namespace NachoCore.IMAP
                 }
             }
 
-            UniqueIdSet newMails = null;
-            if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync) {
-                newMails = newEmailSet (folder, folder.ImapLastUidSynced, SpanSizeWithCommStatus (protocolState));
-            }
-            if (null == newMails || !newMails.Any ()) {
-                // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
-                if (null != pending) {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl);
-                } else {
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-                }
+            // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
+            if (null != pending) {
+                pending.ResolveAsSuccess (BEContext.ProtoControl);
+            } else {
+                BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
         }
 
