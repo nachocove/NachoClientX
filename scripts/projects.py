@@ -111,12 +111,12 @@ projects = {
             'display_name': 'Nacho Mail'
         },
         'android': {
-            'package_name': 'com.nachocove.nachomail',
+            'package_name': 'com.nachocove.nachomail.beta',
             'label': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
             'hockeyapp': {'app_id': 'bf2582dd142f473dbfdc3bdb8349a3b5', 'api_token': '059371f4a7db486fbbb1bebcb3965aaa'},
-            'keystore': {'filename': 'com.nachocove.mail.keystore',
-                         'alias': 'com.nachocove.mail',
+            'keystore': {'filename': 'com.nachocove.mail.beta.keystore',
+                         'alias': 'com.nachocove.mail.beta',
                          },
             'backup.api_key': 'AEdPqrEAAAAIWORF8SdqdCn_lVgJTP6lxCod1PGW3He-2OIV0g',
             'fileprovider': 'com.nachocove.fileprovider',
