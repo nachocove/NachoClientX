@@ -313,6 +313,7 @@ namespace NachoCore.IMAP
             }
 
             NcAssert.True (startingPoint > 0, "Possibly trying to get syncinstructions before the folder has been opened!");
+            var startingUid = new UniqueId (startingPoint - 1);
 
             var defInbox = McFolder.GetDefaultInboxFolder (folder.AccountId);
             NcAssert.NotNull (defInbox, "No default inbox found.");
@@ -324,38 +325,74 @@ namespace NachoCore.IMAP
 
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
             UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span * KResyncMultiplier);
-            // Get the list of emails on the server in the range (0-startingPoint) over span.
-            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
+            // Get the list of emails not on the client in the range (0-startingPoint) over span.
+            var missingEmails = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier).Except (currentMails).ToList ();
+
             // if both are empty, we're done. Nothing to do.
-            var startingUid = new UniqueId (startingPoint - 1);
-            if (currentMails.Any () || currentUidSet.Any ()) {
-                // resync all the existing mails.
-                if (currentMails.Any ()) {
-                    if (startingPointMustBeInSet && !currentMails.Contains (startingUid)) {
-                        // it doesn't hurt to add the starting Uid to both sets, if that winds up happening.
-                        currentMails.Add (startingUid);
+            if (currentMails.Any () || missingEmails.Any ()) {
+
+                // see if there's still new mail at the top to sync.
+                if (span > 0) {
+                    List<UniqueId> newMailSet;
+                    if (currentMails.Any ()) {
+                        newMailSet = missingEmails.Where (x => x.Id > currentMails.Max ().Id).ToList ();
+                    } else {
+                        newMailSet = missingEmails;
                     }
-                    var uidSet = OrderedSetWithSpan (currentMails, span * KResyncMultiplier);
-                    instructions.Add (SyncInstructionForFlagSync (uidSet));
-                    span -= (uint)(uidSet.Count / KResyncMultiplier);
+                    if (newMailSet.Any ()) {
+                        if (startingPointMustBeInSet && !newMailSet.Contains (startingUid)) {
+                            newMailSet.Add (startingUid);
+                        }
+                        var uidSet = OrderedSetWithSpan (newMailSet, span);
+                        instructions.Add (SyncInstructionForFlagSync (uidSet));
+                        span -= (uint)(uidSet.Count);
+                    }
                 }
 
-                if (span > 0) {
-                    var newMail = currentUidSet.Except (currentMails).ToList ();
-                    if (newMail.Any ()) {
-                        // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
-                        // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
-                        // to sync (they might have gotten deleted).
-                        if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
-                            newMail.Add (startingUid);
+                // in quick sync, stop here. Don't bother with anything past new mails.
+                if (NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.QuickSync) {
+                    // resync all the existing mails.
+                    if (span > 0 && currentMails.Any ()) {
+                        if (startingPointMustBeInSet && !currentMails.Contains (startingUid)) {
+                            currentMails.Add (startingUid);
                         }
-                        var uidSet = OrderedSetWithSpan (newMail, span);
-                        span -= (uint)(uidSet.Count);
-                        instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
+                        var uidSet = OrderedSetWithSpan (currentMails, span * KResyncMultiplier);
+                        instructions.Add (SyncInstructionForFlagSync (uidSet));
+                        span -= (uint)(uidSet.Count / KResyncMultiplier);
+                    }
+
+                    // see if there's still old mail at the bottom to sync.
+                    if (span > 0 && currentMails.Any ()) {
+                        var oldMailSet = missingEmails.Where (x => x.Id < currentMails.Min ().Id).ToList ();
+                        if (oldMailSet.Any ()) {
+                            // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
+                            // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
+                            // to sync (they might have gotten deleted).
+                            if (startingPointMustBeInSet && !oldMailSet.Contains (startingUid)) {
+                                oldMailSet.Add (startingUid);
+                            }
+                            var uidSet = OrderedSetWithSpan (oldMailSet, span);
+                            span -= (uint)(uidSet.Count);
+                            instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
+                        }
                     }
                 }
             }
             return instructions.Any () ? instructions : null;
+        }
+
+        protected static UniqueIdSet newEmailSet (McFolder folder, uint startingPoint, uint span)
+        {
+            UniqueIdSet newMails;
+            // Get the list of emails we have locally in the range (0-startingPoint) over span.
+            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span);
+            if (currentMails.Any () && currentMails.Max ().Id + 1 <= startingPoint) {
+                // Get the list of emails on the server in the range (currentMails.Max+1-startingPoint) over span.
+                newMails = getCurrentUIDSet (folder, currentMails.Max ().Id + 1, startingPoint, span);
+            } else {
+                newMails = new UniqueIdSet ();
+            }
+            return newMails;
         }
 
         /// <summary>
@@ -383,9 +420,9 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        public static UniqueIdRange QuickSyncSet (uint UidNext, McFolder folder, uint span)
+        public static UniqueIdRange QuickSyncSet (uint uidNext, McFolder folder, uint span)
         {
-            uint highest = UidNext > 1 ? UidNext - 1 : 0;
+            uint highest = uidNext > 1 ? uidNext - 1 : 0;
             if (highest <= 0) {
                 return null;
             }
@@ -462,7 +499,11 @@ namespace NachoCore.IMAP
                     startingPoint = syncInst.UidSet.Min ().Id;
                 }
             }
-            if (span > 0) {
+
+            // if we still have slots in the span to do some work, and we're not in quicksync,
+            // then start resyncing old mail to update flags and status
+            if (span > 0 &&
+                NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.QuickSync) {
                 // don't use the multiplier here, since it's a quicksync.
                 var emails = getCurrentEmailUids (Synckit.Folder, 0, startingPoint, span);
                 if (emails.Any ()) {
@@ -573,11 +614,17 @@ namespace NachoCore.IMAP
                 }
             }
 
-            // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
-            if (null != pending) {
-                pending.ResolveAsSuccess (BEContext.ProtoControl);
-            } else {
-                BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+            UniqueIdSet newMails = null;
+            if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync) {
+                newMails = newEmailSet (folder, folder.ImapLastUidSynced, SpanSizeWithCommStatus (protocolState));
+            }
+            if (null == newMails || !newMails.Any ()) {
+                // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
+                if (null != pending) {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                } else {
+                    BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+                }
             }
         }
 
