@@ -145,6 +145,12 @@ namespace NachoClient.iOS
             var attachment = _Attachments [indexPath.Row];
             var cell = tableView.DequeueReusableCell (AttachmentCellIdentifier) as AttachmentCell;
             cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+            if (String.IsNullOrWhiteSpace (cell.TextLabel.Text)) {
+                cell.TextLabel.Text = "(no name)";
+                cell.TextLabel.TextColor = A.Color_NachoTextGray;
+            } else {
+                cell.TextLabel.TextColor = A.Color_NachoDarkText;
+            }
             cell.DetailTextLabel.Text = Pretty.GetAttachmentDetail (attachment);
             cell.IconView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
             if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Error) {
@@ -187,6 +193,7 @@ namespace NachoClient.iOS
                 (cell.AccessoryView as DownloadAccessoryView).StartAnimating ();
                 if (!DownloadersByAttachmentId.ContainsKey (attachment.Id)) {
                     var downloader = new AttachmentDownloader ();
+                    DownloadersByAttachmentId.Add (attachment.Id, downloader);
                     downloader.Delegate = this;
                     downloader.Download (attachment);
                 }

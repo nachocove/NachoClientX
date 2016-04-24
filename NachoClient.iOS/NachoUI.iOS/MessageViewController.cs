@@ -145,6 +145,9 @@ namespace NachoClient.iOS
                 StartBodyDownload ();
             } else {
                 DisplayMessageBody ();
+                if (!Message.IsRead) {
+                    EmailHelper.MarkAsRead (Message);
+                }
             }
         }
 
@@ -342,21 +345,32 @@ namespace NachoClient.iOS
 
         void ActivityShowTimerFired (object state)
         {
+            BeginInvokeOnMainThread (StartActivityIndicator);
+        }
+
+        void StartActivityIndicator ()
+        {
             ActivityShowTimer = null;
             if (ActivityIndicator == null) {
                 ActivityIndicator = new NcActivityIndicatorView (new CGRect(0.0f, 0.0f, ActivityIndicatorSize, ActivityIndicatorSize));
+                ActivityIndicator.Speed = 1.5f;
                 ActivityIndicator.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
             }
-            ActivityIndicator.Frame = new CGRect ((ScrollView.Bounds.Width - ActivityIndicatorSize) / 2.0f, HeaderView.Frame.Height + 2.0f * ActivityIndicatorSize, ActivityIndicatorSize, ActivityIndicatorSize);
+            nfloat y = HeaderView.Frame.Height + 2.0f * ActivityIndicatorSize;
+            if (!AttachmentsView.Hidden) {
+                y = AttachmentsView.Frame.Y + AttachmentsView.Frame.Height + 2.0f * ActivityIndicatorSize;
+            }
+            ActivityIndicator.Frame = new CGRect ((ScrollView.Bounds.Width - ActivityIndicatorSize) / 2.0f, y, ActivityIndicatorSize, ActivityIndicatorSize);
             ActivityIndicator.Alpha = 0.0f;
             ScrollView.AddSubview (ActivityIndicator);
             ActivityIndicator.StartAnimating ();
-            nfloat duration = 0.25f;
+            nfloat duration = 0.5f;
             var animation = CABasicAnimation.FromKeyPath ("opacity");
             animation.From = new NSNumber (0.0f);
             animation.To = new NSNumber (1.0f);
             animation.Duration = duration;
             ActivityIndicator.Layer.AddAnimation (animation, "opacity");
+            ActivityIndicator.Alpha = 1.0f;
         }
 
         void HideActivityIndicator ()
@@ -382,6 +396,7 @@ namespace NachoClient.iOS
                     ActivityIndicator.RemoveFromSuperview ();
                 };
                 ActivityIndicator.Layer.AddAnimation (animation, "opacity");
+                ActivityIndicator.Alpha = 0.0f;
             }
         }
 
@@ -395,6 +410,7 @@ namespace NachoClient.iOS
 
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
+            EmailHelper.MarkAsRead (Message);
             if (Bundle == null) {
                 Bundle = downloader.Bundle;
             }
@@ -455,6 +471,9 @@ namespace NachoClient.iOS
         public void DidScroll (UIScrollView scrollView)
         {
             HeaderView.Frame = new CGRect (scrollView.ContentOffset.X, HeaderView.Frame.Y, HeaderView.Frame.Width, HeaderView.Frame.Height);
+            if (!AttachmentsView.Hidden) {
+                AttachmentsView.Frame = new CGRect (scrollView.ContentOffset.X, AttachmentsView.Frame.Y, AttachmentsView.Frame.Width, AttachmentsView.Frame.Height);
+            }
         }
 
         // TODO: handle links (shouldLoadUrl?)
@@ -549,137 +568,5 @@ namespace NachoClient.iOS
 
         #endregion
 
-        // Event handlers
-
-//        private void AttachmentsOnSelected (McAttachment attachment)
-//        {
-//            if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
-//                PlatformHelpers.DisplayAttachment (this, attachment);
-//            }
-//        }
-//
-//        private void AttachmentOnError (McAttachment attachment, NcResult result)
-//        {
-//            string message;
-//            if (!ErrorHelper.ExtractErrorString (result, out message)) {
-//                message = "Download failed.";
-//            }
-//            NcAlertView.ShowMessage (this, "Attachment error", message);
-//        }
-
-        //        protected void ConfigureAttachments ()
-        //        {
-        //            attachmentListView.Reset ();
-        //            bool firstAttachment = true;
-        //            foreach (var attachment in attachments) {
-        //                if (!firstAttachment) {
-        //                    attachmentListView.LastAttachmentView ().ShowSeparator ();
-        //                }
-        //                firstAttachment = false;
-        //                attachmentListView.AddAttachment (attachment);
-        //            }
-        //        }
-
-        //        protected override void CreateViewHierarchy ()
-        //        {
-        //
-        //            // "To" label
-        //            nfloat blockWidth = headerView.Frame.Width - TOVIEW_LEFT_MARGIN;
-        //            toView = new UcAddressBlock (this, "To:", null, blockWidth);
-        //            toView.SetCompact (false, -1);
-        //            toView.SetEditable (false);
-        //            toView.SetLineHeight (20);
-        //            toView.SetAddressIndentation (45);
-        //            ViewFramer.Create (toView)
-        //                .X (TOVIEW_LEFT_MARGIN)
-        //                .Y (yOffset)
-        //                .Width (blockWidth)
-        //                .Height (0);
-        //            headerView.AddSubview (toView);
-        //
-        //            // "cc" label
-        //            blockWidth = headerView.Frame.Width - CCVIEW_LEFT_MARGIN;
-        //            ccView = new UcAddressBlock (this, "Cc:", null, blockWidth);
-        //            ccView.SetCompact (false, -1);
-        //            ccView.SetEditable (false);
-        //            ccView.SetLineHeight (20);
-        //            ccView.SetAddressIndentation (45);
-        //            ViewFramer.Create (ccView)
-        //                .X (CCVIEW_LEFT_MARGIN)
-        //                .Y (yOffset)
-        //                .Width (blockWidth)
-        //                .Height (0);
-        //            headerView.AddSubview (ccView);
-        //
-        //            // Chili image
-        //            var chiliImageView = new UIImageView (new CGRect (fromLabelView.Frame.Right, 14, 20, 20));
-        //            chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
-        //            headerView.AddSubview (chiliImageView);
-        //
-        //            // A blank view below separator2, which covers up the To and CC fields
-        //            // when the headers are colapsed.  (The To and CC fields are often
-        //            // covered by the attachments view or the message body. But not always.)
-        //            var blankView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 0));
-        //            blankView.BackgroundColor = UIColor.White;
-        //            blankView.Tag = (int)TagType.BLANK_VIEW_TAG;
-        //            headerView.AddSubview (blankView);
-        //
-        //            // Separator 1
-        //            var separator1View = new UIView (new CGRect (0, yOffset, View.Frame.Width, 1));
-        //            separator1View.BackgroundColor = A.Color_NachoBorderGray;
-        //            separator1View.Tag = (int)TagType.SEPARATOR1_TAG;
-        //            headerView.AddSubview (separator1View);
-        //
-        //            // Attachments
-        //            attachmentListView = new AttachmentListView (new CGRect (
-        //                ATTACHMENTVIEW_INSET, yOffset + 1.0f,
-        //                headerView.Frame.Width - ATTACHMENTVIEW_INSET, 50));
-        //            attachmentListView.SetHeader ("Attachments", A.Font_AvenirNextRegular17, A.Color_NachoTextGray, null, A.Font_AvenirNextDemiBold14, UIColor.White, A.Color_909090, 10f);
-        //            attachmentListView.OnAttachmentSelected = AttachmentsOnSelected;
-        //            attachmentListView.OnAttachmentError = AttachmentOnError;
-        //            attachmentListView.OnStateChanged = AttachmentsOnStateChange;
-        //            attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
-        //            headerView.AddSubview (attachmentListView);
-        //
-        //            // Separater 2
-        //            var separator2View = new UIView (new CGRect (0, yOffset, View.Frame.Width, 1));
-        //            separator2View.BackgroundColor = A.Color_NachoBorderGray;
-        //            separator2View.Tag = (int)TagType.SEPARATOR2_TAG;
-        //            headerView.AddSubview (separator2View);
-        //
-        //            yOffset += 1;
-        //
-        //            // Message body, which is added to the scroll view, not the header view.
-        //            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, this);
-        //            scrollView.AddSubview (bodyView);
-        //        }
-
-
-        // IUcAddressBlockDelegate implementation
-
-//        public void AddressBlockNeedsLayout (UcAddressBlock view)
-//        {
-//            view.Layout ();
-//        }
-//
-//        public void AddressBlockWillBecomeActive (UcAddressBlock view)
-//        {
-//        }
-//
-//        public void AddressBlockWillBecomeInactive (UcAddressBlock view)
-//        {
-//        }
-//
-//        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
-//        {
-//        }
-//
-//        public void AddressBlockSearchContactClicked (UcAddressBlock view, string prefix)
-//        {
-//        }
-//
-//        public void AddressBlockRemovedAddress (UcAddressBlock view, NcEmailAddress address)
-//        {
-//        }
     }
 }
