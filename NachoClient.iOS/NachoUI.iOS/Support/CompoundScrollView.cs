@@ -37,16 +37,11 @@ namespace NachoClient.iOS
                 }
             }
 
-            UIView ZoomingView;
-//            CGPoint ZoomingViewOffsetAtZoomStart;
-//            CGPoint ScrollViewOffsetAtZoomStart;
-//            int ZoomingViewLevel;
             List<UIView> CompoundViews;
             bool IsLayingOutSubviews;
 
             public CompoundScrollViewContainerView (CGRect frame) : base(frame)
             {
-                ZoomingView = null;
             }
 
             public static UIScrollView ScrollViewForCompoundScrollView (UIView view)
@@ -94,7 +89,7 @@ namespace NachoClient.iOS
 
             public void DetermineContentSize ()
             {
-                var size = new CGSize (Bounds.Width, 0.0f);
+                var size = new CGSize (0.0f, 0.0f);
                 foreach (var subview in CompoundViews) {
                     if (!subview.Hidden) {
                         var scrollView = ScrollViewForCompoundScrollView (subview);
@@ -132,38 +127,30 @@ namespace NachoClient.iOS
                         contentHeight = 0;
                     }else if (scrollView != null){
                         contentHeight = scrollView.ContentSize.Height;
-                        if (subview != ZoomingView){
-                            // Start with a default frame that assumes the inner view is out of bounds and therefore gets 0 height
-                            frame = new CGRect(Math.Min(Math.Max(0, Bounds.X), Math.Max(0, scrollView.ContentSize.Width - Bounds.Width)), y, Bounds.Width, 0);
-                            if (y + contentHeight > Bounds.Y && y < Bounds.Y + Bounds.Height){
-                                // If we're in bounds, cap the frame's top at the top boundary
-                                if (y < Bounds.Y){
-                                    frame.Y = Bounds.Y;
-                                }else{
-                                    frame.Y = y;
-                                }
-                                // Cap the frame's bottom at the bottom boundary, and make sure the final view extends there regardless
-                                nfloat minBoundsY = 0.0f;
-                                nfloat maxBoundsY = (nfloat)Math.Max (Bounds.Height, y + contentHeight) - Bounds.Height;
-                                nfloat boundsYWithoutBounce = (nfloat)Math.Max(minBoundsY, Math.Min(maxBoundsY, Bounds.Y));
-                                nfloat availableHeight = boundsYWithoutBounce + Bounds.Height - frame.Y;
-                                if (i == CompoundViews.Count - 1){
-                                    frame.Height = availableHeight;
-                                }else{
-                                    frame.Height = (nfloat)Math.Min(contentHeight, availableHeight);
-                                }
-                                // Adjust the inner scroll view's offset so it lines up with where it should be
-                                CGPoint p = new CGPoint(frame.X, Math.Max(0, Bounds.Y - y));
-                                scrollView.ContentOffset = p;
+                        // Start with a default frame that assumes the inner view is out of bounds and therefore gets 0 height
+                        frame = new CGRect(Math.Min(Math.Max(0, Bounds.X), Math.Max(0, scrollView.ContentSize.Width - Bounds.Width)), y, Bounds.Width, 0);
+                        if (y + contentHeight > Bounds.Y && y < Bounds.Y + Bounds.Height){
+                            // If we're in bounds, cap the frame's top at the top boundary
+                            if (y < Bounds.Y){
+                                frame.Y = Bounds.Y;
+                            }else{
+                                frame.Y = y;
                             }
-                            subview.Frame = frame;
-                        }else{
-                            // Special case for when we're zooming an inner view, make it take up the entire bounds
-                            // because otherwise we'd need to adjust its position/contentOffset as it zooms, and that
-                            // always ends up being a very rough transition.  Better to make it the max size and not adjust
-                            // it while zooming
-                            subview.Frame = Bounds;
+                            // Cap the frame's bottom at the bottom boundary, and make sure the final view extends there regardless
+                            nfloat minBoundsY = 0.0f;
+                            nfloat maxBoundsY = (nfloat)Math.Max (Bounds.Height, y + contentHeight) - Bounds.Height;
+                            nfloat boundsYWithoutBounce = (nfloat)Math.Max(minBoundsY, Math.Min(maxBoundsY, Bounds.Y));
+                            nfloat availableHeight = boundsYWithoutBounce + Bounds.Height - frame.Y;
+                            if (i == CompoundViews.Count - 1){
+                                frame.Height = availableHeight;
+                            }else{
+                                frame.Height = (nfloat)Math.Min(contentHeight, availableHeight);
+                            }
+                            // Adjust the inner scroll view's offset so it lines up with where it should be
+                            CGPoint p = new CGPoint(frame.X, Math.Max(0, Bounds.Y - y));
+                            scrollView.ContentOffset = p;
                         }
+                        subview.Frame = frame;
                     }else{
                         // If we aren't dealing with a scrolling view, don't change its size or X position, just make sure
                         // it is stacked at the proper Y position.
@@ -218,82 +205,12 @@ namespace NachoClient.iOS
                 }
             }
 
-            [Foundation.Export ("scrollViewWillBeginZooming:withView:")]
-            public void ZoomingStarted (UIKit.UIScrollView scrollView, UIKit.UIView view)
-            {
-                // FIXME: adding the Scrolled method above possibly broke this zooming code...needs testing;
-                //        likely solution is to ignore scrolling while zooming
-                // The idea here is to position the zooming view to the maximum size (our bounds),
-                // at the start of zooming so we don't have reposition/resize it while we're zooming because
-                // that causing a lot of jumpiness.
-                //
-                // We'll also record where we started offset-wise in the inner view, so we can keep track
-                // of how much it changed on its own, and update the outer offset accordingly so all the inner views
-                // appear to move in the right way.
-                //
-                // Note that at least with WKWebView there is a jump at the start of zooming if the web view isn't already
-                // at our bounds.  The jump doesn't appear to be from this code, but rather from the first move after this
-                // code runs.
-//                UIView zoomingView = scrollView;
-//                while (zoomingView.Superview != this){
-//                    zoomingView = zoomingView.Superview;
-//                }
-//                ZoomingView = zoomingView;
-//                ZoomingViewLevel = 0;
-//                for (int i = 0; i < Subviews.Length; ++i) {
-//                    if (Subviews [i] == ZoomingView) {
-//                        ZoomingViewLevel = i;
-//                        break;
-//                    }
-//                }
-//                SendSubviewToBack (ZoomingView);
-//                nfloat yDiff = ZoomingView.Frame.Y - Bounds.Y;
-//                if (yDiff > 0){
-//                    ZoomingView.Frame = Bounds;
-//                    scrollView.ContentOffset = new CGPoint(scrollView.ContentOffset.X, scrollView.ContentOffset.Y - yDiff);
-//                }
-//                ZoomingViewOffsetAtZoomStart = scrollView.ContentOffset;
-//                ScrollViewOffsetAtZoomStart = ScrollView.ContentOffset;
-            }
-
-            [Foundation.Export ("scrollViewDidZoom:")]
-            public void DidZoom (UIKit.UIScrollView scrollView)
-            {
-                // While an inner view is zooming, its contentOffset is changing.  We need to adjust the outer content offset
-                // by the same amount so we don't get out of sync and so the other inner views can move accordingly.
-//                CGPoint diff = new CGPoint(scrollView.ContentOffset.X - ZoomingViewOffsetAtZoomStart.X, scrollView.ContentOffset.Y - ZoomingViewOffsetAtZoomStart.Y);
-//                CGPoint offset = ScrollViewOffsetAtZoomStart;
-//                offset.X += diff.X;
-//                offset.Y += diff.Y;
-//                ScrollView.ContentOffset = offset;
-//                ScrollView.LayoutIfNeeded();
-//                LayoutIfNeeded ();
-            }
-
             [Foundation.Export ("scrollViewDidEndZooming:withView:atScale:")]
             public void ZoomingEnded (UIKit.UIScrollView theScrollView, UIKit.UIView withView, System.nfloat atScale)
             {
-                // Put the zooming view back at the proper level
-//                InsertSubview (ZoomingView, ZoomingViewLevel);
-//                ZoomingView = null;
-//                SetNeedsLayout ();
-//                // Update our content size now that a view has zoomed and takes up more/less space in both directions
-//                CGSize contentSize = new CGSize(Bounds.Width, 0);
-//                foreach (UIView subview in CompoundViews){
-//                    UIScrollView scrollView = ScrollViewForCompoundScrollView (subview);
-//                    if (scrollView != null){
-//                        if (scrollView.ContentSize.Width > contentSize.Width){
-//                            contentSize.Width = scrollView.ContentSize.Width;
-//                        }
-//                        contentSize.Height += scrollView.ContentSize.Height;
-//                    }else{
-//                        if (subview.Frame.Width > contentSize.Width){
-//                            contentSize.Width = subview.Frame.Width;
-//                        }
-//                        contentSize.Height += subview.Frame.Height;
-//                    }
-//                }
-//                ScrollView.ContentSize = contentSize;
+                DetermineContentSize ();
+                ScrollView.SetNeedsLayout ();
+                ScrollView.LayoutIfNeeded ();
             }
 
         }

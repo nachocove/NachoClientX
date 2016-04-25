@@ -462,7 +462,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "MessageViewController LoadingFinished()");
             int width = (int)ScrollView.Bounds.Width;
-            var viewportString = String.Format ("width={0}, min-scale=0.5, max-scale=2.0", width);
+            var viewportString = String.Format ("width={0},minimum-scale=0.2,maximum-scale=5.0,user-scalable=yes", width);
             BodyView.EvaluateJavascript (String.Format ("Viewer.Enable(); Viewer.defaultViewer.setViewportContent({0})", viewportString.JavascriptEscapedString ()));
             UpdateScrollViewSize ();
         }
