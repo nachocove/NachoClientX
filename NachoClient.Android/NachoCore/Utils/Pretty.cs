@@ -289,6 +289,23 @@ namespace NachoCore.Utils
             return string.Format ("{0} - {1}", MediumFullDate (dateTime), Time (dateTime));
         }
 
+        static public string FriendlyFullDateTime (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var now = DateTime.Now;
+            var diff = now - local;
+            var dayString = "";
+            var timeString = Time (dateTime);
+            if (diff < now.TimeOfDay) {
+                return String.Format ("Today - {0}", timeString);
+            }else if (diff < (now.TimeOfDay + TimeSpan.FromDays (1))){
+                return String.Format ("Yesterday - {0}", timeString);
+            } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (6))) {
+                return String.Format ("{0} - {1}", local.ToString ("dddd"), timeString);
+            }
+            return String.Format ("{0} - {1}", LongFullDate (dateTime), timeString);
+        }
+
         /// <summary>
         /// "Wednesday 4:28 pm"
         /// </summary>

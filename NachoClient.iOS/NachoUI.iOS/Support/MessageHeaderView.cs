@@ -115,7 +115,7 @@ namespace NachoClient.iOS
         public void Update ()
         {
             PortraitView.SetPortrait (Message.cachedPortraitId, Message.cachedFromColor, Message.cachedFromLetters);
-            DateLabel.Text = Pretty.MediumFullDateTime (Message.DateReceived);
+            DateLabel.Text = Pretty.FriendlyFullDateTime (Message.DateReceived);
             FromLabel.Text = Pretty.SenderString (Message.From);
             string prettySubject = "";
             if (String.IsNullOrWhiteSpace (Message.Subject)) {
