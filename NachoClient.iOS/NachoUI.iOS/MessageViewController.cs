@@ -484,9 +484,8 @@ namespace NachoClient.iOS
 
         void ShowHeaderDetails ()
         {
-            // TODO: actually have a details view controller
-            var viewController = new UIViewController ();
-            viewController.View.BackgroundColor = UIColor.White;
+            var viewController = new MessageHeaderDetailViewController ();
+            viewController.Message = Message;
             NavigationController.PushViewController (viewController, true);
         }
 
@@ -537,14 +536,6 @@ namespace NachoClient.iOS
                 composeViewController.StartWithQuickResponse = startWithQuickResponse;
                 composeViewController.Present ();
             }
-        }
-
-        void ShowContact (McContact contact)
-        {
-            // McContact.QueryBestMatchByEmailAddress (thread.FirstMessage ().AccountId, addressField.address.address);
-            var vc = new ContactDetailViewController ();
-            vc.contact = contact;
-            NavigationController.PushViewController (vc, true);
         }
 
         #endregion

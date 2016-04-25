@@ -1671,6 +1671,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\AttachmentDownloader.cs">
       <Link>NachoCore\Utils\AttachmentDownloader.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\MessageHeaderDetailViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\NameValueCell.cs" />
+    <Compile Include="NachoUI.iOS\MessageRawBodyViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageMimePartViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

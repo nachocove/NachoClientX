@@ -53,6 +53,7 @@ namespace NachoClient.iOS
         public nfloat GroupBorderWidth = 0.5f;
         public nfloat GroupSeparatorWidth = 0.5f;
         public nfloat DetailTextSpacing = 3.0f;
+        public bool HideDetailWhenEmpty = false;
         private UIView _GroupSelectedBackgroundView;
 
         private UIView GroupSelectedBackgroundView {
@@ -237,7 +238,8 @@ namespace NachoClient.iOS
             combinedTextLabelRect.X = SeparatorInset.Left;
             combinedTextLabelRect.Width = ContentView.Bounds.Width - combinedTextLabelRect.X;
             combinedTextLabelRect.Height = 0.0f;
-            if (_DetailTextLabel != null) {
+            bool showDetail = _DetailTextLabel != null && (!HideDetailWhenEmpty || !String.IsNullOrWhiteSpace (_DetailTextLabel.Text));
+            if (showDetail) {
                 combinedTextLabelRect.Height += _DetailTextLabel.Font.RoundedLineHeight (1.0f) + DetailTextSpacing;
             }
             if (_TextLabel != null) {
@@ -251,7 +253,7 @@ namespace NachoClient.iOS
                 _TextLabel.Frame = frame;
             }
             // DetailTextLabel
-            if (_DetailTextLabel != null) {
+            if (showDetail) {
                 frame = combinedTextLabelRect.Inset (0.0f, 0.0f);
                 frame.Height = _DetailTextLabel.Font.RoundedLineHeight (1.0f);
                 frame.Y = combinedTextLabelRect.Y + combinedTextLabelRect.Height - frame.Height;
