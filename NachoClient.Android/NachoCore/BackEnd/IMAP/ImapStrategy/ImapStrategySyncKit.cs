@@ -344,6 +344,7 @@ namespace NachoCore.IMAP
                         var uidSet = OrderedSetWithSpan (newMailSet, span);
                         instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
                         span -= (uint)(uidSet.Count);
+                        missingEmails.RemoveAll (newMailSet.Contains);
                     }
                 }
 
