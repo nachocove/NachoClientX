@@ -30,10 +30,7 @@ namespace NachoCore.IMAP
         /// </summary>
         const int KImapMaxEmailDeleteCount = 100;
 
-        /// <summary>
-        /// Easy way to disable old-email-deleting
-        /// </summary>
-        const bool KImapAllowDeleteOldEmails = false;
+#define KImapAllowDeleteOldEmails 0
 
         /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
@@ -263,8 +260,8 @@ namespace NachoCore.IMAP
         /// <param name="folder">Folder.</param>
         List<NcEmailMessageIndex> GetEmailsToDelete (McFolder folder)
         {
-            if (!KImapAllowDeleteOldEmails ||
-                folder.ImapNeedFullSync ||
+#if KImapAllowDeleteOldEmails
+            if (folder.ImapNeedFullSync ||
                 BEContext.Account.DaysToSyncEmail == NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0) {
                 return null;
             }
@@ -280,6 +277,9 @@ namespace NachoCore.IMAP
                 folder.AccountId,
                 lowestUid,
                 KImapMaxEmailDeleteCount);
+#else
+            return null;
+#endif
         }
 
         #endregion
