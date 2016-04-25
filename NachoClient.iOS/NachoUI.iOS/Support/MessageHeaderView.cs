@@ -112,7 +112,7 @@ namespace NachoClient.iOS
             AddSubview (DateLabel);
         }
 
-        void Update ()
+        public void Update ()
         {
             PortraitView.SetPortrait (Message.cachedPortraitId, Message.cachedFromColor, Message.cachedFromLetters);
             DateLabel.Text = Pretty.MediumFullDateTime (Message.DateReceived);

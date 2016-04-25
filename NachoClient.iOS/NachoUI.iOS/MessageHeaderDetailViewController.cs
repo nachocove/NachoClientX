@@ -72,6 +72,9 @@ namespace NachoClient.iOS
 
         public MessageHeaderDetailViewController () : base (UITableViewStyle.Grouped)
         {
+            NavigationItem.Title = "Header Details";
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         public override bool CanBecomeFirstResponder {

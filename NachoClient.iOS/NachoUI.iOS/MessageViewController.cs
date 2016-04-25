@@ -58,6 +58,7 @@ namespace NachoClient.iOS
         PressGestureRecognizer HeaderPressRecognizer;
 
         UIBarButtonItem CreateEventButton;
+        UIBarButtonItem HotButton;
 
         // Information to be collected for telemetry
         protected DateTime appearTime;
@@ -76,12 +77,18 @@ namespace NachoClient.iOS
                 CreateEventButton.AccessibilityLabel = "Create Event";
             }
 
+            using (var image = UIImage.FromBundle ("email-not-hot")) {
+                HotButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, ToggleHot);
+                HotButton.AccessibilityLabel = "Hot";
+            }
+
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 CreateEventButton,
+                HotButton
             };
 
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
-            NavigationItem.BackBarButtonItem.Title = "";
+            NavigationItem.BackBarButtonItem.Title = "Message";
 
         }
 
@@ -329,6 +336,12 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (false, new Action (delegate {
                 NavigationController.PopViewController (true);
             }));
+        }
+
+        void ToggleHot (object sender, EventArgs e)
+        {
+            Message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (Message);
+            HeaderView.Update ();
         }
 
         #endregion
