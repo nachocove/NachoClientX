@@ -344,7 +344,7 @@ namespace NachoCore.IMAP
                             newMailSet.Add (startingUid);
                         }
                         var uidSet = OrderedSetWithSpan (newMailSet, span);
-                        instructions.Add (SyncInstructionForFlagSync (uidSet));
+                        instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
                         span -= (uint)(uidSet.Count);
                     }
                 }
