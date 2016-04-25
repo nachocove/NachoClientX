@@ -19,7 +19,6 @@ namespace NachoCore.SMTP
                 ParentId = pending.ParentId,
             };
             answPending.Insert ();
-            answPending.MarkPredBlocked (pending.Id);
 
             int lastVerb;
             DateTime lastVerbTime;
