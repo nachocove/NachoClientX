@@ -88,7 +88,7 @@ namespace NachoClient.iOS
 
             quickReplyButton = new NcUIBarButtonItem ();
             quickReplyButton.TintColor = BUTTON_COLOR;
-            Util.SetAutomaticImageForButton (quickReplyButton, "contact-quickemail");
+            Util.SetAutomaticImageForButton (quickReplyButton, "toolbar-quick-reply");
             quickReplyButton.AccessibilityLabel = "Quick Reply";
             quickReplyButton.Clicked += QuickReplyButtonClicked;
 

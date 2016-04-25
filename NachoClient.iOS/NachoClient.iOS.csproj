@@ -2738,6 +2738,15 @@
     <BundleResource Include="Resources\subject-attach.png" />
     <BundleResource Include="Resources\subject-attach%402x.png" />
     <BundleResource Include="Resources\subject-attach%403x.png" />
+    <BundleResource Include="Resources\toolbar-quick-reply.png" />
+    <BundleResource Include="Resources\toolbar-quick-reply%402x.png" />
+    <BundleResource Include="Resources\toolbar-quick-reply%403x.png" />
+    <BundleResource Include="Resources\email-read-swipe.png" />
+    <BundleResource Include="Resources\email-read-swipe%402x.png" />
+    <BundleResource Include="Resources\email-read-swipe%403x.png" />
+    <BundleResource Include="Resources\email-unread-swipe.png" />
+    <BundleResource Include="Resources\email-unread-swipe%402x.png" />
+    <BundleResource Include="Resources\email-unread-swipe%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

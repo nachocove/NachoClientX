@@ -623,9 +623,9 @@ namespace NachoClient.iOS
                 var actions = new List<SwipeTableRowAction> ();
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
                     if (message.isHot ()) {
                         actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
