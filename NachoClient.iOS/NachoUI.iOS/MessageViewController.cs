@@ -16,11 +16,12 @@ using MimeKit;
 using DDay.iCal;
 using DDay.iCal.Serialization;
 using DDay.iCal.Serialization.iCalendar;
+using SafariServices;
 
 namespace NachoClient.iOS
 {
 
-    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate
+    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate
     {
         
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
@@ -476,7 +477,36 @@ namespace NachoClient.iOS
             }
         }
 
-        // TODO: handle links (shouldLoadUrl?)
+        [Export ("webView:shouldStartLoadWithRequest:navigationType:")]
+        public bool ShouldStartLoad (UIWebView webView, NSUrlRequest request, UIWebViewNavigationType navigationType)
+        {
+            if (navigationType == UIWebViewNavigationType.LinkClicked) {
+                var url = request.Url;
+                var scheme = url.Scheme.ToLowerInvariant ();
+                if (scheme.Equals ("x-apple-data-detectors")) {
+                    return true;
+                } else if (scheme.Equals ("mailto")) {
+                    ComposeMessage (url);
+                } else if (scheme.Equals ("http") || scheme.Equals ("https")) {
+                    var viewController = new SFSafariViewController (url);
+                    viewController.Delegate = this;
+                    NavigationController.PushViewController (viewController, animated: true);
+                    NavigationController.SetNavigationBarHidden (true, animated: true);
+                } else {
+                    UIApplication.SharedApplication.OpenUrl (url);
+                }
+                return false;
+            }
+            return true;
+        }
+
+        [Export ("safariViewControllerDidFinish:")]
+        public virtual void DidFinish (SFSafariViewController controller)
+        {
+            controller.Delegate = null;
+            NavigationController.PopViewController (animated: true);
+            NavigationController.SetNavigationBarHidden (false, animated: true);
+        }
 
         #endregion
 
@@ -536,6 +566,16 @@ namespace NachoClient.iOS
                 composeViewController.StartWithQuickResponse = startWithQuickResponse;
                 composeViewController.Present ();
             }
+        }
+
+        private void ComposeMessage (NSUrl url)
+        {
+            string body;
+            var account = McAccount.EmailAccountForMessage (Message);
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
+            composeViewController.Composer.InitialText = body;
+            composeViewController.Present ();
         }
 
         #endregion
