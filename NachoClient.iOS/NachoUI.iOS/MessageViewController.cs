@@ -701,18 +701,60 @@ namespace NachoClient.iOS
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 CGPoint touch = gesture.LocationInView (headerView);
-                // In the chili zone?
+
+                // Did the user tap on or near the chili?
                 if ((touch.X > View.Frame.Width - 50) && (touch.Y < 50)) {
                     var message = thread.SingleMessageSpecialCase ();
                     if (null != message) {
                         NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                         ConfigureChili (message);
                     }
-                } else if (touch.Y <= separator1YOffset) {
+                    return;
+                }
+
+                // Did the user tap on the "From" field?
+                var fromView = headerView.ViewWithTag ((int)TagType.FROM_TAG);
+                if (null != fromView) {
+                    CGPoint location = gesture.LocationInView (fromView.Superview);
+                    if (fromView.Frame.Contains (location)) {
+                        var message = thread.SingleMessageSpecialCase ();
+                        var contact = McContact.QueryBestMatchByEmailAddress (message.AccountId, message.From, message.FromEmailAddressId);
+                        if (null != contact) {
+                            ShowContact (contact);
+                            return;
+                        }
+                    }
+                }
+
+                // Did the user tap on one of the To or Cc addresses?
+                if (expandedHeader && (ShowContactDetailWhenTapped (gesture, toView) || ShowContactDetailWhenTapped (gesture, ccView))) {
+                    return;
+                }
+
+                // Otherwise, toggle the entire header view between compact and expanded modes.
+                if (touch.Y <= separator1YOffset) {
                     expandedHeader = !expandedHeader;
                     LayoutView (true);
                 }
             }
+        }
+
+        bool ShowContactDetailWhenTapped (UIGestureRecognizer gesture, UcAddressBlock addressBlock)
+        {
+            CGPoint location = gesture.LocationInView (addressBlock);
+            foreach (var subview in addressBlock.Subviews) {
+                if (subview is UcAddressField) {
+                    var addressField = (UcAddressField)subview;
+                    if (addressField.IsTextField () && addressField.Frame.Contains (location)) {
+                        var contact = McContact.QueryBestMatchByEmailAddress (thread.FirstMessage ().AccountId, addressField.address.address);
+                        if (null != contact) {
+                            ShowContact (contact);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         void EditEvent (McCalendar calendarEvent)
@@ -732,6 +774,13 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, true, message.AccountId, thread);
             }
             PresentViewController (vc, true, null);
+        }
+
+        void ShowContact (McContact contact)
+        {
+            var vc = new ContactDetailViewController ();
+            vc.contact = contact;
+            NavigationController.PushViewController (vc, true);
         }
 
         private void CreateEventButtonClicked (object sender, EventArgs e)

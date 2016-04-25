@@ -57,6 +57,52 @@ namespace NachoCore.Model
         [Ignore]
         public long DeviceEventId { get; set; }
 
+        private McCalendar _Calendar;
+
+        private McAbstrCalendarRoot _CalendarOrException;
+
+        [Ignore]
+        private McCalendar Calendar {
+            get {
+                if (_Calendar == null) {
+                    _Calendar = McCalendar.QueryById<McCalendar> (CalendarId);
+                }
+                return _Calendar;
+            }
+        }
+
+        [Ignore]
+        private McAbstrCalendarRoot CalendarOrException
+        {
+            get {
+                if (_CalendarOrException == null) {
+                    _CalendarOrException = GetCalendarItemforEvent ();
+                }
+                return _CalendarOrException;
+            }
+        }
+
+        [Ignore]
+        public string Subject {
+            get {
+                return CalendarOrException.GetSubject ();
+            }
+        }
+
+        [Ignore]
+        public string OrganizerEmail {
+            get {
+                return Calendar.OrganizerEmail;
+            }
+        }
+
+        [Ignore]
+        public string Location {
+            get {
+                return CalendarOrException.GetLocation ();
+            }
+        }
+
         static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, string UID, bool allDayEvent, int calendarId, int exceptionId)
         {
             // Save the event
@@ -76,6 +122,21 @@ namespace NachoCore.Model
                     startTime, e.Id, exceptionId, calendarId);
             }
             return e;
+        }
+
+        public bool IsValid ()
+        {
+            return Calendar != null && CalendarOrException != null;
+        }
+
+        public int GetColorIndex ()
+        {
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (Calendar.AccountId, Calendar.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            return colorIndex;
         }
 
         public DateTime GetStartTimeUtc ()
