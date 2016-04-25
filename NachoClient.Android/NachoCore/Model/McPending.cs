@@ -891,7 +891,7 @@ namespace NachoCore.Model
             foreach (var iter in successors) {
                 var succ = iter;
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
-                Log.Info (Log.LOG_SYNC, "{0}:UnblockSuccessors: {1} now {2}", this, succ.Id, toState.ToString ());
+                Log.Info (Log.LOG_SYNC, "{0}:UnblockSuccessors: {1} now {2}", this, succ, toState.ToString ());
                 switch (toState) {
                 case StateEnum.Eligible:
                     if (0 == remaining.Count ()) {
