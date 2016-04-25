@@ -548,7 +548,7 @@ namespace NachoCore.IMAP
             }
             if ((Flags & MessageFlags.Answered) == MessageFlags.Answered) {
                 // we don't really know if this was ReplyAll or ReplyToSender. So just assume ReplyToSender,
-                // but don't overwrite any value REPLYTO<something> value we might have set previously.
+                // but don't overwrite any REPLYTO<something> value we might have set previously.
                 if (emailMessage.LastVerbExecuted != (int)AsLastVerbExecutedType.REPLYTOALL &&
                     emailMessage.LastVerbExecuted != (int)AsLastVerbExecutedType.REPLYTOSENDER) {
                     emailMessage.LastVerbExecuted = (int)AsLastVerbExecutedType.REPLYTOSENDER;
