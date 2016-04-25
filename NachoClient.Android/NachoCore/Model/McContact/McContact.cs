@@ -1381,6 +1381,48 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static McContact QueryBestMatchByEmailAddress (int preferredAccount, string emailAddress, int addressId)
+        {
+            if (0 != addressId) {
+                var address = McEmailAddress.QueryById<McEmailAddress> (addressId);
+                if (null != address) {
+                    var contact = BestMatch (QueryByEmailAddress (address.CanonicalEmailAddress), preferredAccount);
+                    if (null != contact) {
+                        return contact;
+                    }
+                }
+            }
+            return QueryBestMatchByEmailAddress (preferredAccount, emailAddress);
+        }
+
+        public static McContact QueryBestMatchByEmailAddress (int preferredAccount, string emailAddress)
+        {
+            var result = BestMatch (QueryByEmailAddress (emailAddress), preferredAccount);
+            if (null == result) {
+                MimeKit.MailboxAddress parsedAddress;
+                if (MimeKit.MailboxAddress.TryParse(emailAddress, out parsedAddress)) {
+                    if (emailAddress != parsedAddress.Address) {
+                        result = BestMatch (QueryByEmailAddress (parsedAddress.Address), preferredAccount);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private static McContact BestMatch (List<McContact> matches, int preferredAccount)
+        {
+            McContact best = null;
+            foreach (var match in matches) {
+                if (null == best ||
+                    (best.IsGleaned() && !match.IsGleaned()) ||
+                    (best.IsGleaned() == match.IsGleaned() && best.AccountId != preferredAccount && match.AccountId == preferredAccount))
+                {
+                    best = match;
+                }
+            }
+            return best;
+        }
+
         public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", emailAddressIndexList.ToArray<int> ()));
