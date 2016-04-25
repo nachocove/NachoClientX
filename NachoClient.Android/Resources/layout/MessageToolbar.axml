@@ -7,6 +7,22 @@
         android:background="@android:color/white"
         android:orientation="horizontal">
         <LinearLayout
+            android:id="@+id/quick_reply"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:orientation="vertical">
+            <ImageView
+                android:src="@drawable/contact_quickemail"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:scaleType="fitXY"
+                android:layout_gravity="center" />
+        </LinearLayout>
+        <LinearLayout
             android:id="@+id/reply"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -67,6 +83,23 @@
                 android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
+                android:layout_gravity="center"
+                android:padding="3dp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/move"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:orientation="vertical">
+            <ImageView
+                android:src="@drawable/folder_move"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:scaleType="fitXY"
                 android:layout_gravity="center"
                 android:padding="3dp" />
         </LinearLayout>

@@ -48,13 +48,13 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
+        protected override NachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            INachoEmailMessages messages;
+            NachoEmailMessages messages;
             if (Folder.IsClientOwnedDraftsFolder () || Folder.IsClientOwnedOutboxFolder ()) {
                 messages = new NachoDraftMessages (Folder);
             } else {
-                messages = new NachoEmailMessages (Folder);
+                messages = new NachoFolderMessages (Folder);
             }
             messages.Refresh (out adds, out deletes);
             return messages;

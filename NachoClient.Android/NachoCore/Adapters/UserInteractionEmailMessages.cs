@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class UserInteractionEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
+    public class UserInteractionEmailMessages : NachoEmailMessages
     {
         McContact contact;
         List<McEmailMessageThread> threadList;

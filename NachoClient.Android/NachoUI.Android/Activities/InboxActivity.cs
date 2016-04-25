@@ -19,7 +19,7 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "InboxActivity")]            
     public class InboxActivity : NcMessageListActivity
     {
-        protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
+        protected override NachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             var messages = NcEmailSingleton.InboxSingleton (NcApplication.Instance.Account.Id);
             NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes);

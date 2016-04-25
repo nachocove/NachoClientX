@@ -189,13 +189,13 @@ namespace NachoCore.Brain
 
         public override bool Analyze (McEmailMessage emailMessage)
         {
-            var isFiltered =
-                String.IsNullOrEmpty (emailMessage.Headers) ? false : HeaderFilters.IsMatch (emailMessage.Headers);
-            if (isFiltered && (false == emailMessage.HeadersFiltered)) {
-                emailMessage.HeadersFiltered = isFiltered;
+            if (emailMessage.HeadersFiltered) {
+                // Already disqualified. No further computation needed.
                 return true;
             }
-            return false;
+            bool isMarketing = !string.IsNullOrEmpty (emailMessage.Headers) && HeaderFilters.IsMatch (emailMessage.Headers);
+            emailMessage.HeadersFiltered = isMarketing;
+            return isMarketing;
         }
 
         public override bool ConditionMet (McEmailMessage emailMessage)
@@ -218,13 +218,13 @@ namespace NachoCore.Brain
 
         public override bool Analyze (McEmailMessage emailMessage)
         {
-            var isBulk =
-                String.IsNullOrEmpty (emailMessage.Headers) ? false : HeaderFilters.IsMatch (emailMessage.Headers);
-            if (isBulk && (false == emailMessage.HeadersFiltered)) {
-                emailMessage.HeadersFiltered = isBulk;
+            if (emailMessage.HeadersFiltered) {
+                // Already disqualified. No further computation needed.
                 return true;
             }
-            return false;
+            bool isBulk = !string.IsNullOrEmpty (emailMessage.Headers) && HeaderFilters.IsMatch (emailMessage.Headers);
+            emailMessage.HeadersFiltered = isBulk;
+            return isBulk;
         }
 
         public override bool ConditionMet (McEmailMessage emailMessage)

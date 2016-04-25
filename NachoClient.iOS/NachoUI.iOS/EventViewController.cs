@@ -1368,7 +1368,9 @@ namespace NachoClient.iOS
         {
             var dc = new EditEventViewController ();
             dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
-            NavigationController.PushViewController (dc, true);
+            var navigationController = new UINavigationController (dc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         private void CancelMeetingButtonClicked (object sender, EventArgs args)

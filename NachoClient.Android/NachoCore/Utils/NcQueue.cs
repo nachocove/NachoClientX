@@ -114,12 +114,7 @@ namespace NachoCore.Utils
             Token.ThrowIfCancellationRequested ();
             ProducedCount.Wait (Token);
             lock (Lock) {
-                NcAssert.True (0 < _Queue.Count);
-                T obj = _Queue [0];
-                _Queue.RemoveAt (0);
-                _NumDequeueBytes += obj.GetSize ();
-                _NumDequeue++;
-                return obj;
+                return DequeueImplementation ();
             }
         }
 
@@ -203,8 +198,14 @@ namespace NachoCore.Utils
                 if (_Queue.Count > 0) {
                     T obj = Peek ();
                     if (match (obj)) {
-                        Dequeue ();
-                        return obj;
+                        // It is possible that another thread called Dequeue(), made it past the ProducedCount.Wait()
+                        // call, and is waiting on "lock (Lock)".  If that is the case, then this thread has to stop
+                        // what it is doing and leave the queue unchanged.  Since the other thread has already
+                        // acquired the semaphore, it rightfully expects the queue to contain at least one item.
+                        // The Wait(timeout) call is how this thread checks for such a condition.
+                        if (ProducedCount.Wait (TimeSpan.Zero)) {
+                            return DequeueImplementation ();
+                        }
                     }
                 }
                 return default(T);
@@ -237,6 +238,17 @@ namespace NachoCore.Utils
                     obj = _Queue [_Queue.Count - 1];
                 }
             }
+            return obj;
+        }
+
+        // The caller must have already acquired both the semaphore and the lock!!
+        private T DequeueImplementation ()
+        {
+            NcAssert.True (0 < _Queue.Count);
+            T obj = _Queue [0];
+            _Queue.RemoveAt (0);
+            _NumDequeueBytes += obj.GetSize ();
+            _NumDequeue++;
             return obj;
         }
     }

@@ -131,9 +131,6 @@
     <Compile Include="NachoCore\Adapters\INachoCalendar.cs" />
     <Compile Include="NachoCore\Adapters\INachoContacts.cs" />
     <Compile Include="NachoCore\Adapters\INachoFolders.cs" />
-    <Compile Include="NachoCore\Adapters\INachoEmailMessages.cs" />
-    <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
-    <Compile Include="NachoCore\Adapters\NachoDeferredEmailMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoCalendar.cs" />
     <Compile Include="NachoCore\Adapters\NachoContacts.cs" />
     <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
@@ -322,7 +319,6 @@
     <Compile Include="NachoCore\Utils\RegexUtilities.cs" />
     <Compile Include="NachoCore\Model\McPortrait.cs" />
     <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
-    <Compile Include="NachoCore\Brain\NcBrainControl.cs" />
     <Compile Include="NachoCore\Model\McEvent.cs" />
     <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
     <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
@@ -539,9 +535,6 @@
     <Compile Include="NachoUI.Android\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration47.cs" />
     <Compile Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\DeferredActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\DeadlineActivity.cs" />
-    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
     <Compile Include="NachoCore\Model\McMapAttachmentItem.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration48.cs" />
     <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
@@ -669,6 +662,9 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration55.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration56.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration57.cs" />
+    <Compile Include="NachoCore\Adapters\NachoFolderMessages.cs" />
+    <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
+    <Compile Include="NachoCore\Utils\MessagesSyncManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

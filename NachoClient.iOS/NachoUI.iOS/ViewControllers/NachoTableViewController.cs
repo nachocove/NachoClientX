@@ -15,12 +15,12 @@ namespace NachoClient.iOS
     public partial class NachoTableViewController : UITableViewController, SwipeTableViewDelegate, IUIScrollViewDelegate
     {
         
-        NSIndexPath SwipingIndexPath;
-        NcActivityIndicatorView RefreshIndicator;
-        UILabel RefreshLabel;
+        protected NSIndexPath SwipingIndexPath { get ; private set; }
+        protected NcActivityIndicatorView RefreshIndicator { get ; private set; }
+        protected UILabel RefreshLabel { get; private set; }
         protected nfloat RefreshIndicatorSize = 40.0f;
         protected nfloat GroupedCellInset = 10.0f;
-        bool IsShowingRefreshIndicator;
+        protected bool IsShowingRefreshIndicator { get ; private set; }
         UITableViewStyle TableStyle;
         string ClassName;
 
@@ -74,7 +74,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        void EnableRefreshControl ()
+        protected void EnableRefreshControl ()
         {
             RefreshControl = new UIRefreshControl ();
             RefreshControl.AttributedTitle = new NSAttributedString ("test");
@@ -99,24 +99,45 @@ namespace NachoClient.iOS
             refreshOverlay.AddSubview (RefreshLabel);
 
             RefreshControl.AddSubview (refreshOverlay);
+
+            // The refresh control will sometimes be visible when a table loads.  It often seems to happen when the table rows
+            // don't fill up the full view height.  Regardless of the cause, scheduling an update on the run loop, so it
+            // happens after other queued layout events, seems to help.  Although, I've caught a few cases where it still shows,
+            // so there may still be a better solution/workaround than this one.
+            // One assumption here is that EnableRefreshControl will only be called when the table is expected to be at 0,0 offset
+            ScheduleContentOffsetAdjustment ();
         }
 
-        void EndRefreshing ()
+        public void ScheduleContentOffsetAdjustment ()
         {
-            RefreshIndicator.StopAnimating ();
-            RefreshControl.EndRefreshing ();
+            var selector = new ObjCRuntime.Selector ("adjustContentOffset");
+            var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+            NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
         }
 
-        void HandleRefreshControlEvent (object sender, EventArgs e)
+        [Export ("adjustContentOffset")]
+        void AdjustContentOffset ()
         {
-            Refresh ();
+            TableView.ContentOffset = new CGPoint (0.0f, 0.0f);
         }
 
-        protected void Refresh ()
+        protected void EndRefreshing ()
+        {
+            if (RefreshControl != null) {
+                if (RefreshIndicator.IsAnimating) {
+                    RefreshIndicator.StopAnimating ();
+                }
+                if (RefreshControl.Refreshing) {
+                    RefreshControl.EndRefreshing ();
+                }
+            }
+        }
+
+        protected virtual void HandleRefreshControlEvent (object sender, EventArgs e)
         {
         }
 
-        void EndSwiping ()
+        protected virtual void EndSwiping ()
         {
             if (SwipingIndexPath != null) {
                 var cell = TableView.CellAt (SwipingIndexPath) as SwipeTableViewCell;
@@ -143,16 +164,24 @@ namespace NachoClient.iOS
         {
             if (RefreshControl != null) {
                 var distancePulled = (nfloat)Math.Max (0, -RefreshControl.Frame.Y);
-                if (distancePulled > 0.0f) {
+                if (distancePulled >= 1.0f) {
+                    if (!IsShowingRefreshIndicator) {
+                        PrepareRefreshIndicator ();
+                    }
                     UpdateRefreshIndicatorForPosition (distancePulled);
                     IsShowingRefreshIndicator = true;
                 } else {
                     if (IsShowingRefreshIndicator) {
+                        UpdateRefreshIndicatorForPosition (0.0f);
                         ClearRefreshIndicator ();
                         IsShowingRefreshIndicator = false;
                     }
                 }
             }
+        }
+
+        protected virtual void PrepareRefreshIndicator()
+        {
         }
 
         void UpdateRefreshIndicatorForPosition (nfloat distancePulled)
@@ -200,13 +229,16 @@ namespace NachoClient.iOS
             }
         }
 
-        public void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
+        public virtual void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
         {
-            EndSwiping ();
+
+            if (SwipingIndexPath != null) {
+                EndSwiping ();
+            }
             SwipingIndexPath = indexPath;
         }
 
-        public void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
+        public virtual void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
         {
             if (indexPath.IsEqual (SwipingIndexPath)) {
                 SwipingIndexPath = null;
@@ -247,6 +279,39 @@ namespace NachoClient.iOS
             return null;
         }
 
+    }
+
+    public class NachoWrappedTableViewController : NachoTableViewController
+    {
+        
+        UITableView _TableView;
+        public override UITableView TableView {
+            get {
+                return _TableView;
+            }
+            set {
+                base.TableView = _TableView = value;
+            }
+        }
+
+        public NachoWrappedTableViewController (UITableViewStyle style) : base (style)
+        {
+        }
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+
+            var view = new UIView (new CGRect (0.0f, 0.0f, 320.0f, 320.0f));
+            view.BackgroundColor = UIColor.White;
+
+            TableView.Frame = view.Bounds;
+            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+
+            view.AddSubview (TableView);
+
+            View = view;
+        }
     }
 }
 

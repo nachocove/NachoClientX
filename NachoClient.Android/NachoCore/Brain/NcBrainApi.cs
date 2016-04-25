@@ -13,7 +13,10 @@ namespace NachoCore.Brain
             var dbEvent = new McBrainEvent (brainEvent);
             dbEvent.AccountId = accountId;
             dbEvent.Insert ();
-            SharedInstance.EnqueueIfNotAtTail (new NcBrainPersistentQueueEvent ());
+            if (SharedInstance.EventQueue.IsEmpty ()) {
+                // The brain might be asleep.  Wake it up.
+                SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            }
         }
 
         protected static bool ValidEmailMessage (McEmailMessage emailMessage)
@@ -32,8 +35,7 @@ namespace NachoCore.Brain
             if ((0 == accountId) || (0 == emailAddressId)) {
                 return;
             }
-            var brainEvent = new NcBrainUpdateAddressScoreEvent (emailAddressId, forcedUpdateDependentMessages);
-            PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainUpdateAddressScoreEvent (emailAddressId, forcedUpdateDependentMessages));
         }
 
         public static void UpdateMessageScore (int accountId, int emailMessageId)
@@ -41,8 +43,7 @@ namespace NachoCore.Brain
             if ((0 == accountId) || (0 == emailMessageId)) {
                 return;
             }
-            var brainEvent = new NcBrainUpdateMessageScoreEvent (accountId, emailMessageId);
-            PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainUpdateMessageScoreEvent (accountId, emailMessageId));
         }
 
         public static void UpdateUserAction (int accountId, int emailMessageId, int action)
@@ -50,8 +51,7 @@ namespace NachoCore.Brain
             if ((0 == accountId) || (0 == emailMessageId)) {
                 return;
             }
-            var brainEvent = new NcBrainUpdateUserActionEvent (accountId, emailMessageId, action);
-            PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainUpdateUserActionEvent (accountId, emailMessageId, action));
         }
 
         public static void UnindexEmailMessage (McEmailMessage emailMessage)
@@ -113,11 +113,10 @@ namespace NachoCore.Brain
             if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.NotificationTime, notificationTime)) {
                 return;
             }
-            var brainEvent = new NcBrainUpdateMessageNotificationStatusEvent (emailMessage.AccountId, emailMessage.Id) {
+            SharedInstance.Enqueue (new NcBrainUpdateMessageNotificationStatusEvent (emailMessage.AccountId, emailMessage.Id) {
                 NotificationTime = notificationTime,
                 Variance = variance,
-            };
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            });
         }
 
         public static void MessageReadStatusUpdated (McEmailMessage emailMessage, DateTime readTime, double variance)
@@ -129,11 +128,10 @@ namespace NachoCore.Brain
             if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.ReadTime, readTime)) {
                 return;
             }
-            var brainEvent = new NcBrainUpdateMessageReadStatusEvent (emailMessage.AccountId, emailMessage.Id) {
+            SharedInstance.Enqueue (new NcBrainUpdateMessageReadStatusEvent (emailMessage.AccountId, emailMessage.Id) {
                 ReadTime = readTime,
                 Variance = variance,
-            };
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            });
         }
 
         public static void MessageReplyStatusUpdated (McEmailMessage emailMessage, DateTime replyTime, double variance)
@@ -145,11 +143,10 @@ namespace NachoCore.Brain
             if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.ReplyTime, replyTime)) {
                 return;
             }
-            var brainEvent = new NcBrainUpdateMessageReplyStatusEvent (emailMessage.AccountId, emailMessage.Id) {
+            SharedInstance.Enqueue (new NcBrainUpdateMessageReplyStatusEvent (emailMessage.AccountId, emailMessage.Id) {
                 ReplyTime = replyTime,
                 Variance = variance,
-            };
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            });
         }
     }
 }

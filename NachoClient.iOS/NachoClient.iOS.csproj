@@ -340,15 +340,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
       <Link>NachoCore\Adapters\NachoFolders.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeferredEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoDeferredEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoEmailMessages.cs">
-      <Link>NachoCore\Adapters\INachoEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoFolders.cs">
       <Link>NachoCore\Adapters\INachoFolders.cs</Link>
     </Compile>
@@ -731,8 +722,6 @@
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\A.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Support\IMessageTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
@@ -919,9 +908,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainControl.cs">
-      <Link>NachoCore\Brain\NcBrainControl.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
     </Compile>
@@ -948,9 +934,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
     <Compile Include="NachoUI.iOS\NachoTabBarController.cs" />
-    <Compile Include="NachoUI.iOS\HotListViewController.cs" />
-    <Compile Include="NachoUI.iOS\DeferredViewController.cs" />
-    <Compile Include="NachoUI.iOS\InboxViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
       <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
     </Compile>
@@ -998,7 +981,6 @@
       <Link>NachoCore\Index\IndexDocument.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
-    <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
@@ -1009,7 +991,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
       <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\DeadlinesViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
@@ -1135,7 +1116,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDraftMessages.cs">
       <Link>NachoCore\Adapters\NachoDraftMessages.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
       <Link>NachoCore\Model\McLicenseInformation.cs</Link>
     </Compile>
@@ -1500,7 +1480,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\LikelyToReadViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
@@ -1532,9 +1511,6 @@
     <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration47.cs">
       <Link>NachoCore\Model\Migration\NcMigration47.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeadlineEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoDeadlineEmailMessages.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapAttachmentItem.cs">
       <Link>NachoCore\Model\McMapAttachmentItem.cs</Link>
@@ -1678,6 +1654,21 @@
     <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration57.cs">
       <Link>NachoCore\Model\Migration\NcMigration57.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolderMessages.cs">
+      <Link>NachoCore\Adapters\NachoFolderMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\InboxViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\CornerLayer.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageListFilterBar.cs" />
+    <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessagesSyncManager.cs">
+      <Link>NachoCore\Utils\MessagesSyncManager.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2718,6 +2709,24 @@
     <BundleResource Include="Resources\avatar-salesforce%404x.png" />
     <BundleResource Include="Resources\avatar-salesforce%406x.png" />
     <BundleResource Include="Resources\chat-email.html" />
+    <BundleResource Include="Resources\email-filter-all.png" />
+    <BundleResource Include="Resources\email-filter-all%402x.png" />
+    <BundleResource Include="Resources\email-filter-all%403x.png" />
+    <BundleResource Include="Resources\email-filter-focus.png" />
+    <BundleResource Include="Resources\email-filter-focus%402x.png" />
+    <BundleResource Include="Resources\email-filter-focus%403x.png" />
+    <BundleResource Include="Resources\email-filter-unread.png" />
+    <BundleResource Include="Resources\email-filter-unread%402x.png" />
+    <BundleResource Include="Resources\email-filter-unread%403x.png" />
+    <BundleResource Include="Resources\nav-hot-active.png" />
+    <BundleResource Include="Resources\nav-hot-active%402x.png" />
+    <BundleResource Include="Resources\nav-hot-active%403x.png" />
+    <BundleResource Include="Resources\nav-hot.png" />
+    <BundleResource Include="Resources\nav-hot%402x.png" />
+    <BundleResource Include="Resources\nav-hot%403x.png" />
+    <BundleResource Include="Resources\empty-hot.png" />
+    <BundleResource Include="Resources\empty-hot%402x.png" />
+    <BundleResource Include="Resources\empty-hot%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
