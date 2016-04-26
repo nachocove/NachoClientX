@@ -517,7 +517,7 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Trying to update email message without any flags");
                 return false;
             }
-            MessageFlags flags = AdjustFlagsFromPending (emailMessage, summary.Flags.GetValueOrDefault ());
+            MessageFlags flags = AdjustFlagsFromPendings (emailMessage.AccountId, emailMessage.Id, summary.Flags.GetValueOrDefault ());
             HashSet<string> UserFlags = summary.UserFlags;
             bool changed = false;
 
@@ -538,7 +538,7 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        static MessageFlags AdjustFlagsFromPending (McEmailMessage emailMessage, MessageFlags flags)
+        static MessageFlags AdjustFlagsFromPendings (int accountId, int emailId, MessageFlags flags)
         {
             var pendings = NcModel.Instance.Db.Query<McPending> (
                 string.Format ("SELECT * FROM McPending WHERE AccountId=? AND ServerId=? AND State NOT IN ('{0}') AND Operation IN ('{1}')",
@@ -549,8 +549,8 @@ namespace NachoCore.IMAP
                     string.Join ("','", new List<McPending.Operations> () {
                         McPending.Operations.EmailMarkRead,
                     })),
-                emailMessage.AccountId,
-                emailMessage.Id);
+                accountId,
+                emailId);
 
             foreach (McPending pending in pendings) {
                 switch (pending.Operation) {
@@ -558,7 +558,7 @@ namespace NachoCore.IMAP
                     // We have a pending that is supposed to un/set the Seen flag, but we have an incoming sync with
                     // a value that differs. Override the incoming value, so we don't set the DB to the 'old' (on-server)
                     // value that we're going to set when the outgoing change gets processed.
-                    Log.Warn (Log.LOG_IMAP, "ImapSyncCommand{0}: Overriding incoming IsRead={1} due to pending IsRead={2}", emailMessage.AccountId,
+                    Log.Warn (Log.LOG_IMAP, "ImapSyncCommand{0}: Overriding incoming IsRead={1} due to pending IsRead={2}", accountId,
                         ((flags & MessageFlags.Seen) == MessageFlags.Seen),
                         (pending.EmailSetFlag_FlagType == McPending.MarkReadFlag));
                     if (pending.EmailSetFlag_FlagType == McPending.MarkReadFlag) {
