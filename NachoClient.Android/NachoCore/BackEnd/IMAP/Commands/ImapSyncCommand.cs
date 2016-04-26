@@ -91,7 +91,7 @@ namespace NachoCore.IMAP
             }
 
             Finish (changed);
-            ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+            imapProtoControl.Strategy.ResolveOneSync (PendingSingle, Synckit.Folder);
             PendingSingle = null; // we resolved it.
             cap.Dispose ();
             return evt;
@@ -123,7 +123,7 @@ namespace NachoCore.IMAP
             changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
             Event evt;
             var protocolState = BEContext.ProtocolState;
-            if (ImapStrategy.FillInFastSyncKit (ref protocolState, ref Synckit, AccountId)) {
+            if (imapProtoControl.Strategy.FillInFastSyncKit (ref protocolState, ref Synckit, AccountId)) {
                 evt = syncFolder (mailKitFolder, ref changed);
                 changed = true;
             } else {

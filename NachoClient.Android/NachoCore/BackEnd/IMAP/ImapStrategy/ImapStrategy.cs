@@ -17,6 +17,14 @@ namespace NachoCore.IMAP
     public partial class ImapStrategy : NcStrategy
     {
         private Random CoinToss;
+        /// <summary>
+        /// Do a quicksync. Set this to true when strategy is created in quicksync. Sync will turn this off after the first run
+        /// so we don't keep thinking we're starting a new sync-run in quicksync and thus loop forever.
+        /// </summary>
+        /// <description>
+        /// NOTE: This assumes we quicksync a single folder. If we start doing more folders, we'll likely need a per-folder DoQuickSync.
+        /// </description>
+        public bool DoQuickSync { get; set; }
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
