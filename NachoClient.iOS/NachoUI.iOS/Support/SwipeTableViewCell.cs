@@ -149,22 +149,18 @@ namespace NachoClient.iOS
 
         #region Helper Properties
 
-        private UITableView _TableView;
-
         private UITableView TableView {
             get {
                 if (Superview == null) {
                     return null;
                 } else {
-                    if (_TableView == null) {
-                        var view = Superview;
-                        _TableView = view as UITableView;
-                        while (_TableView == null && view != null) {
-                            view = view.Superview;
-                            _TableView = view as UITableView;
-                        }
+                    var view = Superview;
+                    var tableView = view as UITableView;
+                    while (tableView == null && view != null) {
+                        view = view.Superview;
+                        tableView = view as UITableView;
                     }
-                    return _TableView;
+                    return tableView;
                 }
             }
         }

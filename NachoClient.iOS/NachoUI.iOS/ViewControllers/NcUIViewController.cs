@@ -88,6 +88,13 @@ namespace NachoClient.iOS
         {
         }
 
+        protected bool ShouldCleanupDuringDidDisappear
+        {
+            get {
+                return IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
+            }
+        }
+
         private void OnKeyboardNotification (NSNotification notification)
         {
             if (IsViewLoaded && View.Window != null) {
@@ -157,7 +164,7 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             base.ViewDidDisappear (animated);
-            if (this.IsViewLoaded && null == this.NavigationController) {
+            if (ShouldCleanupDuringDidDisappear) {
                 Cleanup ();
                 ViewHelper.DisposeViewHierarchy (View);
                 View = null;

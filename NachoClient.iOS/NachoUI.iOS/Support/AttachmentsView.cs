@@ -83,6 +83,15 @@ namespace NachoClient.iOS
             AddSubview (BottomBorder);
         }
 
+        public void Cleanup ()
+        {
+            HeaderView.RemoveGestureRecognizer (HeaderPressRecognizer);
+            HeaderPressRecognizer = null;
+
+            TableView.WeakDelegate = null;
+            TableView.WeakDataSource = null;
+        }
+
         void HeaderPressed ()
         {
             if (HeaderPressRecognizer.State == UIGestureRecognizerState.Began) {

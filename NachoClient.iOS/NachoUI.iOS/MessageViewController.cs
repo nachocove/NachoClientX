@@ -202,25 +202,48 @@ namespace NachoClient.iOS
 
         public override void ViewDidDisappear (bool animated)
         {
-            if (IsMovingToParentViewController) {
-                HideActivityIndicator ();
+            if (ShouldCleanupDuringDidDisappear) {
+                Cleanup ();
             }
             base.ViewDidDisappear (animated);
         }
 
-        public override void ViewDidUnload ()
+        void Cleanup ()
         {
-            BodyView.Delegate = null;
-            if (ReusableWebViews.Count < 3) {
-                ReusableWebViews.Push (BodyView);
-                if (BodyView.IsLoading) {
-                    BodyView.StopLoading ();
-                }
-                BodyView.EvaluateJavascript ("document.body.innerHTML = ''");
+            // Stop any downloading
+            HideActivityIndicator ();
+            if (BodyDownloader != null) {
+                BodyDownloader.Delegate = null;
+                BodyDownloader = null;
             }
+
+            // Recycle body view
+            BodyView.Delegate = null;
+            if (BodyView.IsLoading) {
+                BodyView.StopLoading ();
+            }
+            BodyView.EvaluateJavascript ("document.body.innerHTML = ''");
+            BodyView.RemoveFromSuperview ();
+            ReusableWebViews.Push (BodyView);
+
+            // clean up navbar
+            CreateEventButton.Clicked -= CreateEventButtonClicked;
+            HotButton.Clicked -= ToggleHot;
+
+            // clean up header
+            HeaderView.RemoveGestureRecognizer (HeaderPressRecognizer);
+            HeaderPressRecognizer = null;
+
+            // clean up attachments
+            AttachmentsView.Delegate = null;
+            AttachmentsView.Cleanup ();
+
+            // clean up toolbar
             MessageToolbar.OnClick = null;
             MessageToolbar.Cleanup ();
-            base.ViewDidUnload ();
+
+            // clean up scroll view
+            ScrollView.Delegate = null;
         }
 
         #endregion
@@ -430,6 +453,8 @@ namespace NachoClient.iOS
             }
             HideActivityIndicator ();
             DisplayMessageBody ();
+            BodyDownloader.Delegate = null;
+            BodyDownloader = null;
         }
 
         public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
@@ -439,6 +464,8 @@ namespace NachoClient.iOS
             alert.AddAction (UIAlertAction.Create("OK", UIAlertActionStyle.Default, null));
             PresentViewController (alert, true, null);
             // TODO: show preview and error message
+            BodyDownloader.Delegate = null;
+            BodyDownloader = null;
         }
 
         void DisplayMessageBody ()
