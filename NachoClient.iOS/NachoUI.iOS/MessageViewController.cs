@@ -280,6 +280,8 @@ namespace NachoClient.iOS
                 HeaderView.SetSelected (true, animated: false);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Ended) {
                 ShowHeaderDetails ();
+            }else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Changed) {
+                HeaderView.SetSelected (HeaderPressRecognizer.IsInsideView, animated: false);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Failed) {
                 HeaderView.SetSelected (false, animated: true);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Cancelled) {

@@ -40,6 +40,17 @@ namespace NachoClient.iOS
         UIImageView IconView;
         nfloat IconSize = 16.0f;
         NcTimer ChangeDateLabelTimer;
+        NcTimer SetSelectedTimer;
+
+        private bool _Selected;
+        public bool Selected {
+            get {
+                return _Selected;
+            }
+            set {
+                SetSelected (value, false);
+            }
+        }
 
         private UIView ContentView {
             get {
@@ -70,6 +81,7 @@ namespace NachoClient.iOS
             EmptyLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             EmptyLabel.Font = A.Font_AvenirNextDemiBold17;
             EmptyLabel.TextColor = A.Color_NachoTextGray;
+            EmptyLabel.TextAlignment = UITextAlignment.Center;
             EmptyLabel.Hidden = true;
             EmptyLabel.Text = "No upcoming events";
             ContentView.AddSubview (EmptyLabel);
@@ -94,8 +106,6 @@ namespace NachoClient.iOS
             DateLabel.Font = A.Font_AvenirNextRegular14;
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
-
-            AddGestureRecognizer (new UITapGestureRecognizer (Tap));
         }
 
         public void CancelAutomaticDateUpdate ()
@@ -106,10 +116,74 @@ namespace NachoClient.iOS
             }
         }
 
-        void Tap ()
+        public override void TouchesBegan (Foundation.NSSet touches, UIEvent evt)
         {
-            if (Event != null) {
-                Action ();
+            if (Event != null && !SwipeView.IsEditing ()) {
+                SetSelectedTimer = new NcTimer ("HotEventView_SetSelected", SetSelectedAfterDelay, null, TimeSpan.FromMilliseconds(100), TimeSpan.Zero);
+            }
+        }
+
+        public override void TouchesMoved (Foundation.NSSet touches, UIEvent evt)
+        {
+            if (Event != null && !SwipeView.IsEditing () && SetSelectedTimer == null) {
+                var touch = touches.AnyObject as UITouch;
+                var location = touch.LocationInView (this);
+                bool isInView = location.X >= Bounds.X && location.X < Bounds.X + Bounds.Width && location.Y >= Bounds.Y && location.Y < Bounds.Y + Bounds.Height;
+                SetSelected (isInView, animated: false);
+            }
+        }
+
+        public override void TouchesEnded (Foundation.NSSet touches, UIEvent evt)
+        {
+            if (SetSelectedTimer != null) {
+                SetSelectedTimer.Dispose ();
+                SetSelectedTimer = null;
+                SetSelected (true, animated: false);
+            }
+            if (Event != null && !SwipeView.IsEditing ()) {
+                var touch = touches.AnyObject as UITouch;
+                var location = touch.LocationInView (this);
+                bool isInView = location.X >= Bounds.X && location.X < Bounds.X + Bounds.Width && location.Y >= Bounds.Y && location.Y < Bounds.Y + Bounds.Height;
+                if (isInView) {
+                    Action ();
+                } else {
+                    SetSelected (false, animated: false);
+                }
+            }
+        }
+
+        public override void TouchesCancelled (Foundation.NSSet touches, UIEvent evt)
+        {
+            if (SetSelectedTimer != null) {
+                SetSelectedTimer.Dispose ();
+                SetSelectedTimer = null;
+            }
+            SetSelected (false, animated: false);
+        }
+
+        void SetSelectedAfterDelay (object state)
+        {
+            SetSelectedTimer.Dispose ();
+            SetSelectedTimer = null;
+            BeginInvokeOnMainThread (() => {
+                SetSelected (true, animated: false);
+            });
+        }
+
+        public void SetSelected (bool selected, bool animated)
+        {
+            _Selected = selected;
+            if (animated) {
+                UIView.BeginAnimations (null, IntPtr.Zero);
+                UIView.SetAnimationDuration (0.25f);
+            }
+            if (selected) {
+                ContentView.BackgroundColor = UIColor.FromRGB (0xE0, 0xE0, 0xE0);
+            } else {
+                ContentView.BackgroundColor = UIColor.White;
+            }
+            if (animated) {
+                UIView.CommitAnimations ();
             }
         }
 

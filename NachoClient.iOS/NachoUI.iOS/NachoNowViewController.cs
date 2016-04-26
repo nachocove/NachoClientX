@@ -141,6 +141,9 @@ namespace NachoClient.iOS
                 ReloadHotMessages ();
             }
             HasAppearedOnce = true;
+            if (HotEventView.Selected) {
+                HotEventView.SetSelected (false, animated: true);
+            }
         }
 
         public override void ViewDidAppear (bool animated)
