@@ -57,6 +57,37 @@ namespace NachoClient.iOS
         NcTimer ActivityShowTimer;
         MessageDownloader BodyDownloader;
         PressGestureRecognizer HeaderPressRecognizer;
+        UILabel _ErrorLabel;
+        UILabel ErrorLabel {
+            get {
+                if (_ErrorLabel == null) {
+                    _ErrorLabel = new UILabel ();
+                    _ErrorLabel.Font = A.Font_AvenirNextRegular17;
+                    _ErrorLabel.TextColor = A.Color_NachoRed;
+                    _ErrorLabel.Lines = 0;
+                    _ErrorLabel.UserInteractionEnabled = true;
+                    _ErrorLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                    ErrorTapGestureRecognizer = new UITapGestureRecognizer (RetryDownload);
+                    _ErrorLabel.AddGestureRecognizer (ErrorTapGestureRecognizer);
+                }
+                return _ErrorLabel;
+            }
+        }
+
+        UILabel _PreviewLabel;
+        UILabel PreviewLabel {
+            get {
+                if (_PreviewLabel == null) {
+                    _PreviewLabel = new UILabel ();
+                    _PreviewLabel.Font = A.Font_AvenirNextRegular17;
+                    _PreviewLabel.TextColor = A.Color_NachoDarkText;
+                    _PreviewLabel.Lines = 0;
+                    _PreviewLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                }
+                return _PreviewLabel;
+            }
+        }
+        UITapGestureRecognizer ErrorTapGestureRecognizer;
 
         UIBarButtonItem CreateEventButton;
         UIBarButtonItem HotButton;
@@ -247,11 +278,19 @@ namespace NachoClient.iOS
             AttachmentsView.Cleanup ();
 
             // clean up the calendar
-            CalendarView.Cleanup ();
+            if (CalendarView != null) {
+                CalendarView.Cleanup ();
+            }
 
             // clean up toolbar
             MessageToolbar.OnClick = null;
             MessageToolbar.Cleanup ();
+
+            // clean up error view
+            if (_ErrorLabel != null) {
+                _ErrorLabel.RemoveGestureRecognizer (ErrorTapGestureRecognizer);
+                ErrorTapGestureRecognizer = null;
+            }
 
             // clean up scroll view
             ScrollView.Delegate = null;
@@ -380,17 +419,28 @@ namespace NachoClient.iOS
             HeaderView.Update ();
         }
 
+        void RetryDownload ()
+        {
+            ScrollView.RemoveCompoundView (ErrorLabel);
+            if (_PreviewLabel != null) {
+                ScrollView.RemoveCompoundView (PreviewLabel);
+            }
+            BodyView.Hidden = false;
+            LayoutScrollView ();
+            StartBodyDownload ();
+        }
+
         #endregion
 
         #region Body Download
 
         void StartBodyDownload ()
         {
+            ActivityShowTimer = new NcTimer ("", ActivityShowTimerFired, null, TimeSpan.FromSeconds (2), TimeSpan.Zero);
             BodyDownloader = new MessageDownloader ();
             BodyDownloader.Delegate = this;
             BodyDownloader.Bundle = Bundle;
             BodyDownloader.Download (Message);
-            ActivityShowTimer = new NcTimer ("", ActivityShowTimerFired, null, TimeSpan.FromSeconds (2), TimeSpan.Zero);
         }
 
         void ActivityShowTimerFired (object state)
@@ -473,10 +523,7 @@ namespace NachoClient.iOS
         public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
         {
             HideActivityIndicator ();
-            var alert = UIAlertController.Create ("Download Failed", "Sorry, we couldn't download your message", UIAlertControllerStyle.Alert);
-            alert.AddAction (UIAlertAction.Create("OK", UIAlertActionStyle.Default, null));
-            PresentViewController (alert, true, null);
-            // TODO: show preview and error message
+            ShowDownloadErrorForResult (result);
             BodyDownloader.Delegate = null;
             BodyDownloader = null;
         }
@@ -642,6 +689,30 @@ namespace NachoClient.iOS
             composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
             composeViewController.Composer.InitialText = body;
             composeViewController.Present ();
+        }
+
+        void ShowDownloadErrorForResult (NcResult result)
+        {
+            var canRetryDownload = result.Why != NcResult.WhyEnum.MissingOnServer;
+            if (canRetryDownload) {
+                ErrorLabel.Text = "Message download failed. Tap here to retry.";
+            } else {
+                ErrorLabel.Text = "Message download failed.";
+            }
+            ErrorTapGestureRecognizer.Enabled = canRetryDownload;
+            nfloat padding = 14.0f;
+            var width = ScrollView.Bounds.Width - padding * 2.0f;
+            var size = ErrorLabel.SizeThatFits (new CGSize (width, 0.0f));
+            ErrorLabel.Frame = new CGRect (padding, 0.0f, width, (nfloat)Math.Ceiling (size.Height + 2.0f * padding));
+            ScrollView.AddCompoundView (ErrorLabel);
+            BodyView.Hidden = true;
+            if (!String.IsNullOrEmpty (Message.BodyPreview)) {
+                PreviewLabel.Text = Message.BodyPreview;
+                size = PreviewLabel.SizeThatFits (new CGSize (width, 0.0f));
+                PreviewLabel.Frame = new CGRect (padding, 0.0f, width, (nfloat)Math.Ceiling (size.Height));
+                ScrollView.AddCompoundView (PreviewLabel);
+            }
+            LayoutScrollView ();
         }
 
         #endregion
