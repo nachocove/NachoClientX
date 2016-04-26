@@ -661,6 +661,8 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonFileTable.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration55.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration56.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs" />
     <Compile Include="NachoCore\Adapters\NachoFolderMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
     <Compile Include="NachoCore\Utils\MessagesSyncManager.cs" />
