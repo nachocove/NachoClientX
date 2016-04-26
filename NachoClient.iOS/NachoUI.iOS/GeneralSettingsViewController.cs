@@ -147,7 +147,7 @@ namespace NachoClient.iOS
         public override nfloat GetHeightForHeader (UITableView tableView, nint section)
         {
             if (section == SectionAccounts) {
-                return AccountsHeader.Label.Font.RoundedLineHeight (1.0f) + AccountsHeader.LabelInsets.Top + AccountsHeader.LabelInsets.Bottom;
+                return AccountsHeader.PreferredHeight;
             }
             return 0.0f;
         }

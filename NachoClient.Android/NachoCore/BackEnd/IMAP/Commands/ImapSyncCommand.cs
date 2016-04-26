@@ -66,7 +66,7 @@ namespace NachoCore.IMAP
 
             var changed = UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
             if (changed) {
-                // HACK: Ignore strategy and do a QuickSync.
+                // HACK: Ignore strategy and do a FastSync.
                 Synckit = new SyncKit (Synckit.Folder, Synckit.PendingSingle);
             }
 
@@ -80,10 +80,10 @@ namespace NachoCore.IMAP
                 evt = RegularSync (mailKitFolder, out changed);
                 break;
 
-            case SyncKit.MethodEnum.QuickSync:
+            case SyncKit.MethodEnum.FastSync:
                 NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
-                evt = QuickSync (mailKitFolder, timespan, out changed);
+                evt = FastSync (mailKitFolder, timespan, out changed);
                 break;
 
             default:
@@ -118,12 +118,12 @@ namespace NachoCore.IMAP
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="timespan">Timespan.</param>
         /// <param name="changed">Has anything changed?</param>
-        Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan, out bool changed)
+        Event FastSync (NcImapFolder mailKitFolder, TimeSpan timespan, out bool changed)
         {
             changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
             Event evt;
             var protocolState = BEContext.ProtocolState;
-            if (ImapStrategy.FillInQuickSyncKit (ref protocolState, ref Synckit, AccountId)) {
+            if (ImapStrategy.FillInFastSyncKit (ref protocolState, ref Synckit, AccountId)) {
                 evt = syncFolder (mailKitFolder, ref changed);
                 changed = true;
             } else {
@@ -580,8 +580,14 @@ namespace NachoCore.IMAP
             if (emailMessage.IsRead != before) {
                 changed = true;
             }
-            // FIXME Where do we set these flags?
             if ((Flags & MessageFlags.Answered) == MessageFlags.Answered) {
+                // we don't really know if this was ReplyAll or ReplyToSender. So just assume ReplyToSender,
+                // but don't overwrite any REPLYTO<something> value we might have set previously.
+                if (emailMessage.LastVerbExecuted != (int)AsLastVerbExecutedType.REPLYTOALL &&
+                    emailMessage.LastVerbExecuted != (int)AsLastVerbExecutedType.REPLYTOSENDER) {
+                    emailMessage.LastVerbExecuted = (int)AsLastVerbExecutedType.REPLYTOSENDER;
+                    emailMessage.LastVerbExecutionTime = DateTime.UtcNow;
+                }
             }
             if ((Flags & MessageFlags.Flagged) == MessageFlags.Flagged) {
                 //emailMessage.UserAction = 1;

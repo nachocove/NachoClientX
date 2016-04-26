@@ -23,6 +23,18 @@ namespace NachoClient.iOS
         }
     }
 
+    public class BasicSwipeAction : SwipeAction
+    {
+
+        public readonly Action Action;
+
+        public BasicSwipeAction (string title, UIImage image, UIColor color, Action action) : base (title, image, color)
+        {
+            Action = action;
+        }
+
+    }
+
     public interface SwipeActionsViewDelegate
     {
         List<SwipeAction> ActionsForViewSwipingRight (SwipeActionsView view);
@@ -467,7 +479,7 @@ namespace NachoClient.iOS
             base.LayoutSubviews ();
             CGRect frame;
             var fullActionWidth = GetFullActionWidth ();
-            var scale = Window.Screen.Scale;
+            var scale = Window != null ? Window.Screen.Scale : 1.0f;
             var distance = (nfloat)Math.Floor (fullActionWidth * ActionRevealPercentage * scale) / scale;
             if (_ActionsView != null) {
                 frame = _ActionsView.Frame;
@@ -525,7 +537,7 @@ namespace NachoClient.iOS
 
             public override void LayoutSubviews ()
             {
-                var scale = Window.Screen.Scale;
+                var scale = Window != null ? Window.Screen.Scale : 1.0f;
                 var availableWidth = PreferredWidth;
                 if (Bounds.Width > PreferredWidth) {
                     availableWidth += (nfloat)Math.Floor ((Bounds.Width - PreferredWidth) / 4.0f * scale) / scale;

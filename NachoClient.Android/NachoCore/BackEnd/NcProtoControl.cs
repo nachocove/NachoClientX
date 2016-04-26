@@ -6,6 +6,7 @@ using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
 using System.Threading;
 using NachoPlatform;
+using NachoCore.Brain;
 
 namespace NachoCore
 {
@@ -610,8 +611,13 @@ namespace NachoCore
             return result;
         }
 
+        protected enum SendEmailKind {
+            Reply,
+            Forward,
+        }
+
         protected virtual NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
-            int folderId, bool originalEmailIsEmbedded)
+            int folderId, bool originalEmailIsEmbedded, SendEmailKind kind)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McFolder folder;
@@ -634,6 +640,11 @@ namespace NachoCore
                     Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
                 };
                 pending.Insert ();
+                if (kind == SendEmailKind.Reply) {
+                    MarkEmailAnswered(pending, refdEmailMessage, true);
+                } else {
+                    MarkMessageForwarded(pending, refdEmailMessage, true);
+                }
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
@@ -647,16 +658,44 @@ namespace NachoCore
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
-            return SmartEmailCmd (McPending.Operations.EmailReply,
-                newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
+            return SmartEmailCmd (McPending.Operations.EmailReply, newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded, SendEmailKind.Reply);
         }
 
         public virtual NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-            return SmartEmailCmd (McPending.Operations.EmailForward,
-                newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+            return SmartEmailCmd (McPending.Operations.EmailForward, newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded, SendEmailKind.Forward);
+        }
+
+        /// <summary>
+        /// Mark the email as 'answered'. Different proto-Controllers will do this differently, or not at all.
+        /// For example for ActiveSync, this is handled by the server itself, and we don't need to do anything.
+        /// For IMAP, we need to mark the email as \Answered.
+        /// </summary>
+        /// <returns>The email that was answered.</returns>
+        /// <param name="pending">Pending.</param>
+        /// <param name="email">Email.</param>
+        /// <param name="answered">If set to <c>true</c> mark as answered, otherwise, UNmark.</param>
+        public virtual NcResult MarkEmailAnswered (McPending pending, McEmailMessage email, bool answered)
+        {
+            NcBrain.MessageReplyStatusUpdated (email, DateTime.UtcNow, 0.1);
+            return NcResult.OK ();
+        }
+
+        /// <summary>
+        /// Mark the email as forwarded. Different proto-Controllers will do this differently, or not at all.
+        /// For example for ActiveSync, this is handled by the server itself, and we don't need to do anything.
+        /// For IMAP, we need to set some fields in the email, but there is no command to run.
+        /// </summary>
+        /// <returns>The message forwarded.</returns>
+        /// <param name="pending">Pending.</param>
+        /// <param name="email">Email.</param>
+        /// <param name="forwarded">If set to <c>true</c> forwarded.</param>
+        public virtual NcResult MarkMessageForwarded (McPending pending, McEmailMessage email, bool forwarded)
+        {
+            NcBrain.MessageReplyStatusUpdated (email, DateTime.UtcNow, 0.1);
+            return NcResult.OK ();
         }
 
         /// <summary>
