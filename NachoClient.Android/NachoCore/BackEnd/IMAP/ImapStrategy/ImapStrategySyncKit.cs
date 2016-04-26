@@ -329,6 +329,16 @@ namespace NachoCore.IMAP
             // if both are empty, we're done. Nothing to do.
             var startingUid = new UniqueId (startingPoint - 1);
             if (currentMails.Any () || currentUidSet.Any ()) {
+                // resync all the existing mails.
+                if (currentMails.Any ()) {
+                    if (startingPointMustBeInSet && !currentMails.Contains (startingUid)) {
+                        // it doesn't hurt to add the starting Uid to both sets, if that winds up happening.
+                        currentMails.Add (startingUid);
+                    }
+                    var uidSet = OrderedSetWithSpan (currentMails, span * KResyncMultiplier);
+                    instructions.Add (SyncInstructionForFlagSync (uidSet));
+                    span -= (uint)(uidSet.Count / KResyncMultiplier);
+                }
 
                 if (span > 0) {
                     var newMail = currentUidSet.Except (currentMails).ToList ();
@@ -342,19 +352,6 @@ namespace NachoCore.IMAP
                         var uidSet = OrderedSetWithSpan (newMail, span);
                         span -= (uint)(uidSet.Count);
                         instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
-                    }
-                }
-
-                // resync all the existing mails.
-                if (span > 0) {
-                    if (currentMails.Any ()) {
-                        if (startingPointMustBeInSet && !currentMails.Contains (startingUid)) {
-                            // it doesn't hurt to add the starting Uid to both sets, if that winds up happening.
-                            currentMails.Add (startingUid);
-                        }
-                        var uidSet = OrderedSetWithSpan (currentMails, span * KResyncMultiplier);
-                        instructions.Add (SyncInstructionForFlagSync (uidSet));
-                        span -= (uint)(uidSet.Count / KResyncMultiplier);
                     }
                 }
             }
@@ -445,15 +442,6 @@ namespace NachoCore.IMAP
         /// <param name="AccountId">Account identifier.</param>
         public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
         {
-#if !OWEN_HACK_REVERT
-            Synckit.Folder.ImapNeedFullSync = true;
-            resetLastSyncPoint (ref Synckit.Folder);
-            uint span = SpanSizeWithCommStatus (protocolState);
-            var insts = SyncInstructions (Synckit.Folder, ref protocolState, span, false);
-            if (null != insts) {
-                Synckit.SyncInstructions.AddRange (insts);
-            }
-#else
             resetLastSyncPoint (ref Synckit.Folder);
             var startingPoint = Synckit.Folder.ImapUidNext;
             bool startingPointMustBeInSet = true;
@@ -488,7 +476,6 @@ namespace NachoCore.IMAP
                     span -= (uint)syncInst.UidSet.Count;
                 }
             }
-#endif
             return Synckit.SyncInstructions.Any () || Synckit.UploadMessages.Any ();
         }
 
