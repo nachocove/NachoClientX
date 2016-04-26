@@ -449,14 +449,10 @@ namespace NachoCore.IMAP
             Synckit.Folder.ImapNeedFullSync = true;
             resetLastSyncPoint (ref Synckit.Folder);
             uint span = SpanSizeWithCommStatus (protocolState);
-            if (null == Synckit.SyncInstructions) {
-                Synckit.SyncInstructions = new List<SyncInstruction> ();
-            }
             var insts = SyncInstructions (Synckit.Folder, ref protocolState, span, false);
             if (null != insts) {
                 Synckit.SyncInstructions.AddRange (insts);
             }
-            Synckit.UploadMessages = new List<NcEmailMessageIndex> ();
 #else
             resetLastSyncPoint (ref Synckit.Folder);
             var startingPoint = Synckit.Folder.ImapUidNext;
