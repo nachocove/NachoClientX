@@ -45,6 +45,11 @@ namespace NachoClient.iOS
             ncQuick = new NcQuickResponse (whatType);
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public void CreateView ()
         {
             UIView qrView = new UIView (View.Frame);

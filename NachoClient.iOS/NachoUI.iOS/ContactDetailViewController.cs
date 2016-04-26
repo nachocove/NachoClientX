@@ -134,7 +134,6 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
 
-            Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);
@@ -163,7 +162,6 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIMenuController.WillHideMenuNotification);
             }
 
-            Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);

@@ -667,12 +667,14 @@ namespace NachoClient
         public static void ConfigureNavBar (bool isTransparent, UINavigationController nc)
         {
             if (isTransparent) {
+                nc.NavigationBar.BarStyle = UIBarStyle.BlackTranslucent;
                 nc.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
                 nc.NavigationBar.ShadowImage = new UIImage ();
                 nc.NavigationBar.Translucent = true;
                 nc.NavigationBar.BackgroundColor = UIColor.Clear;
                 nc.NavigationBar.TintColor = UIColor.White;
             } else {
+                nc.NavigationBar.BarStyle = UIBarStyle.BlackOpaque;
                 nc.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
                 nc.NavigationBar.ShadowImage = new UIImage ();
                 nc.NavigationBar.Translucent = false;

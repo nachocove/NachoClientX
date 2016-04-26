@@ -33,6 +33,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();

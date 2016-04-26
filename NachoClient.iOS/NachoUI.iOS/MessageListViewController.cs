@@ -1032,6 +1032,11 @@ namespace NachoClient.iOS
             SearchResults = new EmailSearch (UpdateResults);
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public override void LoadView ()
         {
             base.LoadView ();
