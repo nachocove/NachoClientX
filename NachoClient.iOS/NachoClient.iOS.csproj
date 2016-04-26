@@ -1655,6 +1655,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration57.cs">
       <Link>NachoCore\Model\Migration\NcMigration57.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolderMessages.cs">
       <Link>NachoCore\Adapters\NachoFolderMessages.cs</Link>
     </Compile>

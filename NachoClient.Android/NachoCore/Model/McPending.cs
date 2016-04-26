@@ -90,7 +90,8 @@ namespace NachoCore.Model
             CalForward,
             // These values are persisted in the DB, so only add at the end.
             EmailSearch,
-            Last = EmailSearch,
+            EmailMarkAnswered,
+            Last = EmailMarkAnswered,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -148,6 +149,9 @@ namespace NachoCore.Model
 
         public const string MarkReadFlag = "Read";
         public const string MarkUnreadFlag = "Unread";
+
+        public const string MarkAnsweredFlag = "Answered";
+        public const string MarkNotAnsweredFlag = "NotAnswered";
 
         // Always valid.
         [Indexed]
@@ -481,6 +485,7 @@ namespace NachoCore.Model
             case Operations.EmailClearFlag:
             case Operations.EmailMarkFlagDone:
             case Operations.EmailMarkRead:
+            case Operations.EmailMarkAnswered:
             case Operations.EmailSetFlag:
             case Operations.EmailDelete:
             case Operations.TaskUpdate:
@@ -527,6 +532,7 @@ namespace NachoCore.Model
                 case Operations.EmailClearFlag:
                 case Operations.EmailMarkFlagDone:
                 case Operations.EmailMarkRead:
+                case Operations.EmailMarkAnswered:
                 case Operations.EmailSetFlag:
                 case Operations.TaskCreate:
                 case Operations.TaskUpdate:
@@ -546,6 +552,7 @@ namespace NachoCore.Model
             case Operations.EmailClearFlag:
             case Operations.EmailMarkFlagDone:
             case Operations.EmailMarkRead:
+            case Operations.EmailMarkAnswered:
             case Operations.EmailSetFlag:
             case Operations.EmailDelete:
             case Operations.TaskUpdate:
@@ -566,6 +573,9 @@ namespace NachoCore.Model
                 break;
             case Operations.EmailMarkRead:
                 subKind = NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded;
+                break;
+            case Operations.EmailMarkAnswered:
+                subKind = NcResult.SubKindEnum.Info_EmailMessageMarkedAnsweredSucceeded;
                 break;
             case Operations.EmailSetFlag:
                 subKind = NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded;
@@ -824,6 +834,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageMoveFailed;
             case Operations.EmailMarkRead:
                 return NcResult.SubKindEnum.Error_EmailMessageMarkedReadFailed;
+            case Operations.EmailMarkAnswered:
+                return NcResult.SubKindEnum.Error_EmailMessageMarkedAnsweredFailed;
             case Operations.EmailSetFlag:
                 return NcResult.SubKindEnum.Error_EmailMessageSetFlagFailed;
             case Operations.EmailClearFlag:
@@ -879,7 +891,7 @@ namespace NachoCore.Model
             foreach (var iter in successors) {
                 var succ = iter;
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
-                Log.Info (Log.LOG_SYNC, "{0}:UnblockSuccessors: {1} now {2}", this, succ.Id, toState.ToString ());
+                Log.Info (Log.LOG_SYNC, "{0}:UnblockSuccessors: {1} now {2}", this, succ, toState.ToString ());
                 switch (toState) {
                 case StateEnum.Eligible:
                     if (0 == remaining.Count ()) {
@@ -889,6 +901,12 @@ namespace NachoCore.Model
                             target.State = toState;
                             return true;
                         });
+                        // since we enabled an item, send a message to the service in charge of this pending
+                        if (succ.DelayNotAllowed) {
+                            BackEnd.Instance.PendQHotInd (succ.AccountId, succ.Capability);
+                        } else {
+                            BackEnd.Instance.PendQInd (succ.AccountId, succ.Capability);
+                        }
                     }
                     break;
                 case StateEnum.Failed:
@@ -1613,6 +1631,7 @@ namespace NachoCore.Model
             case Operations.EmailForward:
             case Operations.EmailMarkFlagDone:
             case Operations.EmailMarkRead:
+            case Operations.EmailMarkAnswered:
             case Operations.EmailMove:
             case Operations.EmailReply:
             case Operations.EmailSend:

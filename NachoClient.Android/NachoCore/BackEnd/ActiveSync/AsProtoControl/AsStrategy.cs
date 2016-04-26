@@ -1178,7 +1178,7 @@ namespace NachoCore.ActiveSync
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
                 if (null != next) {
-                    NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
+                    NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailMarkAnswered);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     AsCommand cmd = null;
                     var action = next.DelayNotAllowed ? PickActionEnum.HotQOp : PickActionEnum.QOop;

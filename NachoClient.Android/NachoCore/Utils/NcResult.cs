@@ -190,6 +190,8 @@ namespace NachoCore.Utils
             Info_AccountSetChanged,
             Info_ChatSetChanged,
             Info_ChatMessageAdded,
+            Info_EmailMessageMarkedAnsweredSucceeded,
+            Error_EmailMessageMarkedAnsweredFailed,
             Info_ItemOrphaned,
         };
 

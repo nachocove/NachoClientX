@@ -99,7 +99,7 @@ namespace NachoCore.IMAP
                 var next = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
                     // Analysis disable once ConditionIsAlwaysTrueOrFalse
-                    NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
+                    NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailMarkAnswered);
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     ImapCommand cmd = null;
                     var action = next.DelayNotAllowed ? PickActionEnum.HotQOp : PickActionEnum.QOop;
@@ -133,6 +133,9 @@ namespace NachoCore.IMAP
                         break;
                     case McPending.Operations.EmailMarkRead:
                         cmd = new ImapEmailMarkReadCommand (BEContext, next);
+                        break;
+                    case McPending.Operations.EmailMarkAnswered:
+                        cmd = new ImapEmailMarkAnsweredCommand (BEContext, next);
                         break;
                     case McPending.Operations.EmailSetFlag:
                         // FIXME - defer until we decide how to deal with deferred messages.
