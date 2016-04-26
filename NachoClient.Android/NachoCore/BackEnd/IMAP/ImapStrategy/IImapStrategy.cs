@@ -73,7 +73,7 @@ namespace NachoCore.IMAP
         public enum MethodEnum
         {
             Sync,
-            QuickSync,
+            FastSync,
         };
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace NachoCore.IMAP
 
         public SyncKit (McFolder folder, McPending pending)
         {
-            Method = MethodEnum.QuickSync;
+            Method = MethodEnum.FastSync;
             Folder = folder;
             SyncInstructions = new List<SyncInstruction> ();
             PendingSingle = pending;
@@ -362,7 +362,7 @@ namespace NachoCore.IMAP
 
         SyncKit GenSyncKit (McProtocolState protocolState, McPending pending);
 
-        SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync);
+        SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool fastSync);
 
         FetchKit GenFetchKit ();
 
