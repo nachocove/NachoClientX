@@ -50,6 +50,7 @@ namespace NachoClient.iOS
         CompoundScrollView ScrollView;
         MessageHeaderView HeaderView;
         AttachmentsView AttachmentsView;
+        BodyCalendarView CalendarView;
         UIWebView BodyView;
         MessageToolbar MessageToolbar;
         NcActivityIndicatorView ActivityIndicator;
@@ -120,6 +121,10 @@ namespace NachoClient.iOS
             AttachmentsView.Delegate = this;
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
+            if (Message.MeetingRequest != null) {
+                CalendarView = new BodyCalendarView (0.0f, ScrollView.Bounds.Width, Message, false, RemoveCalendarView, OpenUrl, new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f), UIColor.White.ColorDarkenedByAmount (0.15f));
+            }
+
             if (!ReusableWebViews.TryPop (out BodyView)) {
                 BodyView = new UIWebView (ScrollView.Bounds);
                 BodyView.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
@@ -128,6 +133,9 @@ namespace NachoClient.iOS
 
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (AttachmentsView);
+            if (CalendarView != null) {
+                ScrollView.AddCompoundView (CalendarView);
+            }
             ScrollView.AddCompoundView (BodyView);
 
             View.AddSubview (ScrollView);
@@ -237,6 +245,9 @@ namespace NachoClient.iOS
             // clean up attachments
             AttachmentsView.Delegate = null;
             AttachmentsView.Cleanup ();
+
+            // clean up the calendar
+            CalendarView.Cleanup ();
 
             // clean up toolbar
             MessageToolbar.OnClick = null;
@@ -527,16 +538,8 @@ namespace NachoClient.iOS
                 var scheme = url.Scheme.ToLowerInvariant ();
                 if (scheme.Equals ("x-apple-data-detectors")) {
                     return true;
-                } else if (scheme.Equals ("mailto")) {
-                    ComposeMessage (url);
-                } else if (scheme.Equals ("http") || scheme.Equals ("https")) {
-                    var viewController = new SFSafariViewController (url);
-                    viewController.Delegate = this;
-                    NavigationController.PushViewController (viewController, animated: true);
-                    NavigationController.SetNavigationBarHidden (true, animated: true);
-                } else {
-                    UIApplication.SharedApplication.OpenUrl (url);
                 }
+                OpenUrl (url);
                 return false;
             }
             return true;
@@ -553,6 +556,27 @@ namespace NachoClient.iOS
         #endregion
 
         #region Private Helpers
+
+        void OpenUrl (NSUrl url)
+        {
+            var scheme = url.Scheme.ToLowerInvariant ();
+            if (scheme.Equals ("mailto")) {
+                ComposeMessage (url);
+            } else if (scheme.Equals ("http") || scheme.Equals ("https")) {
+                var viewController = new SFSafariViewController (url);
+                viewController.Delegate = this;
+                NavigationController.PushViewController (viewController, animated: true);
+                NavigationController.SetNavigationBarHidden (true, animated: true);
+            } else {
+                UIApplication.SharedApplication.OpenUrl (url);
+            }
+        }
+
+        void RemoveCalendarView ()
+        {
+            ScrollView.RemoveCompoundView (CalendarView);
+            LayoutScrollView ();
+        }
 
         void ShowHeaderDetails ()
         {
