@@ -83,7 +83,7 @@ namespace NachoClient.iOS
             base.LayoutSubviews ();
 
             var itemCount = ItemViews.Count;
-            var scale = Window.Screen.Scale;
+            var scale = Window != null ? Window.Screen.Scale : 1.0f;
             var itemSize = new CGSize ((nfloat)Math.Floor (Bounds.Width / (itemCount + 1) * scale) / scale, Bounds.Height);
 
             var x = (Bounds.Width - itemCount * itemSize.Width) / 2.0f;

@@ -18,7 +18,6 @@ namespace NachoCore
             List<int> adds;
             List<int> deletes;
             threadList = new List<McEmailMessageThread> ();
-            Refresh (out adds, out deletes);
         }
 
         public override bool Refresh (out List<int> adds, out List<int> deletes)

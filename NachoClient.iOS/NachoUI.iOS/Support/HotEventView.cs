@@ -16,269 +16,191 @@ namespace NachoClient.iOS
 {
     public class HotEventView : UIView
     {
-        private const int SWIPE_TAG = 3900;
-        private const int DOT_TAG = 3901;
-        private const int SUBJECT_TAG = 3902;
-        private const int ICON_TAG = 3903;
-        private const int TEXT_TAG = 3904;
-        private const int NO_MESSAGES_TAG = 3905;
 
-        public const int DIAL_IN_TAG = 1;
-        public const int NAVIGATE_TO_TAG = 2;
-        public const int LATE_TAG = 3;
-        public const int FORWARD_TAG = 4;
-        public const int OPEN_TAG = 5;
+        static public readonly nfloat PreferredHeight = 69.0f;
 
-        public delegate void ButtonCallback (int tag, int eventId);
+        private McEvent _Event;
+        public McEvent Event {
+            get {
+                return _Event;
+            }
+            set {
+                _Event = value;
+                Update ();
+            }
+        }
+        public readonly SwipeActionsView SwipeView;
+        public Action Action;
+        UIEdgeInsets ContentInsets;
+        UIEdgeInsets TextInsets;
+        UILabel TitleLabel;
+        UILabel DetailLabel;
+        UILabel DateLabel;
+        UILabel EmptyLabel;
+        UIImageView IconView;
+        nfloat IconSize = 16.0f;
+        NcTimer ChangeDateLabelTimer;
 
-        public ButtonCallback OnClick;
-
-        protected McEvent currentEvent;
-        protected UITapGestureRecognizer tapRecognizer;
-        protected NcTimer eventEndTimer = null;
-
-        // Pre-made swipe action descriptors
-//        private static SwipeActionDescriptor DIAL_IN_BUTTON =
-//            new SwipeActionDescriptor (DIAL_IN_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeDialIn),
-//                "Dial In", A.Color_NachoSwipeDialIn);
-//        private static SwipeActionDescriptor NAVIGATE_BUTTON =
-//            new SwipeActionDescriptor (NAVIGATE_TO_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeNavigate),
-//                "Navigate To", A.Color_NachoSwipeNavigate);
-        private static SwipeActionDescriptor LATE_BUTTON =
-            new SwipeActionDescriptor (LATE_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeLate),
-                "I'm Late", A.Color_NachoSwipeLate);
-        private static SwipeActionDescriptor FORWARD_BUTTON =
-            new SwipeActionDescriptor (FORWARD_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeForward),
-                "Forward", A.Color_NachoeSwipeForward);
+        private UIView ContentView {
+            get {
+                return SwipeView.ContentView;
+            }
+        }
 
         public HotEventView (CGRect rect) : base (rect)
         {
-            var cellWidth = rect.Width;
+            ContentInsets = new UIEdgeInsets (0.0f, 10.0f, 0.0f, 10.0f);
+            TextInsets = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 10.0f);
 
-            var view = new SwipeActionView (rect);
-            view.Tag = SWIPE_TAG;
+            SwipeView = new SwipeActionsView (Bounds);
+            SwipeView.BackgroundColor = UIColor.White;
+            SwipeView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
 
-            this.AddSubview (view);
+            AddSubview (SwipeView);
 
-//            view.SetAction (NAVIGATE_BUTTON, SwipeSide.LEFT);
-//            view.SetAction (DIAL_IN_BUTTON, SwipeSide.LEFT);
-            view.SetAction (LATE_BUTTON, SwipeSide.LEFT);
-            view.SetAction (FORWARD_BUTTON, SwipeSide.RIGHT);
+            using (var image = UIImage.FromBundle ("nav-calendar-active").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+                IconView = new UIImageView (image);
+                IconView.Frame = new CGRect (0.0f, 0.0f, IconSize, IconSize);
+            }
+            ContentView.AddSubview (IconView);
 
-            // Dot image view
-            var dotView = new UIImageView (new CGRect (30, 20, 9, 9));
-            dotView.Tag = DOT_TAG;
-            view.AddSubview (dotView);
+            EmptyLabel = new UILabel (Bounds);
+            EmptyLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            EmptyLabel.Lines = 1;
+            EmptyLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            EmptyLabel.Font = A.Font_AvenirNextDemiBold17;
+            EmptyLabel.TextColor = A.Color_NachoTextGray;
+            EmptyLabel.Hidden = true;
+            EmptyLabel.Text = "No upcoming events";
+            ContentView.AddSubview (EmptyLabel);
 
-            // Subject label view
-            var subjectLabelView = new UILabel (new CGRect (56, 15, cellWidth - 56, 20));
-            subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
-            subjectLabelView.TextColor = A.Color_0F424C;
-            subjectLabelView.Tag = SUBJECT_TAG;
-            view.AddSubview (subjectLabelView);
+            TitleLabel = new UILabel ();
+            TitleLabel.Lines = 1;
+            TitleLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            TitleLabel.TextColor = A.Color_NachoGreen;
+            ContentView.AddSubview (TitleLabel);
 
-            // No messages label view
-            var noMessagesLabelView = new UILabel (rect);
-            noMessagesLabelView.Font = A.Font_AvenirNextDemiBold17;
-            noMessagesLabelView.TextColor = A.Color_0F424C;
-            noMessagesLabelView.Tag = NO_MESSAGES_TAG;
-            noMessagesLabelView.TextAlignment = UITextAlignment.Center;
-            view.AddSubview (noMessagesLabelView);
+            DetailLabel = new UILabel ();
+            DetailLabel.Lines = 1;
+            DetailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            DetailLabel.Font = A.Font_AvenirNextRegular14;
+            DetailLabel.TextColor = A.Color_NachoTextGray;
+            ContentView.AddSubview (DetailLabel);
 
-            // Location image view
-            var iconView = new UIImageView (new CGRect (30, 40, 12, 12));
-            iconView.Tag = ICON_TAG;
-            iconView.Image = UIImage.FromBundle ("cal-icn-pin");
-            view.AddSubview (iconView);
+            DateLabel = new UILabel ();
+            DateLabel.Lines = 1;
+            DateLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            DateLabel.Font = A.Font_AvenirNextRegular14;
+            DateLabel.TextColor = A.Color_NachoTextGray;
+            ContentView.AddSubview (DateLabel);
 
-            // Location label view
-            var labelView = new UILabel (new CGRect (56, 37, cellWidth - 56, 20));
-            labelView.Font = A.Font_AvenirNextRegular14;
-            labelView.TextColor = A.Color_0F424C;
-            labelView.Tag = TEXT_TAG;
-            view.AddSubview (labelView);
-
-            var bottomLine = new UIView (new CGRect (0, this.Frame.Height - 1, this.Frame.Width, 1));
-            bottomLine.BackgroundColor = A.Color_NachoBackgroundGray;
-            view.AddSubview (bottomLine);
-
-            tapRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer tap) => {
-                SendClick (OPEN_TAG);
-            });
-            this.AddGestureRecognizer (tapRecognizer);
-
-            // Have the event manager keep the McEvents accurate for at least the next seven days.
-            NcEventManager.AddEventWindow (this, new TimeSpan (7, 0, 0, 0));
+            AddGestureRecognizer (new UITapGestureRecognizer (Tap));
         }
 
-        public void ViewWillAppear ()
+        public void CancelAutomaticDateUpdate ()
         {
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            Configure ();
-        }
-
-        public void ViewWillDisappear ()
-        {
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            if (null != eventEndTimer) {
-                eventEndTimer.Dispose ();
-                eventEndTimer = null;
+            if (ChangeDateLabelTimer != null) {
+                ChangeDateLabelTimer.Dispose ();
+                ChangeDateLabelTimer = null;
             }
         }
 
-        public void Configure ()
+        void Tap ()
         {
-            DateTime timerFireTime;
-            currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
-            ConfigureCurrentEvent ();
+            if (Event != null) {
+                Action ();
+            }
+        }
 
-            if (null != eventEndTimer) {
-                eventEndTimer.Dispose ();
-                eventEndTimer = null;
+        void Update ()
+        {
+            var enabled = Event != null;
+            IconView.Hidden = !enabled;
+            TitleLabel.Hidden = !enabled;
+            DetailLabel.Hidden = !enabled;
+            DateLabel.Hidden = !enabled;
+            EmptyLabel.Hidden = enabled;
+            SwipeView.Enabled = enabled;
+
+            if (ChangeDateLabelTimer != null) {
+                ChangeDateLabelTimer.Dispose ();
             }
 
-            // Set a timer to fire at the end of the currently displayed event, so the view can
-            // be reconfigured to show the next event.
-            if (null != currentEvent) {
-                TimeSpan timerDuration = timerFireTime - DateTime.UtcNow;
-                if (timerDuration < TimeSpan.Zero) {
-                    // The time to reevaluate the current event was in the very near future, and that time was reached in between
-                    // CurrentOrNextEvent() and now.  Configure the timer to fire immediately.
-                    timerDuration = TimeSpan.Zero;
+            if (Event != null) {
+                TitleLabel.Text = Pretty.SubjectString (Event.Subject);
+                DetailLabel.Text = Event.Location ?? "";
+                DetailLabel.Hidden = String.IsNullOrWhiteSpace (DetailLabel.Text);
+
+                UIColor iconColor = A.Color_NachoYellow;
+                var colorIndex = Event.GetColorIndex ();
+                if (colorIndex > 0) {
+                    iconColor = Util.CalendarColor (colorIndex);
                 }
-                eventEndTimer = new NcTimer ("HotEventView", (state) => {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        Configure ();
-                    });
-                }, null, timerDuration, TimeSpan.Zero);
-            }
-        }
-
-        private void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var statusEvent = (StatusIndEventArgs)e;
-
-            switch (statusEvent.Status.SubKind) {
-
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                Configure ();
-                break;
-
-            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
-                // When the app goes into the background, eventEndTimer might get cancelled, but ViewWillAppear
-                // won't get called when the app returns to the foreground.  That might leave the view displaying
-                // an old event.  Watch for foreground events and refresh the view.
-                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                    Configure ();
-                }
-                break;
-            }
-        }
-
-        private void SendClick (int tag)
-        {
-            if ((null != currentEvent) && (null != OnClick)) {
-                OnClick (tag, currentEvent.Id);
-            }
-        }
-
-        public void ConfigureCurrentEvent ()
-        {
-            McAbstrCalendarRoot c = null;
-            McCalendar cRoot = null;
-
-            if (null != currentEvent) {
-                c = currentEvent.GetCalendarItemforEvent ();
-                cRoot = McCalendar.QueryById<McCalendar> (currentEvent.CalendarId);
-            }
-
-            var view = (SwipeActionView)this.ViewWithTag (SWIPE_TAG);
-            var noMessagesLabelView = (UILabel)this.ViewWithTag (NO_MESSAGES_TAG);
-            var subjectLabelView = (UILabel)this.ViewWithTag (SUBJECT_TAG);
-            var labelView = (UILabel)this.ViewWithTag (TEXT_TAG);
-            var dotView = (UIImageView)this.ViewWithTag (DOT_TAG);
-            var iconView = (UIImageView)this.ViewWithTag (ICON_TAG);
-
-            if (null == c || null == cRoot) {
-                noMessagesLabelView.Text = "No upcoming events";
-                noMessagesLabelView.Hidden = false;
-                subjectLabelView.Hidden = true;
-                labelView.Hidden = true;
-                iconView.Hidden = true;
-                dotView.Hidden = true;
-                view.OnSwipe = null;
-                view.OnClick = null;
-                view.DisableSwipe ();
-                return;
-            }
-
-            view.EnableSwipe (!string.IsNullOrEmpty (cRoot.OrganizerEmail));
-
-            noMessagesLabelView.Hidden = true;
-
-            // Subject label view
-            var subject = Pretty.SubjectString (c.GetSubject ());
-            subjectLabelView.Text = subject;
-            subjectLabelView.Hidden = false;
-
-            int colorIndex = 0;
-            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
-            if (null != folder) {
-                colorIndex = folder.DisplayColor;
-            }
-            dotView.Image = Util.DrawCalDot (Util.CalendarColor (colorIndex), new CGSize (10, 10));
-            dotView.Hidden = false;
-
-            var startString = "";
-            if (c.AllDayEvent) {
-                startString = "ALL DAY " + Pretty.LongFullDate (currentEvent.GetStartTimeUtc ());
-            } else {
-                if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
-                    startString = Pretty.Time (currentEvent.GetStartTimeUtc ());
+                IconView.TintColor = iconColor;
+                TimeSpan labelValidSpan = TimeSpan.FromSeconds(-2);
+                var start = Event.GetStartTimeUtc ();
+                if (Event.AllDayEvent) {
+                    DateLabel.Text = Pretty.EventDay (start, out labelValidSpan);
                 } else {
-                    startString = Pretty.LongDayTime (currentEvent.GetStartTimeUtc ());
+                    DateLabel.Text = Pretty.EventTime (start, out labelValidSpan);
+                }
+                // adjust by one second so we're always on the under side of a Ceiling operation
+                labelValidSpan = labelValidSpan + TimeSpan.FromSeconds (1);
+                if (labelValidSpan.TotalSeconds > 0.0) {
+                    ChangeDateLabelTimer = new NcTimer ("HotEventView_UpdateDateLabel", ChangeDateLabelTimerFired, null, labelValidSpan, TimeSpan.Zero);
                 }
             }
-
-            var locationString = Pretty.SubjectString (c.GetLocation ());
-            var eventString = Pretty.Join (startString, locationString, " : ");
-
-            iconView.Hidden = String.IsNullOrEmpty (eventString);
-            labelView.Text = eventString;
-            labelView.Hidden = false;
-
-            view.OnClick = (int tag) => {
-                switch (tag) {
-                case NAVIGATE_TO_TAG:
-                    SendClick (NAVIGATE_TO_TAG);
-                    break;
-                case FORWARD_TAG:
-                    SendClick (FORWARD_TAG);
-                    break;
-                case DIAL_IN_TAG:
-                    SendClick (DIAL_IN_TAG);
-                    break;
-                case LATE_TAG:
-                    SendClick (LATE_TAG);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
-                }
-            };
-            view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
-                switch (state) {
-                case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
-                }
-            };
+            SetNeedsLayout ();
         }
+
+        void ChangeDateLabelTimerFired (object state)
+        {
+            BeginInvokeOnMainThread (Update);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            if (Event != null) {
+                var dateSize = DateLabel.SizeThatFits (new CGSize (0.0f, 0.0f));
+                var titleHeight = TitleLabel.Font.RoundedLineHeight (1.0f);
+                nfloat detailHeight = 0.0f;
+                if (!DetailLabel.Hidden) {
+                    detailHeight = DetailLabel.Font.RoundedLineHeight (1.0f);
+                }
+                var textHeight = titleHeight + detailHeight;
+                var textTop = (ContentView.Bounds.Height - textHeight) / 2.0f;
+
+                CGRect frame;
+
+                frame = DateLabel.Frame;
+                frame.X = ContentView.Bounds.Width - ContentInsets.Right - TextInsets.Right - dateSize.Width;
+                frame.Width = dateSize.Width;
+                frame.Height = DateLabel.Font.RoundedLineHeight (1.0f);
+                frame.Y = (ContentView.Bounds.Height - frame.Height) / 2.0f;
+                DateLabel.Frame = frame;
+
+                frame = TitleLabel.Frame;
+                frame.X = ContentInsets.Left + TextInsets.Left;
+                frame.Y = textTop;
+                frame.Width = DateLabel.Frame.X - frame.X;
+                frame.Height = titleHeight;
+                TitleLabel.Frame = frame;
+
+                if (!DetailLabel.Hidden) {
+                    frame = DetailLabel.Frame;
+                    frame.X = TitleLabel.Frame.X;
+                    frame.Y = TitleLabel.Frame.Y + TitleLabel.Frame.Height;
+                    frame.Width = TitleLabel.Frame.Width;
+                    frame.Height = detailHeight;
+                    DetailLabel.Frame = frame;
+                }
+
+                IconView.Center = new CGPoint (ContentInsets.Left + TextInsets.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
+            }
+        }
+
     }
 }
 

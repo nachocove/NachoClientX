@@ -949,6 +949,7 @@ namespace NachoCore.ActiveSync
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
+                    Log.Info (Log.LOG_AS, "DoExtraOrDont: Nothing to do.");
                 } else {
                     Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");
                     var dummySm = new NcStateMachine ("ASPC:EXTRA") { 
@@ -998,9 +999,10 @@ namespace NachoCore.ActiveSync
                     // Leave State unchanged.
                     return;
                 }
-            }
+
             // If we got here, we decided that doing an extra request was a bad idea, ...
-            if (0 == ConcurrentExtraRequests) {
+            } else if (0 == ConcurrentExtraRequests) {
+
                 // ... and we are currently processing no extra requests. Only in this case will we 
                 // interrupt the base request, and only then if we are not already dealing with a "hot" request.
                 if ((uint)Lst.HotQOpW != Sm.State) {
@@ -1098,7 +1100,7 @@ namespace NachoCore.ActiveSync
 
         private void SetAndExecute (AsCommand cmd)
         {
-            if (isPingCommand(cmd) && null != PushAssist) {
+            if (isPingCommand (cmd) && null != PushAssist) {
                 PushAssist.Execute ();
             }
             NcAssert.NotNull (cmd);
@@ -1149,6 +1151,7 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
+
         private void SetCmd (INcCommand nextCmd)
         {
             lock (CmdLockObject) {
