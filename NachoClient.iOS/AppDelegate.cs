@@ -287,6 +287,10 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+
+            NcApplication.GuaranteeGregorianCalendar ();
+
             // move data files to Documents/Data if needed
             NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded ();
             // One-time initialization that do not need to be shut down later.
@@ -318,7 +322,6 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
             NcApplication.Instance.StartBasalServices ();

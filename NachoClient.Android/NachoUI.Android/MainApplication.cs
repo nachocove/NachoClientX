@@ -68,6 +68,8 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: {0}", caller);
 
+            NcApplication.GuaranteeGregorianCalendar ();
+
             // This creates the NcApplication object
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
 
