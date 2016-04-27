@@ -112,6 +112,7 @@ namespace NachoClient.iOS
             TableView.AccessibilityLabel = "Message list";
             TableView.TintColor = A.Color_NachoGreen;
             TableView.BackgroundColor = UIColor.White;
+            TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
 
             FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, View.Bounds.Width, MessageListFilterBar.PreferredHeight));
             FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
