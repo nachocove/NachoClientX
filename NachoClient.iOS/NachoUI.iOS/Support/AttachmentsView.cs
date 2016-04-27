@@ -65,6 +65,7 @@ namespace NachoClient.iOS
             HeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
             HeaderPressRecognizer = new PressGestureRecognizer (HeaderPressed);
+            HeaderPressRecognizer.IsCanceledByPanning = true;
             HeaderView.AddGestureRecognizer (HeaderPressRecognizer);
             
             TableView = new UITableView (new CGRect(0.0f, HeaderView.Frame.Height, Bounds.Width, RowHeight), UITableViewStyle.Plain);
