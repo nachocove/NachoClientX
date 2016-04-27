@@ -485,6 +485,8 @@ namespace NachoCore.IMAP
             if (NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.QuickSync) {
                 Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
                 span -= (uint)Synckit.UploadMessages.Count;
+            } else {
+                 Synckit.UploadMessages = new List<NcEmailMessageIndex> ();
             }
             if (span > 0) {
                 var uidSet = SyncKit.MustUniqueIdSet (FastSyncSet (startingPoint, Synckit.Folder, span));
