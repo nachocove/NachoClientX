@@ -83,6 +83,12 @@ namespace NachoClient.iOS
                 if (CompoundViews != null){
                     CompoundViews.Remove (view);
                 }
+                UIScrollView scrollView = ScrollViewForCompoundScrollView (view);
+                if (scrollView != null) {
+                    // reverse the changes made when adding the view
+                    scrollView.Delegate = null;
+                    scrollView.ScrollEnabled = true;
+                }
                 view.RemoveFromSuperview ();
                 SetNeedsLayout ();
             }

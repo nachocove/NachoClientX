@@ -262,7 +262,7 @@ namespace NachoClient.iOS
                 BodyView.StopLoading ();
             }
             BodyView.EvaluateJavascript ("document.body.innerHTML = ''");
-            BodyView.RemoveFromSuperview ();
+            ScrollView.RemoveCompoundView (BodyView);
             ReusableWebViews.Push (BodyView);
 
             // clean up navbar
