@@ -726,6 +726,11 @@ namespace NachoClient.iOS
             EndRefreshing ();
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         #endregion
 
         #region Private Helpers
@@ -1030,11 +1035,6 @@ namespace NachoClient.iOS
         public MessageSearchResultsViewController () : base (UITableViewStyle.Plain)
         {
             SearchResults = new EmailSearch (UpdateResults);
-        }
-
-        public override UIStatusBarStyle PreferredStatusBarStyle ()
-        {
-            return UIStatusBarStyle.LightContent;
         }
 
         public override void LoadView ()
