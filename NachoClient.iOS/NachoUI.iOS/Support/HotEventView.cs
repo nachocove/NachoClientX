@@ -14,7 +14,7 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public class HotEventView : UIView
+    public class HotEventView : UIView, IUIGestureRecognizerDelegate
     {
 
         static public readonly nfloat PreferredHeight = 69.0f;
@@ -26,6 +26,7 @@ namespace NachoClient.iOS
             }
             set {
                 _Event = value;
+                EventPressGestureRecognizer.Enabled = _Event != null;
                 Update ();
             }
         }
@@ -40,7 +41,8 @@ namespace NachoClient.iOS
         UIImageView IconView;
         nfloat IconSize = 16.0f;
         NcTimer ChangeDateLabelTimer;
-        NcTimer SetSelectedTimer;
+
+        PressGestureRecognizer EventPressGestureRecognizer;
 
         private bool _Selected;
         public bool Selected {
@@ -106,6 +108,13 @@ namespace NachoClient.iOS
             DateLabel.Font = A.Font_AvenirNextRegular14;
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
+
+            EventPressGestureRecognizer = new PressGestureRecognizer (EventPressed);
+            EventPressGestureRecognizer.IsCanceledByPanning = true;
+            EventPressGestureRecognizer.DelaysStart = true;
+            EventPressGestureRecognizer.Delegate = this;
+            ContentView.AddGestureRecognizer (EventPressGestureRecognizer);
+
         }
 
         public void CancelAutomaticDateUpdate ()
@@ -116,58 +125,29 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void TouchesBegan (Foundation.NSSet touches, UIEvent evt)
+        void EventPressed ()
         {
-            if (Event != null && !SwipeView.IsEditing ()) {
-                SetSelectedTimer = new NcTimer ("HotEventView_SetSelected", SetSelectedAfterDelay, null, TimeSpan.FromMilliseconds(100), TimeSpan.Zero);
-            }
-        }
-
-        public override void TouchesMoved (Foundation.NSSet touches, UIEvent evt)
-        {
-            if (Event != null && !SwipeView.IsEditing () && SetSelectedTimer == null) {
-                var touch = touches.AnyObject as UITouch;
-                var location = touch.LocationInView (this);
-                bool isInView = location.X >= Bounds.X && location.X < Bounds.X + Bounds.Width && location.Y >= Bounds.Y && location.Y < Bounds.Y + Bounds.Height;
-                SetSelected (isInView, animated: false);
-            }
-        }
-
-        public override void TouchesEnded (Foundation.NSSet touches, UIEvent evt)
-        {
-            if (SetSelectedTimer != null) {
-                SetSelectedTimer.Dispose ();
-                SetSelectedTimer = null;
+            if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Began) {
                 SetSelected (true, animated: false);
-            }
-            if (Event != null && !SwipeView.IsEditing ()) {
-                var touch = touches.AnyObject as UITouch;
-                var location = touch.LocationInView (this);
-                bool isInView = location.X >= Bounds.X && location.X < Bounds.X + Bounds.Width && location.Y >= Bounds.Y && location.Y < Bounds.Y + Bounds.Height;
-                if (isInView) {
-                    Action ();
-                } else {
-                    SetSelected (false, animated: false);
-                }
-            }
-        }
-
-        public override void TouchesCancelled (Foundation.NSSet touches, UIEvent evt)
-        {
-            if (SetSelectedTimer != null) {
-                SetSelectedTimer.Dispose ();
-                SetSelectedTimer = null;
-            }
-            SetSelected (false, animated: false);
-        }
-
-        void SetSelectedAfterDelay (object state)
-        {
-            SetSelectedTimer.Dispose ();
-            SetSelectedTimer = null;
-            BeginInvokeOnMainThread (() => {
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Ended) {
                 SetSelected (true, animated: false);
-            });
+                Action ();
+            }else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Changed) {
+                SetSelected (EventPressGestureRecognizer.IsInsideView, animated: false);
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Failed) {
+                SetSelected (false, animated: true);
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                SetSelected (false, animated: false);
+            }
+        }
+
+        [Foundation.Export ("gestureRecognizerShouldBegin:")]
+        public bool ShouldBegin (UIKit.UIGestureRecognizer recognizer)
+        {
+            if (recognizer == EventPressGestureRecognizer) {
+                return !SwipeView.IsEditing ();
+            }
+            return false;
         }
 
         public void SetSelected (bool selected, bool animated)

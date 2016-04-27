@@ -146,6 +146,8 @@ namespace NachoClient.iOS
             HeaderView = new MessageHeaderView (new CGRect(0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
             HeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             HeaderPressRecognizer = new PressGestureRecognizer (HeaderPressed);
+            HeaderPressRecognizer.IsCanceledByPanning = true;
+            HeaderPressRecognizer.DelaysStart = true;
             HeaderView.AddGestureRecognizer (HeaderPressRecognizer);
 
             AttachmentsView = new AttachmentsView (new CGRect(0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
@@ -329,6 +331,7 @@ namespace NachoClient.iOS
             if (HeaderPressRecognizer.State == UIGestureRecognizerState.Began) {
                 HeaderView.SetSelected (true, animated: false);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Ended) {
+                HeaderView.SetSelected (true, animated: false);
                 ShowHeaderDetails ();
             }else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Changed) {
                 HeaderView.SetSelected (HeaderPressRecognizer.IsInsideView, animated: false);
