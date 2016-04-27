@@ -187,7 +187,7 @@ namespace Test.iOS
 
             TestFolder = resetFolder (TestFolder);
             TestFolder = DoFakeFolderOpen (TestFolder, 10);
-            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, false);
+            var syncInstList = ImapStrategy.RegularSyncInstructions (TestFolder, ref protocolState, false);
             Assert.AreEqual (1, syncInstList.Count);
             syncKit = new SyncKit(TestFolder, new List<SyncInstruction> () { syncInstList.First () });
             TestFolder = DoFakeSync (TestFolder, syncKit); // creates emails 1-9
@@ -243,7 +243,7 @@ namespace Test.iOS
             // create some emails, simulating an initial sync
             TestFolder = resetFolder (TestFolder);
             TestFolder = DoFakeFolderOpen (TestFolder, 10);
-            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, false);
+            var syncInstList = ImapStrategy.RegularSyncInstructions (TestFolder, ref protocolState, false);
             Assert.AreEqual (1, syncInstList.Count);
             syncKit = new SyncKit(TestFolder, new List<SyncInstruction> () { syncInstList.First () });
             TestFolder = DoFakeSync (TestFolder, syncKit); // creates emails 1-9
@@ -521,7 +521,7 @@ namespace Test.iOS
                 target.ImapUidSet = string.Format ("{0}:{1}", 1, HighestSynced);
                 return true;
             }));
-            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, 10, false);
+            var syncInstList = ImapStrategy.RegularSyncInstructions (TestFolder, ref protocolState, 10, false);
             Assert.NotNull (syncInstList);
             Assert.AreEqual (1, syncInstList.Count); // since there's existing emails, and a new email, there will be 2 instructions
             var syncInst = syncInstList.First ();
