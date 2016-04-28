@@ -160,6 +160,30 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
+        protected override void Cleanup ()
+        {
+            // Clean up nav bar
+            SearchButton.Clicked -= ShowSearch;
+            NewMessageButton.Clicked -= NewMessage;
+            EditTableButton.Clicked -= EditTable;
+            CancelEditingButton.Clicked -= CancelEditingTable;
+            DoneSwipingButton.Clicked -= EndSwiping;
+
+            // Clean up filterbar
+            FilterBar.Cleanup ();
+
+            // Clean up sync manager
+            SyncManager.Delegate = null;
+
+            // Clean up search
+            if (SearchController != null) {
+                SearchController.Delegate = null;
+            }
+            SearchResultsViewController = null;
+            
+            base.Cleanup ();
+        }
+
         #endregion
 
         #region User Actions (Except Table Delegate)

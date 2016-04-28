@@ -70,7 +70,7 @@ namespace NachoClient.iOS
         private SwipeActionViewState State;
 
         private UITapGestureRecognizer TapGestureRecognizer;
-        public readonly UIPanGestureRecognizer PanGestureRecognizer;
+        public UIPanGestureRecognizer PanGestureRecognizer { get; private set; }
 
         private List<ActionView> ActionViews;
         private nfloat PreferredActionWidth = 64.0f;
@@ -138,6 +138,21 @@ namespace NachoClient.iOS
         {
             if (State != SwipeActionViewState.Normal) {
                 HideActions ();
+            }
+        }
+
+        public void Cleanup ()
+        {
+            RemoveGestureRecognizer (PanGestureRecognizer);
+            PanGestureRecognizer.WeakDelegate = null;
+            PanGestureRecognizer = null;
+            ContentView.RemoveGestureRecognizer (TapGestureRecognizer);
+            TapGestureRecognizer.WeakDelegate = null;
+            TapGestureRecognizer = null;
+
+            foreach (var actionView in ActionViews) {
+                actionView.SwipeView = null;
+                actionView.Cleanup ();
             }
         }
 
@@ -470,6 +485,10 @@ namespace NachoClient.iOS
                 ActionsView.InsertSubview (actionView, 0);
                 ActionViews.Add (actionView);
             }
+            foreach (var view in reusableViews) {
+                view.SwipeView = null;
+                view.Cleanup ();
+            }
             ActionsView.State = forState;
             ActionsView.PreferredWidth = GetFullActionWidth ();
             ActionsView.SetNeedsLayout ();
@@ -617,6 +636,13 @@ namespace NachoClient.iOS
             {
                 Action = action;
                 Update ();
+            }
+
+            public void Cleanup ()
+            {
+                RemoveGestureRecognizer (PressGestureRecognizer);
+                PressGestureRecognizer = null;
+                Action = null;
             }
 
             void Update ()

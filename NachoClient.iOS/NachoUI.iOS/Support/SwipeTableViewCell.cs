@@ -211,6 +211,16 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Cleanup
+
+        public void Cleanup ()
+        {
+            SwipeView.Delegate = null;
+            SwipeView.Cleanup ();
+        }
+
+        #endregion
+
         #region Layout
 
         public override void LayoutSubviews ()
