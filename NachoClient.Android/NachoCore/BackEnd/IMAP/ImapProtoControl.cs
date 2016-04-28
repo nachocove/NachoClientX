@@ -532,6 +532,7 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
+            Strategy.DoQuickSync = NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }
