@@ -188,7 +188,7 @@ namespace NachoCore.Model
             if (IsDeferred) {
                 NcMessageDeferral.DeferThread (thread, DeferralType, DeferUntilDate);
             } else if (DueDate != default(DateTime)) {
-                NcMessageDeferral.SetDueDate (thread, DeferralType, DueDate);
+                NcMessageDeferral.SetDueDate (thread, DueDate);
             } else {
                 // works for defer or due date clearing
                 NcMessageDeferral.UndeferThread (thread);

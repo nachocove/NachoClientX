@@ -28,35 +28,8 @@ namespace NachoCore.Brain
             Deadline,
         }
 
-        static public void DateSelected (MessageDateType type, McEmailMessageThread thread, MessageDeferralType deferralType, DateTime selectedDate)
-        {
-            switch (type) {
-            case MessageDateType.Defer:
-                NcMessageDeferral.DeferThread (thread, deferralType, selectedDate);
-                break;
-            case MessageDateType.Deadline:
-                NcMessageDeferral.SetDueDate (thread, deferralType, selectedDate);
-                break;
-            case MessageDateType.Intent:
-            case MessageDateType.None:
-                break;
-            }
-        }
-
         static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
         {
-            if (MessageDeferralType.None == deferralType) {
-                UndeferThread (thread);
-                return NcResult.OK ();
-            }
-
-            if (MessageDeferralType.Custom != deferralType) {
-                NcResult r = ComputeDeferral (DateTime.UtcNow, deferralType, deferUntil);
-                if (r.isError ()) {
-                    return r;
-                }
-                deferUntil = r.GetValue<DateTime> ();
-            }
             foreach (var message in thread) {
                 if (null != message) {
                     message.UpdateWithOCApply<McEmailMessage> ((item) => {
@@ -111,23 +84,12 @@ namespace NachoCore.Brain
             return ClearMessageThreadFlags (thread);
         }
 
-        static public NcResult SetDueDate (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime dueOn)
+        static public NcResult SetDueDate (McEmailMessageThread thread, DateTime dueOn)
         {
-            if (MessageDeferralType.Custom != deferralType) {
-                NcResult r = ComputeDeferral (DateTime.UtcNow, deferralType, dueOn);
-                if (r.isError ()) {
-                    return r;
-                }
-                dueOn = r.GetValue<DateTime> ();
-            }
             foreach (var message in thread) {
                 if (null != message) {
                     var start = DateTime.UtcNow;
-                    if (MessageDeferralType.None == deferralType) {
-                        BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
-                    } else {
-                        BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
-                    }
+                    BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
                     NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
                 }
             }
@@ -143,7 +105,7 @@ namespace NachoCore.Brain
         public static NcResult ComputeDeferral (DateTime from, MessageDeferralType deferralType, DateTime customDate)
         {
             NcAssert.True (DateTimeKind.Utc == from.Kind);
-            NcAssert.True ((MessageDeferralType.Custom != deferralType) || (DateTimeKind.Utc == customDate.Kind));
+            NcAssert.True ((MessageDeferralType.Custom != deferralType && MessageDeferralType.DueDate != deferralType) || (DateTimeKind.Utc == customDate.Kind));
 
             switch (deferralType) {
             case MessageDeferralType.None:
@@ -216,6 +178,7 @@ namespace NachoCore.Brain
             case MessageDeferralType.Forever:
                 from = DateTime.MaxValue.ToLocalTime ().ToUniversalTime ();
                 break;
+            case MessageDeferralType.DueDate:
             case MessageDeferralType.Custom:
                 from = customDate;
                 break;

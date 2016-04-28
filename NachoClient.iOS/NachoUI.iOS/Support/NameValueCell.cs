@@ -11,10 +11,20 @@ namespace NachoClient.iOS
     {
 
         public static nfloat PreferredHeight = 44.0f;
-        public readonly UILabel ValueLabel;
+        public UILabel ValueLabel { get; private set; }
         public nfloat RightPadding = 10.0f;
 
+        public NameValueCell () : base ()
+        {
+            Initialize ();
+        }
+
         public NameValueCell (IntPtr handle) : base (handle)
+        {
+            Initialize ();
+        }
+
+        void Initialize ()
         {
             TextLabel.Font = A.Font_AvenirNextRegular14;
             TextLabel.TextColor = A.Color_NachoDarkText;

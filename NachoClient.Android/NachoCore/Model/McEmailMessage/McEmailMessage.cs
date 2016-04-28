@@ -34,6 +34,7 @@ namespace NachoCore.Model
         Custom,
         Weekend,
         ThisWeek,
+        DueDate,
     };
 
     public enum NcImportance

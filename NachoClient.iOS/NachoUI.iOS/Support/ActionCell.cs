@@ -114,7 +114,11 @@ namespace NachoClient.iOS
         public void SetAction (McAction action)
         {
             TextLabel.Text = action.Title;
-            DetailTextLabel.Text = action.Description;
+            if (action.Description != null) {
+                DetailTextLabel.Text = System.Text.RegularExpressions.Regex.Replace (action.Description, "\\s+", " ");
+            } else {
+                DetailTextLabel.Text = "";
+            }
             if (action.DueDate != default(DateTime)) {
                 // DateLabel.Text = Pretty.Something ();
             }

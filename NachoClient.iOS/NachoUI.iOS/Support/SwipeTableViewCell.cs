@@ -195,6 +195,11 @@ namespace NachoClient.iOS
             Initialize ();
         }
 
+        public SwipeTableViewCell () : base (UITableViewCellStyle.Default, null)
+        {
+            Initialize ();
+        }
+
         void Initialize ()
         {
             SelectedBackgroundView = new UIView ();

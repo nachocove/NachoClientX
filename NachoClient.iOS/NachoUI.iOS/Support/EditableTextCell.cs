@@ -7,9 +7,15 @@ using CoreGraphics;
 
 namespace NachoClient.iOS
 {
+
+    public interface EditableTextCellDelegate {
+        void EditableCellDidChange (EditableTextCell cell);
+    }
+
     public class EditableTextCell : SwipeTableViewCell, IUITextViewDelegate
     {
 
+        public EditableTextCellDelegate Delegate;
         public readonly UITextView TextView;
         public nfloat Height { get; private set; }
         nfloat MinimumHeight = 44.0f;
@@ -75,6 +81,9 @@ namespace NachoClient.iOS
                 // Evidently this reloads the sizes of the cells, but not the contents, which is exactly what we want in this case
                 TableView.BeginUpdates ();
                 TableView.EndUpdates ();
+            }
+            if (Delegate != null) {
+                Delegate.EditableCellDidChange (this);
             }
         }
 

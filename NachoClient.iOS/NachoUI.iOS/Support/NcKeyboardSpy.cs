@@ -61,7 +61,7 @@ namespace NachoClient.iOS
             if (view.Window != null) {
                 var keyboardFrameInWindow = view.Window.ConvertRectFromWindow (keyboardFrame, null);
                 var keyboardFrameInView = view.ConvertRectFromView (keyboardFrameInWindow, view.Window);
-                return view.Frame.Height - keyboardFrameInView.Top;
+                return (nfloat)Math.Max (0.0f, view.Frame.Height - keyboardFrameInView.Top);
             }
             return 0.0f;
         }
