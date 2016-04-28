@@ -104,15 +104,11 @@ namespace NachoClient.iOS
 
         public MessageViewController() : base  ()
         {
-            using (var image = UIImage.FromBundle ("cal-add")) {
-                CreateEventButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, CreateEventButtonClicked);
-                CreateEventButton.AccessibilityLabel = "Create Event";
-            }
+            CreateEventButton = new NcUIBarButtonItem (UIImage.FromBundle ("cal-add"), UIBarButtonItemStyle.Plain, CreateEventButtonClicked);
+            CreateEventButton.AccessibilityLabel = "Create Event";
 
-            using (var image = UIImage.FromBundle ("email-not-hot")) {
-                HotButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, ToggleHot);
-                HotButton.AccessibilityLabel = "Hot";
-            }
+            HotButton = new NcUIBarButtonItem (UIImage.FromBundle ("email-not-hot"), UIBarButtonItemStyle.Plain, ToggleHot);
+            HotButton.AccessibilityLabel = "Hot";
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 CreateEventButton,

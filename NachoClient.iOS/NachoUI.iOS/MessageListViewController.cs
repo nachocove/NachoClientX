@@ -71,13 +71,9 @@ namespace NachoClient.iOS
 
             AutomaticallyAdjustsScrollViewInsets = false;
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
-            using (var image = UIImage.FromBundle ("contact-newemail")) {
-                NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
-            }
-            using (var image = UIImage.FromBundle ("folder-edit")) {
-                EditTableButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, EditTable);
-                EditTableButton.AccessibilityLabel = "Folder edit";
-            }
+            NewMessageButton = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewMessage);
+            EditTableButton = new NcUIBarButtonItem (UIImage.FromBundle ("folder-edit"), UIBarButtonItemStyle.Plain, EditTable);
+            EditTableButton.AccessibilityLabel = "Folder edit";
             CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
             DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
 
