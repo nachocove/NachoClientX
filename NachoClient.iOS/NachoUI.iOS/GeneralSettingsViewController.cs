@@ -19,7 +19,7 @@ namespace NachoClient.iOS
 
         const string NameValueCellIdentifier = "NameValueCellIdentifier";
         const string AccountCellIdentifier = "AccountCellIdentifier";
-        const string ActionCellIdentifier = "ActionCellIdentifier";
+        const string ButttonCellIdentifier = "ButtonCellIdentifier";
 
         const int SectionGeneralSettings = 0;
         const int SectionAccounts = 1;
@@ -58,7 +58,7 @@ namespace NachoClient.iOS
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof (AccountCell), AccountCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof (ActionCell), ActionCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ButtonCell), ButttonCellIdentifier);
         }
 
         public override void ViewDidLoad ()
@@ -136,7 +136,7 @@ namespace NachoClient.iOS
                 if (indexPath.Row < Accounts.Count) {
                     return AccountCell.PreferredHeight;
                 }
-                return ActionCell.PreferredHeight;
+                return ButtonCell.PreferredHeight;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetHeightForRow unknown table section {0}", indexPath.Section));
         }
@@ -199,7 +199,7 @@ namespace NachoClient.iOS
                     return cell;
                 } else {
                     var actionRow = indexPath.Row - Accounts.Count;
-                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+                    var cell = tableView.DequeueReusableCell (ButttonCellIdentifier) as ButtonCell;
 //                    cell.SeparatorInset = new UIEdgeInsets (0.0f, AccountCell.PreferredHeight, 0.0f, 0.0f);
                     if (actionRow == AccountsExtraRowAddAccount) {
                         cell.TextLabel.Text = "Add Account";
@@ -441,12 +441,12 @@ namespace NachoClient.iOS
             }
         }
 
-        private class ActionCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
-            public ActionCell (IntPtr handle) : base (handle)
+            public ButtonCell (IntPtr handle) : base (handle)
             {
                 TextLabel.Font = A.Font_AvenirNextRegular14;
                 TextLabel.TextColor = A.Color_NachoGreen;

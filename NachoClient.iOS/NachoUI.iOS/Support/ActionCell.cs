@@ -10,9 +10,10 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
 
-    public class MessageCell : SwipeTableViewCell
+    public class ActionCell : SwipeTableViewCell
     {
 
+        public readonly ActionCheckboxView CheckboxView;
         UIImageView UnreadIndicator;
         UIView _ColorIndicatorView;
         UIView ColorIndicatorView {
@@ -45,9 +46,7 @@ namespace NachoClient.iOS
                 }
             }
         }
-        PortraitView PortraitView;
         UILabel DateLabel;
-        nfloat PortraitSize = 40.0f;
         nfloat RightPadding = 10.0f;
         nfloat ColorIndicatorSize = 3.0f;
         UIEdgeInsets _ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 7.0f);
@@ -60,7 +59,6 @@ namespace NachoClient.iOS
                 SetNeedsLayout ();
             }
         }
-        public bool UseRecipientName;
 
         static NSAttributedString _HotAttachmentString;
         static NSAttributedString HotAttachmentString {
@@ -69,16 +67,6 @@ namespace NachoClient.iOS
                     _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(A.Font_AvenirNextRegular14));
                 }
                 return _HotAttachmentString;
-            }
-        }
-
-        static NSAttributedString _AttachAttachmentString;
-        static NSAttributedString AttachAttachmentString {
-            get {
-                if (_AttachAttachmentString == null) {
-                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment(A.Font_AvenirNextRegular14));
-                }
-                return _AttachAttachmentString;
             }
         }
 
@@ -94,7 +82,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public MessageCell (IntPtr handle) : base (handle)
+        public ActionCell (IntPtr handle) : base (handle)
         {
             DetailTextSpacing = 0.0f;
 
@@ -109,51 +97,28 @@ namespace NachoClient.iOS
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
-            PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
-            ContentView.AddSubview (PortraitView);
-
             using (var image = UIImage.FromBundle ("chat-stat-online")) {
                 UnreadIndicator = new UIImageView (image);
             }
             UnreadIndicator.Hidden = true;
+
+            CheckboxView = new ActionCheckboxView (viewSize: 44.0f, checkboxSize: 20.0f);
+
+            ContentView.AddSubview (CheckboxView);
             ContentView.AddSubview (UnreadIndicator);
 
             SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
         }
 
-        public void SetMessage (McEmailMessage message)
+        public void SetAction (McAction action)
         {
-            DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
-            if (UseRecipientName) {
-                TextLabel.Text = Pretty.RecipientString (message.To);
-                PortraitView.Hidden = true;
-                SeparatorInset = new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f);
-            } else {
-                TextLabel.Text = Pretty.SenderString (message.From);
-                PortraitView.SetPortrait (message.cachedPortraitId, message.cachedFromColor, message.cachedFromLetters);
-                PortraitView.Hidden = false;
-                SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
+            TextLabel.Text = action.Title;
+            DetailTextLabel.Text = action.Description;
+            if (action.DueDate != default(DateTime)) {
+                // DateLabel.Text = Pretty.Something ();
             }
-            int subjectLength;
-            var previewText = Pretty.MessagePreview (message, out subjectLength);
-            using (var attributedPreview = new NSMutableAttributedString (previewText)) {
-                if (subjectLength > 0) {
-                    attributedPreview.AddAttribute (UIStringAttributeKey.Font, A.Font_AvenirNextMedium14.WithSize(DetailTextLabel.Font.PointSize), new NSRange(0, subjectLength));
-                    attributedPreview.AddAttribute (UIStringAttributeKey.ForegroundColor, A.Color_NachoGreen, new NSRange(0, subjectLength));
-                }
-                if (message.isHot ()) {
-                    attributedPreview.Replace (new NSRange (0, 0), " ");
-                    attributedPreview.Insert (HotAttachmentString, 0);
-                    subjectLength += 2;
-                }
-                if (message.cachedHasAttachments) {
-                    attributedPreview.Replace (new NSRange (subjectLength, 0), " ");
-                    attributedPreview.Insert (AttachAttachmentString, subjectLength + 1);
-                    // TODO: add space after if subjectLength was originally 0
-                }
-                DetailTextLabel.AttributedText = attributedPreview;
-            }
-            UnreadIndicator.Hidden = message.IsRead;
+            CheckboxView.IsChecked = action.IsCompleted;
+            // UnreadIndicator.Hidden = message.IsRead;
         }
 
         public override void LayoutSubviews ()
@@ -192,8 +157,8 @@ namespace NachoClient.iOS
             frame.Height = detailHeight;
             DetailTextLabel.Frame = frame;
 
-            PortraitView.Center = new CGPoint (SeparatorInset.Left / 2.0f, textTop * 2.0f + PortraitView.Frame.Height / 2.0f);
-            UnreadIndicator.Center = new CGPoint (PortraitView.Frame.X + PortraitView.Frame.Width - UnreadIndicator.Frame.Width / 2.0f, PortraitView.Frame.Y + UnreadIndicator.Frame.Height / 2.0f);
+            CheckboxView.Center = new CGPoint (SeparatorInset.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
+            // UnreadIndicator.Center = new CGPoint (PortraitView.Frame.X + PortraitView.Frame.Width - UnreadIndicator.Frame.Width / 2.0f, PortraitView.Frame.Y + UnreadIndicator.Frame.Height / 2.0f);
 
             if (_ColorIndicatorView != null) {
                 _ColorIndicatorView.Frame = new CGRect (ContentView.Bounds.Width - ColorIndicatorInsets.Right - ColorIndicatorSize, ColorIndicatorInsets.Top, ColorIndicatorSize, ContentView.Bounds.Height - ColorIndicatorInsets.Top - ColorIndicatorInsets.Bottom);
