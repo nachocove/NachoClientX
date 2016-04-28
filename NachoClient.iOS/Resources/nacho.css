@@ -4,7 +4,7 @@ html {
 body {
     font: 400 17px/24px "Avenir", "Helvetica", sans-serif;
     word-wrap: break-word;
-    margin: 8px;
+    margin: 14px;
     min-height: calc(100vh - 16px);
 }
 

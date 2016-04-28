@@ -103,20 +103,8 @@ namespace NachoClient.iOS
         public void ConfigureView ()
         {
             if (null != attachment) {
-
                 textLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
-
-                var detailText = "";
-                if (attachment.IsInline) {
-                    detailText += "Inline ";
-                }
-                string extension = Pretty.GetExtension (attachment.DisplayName);
-                detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
-                detailText += "file";
-                if (0 != attachment.FileSize) {
-                    detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-                } 
-                detailTextlabel.Text = detailText;
+                detailTextlabel.Text = Pretty.GetAttachmentDetail (attachment);
                 cellIconImageView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
             } else {
                 textLabel.Text = "File no longer exists";

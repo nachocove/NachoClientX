@@ -44,6 +44,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         // INachoLabelChooser
         public void SetOwner (INachoLabelChooserParent owner, int accountId)
         {

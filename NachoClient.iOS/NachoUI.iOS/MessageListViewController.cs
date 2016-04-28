@@ -112,6 +112,7 @@ namespace NachoClient.iOS
             TableView.AccessibilityLabel = "Message list";
             TableView.TintColor = A.Color_NachoGreen;
             TableView.BackgroundColor = UIColor.White;
+            TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
 
             FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, View.Bounds.Width, MessageListFilterBar.PreferredHeight));
             FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -598,7 +599,7 @@ namespace NachoClient.iOS
                     } else if (thread.HasMultipleMessages ()) {
                         ShowThread (thread);
                     } else {
-                        ShowMessage (thread);
+                        ShowMessage (message);
                     }
                 }
             }
@@ -623,9 +624,9 @@ namespace NachoClient.iOS
                 var actions = new List<SwipeTableRowAction> ();
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
                     if (message.isHot ()) {
                         actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
@@ -724,6 +725,11 @@ namespace NachoClient.iOS
         public void MessagesSyncDidTimeOut (MessagesSyncManager manager)
         {
             EndRefreshing ();
+        }
+
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
         }
 
         #endregion
@@ -845,10 +851,10 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
-        void ShowMessage (McEmailMessageThread thread)
+        void ShowMessage (McEmailMessage message)
         {
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 
@@ -1137,11 +1143,8 @@ namespace NachoClient.iOS
 
         void ShowMessage (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.MessageCount = 1;
-            thread.FirstMessageId = message.Id;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
             NavigationController.SetNavigationBarHidden (false, true);
         }

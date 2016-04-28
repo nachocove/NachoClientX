@@ -14,7 +14,7 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public class HotEventView : UIView
+    public class HotEventView : UIView, IUIGestureRecognizerDelegate
     {
 
         static public readonly nfloat PreferredHeight = 69.0f;
@@ -26,6 +26,7 @@ namespace NachoClient.iOS
             }
             set {
                 _Event = value;
+                EventPressGestureRecognizer.Enabled = _Event != null;
                 Update ();
             }
         }
@@ -40,6 +41,18 @@ namespace NachoClient.iOS
         UIImageView IconView;
         nfloat IconSize = 16.0f;
         NcTimer ChangeDateLabelTimer;
+
+        PressGestureRecognizer EventPressGestureRecognizer;
+
+        private bool _Selected;
+        public bool Selected {
+            get {
+                return _Selected;
+            }
+            set {
+                SetSelected (value, false);
+            }
+        }
 
         private UIView ContentView {
             get {
@@ -70,6 +83,7 @@ namespace NachoClient.iOS
             EmptyLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             EmptyLabel.Font = A.Font_AvenirNextDemiBold17;
             EmptyLabel.TextColor = A.Color_NachoTextGray;
+            EmptyLabel.TextAlignment = UITextAlignment.Center;
             EmptyLabel.Hidden = true;
             EmptyLabel.Text = "No upcoming events";
             ContentView.AddSubview (EmptyLabel);
@@ -95,7 +109,12 @@ namespace NachoClient.iOS
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
-            AddGestureRecognizer (new UITapGestureRecognizer (Tap));
+            EventPressGestureRecognizer = new PressGestureRecognizer (EventPressed);
+            EventPressGestureRecognizer.IsCanceledByPanning = true;
+            EventPressGestureRecognizer.DelaysStart = true;
+            EventPressGestureRecognizer.Delegate = this;
+            ContentView.AddGestureRecognizer (EventPressGestureRecognizer);
+
         }
 
         public void CancelAutomaticDateUpdate ()
@@ -106,10 +125,45 @@ namespace NachoClient.iOS
             }
         }
 
-        void Tap ()
+        void EventPressed ()
         {
-            if (Event != null) {
+            if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Began) {
+                SetSelected (true, animated: false);
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Ended) {
+                SetSelected (true, animated: false);
                 Action ();
+            }else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Changed) {
+                SetSelected (EventPressGestureRecognizer.IsInsideView, animated: false);
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Failed) {
+                SetSelected (false, animated: true);
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                SetSelected (false, animated: false);
+            }
+        }
+
+        [Foundation.Export ("gestureRecognizerShouldBegin:")]
+        public bool ShouldBegin (UIKit.UIGestureRecognizer recognizer)
+        {
+            if (recognizer == EventPressGestureRecognizer) {
+                return !SwipeView.IsEditing ();
+            }
+            return false;
+        }
+
+        public void SetSelected (bool selected, bool animated)
+        {
+            _Selected = selected;
+            if (animated) {
+                UIView.BeginAnimations (null, IntPtr.Zero);
+                UIView.SetAnimationDuration (0.25f);
+            }
+            if (selected) {
+                ContentView.BackgroundColor = UIColor.FromRGB (0xE0, 0xE0, 0xE0);
+            } else {
+                ContentView.BackgroundColor = UIColor.White;
+            }
+            if (animated) {
+                UIView.CommitAnimations ();
             }
         }
 

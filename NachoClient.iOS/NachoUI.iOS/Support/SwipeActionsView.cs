@@ -70,7 +70,7 @@ namespace NachoClient.iOS
         private SwipeActionViewState State;
 
         private UITapGestureRecognizer TapGestureRecognizer;
-        private UIPanGestureRecognizer PanGestureRecognizer;
+        public readonly UIPanGestureRecognizer PanGestureRecognizer;
 
         private List<ActionView> ActionViews;
         private nfloat PreferredActionWidth = 64.0f;
@@ -128,6 +128,11 @@ namespace NachoClient.iOS
         #endregion
 
         #region Public API
+
+        public bool IsEditing ()
+        {
+            return State != SwipeActionViewState.Normal; 
+        }
 
         public void EndEditing ()
         {

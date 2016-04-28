@@ -40,6 +40,11 @@ namespace NachoClient.iOS
         protected bool modal;
         protected INachoFolderChooserParent owner;
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public void SetOwner (INachoFolderChooserParent owner, bool modal, int accountId, object cookie)
         {
             this.owner = owner;

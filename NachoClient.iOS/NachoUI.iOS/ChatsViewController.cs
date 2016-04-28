@@ -67,7 +67,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            Util.ConfigureNavBar (false, NavigationController);
 
             SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = SwitchAccountButton;

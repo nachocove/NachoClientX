@@ -46,7 +46,7 @@ namespace NachoClient.iOS
 
         int NumberOfMessagePreviewLines = 2;
         int SectionCount = 0;
-        int HotMessagesSection;
+        int HotMessagesSection = -1;
         int MaximumNumberOfHotMessages = 4;
         int HotSectionRows;
 
@@ -141,6 +141,9 @@ namespace NachoClient.iOS
                 ReloadHotMessages ();
             }
             HasAppearedOnce = true;
+            if (HotEventView.Selected) {
+                HotEventView.SetSelected (false, animated: true);
+            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -436,9 +439,12 @@ namespace NachoClient.iOS
                 EndRefreshing ();
             }
             SectionCount = 0;
+            var hotMessagesSectionBeforeUpdate = HotMessagesSection;
             if (HotMessages.Count () > 0) {
                 SectionCount = 1;
                 HotMessagesSection = 0;
+            } else {
+                HotMessagesSection = -1;
             }
             if (!HasLoadedOnce) {
                 TableView.ReloadData ();
@@ -446,60 +452,70 @@ namespace NachoClient.iOS
                 HasLoadedOnce = true;
             }else{
                 if (changed) {
-                    int rowsBeforeUpdate = HotSectionRows;
-                    int messageRowsBeforeUpate = Math.Min (rowsBeforeUpdate, MaximumNumberOfHotMessages);
-                    HotSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
-                    int messageRows = Math.Min (HotSectionRows, MaximumNumberOfHotMessages);
+                    if (hotMessagesSectionBeforeUpdate == -1 && HotMessagesSection >= 0) {
+                        TableView.BeginUpdates ();
+                        TableView.InsertSections (NSIndexSet.FromIndex (HotMessagesSection), UITableViewRowAnimation.Automatic);
+                        TableView.EndUpdates ();
+                    } else if (hotMessagesSectionBeforeUpdate >= 0 && HotMessagesSection == -1) {
+                        TableView.BeginUpdates ();
+                        TableView.DeleteSections (NSIndexSet.FromIndex (hotMessagesSectionBeforeUpdate), UITableViewRowAnimation.Automatic);
+                        TableView.EndUpdates ();
+                    } else {
+                        int rowsBeforeUpdate = HotSectionRows;
+                        int messageRowsBeforeUpate = Math.Min (rowsBeforeUpdate, MaximumNumberOfHotMessages);
+                        HotSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                        int messageRows = Math.Min (HotSectionRows, MaximumNumberOfHotMessages);
 
-                    var addedIndexPaths = new List<NSIndexPath> ();
-                    var deletedIndexPaths = new List<NSIndexPath> ();
+                        var addedIndexPaths = new List<NSIndexPath> ();
+                        var deletedIndexPaths = new List<NSIndexPath> ();
 
-                    // Figure out how many of the adds will actually be added to our limited table
-                    foreach (var index in adds){
-                        if (index < MaximumNumberOfHotMessages) {
-                            addedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
+                        // Figure out how many of the adds will actually be added to our limited table
+                        foreach (var index in adds) {
+                            if (index < MaximumNumberOfHotMessages) {
+                                addedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
+                            }
                         }
-                    }
 
-                    // If the newly added rows put us over the row limit, remove rows from the end as necessary
-                    int messageRowsAfterUpdate = messageRowsBeforeUpate + addedIndexPaths.Count;
-                    int deleteIndex = messageRowsBeforeUpate - 1;
+                        // If the newly added rows put us over the row limit, remove rows from the end as necessary
+                        int messageRowsAfterUpdate = messageRowsBeforeUpate + addedIndexPaths.Count;
+                        int deleteIndex = messageRowsBeforeUpate - 1;
 
-                    while (messageRowsAfterUpdate > messageRows) {
-                        deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, HotMessagesSection));
-                        --deleteIndex;
-                        --messageRowsAfterUpdate;
-                    }
-
-                    // If any of the deletes are from the rows not yet deleted, remove them
-                    foreach (var index in deletes){
-                        if (index <= deleteIndex){
-                            deletedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
+                        while (messageRowsAfterUpdate > messageRows) {
+                            deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, hotMessagesSectionBeforeUpdate));
+                            --deleteIndex;
                             --messageRowsAfterUpdate;
                         }
-                    }
 
-                    var insertIndex = messageRowsAfterUpdate;
+                        // If any of the deletes are from the rows not yet deleted, remove them
+                        foreach (var index in deletes) {
+                            if (index <= deleteIndex) {
+                                deletedIndexPaths.Add (NSIndexPath.FromRowSection (index, hotMessagesSectionBeforeUpdate));
+                                --messageRowsAfterUpdate;
+                            }
+                        }
 
-                    // If the deletes left us short of the new count, add rows to the end
-                    while (messageRowsAfterUpdate < messageRows) {
-                        addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, HotMessagesSection));
-                        ++messageRowsAfterUpdate;
-                        ++insertIndex;
-                    }
+                        var insertIndex = messageRowsAfterUpdate;
 
-                    // Finally, add or remove the action row if it has changed
-                    if (rowsBeforeUpdate > MaximumNumberOfHotMessages && HotSectionRows <= MaximumNumberOfHotMessages) {
-                        deletedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
-                    } else if (rowsBeforeUpdate <= MaximumNumberOfHotMessages && HotSectionRows > MaximumNumberOfHotMessages) {
-                        addedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
-                    }
+                        // If the deletes left us short of the new count, add rows to the end
+                        while (messageRowsAfterUpdate < messageRows) {
+                            addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, HotMessagesSection));
+                            ++messageRowsAfterUpdate;
+                            ++insertIndex;
+                        }
 
-                    if (addedIndexPaths.Count > 0 || deletedIndexPaths.Count > 0) {
-                        TableView.BeginUpdates ();
-                        TableView.DeleteRows (deletedIndexPaths.ToArray(), UITableViewRowAnimation.Fade);
-                        TableView.InsertRows (addedIndexPaths.ToArray(), UITableViewRowAnimation.Top);
-                        TableView.EndUpdates ();
+                        // Finally, add or remove the action row if it has changed
+                        if (rowsBeforeUpdate > MaximumNumberOfHotMessages && HotSectionRows <= MaximumNumberOfHotMessages) {
+                            deletedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, hotMessagesSectionBeforeUpdate));
+                        } else if (rowsBeforeUpdate <= MaximumNumberOfHotMessages && HotSectionRows > MaximumNumberOfHotMessages) {
+                            addedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
+                        }
+
+                        if (addedIndexPaths.Count > 0 || deletedIndexPaths.Count > 0) {
+                            TableView.BeginUpdates ();
+                            TableView.DeleteRows (deletedIndexPaths.ToArray (), UITableViewRowAnimation.Fade);
+                            TableView.InsertRows (addedIndexPaths.ToArray (), UITableViewRowAnimation.Top);
+                            TableView.EndUpdates ();
+                        }
                     }
                 }
                 UpdateVisibleRows ();
@@ -633,9 +649,9 @@ namespace NachoClient.iOS
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
                     var actions = new List<SwipeTableRowAction> ();
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
                     if (message.isHot ()) {
                         actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
@@ -796,11 +812,8 @@ namespace NachoClient.iOS
 
         void ShowMessage (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.FirstMessageId = message.Id;
-            thread.MessageCount = 1;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 

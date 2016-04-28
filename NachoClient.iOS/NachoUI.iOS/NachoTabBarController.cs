@@ -27,7 +27,6 @@ namespace NachoClient.iOS
 
         public NachoTabBarController () : base ()
         {
-
             var nowNavController = new UINavigationController (new NachoNowViewController ());
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
@@ -60,6 +59,14 @@ namespace NachoClient.iOS
 
             Util.ConfigureNavBar (false, nowNavController);
             Util.ConfigureNavBar (false, inboxNavController);
+            Util.ConfigureNavBar (false, chatsNavController);
+            Util.ConfigureNavBar (false, calendarNavController);
+            Util.ConfigureNavBar (false, contactsNavController);
+            Util.ConfigureNavBar (false, foldersNavController);
+            Util.ConfigureNavBar (false, filesNavController);
+            Util.ConfigureNavBar (false, settingsNavController);
+            Util.ConfigureNavBar (false, supportNavController);
+            Util.ConfigureNavBar (false, aboutNavController);
 
             ViewControllers = new UIViewController[] {
                 nowNavController,
@@ -97,8 +104,8 @@ namespace NachoClient.iOS
             TabBar.SelectedImageTintColor = A.Color_NachoGreen;
             TabBar.Translucent = false;
 
-            MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
-            MoreNavigationController.NavigationBar.Translucent = false;
+            Util.ConfigureNavBar (false, MoreNavigationController);
+
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem.Title = "";
 
@@ -430,6 +437,7 @@ namespace NachoClient.iOS
                 foreach (var cell in ((UITableView)moreTableView).VisibleCells) {
                     if (3 == cell.Subviews.Length && cell.Subviews [2] is UIButton) {
                         cell.Subviews [2].Hidden = true;
+                        cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                     }
                 }
             }
