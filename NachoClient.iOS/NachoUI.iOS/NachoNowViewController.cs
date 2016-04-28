@@ -247,6 +247,7 @@ namespace NachoClient.iOS
 
         void MakeAction (NSIndexPath indexPath)
         {
+            DidEndSwiping (TableView, indexPath);
             var message = HotMessages.GetCachedMessage (indexPath.Row);
             // TODO:move this to a serial task queue
             NcModel.Instance.RunInTransaction (() => {
@@ -497,29 +498,32 @@ namespace NachoClient.iOS
                 var deletedIndexPaths = new List<NSIndexPath> ();
 
                 if (messagesChanged) {
+                    int messageSectionRowsBeforeUpdate = MessageSectionRows;
+                    MessageSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
                     if (hotMessagesSectionBeforeUpdate == -1 && HotMessagesSection >= 0) {
                         addedSections.Add ((nuint)HotMessagesSection);
                     } else if (hotMessagesSectionBeforeUpdate >= 0 && HotMessagesSection == -1) {
                         deletedSections.Add ((nuint)hotMessagesSectionBeforeUpdate);
                     } else {
-                        int messageRowsBeforeUpate = Math.Min (MessageSectionRows, MaximumNumberOfHotMessages);
+                        int messageRowsBeforeUpate = Math.Min (messageSectionRowsBeforeUpdate, MaximumNumberOfHotMessages);
                         MessageSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
                         int messageRows = Math.Min (MessageSectionRows, MaximumNumberOfHotMessages);
 
-                        DetermineRowChanges (messageAdds, messageDeletes, addedIndexPaths, deletedIndexPaths, MessageSectionRows, messageRowsBeforeUpate, hotMessagesSectionBeforeUpdate, messageRows, HotMessagesSection, MaximumNumberOfHotMessages);
+                        DetermineRowChanges (messageAdds, messageDeletes, addedIndexPaths, deletedIndexPaths, messageSectionRowsBeforeUpdate, messageRowsBeforeUpate, hotMessagesSectionBeforeUpdate, MessageSectionRows, messageRows, HotMessagesSection, MaximumNumberOfHotMessages);
                     }
                 }
-
+                 
                 if (actionsChanged) {
+                    int actionSectionRowsBeforeUpdate = ActionSectionRows;
+                    ActionSectionRows = (int)RowsInSection (TableView, ActionsSection);
                     if (actionsSectionBeforeUpdate == -1 && ActionSectionRows >= 0) {
                         addedSections.Add ((nuint)ActionsSection);
                     } else if (actionsSectionBeforeUpdate >= 0 && ActionSectionRows == -1) {
                         deletedSections.Add ((nuint)actionsSectionBeforeUpdate);
                     } else {
-                        int actionRowsBeforeUpdate = Math.Min (ActionSectionRows, MaximumNumberOfActions);
-                        ActionSectionRows = (int)RowsInSection (TableView, ActionsSection);
+                        int actionRowsBeforeUpdate = Math.Min (actionSectionRowsBeforeUpdate, MaximumNumberOfActions);
                         int actionRows = Math.Min (ActionSectionRows, MaximumNumberOfActions);
-                        DetermineRowChanges (actionAdds, actionDeletes, addedIndexPaths, deletedIndexPaths, ActionSectionRows, actionRowsBeforeUpdate, actionsSectionBeforeUpdate, actionRows, ActionsSection, MaximumNumberOfActions);
+                        DetermineRowChanges (actionAdds, actionDeletes, addedIndexPaths, deletedIndexPaths, actionSectionRowsBeforeUpdate, actionRowsBeforeUpdate, actionsSectionBeforeUpdate, ActionSectionRows, actionRows, ActionsSection, MaximumNumberOfActions);
                     }
                 }
 
@@ -545,47 +549,47 @@ namespace NachoClient.iOS
             EmptyView.Hidden = HotMessages.Count () > 0;
         }
 
-        void DetermineRowChanges (List<int> adds, List<int> deletes, List<NSIndexPath> addedIndexPaths, List<NSIndexPath> deletedIndexPaths, int totalSectionRowsBeforeUpdate, int itemRowsBeforeUpdate, int sectionBeforeUpdate, int itemRows, int section, int maxItemRows)
+        void DetermineRowChanges (List<int> adds, List<int> deletes, List<NSIndexPath> addedIndexPaths, List<NSIndexPath> deletedIndexPaths, int totalSectionRowsBeforeUpdate, int itemRowsBeforeUpdate, int sectionBeforeUpdate, int totalSectionRows, int itemRows, int section, int maxItemRows)
         {
-
+            int itemRowsAfterUpdate = itemRowsBeforeUpdate;
             // Figure out how many of the adds will actually be added to our limited table
             foreach (var index in adds) {
                 if (index < maxItemRows) {
                     addedIndexPaths.Add (NSIndexPath.FromRowSection (index, section));
+                        ++itemRowsAfterUpdate;
                 }
             }
 
             // If the newly added rows put us over the row limit, remove rows from the end as necessary
-            int messageRowsAfterUpdate = itemRowsBeforeUpdate + addedIndexPaths.Count;
             int deleteIndex = itemRowsBeforeUpdate - 1;
 
-            while (messageRowsAfterUpdate > itemRows) {
+            while (itemRowsAfterUpdate > itemRows) {
                 deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, sectionBeforeUpdate));
                 --deleteIndex;
-                --messageRowsAfterUpdate;
+                --itemRowsAfterUpdate;
             }
 
             // If any of the deletes are from the rows not yet deleted, remove them
             foreach (var index in deletes) {
                 if (index <= deleteIndex) {
                     deletedIndexPaths.Add (NSIndexPath.FromRowSection (index, sectionBeforeUpdate));
-                    --messageRowsAfterUpdate;
+                    --itemRowsAfterUpdate;
                 }
             }
 
-            var insertIndex = messageRowsAfterUpdate;
+            var insertIndex = itemRowsAfterUpdate;
 
             // If the deletes left us short of the new count, add rows to the end
-            while (messageRowsAfterUpdate < itemRows) {
+            while (itemRowsAfterUpdate < itemRows) {
                 addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, section));
-                ++messageRowsAfterUpdate;
+                ++itemRowsAfterUpdate;
                 ++insertIndex;
             }
 
             // Finally, add or remove the action row if it has changed
-            if (totalSectionRowsBeforeUpdate > maxItemRows && MessageSectionRows <= maxItemRows) {
+            if (totalSectionRowsBeforeUpdate > maxItemRows && totalSectionRows <= maxItemRows) {
                 deletedIndexPaths.Add (NSIndexPath.FromRowSection (maxItemRows, sectionBeforeUpdate));
-            } else if (totalSectionRowsBeforeUpdate <= maxItemRows && MessageSectionRows > maxItemRows) {
+            } else if (totalSectionRowsBeforeUpdate <= maxItemRows && totalSectionRows > maxItemRows) {
                 addedIndexPaths.Add (NSIndexPath.FromRowSection (maxItemRows, section));
             }
         }
@@ -673,7 +677,7 @@ namespace NachoClient.iOS
             if (section == ActionsSection) {
                 var actionCount = HotActions.Count ();
                 if (actionCount > MaximumNumberOfActions) {
-                    return MaximumNumberOfActions;
+                    return MaximumNumberOfActions + 1;
                 }
                 return actionCount;
             }
@@ -754,6 +758,7 @@ namespace NachoClient.iOS
                     cell.SetAction (action);
                     if (HotActions.IncludesMultipleAccounts ()) {
                         cell.IndicatorColor = Util.ColorForAccount (action.AccountId);
+                        cell.ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 1.0f);
                     } else {
                         cell.IndicatorColor = null;
                     }
