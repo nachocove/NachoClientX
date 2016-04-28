@@ -149,7 +149,7 @@ namespace NachoClient.iOS
 
         #region Helper Properties
 
-        private UITableView TableView {
+        protected UITableView TableView {
             get {
                 if (Superview == null) {
                     return null;
@@ -213,7 +213,7 @@ namespace NachoClient.iOS
 
         #region Cleanup
 
-        public void Cleanup ()
+        public virtual void Cleanup ()
         {
             SwipeView.Delegate = null;
             SwipeView.Cleanup ();

@@ -1689,6 +1689,8 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\ActionCell.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionCheckboxView.cs" />
+    <Compile Include="NachoUI.iOS\ActionEditViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\EditableTextCell.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

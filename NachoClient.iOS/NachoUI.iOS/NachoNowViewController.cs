@@ -67,14 +67,10 @@ namespace NachoClient.iOS
 
             AutomaticallyAdjustsScrollViewInsets = false;
 
-            using (var image = UIImage.FromBundle ("contact-newemail")) {
-                NewMessageItem = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewEmailMessage);
-                NewMessageItem.AccessibilityLabel = "New message";
-            }
-            using (var image = UIImage.FromBundle ("cal-add")) {
-                NewMeetingItem = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMeeting);
-                NewMeetingItem.AccessibilityLabel = "New meeting";
-            }
+            NewMessageItem = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewEmailMessage);
+            NewMessageItem.AccessibilityLabel = "New message";
+            NewMeetingItem = new NcUIBarButtonItem (UIImage.FromBundle ("cal-add"), UIBarButtonItemStyle.Plain, NewMeeting);
+            NewMeetingItem.AccessibilityLabel = "New meeting";
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { NewMessageItem, NewMeetingItem };
 
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
@@ -247,28 +243,15 @@ namespace NachoClient.iOS
 
         void MakeAction (NSIndexPath indexPath)
         {
-            DidEndSwiping (TableView, indexPath);
             var message = HotMessages.GetCachedMessage (indexPath.Row);
-            // TODO:move this to a serial task queue
-            NcModel.Instance.RunInTransaction (() => {
-                message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
-                    var _message = record as McEmailMessage;
-                    _message.IsAction = true;
-                    return true;
-                });
-                var action = new McAction ();
-                action.Title = message.Subject;
-                action.Description = message.BodyPreview;
-                action.AccountId = message.AccountId;
-                action.EmailMessageId = message.Id;
-                action.Insert ();
-                action.Hot ();
-            });
-            var account = McAccount.QueryById<McAccount> (message.AccountId);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
-                Account = account,
-                Status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged)
-            });
+            var action = new McAction ();
+            action.Title = message.Subject;
+            action.AccountId = message.AccountId;
+            action.EmailMessageId = message.Id;
+            action.State = McAction.ActionState.Hot;
+            var viewController = new ActionEditViewController ();
+            viewController.Action = action;
+            viewController.PresentOverViewController (this);
         }
 
         void MarkMessageAsUnhot (NSIndexPath indexPath)
@@ -304,6 +287,13 @@ namespace NachoClient.iOS
                 NcAssert.NotNull (thread);
                 NcEmailArchiver.Archive (thread);
             }
+        }
+
+        void DeleteAction (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = HotActions.ActionAt (indexPath.Row);
+            action.RemoveButKeepMessage ();
         }
 
         #endregion
@@ -516,9 +506,9 @@ namespace NachoClient.iOS
                 if (actionsChanged) {
                     int actionSectionRowsBeforeUpdate = ActionSectionRows;
                     ActionSectionRows = (int)RowsInSection (TableView, ActionsSection);
-                    if (actionsSectionBeforeUpdate == -1 && ActionSectionRows >= 0) {
+                    if (actionsSectionBeforeUpdate == -1 && ActionsSection >= 0) {
                         addedSections.Add ((nuint)ActionsSection);
-                    } else if (actionsSectionBeforeUpdate >= 0 && ActionSectionRows == -1) {
+                    } else if (actionsSectionBeforeUpdate >= 0 && ActionsSection == -1) {
                         deletedSections.Add ((nuint)actionsSectionBeforeUpdate);
                     } else {
                         int actionRowsBeforeUpdate = Math.Min (actionSectionRowsBeforeUpdate, MaximumNumberOfActions);
@@ -530,13 +520,13 @@ namespace NachoClient.iOS
                 if (addedIndexPaths.Count > 0 || deletedIndexPaths.Count > 0 || addedSections.Count > 0 || deletedSections.Count > 0) {
                     TableView.BeginUpdates ();
                     if (deletedIndexPaths.Count > 0) {
-                        TableView.DeleteRows (deletedIndexPaths.ToArray (), UITableViewRowAnimation.Fade);
+                        TableView.DeleteRows (deletedIndexPaths.ToArray (), UITableViewRowAnimation.Automatic);
                     }
                     if (deletedSections.Count > 0) {
                         TableView.DeleteSections (deletedSections, UITableViewRowAnimation.Automatic);
                     }
                     if (addedIndexPaths.Count > 0) {
-                        TableView.InsertRows (addedIndexPaths.ToArray (), UITableViewRowAnimation.Top);
+                        TableView.InsertRows (addedIndexPaths.ToArray (), UITableViewRowAnimation.Automatic);
                     }
                     if (addedSections.Count > 0) {
                         TableView.InsertSections (addedSections, UITableViewRowAnimation.Automatic);
@@ -546,7 +536,7 @@ namespace NachoClient.iOS
 
                 UpdateVisibleRows ();
             }
-            EmptyView.Hidden = HotMessages.Count () > 0;
+            EmptyView.Hidden = HotMessages.Count () > 0 || HotActions.Count () > 0;
         }
 
         void DetermineRowChanges (List<int> adds, List<int> deletes, List<NSIndexPath> addedIndexPaths, List<NSIndexPath> deletedIndexPaths, int totalSectionRowsBeforeUpdate, int itemRowsBeforeUpdate, int sectionBeforeUpdate, int totalSectionRows, int itemRows, int section, int maxItemRows)
@@ -826,6 +816,12 @@ namespace NachoClient.iOS
                     actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
                     return actions;
                 }
+            }else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < MaximumNumberOfActions) {
+                    var actions = new List<SwipeTableRowAction> ();
+                    actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAction));
+                    return actions;
+                }
             }
             return null;
         }
@@ -1074,9 +1070,7 @@ namespace NachoClient.iOS
                 TextLabel.TextAlignment = UITextAlignment.Center;
                 TextLabel.Text = "Your most important items will show up here automatically as Nacho Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
 
-                using (var image = UIImage.FromBundle("empty-hot")){
-                    ImageView = new UIImageView (image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
-                }
+                ImageView = new UIImageView (UIImage.FromBundle("empty-hot").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
 
                 AddSubview(ImageView);
                 AddSubview(TextLabel);

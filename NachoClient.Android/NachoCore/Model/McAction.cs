@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using SQLite;
 using NachoCore.Brain;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -204,6 +205,21 @@ namespace NachoCore.Model
                 }
                 return _Message;
             }
+        }
+
+        public void RemoveButKeepMessage ()
+        {
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                var message = record as McEmailMessage;
+                message.IsAction = false;
+                return true;
+            });
+            base.Delete ();
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged)
+            });
         }
 
     }

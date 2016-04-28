@@ -85,6 +85,7 @@ namespace NachoClient.iOS
         public ActionCell (IntPtr handle) : base (handle)
         {
             DetailTextSpacing = 0.0f;
+            HideDetailWhenEmpty = true;
 
             TextLabel.Font = A.Font_AvenirNextDemiBold17;
             TextLabel.TextColor = A.Color_NachoGreen;
@@ -127,9 +128,13 @@ namespace NachoClient.iOS
             base.LayoutSubviews ();
             var dateSize = DateLabel.SizeThatFits (new CGSize (0.0f, 0.0f));
             dateSize.Height = DateLabel.Font.RoundedLineHeight (1.0f);
+            var showDetail = !String.IsNullOrWhiteSpace (DetailTextLabel.Text);
             var textHeight = TextLabel.Font.RoundedLineHeight (1.0f);
             var detailTextHeight = (nfloat)Math.Ceiling (DetailTextLabel.Font.LineHeight * DetailTextLabel.Lines);
-            var totalTextHeight = textHeight + DetailTextSpacing + detailTextHeight;
+            var totalTextHeight = textHeight;
+            if (showDetail) {
+                totalTextHeight += DetailTextSpacing + detailTextHeight;
+            }
             var textTop = (Bounds.Height - totalTextHeight) / 2.0f;
             var detailWidth = ContentView.Bounds.Width - rightPadding - SeparatorInset.Left;
             var detailHeight = DetailTextLabel.SizeThatFits (new CGSize (detailWidth, 0.0f)).Height;
@@ -150,12 +155,14 @@ namespace NachoClient.iOS
             frame.Height = textHeight;
             TextLabel.Frame = frame;
 
-            frame = DetailTextLabel.Frame;
-            frame.X = TextLabel.Frame.X;
-            frame.Y = TextLabel.Frame.Y + TextLabel.Frame.Height + DetailTextSpacing;
-            frame.Width = detailWidth;
-            frame.Height = detailHeight;
-            DetailTextLabel.Frame = frame;
+            if (showDetail) {
+                frame = DetailTextLabel.Frame;
+                frame.X = TextLabel.Frame.X;
+                frame.Y = TextLabel.Frame.Y + TextLabel.Frame.Height + DetailTextSpacing;
+                frame.Width = detailWidth;
+                frame.Height = detailHeight;
+                DetailTextLabel.Frame = frame;
+            }
 
             CheckboxView.Center = new CGPoint (SeparatorInset.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
             // UnreadIndicator.Center = new CGPoint (PortraitView.Frame.X + PortraitView.Frame.Width - UnreadIndicator.Frame.Width / 2.0f, PortraitView.Frame.Y + UnreadIndicator.Frame.Height / 2.0f);
