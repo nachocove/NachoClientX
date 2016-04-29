@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         UIBarButtonItem EditTableButton;
         UIBarButtonItem DoneSwipingButton;
         UIBarButtonItem CancelEditingButton;
+        UIBarButtonItem DoneEditingButton;
 
         UIBarButtonItem DeferButton;
         UIBarButtonItem DeleteButton;
@@ -36,6 +37,7 @@ namespace NachoClient.iOS
         bool HasAppearedOnce = false;
         bool IsListeningForStatusInd = false;
         bool HasLoadedOnce = false;
+        bool HasMadeEdits = false;
 
         public McAction.ActionState[] SubStates;
 
@@ -62,6 +64,8 @@ namespace NachoClient.iOS
             EditTableButton.AccessibilityLabel = "Edit";
             CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
             CancelEditingButton.AccessibilityLabel = "Cancel Editing";
+            DoneEditingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, CancelEditingTable);
+            DoneEditingButton.AccessibilityLabel = "Done Editing";
             DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
             EditTableButton.AccessibilityLabel = "Done";
 
@@ -116,6 +120,7 @@ namespace NachoClient.iOS
 
             EditTableButton.Clicked -= EditTable;
             CancelEditingButton.Clicked -= CancelEditingTable;
+            DoneEditingButton.Clicked -= CancelEditingTable;
             DoneSwipingButton.Clicked -= EndSwiping;
 
             base.Cleanup ();
@@ -330,6 +335,38 @@ namespace NachoClient.iOS
             return true;
         }
 
+        public override bool CanMoveRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Row >= Actions.Count ()) {
+                return false;
+            }
+            return State != McAction.ActionState.Completed;
+        }
+
+        public override NSIndexPath CustomizeMoveTarget (UITableView tableView, NSIndexPath sourceIndexPath, NSIndexPath proposedIndexPath)
+        {
+            if (proposedIndexPath.Row >= Actions.Count ()) {
+                return NSIndexPath.FromRowSection (Actions.Count () - 1, proposedIndexPath.Section);
+            }
+            return proposedIndexPath;
+        }
+
+        public override void MoveRow (UITableView tableView, NSIndexPath sourceIndexPath, NSIndexPath destinationIndexPath)
+        {
+            if (sourceIndexPath.Row != destinationIndexPath.Row) {
+                Actions.Move (sourceIndexPath.Row, destinationIndexPath.Row);
+                var action = Actions.ActionAt (destinationIndexPath.Row);
+                if (destinationIndexPath.Row == 0) {
+                    action.MoveToFront ();
+                } else {
+                    var previous = Actions.ActionAt (destinationIndexPath.Row - 1);
+                    action.MoveAfterAction (previous);
+                }
+                HasMadeEdits = true;
+                UpdateNavigationItem ();
+            }
+        }
+
         public override List<SwipeTableRowAction> ActionsForSwipingRightInRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (indexPath.Row < Actions.Count ()) {
@@ -493,6 +530,7 @@ namespace NachoClient.iOS
 
         void StartEditingTable ()
         {
+            HasMadeEdits = false;
             // TODO: adjust insets
             TableView.SetEditing(true, true);
             UpdateNavigationItem ();
@@ -541,9 +579,15 @@ namespace NachoClient.iOS
                     DoneSwipingButton
                 };
             } else if (IsViewLoaded && TableView.Editing) {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                    CancelEditingButton
-                };
+                if (HasMadeEdits) {
+                    NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                        DoneEditingButton
+                    };
+                } else {
+                    NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                        CancelEditingButton
+                    };
+                }
             } else {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     EditTableButton

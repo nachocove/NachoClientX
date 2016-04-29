@@ -161,6 +161,8 @@ namespace NachoCore.Model
 
         public void MoveAfterAction (McAction action)
         {
+            // re-query to make sure we have the latest info
+            action = McAction.QueryById<McAction> (action.Id);
             var targetOrder = action.UserSortOrder + 1;
             var existing = NcModel.Instance.Db.Query<McAction> ("SELECT * FROM McAction WHERE State = ? AND UserSortOrder = ?", State, targetOrder);
             if (existing.Count > 0) {

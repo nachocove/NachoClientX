@@ -54,6 +54,13 @@ namespace NachoCore
             return Actions [index];
         }
 
+        public void Move (int index, int toIndex)
+        {
+            var action = Actions [index];
+            Actions.RemoveAt (index);
+            Actions.Insert (toIndex, action);
+        }
+
         public bool IncludesMultipleAccounts ()
         {
             return AccountId == McAccount.GetUnifiedAccount ().Id;
