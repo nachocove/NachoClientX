@@ -15,8 +15,6 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
 using NachoPlatform;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 
 namespace NachoClient.AndroidClient
 {
