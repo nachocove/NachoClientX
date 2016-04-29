@@ -211,6 +211,22 @@ namespace NachoClient.iOS
             return textHeight + detailHeight + detailSpacing + topPadding * 2.0f;
         }
 
+        public override void WillTransitionToState (UITableViewCellState mask)
+        {
+            base.WillTransitionToState (mask);
+            if ((mask & UITableViewCellState.ShowingEditControlMask) != 0) {
+                CheckboxView.Enabled = false;
+            }
+        }
+
+        public override void DidTransitionToState (UITableViewCellState mask)
+        {
+            base.DidTransitionToState (mask);
+            if ((mask & UITableViewCellState.ShowingEditControlMask) == 0) {
+                CheckboxView.Enabled = true;
+            }
+        }
+
         public override void Cleanup ()
         {
             CheckboxView.Changed = null;

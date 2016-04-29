@@ -173,7 +173,7 @@ namespace NachoCore.Model
         public void Hot ()
         {
             State = ActionState.Hot;
-            MoveToBack ();
+            MoveToFront ();
         }
 
         public void Unhot ()

@@ -75,6 +75,7 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
+            TableView.TintColor = A.Color_NachoGreen;
             TableView.RowHeight = ActionCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 44.0f, 0.0f, 0.0f);
             TableView.AllowsMultipleSelectionDuringEditing = true;
@@ -146,9 +147,74 @@ namespace NachoClient.iOS
 
         void DeleteSelectedActions (object sender, EventArgs e)
         {
-            // TODO:
-//            NcEmailArchiver.Delete (SelectedActions ());
+            var actions = SelectedActions ();
+            NcTask.Run (() => {
+                var messages = new List<McEmailMessage> (actions.Count);
+                foreach (var action in actions) {
+                    messages.Add (action.Message);
+                }
+                NcEmailArchiver.Delete (messages);
+            }, "ActionListViewController_DeleteSelectedActions");
             CancelEditingTable ();
+        }
+
+        void DeleteAction (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = Actions.ActionAt (indexPath.Row);
+            NcEmailArchiver.Delete (action.Message);
+            NotifyActionsChanged (action);
+        }
+
+        void DemoteAction (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = Actions.ActionAt (indexPath.Row);
+            action.RemoveButKeepMessage ();
+            NotifyActionsChanged (action);
+        }
+
+        void MarkActionAsHot (NSIndexPath indexPath)
+        {
+            var action = Actions.ActionAt (indexPath.Row);
+            // TODO: run in serial task queue
+            if (!action.IsHot) {
+                action.Hot ();
+                NotifyActionsChanged (action);
+            }
+        }
+
+        void MarkActionAsUnhot (NSIndexPath indexPath)
+        {
+            var action = Actions.ActionAt (indexPath.Row);
+            // TODO: run in serial task queue
+            if (action.IsHot) {
+                action.Unhot ();
+                NotifyActionsChanged (action);
+            }
+        }
+
+        void DeferAction (NSIndexPath indexPath)
+        {
+            var action = Actions.ActionAt (indexPath.Row);
+            var editedCopy = McAction.QueryById<McAction> (action.Id);
+            editedCopy.State = McAction.ActionState.Deferred;
+            EditAction (editedCopy);
+        }
+
+        void EditAction (NSIndexPath indexPath)
+        {
+            var action = Actions.ActionAt (indexPath.Row);
+            EditAction (action);
+        }
+
+        void NotifyActionsChanged (McAction action)
+        {
+            var account = McAccount.QueryById<McAccount> (action.AccountId);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+            });
         }
 
         #endregion
@@ -266,12 +332,38 @@ namespace NachoClient.iOS
 
         public override List<SwipeTableRowAction> ActionsForSwipingRightInRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return base.ActionsForSwipingRightInRow (tableView, indexPath);
+            if (indexPath.Row < Actions.Count ()) {
+                var action = Actions.ActionAt (indexPath.Row);
+                var actions = new List<SwipeTableRowAction> ();
+                if (!action.IsCompleted) {
+                    if (action.IsHot) {
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsUnhot));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsHot));
+                    }
+                    if (action.IsDeferred) {
+                        actions.Add (new SwipeTableRowAction ("Edit", UIImage.FromBundle ("gen-edit"), UIColor.FromRGB (0x01, 0xB2, 0xCD), EditAction));
+                    } else {
+                        actions.Add (new SwipeTableRowAction ("Defer", UIImage.FromBundle ("email-defer-swipe"), UIColor.FromRGB (0x01, 0xB2, 0xCD), DeferAction));
+                    }
+                }
+                return actions;
+            }
+            return null;
         }
 
         public override List<SwipeTableRowAction> ActionsForSwipingLeftInRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return base.ActionsForSwipingLeftInRow (tableView, indexPath);
+            if (indexPath.Row < Actions.Count ()) {
+                var action = Actions.ActionAt (indexPath.Row);
+                var actions = new List<SwipeTableRowAction> ();
+                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAction));
+                if (!action.IsCompleted) {
+                    actions.Add (new SwipeTableRowAction ("Not Action", UIImage.FromBundle ("email-not-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), DemoteAction));
+                }
+                return actions;
+            }
+            return null;
         }
 
         public override void WillBeginSwiping (UITableView tableView, NSIndexPath indexPath)
@@ -373,6 +465,13 @@ namespace NachoClient.iOS
         {
             var viewController = new ActionListViewController (state);
             NavigationController.PushViewController (viewController, animated: true);
+        }
+
+        void EditAction (McAction action)
+        {
+            var viewController = new ActionEditViewController ();
+            viewController.Action = action;
+            viewController.PresentOverViewController (this);
         }
 
         void SwitchToAccount (McAccount account)

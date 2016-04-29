@@ -27,6 +27,15 @@ namespace NachoClient.iOS
         PressGestureRecognizer PressRecognizer;
         public Action<bool> Changed;
 
+        public bool Enabled {
+            get {
+                return PressRecognizer.Enabled;
+            }
+            set {
+                PressRecognizer.Enabled = value;
+            }
+        }
+
         nfloat CheckboxSize;
 
         public ActionCheckboxView (float viewSize = 44.0f, float checkboxSize = 20.0f) : this (new CGRect (0.0f, 0.0f, (nfloat)viewSize, (nfloat)viewSize), checkboxSize)

@@ -292,7 +292,51 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var action = HotActions.ActionAt (indexPath.Row);
+            NcEmailArchiver.Delete (action.Message);
+        }
+
+        void DemoteAction (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = HotActions.ActionAt (indexPath.Row);
             action.RemoveButKeepMessage ();
+        }
+
+        void MarkActionAsHot (NSIndexPath indexPath)
+        {
+            var action = HotActions.ActionAt (indexPath.Row);
+            // TODO: run in serial task queue
+            if (!action.IsHot) {
+                action.Hot ();
+                NotifyActionsChanged (action);
+            }
+        }
+
+        void MarkActionAsUnhot (NSIndexPath indexPath)
+        {
+            var action = HotActions.ActionAt (indexPath.Row);
+            // TODO: run in serial task queue
+            if (action.IsHot) {
+                action.Unhot ();
+                NotifyActionsChanged (action);
+            }
+        }
+
+        void DeferAction (NSIndexPath indexPath)
+        {
+            var action = HotActions.ActionAt (indexPath.Row);
+            var editedCopy = McAction.QueryById<McAction> (action.Id);
+            editedCopy.State = McAction.ActionState.Deferred;
+            EditAction (editedCopy);
+        }
+
+        void NotifyActionsChanged (McAction action)
+        {
+            var account = McAccount.QueryById<McAccount> (action.AccountId);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+            });
         }
 
         #endregion
@@ -834,12 +878,18 @@ namespace NachoClient.iOS
                     } else {
                         actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
-                    if (message.isHot ()) {
-                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
-                    } else {
-                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
-                    }
+                    actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
                     actions.Add (new SwipeTableRowAction ("Action", UIImage.FromBundle ("email-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), MakeAction));
+                    return actions;
+                }
+            } else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < ActionRows) {
+                    var action = HotActions.ActionAt (indexPath.Row);
+                    var actions = new List<SwipeTableRowAction> ();
+                    if (!action.IsCompleted) {
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsUnhot));
+                        actions.Add (new SwipeTableRowAction ("Defer", UIImage.FromBundle ("email-defer-swipe"), UIColor.FromRGB (0x01, 0xB2, 0xCD), DeferAction));
+                    }
                     return actions;
                 }
             }
@@ -857,8 +907,12 @@ namespace NachoClient.iOS
                 }
             }else if (indexPath.Section == ActionsSection) {
                 if (indexPath.Row < ActionRows) {
+                    var action = HotActions.ActionAt (indexPath.Row);
                     var actions = new List<SwipeTableRowAction> ();
                     actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAction));
+                    if (!action.IsCompleted) {
+                        actions.Add (new SwipeTableRowAction ("Not Action", UIImage.FromBundle ("email-not-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), DemoteAction));
+                    }
                     return actions;
                 }
             }
@@ -1023,6 +1077,13 @@ namespace NachoClient.iOS
             var vc = new EventViewController ();
             vc.SetCalendarItem (calendarEvent);
             NavigationController.PushViewController (vc, true);
+        }
+
+        void EditAction (McAction action)
+        {
+            var viewController = new ActionEditViewController ();
+            viewController.Action = action;
+            viewController.PresentOverViewController (this);
         }
 
         void SwitchToAccount (McAccount account)

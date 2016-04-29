@@ -1534,6 +1534,14 @@ namespace NachoCore.Model
             }
         }
 
+        void DeleteAction ()
+        {
+            var action = McAction.ActionForMessage (this);
+            if (action != null) {
+                action.Delete ();
+            }
+        }
+
         public override void DeleteAncillary ()
         {
             NcAssert.True (0 != Id);
@@ -1553,6 +1561,7 @@ namespace NachoCore.Model
             DeleteAttachments ();
             DeleteAddressMaps ();
             DeleteChatMessages ();
+            DeleteAction ();
         }
 
         public override int Delete ()

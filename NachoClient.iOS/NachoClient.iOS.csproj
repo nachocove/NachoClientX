@@ -2771,6 +2771,9 @@
     <BundleResource Include="Resources\email-action-swipe.png" />
     <BundleResource Include="Resources\email-action-swipe%402x.png" />
     <BundleResource Include="Resources\email-action-swipe%403x.png" />
+    <BundleResource Include="Resources\email-not-action-swipe.png" />
+    <BundleResource Include="Resources\email-not-action-swipe%402x.png" />
+    <BundleResource Include="Resources\email-not-action-swipe%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
