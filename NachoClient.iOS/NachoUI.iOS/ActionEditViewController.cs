@@ -118,17 +118,20 @@ namespace NachoClient.iOS
             TitleCell = new ActionTitleCell ();
             TitleCell.Placeholder = "Summary";
             TitleCell.Delegate = this;
+            TitleCell.SeparatorInset = new UIEdgeInsets (0.0f, 44.0f, 0.0f, 0.0f);
             DescriptionCell = new EditableTextCell ();
             DescriptionCell.TextView.Font = A.Font_AvenirNextRegular14;
             DescriptionCell.TextView.TextColor = A.Color_NachoTextGray;
             DescriptionCell.Placeholder = "Notes";
             DescriptionCell.Delegate = this;
+            DescriptionCell.SeparatorInset = TitleCell.SeparatorInset;
 
             TitleCell.TextView.ReturnKeyType = UIReturnKeyType.Next;
             TitleCell.FollowingResponder = DescriptionCell.TextView;
 
             DueDateCell = new SwipeTableViewCell ();
             DueDateCell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            DueDateCell.SeparatorInset = TitleCell.SeparatorInset;
 
             TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), StateCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(NameValueCell), DeferCellIdentifier);
@@ -269,6 +272,7 @@ namespace NachoClient.iOS
         {
             if (indexPath.Section == NameSection) {
                 if (indexPath.Row == NameRowTitle) {
+                    UpdateCheckboxTint ();
                     return TitleCell;
                 } else if (indexPath.Row == NameRowDescription) {
                     return DescriptionCell;
@@ -369,6 +373,7 @@ namespace NachoClient.iOS
                 }
                 UpdateSectionCheckmark (indexPath);
                 tableView.DeselectRow (indexPath, true);
+                UpdateCheckboxTint ();
             } else if (indexPath.Section == DeferSection) {
                 View.EndEditing (false);
                 var deferModel = Deferrals [indexPath.Row];
@@ -485,6 +490,15 @@ namespace NachoClient.iOS
             }
         }
 
+        void UpdateCheckboxTint ()
+        {
+            if (Action.State == McAction.ActionState.Hot) {
+                TitleCell.CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+            } else {
+                TitleCell.CheckboxView.TintColor = A.Color_NachoGreen;
+            }
+        }
+
         #endregion
 
         #region Headers
@@ -532,11 +546,23 @@ namespace NachoClient.iOS
 
         class ActionTitleCell : EditableTextCell
         {
+
+            public readonly ActionCheckboxView CheckboxView;
+
             public ActionTitleCell () : base ()
             {
+                CheckboxView = new ActionCheckboxView(44.0f, checkboxSize: 20.0f);
+                ContentView.AddSubview (CheckboxView);
+
                 AllowsNewlines = false;
                 TextView.Font = A.Font_AvenirNextDemiBold17;
                 TextView.TextColor = A.Color_NachoDarkText;
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                CheckboxView.Center = new CGPoint (SeparatorInset.Left / 2.0f, 22.0f);
             }
 
         }
