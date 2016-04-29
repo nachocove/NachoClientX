@@ -7,11 +7,12 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
+
     public class NachoActions
     {
 
-        int AccountId;
-        McAction.ActionState State;
+        protected int AccountId;
+        protected McAction.ActionState State;
         List<McAction> Actions;
 
         public delegate void RefreshHandler (bool changed, List<int> adds, List<int> deletes);
@@ -23,7 +24,7 @@ namespace NachoCore
             Actions = new List<McAction> ();
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public virtual bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var updatedActions = McAction.ActionsForState (AccountId, State);
             bool changed = AreDifferent(Actions, updatedActions, out adds, out deletes);
@@ -97,6 +98,44 @@ namespace NachoCore
             }
             return adds.Count > 0 || deletes.Count > 0;
         }
+    }
+
+    public class NachoHotActions : NachoActions
+    {
+
+        public int NormalCount { get; private set; }
+        public int DeferredCount { get; private set; }
+        public int CompletedCount { get; private set; }
+
+        public NachoHotActions (int accountId) : base (accountId, McAction.ActionState.Hot)
+        {
+        }
+
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        {
+            var changed = base.Refresh (out adds, out deletes);
+            var counts = McAction.StateCounts (AccountId);
+            if (counts [McAction.ActionState.Open] != NormalCount) {
+                changed = true;
+                NormalCount = counts [McAction.ActionState.Open];
+            }
+            if (counts [McAction.ActionState.Deferred] != DeferredCount) {
+                changed = true;
+                DeferredCount = counts [McAction.ActionState.Deferred];
+            }
+            if (counts [McAction.ActionState.Completed] != CompletedCount) {
+                changed = true;
+                CompletedCount = counts [McAction.ActionState.Completed];
+            }
+            return changed;
+        }
+
+        public int NonHotCount {
+            get {
+                return NormalCount + DeferredCount + CompletedCount;
+            }
+        }
+
     }
 }
 

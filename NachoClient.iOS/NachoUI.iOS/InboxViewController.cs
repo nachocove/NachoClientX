@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         {
             SwitchAccountButton = new SwitchAccountButton (ShowAccountSwitcher);
             NavigationItem.TitleView = SwitchAccountButton;
-            SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            SwitchAccountButton.SetAccountImage (Account);
             base.ViewDidLoad ();
         }
 

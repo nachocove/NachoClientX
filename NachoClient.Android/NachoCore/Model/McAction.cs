@@ -74,6 +74,27 @@ namespace NachoCore.Model
             }
         }
 
+        public static Dictionary<McAction.ActionState, int> StateCounts (int accountId)
+        {
+            List<StateCountResult> counts;
+            if (accountId == McAccount.GetUnifiedAccount ().Id) {
+                var sql = "SELECT State, COUNT(*) as \"Count\" FROM McAction GROUP BY State";
+                counts = NcModel.Instance.Db.Query<StateCountResult> (sql);
+            } else {
+                var sql = "SELECT State, COUNT(*) as \"Count\" FROM McAction WHERE accountId = ? GROUP BY State";
+                counts = NcModel.Instance.Db.Query<StateCountResult> (sql, accountId);
+            }
+            var countsByState = new Dictionary<McAction.ActionState, int> ();
+            countsByState.Add (ActionState.Hot, 0);
+            countsByState.Add (ActionState.Open, 0);
+            countsByState.Add (ActionState.Deferred, 0);
+            countsByState.Add (ActionState.Completed, 0);
+            foreach (var count in counts) {
+                countsByState [count.State] += count.Count;
+            }
+            return countsByState;
+        }
+
         public static McAction ActionForMessage (McEmailMessage message)
         {
             var messages = NcModel.Instance.Db.Query<McAction> ("SELECT a.* FROM McAction a WHERE EmailMessageId = ?", message.Id);
@@ -217,6 +238,12 @@ namespace NachoCore.Model
                 Account = account,
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged)
             });
+        }
+
+        private class StateCountResult {
+
+            public McAction.ActionState State { get; set; }
+            public int Count { get; set; }
         }
 
     }

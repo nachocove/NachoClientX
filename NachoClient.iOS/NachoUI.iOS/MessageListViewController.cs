@@ -72,7 +72,7 @@ namespace NachoClient.iOS
             AutomaticallyAdjustsScrollViewInsets = false;
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             NewMessageButton = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewMessage);
-            EditTableButton = new NcUIBarButtonItem (UIImage.FromBundle ("folder-edit"), UIBarButtonItemStyle.Plain, EditTable);
+            EditTableButton = new UIBarButtonItem ("Edit", UIBarButtonItemStyle.Plain, EditTable);
             EditTableButton.AccessibilityLabel = "Folder edit";
             CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
             DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
@@ -943,7 +943,9 @@ namespace NachoClient.iOS
             MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
             if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
                 ToolbarItems = new UIBarButtonItem[] {
-                    DeleteButton
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    DeleteButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace)
                 };
             } else {
                 ToolbarItems = new UIBarButtonItem[] {
