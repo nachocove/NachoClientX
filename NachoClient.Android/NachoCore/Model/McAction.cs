@@ -193,10 +193,10 @@ namespace NachoCore.Model
             }
         }
 
-        public void Uncomplete ()
+        public void Uncomplete (ActionState toState = ActionState.Open)
         {
             if (State == ActionState.Completed) {
-                State = ActionState.Open;
+                State = toState;
                 MoveToFront ();
             }
         }

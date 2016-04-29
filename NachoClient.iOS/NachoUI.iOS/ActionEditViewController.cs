@@ -119,6 +119,7 @@ namespace NachoClient.iOS
             TitleCell.Placeholder = "Summary";
             TitleCell.Delegate = this;
             TitleCell.SeparatorInset = new UIEdgeInsets (0.0f, 44.0f, 0.0f, 0.0f);
+            TitleCell.CheckboxView.Changed = CheckboxChanged;
             DescriptionCell = new EditableTextCell ();
             DescriptionCell.TextView.Font = A.Font_AvenirNextRegular14;
             DescriptionCell.TextView.TextColor = A.Color_NachoTextGray;
@@ -143,6 +144,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             TitleCell.TextView.Text = Action.Title;
             TitleCell.UpdatePlaceholderVisible ();
+            TitleCell.CheckboxView.IsChecked = Action.IsCompleted;
             DescriptionCell.TextView.Text = Action.Description;
             DescriptionCell.UpdatePlaceholderVisible ();
             if (Action.Id == 0){
@@ -178,7 +180,9 @@ namespace NachoClient.iOS
             // Cleanup nav bar
             SaveButton.Clicked -= SaveButtonPressed;
 
+            TitleCell.CheckboxView.Changed = null;
             TitleCell.Delegate = null;
+            TitleCell.CheckboxView.Cleanup ();
             DescriptionCell.Delegate = null;
 
             base.Cleanup ();
@@ -206,6 +210,18 @@ namespace NachoClient.iOS
             } else if (cell == DescriptionCell) {
                 Action.Description = cell.TextView.Text.Trim ();
             }
+        }
+
+        void CheckboxChanged (bool isChecked)
+        {
+            if (isChecked) {
+                Action.State = McAction.ActionState.Completed;
+                Action.CompletedDate = DateTime.UtcNow;
+            } else {
+                Action.State = McAction.ActionState.Open;
+                Action.CompletedDate = default (DateTime);
+            }
+            TableView.ReloadSections (NSIndexSet.FromIndex (StateSection), UITableViewRowAnimation.None);
         }
 
         #endregion
@@ -433,7 +449,7 @@ namespace NachoClient.iOS
                     var account = McAccount.QueryById<McAccount> (Action.AccountId);
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
                         Account = account,
-                        Status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged)
+                        Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
                     });
                 }
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (FinishSave);

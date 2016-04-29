@@ -210,17 +210,13 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
                 cell.SetAction (action);
                 cell.NumberOfPreviewLines = NumberOfPreviewLines;
+                cell.StrikesCompletedActions = State != McAction.ActionState.Completed;
                 if (Actions.IncludesMultipleAccounts ()) {
                     cell.IndicatorColor = Util.ColorForAccount (action.AccountId);
                 } else {
                     cell.IndicatorColor = null;
                 }
                 cell.SeparatorInset = TableView.SeparatorInset;
-                if (action.IsHot) {
-                    cell.CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
-                } else {
-                    cell.CheckboxView.TintColor = A.Color_NachoGreen;
-                }
                 return cell;
             } else {
                 var cell = tableView.DequeueReusableCell (SubStateCellIdentifier) as SwipeTableViewCell;
@@ -315,32 +311,18 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
 
-            // TODO:
-//            if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
-//
-//                bool isVisible = IsViewLoaded && View.Window != null;
-//
-//                switch (s.Status.SubKind) {
-//                case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-//                    if (isVisible) {
-//                        Reload ();
-//                    }
-//                    break;
-//                case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
-//                case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
-//                case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
-//                case NcResult.SubKindEnum.Info_EmailMessageChanged:
-//                case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-//                    if (isVisible) {
-//                        UpdateVisibleRows ();
-//                    }
-//                    break;
-//                case NcResult.SubKindEnum.Error_SyncFailed:
-//                case NcResult.SubKindEnum.Info_SyncSucceeded:
-//                    Messages.RefetchSyncTime ();
-//                    break;
-//                }
-//            }
+            if (s.Account == null || (Actions != null && Account.ContainsAccount (s.Account.Id))) {
+
+                bool isVisible = IsViewLoaded && View.Window != null;
+
+                switch (s.Status.SubKind) {
+                case NcResult.SubKindEnum.Info_ActionSetChanged:
+                    if (isVisible) {
+                        Reload ();
+                    }
+                    break;
+                }
+            }
         }
 
         public void MessagesSyncDidComplete (MessagesSyncManager manager)

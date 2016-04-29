@@ -6,6 +6,7 @@ using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -13,6 +14,7 @@ namespace NachoClient.iOS
     public class ActionCell : SwipeTableViewCell
     {
 
+        McAction Action;
         public readonly ActionCheckboxView CheckboxView;
         UIImageView UnreadIndicator;
         UIView _ColorIndicatorView;
@@ -82,6 +84,9 @@ namespace NachoClient.iOS
             }
         }
 
+        public McAction.ActionState UncompleteState = McAction.ActionState.Open;
+        public bool StrikesCompletedActions;
+
         public ActionCell (IntPtr handle) : base (handle)
         {
             DetailTextSpacing = 0.0f;
@@ -104,6 +109,7 @@ namespace NachoClient.iOS
             UnreadIndicator.Hidden = true;
 
             CheckboxView = new ActionCheckboxView (viewSize: 44.0f, checkboxSize: 20.0f);
+            CheckboxView.Changed = CheckboxChanged;
 
             ContentView.AddSubview (CheckboxView);
             ContentView.AddSubview (UnreadIndicator);
@@ -113,16 +119,36 @@ namespace NachoClient.iOS
 
         public void SetAction (McAction action)
         {
-            TextLabel.Text = action.Title;
-            if (action.Description != null) {
-                DetailTextLabel.Text = System.Text.RegularExpressions.Regex.Replace (action.Description, "\\s+", " ");
+            Action = action;
+            Update ();
+        }
+
+        void Update ()
+        {
+            if (Action.Description != null) {
+                DetailTextLabel.Text = System.Text.RegularExpressions.Regex.Replace (Action.Description, "\\s+", " ");
             } else {
                 DetailTextLabel.Text = "";
             }
-            if (action.DueDate != default(DateTime)) {
+            if (Action.DueDate != default(DateTime)) {
                 // DateLabel.Text = Pretty.Something ();
             }
-            CheckboxView.IsChecked = action.IsCompleted;
+            if (Action.IsCompleted) {
+                var strickenAttributes = new UIStringAttributes ();
+                strickenAttributes.StrikethroughStyle = NSUnderlineStyle.Single;
+                TextLabel.AttributedText = new NSAttributedString (Action.Title, strickenAttributes);;
+                TextLabel.TextColor = A.Color_NachoTextGray;
+                CheckboxView.TintColor = A.Color_NachoTextGray;
+            } else {
+                TextLabel.Text = Action.Title;
+                TextLabel.TextColor = A.Color_NachoGreen;
+                if (Action.IsHot) {
+                    CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+                } else {
+                    CheckboxView.TintColor = A.Color_NachoGreen;
+                }
+            }
+            CheckboxView.IsChecked = Action.IsCompleted;
             // UnreadIndicator.Hidden = message.IsRead;
         }
 
@@ -183,6 +209,33 @@ namespace NachoClient.iOS
             var textHeight = mainFont.RoundedLineHeight (1.0f);
             var detailHeight = (nfloat)Math.Ceiling (previewFont.LineHeight * numberOfPreviewLines);
             return textHeight + detailHeight + detailSpacing + topPadding * 2.0f;
+        }
+
+        public override void Cleanup ()
+        {
+            CheckboxView.Changed = null;
+            base.Cleanup ();
+        }
+
+        void CheckboxChanged (bool isChecked)
+        {
+            // TODO run in serial task queue
+            NcModel.Instance.RunInTransaction (() => {
+                if (isChecked) {
+                    Action.Complete ();
+                } else {
+                    Action.Uncomplete (UncompleteState);
+                }
+                Update ();
+                // If we send a status ind, the item will disappear right away.
+                // If we don't send a statud ind, the item will remain until the next reload
+                // Still tying to decide which behavior is better
+//                var account = McAccount.QueryById<McAccount> (Action.AccountId);
+//                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+//                    Account = account,
+//                    Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+//                });
+            });
         }
 
     }

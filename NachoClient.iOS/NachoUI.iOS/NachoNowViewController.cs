@@ -767,7 +767,7 @@ namespace NachoClient.iOS
                     var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
                     var action = HotActions.ActionAt (indexPath.Row);
                     cell.NumberOfPreviewLines = NumberOfActionPreviewLines;
-                    cell.CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+                    cell.UncompleteState = McAction.ActionState.Hot;
                     cell.SetAction (action);
                     if (HotActions.IncludesMultipleAccounts ()) {
                         cell.IndicatorColor = Util.ColorForAccount (action.AccountId);
@@ -914,6 +914,7 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
                 case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                case NcResult.SubKindEnum.Info_ActionSetChanged:
                     ReloadHotMessages ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:

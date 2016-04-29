@@ -24,6 +24,8 @@ namespace NachoClient.iOS
                 return _CheckView;
             }
         }
+        PressGestureRecognizer PressRecognizer;
+        public Action<bool> Changed;
 
         nfloat CheckboxSize;
 
@@ -42,6 +44,10 @@ namespace NachoClient.iOS
             AddSubview (BoxView);
 
             TintColor = A.Color_NachoGreen;
+
+            PressRecognizer = new PressGestureRecognizer (Press);
+            PressRecognizer.IsCanceledByPanning = true;
+            AddGestureRecognizer (PressRecognizer);
         }
 
         bool _IsChecked;
@@ -79,6 +85,47 @@ namespace NachoClient.iOS
             if (_CheckView != null) {
                 CheckView.Frame = BoxView.Frame;
             }
+        }
+
+        void Press ()
+        {
+            if (PressRecognizer.State == UIGestureRecognizerState.Began) {
+                SetSelected (true, animated: false);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Changed) {
+                SetSelected (PressRecognizer.IsInsideView, animated: false);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Ended) {
+                IsChecked = !IsChecked;
+                if (Changed != null) {
+                    Changed (IsChecked);
+                }
+                SetSelected (false, animated: false);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                SetSelected (false, animated: false);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Failed) {
+                SetSelected (false, animated: false);
+            }
+        }
+
+        public void SetSelected (bool selected, bool animated = false)
+        {
+            if (animated) {
+                UIView.BeginAnimations (null, IntPtr.Zero);
+                UIView.SetAnimationDuration (0.25f);
+            }
+            if (selected) {
+                BoxView.BackgroundColor = TintColor.ColorWithAlpha (0.1f);
+            } else {
+                BoxView.BackgroundColor = UIColor.Clear;
+            }
+            if (animated) {
+                UIView.CommitAnimations ();
+            }
+        }
+
+        public void Cleanup ()
+        {
+            RemoveGestureRecognizer (PressRecognizer);
+            PressRecognizer = null;
         }
     }
 }
