@@ -429,6 +429,14 @@ namespace NachoClient.iOS
             PresentViewController (alertView, true, null);
         }
 
+        void MakeAction (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            var viewController = new ActionEditViewController ();
+            viewController.Action = McAction.FromMessage (message);
+            viewController.PresentOverViewController (this);
+        }
+
         void MarkSelectedMessagesAsRead (UIAlertAction action)
         {
             // TODO:
@@ -653,6 +661,7 @@ namespace NachoClient.iOS
                     } else {
                         actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
                     }
+                    actions.Add (new SwipeTableRowAction ("Action", UIImage.FromBundle ("email-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), MakeAction));
                 }
                 return actions;
             }

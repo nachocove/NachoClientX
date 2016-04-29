@@ -54,7 +54,6 @@ namespace NachoClient.iOS
         CompoundScrollView ScrollView;
         MessageHeaderView HeaderView;
         AttachmentsView AttachmentsView;
-        MessageActionHeaderView ActionView;
         BodyCalendarView CalendarView;
         UIWebView BodyView;
         MessageToolbar MessageToolbar;
@@ -93,9 +92,26 @@ namespace NachoClient.iOS
                 return _PreviewLabel;
             }
         }
+
+        MessageActionHeaderView _ActionView;
+        MessageActionHeaderView ActionView {
+            get {
+                if (_ActionView == null) {
+                    _ActionView = new MessageActionHeaderView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 44.0f));
+                    _ActionView.Action = Action;
+                    ActionPressRecognizer = new PressGestureRecognizer (ActionPressed);
+                    ActionPressRecognizer.IsCanceledByPanning = true;
+                    ActionPressRecognizer.DelaysStart = true;
+                    _ActionView.AddGestureRecognizer (ActionPressRecognizer);
+                }
+                return _ActionView;
+            }
+        }
+
         UITapGestureRecognizer ErrorTapGestureRecognizer;
 
         UIBarButtonItem CreateEventButton;
+        UIBarButtonItem ActionButton;
         UIBarButtonItem HotButton;
 
         // Information to be collected for telemetry
@@ -112,14 +128,13 @@ namespace NachoClient.iOS
         {
             CreateEventButton = new NcUIBarButtonItem (UIImage.FromBundle ("cal-add"), UIBarButtonItemStyle.Plain, CreateEventButtonClicked);
             CreateEventButton.AccessibilityLabel = "Create Event";
+            ActionButton = new NcUIBarButtonItem (UIImage.FromBundle ("email-action-swipe"), UIBarButtonItemStyle.Plain, ActionButtonClicked);
+            ActionButton.AccessibilityLabel = "Create Action";
 
             HotButton = new NcUIBarButtonItem (UIImage.FromBundle ("email-not-hot"), UIBarButtonItemStyle.Plain, ToggleHot);
             HotButton.AccessibilityLabel = "Hot";
 
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                CreateEventButton,
-                HotButton
-            };
+            UpdateNavigationItem ();
 
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "Message";
@@ -156,15 +171,6 @@ namespace NachoClient.iOS
             AttachmentsView.Delegate = this;
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
-            if (Action != null) {
-                ActionView = new MessageActionHeaderView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 44.0f));
-                ActionView.Action = Action;
-                ActionPressRecognizer = new PressGestureRecognizer (ActionPressed);
-                ActionPressRecognizer.IsCanceledByPanning = true;
-                ActionPressRecognizer.DelaysStart = true;
-                ActionView.AddGestureRecognizer (ActionPressRecognizer);
-            }
-
             if (Message.MeetingRequest != null) {
                 CalendarView = new BodyCalendarView (0.0f, ScrollView.Bounds.Width, Message, false, RemoveCalendarView, OpenUrl, new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f), UIColor.White.ColorDarkenedByAmount (0.15f));
             }
@@ -177,7 +183,7 @@ namespace NachoClient.iOS
 
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (AttachmentsView);
-            if (ActionView != null) {
+            if (Action != null) {
                 ScrollView.AddCompoundView (ActionView);
             }
             if (CalendarView != null) {
@@ -231,8 +237,8 @@ namespace NachoClient.iOS
             if (HeaderView.Selected) {
                 HeaderView.SetSelected (false, animated: true);
             }
-            if (ActionView != null && ActionView.Selected) {
-                ActionView.SetSelected (false, animated: true);
+            if (_ActionView != null && ActionView.Selected) {
+                _ActionView.SetSelected (false, animated: true);
             }
         }
 
@@ -287,6 +293,7 @@ namespace NachoClient.iOS
             // clean up navbar
             CreateEventButton.Clicked -= CreateEventButtonClicked;
             HotButton.Clicked -= ToggleHot;
+            ActionButton.Clicked -= ActionButtonClicked;
 
             // clean up header
             HeaderView.RemoveGestureRecognizer (HeaderPressRecognizer);
@@ -297,10 +304,10 @@ namespace NachoClient.iOS
             AttachmentsView.Cleanup ();
 
             // clean up action view
-            if (ActionView != null) {
-                ActionView.RemoveGestureRecognizer (ActionPressRecognizer);
+            if (_ActionView != null) {
+                _ActionView.RemoveGestureRecognizer (ActionPressRecognizer);
                 ActionPressRecognizer = null;
-                ActionView.Cleanup ();
+                _ActionView.Cleanup ();
             }
 
             // clean up the calendar
@@ -421,6 +428,11 @@ namespace NachoClient.iOS
         private void CreateEventButtonClicked (object sender, EventArgs e)
         {
             CreateEvent ();
+        }
+
+        private void ActionButtonClicked (object sender, EventArgs e)
+        {
+            CreateAction ();
         }
 
         void ShowMove ()
@@ -761,20 +773,54 @@ namespace NachoClient.iOS
         void ShowAction ()
         {
             var viewController = new ActionEditViewController ();
-            viewController.Action = Action;
+            // re-query the action so the edit view alters a copy
+            viewController.Action = McAction.QueryById<McAction> (Action.Id);
+            viewController.Delegate = this;
+            viewController.PresentOverViewController (this);
+        }
+
+        void CreateAction ()
+        {
+            var viewController = new ActionEditViewController ();
+            viewController.Action = McAction.FromMessage (Message);
             viewController.Delegate = this;
             viewController.PresentOverViewController (this);
         }
 
         public void ActionEditViewDidSave (ActionEditViewController viewController)
         {
+            bool creatingAction = Action == null;
             Action = McAction.ActionForMessage (_Message);
+            if (creatingAction) {
+                UpdateNavigationItem ();
+            }
+            if (_ActionView == null) {
+                ScrollView.InsertCompoundViewBelow (ActionView, BodyView);
+                LayoutScrollView ();
+            }
             ActionView.Action = Action;
         }
 
         public void ActionEditViewDidDismiss (ActionEditViewController viewController)
         {
             viewController.Delegate = null;
+        }
+
+        void UpdateNavigationItem ()
+        {
+
+            if (Action == null) {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    CreateEventButton,
+                    ActionButton,
+                    HotButton
+                };
+            } else {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    CreateEventButton,
+                    HotButton
+                };
+            }
         }
 
         #endregion

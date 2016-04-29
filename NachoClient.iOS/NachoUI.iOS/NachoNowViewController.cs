@@ -248,13 +248,8 @@ namespace NachoClient.iOS
         void MakeAction (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
-            var action = new McAction ();
-            action.Title = message.Subject;
-            action.AccountId = message.AccountId;
-            action.EmailMessageId = message.Id;
-            action.State = McAction.ActionState.Hot;
             var viewController = new ActionEditViewController ();
-            viewController.Action = action;
+            viewController.Action = McAction.FromMessage (message);
             viewController.PresentOverViewController (this);
         }
 

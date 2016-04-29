@@ -42,6 +42,10 @@ namespace NachoClient.iOS
 
             public CompoundScrollViewContainerView (CGRect frame) : base(frame)
             {
+                // We keep track of the inner views separately from the Subviews list because
+                // sometimes we'll modify the order of Subviews without wanting to adjust the order
+                // in which the inner views are itereated.  Our own list maintains the correct iteration order.
+                CompoundViews = new List<UIView> (5);
             }
 
             public static UIScrollView ScrollViewForCompoundScrollView (UIView view)
@@ -61,14 +65,21 @@ namespace NachoClient.iOS
 
             public void AddCompoundView (UIView view)
             {
-                // We keep track of the inner views separately from the Subviews list because
-                // sometimes we'll modify the order of Subviews without wanting to adjust the order
-                // in which the inner views are itereated.  Our own list maintains the correct iteration order.
-                if (CompoundViews == null){
-                    CompoundViews = new List<UIView> (5);
-                }
                 CompoundViews.Add (view);
                 AddSubview (view);
+                PrepareCompoundView (view);
+            }
+
+            public void InsertCompoundViewBelow (UIView view, UIView sibling)
+            {
+                var index = CompoundViews.IndexOf (sibling);
+                CompoundViews.Insert (index, view);
+                InsertSubviewBelow (view, sibling);
+                PrepareCompoundView (view);
+            }
+
+            void PrepareCompoundView (UIView view)
+            {
                 UIScrollView scrollView = ScrollViewForCompoundScrollView (view);
                 if (scrollView != null){
                     // Turn off scrolling if the inner view is a scrolling view
@@ -222,7 +233,16 @@ namespace NachoClient.iOS
         }
 
 
-        CompoundScrollViewContainerView CompoundContainerView;
+        CompoundScrollViewContainerView _CompoundContainerView;
+        CompoundScrollViewContainerView CompoundContainerView {
+            get {
+                if (_CompoundContainerView == null) {
+                    _CompoundContainerView = new CompoundScrollViewContainerView (Bounds);
+                    AddSubview (CompoundContainerView);
+                }
+                return _CompoundContainerView;
+            }
+        }
 
         public CompoundScrollView (CGRect frame) : base(frame)
         {
@@ -230,11 +250,12 @@ namespace NachoClient.iOS
 
         public void AddCompoundView (UIView view)
         {
-            if (CompoundContainerView == null){
-                CompoundContainerView = new CompoundScrollViewContainerView (Bounds);
-                AddSubview (CompoundContainerView);
-            }
             CompoundContainerView.AddCompoundView (view);
+        }
+
+        public void InsertCompoundViewBelow (UIView view, UIView sibling)
+        {
+            CompoundContainerView.InsertCompoundViewBelow (view, sibling);
         }
 
         public void DetermineContentSize ()
@@ -244,9 +265,7 @@ namespace NachoClient.iOS
 
         public void RemoveCompoundView (UIView view)
         {
-            if (CompoundContainerView != null) {
-                CompoundContainerView.RemoveCompoundView (view);
-            }
+            CompoundContainerView.RemoveCompoundView (view);
         }
 
         public override void LayoutSubviews ()

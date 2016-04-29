@@ -54,6 +54,16 @@ namespace NachoCore.Model
         {
         }
 
+        public static McAction FromMessage (McEmailMessage message)
+        {
+            var action = new McAction ();
+            action.Title = message.Subject;
+            action.AccountId = message.AccountId;
+            action.EmailMessageId = message.Id;
+            action.State = McAction.ActionState.Hot;
+            return action;
+        }
+
         public static List<McAction> ActionsForState (int accountId, ActionState state)
         {
             if (accountId == McAccount.GetUnifiedAccount ().Id) {
