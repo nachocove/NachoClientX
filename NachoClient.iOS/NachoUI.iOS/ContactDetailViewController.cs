@@ -71,6 +71,7 @@ namespace NachoClient.iOS
         protected UIView copyCellView = new UIView ();
         protected List<LongPressPair> longPressRecognizers = new List<LongPressPair> ();
         protected LongPressCopyData longPressData;
+        protected bool disposed = false;
 
         protected class TapGesturePair
         {
@@ -115,7 +116,7 @@ namespace NachoClient.iOS
 
         private void HideMenu (NSNotification notification)
         {
-            if (IsViewLoaded) {
+            if (!disposed && IsViewLoaded) {
                 if (!copyCellView.Hidden) {
                     copyCellView.Hidden = true;
                 }
@@ -168,6 +169,12 @@ namespace NachoClient.iOS
             if (null != SegmentedControl) {
                 selectedSegment = SegmentedControl.SelectedSegment;
             }
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            base.Dispose (disposing);
+            disposed = true;
         }
 
         public override bool HidesBottomBarWhenPushed {
