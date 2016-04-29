@@ -21,6 +21,7 @@ LIST="MimeKit \
     registered-domain-libs \
     sqlite-net \
     MailKit \
+    Microsoft \
     CSharp-Name-Parser \
     JetBlack.Caching \
     ios-openssl"
