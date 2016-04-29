@@ -441,21 +441,42 @@ namespace NachoClient.iOS
             ShowCredentialsError ("We were unable to verify your information because your device is offline.  Please try again when your device is online");
         }
 
+        string getServerErrors ()
+        {
+            string serverErrorsTxt = "";
+            var serverErrors = ServerCertificatePeek.ServerErrors (Account.Id);
+            if (serverErrors.Count > 0) {
+                foreach (var server in serverErrors.Keys) {
+                    serverErrorsTxt += string.Format ("{0}: {1}", server, serverErrors[server].SslPolicyError);
+                }
+            }
+            return serverErrorsTxt;
+        }
+
         private void HandleServerError ()
         {
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
+            var serverErrors = getServerErrors ();
             if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
+                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
+                if (!string.IsNullOrWhiteSpace (serverErrors)) {
+                    errorText += string.Format ("  ({0})", serverErrors);
+                }
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
-                ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
+                ShowCredentialsError (errorText);
             } else {
+                string errorText = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                if (!string.IsNullOrWhiteSpace (serverErrors)) {
+                    errorText += string.Format ("  ({0})", serverErrors);
+                }
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
-                    statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                    statusLabel.Text = errorText;
                     ToggleAdvancedFields ();
                 } else {
-                    statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                    statusLabel.Text = errorText;
                 }
             }
         }

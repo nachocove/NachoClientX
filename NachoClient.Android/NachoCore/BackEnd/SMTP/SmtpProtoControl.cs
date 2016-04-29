@@ -206,12 +206,12 @@ namespace NachoCore.SMTP
                         },
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
-                            (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDiscHardFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -466,13 +466,18 @@ namespace NachoCore.SMTP
         {
             Log.Info (Log.LOG_SMTP, "SMTP DoDisc Attempt {0}", DiscoveryRetries++);
             if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.SmtpDiscoveryDone) {
-                var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-                err.Message = "Too many failures";
-                StatusInd (err);
-                Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
+                DoDiscHardFail ();
             } else {
                 DoDisc ();
             }
+        }
+
+        private void DoDiscHardFail ()
+        {
+            var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+            err.Message = "Too many failures";
+            StatusInd (err);
+            Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
         }
 
         private void DoUiServConfReq ()

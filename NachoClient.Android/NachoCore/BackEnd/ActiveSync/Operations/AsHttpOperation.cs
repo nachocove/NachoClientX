@@ -425,7 +425,7 @@ namespace NachoCore.ActiveSync
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP({0}):URL:{1}", AccountId, RedactedServerUri);
-            Tuple<X509Chain, X509Certificate2, SslPolicyErrors> failedInfo;
+            ServerCertificatePeek.ServerCertificateError failedInfo;
             ServerCertificatePeek.Instance.FailedCertificates.TryRemove (ServerUri.Host, out failedInfo);
             BEContext.ProtoControl.HttpClient.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, cToken);
         }
@@ -473,9 +473,9 @@ namespace NachoCore.ActiveSync
 
         void AttemptHttpError (Exception ex, CancellationToken cToken)
         {
-            Tuple<X509Chain, X509Certificate2, SslPolicyErrors> failedInfo;
-            if (ServerCertificatePeek.Instance.FailedCertificates.TryRemove (ServerUri.Host, out failedInfo)) {
-                ServerCertificatePeek.LogCertificateChainErrors (failedInfo.Item1, failedInfo.Item3, string.Format ("AttemptHttp({0}): Cert Validation Error for {1}", ex.GetType ().Name, ServerUri.Host));
+            ServerCertificatePeek.ServerCertificateError failedInfo;
+            if (ServerCertificatePeek.Instance.FailedCertificates.TryGetValue (ServerUri.Host, out failedInfo)) {
+                ServerCertificatePeek.LogCertificateChainErrors (failedInfo, string.Format ("AttemptHttp({0}): Cert Validation Error for {1}", ex.GetType ().Name, ServerUri.Host));
             }
             if (ex is OperationCanceledException) {
                 Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);

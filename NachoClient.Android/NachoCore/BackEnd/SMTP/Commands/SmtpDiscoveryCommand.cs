@@ -34,7 +34,7 @@ namespace NachoCore.SMTP
 
         protected override Event ExecuteCommand ()
         {
-            Tuple<X509Chain, X509Certificate2, SslPolicyErrors> failedInfo;
+            ServerCertificatePeek.ServerCertificateError failedInfo;
             ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo);
                 
             bool Initial = !BEContext.ProtocolState.SmtpDiscoveryDone;
@@ -107,10 +107,9 @@ namespace NachoCore.SMTP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIOEXTEMP");
                 errResult.Message = ex.Message;
                 serverFailedGenerally = true;
-                if (ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo)) {
-                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo.Item1, failedInfo.Item3, string.Format ("SmtpDiscoveryCommand: Cert Validation Error for {0}", BEContext.Server.Host));
-                    // TODO Should hardfail here. Repeating won't help. SM needs to be modified to handle HardFail with a proper error message
-                    // evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPCERTHARD");
+                if (ServerCertificatePeek.Instance.FailedCertificates.TryGetValue (BEContext.Server.Host, out failedInfo)) {
+                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo, string.Format ("SmtpDiscoveryCommand: Cert Validation Error for {0}", BEContext.Server.Host));
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPCERTHARD");
                 } else {
                     Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.ToString ());
                 }

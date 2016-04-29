@@ -33,7 +33,7 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
-            Tuple<X509Chain, X509Certificate2, SslPolicyErrors> failedInfo;
+            ServerCertificatePeek.ServerCertificateError failedInfo;
             ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo);
 
             bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
@@ -104,11 +104,9 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
-                if (ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo)) {
-                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo.Item1, failedInfo.Item3, string.Format ("ImapDiscoverCommand: Cert Validation Error for {0}", BEContext.Server.Host));
-                    // TODO Should hardfail here. Repeating won't help. SM needs to be modified to handle HardFail with a proper error message
-                    // evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPCERTHARD");
-
+                if (ServerCertificatePeek.Instance.FailedCertificates.TryGetValue (BEContext.Server.Host, out failedInfo)) {
+                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo, string.Format ("ImapDiscoverCommand: Cert Validation Error for {0}", BEContext.Server.Host));
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPCERTHARD");
                 } else {
                     Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
                 }
