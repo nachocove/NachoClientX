@@ -212,27 +212,5 @@ namespace NachoCore.Model
                 return false;
             }
         }
-
-
-        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
-        {
-            var account = McAccount.QueryById<McAccount> (AccountId);
-            Oauth2TokenRefresh refresh;
-            switch (account.AccountService) {
-            case McAccount.AccountServiceEnum.GoogleDefault:
-                refresh = new GoogleOauth2Refresh (this);
-                break;
-
-            case McAccount.AccountServiceEnum.SalesForce:
-                refresh = new SFDCOauth2Refresh (this);
-                break;
-
-            default:
-                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}:{1}): Can not refresh", account.Id, account.AccountService);
-                return;
-            }
-
-            refresh.Refresh (onSuccess, onFailure, Token, (int)ExpirySecs);
-        }
     }
 }

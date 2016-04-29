@@ -43,10 +43,17 @@ namespace NachoClient.AndroidClient
         {
             base.OnResume ();
 
-            var account = McAccount.GetAccountBeingConfigured ();
-            var welcomeId = (null == account ? Resource.String.gettingstarted : Resource.String.welcome_back);
+            int welcomeId;
             var textView = View.FindViewById<TextView> (Resource.Id.welcome);
-            textView.SetText (welcomeId);
+            if (NcMdmConfig.Instance.IsPopulated && null == McAccount.GetMDMAccount ()) {
+                var fmt = GetString (Resource.String.mdmgettingstarted);
+                textView.Text = string.Format (fmt,
+                    !string.IsNullOrEmpty (NcMdmConfig.Instance.BrandingName) ? NcMdmConfig.Instance.BrandingName : "company");
+            } else {
+                var account = McAccount.GetAccountBeingConfigured ();
+                welcomeId = (null == account ? Resource.String.gettingstarted : Resource.String.welcome_back);
+                textView.SetText (welcomeId);
+            }
         }
 
         void SubmitButton_Click (object sender, EventArgs e)

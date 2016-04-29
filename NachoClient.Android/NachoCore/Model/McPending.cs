@@ -90,7 +90,8 @@ namespace NachoCore.Model
             CalForward,
             // These values are persisted in the DB, so only add at the end.
             EmailSearch,
-            Last = EmailSearch,
+            EmailMarkAnswered,
+            Last = EmailMarkAnswered,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -149,6 +150,9 @@ namespace NachoCore.Model
         public const string MarkReadFlag = "Read";
         public const string MarkUnreadFlag = "Unread";
 
+        public const string MarkAnsweredFlag = "Answered";
+        public const string MarkNotAnsweredFlag = "NotAnswered";
+
         // Always valid.
         [Indexed]
         // FIXME - rename this column - this is for sequencing, not priority.
@@ -177,10 +181,8 @@ namespace NachoCore.Model
         // Valid when in Deferred state.
         public uint DefersRemaining { set; get; }
         // Valid when in Deferred state.
-        [Indexed]
         public bool DeferredSerialIssueOnly { set; get; }
         // Valid when Deferred, Blocked, or Failed.
-        [Indexed]
         // Set if the McPending may not be delayed or deferred.
         // Has the side-effect that the McPending will be deleted on restart.
         // Always valid.
@@ -483,6 +485,7 @@ namespace NachoCore.Model
             case Operations.EmailClearFlag:
             case Operations.EmailMarkFlagDone:
             case Operations.EmailMarkRead:
+            case Operations.EmailMarkAnswered:
             case Operations.EmailSetFlag:
             case Operations.EmailDelete:
             case Operations.TaskUpdate:
@@ -529,6 +532,7 @@ namespace NachoCore.Model
                 case Operations.EmailClearFlag:
                 case Operations.EmailMarkFlagDone:
                 case Operations.EmailMarkRead:
+                case Operations.EmailMarkAnswered:
                 case Operations.EmailSetFlag:
                 case Operations.TaskCreate:
                 case Operations.TaskUpdate:
@@ -548,6 +552,7 @@ namespace NachoCore.Model
             case Operations.EmailClearFlag:
             case Operations.EmailMarkFlagDone:
             case Operations.EmailMarkRead:
+            case Operations.EmailMarkAnswered:
             case Operations.EmailSetFlag:
             case Operations.EmailDelete:
             case Operations.TaskUpdate:
@@ -568,6 +573,9 @@ namespace NachoCore.Model
                 break;
             case Operations.EmailMarkRead:
                 subKind = NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded;
+                break;
+            case Operations.EmailMarkAnswered:
+                subKind = NcResult.SubKindEnum.Info_EmailMessageMarkedAnsweredSucceeded;
                 break;
             case Operations.EmailSetFlag:
                 subKind = NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded;
@@ -693,24 +701,25 @@ namespace NachoCore.Model
             return ResolveAsCancelled (true);
         }
 
-        private void EmailBodyError (int accountId, string serverId)
+        public static void EmailBodyError (int accountId, string serverId)
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Warn (Log.LOG_AS, "{0}: ResolveAsHardFail/EmailBodyError: can't find McEmailMessage with ServerId {1}", this, serverId);
+                Log.Warn (Log.LOG_AS, "EmailBodyError: can't find McEmailMessage with ServerId {0}", serverId);
                 return;
             }
             McBody body = null;
             if (0 != email.BodyId) {
                 body = McBody.QueryById<McBody> (email.BodyId);
                 if (null == body) {
-                    Log.Error (Log.LOG_AS, "{0}: ResolveAsHardFail/EmailBodyError: BodyId {1} has no body", this, email.BodyId);
+                    Log.Error (Log.LOG_AS, "EmailBodyError: BodyId {0} has no body", email.BodyId);
                 }
             }
             if (null == body) {
                 body = McBody.InsertError (accountId);
                 email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
-                    email.BodyId = body.Id;
+                    var target = (McEmailMessage)record;
+                    target.BodyId = body.Id;
                     return true;
                 });
             } else {
@@ -825,6 +834,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageMoveFailed;
             case Operations.EmailMarkRead:
                 return NcResult.SubKindEnum.Error_EmailMessageMarkedReadFailed;
+            case Operations.EmailMarkAnswered:
+                return NcResult.SubKindEnum.Error_EmailMessageMarkedAnsweredFailed;
             case Operations.EmailSetFlag:
                 return NcResult.SubKindEnum.Error_EmailMessageSetFlagFailed;
             case Operations.EmailClearFlag:
@@ -880,7 +891,7 @@ namespace NachoCore.Model
             foreach (var iter in successors) {
                 var succ = iter;
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
-                Log.Info (Log.LOG_SYNC, "{0}:UnblockSuccessors: {1} now {2}", this, succ.Id, toState.ToString ());
+                Log.Info (Log.LOG_SYNC, "{0}:UnblockSuccessors: {1} now {2}", this, succ, toState.ToString ());
                 switch (toState) {
                 case StateEnum.Eligible:
                     if (0 == remaining.Count ()) {
@@ -890,6 +901,12 @@ namespace NachoCore.Model
                             target.State = toState;
                             return true;
                         });
+                        // since we enabled an item, send a message to the service in charge of this pending
+                        if (succ.DelayNotAllowed) {
+                            BackEnd.Instance.PendQHotInd (succ.AccountId, succ.Capability);
+                        } else {
+                            BackEnd.Instance.PendQInd (succ.AccountId, succ.Capability);
+                        }
                     }
                     break;
                 case StateEnum.Failed:
@@ -1024,6 +1041,7 @@ namespace NachoCore.Model
             DeferredReason = DeferredEnum.UntilTime;
             DeferredUntilTime = eligibleAfter;
             ResolveAsDeferred (control, DeferredEnum.UntilTime, onFail);
+            McPendingHelper.Instance.AddCheckTime (eligibleAfter);
         }
 
         public void ResolveAsDeferred (NcProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why)
@@ -1401,6 +1419,16 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority).ToList ();
         }
 
+        public static DateTime? QueryNextDeferredUntilTime ()
+        {
+            try {
+                var next = NcModel.Instance.Db.Table<McPending> ().Where (rec => rec.State == StateEnum.Deferred && rec.DeferredReason == DeferredEnum.UntilTime).OrderBy (x => x.DeferredUntilTime).First ();
+                return next.DeferredUntilTime;
+            } catch (InvalidOperationException){
+                return null;
+            }
+        }
+
         public static IEnumerable<McPending> QueryByToken (int accountId, string token)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (x => 
@@ -1603,6 +1631,7 @@ namespace NachoCore.Model
             case Operations.EmailForward:
             case Operations.EmailMarkFlagDone:
             case Operations.EmailMarkRead:
+            case Operations.EmailMarkAnswered:
             case Operations.EmailMove:
             case Operations.EmailReply:
             case Operations.EmailSend:
@@ -1624,6 +1653,7 @@ namespace NachoCore.Model
     {
         static McPendingHelper _Instance;
         static object LockObj = new object ();
+        private DateTime? CheckTime;
 
         public static McPendingHelper Instance {
             get {
@@ -1638,9 +1668,25 @@ namespace NachoCore.Model
             }
         }
 
+        public void AddCheckTime (DateTime checkTime)
+        {
+            if (!CheckTime.HasValue || checkTime < CheckTime.Value) {
+                CheckTime = checkTime;
+                PendingOnTimeTimerStart ();
+            }
+        }
+
         public void Start ()
         {
-            PendingOnTimeTimerStart ();
+            ScheduleNextCheck ();
+        }
+
+        private void ScheduleNextCheck ()
+        {
+            var nextDeferredTime = McPending.QueryNextDeferredUntilTime ();
+            if (nextDeferredTime.HasValue) {
+                AddCheckTime (nextDeferredTime.Value);
+            }
         }
 
         public void Stop ()
@@ -1660,11 +1706,23 @@ namespace NachoCore.Model
             }
 
             lock (PendingOnTimeTimerLockObj) {
-                if (null == PendingOnTimeTimer) {
-                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
-                    PendingOnTimeTimer.Stfu = true;
-                }                        
+                if (PendingOnTimeTimer != null) {
+                    PendingOnTimeTimer.Dispose ();
+                }
+                var span = CheckTime.Value - DateTime.UtcNow;
+                if (span.TotalSeconds < 1.0) {
+                    span = new TimeSpan (0, 0, 1);
+                }
+                PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", FireTimer, null, span, System.Threading.Timeout.InfiniteTimeSpan);
+                PendingOnTimeTimer.Stfu = true;                        
             }
+        }
+
+        void FireTimer(object state)
+        {
+            CheckTime = null;
+            McPending.MakeEligibleOnTime ();
+            ScheduleNextCheck ();
         }
 
         void PendingOnTimeTimerStop ()

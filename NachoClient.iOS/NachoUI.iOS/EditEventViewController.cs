@@ -24,10 +24,18 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
+    public interface IEditEventViewOwner
+    {
+        /// <summary>
+        /// Called when the event being edited was deleted.  The owner should dismiss the event
+        /// editor view, and may also dismiss its own view.
+        /// </summary>
+        void EventWasDeleted (EditEventViewController vc);
+    }
+
     public partial class EditEventViewController
         : NcUIViewControllerNoLeaks, INachoAttendeeListChooserDelegate, IUcAttachmentBlockDelegate, INachoFileChooserParent
     {
-        protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
         protected McCalendar item;
         protected McCalendar c;
@@ -35,6 +43,11 @@ namespace NachoClient.iOS
         protected McAccount account;
         protected string TempPhone = "";
         protected McFolder calendarFolder;
+
+        IEditEventViewOwner owner;
+
+        UIView contentView;
+        UIScrollView scrollView;
 
         UITextField titleField;
         UITextView descriptionTextView;
@@ -144,6 +157,10 @@ namespace NachoClient.iOS
 
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
 
+        public EditEventViewController () : base ()
+        {
+        }
+
         public EditEventViewController (IntPtr handle)
             : base (handle)
         {
@@ -184,7 +201,17 @@ namespace NachoClient.iOS
                 break;
             }
 
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+
             base.ViewDidLoad ();
+        }
+
+        public void SetOwner (IEditEventViewOwner owner)
+        {
+            this.owner = owner;
         }
 
         public void SetCalendarEvent (McEvent e, CalendarItemEditorAction action)
@@ -289,7 +316,7 @@ namespace NachoClient.iOS
             if (calendarItemIsMissing) {
                 NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it was deleted.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                        NavigationController.PopViewController (true);
+                        DismissView ();
                     }));
             }
 
@@ -297,7 +324,7 @@ namespace NachoClient.iOS
                 NcAlertView.Show (this, "No Calendar Access",
                     "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                        NavigationController.PopViewController (true);
+                        DismissView ();
                     }));
             }
 
@@ -305,7 +332,7 @@ namespace NachoClient.iOS
                 NcAlertView.Show (this, "No device calendars",
                     "The Calendar app does not have any accessible calendars.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
-                        NavigationController.PopViewController (true);
+                        DismissView ();
                     }));
             }
         }
@@ -314,26 +341,6 @@ namespace NachoClient.iOS
             get {
                 return true;
             }
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="owner">Owner.</param>
-        public void SetOwner (INachoCalendarItemEditorParent owner)
-        {
-            this.owner = owner;
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="animated">If set to <c>true</c> animated.</param>
-        /// <param name="action">Action.</param>
-        public void DismissCalendarItemEditor (bool animated, Action action)
-        {
-            owner = null;
-            NavigationController.PopViewController (true);
         }
 
         protected override void OnKeyboardChanged ()
@@ -348,58 +355,45 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowAttendees ()
         {
-            if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
-                var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                ExtractValues ();
-                dc.Setup (this, account, c.attendees, c, editing: true,
-                    organizer: CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr), recurring: false);
-                return;
-            }
+            var dc = new EventAttendeeViewController ();
+            ExtractValues ();
+            dc.Setup (this, account, c.attendees, c, editing: true,
+                organizer: CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr), recurring: false);
+            NavigationController.PushViewController (dc, true);
+        }
 
-            if (segue.Identifier.Equals ("EditEventToAlert")) {
-                var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (c.ReminderIsSet, c.Reminder);
-                ExtractValues ();
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    uint reminder;
-                    c.ReminderIsSet = dc.GetReminder (out reminder);
-                    if (c.ReminderIsSet) {
-                        c.Reminder = reminder;
+        void ShowAlert ()
+        {
+            var dc = new AlertChooserViewController ();
+            dc.SetReminder (c.ReminderIsSet, c.Reminder);
+            ExtractValues ();
+            dc.ViewDisappearing += (object s, EventArgs e) => {
+                uint reminder;
+                c.ReminderIsSet = dc.GetReminder (out reminder);
+                if (c.ReminderIsSet) {
+                    c.Reminder = reminder;
+                }
+            };
+            NavigationController.PushViewController (dc, true);
+        }
+
+        void ShowCalendarChooser ()
+        {
+            var dc = new ChooseCalendarViewController();
+            ExtractValues ();
+            dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
+            dc.ViewDisappearing += (object s, EventArgs e) => {
+                var newCalendar = dc.GetSelectedCalendar ();
+                if (null != newCalendar) {
+                    if (newCalendar.AccountId != calendarFolder.AccountId) {
+                        ChangeToAccount (newCalendar.AccountId);
                     }
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToPhone")) {
-                var dc = (PhoneViewController)segue.DestinationViewController;
-                dc.SetPhone (TempPhone);
-                ExtractValues ();
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    TempPhone = dc.GetPhone ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
-                var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                ExtractValues ();
-                dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    var newCalendar = dc.GetSelectedCalendar ();
-                    if (null != newCalendar) {
-                        if (newCalendar.AccountId != calendarFolder.AccountId) {
-                            ChangeToAccount (newCalendar.AccountId);
-                        }
-                        calendarFolder = newCalendar;
-                    }
-                };
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+                    calendarFolder = newCalendar;
+                }
+            };
+            NavigationController.PushViewController (dc, true);
         }
 
         protected override void CreateViewHierarchy ()
@@ -1038,7 +1032,7 @@ namespace NachoClient.iOS
 
         public void DismissView ()
         {
-            NavigationController.PopViewController (true);
+            DismissViewController (true, null);
         }
 
         protected void LayoutView ()
@@ -1231,14 +1225,17 @@ namespace NachoClient.iOS
 
         protected void DeleteEvent ()
         {
-            //remove item from db
             if (0 != c.attendees.Count) {
                 PrepareCancelationNotices ();
             }
+
             BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
-            var controllers = this.NavigationController.ViewControllers;
-            int currentVC = controllers.Count () - 1; // take 0 indexing into account
-            NavigationController.PopToViewController (controllers [currentVC - 2], true);
+
+            if (null == owner) {
+                DismissView ();
+            } else {
+                owner.EventWasDeleted (this);
+            }
         }
 
         protected void PrepareCancelationNotices ()
@@ -1285,7 +1282,7 @@ namespace NachoClient.iOS
         /// IUcAttachmentBlock delegate
         public void ShowChooserForAttachmentBlock ()
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard, attachmentView);
+            var helper = new AddAttachmentViewController.MenuHelper (this, account, attachmentView);
             PresentViewController (helper.MenuViewController, true, null);
         }
 
@@ -1695,19 +1692,19 @@ namespace NachoClient.iOS
         private void PeopleTapAction ()
         {
             View.EndEditing (true);
-            PerformSegue ("EditEventToEventAttendees", this);
+            ShowAttendees ();
         }
 
         private void AlertTapAction ()
         {
             View.EndEditing (true);
-            PerformSegue ("EditEventToAlert", this);
+            ShowAlert ();
         }
 
         private void CalendarTapAction ()
         {
             View.EndEditing (true);
-            PerformSegue ("EditEventToCalendarChooser", this);
+            ShowCalendarChooser ();
         }
 
         private void DeleteTapAction ()

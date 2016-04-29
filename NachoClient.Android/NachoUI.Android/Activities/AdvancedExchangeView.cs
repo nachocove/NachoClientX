@@ -172,16 +172,19 @@ namespace NachoClient.AndroidClient
                 LockServerField = true;
                 serverField.Enabled = false;
                 serverField.Alpha = 0.6f;
+                (serverField.Parent as ViewGroup).Alpha = 0.6f;
             }
             if (!String.IsNullOrEmpty (config.Username)) {
                 LockUsernameField = true;
                 usernameField.Enabled = false;
                 usernameField.Alpha = 0.6f;
+                (usernameField.Parent as ViewGroup).Alpha = 0.6f;
             }
             if (!String.IsNullOrEmpty (config.Domain)) {
                 LockDomainField = true;
                 domainField.Enabled = false;
                 domainField.Alpha = 0.6f;
+                (domainField.Parent as ViewGroup).Alpha = 0.6f;
             }
         }
 

@@ -491,11 +491,16 @@ namespace NachoCore.Utils
         private void CompleteBundleAfterParse ()
         {
             FillMissing ();
-            StoreFullEntries ();
-            StoreTopEntries ();
-            StoreLightlyStyledEntries ();
-            StoreManifest ();
-            NeedsUpdate = false;
+            try {
+                StoreFullEntries ();
+                StoreTopEntries ();
+                StoreLightlyStyledEntries ();
+                StoreManifest ();
+                NeedsUpdate = false;
+            } catch (System.IO.IOException e){
+                Log.Error(Log.LOG_UI, "NcEmailMessageBundle error storing files: {0}", e);
+                Manifest = null;
+            }
         }
 
         private void ParseMessage ()

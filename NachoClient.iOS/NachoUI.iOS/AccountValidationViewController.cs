@@ -36,6 +36,10 @@ namespace NachoClient.iOS
 
         List<McServer> ServerList;
 
+        public AccountValidationViewController () : base ()
+        {
+        }
+
         public AccountValidationViewController (IntPtr handle) : base (handle)
         {
         }

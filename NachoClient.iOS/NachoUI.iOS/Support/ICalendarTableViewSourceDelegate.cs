@@ -2,12 +2,12 @@
 //
 using System;
 using Foundation;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
     public interface ICalendarTableViewSourceDelegate
     {
-        void PerformSegueForDelegate (string identifier, NSObject sender);
 
         void SendRunningLateMessage (int calendarIndex);
 
@@ -16,6 +16,10 @@ namespace NachoClient.iOS
         void CalendarTableViewScrollingEnded ();
 
         void ReturnToToday ();
+
+        void CreateEvent (DateTime date);
+
+        void ShowEvent (McEvent calendarEvent);
 
     }
 }

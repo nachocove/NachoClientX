@@ -25,19 +25,27 @@ namespace NachoClient.iOS
 
         SwitchAccountButton switchAccountButton;
 
+        public FoldersViewController () : base ()
+        {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
+        }
+
         public FoldersViewController (IntPtr handle) : base (handle)
         {
         }
 
+        int accountId;
         protected object cookie;
         protected bool modal;
         protected INachoFolderChooserParent owner;
 
-        public void SetOwner (INachoFolderChooserParent owner, bool modal, object cookie)
+        public void SetOwner (INachoFolderChooserParent owner, bool modal, int accountId, object cookie)
         {
             this.owner = owner;
             this.modal = modal;
             this.cookie = cookie;
+            this.accountId = accountId;
         }
 
         public void DismissFolderChooser (bool animated, Action action)
@@ -65,6 +73,7 @@ namespace NachoClient.iOS
             TableView.TableHeaderView = v;
                 
             if (modal) {
+                NcAssert.False (0 == accountId);
                 var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
                 navBar.BarStyle = UIBarStyle.Default;
                 navBar.Translucent = false;
@@ -98,6 +107,7 @@ namespace NachoClient.iOS
                 switchAccountButton = new SwitchAccountButton (switchAccountButtonPressed);
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
                 NavigationItem.TitleView = switchAccountButton;
+                accountId = NcApplication.Instance.Account.Id;
             }
         }
 
@@ -106,15 +116,16 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
 
             if (null == folderTableViewSource) {
-                folderTableViewSource = new FolderTableViewSource (NcApplication.Instance.Account.Id, hideFakeFolders: modal);
+                folderTableViewSource = new FolderTableViewSource (accountId, hideFakeFolders: modal);
                 TableView.Source = folderTableViewSource;
                 TableView.ReloadData ();
             } else {
-                folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
+                folderTableViewSource.Refresh (accountId);
                 TableView.ReloadData ();
             }
 
             if (null != switchAccountButton) {
+                NcAssert.False (modal);
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
@@ -134,6 +145,7 @@ namespace NachoClient.iOS
 
         void FolderTableViewSource_OnAccountSelected (object sender, McAccount account)
         {
+            NcAssert.False (modal);
             FolderLists.SetDefaultAccount (account.Id);
             folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
             TableView.ReloadData ();
@@ -143,32 +155,64 @@ namespace NachoClient.iOS
         {
             switch (folder.Id) {
             case McFolder.INBOX_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToInbox", new SegueHolder (null));
+                ShowInbox ();
                 return;
             case McFolder.HOT_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToHotList", new SegueHolder (null));
+                ShowHotList ();
                 return;
             case McFolder.LTR_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToLikelyToRead", new SegueHolder (null));
-                return;
-            case McFolder.DEFERRED_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToDeferredList", new SegueHolder (null));
-                return;
-            case McFolder.DEADLINE_FAKE_FOLDER_ID:
-                PerformSegue ("SegueToDeadlines", new SegueHolder (null));
+                ShowLikelyToRead ();
                 return;
             }
 
             folder.UpdateSet_LastAccessed (DateTime.UtcNow);
             if (null == owner) {
                 if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
-                    PerformSegue ("SegueToDrafts", new SegueHolder (folder));
+                    ShowDrafts (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    ShowMessages (folder);
                 }
             } else {
                 owner.FolderSelected (this, folder, cookie);
             }
+        }
+
+        void ShowInbox ()
+        {
+            var viewController = new InboxViewController ();
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowHotList ()
+        {
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowLikelyToRead ()
+        {
+            var viewController = new MessageListViewController ();
+            var messages = NcEmailManager.LikelyToReadInbox (NcApplication.Instance.Account.Id);
+            viewController.SetEmailMessages (messages);
+            NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowDrafts (McFolder folder)
+        {
+            var draftsList = new NachoDraftMessages (folder);
+            var draftsListViewController = new MessageListViewController ();
+            draftsListViewController.SetEmailMessages (draftsList);
+            NavigationController.PushViewController (draftsListViewController, true);
+        }
+
+        void ShowMessages (McFolder folder)
+        {
+            var viewController = new MessageListViewController ();
+            var messageList = new NachoFolderMessages (folder);
+            viewController.SetEmailMessages (messageList);
+            NavigationController.PushViewController (viewController, true);
         }
 
         void switchAccountButtonPressed ()
@@ -178,48 +222,16 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
+            NcAssert.False (modal);
+            accountId = account.Id;
             switchAccountButton.SetAccountImage (account);
             folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
             TableView.ReloadData ();
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if ("FoldersToMessageList" == segue.Identifier) {
-                var holder = (SegueHolder)sender;
-                var messageList = new NachoEmailMessages ((McFolder)holder.value);
-                var messageListViewController = (MessageListViewController)segue.DestinationViewController;
-                messageListViewController.SetEmailMessages (messageList);
-                return;
-            }
-            if ("SegueToDrafts" == segue.Identifier) {
-                var holder = (SegueHolder)sender;
-                var draftsList = new NachoDraftMessages ((McFolder)holder.value);
-                var draftsListViewController = (DraftsViewController)segue.DestinationViewController;
-                draftsListViewController.SetEmailMessages (draftsList);
-                return;
-            }
-            if ("SegueToInbox" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToHotList" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToDeferredList" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToLikelyToRead" == segue.Identifier) {
-                return;
-            }
-            if ("SegueToDeadlines" == segue.Identifier) {
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         private void ComposeMessage ()
         {
+            NcAssert.False (modal);
             var account = McAccount.EmailAccountForAccount (NcApplication.Instance.Account);
             var composeViewController = new MessageComposeViewController (account);
             composeViewController.Present ();

@@ -24,12 +24,14 @@ using DDay.iCal.Serialization.iCalendar;
 namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewControllerNoLeaks, INachoMessageViewer,
-        INachoFolderChooserParent, INachoCalendarItemEditorParent, 
-        IUcAddressBlockDelegate, INachoDateControllerParent, IBodyViewOwner
+        INachoFolderChooserParent, 
+        IUcAddressBlockDelegate, IBodyViewOwner
     {
         // Model data
         public McEmailMessageThread thread;
         protected List<McAttachment> attachments;
+
+        UIScrollView scrollView;
 
         // UI elements for the main view
         protected UIView headerView;
@@ -37,7 +39,6 @@ namespace NachoClient.iOS
         protected UcAddressBlock toView;
         protected UcAddressBlock ccView;
         protected BodyView bodyView;
-        protected UIBlockMenu blockMenu;
         protected MessageToolbar messageToolbar;
         protected UITapGestureRecognizer singleTapGesture;
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
@@ -45,28 +46,19 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer.Token doubleTapGestureHandlerToken;
 
         // UI elements for the navigation bar
-        protected UIBarButtonItem moveButton;
-        protected UIBarButtonItem deferButton;
-        protected UIBarButtonItem blockMenuButton;
+        protected UIBarButtonItem createEventButton;
 
         // UI related constants (or pseudo constants)
         protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected static nfloat TOVIEW_LEFT_MARGIN = 20;
         protected static nfloat CCVIEW_LEFT_MARGIN = 20;
         protected static nfloat CHILI_ICON_WIDTH = 20;
+
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
-
-
-
-
-
-
-
-
-#else
+        #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
         nfloat HEADER_TOP_MARGIN = 0;
@@ -85,8 +77,6 @@ namespace NachoClient.iOS
             USER_IMAGE_TAG = 101,
             FROM_TAG = 102,
             SUBJECT_TAG = 103,
-            REMINDER_TEXT_TAG = 104,
-            REMINDER_ICON_TAG = 105,
             ATTACHMENT_ICON_TAG = 106,
             RECEIVED_DATE_TAG = 107,
             SEPARATOR1_TAG = 108,
@@ -96,11 +86,14 @@ namespace NachoClient.iOS
             BLANK_VIEW_TAG = 113,
             ATTACHMENT_VIEW_TAG = 301,
             ATTACHMENT_NAME_TAG = 302,
-            ATTACHMENT_STATUS_TAG = 303,
-            BLOCK_MENU_TAG = 1000,
+            ATTACHMENT_STATUS_TAG = 303
         }
 
         private bool isAppearing;
+
+        public MessageViewController() : base  ()
+        {
+        }
 
         public MessageViewController (IntPtr handle)
             : base (handle)
@@ -115,6 +108,9 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            scrollView = new UIScrollView (View.Bounds);
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            View.AddSubview (scrollView);
             base.ViewDidLoad ();
             ConfigureAndLayout ();
         }
@@ -132,15 +128,13 @@ namespace NachoClient.iOS
             // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
             if (null != message) {
-                if (!NcApplication.Instance.Account.ContainsAccount(message.AccountId)) {
+                if (!NcApplication.Instance.Account.ContainsAccount (message.AccountId)) {
                     Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
                     if (null != NavigationController) {
                         NavigationController.PopViewController (false);
                     }
                 }
-                NcTask.Run (() => {
-                    NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
-                }, "MessageViewController.MessageReadStatusUpdated");
+                NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
             }
         }
 
@@ -195,6 +189,9 @@ namespace NachoClient.iOS
             messageToolbar.OnClick = (object sender, EventArgs e) => {
                 var toolbarEventArgs = (MessageToolbarEventArgs)e;
                 switch (toolbarEventArgs.Action) {
+                case MessageToolbar.ActionType.QUICK_REPLY:
+                    ComposeResponse (EmailHelper.Action.Reply, true);
+                    break;
                 case MessageToolbar.ActionType.REPLY:
                     onReplyButtonClicked (EmailHelper.Action.Reply);
                     break;
@@ -203,6 +200,9 @@ namespace NachoClient.iOS
                     break;
                 case MessageToolbar.ActionType.FORWARD:
                     onReplyButtonClicked (EmailHelper.Action.Forward);
+                    break;
+                case MessageToolbar.ActionType.MOVE:
+                    ShowMove();
                     break;
                 case MessageToolbar.ActionType.ARCHIVE:
                     onArchiveButtonClicked ();
@@ -219,27 +219,15 @@ namespace NachoClient.iOS
 
             // Navigation controls
 
-            blockMenuButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
-            blockMenuButton.AccessibilityLabel = "More";
-
-            deferButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (deferButton, "email-defer");
-            deferButton.AccessibilityLabel = "Defer";
-
-            moveButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (moveButton, "folder-move");
-            moveButton.AccessibilityLabel = "Move";
+            createEventButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (createEventButton, "cal-add");
+            createEventButton.AccessibilityLabel = "Create Event";
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                blockMenuButton,
-                deferButton,
-                moveButton,
+                createEventButton,
             };
-
-            moveButton.Clicked += MoveButtonClicked;
-            blockMenuButton.Clicked += BlockMenuButtonClicked;
-            deferButton.Clicked += DeferButtonClicked;
+                
+            createEventButton.Clicked += CreateEventButtonClicked;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
@@ -350,19 +338,6 @@ namespace NachoClient.iOS
                 .Height (0);
             headerView.AddSubview (ccView);
 
-            // Reminder image
-            var reminderImageView = new UIImageView (new CGRect (65, yOffset + 4, 12, 12));
-            reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
-            reminderImageView.Tag = (int)TagType.REMINDER_ICON_TAG;
-            headerView.AddSubview (reminderImageView);
-
-            // Reminder label
-            var reminderLabelView = new UILabel (new CGRect (87, yOffset, 230, 20));
-            reminderLabelView.Font = A.Font_AvenirNextRegular14;
-            reminderLabelView.TextColor = A.Color_9B9B9B;
-            reminderLabelView.Tag = (int)TagType.REMINDER_TEXT_TAG;
-            headerView.AddSubview (reminderLabelView);
-
             // Chili image
             var chiliImageView = new UIImageView (new CGRect (fromLabelView.Frame.Right, 14, 20, 20));
             chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
@@ -404,24 +379,6 @@ namespace NachoClient.iOS
             // Message body, which is added to the scroll view, not the header view.
             bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, this);
             scrollView.AddSubview (bodyView);
-
-            blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
-                new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
-                    ComposeResponse (EmailHelper.Action.Reply, true);
-                }),
-                new UIBlockMenu.Block ("email-calendartime", "Create Deadline", () => {
-                    PerformSegue ("SegueToMessageDeadline", new SegueHolder (null));
-                }),
-                new UIBlockMenu.Block ("now-addcalevent", "Create Event", () => {
-                    var message = thread.SingleMessageSpecialCase ();
-                    if (null != message) {
-                        var c = CalendarHelper.CreateMeeting (message);
-                        PerformSegue ("SegueToEditEvent", new SegueHolder (c));
-                    }
-                })
-            }, View.Frame.Width);
-            blockMenu.Tag = (int)TagType.BLOCK_MENU_TAG;
-            View.AddSubview (blockMenu);
         }
 
         protected override void ConfigureAndLayout ()
@@ -498,20 +455,6 @@ namespace NachoClient.iOS
 
                 // Reminder image view and label
                 nfloat yOffset = receivedLabelView.Frame.Bottom;
-                var reminderImageView = View.ViewWithTag ((int)TagType.REMINDER_ICON_TAG) as UIImageView;
-                var reminderLabelView = View.ViewWithTag ((int)TagType.REMINDER_TEXT_TAG) as UILabel;
-                if (message.HasDueDate () || message.IsDeferred ()) {
-                    reminderImageView.Hidden = false;
-                    reminderLabelView.Hidden = false;
-                    reminderLabelView.Text = Pretty.ReminderText (message);
-                    ViewFramer.Create (reminderImageView).Y (yOffset + 4);
-                    ViewFramer.Create (reminderLabelView).Y (yOffset);
-                    yOffset += 20;
-                    cursor.AddSpace (20);
-                } else {
-                    reminderImageView.Hidden = true;
-                    reminderLabelView.Hidden = true;
-                }
 
                 compactSeparatorYOffset = cursor.TotalHeight;
 
@@ -576,18 +519,13 @@ namespace NachoClient.iOS
             scrollView.Scrolled -= ScrollViewScrolled;
             scrollView.ZoomingEnded -= ScrollViewZoomingEnded;
             scrollView.ViewForZoomingInScrollView = null;
-            moveButton.Clicked -= MoveButtonClicked;
-            blockMenuButton.Clicked -= BlockMenuButtonClicked;
-            deferButton.Clicked -= DeferButtonClicked;
+            createEventButton.Clicked -= CreateEventButtonClicked;
             messageToolbar.OnClick = null;
 
-            blockMenu.Cleanup ();
             messageToolbar.Cleanup ();
             attachmentListView.Cleanup ();
 
-            moveButton = null;
             scrollView = null;
-            blockMenu = null;
             messageToolbar = null;
 
             headerView = null;
@@ -595,8 +533,7 @@ namespace NachoClient.iOS
             toView = null;
             ccView = null;
             bodyView = null;
-            deferButton = null;
-            blockMenuButton = null;
+            createEventButton = null;
         }
 
         protected void LayoutView (bool animated)
@@ -657,54 +594,6 @@ namespace NachoClient.iOS
             ScrollViewScrolled (null, null);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-
-            if (segue.Identifier == "MessageViewToMessagePriority") {
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
-            if (segue.Identifier == "SegueToMessageDeadline") {
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Deadline);
-                return;
-            }
-            if (segue.Identifier == "MessageViewToFolders") {
-                var vc = (INachoFolderChooser)segue.DestinationViewController;
-                vc.SetOwner (this, true, thread);
-                return;
-            }
-            if (segue.Identifier == "MessageViewToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                var c = h.value as McCalendar;
-                vc.SetOwner (this);
-                vc.SetCalendarItem (c);
-                return;
-            }
-//            if (segue.Identifier == "SegueToDatePicker") {
-//                var vc = (DatePickerViewController)segue.DestinationViewController;
-//                vc.owner = this;
-//                return;
-//            }
-            if (segue.Identifier == "SegueToEditEvent") {
-                var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var e = holder.value as McCalendar;
-                vc.SetCalendarItem (e);
-                vc.SetOwner (this);
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         public override bool HidesBottomBarWhenPushed {
             get {
                 return true;
@@ -747,6 +636,15 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void CreateEvent ()
+        {
+            var message = thread.SingleMessageSpecialCase ();
+            if (null != message) {
+                var c = CalendarHelper.CreateMeeting (message);
+                EditEvent (c);
+            }
+        }
+
         protected void DeleteThisMessage ()
         {
             var message = thread.SingleMessageSpecialCase ();
@@ -771,28 +669,10 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (false, new Action (delegate {
-                NavigationController.PopViewController (true);
-            }));
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             MoveThisMessage (folder);
-            vc.SetOwner (null, false, null);
+            vc.SetOwner (null, false, 0, null);
             vc.DismissFolderChooser (false, new Action (delegate {
                 NavigationController.PopViewController (true);
             }));
@@ -821,29 +701,91 @@ namespace NachoClient.iOS
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 CGPoint touch = gesture.LocationInView (headerView);
-                // In the chili zone?
+
+                // Did the user tap on or near the chili?
                 if ((touch.X > View.Frame.Width - 50) && (touch.Y < 50)) {
                     var message = thread.SingleMessageSpecialCase ();
                     if (null != message) {
                         NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                         ConfigureChili (message);
                     }
-                } else if (touch.Y <= separator1YOffset) {
+                    return;
+                }
+
+                // Did the user tap on the "From" field?
+                var fromView = headerView.ViewWithTag ((int)TagType.FROM_TAG);
+                if (null != fromView) {
+                    CGPoint location = gesture.LocationInView (fromView.Superview);
+                    if (fromView.Frame.Contains (location)) {
+                        var message = thread.SingleMessageSpecialCase ();
+                        var contact = McContact.QueryBestMatchByEmailAddress (message.AccountId, message.From, message.FromEmailAddressId);
+                        if (null != contact) {
+                            ShowContact (contact);
+                            return;
+                        }
+                    }
+                }
+
+                // Did the user tap on one of the To or Cc addresses?
+                if (expandedHeader && (ShowContactDetailWhenTapped (gesture, toView) || ShowContactDetailWhenTapped (gesture, ccView))) {
+                    return;
+                }
+
+                // Otherwise, toggle the entire header view between compact and expanded modes.
+                if (touch.Y <= separator1YOffset) {
                     expandedHeader = !expandedHeader;
                     LayoutView (true);
                 }
             }
         }
 
-        private void MoveButtonClicked (object sender, EventArgs e)
+        bool ShowContactDetailWhenTapped (UIGestureRecognizer gesture, UcAddressBlock addressBlock)
         {
-            PerformSegue ("MessageViewToFolders", new SegueHolder (null));
+            CGPoint location = gesture.LocationInView (addressBlock);
+            foreach (var subview in addressBlock.Subviews) {
+                if (subview is UcAddressField) {
+                    var addressField = (UcAddressField)subview;
+                    if (addressField.IsTextField () && addressField.Frame.Contains (location)) {
+                        var contact = McContact.QueryBestMatchByEmailAddress (thread.FirstMessage ().AccountId, addressField.address.address);
+                        if (null != contact) {
+                            ShowContact (contact);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
-        private void BlockMenuButtonClicked (object sender, EventArgs e)
+        void EditEvent (McCalendar calendarEvent)
         {
-            UIBlockMenu blockMenu = (UIBlockMenu)View.ViewWithTag ((int)TagType.BLOCK_MENU_TAG);
-            blockMenu.MenuTapped ();
+            var vc = new EditEventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            var navigationController = new UINavigationController (vc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
+        }
+
+        void ShowMove ()
+        {
+            var vc = new FoldersViewController ();
+            var message = thread.FirstMessage ();
+            if (null != message) {
+                vc.SetOwner (this, true, message.AccountId, thread);
+            }
+            PresentViewController (vc, true, null);
+        }
+
+        void ShowContact (McContact contact)
+        {
+            var vc = new ContactDetailViewController ();
+            vc.contact = contact;
+            NavigationController.PushViewController (vc, true);
+        }
+
+        private void CreateEventButtonClicked (object sender, EventArgs e)
+        {
+            CreateEvent ();
         }
 
         private void onDeleteButtonClicked ()
@@ -861,11 +803,6 @@ namespace NachoClient.iOS
         private void onReplyButtonClicked (EmailHelper.Action action)
         {
             ComposeResponse (action);
-        }
-
-        private void DeferButtonClicked (object sender, EventArgs e)
-        {
-            PerformSegue ("MessageViewToMessagePriority", new SegueHolder (null));
         }
 
         private bool SingleTapGestureRecognizer (UIGestureRecognizer a, UIGestureRecognizer b)

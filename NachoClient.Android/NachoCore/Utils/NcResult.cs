@@ -129,7 +129,7 @@ namespace NachoCore.Utils
             Error_FolderDeleteFailed,
             Error_FolderUpdateFailed,
             Error_SyncFailed,
-            Error_SyncFailedToComplete,
+            Error_SyncFailedToComplete_Obsolete,
             Error_FolderSyncFailed,
             Error_MeetingResponseFailed,
             Error_ContactSearchCommandFailed,
@@ -189,7 +189,9 @@ namespace NachoCore.Utils
             Error_NotAttached,
             Info_AccountSetChanged,
             Info_ChatSetChanged,
-            Info_ChatMessageAdded
+            Info_ChatMessageAdded,
+            Info_EmailMessageMarkedAnsweredSucceeded,
+            Error_EmailMessageMarkedAnsweredFailed,
         };
 
         public enum WhyEnum

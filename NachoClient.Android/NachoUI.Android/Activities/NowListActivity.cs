@@ -41,7 +41,7 @@ namespace NachoClient.AndroidClient
             MainApplication.SetupHockeyAppCrashManager (this);
         }
 
-        protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
+        protected override NachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             NcAssert.NotNull (NcApplication.Instance.Account);
             var messages = NcEmailSingleton.PrioritySingleton (NcApplication.Instance.Account.Id);

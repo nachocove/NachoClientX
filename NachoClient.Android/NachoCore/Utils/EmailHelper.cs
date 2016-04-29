@@ -894,8 +894,8 @@ namespace NachoCore.Utils
                     if (null != inboxFolder) {
                         var newSince = GetNewSincePreference (accountId);
                         unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
-                        deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
-                        deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
+                        deadlineMessageCount += 0;
+                        deferredMessageCount += 0;
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
                     }
                 }
@@ -1041,10 +1041,21 @@ namespace NachoCore.Utils
         public static void MarkAsRead (McEmailMessage message, bool force = false)
         {
             if ((null != message) && !message.IsRead) {
-                var body = McBody.QueryById<McBody> (message.BodyId);
-                if (force || McBody.IsComplete (body)) {
+                if (force || McBody.IsComplete (McBody.QueryById<McBody> (message.BodyId))) {
                     NcTask.Run (() => {
                         BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                    }, "MarkEmailReadCmd");
+
+                }
+            }
+        }
+
+        public static void MarkAsUnread (McEmailMessage message, bool force = false)
+        {
+            if ((null != message) && message.IsRead) {
+                if (force || McBody.IsComplete (McBody.QueryById<McBody> (message.BodyId))) {
+                    NcTask.Run (() => {
+                        BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, false);
                     }, "MarkEmailReadCmd");
 
                 }
@@ -1054,7 +1065,7 @@ namespace NachoCore.Utils
         public static void MarkAsRead (McEmailMessageThread thread, bool force = false)
         {
             var message = thread.SingleMessageSpecialCase ();
-            MarkAsRead (message);
+            MarkAsRead (message, force);
         }
 
         public static void ToggleRead (McEmailMessage message)
@@ -1158,6 +1169,7 @@ namespace NachoCore.Utils
         public static NcResult SyncUnified ()
         {
             bool syncStarted = false;
+            var tokens = new List<string> ();
             var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
             foreach (var account in EmailAccounts) {
                 if (McAccount.GetUnifiedAccount ().Id != account.Id) {
@@ -1165,10 +1177,14 @@ namespace NachoCore.Utils
                     if (null != inboxFolder) {
                         var nr = BackEnd.Instance.SyncCmd (inboxFolder.AccountId, inboxFolder.Id);
                         syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                        if (!nr.isError () && (nr.Value is string)) {
+                            tokens.Add (nr.Value as string);
+                        }
                     }
                 }
             }
-            return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
+            var value = String.Join (",", tokens);
+            return (syncStarted ? NcResult.OK (value) : NachoSyncResult.DoesNotSync ());
         }
 
         public static NcResult SyncUnifiedSent ()

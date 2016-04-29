@@ -92,6 +92,9 @@ namespace NachoClient.iOS
         protected const int MORE_VIEW_DEFAULT_BUTTON_TAG = 1000;
         protected const int MORE_VIEW_DELETE_BUTTON_TAG = 2000;
 
+        UIScrollView scrollView;
+        UIView contentView;
+
         protected UILabel contactNameLabel;
         protected UITextField firstNameField;
         protected UITextField middleNameField;
@@ -145,6 +148,11 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            
             moreButtonIndent = View.Frame.Width - 40;
 
             switch (controllerType) {
@@ -157,6 +165,10 @@ namespace NachoClient.iOS
             }
 
             base.ViewDidLoad ();
+        }
+
+        public ContactEditViewController () : base ()
+        {
         }
 
         public ContactEditViewController (IntPtr handle) : base (handle)
@@ -735,41 +747,36 @@ namespace NachoClient.iOS
             view.Frame = frame;
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        public void SelectLabel (List<string> labelList)
         {
-            if (segue.Identifier.Equals ("SegueToLabelSelection")) {
-                LabelSelectionViewController destinationController = (LabelSelectionViewController)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
+            var destinationController = new LabelSelectionViewController ();
 
-                destinationController.SetLabelList ((List<string>)holder.value);
-                switch (editingBlockType) {
-                case BlockType.Phone:
-                    destinationController.SetSelectedName (editingPhoneCell.phoneAttribute.Name);
-                    break;
-                case BlockType.Email:
-                    destinationController.SetSelectedName (editingEmailCell.emailAttribute.Name);
-                    break;
-                case BlockType.Date:
-                    destinationController.SetSelectedName (editingDateCell.dateAttribute.Name);
-                    break;
-                case BlockType.Address:
-                    destinationController.SetSelectedName (editingAddressCell.addressAttribute.Name);
-                    break;
-                case BlockType.IMAddress:
-                    destinationController.SetSelectedName (editingIMAddressCell.imAddressAttribute.Name);
-                    break;
-                case BlockType.Relationship:
-                    destinationController.SetSelectedName (editingRelationshipCell.relationshipAttribute.Name);
-                    break;
-                case BlockType.Misc:
-                    destinationController.SetSelectedName (editingMiscCell.Name);
-                    break;
-                }
-                destinationController.SetOwner (this, contactCopy.AccountId);
-                return;
+            destinationController.SetLabelList (labelList);
+            switch (editingBlockType) {
+            case BlockType.Phone:
+                destinationController.SetSelectedName (editingPhoneCell.phoneAttribute.Name);
+                break;
+            case BlockType.Email:
+                destinationController.SetSelectedName (editingEmailCell.emailAttribute.Name);
+                break;
+            case BlockType.Date:
+                destinationController.SetSelectedName (editingDateCell.dateAttribute.Name);
+                break;
+            case BlockType.Address:
+                destinationController.SetSelectedName (editingAddressCell.addressAttribute.Name);
+                break;
+            case BlockType.IMAddress:
+                destinationController.SetSelectedName (editingIMAddressCell.imAddressAttribute.Name);
+                break;
+            case BlockType.Relationship:
+                destinationController.SetSelectedName (editingRelationshipCell.relationshipAttribute.Name);
+                break;
+            case BlockType.Misc:
+                destinationController.SetSelectedName (editingMiscCell.Name);
+                break;
             }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            destinationController.SetOwner (this, contactCopy.AccountId);
+            PresentViewController (destinationController, true, null);
         }
 
         protected override void OnKeyboardChanged ()
@@ -1730,7 +1737,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Phone;
                 owner.editingPhoneCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailablePhoneNames (owner.contactCopy)));
+                owner.SelectLabel (ContactsHelper.GetAvailablePhoneNames (owner.contactCopy));
             }
 
             protected void MoreButtonClicked (object sender, EventArgs e)
@@ -1829,7 +1836,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Email;
                 owner.editingEmailCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableEmailNames (owner.contactCopy)));
+                owner.SelectLabel (ContactsHelper.GetAvailableEmailNames (owner.contactCopy));
             }
 
             public void Cleanup ()
@@ -1996,7 +2003,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Date;
                 owner.editingDateCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableDateNames (owner.contactCopy)));
+                owner.SelectLabel (ContactsHelper.GetAvailableDateNames (owner.contactCopy));
             }
 
             public void Cleanup ()
@@ -2161,7 +2168,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Address;
                 owner.editingAddressCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableAddressNames (owner.contactCopy)));
+                owner.SelectLabel (ContactsHelper.GetAvailableAddressNames (owner.contactCopy));
             }
 
             protected void EditingEnded (object sender, EventArgs e)
@@ -2240,7 +2247,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.IMAddress;
                 owner.editingIMAddressCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableIMAddressNames (owner.contactCopy)));
+                owner.SelectLabel (ContactsHelper.GetAvailableIMAddressNames (owner.contactCopy));
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
@@ -2314,7 +2321,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Relationship;
                 owner.editingRelationshipCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableRelationshipNames (owner.contactCopy)));
+                owner.SelectLabel (ContactsHelper.GetAvailableRelationshipNames (owner.contactCopy));
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
@@ -2390,7 +2397,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Misc;
                 owner.editingMiscCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableMiscNames (owner.TakenMiscNames ())));
+                owner.SelectLabel (ContactsHelper.GetAvailableMiscNames (owner.TakenMiscNames ()));
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)

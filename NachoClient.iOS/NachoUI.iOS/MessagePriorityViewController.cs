@@ -12,7 +12,7 @@ using CoreGraphics;
 
 namespace NachoClient.iOS
 {
-    public partial class MessagePriorityViewController : BlurryViewController, INcDatePickerDelegate, INachoDateController
+    public partial class MessagePriorityViewController : UIViewController, INcDatePickerDelegate, INachoDateController
     {
         protected McEmailMessageThread thread;
         protected INachoDateControllerParent owner;
@@ -23,6 +23,11 @@ namespace NachoClient.iOS
         const float BUTTON_LABEL_HEIGHT = 40;
         const float BUTTON_PADDING_HEIGHT = 15;
         const float BUTTON_PADDING_WIDTH = 35;
+
+        public MessagePriorityViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
 
         public MessagePriorityViewController (IntPtr handle) : base (handle)
         {
@@ -109,7 +114,7 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Forever", "modal-forever", () => DateSelected (MessageDeferralType.Forever, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     null,
-                    new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
+                    new ButtonInfo ("Pick Date", "modal-pick-date", ShowDatePicker),
                     null,
                 });
                 break;
@@ -125,7 +130,7 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Next Month", "modal-nextmonth", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     null,
-                    new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
+                    new ButtonInfo ("Pick Date", "modal-pick-date", ShowDatePicker),
                     null,
                 });
                 break;
@@ -190,21 +195,11 @@ namespace NachoClient.iOS
             DismissViewController (animated, action);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        public void ShowDatePicker ()
         {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-
-            if (segue.Identifier == "MessagePriorityToDatePicker") {
-                var vc = (DatePickerViewController)segue.DestinationViewController;
-                vc.owner = this;
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            var picker = new DatePickerViewController ();
+            picker.owner = this;
+            PresentViewController (picker, true, null);
         }
 
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)

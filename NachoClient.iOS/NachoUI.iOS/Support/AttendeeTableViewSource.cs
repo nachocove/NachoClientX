@@ -126,7 +126,7 @@ namespace NachoClient.iOS
                 NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
-            owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
+            owner.ContactSelectedCallback (contact);
         }
 
         UIView ViewWithImageName (string imageName)

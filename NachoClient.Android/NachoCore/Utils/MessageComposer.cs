@@ -5,7 +5,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using NachoCore.Model;
-using NachoCore.Brain;
 using NachoPlatform;
 using HtmlAgilityPack;
 using MimeKit;
@@ -224,8 +223,6 @@ namespace NachoCore.Utils
                 if (EmailHelper.IsReplyAction (Kind) && String.IsNullOrEmpty(Message.To)) {
                     EmailHelper.PopulateMessageRecipients (Account, Message, Kind, RelatedMessage);
                 }
-                var now = DateTime.UtcNow;
-                NcBrain.MessageReplyStatusUpdated (RelatedMessage, now, 0.1);
             }
             var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Account), Account.EmailAddr);
             Message.From = mailbox.ToString ();
@@ -547,6 +544,7 @@ namespace NachoCore.Utils
                 message.BodyPreview = preview;
                 message.DateReceived = Mime.Date.DateTime;
                 message.MessageID = Mime.MessageId;
+                message.IsRead = true;
                 return true;
             });
             if (invalidateBundle) {

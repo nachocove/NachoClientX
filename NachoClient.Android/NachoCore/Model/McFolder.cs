@@ -21,10 +21,8 @@ namespace NachoCore.Model
 
     public class McFolder : McAbstrFolderEntry
     {
-        [Indexed]
         public bool IsClientOwned { get; set; }
 
-        [Indexed]
         public bool IsHidden { get; set; }
 
         [Indexed]
@@ -1211,8 +1209,6 @@ namespace NachoCore.Model
 
         public const int HOT_FAKE_FOLDER_ID = -1;
         public const int LTR_FAKE_FOLDER_ID = -2;
-        public const int DEFERRED_FAKE_FOLDER_ID = -3;
-        public const int DEADLINE_FAKE_FOLDER_ID = -4;
         public const int INBOX_FAKE_FOLDER_ID = -5;
 
         public static McFolder GetHotFakeFolder ()
@@ -1228,22 +1224,6 @@ namespace NachoCore.Model
             return new McFolder () {
                 Id = LTR_FAKE_FOLDER_ID,
                 DisplayName = "Focused",
-            };
-        }
-
-        public static McFolder GetDeferredFakeFolder ()
-        {
-            return new McFolder () {
-                Id = DEFERRED_FAKE_FOLDER_ID,
-                DisplayName = "Deferred",
-            };
-        }
-
-        public static McFolder GetDeadlineFakeFolder ()
-        {
-            return new McFolder () {
-                Id = DEADLINE_FAKE_FOLDER_ID,
-                DisplayName = "Deadlines",
             };
         }
 

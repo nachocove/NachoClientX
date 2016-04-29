@@ -46,9 +46,8 @@ namespace NachoClient.AndroidClient
             var deadlineView = view.FindViewById<View> (Resource.Id.deadline);
             deadlineView.Click += DeadlineView_Click;
 
-            var chatsView = view.FindViewById<View> (Resource.Id.chats);
-            chatsView.Click += ChatsView_Click;
-            ;
+            var contactsView = view.FindViewById<View> (Resource.Id.contacts);
+            contactsView.Click += ContactsView_Click;
 
             var filesView = view.FindViewById<View> (Resource.Id.files);
             filesView.Click += FilesView_Click;
@@ -82,10 +81,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void ChatsView_Click (object sender, EventArgs e)
+        void ContactsView_Click (object sender, EventArgs e)
         {
             var intent = new Intent ();
-            intent.SetClass (this.Activity, typeof(ChatListActivity));
+            intent.SetClass (this.Activity, typeof(ContactsActivity));
             StartActivity (intent); 
         }
 
@@ -104,17 +103,11 @@ namespace NachoClient.AndroidClient
         }
 
         void DeadlineView_Click (object sender, EventArgs e)
-        {
-            var folder = McFolder.GetDeadlineFakeFolder ();
-            var intent = DeadlineActivity.ShowDeadlineFolderIntent (this.Activity, folder);
-            StartActivity (intent);  
+        { 
         }
 
         void DeferredView_Click (object sender, EventArgs e)
         {
-            var folder = McFolder.GetDeferredFakeFolder ();
-            var intent = DeferredActivity.ShowDeferredFolderIntent (this.Activity, folder);
-            StartActivity (intent); 
         }
 
         void FolderView_Click (object sender, EventArgs e)
@@ -140,8 +133,6 @@ namespace NachoClient.AndroidClient
 
         static public List<Type> moreTabActivities = new List<Type> () {
             typeof(AboutActivity),
-            typeof(DeadlineActivity),
-            typeof(DeferredActivity),
             typeof(FoldersActivity),
             typeof(FileListActivity),
             typeof(SettingsActivity),

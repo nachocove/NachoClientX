@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoUnifiedInbox : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoUnifiedInbox : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
 
@@ -19,7 +19,7 @@ namespace NachoCore
             threadList = new List<McEmailMessageThread> ();
         }
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        private List<McEmailMessageThread> QueryMessagesByConversation ()
         {
             List<McEmailMessageThread> list;
             switch (FilterSetting) {
@@ -37,12 +37,40 @@ namespace NachoCore
                 list = McEmailMessage.QueryUnifiedInboxItems ();
                 break;
             }
-            var threads = NcMessageThreads.ThreadByConversation (list);
+            return NcMessageThreads.ThreadByConversation (list);
+        }
+
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        {
+            var threads = QueryMessagesByConversation ();
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
                 return true;
             }
             return false;
+        }
+
+        public override bool HasBackgroundRefresh ()
+        {
+            return true;
+        }
+
+        public override void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
+        {
+            NcTask.Run (() => {
+                var newThreadList = QueryMessagesByConversation ();
+                NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                    List<int> adds;
+                    List<int> deletes;
+                    bool changed = NcMessageThreads.AreDifferent (threadList, newThreadList, out adds, out deletes);
+                    if (changed) {
+                        threadList = newThreadList;
+                    }
+                    if (null != completionAction) {
+                        completionAction (changed, adds, deletes);
+                    }
+                });
+            }, "NachoUnifiedInbox.BackgroundRefresh");
         }
 
         public override int Count ()
@@ -119,7 +147,7 @@ namespace NachoCore
             return EmailHelper.SyncUnified ();
         }
 
-        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
@@ -128,7 +156,12 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return McAccount.GetUnifiedAccount ().Id == account.Id;
+            return true;
+        }
+
+        public override bool IncludesMultipleAccounts ()
+        {
+            return true;
         }
 
     }

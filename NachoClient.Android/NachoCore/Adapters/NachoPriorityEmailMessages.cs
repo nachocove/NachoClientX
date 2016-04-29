@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoPriorityEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
+    public class NachoPriorityEmailMessages : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
         McFolder folder;
@@ -19,7 +19,7 @@ namespace NachoCore
             this.folder = folder;
             List<int> adds;
             List<int> deletes;
-            Refresh (out adds, out deletes);
+            threadList = new List<McEmailMessageThread> ();
         }
 
         public override bool Refresh (out List<int> adds, out List<int> deletes)
@@ -74,7 +74,7 @@ namespace NachoCore
             }
         }
 
-        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             return new NachoThreadedEmailMessages (folder, thread.GetThreadId ());
         }
@@ -82,6 +82,22 @@ namespace NachoCore
         public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == folder.AccountId;
+        }
+
+        public override DateTime? LastSuccessfulSyncTime ()
+        {
+            if (folder == null) {
+                return null;
+            }
+            if (folder.IsClientOwned) {
+                return null;
+            }
+            return folder.LastSyncAttempt;
+        }
+
+        public override void RefetchSyncTime ()
+        {
+            folder = McFolder.QueryById<McFolder> (folder.Id);
         }
     }
 }

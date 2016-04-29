@@ -15,6 +15,13 @@ namespace NachoClient.iOS
 {
     public partial class SwitchAccountViewController : UIViewController, IUIViewControllerTransitioningDelegate, INachoAccountsTableDelegate, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
     {
+
+        public SwitchAccountViewController () : base ()
+        {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
+        }
+
         public SwitchAccountViewController (IntPtr handle) : base (handle)
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
@@ -32,8 +39,7 @@ namespace NachoClient.iOS
 
         public static void ShowDropdown (UIViewController fromViewController, SwitchAccountCallback switchAccountCallback)
         {
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var switchViewController = (SwitchAccountViewController)storyboard.InstantiateViewController ("SwitchAccountViewController");
+            var switchViewController = new SwitchAccountViewController ();
             var navViewController = new UINavigationController (switchViewController);
             Util.ConfigureNavBar (false, navViewController);
             switchViewController.switchAccountCallback = switchAccountCallback;
@@ -70,19 +76,6 @@ namespace NachoClient.iOS
             ViewFramer.Create (accountsTableView).Height (View.Frame.Height);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("SegueToAccountSettings")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (AccountSettingsViewController)segue.DestinationViewController;
-                vc.SetAccount (account);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
         // TitleView button
         void SwitchAccountButtonPressed ()
         {
@@ -116,7 +109,14 @@ namespace NachoClient.iOS
         // INachoAccountsTableDelegate
         public void SettingsSelected (McAccount account)
         {
-            PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+            ShowAccount (account);
+        }
+
+        void ShowAccount (McAccount account)
+        {
+            var vc = new AccountSettingsViewController ();
+            vc.SetAccount (account);
+            NavigationController.PushViewController (vc, true);
         }
 
         // INachoAccountsTableDelegate

@@ -32,16 +32,6 @@ namespace NachoClient.iOS
         Dictionary<string, int> PendingSendMap;
         List<McAttachment> AttachmentsForUnsavedChat;
         int MessageCount;
-        UIStoryboard mainStorybaord;
-        UIStoryboard MainStoryboard {
-            get {
-                if (mainStorybaord == null) {
-                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                }
-                return mainStorybaord;
-            }
-
-        }
         public bool CanSend {
             get {
                 return Chat != null || !HeaderView.ToView.IsEmpty ();
@@ -227,7 +217,7 @@ namespace NachoClient.iOS
         {
             if (ParticipantsByEmailId.Count == 1) {
                 var participant = ParticipantsByEmailId.Values.First();
-                var contactDetailViewController = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+                var contactDetailViewController = new ContactDetailViewController ();
                 contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
                 NavigationController.PushViewController (contactDetailViewController, true);
             } else {
@@ -246,7 +236,7 @@ namespace NachoClient.iOS
 
         public void Attach ()
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, Account, MainStoryboard, View);
+            var helper = new AddAttachmentViewController.MenuHelper (this, Account, View);
             PresentViewController (helper.MenuViewController, true, null);
         }
 
@@ -559,14 +549,14 @@ namespace NachoClient.iOS
 
         public void ShowContactChooser (NcEmailAddress address)
         {
-            ContactChooserViewController chooserController = MainStoryboard.InstantiateViewController ("ContactChooserViewController") as ContactChooserViewController;
+            var chooserController = new ContactChooserViewController ();
             chooserController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, chooserController);
         }
 
         public void ShowContactSearch (NcEmailAddress address)
         {
-            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            var searchController = new ContactSearchViewController ();
             searchController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, searchController);
         }
@@ -854,7 +844,6 @@ namespace NachoClient.iOS
         public void SetEnabled (bool isEnabled)
         {
             SendButton.Enabled = isEnabled;
-            MessageField.Editable = isEnabled;
             AttachButton.Enabled = isEnabled;
         }
 

@@ -93,6 +93,7 @@ namespace NachoCore.Utils
             "Telemetry",
             "UpdateUnreadMessageCount",
             "UpdateUnreadMessageView",
+            "MessageListViewController_RefreshMessages"
         };
 
         struct tracer
@@ -156,13 +157,7 @@ namespace NachoCore.Utils
                 } catch (OperationCanceledException) {
                     Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
                 } finally {
-                    var count = NcModel.Instance.NumberDbConnections;
-                    if (15 < count || longRunning) {
-                        NcModel.Instance.Db = null;
-                        if (15 < count) {
-                            Log.Info (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
-                        }
-                    }
+                    NcModel.Instance.Db = null;
                 }
                 if (!stfu) {
                     var finishTime = DateTime.UtcNow;

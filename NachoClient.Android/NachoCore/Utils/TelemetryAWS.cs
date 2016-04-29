@@ -451,7 +451,7 @@ namespace NachoCore.Utils
 
             // Create the temporary JSON .gz file
             var timestamp = jsonEvent.Timestamp ();
-            var readFilePath = TelemetryJsonFileTable.GetReadFilePath (
+            var readFilePath = Telemetry.TelemetryJsonFileTable.GetReadFilePath (
                                    Path.Combine (NcApplication.GetDataDirPath (), "device_info"),
                                    timestamp, timestamp);
             string s3Bucket;

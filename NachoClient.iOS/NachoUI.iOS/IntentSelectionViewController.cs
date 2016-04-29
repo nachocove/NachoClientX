@@ -17,6 +17,10 @@ namespace NachoClient.iOS
         INachoIntentChooserParent owner;
         INachoDateControllerParent dateOwner;
 
+        public IntentSelectionViewController() : base ()
+        {
+        }
+
         public IntentSelectionViewController (IntPtr handle) : base (handle)
         {
 
@@ -87,22 +91,13 @@ namespace NachoClient.iOS
                 owner.SelectMessageIntent (messageIntent);
             }
             if (messageIntent.dueDateAllowed) {
-                PerformSegue ("SegueToMessagePriority", new SegueHolder (null));
+                var priorityViewController = new MessagePriorityViewController ();
+                priorityViewController.Setup (dateOwner, null, NcMessageDeferral.MessageDateType.Intent);
+                priorityViewController.SetIntentSelector (this);
+                PresentViewController (priorityViewController, true, null);
             } else {
                 DismissViewController (true, null);
             }
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "SegueToMessagePriority") {
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (dateOwner, null, NcMessageDeferral.MessageDateType.Intent);
-                vc.SetIntentSelector (this);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
         }
 
         protected class MessageIntentSource : UITableViewSource

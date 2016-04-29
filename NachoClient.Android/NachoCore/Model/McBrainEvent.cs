@@ -37,6 +37,12 @@ namespace NachoCore.Model
                 "SELECT e.* FROM McBrainEvent AS e ORDER BY e.Id ASC LIMIT 1").SingleOrDefault ();
         }
 
+        public static McBrainEvent QueryNextType (NcBrainEventType type)
+        {
+            return NcModel.Instance.Db.Query<McBrainEvent> (
+                "SELECT e.* FROM McBrainEvent AS e WHERE Type = ? ORDER BY e.Id ASC LIMIT 1", (int)type).SingleOrDefault ();
+        }
+
         public NcBrainEvent BrainEvent ()
         {
             MemoryStream binaryStream = new MemoryStream (Data);

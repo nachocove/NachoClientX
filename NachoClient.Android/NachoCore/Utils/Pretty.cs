@@ -38,9 +38,43 @@ namespace NachoCore.Utils
             if (null == preview) {
                 return "";
             } else {
-                var regex = new Regex ("\\s+");
-                return regex.Replace (preview, " ");
+                return ConsecutiveWhitespace.Replace (preview, " ");
             }
+        }
+
+        static Regex SymbolRun = new Regex ("[~`\\-\\+=_#<>\\*\\/]{4,}");
+        static Regex ConsecutiveWhitespace = new Regex ("\\s+");
+
+        static public string MessagePreview (McEmailMessage message, out int subjectLength)
+        {
+            string subject = "";
+            if (message.Subject != null) {
+                subject = message.Subject.Trim ();
+            }
+            string bodyPreview = "";
+            if (message.BodyPreview != null) {
+                var reader = new System.IO.StringReader (message.BodyPreview);
+                var line = reader.ReadLine ();
+                while (line != null) {
+                    if (EmailHelper.IsQuoteLine (line)) {
+                        line = null;
+                    } else {
+                        bodyPreview += line + " ";
+                        line = reader.ReadLine ();
+                    }
+                }
+                bodyPreview = EmailHelper.AdjustPreviewText (bodyPreview).Trim ();
+                bodyPreview = SymbolRun.Replace (bodyPreview, " ");
+                bodyPreview = ConsecutiveWhitespace.Replace (bodyPreview, " ");
+            }
+            subjectLength = subject.Length;
+            if (subject != "" && bodyPreview != "") {
+                return subject + "  ·  " + bodyPreview;
+            }
+            if (subject != "") {
+                return subject;
+            }
+            return bodyPreview;
         }
 
         /// <summary>
@@ -286,6 +320,75 @@ namespace NachoCore.Utils
             return ShortDate (dateTime);
         }
 
+        static public string EventTime (DateTime dateTime, out TimeSpan validSpan)
+        {
+            var local = dateTime.ToLocalTime ();
+            var now = DateTime.Now;
+            var diff = local - now;
+
+            if (diff < TimeSpan.FromSeconds (30)) {
+                validSpan = TimeSpan.FromSeconds (-2);
+                return "now";
+            }
+
+            if (diff < TimeSpan.FromMinutes (1)) {
+                validSpan = TimeSpan.FromSeconds (30);
+                return "in 1 minute";
+            }
+
+            if (diff < TimeSpan.FromMinutes (15)) {
+                var minutes = (int)Math.Ceiling (diff.TotalMinutes);
+                validSpan = (local - TimeSpan.FromMinutes(minutes - 1)) - now;
+                return String.Format ("in {0} minutes", minutes);
+            }
+
+            if (diff <= TimeSpan.FromMinutes (60)) {
+                var minutes = diff.TotalMinutes;
+                var fiveMinuteBlocks = minutes / 5;
+                var remainderMinutes = minutes % 5;
+                var roundedMinutes = (int)Math.Floor (fiveMinuteBlocks) * 5;
+                if (roundedMinutes == 15) {
+                    validSpan = TimeSpan.FromMinutes (remainderMinutes + 1);
+                }else{
+                    validSpan = TimeSpan.FromMinutes (remainderMinutes + 2.5);
+                }
+                if (remainderMinutes > 2.5) {
+                    roundedMinutes = (int)Math.Ceiling (fiveMinuteBlocks) * 5;
+                    validSpan = TimeSpan.FromMinutes(remainderMinutes - 2.5);
+                }
+                return String.Format ("in {0} minutes", roundedMinutes);
+            }
+
+            validSpan = (local - TimeSpan.FromHours (1)) - now;
+            TimeSpan cutoff;
+            if (now.Hour < 12) {
+                cutoff = now.TimeOfDay + TimeSpan.FromHours (12);
+            } else {
+                cutoff = now.TimeOfDay;
+            }
+            if (diff < cutoff) {
+                return "at " + Time (dateTime);
+            }
+            return LongDayTime (dateTime);
+        }
+
+        static public string EventDay (DateTime dateTime, out TimeSpan validSpan)
+        {
+            var local = dateTime.ToLocalTime ();
+            var reference = DateTime.Now;
+            var tomorrow = reference.AddDays (1);
+            tomorrow = tomorrow - tomorrow.TimeOfDay;
+            validSpan = tomorrow - reference;
+            if (local < reference) {
+                return "Today";
+            }
+            reference = reference.AddDays (1);
+            if (local < reference) {
+                return "Tomorrow";
+            }
+            return local.ToString ("dddd");
+        }
+
         static public string VariableDayTime (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
@@ -391,8 +494,23 @@ namespace NachoCore.Utils
 
         static public string RecipientString (string Recipient)
         {
-            if (null == Recipient) {
-                return "";
+            if (String.IsNullOrWhiteSpace (Recipient)) {
+                return "(No Recipients)";
+            }
+            InternetAddressList addresses;
+            if (false == InternetAddressList.TryParse (Recipient, out addresses)) {
+                return Recipient;
+            }
+            var names = new List<string> ();
+            foreach (var mailbox in addresses.Mailboxes){
+                if (String.IsNullOrEmpty (mailbox.Name)) {
+                    names.Add (mailbox.Address);
+                } else {
+                    names.Add (mailbox.Name);
+                }
+            }
+            if (names.Count > 0) {
+                return String.Join (", ", names);
             }
             return Recipient;
         }

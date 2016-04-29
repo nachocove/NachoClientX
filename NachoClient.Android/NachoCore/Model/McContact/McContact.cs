@@ -124,8 +124,7 @@ namespace NachoCore.Model
             Delete,
         }
 
-        /// ActiveSync or Device
-        [Indexed]
+        /// ActiveSync, Device, Salesforce, etc.
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device contacts
@@ -234,13 +233,11 @@ namespace NachoCore.Model
 
         public int PortraitId { get; set; }
 
-        [Indexed]
         public bool IsVip { get; set; }
 
         // 0 means unindexed. If IndexedVersion == ContactIndexDocument.Version - 1, only McContact fields
         // are indexed. If IndexedVersion == ContactIndexDocument.Version, both fields and body (note) are
         // indexed.
-        [Indexed]
         public int IndexVersion { get; set; }
 
         public override ClassCodeEnum GetClassCode ()
@@ -875,6 +872,12 @@ namespace NachoCore.Model
                     CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
                 }
                 EvaluateSelfEclipsing ();
+
+                // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
+                if (this.IsGleaned()) {
+                    IndexVersion = ContactIndexDocument.Version;
+                }
+
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     retval = base.Insert ();
@@ -898,10 +901,10 @@ namespace NachoCore.Model
                     }
                     EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
 
-                    // Re-index the contact. Must do this after the contact update because
-                    // re-indexing has a contact update (for updating IndexVersion) and
-                    // doing this before contact update would set up a race.
-                    NcBrain.ReindexContact (this);
+                    if (!this.IsGleaned () && ContactIndexDocument.Version == this.IndexVersion) {
+                        // A non-gleaned contact that has already been indexed. Re-index the contact.
+                        NcBrain.ReindexContact (this);
+                    }
                 });
                 return retval;
             }
@@ -1376,6 +1379,48 @@ namespace NachoCore.Model
                 " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
                 emailAddress);
             return contactList;
+        }
+
+        public static McContact QueryBestMatchByEmailAddress (int preferredAccount, string emailAddress, int addressId)
+        {
+            if (0 != addressId) {
+                var address = McEmailAddress.QueryById<McEmailAddress> (addressId);
+                if (null != address) {
+                    var contact = BestMatch (QueryByEmailAddress (address.CanonicalEmailAddress), preferredAccount);
+                    if (null != contact) {
+                        return contact;
+                    }
+                }
+            }
+            return QueryBestMatchByEmailAddress (preferredAccount, emailAddress);
+        }
+
+        public static McContact QueryBestMatchByEmailAddress (int preferredAccount, string emailAddress)
+        {
+            var result = BestMatch (QueryByEmailAddress (emailAddress), preferredAccount);
+            if (null == result) {
+                MimeKit.MailboxAddress parsedAddress;
+                if (MimeKit.MailboxAddress.TryParse(emailAddress, out parsedAddress)) {
+                    if (emailAddress != parsedAddress.Address) {
+                        result = BestMatch (QueryByEmailAddress (parsedAddress.Address), preferredAccount);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private static McContact BestMatch (List<McContact> matches, int preferredAccount)
+        {
+            McContact best = null;
+            foreach (var match in matches) {
+                if (null == best ||
+                    (best.IsGleaned() && !match.IsGleaned()) ||
+                    (best.IsGleaned() == match.IsGleaned() && best.AccountId != preferredAccount && match.AccountId == preferredAccount))
+                {
+                    best = match;
+                }
+            }
+            return best;
         }
 
         public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)

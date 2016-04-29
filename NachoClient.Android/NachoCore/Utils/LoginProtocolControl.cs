@@ -147,8 +147,13 @@ namespace NachoCore.Utils
         private static void NetStatusCallback (object sender, NachoPlatform.NetStatusEventArgs nsea)
         {
             if (nsea.Status == NachoPlatform.NetStatusStatusEnum.Down) {
-                LogAndCall (nsea.Status.ToString (), () => {
-                    _Owner.NetworkDown ();
+                // ILoginEvents methods need to be called on the UI thread because the event handler
+                // may manipulate UI objects.  Most of the time the caller is already on the UI thread,
+                // but this is the one place I have found where that is not the case.
+                NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                    LogAndCall (nsea.Status.ToString (), () => {
+                        _Owner.NetworkDown ();
+                    });
                 });
             }
         }

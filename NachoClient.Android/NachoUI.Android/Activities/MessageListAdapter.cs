@@ -659,16 +659,10 @@ namespace NachoClient.AndroidClient
 
         void DeadlinesView_Click ()
         {
-            var folder = McFolder.GetDeadlineFakeFolder ();
-            var intent = DeadlineActivity.ShowDeadlineFolderIntent (owner.Activity, folder);
-            owner.StartActivity (intent);
         }
 
         void DeferredView_Click ()
-        {
-            var folder = McFolder.GetDeferredFakeFolder ();
-            var intent = DeferredActivity.ShowDeferredFolderIntent (owner.Activity, folder);
-            owner.StartActivity (intent); 
+        { 
         }
 
         void InboxView_Click ()

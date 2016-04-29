@@ -362,15 +362,33 @@ namespace NachoCore
             };
             UiThreadId = Thread.CurrentThread.ManagedThreadId;
 
-            // Maintain 'last time we entered background' time
-            StatusIndEvent += (object sender, EventArgs ea) => {
-                var siea = (StatusIndEventArgs)ea;
-                if (NcResult.SubKindEnum.Info_ExecutionContextChanged == siea.Status.SubKind) {
-                    if (ExecutionContextEnum.Background == ExecutionContext) {
-                        LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
-                    }
+            StatusIndEvent += StatusIndEventHandler;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                // Maintain 'last time we entered background' time
+                if (ExecutionContextEnum.Background == ExecutionContext) {
+                    LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
                 }
-            };
+                break;
+
+            case NcResult.SubKindEnum.Info_DaysToSyncChanged:
+                // check to see if the account is IMAP. We do this here, because it's possible to set the
+                // days to sync without the ProtoController having been set up and started, in which case
+                // we'd miss this signal and not be able to reset the state. Unlike AS, which tells the
+                // server how many days to sync, we manage that ourselves only when we ask for the
+                // list of UIDs for a folder (which happens only periodically and not often), so we need
+                // to trigger that re-fetching of the list ourselves.
+                if (null != siea.Account && siea.Account.AccountType == McAccount.AccountTypeEnum.IMAP_SMTP &&
+                    !BackEnd.Instance.AccountHasServices (siea.Account.Id)) {
+                    NachoCore.IMAP.ImapProtoControl.ResetDaysToSync (siea.Account.Id);
+                }
+                break;
+            }
         }
 
         private static volatile NcApplication instance;
@@ -441,7 +459,7 @@ namespace NachoCore
 
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
 
                 // Submit a support request, to make the chances even higher that this will be noticed and investigated.
                 var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
@@ -520,6 +538,7 @@ namespace NachoCore
         public void StopBasalServices ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
+            NcBrain.StopService ();
             BackEnd.Instance.Stop ();
 
             NcApplicationMonitor.Instance.Stop ();
@@ -539,7 +558,7 @@ namespace NachoCore
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
-        { 
+        {
             // Make sure the scheduled notifications are up to date.
             LocalNotificationManager.ScheduleNotifications ();
 
@@ -573,7 +592,6 @@ namespace NachoCore
             CrlMonitor.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
-                NcBrain.StopService ();
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
             }
@@ -719,6 +737,64 @@ namespace NachoCore
             InvokeStatusIndEvent (siea);
         }
 
+        /// <summary>
+        /// Make sure the app's default culture has a Gregorian calendar as its default calendar.  This method must
+        /// be called when the app is launched, before any threads are created.
+        /// </summary>
+        public static void GuaranteeGregorianCalendar ()
+        {
+            if (CultureInfo.CurrentCulture.Calendar is GregorianCalendar) {
+                // All is well
+                return;
+            }
+
+            // I could not find any cultures with a non-Gregorian default calendar and a Gregorian optional calendar.
+            // Since this code can't be tested, it is disabled.
+            #if false
+            // Does the current culture have a Gregorian calendar as an option?
+            foreach (var optionalCalendar in CultureInfo.CurrentCulture.OptionalCalendars) {
+                if (optionalCalendar is GregorianCalendar) {
+                    // CultureInfo.CurrentCulture is read-only, so things have to be cloned to make changes.
+                    Log.Warn (Log.LOG_LIFECYCLE, "Using calendar {0} instead of {1} for culture {2} ({3}).",
+                        optionalCalendar.ToString (), CultureInfo.CurrentCulture.Calendar.ToString (),
+                        CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName);
+                    var tweakedCulture = (CultureInfo)CultureInfo.CurrentCulture.Clone ();
+                    tweakedCulture.DateTimeFormat = (DateTimeFormatInfo)tweakedCulture.DateTimeFormat.Clone ();
+                    tweakedCulture.DateTimeFormat.Calendar = optionalCalendar;
+                    Thread.CurrentThread.CurrentCulture = tweakedCulture;
+                    CultureInfo.DefaultThreadCurrentCulture = tweakedCulture;
+                    return;
+                }
+            }
+            #endif
+
+            // Is there a culture with the same language that has a Gregorian calendar?
+            foreach (var culture in CultureInfo.GetCultures (CultureTypes.AllCultures)) {
+                if (culture.TwoLetterISOLanguageName == CultureInfo.CurrentCulture.TwoLetterISOLanguageName && culture.Calendar is GregorianCalendar) {
+                    Log.Warn (Log.LOG_LIFECYCLE, "Changing the culture from {0} ({1}) to {2} ({3}) because the latter has a Gregorian calendar.",
+                        CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName, culture.Name, culture.DisplayName);
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    CultureInfo.DefaultThreadCurrentCulture = culture;
+                    return;
+                }
+            }
+
+            // Fall back to English (United States)
+            try {
+                var enUS = CultureInfo.GetCultureInfo("en-US");
+                Log.Warn (Log.LOG_LIFECYCLE, "Changing the culture from {0} ({1}) to {2} ({3}) because the latter has a Gregorian calendar.",
+                    CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName, enUS.Name, enUS.DisplayName);
+                Thread.CurrentThread.CurrentCulture = enUS;
+                CultureInfo.DefaultThreadCurrentCulture = enUS;
+            } catch {
+                // "en-US" is not available.  Use the invariant culture.
+                Log.Warn (Log.LOG_LIFECYCLE, "Changing the culture from {0} ({1}) to the invariant culture because no suitable culture could be found.",
+                    CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName);
+                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            }
+        }
+
         #region IBackEndOwner
 
         public void CredReq (int accountId)
@@ -837,7 +913,7 @@ namespace NachoCore
                 return false;
             }
             if (new FileInfo (StartupLog).Length > 2) {
-                Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
+                Telemetry.Instance.FinalizeAll (); // close of all JSON files
                 return true;
             }
             return false;
@@ -884,7 +960,7 @@ namespace NachoCore
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
                     numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
-                    if ((0 == numTelemetryEvents) && (null == Telemetry.JsonFileTable.GetNextReadFile ())) {
+                    if ((0 == numTelemetryEvents) && !Telemetry.Instance.TelemetryPending ()) {
                         telemetryDone = true;
                     }
                 }

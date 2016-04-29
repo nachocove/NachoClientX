@@ -25,7 +25,7 @@ using MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, IBodyViewOwner
+    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, IBodyViewOwner, IEditEventViewOwner
     {
         // Model information
         protected McEvent e;
@@ -33,6 +33,9 @@ namespace NachoClient.iOS
         //protected McCalendar root;
         //protected McAbstrCalendarRoot c;
         //protected McAccount account;
+
+        UIView contentView;
+        UIScrollView scrollView;
 
         // UI elements
         protected UIView eventCardView;
@@ -81,14 +84,10 @@ namespace NachoClient.iOS
         protected UIGestureRecognizer.Token notesTapGestureRecognizerTapToken;
 
         // Helper objects
-        //protected bool isRecurring = false;
-        //protected bool isOrganizer = false;
-        //protected bool isAppointment = false;
         protected bool hasLocation = false;
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
-        //protected bool hasBeenEdited = false;
         protected bool attachmentsDrawerOpen = false;
         // Keep track of the user's Attend/Maybe/Decline choice, so we don't have to worry about
         // whether or not the database item is up to date.
@@ -158,9 +157,22 @@ namespace NachoClient.iOS
             { 10080, "1 week before" },
         };
 
+        public EventViewController () : base ()
+        {
+        }
+
         public EventViewController (IntPtr handle)
             : base (handle)
         {
+        }
+
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            base.ViewDidLoad ();
         }
 
         protected override void CreateViewHierarchy ()
@@ -790,63 +802,20 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowContact (McContact contact)
         {
-            if (segue.Identifier.Equals ("EventToEventAttendees")) {
-                var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, detail.Account, detail.SpecificItem.attendees, detail.SpecificItem,
-                    false, CalendarHelper.IsOrganizer (detail.SeriesItem.OrganizerEmail, detail.Account.EmailAddr),
-                    detail.IsRecurring);
-                return;
-            }
+            var vc = new ContactDetailViewController ();
+            vc.contact = contact;
+            NavigationController.PushViewController (vc, true);
+        }
 
-            if (segue.Identifier.Equals ("EventToAlert")) {
-                var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (detail.SpecificItem.HasReminder (), detail.SpecificItem.GetReminder ());
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    uint reminder;
-                    detail.SpecificItem.ReminderIsSet = dc.GetReminder (out reminder);
-                    if (detail.SpecificItem.ReminderIsSet) {
-                        detail.SpecificItem.Reminder = reminder;
-                    }
-                    SyncMeetingRequest ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToPhone")) {
-                // TODO I don't this this seque is possible.
-                var dc = (PhoneViewController)segue.DestinationViewController;
-                dc.SetPhone ("");
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    // TODO Do something with the phone number that is returned.
-                    // dc.GetPhone ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToNotes")) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToEditEvent")) {
-                var dc = (EditEventViewController)segue.DestinationViewController;
-                dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+        void ShowAttendees ()
+        {
+            var dc = new EventAttendeeViewController ();
+            dc.Setup (null, detail.Account, detail.SpecificItem.attendees, detail.SpecificItem,
+                false, CalendarHelper.IsOrganizer (detail.SeriesItem.OrganizerEmail, detail.Account.EmailAddr),
+                detail.IsRecurring);
+            NavigationController.PushViewController (dc, true);
         }
 
         protected void ShowNothing ()
@@ -1288,14 +1257,29 @@ namespace NachoClient.iOS
 
         private void AttendeeTapGestureRecognizerTap ()
         {
-            PerformSegue ("EventToEventAttendees", this);
+            ShowAttendees ();
         }
 
         private void AlertTapGestureRecognizerTap ()
         {
             if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                PerformSegue ("EventToAlert", this);
+                ShowAlert ();
             }
+        }
+
+        void ShowAlert ()
+        {
+            var dc = new AlertChooserViewController ();
+            dc.SetReminder (detail.SpecificItem.HasReminder (), detail.SpecificItem.GetReminder ());
+            dc.ViewDisappearing += (object s, EventArgs e) => {
+                uint reminder;
+                detail.SpecificItem.ReminderIsSet = dc.GetReminder (out reminder);
+                if (detail.SpecificItem.ReminderIsSet) {
+                    detail.SpecificItem.Reminder = reminder;
+                }
+                SyncMeetingRequest ();
+            };
+            NavigationController.PushViewController (dc, true);
         }
 
         private void OrganizerTapGestureRecognizerTap ()
@@ -1305,12 +1289,19 @@ namespace NachoClient.iOS
                 NcContactGleaner.GleanContacts (detail.SeriesItem.OrganizerEmail, detail.Account.Id, false);
                 contact = McContact.QueryByEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail).FirstOrDefault ();
             }
-            PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
+            ShowContact (contact);
         }
 
         private void NotesTapGestureRecognizerTap ()
         {
-            PerformSegue ("EventToNotes", this);
+            ShowNotes ();
+        }
+
+        void ShowNotes ()
+        {
+            var dc = new NotesViewController();
+            dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
+            NavigationController.PushViewController (dc, true);
         }
 
         /// <summary>
@@ -1366,7 +1357,17 @@ namespace NachoClient.iOS
         private void EditButtonClicked (object sender, EventArgs e)
         {
             detail.HasBeenEdited = true;
-            PerformSegue ("EventToEditEvent", this);
+            EditEvent ();
+        }
+
+        void EditEvent ()
+        {
+            var dc = new EditEventViewController ();
+            dc.SetOwner (this);
+            dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
+            var navigationController = new UINavigationController (dc);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         private void CancelMeetingButtonClicked (object sender, EventArgs args)
@@ -1396,7 +1397,7 @@ namespace NachoClient.iOS
 
         private void ExtraAttendeesTouchUpInside (object sender, EventArgs e)
         {
-            PerformSegue ("EventToEventAttendees", this);
+            ShowAttendees ();
         }
 
         private void AttachmentsOnSelected (McAttachment attachment)
@@ -1482,6 +1483,20 @@ namespace NachoClient.iOS
             composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
             composeViewController.Composer.InitialText = body;
             composeViewController.Present ();
+        }
+
+        #endregion
+
+        #region IEditEventViewOwner implementation
+
+        void IEditEventViewOwner.EventWasDeleted (EditEventViewController vc)
+        {
+            // At first glance, it looks like the views are dismissed in the wrong order.
+            // But by closing the event detail view first with no animation, the event
+            // editor view will transition directly to the calendar list view (or whatever
+            // the parent view is) without the user seeing the event detail view in between.
+            NavigationController.PopViewController (false);
+            vc.DismissViewController (true, null);
         }
 
         #endregion

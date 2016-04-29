@@ -460,6 +460,12 @@ namespace NachoCore.IMAP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
 
+        public static void ResetDaysToSync (int accountId)
+        {
+            // number of accounts and number of folders per account should be smallish, so no need to NcTask.Run this.
+            NcModel.Instance.Db.Execute ("UPDATE McFolder SET ImapNeedFullSync=1 WHERE AccountId=?", accountId);
+        }
+
         public void StatusIndEventHandler (Object sender, EventArgs ea)
         {
             var siea = (StatusIndEventArgs)ea;
@@ -469,6 +475,7 @@ namespace NachoCore.IMAP
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
                 if (!Cts.IsCancellationRequested) {
+                    ImapProtoControl.ResetDaysToSync (AccountId);
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
                 }
                 break;
@@ -693,6 +700,7 @@ namespace NachoCore.IMAP
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
+                    Log.Info (Log.LOG_IMAP, "DoExtraOrDont: nothing to do.");
                 } else {
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: starting extra request.");
                     var dummySm = new NcStateMachine ("IMAPPC:EXTRA", new ImapStateMachineContext ()) { 
@@ -745,9 +753,9 @@ namespace NachoCore.IMAP
                     // Leave State unchanged.
                     return;
                 }
-            }
+
             // If we got here, we decided that doing an extra request was a bad idea, ...
-            if (0 == ConcurrentExtraRequests) {
+            } else if (0 == ConcurrentExtraRequests) {
                 // ... and we are currently processing no extra requests. Only in this case will we 
                 // interrupt the base request, and only then if we are not already dealing with a "hot" request.
                 if ((uint)Lst.HotQOpW != Sm.State) {

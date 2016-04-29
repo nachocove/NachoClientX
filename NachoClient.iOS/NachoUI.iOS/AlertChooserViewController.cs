@@ -22,6 +22,10 @@ namespace NachoClient.iOS
         uint reminder;
         bool reminderIsSet;
 
+        public AlertChooserViewController () : base ()
+        {
+        }
+
         public AlertChooserViewController (IntPtr handle) : base (handle)
         {
         }

@@ -49,12 +49,6 @@ namespace NachoClient.iOS
             if (Account != null) {
                 Service = Account.AccountService;
                 emailField.Text = Account.EmailAddr;
-                var creds = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
-                try {
-                    passwordField.Text = creds.GetPassword ();
-                } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_UI, "KeychainItemNotFoundException {0}", ex.Message);
-                }
             }
             passwordField.WeakDelegate = this;
             accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
@@ -196,8 +190,7 @@ namespace NachoClient.iOS
         partial void Support (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController showing support");
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = (SupportViewController)storyboard.InstantiateViewController ("SupportViewController");
+            var vc = new SupportViewController ();
             vc.HideNavTitle = false;
             NavigationController.PushViewController (vc, true);
         }

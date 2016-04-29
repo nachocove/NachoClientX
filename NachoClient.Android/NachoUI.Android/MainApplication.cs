@@ -3,22 +3,22 @@ using Android.App;
 using Android.Runtime;
 
 using NachoCore;
-using NachoCore.Model;
 using NachoCore.Utils;
 
 using System.Security.Cryptography.X509Certificates;
 using NachoPlatform;
-using Android.App.Backup;
 using Android.Content;
 using System.IO;
 using System.Threading;
-using Android.OS;
 using NachoClient.Build;
 using System.Threading.Tasks;
 
 namespace NachoClient.AndroidClient
 {
-    // DO NOT PUT THE [Application ...] tag here. It'll mess up unit tests. Edit Properties/AndroidManifest.xml directly (yuck)
+#if !DEBUG
+    // DO NOT PUT THE [Application ...] tag here when running unit tests.
+    [Application (AllowBackup = true, BackupAgent = typeof(NcBackupAgentHelper), RestoreAnyVersion = true)]
+#endif
     public class MainApplication : Application
     {
         /// <summary>
@@ -42,6 +42,7 @@ namespace NachoClient.AndroidClient
             _instance = this;
             Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
             LifecycleSpy.SharedInstance.Init (this);
+            MdmConfig.Instance.ExtractValues ();
             CopyAssetsToDocuments ();
             OneTimeStartup ("MainApplication");
         }
@@ -67,6 +68,8 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: {0}", caller);
 
+            NcApplication.GuaranteeGregorianCalendar ();
+
             // This creates the NcApplication object
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
 
@@ -75,7 +78,7 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.AppStartupTasks ();
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
                 Calendars.Instance.DeviceCalendarChanged ();
             };
 

@@ -31,6 +31,10 @@ namespace NachoClient.iOS
         {
         }
 
+        public NotificationChooserViewController () : base ()
+        {
+        }
+
         public void Setup (AccountSettingsViewController owner, int accountId, McAccount.NotificationConfigurationEnum value)
         {
             this.owner = owner;
