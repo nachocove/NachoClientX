@@ -8,8 +8,6 @@ using MailKit;
 using System.IO;
 using System.Net.Sockets;
 using NachoCore.Model;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 
 namespace NachoCore.IMAP
 {

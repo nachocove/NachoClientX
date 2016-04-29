@@ -12,8 +12,6 @@ using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
 using NachoPlatform;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 
 namespace NachoCore.ActiveSync
 {
