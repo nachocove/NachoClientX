@@ -182,16 +182,13 @@ namespace NachoCore.Model
 
         public void UpdateMessageFlag ()
         {
-            var thread = new McEmailMessageThread ();
-            thread.FirstMessageId = EmailMessageId;
-            thread.MessageCount = 1;
             if (IsDeferred) {
-                NcMessageDeferral.DeferThread (thread, DeferralType, DeferUntilDate);
+                NcMessageDeferral.DeferMessage (Message, DeferralType, DeferUntilDate);
             } else if (DueDate != default(DateTime)) {
-                NcMessageDeferral.SetDueDate (thread, DueDate);
+                NcMessageDeferral.SetDueDate (Message, DueDate);
             } else {
                 // works for defer or due date clearing
-                NcMessageDeferral.UndeferThread (thread);
+                NcMessageDeferral.UndeferMessage (Message);
                 // TODO: set a "task" flag without dates?  Backend seems to want dates
             }
         }

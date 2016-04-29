@@ -17,6 +17,7 @@ namespace NachoClient.iOS
                 if (_CheckView == null) {
                     using (var image = UIImage.FromBundle ("action-checkmark")) {
                         _CheckView = new UIImageView (image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
+                        _CheckView.TintColor = TintColor;
                         AddSubview (_CheckView);
                     }
                 }
@@ -65,7 +66,9 @@ namespace NachoClient.iOS
         public override void TintColorDidChange ()
         {
             BoxView.Layer.BorderColor = TintColor.CGColor;
-            CheckView.TintColor = TintColor;
+            if (_CheckView != null) {
+                _CheckView.TintColor = TintColor;
+            }
         }
 
         public override void LayoutSubviews ()

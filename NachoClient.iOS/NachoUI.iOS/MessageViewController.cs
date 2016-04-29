@@ -21,7 +21,7 @@ using SafariServices;
 namespace NachoClient.iOS
 {
 
-    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate
+    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate
     {
         
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
@@ -29,6 +29,7 @@ namespace NachoClient.iOS
         #region Properties
 
         McEmailMessage _Message;
+        McAction Action;
         public McEmailMessage Message {
             get {
                 return _Message;
@@ -36,6 +37,9 @@ namespace NachoClient.iOS
             set {
                 _Message = value;
                 Attachments = McAttachment.QueryByItem (_Message);
+                if (Message.IsAction) {
+                    Action = McAction.ActionForMessage (_Message);
+                }
                 if (_Message.BodyId != 0) {
                     Bundle = new NcEmailMessageBundle (Message);
                 } else {
@@ -50,6 +54,7 @@ namespace NachoClient.iOS
         CompoundScrollView ScrollView;
         MessageHeaderView HeaderView;
         AttachmentsView AttachmentsView;
+        MessageActionHeaderView ActionView;
         BodyCalendarView CalendarView;
         UIWebView BodyView;
         MessageToolbar MessageToolbar;
@@ -57,6 +62,7 @@ namespace NachoClient.iOS
         NcTimer ActivityShowTimer;
         MessageDownloader BodyDownloader;
         PressGestureRecognizer HeaderPressRecognizer;
+        PressGestureRecognizer ActionPressRecognizer;
         UILabel _ErrorLabel;
         UILabel ErrorLabel {
             get {
@@ -150,6 +156,15 @@ namespace NachoClient.iOS
             AttachmentsView.Delegate = this;
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
+            if (Action != null) {
+                ActionView = new MessageActionHeaderView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 44.0f));
+                ActionView.Action = Action;
+                ActionPressRecognizer = new PressGestureRecognizer (ActionPressed);
+                ActionPressRecognizer.IsCanceledByPanning = true;
+                ActionPressRecognizer.DelaysStart = true;
+                ActionView.AddGestureRecognizer (ActionPressRecognizer);
+            }
+
             if (Message.MeetingRequest != null) {
                 CalendarView = new BodyCalendarView (0.0f, ScrollView.Bounds.Width, Message, false, RemoveCalendarView, OpenUrl, new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f), UIColor.White.ColorDarkenedByAmount (0.15f));
             }
@@ -162,6 +177,9 @@ namespace NachoClient.iOS
 
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (AttachmentsView);
+            if (ActionView != null) {
+                ScrollView.AddCompoundView (ActionView);
+            }
             if (CalendarView != null) {
                 ScrollView.AddCompoundView (CalendarView);
             }
@@ -212,6 +230,9 @@ namespace NachoClient.iOS
 
             if (HeaderView.Selected) {
                 HeaderView.SetSelected (false, animated: true);
+            }
+            if (ActionView != null && ActionView.Selected) {
+                ActionView.SetSelected (false, animated: true);
             }
         }
 
@@ -275,6 +296,13 @@ namespace NachoClient.iOS
             AttachmentsView.Delegate = null;
             AttachmentsView.Cleanup ();
 
+            // clean up action view
+            if (ActionView != null) {
+                ActionView.RemoveGestureRecognizer (ActionPressRecognizer);
+                ActionPressRecognizer = null;
+                ActionView.Cleanup ();
+            }
+
             // clean up the calendar
             if (CalendarView != null) {
                 CalendarView.Cleanup ();
@@ -335,6 +363,22 @@ namespace NachoClient.iOS
                 HeaderView.SetSelected (false, animated: true);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Cancelled) {
                 HeaderView.SetSelected (false, animated: false);
+            }
+        }
+
+        void ActionPressed ()
+        {
+            if (ActionPressRecognizer.State == UIGestureRecognizerState.Began) {
+                ActionView.SetSelected (true, animated: false);
+            } else if (ActionPressRecognizer.State == UIGestureRecognizerState.Ended) {
+                ActionView.SetSelected (true, animated: false);
+                ShowAction ();
+            }else if (ActionPressRecognizer.State == UIGestureRecognizerState.Changed) {
+                ActionView.SetSelected (ActionPressRecognizer.IsInsideView, animated: false);
+            } else if (ActionPressRecognizer.State == UIGestureRecognizerState.Failed) {
+                ActionView.SetSelected (false, animated: true);
+            } else if (ActionPressRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                ActionView.SetSelected (false, animated: false);
             }
         }
 
@@ -712,6 +756,25 @@ namespace NachoClient.iOS
                 ScrollView.AddCompoundView (PreviewLabel);
             }
             LayoutScrollView ();
+        }
+
+        void ShowAction ()
+        {
+            var viewController = new ActionEditViewController ();
+            viewController.Action = Action;
+            viewController.Delegate = this;
+            viewController.PresentOverViewController (this);
+        }
+
+        public void ActionEditViewDidSave (ActionEditViewController viewController)
+        {
+            Action = McAction.ActionForMessage (_Message);
+            ActionView.Action = Action;
+        }
+
+        public void ActionEditViewDidDismiss (ActionEditViewController viewController)
+        {
+            viewController.Delegate = null;
         }
 
         #endregion

@@ -11,6 +11,12 @@ using Foundation;
 
 namespace NachoClient.iOS
 {
+
+    public interface ActionEditViewDelegate {
+        void ActionEditViewDidSave (ActionEditViewController viewController);
+        void ActionEditViewDidDismiss (ActionEditViewController viewController);
+    }
+
     public class ActionEditViewController : NachoTableViewController, EditableTextCellDelegate
     {
 
@@ -19,6 +25,7 @@ namespace NachoClient.iOS
         const string StateCellIdentifier = "StateCellIdentifier";
         const string DeferCellIdentifier = "DeferCellIdentifier";
 
+        public ActionEditViewDelegate Delegate;
         public McAction Action;
 
         UIBarButtonItem SaveButton;
@@ -31,6 +38,8 @@ namespace NachoClient.iOS
         int NameRowTitle = 0;
         int NameRowDescription = 1;
         int NameRowDue = 2;
+
+        bool HasAppearedOnce = false;
 
         ActionTitleCell TitleCell;
         EditableTextCell DescriptionCell;
@@ -144,8 +153,11 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            TitleCell.TextView.BecomeFirstResponder ();
-            TitleCell.TextView.SelectAll (null);
+            if (!HasAppearedOnce && Action.Id == 0) {
+                TitleCell.TextView.BecomeFirstResponder ();
+                TitleCell.TextView.SelectAll (null);
+            }
+            HasAppearedOnce = true;
         }
 
         public override void ViewDidAppear (bool animated)
@@ -425,6 +437,9 @@ namespace NachoClient.iOS
 
         void FinishSave ()
         {
+            if (Delegate != null) {
+                Delegate.ActionEditViewDidSave (this);
+            }
             Dismiss ();
         }
 
@@ -432,7 +447,11 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (NavigationController.ViewControllers [0] == this) {
-                DismissViewController (true, null);
+                DismissViewController (true, () => {
+                    if (Delegate != null) {
+                        Delegate.ActionEditViewDidDismiss (this);
+                    }
+                });
             } else {
                 NavigationController.PopViewController (true);
             }

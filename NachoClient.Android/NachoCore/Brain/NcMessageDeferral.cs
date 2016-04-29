@@ -28,19 +28,25 @@ namespace NachoCore.Brain
             Deadline,
         }
 
+        static public NcResult DeferMessage (McEmailMessage message, MessageDeferralType deferralType, DateTime deferUntil)
+        {
+            message.UpdateWithOCApply<McEmailMessage> ((item) => {
+                var em = (McEmailMessage)item;
+                em.DeferralType = deferralType;
+                return true;
+            });
+            var utc = deferUntil;
+            var local = deferUntil.LocalT ();
+            BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
+            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            return NcResult.OK ();
+        }
+
         static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
         {
             foreach (var message in thread) {
                 if (null != message) {
-                    message.UpdateWithOCApply<McEmailMessage> ((item) => {
-                        var em = (McEmailMessage)item;
-                        em.DeferralType = deferralType;
-                        return true;
-                    });
-                    var utc = deferUntil;
-                    var local = deferUntil.LocalT ();
-                    BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
-                    NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                    DeferMessage (message, deferralType, deferUntil);
                 }
             }
             return NcResult.OK ();
@@ -84,13 +90,19 @@ namespace NachoCore.Brain
             return ClearMessageThreadFlags (thread);
         }
 
+        static public NcResult SetDueDate (McEmailMessage message, DateTime dueOn)
+        {
+            var start = DateTime.UtcNow;
+            BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
+            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            return NcResult.OK ();
+        }
+
         static public NcResult SetDueDate (McEmailMessageThread thread, DateTime dueOn)
         {
             foreach (var message in thread) {
                 if (null != message) {
-                    var start = DateTime.UtcNow;
-                    BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
-                    NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                    SetDueDate (message, dueOn);
                 }
             }
             return NcResult.OK ();
