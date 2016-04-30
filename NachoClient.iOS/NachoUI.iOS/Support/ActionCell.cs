@@ -254,6 +254,18 @@ namespace NachoClient.iOS
             });
         }
 
+        public override void SwipeViewWillBeginShowingActions (SwipeActionsView view)
+        {
+            base.SwipeViewWillBeginShowingActions (view);
+            CheckboxView.Enabled = false;
+        }
+
+        public override void SwipeViewDidEndShowingActions (SwipeActionsView view)
+        {
+            base.SwipeViewDidEndShowingActions (view);
+            CheckboxView.Enabled = true;
+        }
+
     }
 }
 

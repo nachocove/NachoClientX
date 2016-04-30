@@ -188,6 +188,7 @@ namespace NachoCore.Model
         {
             State = ActionState.Deferred;
             DeferralType = type;
+            MoveToFront ();
         }
 
         public void Undefer ()

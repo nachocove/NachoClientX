@@ -134,10 +134,10 @@ namespace NachoClient.iOS
             return State != SwipeActionViewState.Normal; 
         }
 
-        public void EndEditing ()
+        public void EndEditing (bool animated = true)
         {
             if (State != SwipeActionViewState.Normal) {
-                HideActions ();
+                HideActions (animated);
             }
         }
 
@@ -449,20 +449,25 @@ namespace NachoClient.iOS
 
         #region Managing Actions
 
-        void HideActions ()
+        void HideActions (bool animated = true)
         {
             ActionRevealPercentage = 0.0f;
             SetNeedsLayout ();
-            UIView.Animate (0.25f, () => {
-                LayoutIfNeeded ();
-            }, () => {
+            if (animated) {
+                UIView.Animate (0.25f, () => {
+                    LayoutIfNeeded ();
+                }, () => {
+                    State = SwipeActionViewState.Normal;
+                    Delegate.SwipeViewDidEndShowingActions (this);
+                    PanGestureRecognizer.Enabled = true;
+                    TapGestureRecognizer.Enabled = true;
+                });
+                PanGestureRecognizer.Enabled = false;
+                TapGestureRecognizer.Enabled = false;
+            } else {
                 State = SwipeActionViewState.Normal;
                 Delegate.SwipeViewDidEndShowingActions (this);
-                PanGestureRecognizer.Enabled = true;
-                TapGestureRecognizer.Enabled = true;
-            });
-            PanGestureRecognizer.Enabled = false;
-            TapGestureRecognizer.Enabled = false;
+            }
         }
 
         void ConfigureActions (List<SwipeAction> actions, SwipeActionViewState forState)

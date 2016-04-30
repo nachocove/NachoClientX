@@ -181,6 +181,7 @@ namespace NachoClient.iOS
 
         void MarkActionAsHot (NSIndexPath indexPath)
         {
+            DidEndSwiping (TableView, indexPath);
             var action = Actions.ActionAt (indexPath.Row);
             // TODO: run in serial task queue
             if (!action.IsHot) {
@@ -191,6 +192,7 @@ namespace NachoClient.iOS
 
         void MarkActionAsUnhot (NSIndexPath indexPath)
         {
+            DidEndSwiping (TableView, indexPath);
             var action = Actions.ActionAt (indexPath.Row);
             // TODO: run in serial task queue
             if (action.IsHot) {
@@ -202,6 +204,26 @@ namespace NachoClient.iOS
         void DeferAction (NSIndexPath indexPath)
         {
             var action = Actions.ActionAt (indexPath.Row);
+            var alertController = UIAlertController.Create ("", "Defer until...", UIAlertControllerStyle.ActionSheet);
+            alertController.AddAction (UIAlertAction.Create ("An Hour From Now", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.OneHour); }));
+            alertController.AddAction (UIAlertAction.Create ("Tonight", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tonight); }));
+            alertController.AddAction (UIAlertAction.Create ("Tomorrow Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tomorrow); }));
+            alertController.AddAction (UIAlertAction.Create ("Monday Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.NextWeek); }));
+            alertController.AddAction (UIAlertAction.Create ("Saturday Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Weekend); }));
+            alertController.AddAction (UIAlertAction.Create ("Other...", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferActionByEditing(action); }));
+            alertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, null));
+            PresentViewController (alertController, true, null);
+        }
+
+        void DeferAction (McAction action, MessageDeferralType type)
+        {
+            // TODO: move to serial task
+            action.Defer (type);
+            NotifyActionsChanged (action);
+        }
+
+        void DeferActionByEditing (McAction action)
+        {
             var editedCopy = McAction.QueryById<McAction> (action.Id);
             editedCopy.State = McAction.ActionState.Deferred;
             EditAction (editedCopy);

@@ -79,6 +79,8 @@ namespace NachoClient.iOS
             }
         }
 
+        bool IsPreparingForReuse;
+
         #endregion
 
         #region UITableViewCell Property Overrides
@@ -311,6 +313,14 @@ namespace NachoClient.iOS
         #endregion
 
         #region State Management
+
+        public override void PrepareForReuse ()
+        {
+            base.PrepareForReuse ();
+            IsPreparingForReuse = true;
+            SwipeView.EndEditing (animated: false);
+            IsPreparingForReuse = false;
+        }
 
         public override void WillTransitionToState (UITableViewCellState mask)
         {
@@ -676,7 +686,7 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public void SwipeViewWillBeginShowingActions (SwipeActionsView view)
+        public virtual void SwipeViewWillBeginShowingActions (SwipeActionsView view)
         {
             if (TableViewDelegate != null) {
                 var indexPath = TableView.IndexPathForCell (this);
@@ -684,12 +694,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SwipeViewDidEndShowingActions (SwipeActionsView view)
+        public virtual void SwipeViewDidEndShowingActions (SwipeActionsView view)
         {
-            if (TableViewDelegate != null) {
-                var indexPath = TableView.IndexPathForCell (this);
-                if (indexPath != null) {
-                    TableViewDelegate.DidEndSwiping (TableView, indexPath);
+            if (!IsPreparingForReuse) {
+                if (TableViewDelegate != null) {
+                    var indexPath = TableView.IndexPathForCell (this);
+                    if (indexPath != null) {
+                        TableViewDelegate.DidEndSwiping (TableView, indexPath);
+                    }
                 }
             }
         }
