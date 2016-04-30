@@ -218,6 +218,7 @@ namespace NachoClient.iOS
                     EmailHelper.MarkAsRead (Message);
                 }
             }
+            UpdateNavigationItem ();
         }
 
         public override void ViewWillAppear (bool animated)

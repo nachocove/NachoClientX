@@ -231,7 +231,7 @@ namespace NachoClient.iOS
             RefreshLabel.Alpha = 0.0f;
         }
 
-        void ReconfigureGroupedRows ()
+        protected void ReconfigureGroupedRows ()
         {
             if (TableView.Style == UITableViewStyle.Grouped) {
                 foreach (var indexPath in TableView.IndexPathsForVisibleRows) {

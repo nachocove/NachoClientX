@@ -600,6 +600,7 @@ namespace NachoClient.iOS
                 }
 
                 UpdateVisibleRows ();
+                ReconfigureGroupedRows ();
             }
             EmptyView.Hidden = HotMessages.Count () > 0 || HotActions.Count () > 0;
         }
