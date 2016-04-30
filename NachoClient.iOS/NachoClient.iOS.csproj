@@ -1681,6 +1681,18 @@
     <Compile Include="NachoUI.iOS\Support\NameValueCell.cs" />
     <Compile Include="NachoUI.iOS\MessageRawBodyViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageMimePartViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoActions.cs">
+      <Link>NachoCore\Adapters\NachoActions.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAction.cs">
+      <Link>NachoCore\Model\McAction.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\ActionCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\ActionCheckboxView.cs" />
+    <Compile Include="NachoUI.iOS\ActionEditViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\EditableTextCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageActionHeaderView.cs" />
+    <Compile Include="NachoUI.iOS\ActionListViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2753,6 +2765,15 @@
     <BundleResource Include="Resources\email-unread-swipe.png" />
     <BundleResource Include="Resources\email-unread-swipe%402x.png" />
     <BundleResource Include="Resources\email-unread-swipe%403x.png" />
+    <BundleResource Include="Resources\action-checkmark.png" />
+    <BundleResource Include="Resources\action-checkmark%402x.png" />
+    <BundleResource Include="Resources\action-checkmark%403x.png" />
+    <BundleResource Include="Resources\email-action-swipe.png" />
+    <BundleResource Include="Resources\email-action-swipe%402x.png" />
+    <BundleResource Include="Resources\email-action-swipe%403x.png" />
+    <BundleResource Include="Resources\email-not-action-swipe.png" />
+    <BundleResource Include="Resources\email-not-action-swipe%402x.png" />
+    <BundleResource Include="Resources\email-not-action-swipe%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

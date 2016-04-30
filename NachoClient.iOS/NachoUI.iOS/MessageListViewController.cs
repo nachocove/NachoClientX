@@ -71,13 +71,9 @@ namespace NachoClient.iOS
 
             AutomaticallyAdjustsScrollViewInsets = false;
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
-            using (var image = UIImage.FromBundle ("contact-newemail")) {
-                NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
-            }
-            using (var image = UIImage.FromBundle ("folder-edit")) {
-                EditTableButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, EditTable);
-                EditTableButton.AccessibilityLabel = "Folder edit";
-            }
+            NewMessageButton = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewMessage);
+            EditTableButton = new UIBarButtonItem ("Edit", UIBarButtonItemStyle.Plain, EditTable);
+            EditTableButton.AccessibilityLabel = "Folder edit";
             CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
             DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
 
@@ -158,6 +154,30 @@ namespace NachoClient.iOS
             SyncManager.PauseEvents ();
             StopListeningForStatusInd ();
             base.ViewDidDisappear (animated);
+        }
+
+        protected override void Cleanup ()
+        {
+            // Clean up nav bar
+            SearchButton.Clicked -= ShowSearch;
+            NewMessageButton.Clicked -= NewMessage;
+            EditTableButton.Clicked -= EditTable;
+            CancelEditingButton.Clicked -= CancelEditingTable;
+            DoneSwipingButton.Clicked -= EndSwiping;
+
+            // Clean up filterbar
+            FilterBar.Cleanup ();
+
+            // Clean up sync manager
+            SyncManager.Delegate = null;
+
+            // Clean up search
+            if (SearchController != null) {
+                SearchController.Delegate = null;
+            }
+            SearchResultsViewController = null;
+            
+            base.Cleanup ();
         }
 
         #endregion
@@ -409,6 +429,14 @@ namespace NachoClient.iOS
             PresentViewController (alertView, true, null);
         }
 
+        void MakeAction (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            var viewController = new ActionEditViewController ();
+            viewController.Action = McAction.FromMessage (message);
+            viewController.PresentOverViewController (this);
+        }
+
         void MarkSelectedMessagesAsRead (UIAlertAction action)
         {
             // TODO:
@@ -633,6 +661,7 @@ namespace NachoClient.iOS
                     } else {
                         actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
                     }
+                    actions.Add (new SwipeTableRowAction ("Action", UIImage.FromBundle ("email-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), MakeAction));
                 }
                 return actions;
             }
@@ -923,7 +952,9 @@ namespace NachoClient.iOS
             MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
             if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
                 ToolbarItems = new UIBarButtonItem[] {
-                    DeleteButton
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    DeleteButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace)
                 };
             } else {
                 ToolbarItems = new UIBarButtonItem[] {

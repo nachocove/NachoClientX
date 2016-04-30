@@ -20,7 +20,7 @@ namespace NachoClient.iOS
 
         private const string MessageAddressCellIdentifier = "MessageAddressCellIdentifier";
         private const string NameValueCellIdentifier = "NameValueCellIdentifier";
-        private const string ActionCellIdentifier = "ActionCellIdentifier";
+        private const string ButtonCellIdentifier = "ButtonCellIdentifier";
 
         private McEmailMessage _Message;
         public McEmailMessage Message {
@@ -93,7 +93,7 @@ namespace NachoClient.iOS
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof(MessageAddressCell), MessageAddressCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(NameValueCell), NameValueCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof(ButtonCell), ButtonCellIdentifier);
         }
 
         public override void ViewDidLoad ()
@@ -238,12 +238,12 @@ namespace NachoClient.iOS
                     }
                     return cell;
                 } else if (indexPath.Row == DebugDeleteBodyRow) {
-                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+                    var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
                     cell.TextLabel.Text = "Delete Body File";
                     cell.TextLabel.TextColor = A.Color_NachoRed;
                     return cell;
                 } else if (indexPath.Row == DebugDeleteMessageRow) {
-                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+                    var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
                     cell.TextLabel.Text = "Delete Message From DB";
                     cell.TextLabel.TextColor = A.Color_NachoRed;
                     return cell;
@@ -510,12 +510,12 @@ namespace NachoClient.iOS
 
         #region Cells
 
-        private class ActionCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
-            public ActionCell (IntPtr handle) : base (handle)
+            public ButtonCell (IntPtr handle) : base (handle)
             {
                 TextLabel.Font = A.Font_AvenirNextRegular14;
                 TextLabel.TextColor = A.Color_NachoGreen;

@@ -71,10 +71,8 @@ namespace NachoClient.iOS
 
             AddSubview (SwipeView);
 
-            using (var image = UIImage.FromBundle ("nav-calendar-active").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
-                IconView = new UIImageView (image);
-                IconView.Frame = new CGRect (0.0f, 0.0f, IconSize, IconSize);
-            }
+            IconView = new UIImageView (UIImage.FromBundle ("nav-calendar-active").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
+            IconView.Frame = new CGRect (0.0f, 0.0f, IconSize, IconSize);
             ContentView.AddSubview (IconView);
 
             EmptyLabel = new UILabel (Bounds);

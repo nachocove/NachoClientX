@@ -192,6 +192,7 @@ namespace NachoCore.Utils
             Info_ChatMessageAdded,
             Info_EmailMessageMarkedAnsweredSucceeded,
             Error_EmailMessageMarkedAnsweredFailed,
+            Info_ActionSetChanged
         };
 
         public enum WhyEnum

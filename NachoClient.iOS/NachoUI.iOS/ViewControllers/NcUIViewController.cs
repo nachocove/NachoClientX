@@ -88,7 +88,7 @@ namespace NachoClient.iOS
         {
         }
 
-        protected bool ShouldCleanupDuringDidDisappear
+        protected virtual bool ShouldCleanupDuringDidDisappear
         {
             get {
                 return IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);

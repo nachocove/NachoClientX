@@ -79,6 +79,8 @@ namespace NachoClient.iOS
             }
         }
 
+        bool IsPreparingForReuse;
+
         #endregion
 
         #region UITableViewCell Property Overrides
@@ -149,7 +151,7 @@ namespace NachoClient.iOS
 
         #region Helper Properties
 
-        private UITableView TableView {
+        protected UITableView TableView {
             get {
                 if (Superview == null) {
                     return null;
@@ -195,6 +197,11 @@ namespace NachoClient.iOS
             Initialize ();
         }
 
+        public SwipeTableViewCell () : base (UITableViewCellStyle.Default, null)
+        {
+            Initialize ();
+        }
+
         void Initialize ()
         {
             SelectedBackgroundView = new UIView ();
@@ -207,6 +214,16 @@ namespace NachoClient.iOS
             ContentView.BackgroundColor = UIColor.White;
             base.ContentView.AddSubview (SwipeView);
             SwipeView.ContentView.AddSubview (ContentView);
+        }
+
+        #endregion
+
+        #region Cleanup
+
+        public virtual void Cleanup ()
+        {
+            SwipeView.Delegate = null;
+            SwipeView.Cleanup ();
         }
 
         #endregion
@@ -296,6 +313,14 @@ namespace NachoClient.iOS
         #endregion
 
         #region State Management
+
+        public override void PrepareForReuse ()
+        {
+            base.PrepareForReuse ();
+            IsPreparingForReuse = true;
+            SwipeView.EndEditing (animated: false);
+            IsPreparingForReuse = false;
+        }
 
         public override void WillTransitionToState (UITableViewCellState mask)
         {
@@ -661,7 +686,7 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public void SwipeViewWillBeginShowingActions (SwipeActionsView view)
+        public virtual void SwipeViewWillBeginShowingActions (SwipeActionsView view)
         {
             if (TableViewDelegate != null) {
                 var indexPath = TableView.IndexPathForCell (this);
@@ -669,12 +694,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SwipeViewDidEndShowingActions (SwipeActionsView view)
+        public virtual void SwipeViewDidEndShowingActions (SwipeActionsView view)
         {
-            if (TableViewDelegate != null) {
-                var indexPath = TableView.IndexPathForCell (this);
-                if (indexPath != null) {
-                    TableViewDelegate.DidEndSwiping (TableView, indexPath);
+            if (!IsPreparingForReuse) {
+                if (TableViewDelegate != null) {
+                    var indexPath = TableView.IndexPathForCell (this);
+                    if (indexPath != null) {
+                        TableViewDelegate.DidEndSwiping (TableView, indexPath);
+                    }
                 }
             }
         }
