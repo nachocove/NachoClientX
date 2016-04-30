@@ -502,25 +502,60 @@ namespace NachoClient.AndroidClient
             ShowCredentialsError ("We were unable to verify your information because your device is offline.  Please try again when your device is online");
         }
 
+        /// <summary>
+        /// Get the server errors for this account (if any), and format them into a string for the user.
+        /// TODO: Note that this is mostly an example function with minimal user-readability. We could add
+        /// a switch to create a better string from serverErrors[server].SslPolicyError, for example,
+        /// and could provide an 'advanced' or 'more info' section int he UI where we outline more
+        /// stuff (for example from serverErrors[server].Chain or serverErrors[server].Cert) to help the
+        /// user in some useful way.
+        /// </summary>
+        /// <returns>The server errors.</returns>
+        string getServerErrors ()
+        {
+            string serverErrorsTxt = "";
+            var serverErrors = ServerCertificatePeek.ServerErrors (Account.Id);
+            if (serverErrors.Count > 0) {
+                foreach (var server in serverErrors.Keys) {
+                    serverErrorsTxt += string.Format ("{0}: {1}", server, serverErrors[server].SslPolicyError);
+                }
+            }
+            return serverErrorsTxt;
+        }
+
         private void HandleServerError ()
         {
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
+            var serverErrors = getServerErrors ();
             if (service == McAccount.AccountServiceEnum.GoogleExchange || service == McAccount.AccountServiceEnum.Office365Exchange) {
+                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
+                if (!string.IsNullOrWhiteSpace (serverErrors)) {
+                    errorText += string.Format ("  ({0})", serverErrors);
+                }
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for known exchange service {0}, not showing advanced", service);
-                ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
+                ShowCredentialsError (errorText);
             } else if (service == McAccount.AccountServiceEnum.Exchange || service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for service {0}, showing advanced", service);
+                string errorText = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                if (!string.IsNullOrWhiteSpace (serverErrors)) {
+                    errorText += string.Format ("  ({0})", serverErrors);
+                }
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
-                    statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                    statusLabel.Text = errorText;
                     ToggleAdvancedFields ();
                 } else {
-                    statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                    statusLabel.Text = errorText;
                 }
             } else {
+                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
+                if (!string.IsNullOrWhiteSpace (serverErrors)) {
+                    errorText += string.Format ("  ({0})", serverErrors);
+                }
+
                 Log.Info (Log.LOG_UI, "CredentialsFragment got unexpected ServerConfWait for service {0}", service);
-                ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
+                ShowCredentialsError (errorText);
             }
         }
 
