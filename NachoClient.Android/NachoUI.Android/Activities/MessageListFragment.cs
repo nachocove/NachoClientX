@@ -857,7 +857,7 @@ namespace NachoClient.AndroidClient
 
         public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
-            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+            NcMessageDeferral.DeferThread (thread, request, selectedDate);
         }
 
         public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
