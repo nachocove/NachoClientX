@@ -45,6 +45,8 @@ namespace NachoClient.iOS
         EditableTextCell DescriptionCell;
         SwipeTableViewCell DueDateCell;
 
+        DatePickerView DatePicker;
+
         class StateModel {
             public McAction.ActionState State;
             public string Name;
@@ -293,13 +295,7 @@ namespace NachoClient.iOS
                 } else if (indexPath.Row == NameRowDescription) {
                     return DescriptionCell;
                 } else if (indexPath.Row == NameRowDue) {
-                    if (Action.DueDate == default(DateTime)) {
-                        DueDateCell.TextLabel.Text = "Set a Due Date";
-                        DueDateCell.TextLabel.TextColor = DueDateCell.ContentView.BackgroundColor.ColorDarkenedByAmount (0.15f);
-                    } else {
-                        DueDateCell.TextLabel.Text = String.Format ("Due on {0}", Pretty.MediumFullDate (Action.DueDate));
-                        DueDateCell.TextLabel.TextColor = A.Color_NachoTextGray;
-                    }
+                    UpdateDueDateCell ();
                     return DueDateCell;
                 }
             } else if (indexPath.Section == StateSection) {
@@ -325,7 +321,7 @@ namespace NachoClient.iOS
                 cell.TextLabel.TextColor = A.Color_NachoGreen;
                 cell.TextLabel.Text = deferModel.Name;
                 if (deferModel.Type == MessageDeferralType.Custom) {
-                    if (Action.DeferUntilDate != default (DateTime)) {
+                    if (Action.DeferralType == MessageDeferralType.Custom && Action.DeferUntilDate != default (DateTime)) {
                         cell.ValueLabel.Text = Pretty.MediumFullDate (Action.DeferUntilDate);
                     } else {
                         cell.ValueLabel.Text = "";
@@ -373,7 +369,18 @@ namespace NachoClient.iOS
         {
             if (indexPath.Section == NameSection) {
                 if (indexPath.Row == NameRowDue) {
-                    // TODO: show date picker
+                    ShowDatePicker (Action.DueDate, (DateTime date) => {
+                        if (date == default(DateTime) && Action.DeferralType == MessageDeferralType.DueDate){
+                            Action.DeferralType = MessageDeferralType.Custom;
+                        }
+                        Action.DueDate = date;
+                        UpdateDueDateCell ();
+                        UpdateDeferals ();
+                        if (Action.IsDeferred){
+                            TableView.ReloadSections (NSIndexSet.FromIndex(DeferSection), UITableViewRowAnimation.None);
+                        }
+                    });
+                    TableView.DeselectRow (indexPath, true);
                 }
             } else if (indexPath.Section == StateSection) {
                 View.EndEditing (false);
@@ -393,19 +400,32 @@ namespace NachoClient.iOS
             } else if (indexPath.Section == DeferSection) {
                 View.EndEditing (false);
                 var deferModel = Deferrals [indexPath.Row];
-                if (Action.DeferralType == deferModel.Type) {
+                if (deferModel.Type == MessageDeferralType.Custom) {
+                    ShowDatePicker (Action.DeferUntilDate, (DateTime date) => {
+                        if (date == default(DateTime)){
+                            Action.DeferralType = MessageDeferralType.None;
+                        }else{
+                            Action.DeferralType = MessageDeferralType.Custom;
+                        }
+                        Action.DeferUntilDate = date;
+                        UpdateSectionCheckmark (NSIndexPath.FromRowSection (Deferrals.Length, indexPath.Section));
+                        TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
+                    });
+                }else if (Action.DeferralType == deferModel.Type) {
                     Action.DeferralType = MessageDeferralType.None;
                     Action.DeferUntilDate = default(DateTime);
                     UpdateSectionCheckmark (NSIndexPath.FromRowSection (Deferrals.Length, indexPath.Section));
-                } else if (deferModel.Type == MessageDeferralType.Custom) {
-                    // TODO: show date picker
                 } else {
+                    bool wasCustom = Action.DeferralType == MessageDeferralType.Custom;
                     Action.DeferralType = deferModel.Type;
                     var result = NachoCore.Brain.NcMessageDeferral.ComputeDeferral (DateTime.UtcNow, Action.DeferralType, Action.DueDate);
                     if (result.isOK ()) {
                         Action.DeferUntilDate = result.GetValue<DateTime> ();
                     }
                     UpdateSectionCheckmark (indexPath);
+                    if (wasCustom) {
+                        UpdateCustomDeferCell ();
+                    }
                 }
                 tableView.DeselectRow (indexPath, true);
             }
@@ -512,6 +532,64 @@ namespace NachoClient.iOS
                 TitleCell.CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
             } else {
                 TitleCell.CheckboxView.TintColor = A.Color_NachoGreen;
+            }
+        }
+
+        void ShowDatePicker (DateTime preselectedDate, Action<DateTime> picked)
+        {
+            NavigationItem.RightBarButtonItem = null;
+            View.EndEditing (true);
+            DatePicker = new DatePickerView (NavigationController.View.Bounds);
+            if (preselectedDate != default(DateTime)) {
+                DatePicker.Date = preselectedDate;
+            }
+            NavigationController.View.AddSubview (DatePicker);
+            DatePicker.LayoutIfNeeded ();
+            DatePicker.Picked = (DateTime date) => {
+                if (date != default(DateTime)){
+                    date = new DateTime (date.Year, date.Month, date.Day, 8, 0, 0, DateTimeKind.Local).ToUniversalTime ();
+                }
+                picked (date);
+                HideDueDatePicker ();
+            };
+            DatePicker.Canceled = () => {
+                HideDueDatePicker ();
+            };
+            DatePicker.Present ();
+        }
+
+        void HideDueDatePicker ()
+        {
+            DatePicker.Dismiss (() => {
+                DatePicker.RemoveFromSuperview ();
+                DatePicker.Picked = null;
+                DatePicker.Cleanup ();
+                DatePicker = null;
+                NavigationItem.RightBarButtonItem = SaveButton;
+            });
+        }
+
+        void UpdateDueDateCell ()
+        {
+            if (Action.DueDate == default(DateTime)) {
+                DueDateCell.TextLabel.Text = "Set a Due Date";
+                DueDateCell.TextLabel.TextColor = DueDateCell.ContentView.BackgroundColor.ColorDarkenedByAmount (0.15f);
+            } else {
+                DueDateCell.TextLabel.Text = String.Format ("Due on {0}", Pretty.MediumFullDate (Action.DueDate));
+                DueDateCell.TextLabel.TextColor = A.Color_NachoTextGray;
+            }
+        }
+
+        void UpdateCustomDeferCell ()
+        {
+            foreach (var indexPath in TableView.IndexPathsForVisibleRows){
+                if (indexPath.Section == DeferSection) {
+                    var deferModel = Deferrals[indexPath.Row];
+                    if (deferModel.Type == MessageDeferralType.Custom){
+                        TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
+                        break;
+                    }
+                }
             }
         }
 

@@ -4,6 +4,7 @@ using System;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -65,6 +66,7 @@ namespace NachoClient.iOS
 
             AddSubview (CheckboxView);
             AddSubview (TitleLabel);
+            AddSubview (DateLabel);
             AddSubview (BottomBorder);
         }
 
@@ -101,11 +103,14 @@ namespace NachoClient.iOS
                     }
                 }
                 TitleLabel.Text = _Action.Title;
-                if (_Action.IsDeferred) {
-                    DateLabel.Text = "Deferred";
-                } else if (!_Action.IsCompleted) {
-                    // DateLabel.Text = Pretty.Something ();
-                    DateLabel.Text = "";
+                if (!_Action.IsCompleted && _Action.DueDate != default(DateTime)) {
+                    if (_Action.DueDate > DateTime.UtcNow) {
+                        DateLabel.Text = "by " + Pretty.FutureDate (_Action.DueDate);
+                    } else {
+                        DateLabel.Text = "due " + Pretty.FutureDate (_Action.DueDate);
+                    }
+                }else if (_Action.IsDeferred) {
+                    DateLabel.Text = "Deferred"; 
                 } else {
                     DateLabel.Text = "";
                 }

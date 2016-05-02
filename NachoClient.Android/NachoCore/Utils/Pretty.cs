@@ -337,6 +337,29 @@ namespace NachoCore.Utils
             return ShortDate (dateTime);
         }
 
+        static public string FutureDate (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var localStartOfDay = local - local.TimeOfDay;
+            var now = DateTime.Now;
+            if (now.Year == local.Year && now.Month == local.Month && now.Day == local.Day) {
+                return "Today";
+            }
+            if (now < localStartOfDay) {
+                if (now + TimeSpan.FromDays (1) > localStartOfDay) {
+                    return "Tomorrow";
+                }
+                if (now + TimeSpan.FromDays (6) > localStartOfDay) {
+                    return local.ToString ("dddd");
+                }
+            } else {
+                if (local + TimeSpan.FromDays (1) > now - now.TimeOfDay) {
+                    return "Yesterday";
+                }
+            }
+            return ShortDate (dateTime);
+        }
+
         static public string EventTime (DateTime dateTime, out TimeSpan validSpan)
         {
             var local = dateTime.ToLocalTime ();
