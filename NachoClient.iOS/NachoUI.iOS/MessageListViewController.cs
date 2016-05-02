@@ -484,8 +484,10 @@ namespace NachoClient.iOS
         {
             Messages.ClearCache ();
             if (Messages.HasBackgroundRefresh ()) {
+                Log.Info (Log.LOG_UI, "MessageListViewController.Reload: using NachoEmailMessages background refresh");
                 Messages.BackgroundRefresh (HandleReloadResults);
             } else {
+                Log.Info (Log.LOG_UI, "MessageListViewController.Reload: simulating a background refresh because this NachoEmailMessages doesn't have one");
                 NcTask.Run (() => {
                     List<int> adds;
                     List<int> deletes;
@@ -499,6 +501,7 @@ namespace NachoClient.iOS
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
         {
+            Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes", changed, adds.Count, deletes.Count);
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
@@ -526,6 +529,7 @@ namespace NachoClient.iOS
         {
             var indexPaths = TableView.IndexPathsForVisibleRows;
             if (indexPaths != null) {
+                Log.Info (Log.LOG_UI, "MessageListViewController.UpdateVisibleRows: {0} visible rows", indexPaths.Length);
                 foreach (var indexPath in indexPaths) {
                     var message = Messages.GetCachedMessage (indexPath.Row);
                     var cell = TableView.CellAt (indexPath) as MessageCell;
@@ -533,6 +537,8 @@ namespace NachoClient.iOS
                         cell.SetMessage (message);
                     }
                 }
+            } else {
+                Log.Info (Log.LOG_UI, "MessageListViewController.UpdateVisibleRows: no visible rows");
             }
         }
 
@@ -725,6 +731,7 @@ namespace NachoClient.iOS
 
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     if (isVisible) {
                         Reload ();
                     }
@@ -734,12 +741,14 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     if (isVisible) {
                         UpdateVisibleRows ();
                     }
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
+                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     Messages.RefetchSyncTime ();
                     break;
                 }
