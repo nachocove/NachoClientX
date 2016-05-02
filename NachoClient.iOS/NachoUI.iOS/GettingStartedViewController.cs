@@ -65,7 +65,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             getStartedButton.Layer.CornerRadius = 6.0f;
-            Util.ConfigureNavBar (false, NavigationController);
         }
 
         public override void ViewWillAppear (bool animated)

@@ -92,8 +92,7 @@ namespace NachoCore.Utils
             "SyncCmd",
             "Telemetry",
             "UpdateUnreadMessageCount",
-            "UpdateUnreadMessageView",
-            "MessageListViewController_RefreshMessages"
+            "UpdateUnreadMessageView"
         };
 
         struct tracer

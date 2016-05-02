@@ -248,6 +248,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public void SetOwner (INachoFileChooserParent owner, McAccount account)
         {
             this.owner = owner;

@@ -133,8 +133,7 @@ namespace NachoCore.IMAP
         public SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending)
         {
             foreach (var folder in SyncFolderList (protocolState.ImapSyncRung, exeCtxt)) {
-                SyncKit syncKit = GenSyncKit (ref protocolState, folder, pending,
-                                      exeCtxt == NcApplication.ExecutionContextEnum.QuickSync);
+                SyncKit syncKit = GenSyncKit (ref protocolState, folder, pending, DoQuickSync);
                 if (null != syncKit) {
                     return syncKit;
                 }
@@ -150,7 +149,7 @@ namespace NachoCore.IMAP
             }
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (protocolState.AccountId, pending.ServerId);
-            return GenSyncKit (ref protocolState, folder, pending, true);
+            return GenSyncKit (ref protocolState, folder, pending, DoQuickSync);
         }
 
         /// <summary>
@@ -220,7 +219,7 @@ namespace NachoCore.IMAP
                         // try to ResolveAsSuccess an eligible pending (which leads to a crash).
                         pending = pending.MarkDispatched ();
                     }
-                    ResolveOneSync (BEContext, ref protocolState, folder, pending);
+                    ResolveOneSync (ref protocolState, folder, pending);
                 }
                 if (null == syncKit) {
                     // see if we can/should delete some older emails
@@ -292,7 +291,7 @@ namespace NachoCore.IMAP
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="span">Span</param>
         /// <param name = "hasPending">If the sync is a pull-to-refresh</param>
-        public static List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, uint span, bool hasPending)
+        public List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, uint span, bool hasPending)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -401,7 +400,7 @@ namespace NachoCore.IMAP
         /// <param name="folder">Folder.</param>
         /// <param name="protocolState">Protocol state.</param>
         /// <param name = "hasPending">If the sync is a pull-to-refresh</param>
-        public static List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, bool hasPending)
+        public List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, bool hasPending)
         {
             uint span = SpanSizeWithCommStatus (protocolState);
             return SyncInstructions (folder, ref protocolState, span, hasPending);
@@ -419,7 +418,7 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        public static UniqueIdRange FastSyncSet (uint uidNext, McFolder folder, uint span)
+        public UniqueIdRange FastSyncSet (uint uidNext, McFolder folder, uint span)
         {
             uint highest = uidNext > 1 ? uidNext - 1 : 0;
             if (highest <= 0) {
@@ -436,7 +435,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static void resetLastSyncPoint (ref McFolder folder)
+        public void resetLastSyncPoint (ref McFolder folder)
         {
             if (folder.ImapLastUidSynced != folder.ImapUidNext || folder.ImapNeedFullSync) {
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
@@ -476,7 +475,7 @@ namespace NachoCore.IMAP
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="Synckit">Synckit.</param>
         /// <param name="AccountId">Account identifier.</param>
-        public static bool FillInFastSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
+        public bool FillInFastSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
         {
             resetLastSyncPoint (ref Synckit.Folder);
             var startingPoint = Synckit.Folder.ImapUidNext;
@@ -485,6 +484,8 @@ namespace NachoCore.IMAP
             if (NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.QuickSync) {
                 Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
                 span -= (uint)Synckit.UploadMessages.Count;
+            } else {
+                 Synckit.UploadMessages = new List<NcEmailMessageIndex> ();
             }
             if (span > 0) {
                 var uidSet = SyncKit.MustUniqueIdSet (FastSyncSet (startingPoint, Synckit.Folder, span));
@@ -565,7 +566,7 @@ namespace NachoCore.IMAP
             return retUids;
         }
 
-        private static bool needFullSync (McFolder folder)
+        private bool needFullSync (McFolder folder)
         {
             bool needSync = false;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
@@ -577,7 +578,7 @@ namespace NachoCore.IMAP
             return needSync;
         }
 
-        private static bool HasNewMail (McFolder folder)
+        private bool HasNewMail (McFolder folder)
         {
             return ((folder.ImapUidNext > 1) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1));
         }
@@ -585,24 +586,23 @@ namespace NachoCore.IMAP
         /// <summary>
         /// Resolves the one sync, i.e. One SyncKit.
         /// </summary>
-        /// <param name="BEContext">BEContext.</param>
         /// <param name = "pending">A McPending</param>
         /// <param name = "folder">A McFolder</param>
-        public static void ResolveOneSync (IBEContext BEContext, McPending pending, McFolder folder)
+        public void ResolveOneSync (McPending pending, McFolder folder)
         {
             var protocolState = BEContext.ProtocolState;
-            ResolveOneSync (BEContext, ref protocolState, folder, pending);
+            ResolveOneSync (ref protocolState, folder, pending);
             MaybeAdvanceSyncStage (ref protocolState, pending != null);
+            DoQuickSync = false;
         }
 
         /// <summary>
         /// Resolves the one sync.
         /// </summary>
-        /// <param name="BEContext">BE context.</param>
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="folder">The folder that was synced.</param>
         /// <param name="pending">The McPending, if any (can be null).</param>
-        private static void ResolveOneSync (IBEContext BEContext, ref McProtocolState protocolState, McFolder folder, McPending pending)
+        private void ResolveOneSync (ref McProtocolState protocolState, McFolder folder, McPending pending)
         {
             // if this is the inbox and we have nothing to do, we need to still mark protocolState.HasSyncedInbox as True.
             if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
@@ -675,7 +675,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState, bool hasPending)
+        private uint MaybeAdvanceSyncStage (ref McProtocolState protocolState, bool hasPending)
         {
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             uint rung = protocolState.ImapSyncRung;

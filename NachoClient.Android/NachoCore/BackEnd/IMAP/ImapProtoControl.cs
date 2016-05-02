@@ -177,12 +177,12 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReFSync,
                             (uint)ImapEvt.E.Wait,
-                            (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDiscHardFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -532,6 +532,7 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
+            Strategy.DoQuickSync = NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }
@@ -563,13 +564,18 @@ namespace NachoCore.IMAP
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
             if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.ImapDiscoveryDone) {
-                var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-                err.Message = "Too many failures";
-                StatusInd (err);
-                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
+                DoDiscHardFail ();
             } else {
                 DoDisc ();
             }
+        }
+
+        void DoDiscHardFail ()
+        {
+            var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+            err.Message = "Too many failures";
+            StatusInd (err);
+            Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
         }
 
         void DoUiServConfReq ()

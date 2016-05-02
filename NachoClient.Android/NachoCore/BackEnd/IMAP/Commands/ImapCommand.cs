@@ -70,6 +70,14 @@ namespace NachoCore.IMAP
         /// <value>The retry count.</value>
         protected int RetryCount { get; set; }
 
+        protected ImapProtoControl imapProtoControl {
+            get {
+                var pc = BEContext.ProtoControl as ImapProtoControl;
+                NcAssert.NotNull (pc);
+                return pc;
+            }
+        }
+
         public ImapCommand (IBEContext beContext) : base (beContext)
         {
             NcCommStatusSingleton = NcCommStatus.Instance;

@@ -24,6 +24,15 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
+    public interface IEditEventViewOwner
+    {
+        /// <summary>
+        /// Called when the event being edited was deleted.  The owner should dismiss the event
+        /// editor view, and may also dismiss its own view.
+        /// </summary>
+        void EventWasDeleted (EditEventViewController vc);
+    }
+
     public partial class EditEventViewController
         : NcUIViewControllerNoLeaks, INachoAttendeeListChooserDelegate, IUcAttachmentBlockDelegate, INachoFileChooserParent
     {
@@ -34,6 +43,8 @@ namespace NachoClient.iOS
         protected McAccount account;
         protected string TempPhone = "";
         protected McFolder calendarFolder;
+
+        IEditEventViewOwner owner;
 
         UIView contentView;
         UIScrollView scrollView;
@@ -196,6 +207,11 @@ namespace NachoClient.iOS
             View.AddSubview (scrollView);
 
             base.ViewDidLoad ();
+        }
+
+        public void SetOwner (IEditEventViewOwner owner)
+        {
+            this.owner = owner;
         }
 
         public void SetCalendarEvent (McEvent e, CalendarItemEditorAction action)
@@ -1209,14 +1225,17 @@ namespace NachoClient.iOS
 
         protected void DeleteEvent ()
         {
-            //remove item from db
             if (0 != c.attendees.Count) {
                 PrepareCancelationNotices ();
             }
+
             BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
-            var controllers = this.NavigationController.ViewControllers;
-            int currentVC = controllers.Count () - 1; // take 0 indexing into account
-            NavigationController.PopToViewController (controllers [currentVC - 2], true);
+
+            if (null == owner) {
+                DismissView ();
+            } else {
+                owner.EventWasDeleted (this);
+            }
         }
 
         protected void PrepareCancelationNotices ()

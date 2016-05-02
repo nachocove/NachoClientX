@@ -53,6 +53,7 @@ namespace NachoClient.iOS
         public nfloat GroupBorderWidth = 0.5f;
         public nfloat GroupSeparatorWidth = 0.5f;
         public nfloat DetailTextSpacing = 3.0f;
+        public bool HideDetailWhenEmpty = false;
         private UIView _GroupSelectedBackgroundView;
 
         private UIView GroupSelectedBackgroundView {
@@ -77,6 +78,8 @@ namespace NachoClient.iOS
                 SelectedBackgroundView.BackgroundColor = value;
             }
         }
+
+        bool IsPreparingForReuse;
 
         #endregion
 
@@ -133,12 +136,13 @@ namespace NachoClient.iOS
                 return _AccessoryView;
             }
             set {
-                if (value == null && _AccessoryView != null) {
+                if (_AccessoryView != null) {
                     _AccessoryView.RemoveFromSuperview ();
                 }
                 _AccessoryView = value;
                 if (_AccessoryView != null) {
                     SwipeView.ContentView.AddSubview (AccessoryView);
+                    SetNeedsLayout ();
                 }
             }
         }
@@ -147,22 +151,18 @@ namespace NachoClient.iOS
 
         #region Helper Properties
 
-        private UITableView _TableView;
-
-        private UITableView TableView {
+        protected UITableView TableView {
             get {
                 if (Superview == null) {
                     return null;
                 } else {
-                    if (_TableView == null) {
-                        var view = Superview;
-                        _TableView = view as UITableView;
-                        while (_TableView == null && view != null) {
-                            view = view.Superview;
-                            _TableView = view as UITableView;
-                        }
+                    var view = Superview;
+                    var tableView = view as UITableView;
+                    while (tableView == null && view != null) {
+                        view = view.Superview;
+                        tableView = view as UITableView;
                     }
-                    return _TableView;
+                    return tableView;
                 }
             }
         }
@@ -197,6 +197,11 @@ namespace NachoClient.iOS
             Initialize ();
         }
 
+        public SwipeTableViewCell () : base (UITableViewCellStyle.Default, null)
+        {
+            Initialize ();
+        }
+
         void Initialize ()
         {
             SelectedBackgroundView = new UIView ();
@@ -209,6 +214,16 @@ namespace NachoClient.iOS
             ContentView.BackgroundColor = UIColor.White;
             base.ContentView.AddSubview (SwipeView);
             SwipeView.ContentView.AddSubview (ContentView);
+        }
+
+        #endregion
+
+        #region Cleanup
+
+        public virtual void Cleanup ()
+        {
+            SwipeView.Delegate = null;
+            SwipeView.Cleanup ();
         }
 
         #endregion
@@ -236,7 +251,8 @@ namespace NachoClient.iOS
             combinedTextLabelRect.X = SeparatorInset.Left;
             combinedTextLabelRect.Width = ContentView.Bounds.Width - combinedTextLabelRect.X;
             combinedTextLabelRect.Height = 0.0f;
-            if (_DetailTextLabel != null) {
+            bool showDetail = _DetailTextLabel != null && (!HideDetailWhenEmpty || !String.IsNullOrWhiteSpace (_DetailTextLabel.Text));
+            if (showDetail) {
                 combinedTextLabelRect.Height += _DetailTextLabel.Font.RoundedLineHeight (1.0f) + DetailTextSpacing;
             }
             if (_TextLabel != null) {
@@ -250,7 +266,7 @@ namespace NachoClient.iOS
                 _TextLabel.Frame = frame;
             }
             // DetailTextLabel
-            if (_DetailTextLabel != null) {
+            if (showDetail) {
                 frame = combinedTextLabelRect.Inset (0.0f, 0.0f);
                 frame.Height = _DetailTextLabel.Font.RoundedLineHeight (1.0f);
                 frame.Y = combinedTextLabelRect.Y + combinedTextLabelRect.Height - frame.Height;
@@ -297,6 +313,14 @@ namespace NachoClient.iOS
         #endregion
 
         #region State Management
+
+        public override void PrepareForReuse ()
+        {
+            base.PrepareForReuse ();
+            IsPreparingForReuse = true;
+            SwipeView.EndEditing (animated: false);
+            IsPreparingForReuse = false;
+        }
 
         public override void WillTransitionToState (UITableViewCellState mask)
         {
@@ -662,7 +686,7 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public void SwipeViewWillBeginShowingActions (SwipeActionsView view)
+        public virtual void SwipeViewWillBeginShowingActions (SwipeActionsView view)
         {
             if (TableViewDelegate != null) {
                 var indexPath = TableView.IndexPathForCell (this);
@@ -670,12 +694,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SwipeViewDidEndShowingActions (SwipeActionsView view)
+        public virtual void SwipeViewDidEndShowingActions (SwipeActionsView view)
         {
-            if (TableViewDelegate != null) {
-                var indexPath = TableView.IndexPathForCell (this);
-                if (indexPath != null) {
-                    TableViewDelegate.DidEndSwiping (TableView, indexPath);
+            if (!IsPreparingForReuse) {
+                if (TableViewDelegate != null) {
+                    var indexPath = TableView.IndexPathForCell (this);
+                    if (indexPath != null) {
+                        TableViewDelegate.DidEndSwiping (TableView, indexPath);
+                    }
                 }
             }
         }

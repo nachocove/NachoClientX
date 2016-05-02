@@ -70,6 +70,8 @@ namespace NachoClient.AndroidClient
 
             NcApplication.GuaranteeGregorianCalendar ();
 
+            ServerCertificatePeek.Initialize ();
+
             // This creates the NcApplication object
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
 
