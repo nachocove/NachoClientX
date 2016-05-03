@@ -1694,6 +1694,9 @@
     <Compile Include="NachoUI.iOS\Support\MessageActionHeaderView.cs" />
     <Compile Include="NachoUI.iOS\ActionListViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\DatePickerView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs">
+      <Link>NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -50,6 +50,7 @@ namespace NachoClient.iOS
             SeparatorInset = new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f);
 
             CheckboxView = new ActionCheckboxView ((float)Bounds.Height, 20.0f);
+            CheckboxView.Changed = CheckboxChanged;
 
             TitleLabel = new UILabel ();
             TitleLabel.Font = A.Font_AvenirNextRegular17;
@@ -152,7 +153,23 @@ namespace NachoClient.iOS
 
         public void Cleanup ()
         {
-            
+            CheckboxView.Changed = null;
+        }
+
+        void CheckboxChanged (bool isChecked)
+        {
+            NcTask.Run(() => {
+                NcModel.Instance.RunInTransaction (() => {
+                    if (isChecked) {
+                        Action.Complete ();
+                    } else {
+                        Action.Uncomplete (McAction.ActionState.Open);
+                    }
+                });
+                BeginInvokeOnMainThread(() => {
+                    Update ();
+                });
+            }, "MessageActionHeaderView_CheckboxChanged", NcTask.ActionSerialScheduler);
         }
     }
 }

@@ -241,23 +241,26 @@ namespace NachoClient.iOS
 
         void CheckboxChanged (bool isChecked)
         {
-            // TODO run in serial task queue
-            NcModel.Instance.RunInTransaction (() => {
-                if (isChecked) {
-                    Action.Complete ();
-                } else {
-                    Action.Uncomplete (UncompleteState);
-                }
-                Update ();
+            NcTask.Run(() => {
+                NcModel.Instance.RunInTransaction (() => {
+                    if (isChecked) {
+                        Action.Complete ();
+                    } else {
+                        Action.Uncomplete (UncompleteState);
+                    }
+                });
+                BeginInvokeOnMainThread(() => {
+                    Update ();
+                });
                 // If we send a status ind, the item will disappear right away.
                 // If we don't send a statud ind, the item will remain until the next reload
                 // Still tying to decide which behavior is better
-//                var account = McAccount.QueryById<McAccount> (Action.AccountId);
-//                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
-//                    Account = account,
-//                    Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
-//                });
-            });
+                // var account = McAccount.QueryById<McAccount> (Action.AccountId);
+                // NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                //     Account = account,
+                //     Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+                // });
+            }, "ActionCell_CheckboxChanged", NcTask.ActionSerialScheduler);
         }
 
         public override void SwipeViewWillBeginShowingActions (SwipeActionsView view)

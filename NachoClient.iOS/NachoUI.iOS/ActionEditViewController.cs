@@ -444,7 +444,6 @@ namespace NachoClient.iOS
         void Save ()
         {
             SaveButton.Enabled = false;
-            // TODO run in a serial task queue so orders won't collide
             NcTask.Run (() => {
                 var isNew = Action.Id == 0;
                 NcModel.Instance.RunInTransaction (() => {
@@ -473,7 +472,7 @@ namespace NachoClient.iOS
                     });
                 }
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (FinishSave);
-            }, "ActionEditViewController_Save");
+            }, "ActionEditViewController_Save", NcTask.ActionSerialScheduler);
         }
 
         void FinishSave ()

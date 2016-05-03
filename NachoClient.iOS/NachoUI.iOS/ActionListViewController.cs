@@ -183,10 +183,11 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var action = Actions.ActionAt (indexPath.Row);
-            // TODO: run in serial task queue
             if (!action.IsHot) {
-                action.Hot ();
-                NotifyActionsChanged (action);
+                NcTask.Run (() => {
+                    action.Hot ();
+                    NotifyActionsChanged (action);
+                }, "ActionListViewController_MarkActionAsHot", NcTask.ActionSerialScheduler);
             }
         }
 
@@ -194,10 +195,11 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var action = Actions.ActionAt (indexPath.Row);
-            // TODO: run in serial task queue
             if (action.IsHot) {
-                action.Unhot ();
-                NotifyActionsChanged (action);
+                NcTask.Run (() => {
+                    action.Unhot ();
+                    NotifyActionsChanged (action);
+                }, "ActionListViewController_MarkActionAsUnhot", NcTask.ActionSerialScheduler);
             }
         }
 
@@ -217,9 +219,10 @@ namespace NachoClient.iOS
 
         void DeferAction (McAction action, MessageDeferralType type)
         {
-            // TODO: move to serial task
-            action.Defer (type);
-            NotifyActionsChanged (action);
+            NcTask.Run (() => {
+                action.Defer (type);
+                NotifyActionsChanged (action);
+            }, "ActionListViewController_DeferAction", NcTask.ActionSerialScheduler);
         }
 
         void DeferActionByEditing (McAction action)
@@ -378,12 +381,14 @@ namespace NachoClient.iOS
             if (sourceIndexPath.Row != destinationIndexPath.Row) {
                 Actions.Move (sourceIndexPath.Row, destinationIndexPath.Row);
                 var action = Actions.ActionAt (destinationIndexPath.Row);
-                if (destinationIndexPath.Row == 0) {
-                    action.MoveToFront ();
-                } else {
-                    var previous = Actions.ActionAt (destinationIndexPath.Row - 1);
-                    action.MoveAfterAction (previous);
-                }
+                NcTask.Run (() => {
+                    if (destinationIndexPath.Row == 0) {
+                        action.MoveToFront ();
+                    } else {
+                        var previous = Actions.ActionAt (destinationIndexPath.Row - 1);
+                        action.MoveAfterAction (previous);
+                    }
+                }, "ActionListViewController_MoveRow", NcTask.ActionSerialScheduler);
                 HasMadeEdits = true;
                 UpdateNavigationItem ();
             }
