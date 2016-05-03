@@ -306,10 +306,11 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var action = HotActions.ActionAt (indexPath.Row);
-            // TODO: run in serial task queue
             if (action.IsHot) {
-                action.Unhot ();
-                NotifyActionsChanged (action);
+                NcTask.Run (() => {
+                    action.Unhot ();
+                    NotifyActionsChanged (action);
+                }, "NachoNowViewController_MarkActionAsUnhot", NcTask.ActionSerialScheduler);
             }
         }
 
@@ -329,9 +330,10 @@ namespace NachoClient.iOS
 
         void DeferAction (McAction action, MessageDeferralType type)
         {
-            // TODO: move to serial task
-            action.Defer (type);
-            NotifyActionsChanged (action);
+            NcTask.Run (() => {
+                action.Defer (type);
+                NotifyActionsChanged (action);
+            }, "NachoNowViewController_DeferAction", NcTask.ActionSerialScheduler);
         }
 
         void DeferActionByEditing (McAction action)
