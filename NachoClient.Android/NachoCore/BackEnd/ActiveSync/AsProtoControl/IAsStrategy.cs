@@ -29,6 +29,15 @@ namespace NachoCore.ActiveSync
         public bool IsPinging { get; set; }
         public int OverallWindowSize { get; set; }
         public List<PerFolder> PerFolders { get; set; }
+        public List<McPending> AllCommands {
+            get {
+                var allCommands = new List<McPending> ();
+                foreach (var perFolder in PerFolders) {
+                    allCommands.AddRange (perFolder.Commands);
+                }
+                return allCommands;
+            }
+        }
     }
 
     public class FetchKit
