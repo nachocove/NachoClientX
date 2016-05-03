@@ -39,7 +39,9 @@ namespace NachoCore
                 list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
                 break;
             }
-            return NcMessageThreads.ThreadByConversation (list);
+            var threadList = NcMessageThreads.ThreadByConversation (list);
+            RemoveIgnoredMessages (threadList);
+            return threadList;
         }
 
         public override bool Refresh (out List<int> adds, out List<int> deletes)

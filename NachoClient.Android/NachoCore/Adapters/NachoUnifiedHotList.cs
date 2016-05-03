@@ -27,6 +27,7 @@ namespace NachoCore
             // When that happens, lower the threshold until we found something
             var list = McEmailMessage.QueryUnifiedInboxItemsByScore (threshold);
             var threads = NcMessageThreads.ThreadByConversation (list);
+            RemoveIgnoredMessages (threads);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
                 return true;

@@ -32,6 +32,7 @@ namespace NachoCore
             }
             var list = McEmailMessage.QueryInteractions (contact.AccountId, contact);
             var threads = NcMessageThreads.ThreadByMessage (list);
+            RemoveIgnoredMessages (threads);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
                 return true;
@@ -56,6 +57,7 @@ namespace NachoCore
             NcTask.Run (() => {
                 var rawList = McEmailMessage.QueryInteractions (contact.AccountId, contact);
                 var newThreadList = NcMessageThreads.ThreadByMessage (rawList);
+                RemoveIgnoredMessages (newThreadList);
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                     List<int> adds = null;
                     List<int> deletes = null;

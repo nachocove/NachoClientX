@@ -784,44 +784,71 @@ namespace NachoClient.AndroidClient
         public void DeleteThisMessage (McEmailMessageThread messageThread)
         {
             if (messages.HasOutboxSemantics ()) {
-                EmailHelper.DeleteEmailThreadFromOutbox (messageThread);
-                return;
+                NcTask.Run (() => {
+                    EmailHelper.DeleteEmailThreadFromOutbox (messageThread);
+                }, "MessageListFragment.DeleteOutboxMessage");
+            } else if (messages.HasDraftsSemantics ()) {
+                NcTask.Run (() => {
+                    EmailHelper.DeleteEmailThreadFromDrafts (messageThread);
+                }, "MessageListFragment.DeleteDraftMessage");
+            } else {
+                NcAssert.NotNull (messageThread);
+                NcTask.Run (() => {
+                    NcEmailArchiver.Delete (messageThread);
+                }, "MessageListFragment.DeleteThisMessage");
             }
-            if (messages.HasDraftsSemantics ()) {
-                EmailHelper.DeleteEmailThreadFromDrafts (messageThread);
-                return;
-            }
-            NcAssert.NotNull (messageThread);
-            Log.Debug (Log.LOG_UI, "DeleteThisMessage");
-            NcEmailArchiver.Delete (messageThread);
+            messages.IgnoreMessage (messageThread.FirstMessageId);
+            RefreshIfVisible ();
         }
 
         public void ArchiveThisMessage (McEmailMessageThread messageThread)
         {
             NcAssert.NotNull (messageThread);
-            NcEmailArchiver.Archive (messageThread);
+            NcTask.Run (() => {
+                NcEmailArchiver.Archive (messageThread);
+            }, "MessageListFragment.ArchiveThisMessage");
+            messages.IgnoreMessage (messageThread.FirstMessageId);
+            RefreshIfVisible ();
         }
 
         public void MultiSelectDelete ()
         {
             var messageList = GetSelectedMessages ();
-            NcEmailArchiver.Delete (messageList);
+            NcTask.Run (() => {
+                NcEmailArchiver.Delete (messageList);
+            }, "MessageListFragment.MultiSelectDelete");
+            foreach (var message in messageList) {
+                messages.IgnoreMessage (message.Id);
+            }
             MultiSelectCancel ();
+            RefreshIfVisible ();
         }
 
         public void MultiSelectMove (McFolder folder)
         {
             NcAssert.True (1 == MultiSelectAccounts.Count);
             var messageList = GetSelectedMessages ();
-            NcEmailArchiver.Move (messageList, folder);
+            NcTask.Run (() => {
+                NcEmailArchiver.Move (messageList, folder);
+            }, "MessageListFragment.MultiSelectMove");
+            foreach (var message in messageList) {
+                messages.IgnoreMessage (message.Id);
+            }
             MultiSelectCancel ();
+            RefreshIfVisible ();
         }
 
         public void MultiSelectArchive ()
         {
             var messageList = GetSelectedMessages ();
-            NcEmailArchiver.Archive (messageList);
+            NcTask.Run (() => {
+                NcEmailArchiver.Archive (messageList);
+            }, "MessageListFragment.MultiSelectArchive");
+            foreach (var message in messageList) {
+                messages.IgnoreMessage (message.Id);
+            }
             MultiSelectCancel ();
+            RefreshIfVisible ();
         }
 
         public void ShowPriorityChooser (McEmailMessageThread messageThread)
@@ -866,7 +893,11 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectMove (folder);
             } else {
-                NcEmailArchiver.Move (thread, folder);
+                NcTask.Run (() => {
+                    NcEmailArchiver.Move (thread, folder);
+                }, "MessageListFragment.MoveMessage");
+                messages.IgnoreMessage (thread.FirstMessageId);
+                RefreshIfVisible ();
             }
         }
 
