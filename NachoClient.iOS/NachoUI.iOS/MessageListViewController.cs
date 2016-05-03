@@ -482,7 +482,6 @@ namespace NachoClient.iOS
 
         protected void Reload ()
         {
-            Messages.ClearCache ();
             if (Messages.HasBackgroundRefresh ()) {
                 Log.Info (Log.LOG_UI, "MessageListViewController.Reload: using NachoEmailMessages background refresh");
                 Messages.BackgroundRefresh (HandleReloadResults);
@@ -1149,7 +1148,6 @@ namespace NachoClient.iOS
 
         public void SearchForText (string searchText)
         {
-            SearchResults.ClearCache ();
             SearchResults.SearchFor (searchText);
         }
 

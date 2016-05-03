@@ -27,12 +27,14 @@ namespace NachoCore
             adds = null;
             deletes = null;
             if (null == contact) {
+                ClearCache ();
                 threadList = new List<McEmailMessageThread> ();
                 return true;
             }
             var list = McEmailMessage.QueryInteractions (contact.AccountId, contact);
             var threads = NcMessageThreads.ThreadByMessage (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                ClearCache ();
                 threadList = threads;
                 return true;
             }

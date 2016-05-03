@@ -26,6 +26,7 @@ namespace NachoCore
             var list = McEmailMessage.QueryUnifiedItemsByScore2 (McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (ThreadList, threads, out adds, out deletes)) {
+                ClearCache ();
                 ThreadList = threads;
                 return true;
             }

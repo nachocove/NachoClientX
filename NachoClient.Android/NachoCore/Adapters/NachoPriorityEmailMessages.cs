@@ -17,8 +17,6 @@ namespace NachoCore
         public NachoPriorityEmailMessages (McFolder folder)
         {
             this.folder = folder;
-            List<int> adds;
-            List<int> deletes;
             threadList = new List<McEmailMessageThread> ();
         }
 
@@ -30,6 +28,7 @@ namespace NachoCore
             var list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                ClearCache ();
                 threadList = threads;
                 return true;
             }
