@@ -501,7 +501,8 @@ namespace NachoClient.iOS
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
         {
-            Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes", changed, adds.Count, deletes.Count);
+            Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes",
+                changed, adds == null ? 0 : adds.Count, deletes == null ? 0 : deletes.Count);
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
