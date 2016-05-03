@@ -68,6 +68,8 @@ namespace NachoCore.Utils
     {
         public X509Certificate2 PinnedCert { set; get; }
 
+        public X509Certificate2Collection PinnedSigningCerts { set; get; }
+
         public ServerCertificateValidator Validator { set; get; }
     }
 
@@ -188,26 +190,31 @@ namespace NachoCore.Utils
             if (Instance.Policies.TryGetValue (ident, out policy)) {
                 bool hasPinning = (null != policy.PinnedCert);
                 if (hasPinning) {
-                    // Extract all CRL DP in intermediary certs
-                    foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        var crlUrls = CertificateHelper.CrlDistributionPoint (cert);
-                        CrlMonitor.Register (crlUrls);
+                    if (!chain.ChainPolicy.ExtraStore.Contains (policy.PinnedCert)) {
+                        chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                     }
+                    foreach (var cert in policy.PinnedSigningCerts) {
+                        if (!chain.ChainPolicy.ExtraStore.Contains (cert)) {
+                            chain.ChainPolicy.ExtraStore.Add (cert);
+                        }                            
+                    }
+
+                    CrlMonitor.Instance.Register (chain.ChainPolicy.ExtraStore);
+
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        if (cert.Issuer == cert.Subject) {
+                        if (CompareCerts(cert, policy.PinnedCert) == false && cert.Issuer == cert.Subject) {
                             selfSignedCerts.Add (cert);
                         }
                     }
                     chain.ChainPolicy.ExtraStore.RemoveRange (selfSignedCerts);
-                    chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                 }
 
                 // Remove all revoked certs
                 var revokedCerts = new X509Certificate2Collection ();
                 foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                    if (CrlMonitor.IsRevoked (cert.SerialNumber)) {
+                    if (CrlMonitor.Instance.IsRevoked (cert)) {
                         revokedCerts.Add (cert);
                     }
                 }
@@ -215,7 +222,7 @@ namespace NachoCore.Utils
                 bool ok;
                 if (null == certificate2) {
                     ok = false;
-                } else if (CrlMonitor.IsRevoked (certificate2.SerialNumber)) {
+                } else if (CrlMonitor.Instance.IsRevoked (certificate2)) {
                     ok = false;
                 } else {
                     ok = chain.Build (certificate2);
@@ -258,6 +265,13 @@ namespace NachoCore.Utils
                 Instance.FailedCertificates [request.Address.Host] = new ServerCertificateError (chain, certificate2, sslPolicyErrors);
             }
             return false;
+        }
+
+        static bool CompareCerts (X509Certificate2 cert1, X509Certificate2 cert2)
+        {
+            return cert1.SubjectName.Name == cert2.SubjectName.Name &&
+            cert1.SerialNumber == cert2.SerialNumber &&
+            cert1.IssuerName.Name == cert2.IssuerName.Name;
         }
 
         public static void LogCertificateChainErrors (ServerCertificateError failedInfo, string tag)
