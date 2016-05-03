@@ -308,15 +308,21 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 if (Messages.HasOutboxSemantics ()) {
-                    EmailHelper.DeleteEmailThreadFromOutbox (thread);
+                    NcTask.Run (() => {
+                        EmailHelper.DeleteEmailThreadFromOutbox (thread);
+                    }, "MessageListViewController.DeleteOutboxMessage");
                 } else if (Messages.HasDraftsSemantics ()) {
-                    EmailHelper.DeleteEmailThreadFromDrafts (thread);
+                    NcTask.Run (() => {
+                        EmailHelper.DeleteEmailThreadFromDrafts (thread);
+                    }, "MessageListViewController.DeleteDraftMessage");
                 } else {
                     NcAssert.NotNull (thread);
-                    Log.Debug (Log.LOG_UI, "DeleteMessage");
-                    NcEmailArchiver.Delete (thread);
+                    NcTask.Run (() => {
+                        NcEmailArchiver.Delete (thread);
+                    }, "MessageListViewController.DeleteMessage");
                 }
-                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+                Messages.IgnoreMessage (thread.FirstMessageId);
+                Reload ();
             }
         }
 
@@ -327,8 +333,11 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 NcAssert.NotNull (thread);
-                NcEmailArchiver.Archive (thread);
-                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+                NcTask.Run (() => {
+                    NcEmailArchiver.Archive (thread);
+                }, "MessageListViewController.ArchiveMessage");
+                Messages.IgnoreMessage (thread.FirstMessageId);
+                Reload ();
             }
         }
 
@@ -362,12 +371,25 @@ namespace NachoClient.iOS
         {
             var messageThread = cookie as McEmailMessageThread;
             if (messageThread != null) {
-                NcAssert.NotNull (messageThread);
-                NcEmailArchiver.Move (messageThread, folder);
-                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+                NcTask.Run (() => {
+                    NcEmailArchiver.Move (messageThread, folder);
+                }, "MessageListViewController.MoveMessage");
+                Messages.IgnoreMessage (messageThread.FirstMessageId);
+                vc.DismissFolderChooser (true, () => {
+                    Reload ();
+                });
             } else {
-                NcEmailArchiver.Move (SelectedMessages (), folder);
-                CancelEditingTable ();
+                var selected = SelectedMessages ();
+                NcTask.Run (() => {
+                    NcEmailArchiver.Move (selected, folder);
+                }, "MessageListViewController.MoveSelectedMessages");
+                foreach (var message in selected) {
+                    Messages.IgnoreMessage (message.Id);
+                }
+                vc.DismissFolderChooser (true, () => {
+                    CancelEditingTable ();
+                    Reload ();
+                });
             }
         }
 
@@ -408,21 +430,35 @@ namespace NachoClient.iOS
 
         void ArchiveSelectedMessages (object sender, EventArgs e)
         {
-            NcEmailArchiver.Archive (SelectedMessages ());
+            var selected = SelectedMessages ();
+            NcTask.Run (() => {
+                NcEmailArchiver.Archive (selected);
+            }, "MessageListViewController.ArchiveSelectedMessages");
+            foreach (var message in selected) {
+                Messages.IgnoreMessage (message.Id);
+            }
             CancelEditingTable ();
+            Reload ();
         }
 
         void DeleteSelectedMessages (object sender, EventArgs e)
         {
-            NcEmailArchiver.Delete (SelectedMessages ());
+            var selected = SelectedMessages ();
+            NcTask.Run (() => {
+                NcEmailArchiver.Delete (selected);
+            }, "MessageListViewController.DeleteSelectedMessages");
+            foreach (var message in selected) {
+                Messages.IgnoreMessage (message.Id);
+            }
             CancelEditingTable ();
+            Reload ();
         }
 
         void MarkSelectedMessages (object sender, EventArgs e)
         {
             var alertView = UIAlertController.Create (String.Format ("Mark {0} messages", TableView.IndexPathsForSelectedRows.Length), null, UIAlertControllerStyle.ActionSheet);
-            alertView.AddAction(UIAlertAction.Create("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
-            alertView.AddAction(UIAlertAction.Create("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
+            alertView.AddAction (UIAlertAction.Create ("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
+            alertView.AddAction (UIAlertAction.Create ("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
             alertView.AddAction (UIAlertAction.Create ("As Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsHot));
             alertView.AddAction (UIAlertAction.Create ("As Not Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsNotHot));
             alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));

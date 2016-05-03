@@ -29,6 +29,7 @@ namespace NachoCore
         {
             var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id, false);
             var threads = NcMessageThreads.ThreadByMessage (list);
+            RemoveIgnoredMessages (threads);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
                 return true;
