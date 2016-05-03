@@ -155,23 +155,31 @@ namespace NachoCore.Utils
                 StopTimer ();
                 try {
                     var soonestExpiry = SoonestCrlExpiry ();
-                    if (soonestExpiry < DateTime.UtcNow) {
-                        StartUpdates ();
-                        return;
-                    }
-                    var dueIn = soonestExpiry - DateTime.UtcNow;
                     if (soonestExpiry != DateTime.MaxValue) {
+                        if (soonestExpiry < DateTime.UtcNow) {
+                            StartUpdates ();
+                            return;
+                        }
+                        var dueIn = soonestExpiry - DateTime.UtcNow;
                         MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
                             StartUpdates ();
                         }, null, dueIn, TimeSpan.Zero);
+                    } else {
+                        Log.Info (Log.LOG_SYS, "no SoonestCrlExpiry. Not starting timer.");
                     }
                 } catch (CrlMonitorNoItems) {
+                    return;
+                } catch (CrlMonitorNoNextUpdate) {
                     return;
                 }
             }
         }
 
         class CrlMonitorNoItems : ArgumentOutOfRangeException
+        {
+        }
+
+        class CrlMonitorNoNextUpdate : ArgumentOutOfRangeException
         {
         }
 
@@ -182,7 +190,7 @@ namespace NachoCore.Utils
         /// <returns>The crl expiry.</returns>
         DateTime SoonestCrlExpiry ()
         {
-            if (!Monitors.Any()) {
+            if (!Monitors.Any ()) {
                 throw new CrlMonitorNoItems ();
             }
             DateTime soonest = DateTime.MaxValue;
@@ -192,7 +200,9 @@ namespace NachoCore.Utils
                     soonest = crlNextupdate;
                 }
             }
-            NcAssert.True (soonest != DateTime.MaxValue);
+            if (soonest == DateTime.MaxValue) {
+                throw new CrlMonitorNoNextUpdate ();
+            }
             return soonest;
         }
 
@@ -350,6 +360,7 @@ namespace NachoCore.Utils
         }
 
         string _crlPath;
+
         string crlPath {
             get {
                 if (string.IsNullOrEmpty (_crlPath)) {
@@ -409,7 +420,7 @@ namespace NachoCore.Utils
         void DownloadCrl (CancellationToken cToken)
         {
             var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
-            Log.Info (Log.LOG_SYS, "{0}: Updating crl url {1}:{2} (retry {3})", Name, UrlIndex, Urls[UrlIndex], Retries);
+            Log.Info (Log.LOG_SYS, "{0}: Updating crl url {1}:{2} (retry {3})", Name, UrlIndex, Urls [UrlIndex], Retries);
             HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
         }
 
@@ -660,7 +671,7 @@ namespace NachoCore.Utils
         /// <value>The next update as a DateTime object.</value>
         public DateTime NextUpdate {
             get {
-                return Crl.NextUpdate.Value;
+                return Crl.NextUpdate != null ? Crl.NextUpdate.Value : DateTime.MaxValue;
             }
         }
 
@@ -687,7 +698,7 @@ namespace NachoCore.Utils
             var bccert = x509Parser.ReadCertificate (certStream);
             try {
                 Crl.Verify (bccert.GetPublicKey ());
-                    return true;
+                return true;
             } catch (CrlException ex) {
                 errorMsg = ex.Message;
                 return false;
