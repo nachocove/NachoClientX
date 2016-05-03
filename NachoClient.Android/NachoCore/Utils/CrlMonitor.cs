@@ -155,31 +155,25 @@ namespace NachoCore.Utils
                 StopTimer ();
                 try {
                     var soonestExpiry = SoonestCrlExpiry ();
-                    if (soonestExpiry != DateTime.MaxValue) {
-                        if (soonestExpiry < DateTime.UtcNow) {
-                            StartUpdates ();
-                            return;
-                        }
-                        var dueIn = soonestExpiry - DateTime.UtcNow;
-                        MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
-                            StartUpdates ();
-                        }, null, dueIn, TimeSpan.Zero);
-                    } else {
-                        Log.Info (Log.LOG_SYS, "no SoonestCrlExpiry. Not starting timer.");
+                    if (soonestExpiry == DateTime.MaxValue) {
+                        // no new expiry time, so default to 1 day.
+                        soonestExpiry = DateTime.UtcNow.AddDays (1);
                     }
+                    if (soonestExpiry < DateTime.UtcNow) {
+                        StartUpdates ();
+                        return;
+                    }
+                    var dueIn = soonestExpiry - DateTime.UtcNow;
+                    MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
+                        StartUpdates ();
+                    }, null, dueIn, TimeSpan.Zero);
                 } catch (CrlMonitorNoItems) {
-                    return;
-                } catch (CrlMonitorNoNextUpdate) {
                     return;
                 }
             }
         }
 
         class CrlMonitorNoItems : ArgumentOutOfRangeException
-        {
-        }
-
-        class CrlMonitorNoNextUpdate : ArgumentOutOfRangeException
         {
         }
 
@@ -199,9 +193,6 @@ namespace NachoCore.Utils
                 if (crlNextupdate < soonest) {
                     soonest = crlNextupdate;
                 }
-            }
-            if (soonest == DateTime.MaxValue) {
-                throw new CrlMonitorNoNextUpdate ();
             }
             return soonest;
         }
@@ -346,7 +337,9 @@ namespace NachoCore.Utils
             if (UpdateRunning) {
                 return;
             }
-            cToken.Register (FinishUpdate);
+            cToken.Register (() => {
+                UpdateRunning = false;
+            });
             Retries = 0;
             UrlIndex = 0;
             UpdateRunning = true;
