@@ -1697,6 +1697,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs">
       <Link>NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ActionsHelper.cs">
+      <Link>NachoCore\Utils\ActionsHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -472,6 +472,7 @@ namespace NachoClient.iOS
                     });
                 }
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (FinishSave);
+                ActionsHelper.Instance.ScheduleNextUndeferCheck ();
             }, "ActionEditViewController_Save", NcTask.ActionSerialScheduler);
         }
 

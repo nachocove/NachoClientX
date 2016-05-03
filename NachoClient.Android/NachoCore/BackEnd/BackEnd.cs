@@ -259,6 +259,9 @@ namespace NachoCore
             ApplyAcrossAccounts ("Start", (accountId) => Start (accountId));
 
             McPendingHelper.Instance.Start ();
+            NcTask.Run (() => {
+                ActionsHelper.Instance.Start ();
+            }, "Backend_StartActionsHelper", NcTask.ActionSerialScheduler);
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -268,6 +271,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
             Oauth2RefreshInstance.Stop ();
+            ActionsHelper.Instance.Stop ();
             McPendingHelper.Instance.Stop ();
             ApplyAcrossAccounts ("Stop", (accountId) => Stop (accountId));
             BodyFetchHints.Reset ();

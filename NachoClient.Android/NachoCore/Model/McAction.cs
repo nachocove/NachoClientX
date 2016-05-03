@@ -126,6 +126,15 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McAction> (sql, ActionState.Deferred, date);
         }
 
+        public static DateTime NextUndeferTime ()
+        {
+            var actions = NcModel.Instance.Db.Query<McAction> ("SELECT * FROM McAction WHERE State = ? AND DeferUntilDate > ? AND DeferralType != ? ORDER BY DeferUntilDate LIMIT 1", ActionState.Deferred, default(DateTime), MessageDeferralType.None);
+            if (actions.Count > 0) {
+                return actions [0].DeferUntilDate;
+            }
+            return default(DateTime);
+        }
+
         static int LowestSortOrder (ActionState state)
         {
             var sql = "SELECT IFNULL(MIN(UserSortOrder), 0) FROM McAction WHERE State = ?";
@@ -141,10 +150,19 @@ namespace NachoCore.Model
         public static void UndeferActions ()
         {
             var actions = ActionsToUndefer ();
+            var accountsById = new Dictionary<int, McAccount> ();
             foreach (var action in actions) {
                 action.Undefer ();
+                if (!accountsById.ContainsKey (action.AccountId)) {
+                    accountsById.Add (action.AccountId, McAccount.QueryById<McAccount> (action.AccountId));
+                }
             }
-            // TODO: status ind?
+            foreach (var account in accountsById.Values) {
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Account = account,
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+                });
+            }
         }
 
         public void MoveToFront ()
@@ -188,12 +206,22 @@ namespace NachoCore.Model
         {
             State = ActionState.Deferred;
             DeferralType = type;
+            NcResult result = NcMessageDeferral.ComputeDeferral (DateTime.UtcNow, type, DueDate);
+            if (result.isOK ()) {
+                DeferUntilDate = result.GetValue<DateTime> ();
+            } else {
+                DeferralType = MessageDeferralType.None;
+                DeferUntilDate = default(DateTime);
+            }
             MoveToFront ();
+            ActionsHelper.Instance.ScheduleNextUndeferCheck ();
         }
 
         public void Undefer ()
         {
             State = ActionState.Hot;
+            DeferUntilDate = default(DateTime);
+            DeferralType = MessageDeferralType.None;
             MoveToFront ();
         }
 
