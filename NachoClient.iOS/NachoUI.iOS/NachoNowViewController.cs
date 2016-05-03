@@ -498,7 +498,6 @@ namespace NachoClient.iOS
 
         void ReloadHotMessages ()
         {
-            HotMessages.ClearCache ();
             NcTask.Run (() => {
                 List<int> messageAdds;
                 List<int> messageDeletes;

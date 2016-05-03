@@ -47,6 +47,7 @@ namespace NachoCore.Utils
             lock (serverResultsLock) {
                 serverResults.Clear ();
             }
+            ClearCache ();
             indexResults = new List<MatchedItem> ();
             finalResults = new List<McEmailMessageThread> ();
         }
@@ -240,6 +241,7 @@ namespace NachoCore.Utils
                     var results = new List<McEmailMessageThread> (scoredResults.Select (x => x.thread));
 
                     NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                        ClearCache ();
                         finalResults = results;
                         updateUi (searchString, results);
                     });

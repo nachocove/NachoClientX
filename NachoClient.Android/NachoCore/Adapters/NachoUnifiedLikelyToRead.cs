@@ -27,6 +27,7 @@ namespace NachoCore
             var threads = NcMessageThreads.ThreadByConversation (list);
             RemoveIgnoredMessages (threads);
             if (NcMessageThreads.AreDifferent (ThreadList, threads, out adds, out deletes)) {
+                ClearCache ();
                 ThreadList = threads;
                 return true;
             }

@@ -48,6 +48,7 @@ namespace NachoCore
         {
             var threads = QueryMessagesByConversation ();
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                ClearCache ();
                 threadList = threads;
                 return true;
             }
@@ -68,6 +69,7 @@ namespace NachoCore
                     List<int> deletes = null;
                     bool changed = NcMessageThreads.AreDifferent (threadList, newThreadList, out adds, out deletes);
                     if (changed) {
+                        ClearCache ();
                         threadList = newThreadList;
                     }
                     if (null != completionAction) {
