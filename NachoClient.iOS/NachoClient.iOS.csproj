@@ -1693,6 +1693,7 @@
     <Compile Include="NachoUI.iOS\Support\EditableTextCell.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageActionHeaderView.cs" />
     <Compile Include="NachoUI.iOS\ActionListViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\DatePickerView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

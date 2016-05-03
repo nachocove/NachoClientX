@@ -131,7 +131,13 @@ namespace NachoClient.iOS
                 DetailTextLabel.Text = "";
             }
             if (Action.DueDate != default(DateTime)) {
-                // DateLabel.Text = Pretty.Something ();
+                if (Action.DueDate > DateTime.UtcNow) {
+                    DateLabel.Text = "by " + Pretty.FutureDate (Action.DueDate);
+                } else {
+                    DateLabel.Text = "due " + Pretty.FutureDate (Action.DueDate);
+                }
+            } else {
+                DateLabel.Text = "";
             }
             if (Action.IsCompleted) {
                 var strickenAttributes = new UIStringAttributes ();
