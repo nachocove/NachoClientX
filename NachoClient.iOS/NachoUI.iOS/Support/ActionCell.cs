@@ -179,7 +179,7 @@ namespace NachoClient.iOS
 
             frame = DateLabel.Frame;
             frame.X = ContentView.Bounds.Width - dateSize.Width - rightPadding;
-            frame.Y = textTop + (TextLabel.Font.Ascender - DateLabel.Font.Ascender);
+            frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - DateLabel.Font.Ascender - (dateSize.Height - DateLabel.Font.LineHeight) / 2.0f);
             frame.Width = dateSize.Width;
             frame.Height = dateSize.Height;
             DateLabel.Frame = frame;

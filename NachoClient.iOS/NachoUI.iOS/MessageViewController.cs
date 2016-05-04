@@ -98,6 +98,7 @@ namespace NachoClient.iOS
             get {
                 if (_ActionView == null) {
                     _ActionView = new MessageActionHeaderView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 44.0f));
+                    _ActionView.Message = Message;
                     _ActionView.Action = Action;
                     ActionPressRecognizer = new PressGestureRecognizer (ActionPressed);
                     ActionPressRecognizer.IsCanceledByPanning = true;
@@ -799,6 +800,7 @@ namespace NachoClient.iOS
                 ScrollView.InsertCompoundViewBelow (ActionView, BodyView);
                 LayoutScrollView ();
             }
+            ActionView.Message = Message;
             ActionView.Action = Action;
         }
 

@@ -94,6 +94,8 @@ namespace NachoClient.iOS
             }
         }
 
+        UIFont BaseDateLabelFont = A.Font_AvenirNextRegular14;
+
         public MessageCell (IntPtr handle) : base (handle)
         {
             DetailTextSpacing = 0.0f;
@@ -105,7 +107,7 @@ namespace NachoClient.iOS
             DetailTextLabel.Lines = 3;
 
             DateLabel = new UILabel ();
-            DateLabel.Font = A.Font_AvenirNextRegular14;
+            DateLabel.Font = BaseDateLabelFont;
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
@@ -136,7 +138,8 @@ namespace NachoClient.iOS
             if (message.Intent != McEmailMessage.IntentType.None) {
                 var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (message.Intent);
                 attributedDateText.Insert (new NSAttributedString (intentString + " "), 0);
-                attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB(0xff, 0x3f, 0x20), new NSRange(0, intentString.Length));
+                attributedDateText.AddAttribute (UIStringAttributeKey.Font, DateLabel.Font.WithSize (11.0f), new NSRange(0, intentString.Length));
+                attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB(0xD2, 0x47, 0x47), new NSRange(0, intentString.Length));
             }
             DateLabel.AttributedText = attributedDateText;
             if (UseRecipientName) {
@@ -188,7 +191,7 @@ namespace NachoClient.iOS
 
             frame = DateLabel.Frame;
             frame.X = ContentView.Bounds.Width - dateSize.Width - rightPadding;
-            frame.Y = textTop + (TextLabel.Font.Ascender - DateLabel.Font.Ascender);
+            frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - BaseDateLabelFont.Ascender - (dateSize.Height - BaseDateLabelFont.LineHeight) / 2.0f);
             frame.Width = dateSize.Width;
             frame.Height = dateSize.Height;
             DateLabel.Frame = frame;
@@ -196,7 +199,7 @@ namespace NachoClient.iOS
             frame = TextLabel.Frame;
             frame.X = SeparatorInset.Left;
             frame.Y = textTop;
-            frame.Width = DateLabel.Frame.X - frame.X - RightPadding;
+            frame.Width = DateLabel.Frame.X - frame.X - 3.0f;
             frame.Height = textHeight;
             TextLabel.Frame = frame;
 
