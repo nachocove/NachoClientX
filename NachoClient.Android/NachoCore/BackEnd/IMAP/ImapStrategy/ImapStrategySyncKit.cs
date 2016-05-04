@@ -682,26 +682,26 @@ namespace NachoCore.IMAP
             default:
                 switch (ImapSyncRung) {
                 case 0:
-                    // the prioFolder could be the inbox, so check first before adding
                     maybeAddFolderToList (folderList, defInbox);
                     break;
 
                 case 1:
-                    Log.Warn (Log.LOG_IMAP, "SyncFolderList: Currently not implemented stage reached!");
-                    NcAssert.True (false);
+                    NcAssert.CaseError ("SyncFolderList: Currently not implemented stage 1 reached!");
                     break;
 
                 case 2:
                     // If inbox hasn't sync'd in kInboxMinSyncTime seconds, add it to the list at (or near) the top.
-                    if (defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-KInboxMinSyncTime)) {
+                    if (defInbox.ImapNeedFullSync || defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-KInboxMinSyncTime)) {
                         maybeAddFolderToList (folderList, defInbox);
                     }
 
+                    // get all folders that need a sync and add them first.
+                    foreach (var folder in McFolder.QueryByIsClientOwned (AccountId, false).Where (x => x.ImapNeedFullSync)) {
+                        maybeAddFolderToList (folderList, folder);
+                    }
+
+                    // get all folders that haven't been synced in a while, i.e. sort by LastSyncAttempt
                     foreach (var folder in McFolder.QueryByIsClientOwned (AccountId, false).OrderBy (x => x.LastSyncAttempt)) {
-                        if (folder.ImapNoSelect || // not a folder that ever contains mail. Don't sync it.
-                            folder.ImapUidNext <= 1) { // this means there are no messages in the folder. Don't bother syncing it.
-                            continue;
-                        }
                         maybeAddFolderToList (folderList, folder);
                     }
                     break;
@@ -713,6 +713,11 @@ namespace NachoCore.IMAP
 
         private void maybeAddFolderToList (List<McFolder> folderList, McFolder folder)
         {
+            if (folder.ImapNoSelect || // not a folder that ever contains mail. Don't sync it.
+                folder.ImapUidNext <= 1) { // this means there are no messages in the folder. Don't bother syncing it.
+                return;
+            }
+
             if (!folderList.Any (x => x.Id == folder.Id)) {
                 folderList.Add (folder);
             }
