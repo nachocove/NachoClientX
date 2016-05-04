@@ -19,7 +19,7 @@ namespace NachoClient.iOS
 
         const string NameValueCellIdentifier = "NameValueCellIdentifier";
         const string AccountCellIdentifier = "AccountCellIdentifier";
-        const string ActionCellIdentifier = "ActionCellIdentifier";
+        const string ButttonCellIdentifier = "ButtonCellIdentifier";
 
         const int SectionGeneralSettings = 0;
         const int SectionAccounts = 1;
@@ -58,7 +58,7 @@ namespace NachoClient.iOS
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof (AccountCell), AccountCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof (ActionCell), ActionCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ButtonCell), ButttonCellIdentifier);
         }
 
         public override void ViewDidLoad ()
@@ -83,9 +83,6 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (null != NavigationController) {
-                Util.ConfigureNavBar (false, NavigationController);
-            }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             // Refresh the ! on the status line
             LoginHelpers.UserInterventionStateChanged (NcApplication.Instance.Account.Id);
@@ -139,7 +136,7 @@ namespace NachoClient.iOS
                 if (indexPath.Row < Accounts.Count) {
                     return AccountCell.PreferredHeight;
                 }
-                return ActionCell.PreferredHeight;
+                return ButtonCell.PreferredHeight;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetHeightForRow unknown table section {0}", indexPath.Section));
         }
@@ -202,7 +199,7 @@ namespace NachoClient.iOS
                     return cell;
                 } else {
                     var actionRow = indexPath.Row - Accounts.Count;
-                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+                    var cell = tableView.DequeueReusableCell (ButttonCellIdentifier) as ButtonCell;
 //                    cell.SeparatorInset = new UIEdgeInsets (0.0f, AccountCell.PreferredHeight, 0.0f, 0.0f);
                     if (actionRow == AccountsExtraRowAddAccount) {
                         cell.TextLabel.Text = "Add Account";
@@ -444,61 +441,12 @@ namespace NachoClient.iOS
             }
         }
 
-        private class NameValueCell : SwipeTableViewCell
-        {
-
-            public static nfloat PreferredHeight = 44.0f;
-            public readonly UILabel ValueLabel;
-            public nfloat RightPadding = 10.0f;
-
-            public NameValueCell (IntPtr handle) : base (handle)
-            {
-                TextLabel.Font = A.Font_AvenirNextRegular14;
-                TextLabel.TextColor = A.Color_NachoDarkText;
-
-                ValueLabel = new UILabel ();
-                ValueLabel.Font = A.Font_AvenirNextMedium14;
-                ValueLabel.TextColor = A.Color_NachoGreen;
-                ValueLabel.Lines = 1;
-                ValueLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                ContentView.AddSubview(ValueLabel);
-            }
-
-            public override void LayoutSubviews ()
-            {
-                base.LayoutSubviews ();
-                var availableWidth = ContentView.Bounds.Width - SeparatorInset.Left - SeparatorInset.Right - RightPadding;
-                var nameWidth = TextLabel.SizeThatFits (new CGSize (availableWidth, 0.0f)).Width;
-                var valueWidth = ValueLabel.SizeThatFits (new CGSize (availableWidth, 0.0f)).Width;
-                CGRect frame;
-                if (nameWidth + valueWidth > availableWidth) {
-                    if (nameWidth < availableWidth) {
-                        valueWidth = availableWidth - nameWidth;
-                    } else if (valueWidth < availableWidth) {
-                        nameWidth = availableWidth - valueWidth;
-                    } else {
-                        nameWidth = valueWidth = availableWidth / 2.0f;
-                    }
-                }
-                frame = TextLabel.Frame;
-                frame.Width = nameWidth;
-                TextLabel.Frame = frame;
-
-                frame = ValueLabel.Frame;
-                frame.Width = valueWidth;
-                frame.Height = ValueLabel.Font.LineHeight;
-                frame.X = ContentView.Bounds.Width - frame.Width - RightPadding;
-                frame.Y = (ContentView.Bounds.Height - frame.Height) / 2.0f;
-                ValueLabel.Frame = frame;
-            }
-        }
-
-        private class ActionCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
-            public ActionCell (IntPtr handle) : base (handle)
+            public ButtonCell (IntPtr handle) : base (handle)
             {
                 TextLabel.Font = A.Font_AvenirNextRegular14;
                 TextLabel.TextColor = A.Color_NachoGreen;

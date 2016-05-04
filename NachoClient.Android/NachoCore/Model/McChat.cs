@@ -71,13 +71,13 @@ namespace NachoCore.Model
         {
             var account = McAccount.QueryById<McAccount> (accountId);
             var mcaddresses = new List<McEmailAddress> (addresses.Count);
-            var addressesById = new Dictionary<int, McEmailAddress> (addresses.Count);
+            var addressIds = new HashSet<int> ();
             foreach (var address in addresses) {
                 McEmailAddress mcaddress;
                 if (McEmailAddress.Get (accountId, address.address, out mcaddress)) {
-                    if (!addressesById.ContainsKey(mcaddress.Id) && !String.Equals (mcaddress.CanonicalEmailAddress, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+                    if (!addressIds.Contains (mcaddress.Id) && !String.Equals (mcaddress.CanonicalEmailAddress, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
                         mcaddresses.Add (mcaddress);
-                        addressesById.Add (mcaddress.Id, mcaddress);
+                        addressIds.Add (mcaddress.Id);
                     }
                 }
             }
@@ -93,14 +93,14 @@ namespace NachoCore.Model
             NcModel.Instance.RunInLock (() => {
                 chats = NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat WHERE ParticipantHash = ? AND AccountId = ?", participantHash, accountId);
                 if (chats.Count == 1) {
-                    chat = chats[0];
-                }else{
+                    chat = chats [0];
+                } else {
                     chat = new McChat ();
                     chat.ParticipantHash = participantHash;
                     chat.AccountId = accountId;
                     chat.Insert ();
-                    chat.PopuplateParticipantsFromAddresses (addresses);
-                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                    chat.PopulateParticipantsFromAddresses (mcaddresses);
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                         Account = account,
                         Status = NcResult.Info (NcResult.SubKindEnum.Info_ChatSetChanged)
                     });
@@ -343,21 +343,16 @@ namespace NachoCore.Model
                 "AND likelihood (m.IsRead = 0, 0.1)", Id);
         }
 
-        void PopuplateParticipantsFromAddresses (List<NcEmailAddress> addresses)
+        void PopulateParticipantsFromAddresses (ICollection<McEmailAddress> addresses)
         {
-            ParticipantCount = 0;
             foreach (var address in addresses) {
-                McEmailAddress mcaddress;
-                if (McEmailAddress.Get (AccountId, address.address, out mcaddress)) {
-                    var participant = new McChatParticipant ();
-                    participant.ChatId = Id;
-                    participant.AccountId = AccountId;
-                    participant.EmailAddrId = mcaddress.Id;
-                    participant.EmailAddress = address.address;
-                    participant.PickContact (mcaddress);
-                    participant.Insert ();
-                    ParticipantCount += 1;
-                }
+                var participant = new McChatParticipant ();
+                participant.ChatId = Id;
+                participant.AccountId = AccountId;
+                participant.EmailAddrId = address.Id;
+                participant.EmailAddress = address.CanonicalEmailAddress;
+                participant.PickContact (address);
+                participant.Insert ();
             }
             ParticipantCount = addresses.Count;
             UpdateParticipantCache ();

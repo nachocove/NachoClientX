@@ -60,6 +60,24 @@ NachoMessageHandler.prototype = {
 
 };
 
+var Viewer = function(){
+    this.viewport = document.getElementById("nacho-viewport");
+};
+
+Viewer.defaultViewer = null;
+
+Viewer.Enable = function(){
+    if (!Viewer.defaultViewer){
+        Viewer.defaultViewer = new Viewer();
+    }
+}
+
+Viewer.prototype = {
+    setViewportContent: function(content){
+        this.viewport.setAttribute("content", content);
+    }
+};
+
 var Editor = function(rootNode){
     this.rootNode = rootNode;
     this.document = this.rootNode.ownerDocument;

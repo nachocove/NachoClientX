@@ -289,6 +289,23 @@ namespace NachoCore.Utils
             return string.Format ("{0} - {1}", MediumFullDate (dateTime), Time (dateTime));
         }
 
+        static public string FriendlyFullDateTime (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var now = DateTime.Now;
+            var diff = now - local;
+            var dayString = "";
+            var timeString = Time (dateTime);
+            if (diff < now.TimeOfDay) {
+                return String.Format ("Today - {0}", timeString);
+            }else if (diff < (now.TimeOfDay + TimeSpan.FromDays (1))){
+                return String.Format ("Yesterday - {0}", timeString);
+            } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (6))) {
+                return String.Format ("{0} - {1}", local.ToString ("dddd"), timeString);
+            }
+            return String.Format ("{0} - {1}", LongFullDate (dateTime), timeString);
+        }
+
         /// <summary>
         /// "Wednesday 4:28 pm"
         /// </summary>
@@ -316,6 +333,29 @@ namespace NachoCore.Utils
             }
             if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
                 return local.ToString ("dddd");
+            }
+            return ShortDate (dateTime);
+        }
+
+        static public string FutureDate (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var localStartOfDay = local - local.TimeOfDay;
+            var now = DateTime.Now;
+            if (now.Year == local.Year && now.Month == local.Month && now.Day == local.Day) {
+                return "Today";
+            }
+            if (now < localStartOfDay) {
+                if (now + TimeSpan.FromDays (1) > localStartOfDay) {
+                    return "Tomorrow";
+                }
+                if (now + TimeSpan.FromDays (6) > localStartOfDay) {
+                    return local.ToString ("dddd");
+                }
+            } else {
+                if (local + TimeSpan.FromDays (1) > now - now.TimeOfDay) {
+                    return "Yesterday";
+                }
             }
             return ShortDate (dateTime);
         }
@@ -892,6 +932,21 @@ namespace NachoCore.Utils
                 return String.Empty;
             }
             return System.IO.Path.GetExtension (path).ToUpper ();
+        }
+
+        public static string GetAttachmentDetail (McAttachment attachment)
+        {
+            string extension = Pretty.GetExtension (attachment.DisplayName);
+            var detailText = "";
+            if (attachment.IsInline) {
+                detailText += "Inline ";
+            }
+            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+            detailText += "file";
+            if (0 != attachment.FileSize) {
+                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
+            } 
+            return detailText;
         }
 
         public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)

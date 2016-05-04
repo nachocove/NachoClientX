@@ -26,6 +26,7 @@ namespace NachoClient.iOS
         UIView BackgroundView;
         UINavigationBar NavigationBar;
         nfloat SearchBarInset = 7.0f;
+        UITapGestureRecognizer BackgroundTapRecognizer;
 
         public NachoSearchController (UIViewController searchResultsController)
         {
@@ -50,7 +51,15 @@ namespace NachoClient.iOS
             SearchBar.Placeholder = "Search";
             NavigationBar.AddSubview (SearchBar);
 
-            BackgroundView.AddGestureRecognizer (new UITapGestureRecognizer (ViewTap));
+            BackgroundTapRecognizer = new UITapGestureRecognizer (ViewTap);
+            BackgroundView.AddGestureRecognizer (BackgroundTapRecognizer);
+        }
+
+        public void Cleanup ()
+        {
+            BackgroundView.RemoveGestureRecognizer (BackgroundTapRecognizer);
+            BackgroundTapRecognizer = null;
+            SearchBar.WeakDelegate = null;
         }
 
         void ViewTap ()

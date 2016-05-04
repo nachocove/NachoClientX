@@ -53,6 +53,11 @@ namespace NachoClient.iOS
 
         McAccount Account;
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         /// <summary>
         /// INachoFileChooser delegate
         /// </summary>
@@ -329,9 +334,6 @@ namespace NachoClient.iOS
                 this.tableView.ScrollEnabled = true;
                 EmptyListLabel.Hidden = true;
                 tableView.Hidden = false;
-            }
-            if (null != this.NavigationController) {
-                Util.ConfigureNavBar (false, this.NavigationController);
             }
         }
 

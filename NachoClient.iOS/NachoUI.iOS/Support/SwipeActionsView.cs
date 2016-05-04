@@ -70,7 +70,7 @@ namespace NachoClient.iOS
         private SwipeActionViewState State;
 
         private UITapGestureRecognizer TapGestureRecognizer;
-        private UIPanGestureRecognizer PanGestureRecognizer;
+        public UIPanGestureRecognizer PanGestureRecognizer { get; private set; }
 
         private List<ActionView> ActionViews;
         private nfloat PreferredActionWidth = 64.0f;
@@ -129,10 +129,30 @@ namespace NachoClient.iOS
 
         #region Public API
 
-        public void EndEditing ()
+        public bool IsEditing ()
+        {
+            return State != SwipeActionViewState.Normal; 
+        }
+
+        public void EndEditing (bool animated = true)
         {
             if (State != SwipeActionViewState.Normal) {
-                HideActions ();
+                HideActions (animated);
+            }
+        }
+
+        public void Cleanup ()
+        {
+            RemoveGestureRecognizer (PanGestureRecognizer);
+            PanGestureRecognizer.WeakDelegate = null;
+            PanGestureRecognizer = null;
+            ContentView.RemoveGestureRecognizer (TapGestureRecognizer);
+            TapGestureRecognizer.WeakDelegate = null;
+            TapGestureRecognizer = null;
+
+            foreach (var actionView in ActionViews) {
+                actionView.SwipeView = null;
+                actionView.Cleanup ();
             }
         }
 
@@ -429,20 +449,25 @@ namespace NachoClient.iOS
 
         #region Managing Actions
 
-        void HideActions ()
+        void HideActions (bool animated = true)
         {
             ActionRevealPercentage = 0.0f;
             SetNeedsLayout ();
-            UIView.Animate (0.25f, () => {
-                LayoutIfNeeded ();
-            }, () => {
+            if (animated) {
+                UIView.Animate (0.25f, () => {
+                    LayoutIfNeeded ();
+                }, () => {
+                    State = SwipeActionViewState.Normal;
+                    Delegate.SwipeViewDidEndShowingActions (this);
+                    PanGestureRecognizer.Enabled = true;
+                    TapGestureRecognizer.Enabled = true;
+                });
+                PanGestureRecognizer.Enabled = false;
+                TapGestureRecognizer.Enabled = false;
+            } else {
                 State = SwipeActionViewState.Normal;
                 Delegate.SwipeViewDidEndShowingActions (this);
-                PanGestureRecognizer.Enabled = true;
-                TapGestureRecognizer.Enabled = true;
-            });
-            PanGestureRecognizer.Enabled = false;
-            TapGestureRecognizer.Enabled = false;
+            }
         }
 
         void ConfigureActions (List<SwipeAction> actions, SwipeActionViewState forState)
@@ -464,6 +489,10 @@ namespace NachoClient.iOS
                 actionView.SetAction (action);
                 ActionsView.InsertSubview (actionView, 0);
                 ActionViews.Add (actionView);
+            }
+            foreach (var view in reusableViews) {
+                view.SwipeView = null;
+                view.Cleanup ();
             }
             ActionsView.State = forState;
             ActionsView.PreferredWidth = GetFullActionWidth ();
@@ -612,6 +641,13 @@ namespace NachoClient.iOS
             {
                 Action = action;
                 Update ();
+            }
+
+            public void Cleanup ()
+            {
+                RemoveGestureRecognizer (PressGestureRecognizer);
+                PressGestureRecognizer = null;
+                Action = null;
             }
 
             void Update ()

@@ -31,6 +31,9 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
+            ServerCertificatePeek.ServerCertificateError failedInfo;
+            ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo);
+
             bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
             Tuple<ResolveAction, string> action = new Tuple<ResolveAction, string> (ResolveAction.None, null);
 
@@ -96,10 +99,15 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
+                if (ServerCertificatePeek.Instance.FailedCertificates.TryGetValue (BEContext.Server.Host, out failedInfo)) {
+                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo, string.Format ("ImapDiscoverCommand: Cert Validation Error for {0}", BEContext.Server.Host));
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPCERTHARD");
+                } else {
+                    Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
+                }
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 if (Initial) {

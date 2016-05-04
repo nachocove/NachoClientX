@@ -71,7 +71,35 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
+            if (ShouldCleanupDuringDidDisappear) {
+                Cleanup ();
+            }
             base.ViewDidDisappear (animated);
+        }
+
+        protected virtual bool ShouldCleanupDuringDidDisappear
+        {
+            get {
+                return IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
+            }
+        }
+
+        protected virtual void Cleanup ()
+        {
+            if (TableView.VisibleCells != null) {
+                foreach (var cell in TableView.VisibleCells) {
+                    var swipeCell = cell as SwipeTableViewCell;
+                    swipeCell.Cleanup ();
+                }
+            }
+            TableView.WeakDelegate = null;
+            TableView.WeakDataSource = null;
+            if (RefreshControl != null) {
+                if (RefreshIndicator.IsAnimating) {
+                    RefreshIndicator.StopAnimating ();
+                }
+                RefreshControl.ValueChanged -= HandleRefreshControlEvent;
+            }
         }
 
         protected void EnableRefreshControl ()
@@ -203,7 +231,7 @@ namespace NachoClient.iOS
             RefreshLabel.Alpha = 0.0f;
         }
 
-        void ReconfigureGroupedRows ()
+        protected void ReconfigureGroupedRows ()
         {
             if (TableView.Style == UITableViewStyle.Grouped) {
                 foreach (var indexPath in TableView.IndexPathsForVisibleRows) {

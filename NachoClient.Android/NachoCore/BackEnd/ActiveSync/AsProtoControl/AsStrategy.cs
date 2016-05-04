@@ -1249,13 +1249,16 @@ namespace NachoCore.ActiveSync
 
                     default:
                         if (AsSyncCommand.IsSyncCommand (next.Operation)) {
-                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next);
                             var syncKit = GenSyncKit (protocolState, SyncMode.Wide);
                             if (null != syncKit) {
+                                Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0} (Commands: {1})", next, string.Join (", ", syncKit.AllCommands));
                                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                                     new AsSyncCommand (BEContext, syncKit));
                             } else {
-                                Log.Error (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand: null SyncKit.");
+                                Log.Error (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand: null SyncKit with {0}", next);
+                                // resolve the McPending as failed. If we leave it where it is, we'll loop forever.
+                                next.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
                             }
                         } else {

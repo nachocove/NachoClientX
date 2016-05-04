@@ -232,6 +232,46 @@ namespace NachoCore
 
         #endregion
 
+        #region Ignored messages
+
+        HashSet<int> ignoredMessageIds = null;
+        DateTime lastIgnoredUpdateTime = default(DateTime);
+        object ignoredMessagesLock = new object ();
+
+        public virtual void IgnoreMessage (int messageId)
+        {
+            lock (ignoredMessagesLock) {
+                if (null == ignoredMessageIds) {
+                    ignoredMessageIds = new HashSet<int> ();
+                }
+                ignoredMessageIds.Add (messageId);
+                lastIgnoredUpdateTime = DateTime.UtcNow;
+            }
+        }
+
+        protected void RemoveIgnoredMessages (List<McEmailMessageThread> threadList)
+        {
+            HashSet<int> copy;
+            lock (ignoredMessagesLock) {
+                if (null == ignoredMessageIds) {
+                    return;
+                }
+                if (DateTime.UtcNow - lastIgnoredUpdateTime > TimeSpan.FromSeconds (60)) {
+                    ignoredMessageIds = null;
+                    return;
+                }
+                // Make a copy of the ignored message IDs so the lock doesn't have to be held
+                // while iterating through the entire thread list.
+                copy = new HashSet<int> (ignoredMessageIds);
+            }
+            for (int i = threadList.Count - 1; i >= 0; --i) {
+                if (copy.Contains (threadList [i].FirstMessageId)) {
+                    threadList.RemoveAt (i);
+                }
+            }
+        }
+
+        #endregion
     }
 
     public static class NachoSyncResult

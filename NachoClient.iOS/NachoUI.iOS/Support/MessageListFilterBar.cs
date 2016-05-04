@@ -54,6 +54,15 @@ namespace NachoClient.iOS
             ItemViews = new List<FilterBarItemView> ();
         }
 
+        public void Cleanup ()
+        {
+            Items = new MessageFilterBarItem[]{ };
+            foreach (var itemView in ItemViews) {
+                itemView.FilterBar = null;
+                itemView.Cleanup ();
+            }
+        }
+
         public void SetItems (MessageFilterBarItem[] items)
         {
             Items = items;
@@ -141,6 +150,7 @@ namespace NachoClient.iOS
             UIImageView ImageView;
             UILabel TitleLabel;
             nfloat ImageSize;
+            UITapGestureRecognizer TapGestureRecognizer;
 
             public FilterBarItemView (CGRect frame) : base (frame)
             {
@@ -156,7 +166,15 @@ namespace NachoClient.iOS
                 AddSubview (ImageView);
                 AddSubview (TitleLabel);
 
-                AddGestureRecognizer (new UITapGestureRecognizer (Tap));
+                TapGestureRecognizer = new UITapGestureRecognizer (Tap);
+                AddGestureRecognizer (TapGestureRecognizer);
+            }
+
+            public void Cleanup ()
+            {
+                RemoveGestureRecognizer (TapGestureRecognizer);
+                TapGestureRecognizer = null;
+                _Item = null;
             }
 
             void Tap ()

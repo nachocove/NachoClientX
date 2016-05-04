@@ -396,8 +396,8 @@ namespace NachoClient.iOS
                 UpdateHeaderSubjectView ();
             }
             if (Composer.IsMessagePrepared) {
-                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText());
-                EvaluateJavaScript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
+                var userText = response.body + Composer.SignatureText ();
+                EvaluateJavaScript (String.Format ("Editor.defaultEditor.replaceUserText({0});", userText.JavascriptEscapedString ()));
             } else {
                 Composer.InitialText = response.body;
             }
@@ -853,17 +853,6 @@ namespace NachoClient.iOS
             } else {
                 JavaScriptQueue.Add (javascript);
             }
-        }
-
-        string JavaScriptEscapedString (string s)
-        {
-            var primitive = new System.Json.JsonPrimitive (s);
-            string escaped = "";
-            using (var writer = new StringWriter ()) {
-                primitive.Save (writer);
-                escaped = writer.ToString ();
-            }
-            return escaped.Replace("\n", "\\n");
         }
 
         [Foundation.Export("scrollViewWillBeginDragging:")]

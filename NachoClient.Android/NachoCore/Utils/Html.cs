@@ -104,6 +104,21 @@ namespace NachoCore.Utils
 
     }
 
+    public static class StringJavascriptExtensions {
+
+        public static string JavascriptEscapedString (this string s)
+        {
+            var primitive = new System.Json.JsonPrimitive (s);
+            string escaped = "";
+            using (var writer = new StringWriter ()) {
+                primitive.Save (writer);
+                escaped = writer.ToString ();
+            }
+            return escaped.Replace("\n", "\\n");
+        }
+
+    }
+
     public class HtmlTextSerializer {
 
         #region Properties
