@@ -45,7 +45,7 @@ namespace NachoClient.iOS
             }
         }
 
-        ActionCheckboxView CheckboxView;
+        public readonly ActionCheckboxView CheckboxView;
         UILabel TitleLabel;
         UILabel DateLabel;
         UIView BottomBorder;

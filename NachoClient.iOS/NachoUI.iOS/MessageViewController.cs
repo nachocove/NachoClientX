@@ -21,7 +21,7 @@ using SafariServices;
 namespace NachoClient.iOS
 {
 
-    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate
+    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate
     {
         
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
@@ -101,6 +101,7 @@ namespace NachoClient.iOS
                     _ActionView.Message = Message;
                     _ActionView.Action = Action;
                     ActionPressRecognizer = new PressGestureRecognizer (ActionPressed);
+                    ActionPressRecognizer.Delegate = this;
                     ActionPressRecognizer.IsCanceledByPanning = true;
                     ActionPressRecognizer.DelaysStart = true;
                     _ActionView.AddGestureRecognizer (ActionPressRecognizer);
@@ -308,6 +309,7 @@ namespace NachoClient.iOS
             // clean up action view
             if (_ActionView != null) {
                 _ActionView.RemoveGestureRecognizer (ActionPressRecognizer);
+                ActionPressRecognizer.Delegate = null;
                 ActionPressRecognizer = null;
                 _ActionView.Cleanup ();
             }
@@ -485,6 +487,19 @@ namespace NachoClient.iOS
             BodyView.Hidden = false;
             LayoutScrollView ();
             StartBodyDownload ();
+        }
+
+        [Export ("gestureRecognizer:shouldReceiveTouch:")]
+        public bool ShouldReceiveTouch (UIGestureRecognizer recognizer, UITouch touch)
+        {
+            var view = touch.View;
+            while (view != _ActionView) {
+                if (view == _ActionView.CheckboxView) {
+                    return false;
+                }
+                view = view.Superview;
+            }
+            return true;
         }
 
         #endregion
