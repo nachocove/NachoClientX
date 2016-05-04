@@ -32,6 +32,8 @@ namespace NachoCore.Model
         public DateTime CompletedDate { get; set; }
         public MessageDeferralType DeferralType { get; set; }
         public bool DueDateIncludesTime { get; set; }
+        [Indexed]
+        public string MimeMessageId { get; set; }
 
         public bool IsHot {
             get {
@@ -62,6 +64,7 @@ namespace NachoCore.Model
             action.AccountId = message.AccountId;
             action.EmailMessageId = message.Id;
             action.State = McAction.ActionState.Hot;
+            action.MimeMessageId = message.MessageID;
             if (message.IntentDate != default(DateTime)) {
                 action.DueDate = message.IntentDate;
                 action.DueDateIncludesTime = NcMessageIntent.IntentIsToday (message.IntentDateType);
@@ -89,9 +92,11 @@ namespace NachoCore.Model
                 NcModel.Instance.RunInTransaction (() => {
                     var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
                     if (message != null){
-                        var action = McAction.FromMessage (message);
-                        action.MoveToFront ();
-                        action.Insert ();
+                        if (String.IsNullOrEmpty (message.MessageID) || !ActionExistsForMimeMessageId(message.AccountId, message.MessageID)){
+                            var action = McAction.FromMessage (message);
+                            action.MoveToFront ();
+                            action.Insert ();
+                        }
                     }
                 });
                 var _message = McEmailMessage.QueryById<McEmailMessage> (messageId);
@@ -103,6 +108,11 @@ namespace NachoCore.Model
                     });
                 }
             }, "McAction_CreateActionFromMessage", NcTask.ActionSerialScheduler);
+        }
+
+        public static bool ActionExistsForMimeMessageId (int accountId, string mimeMessageId)
+        {
+            return NcModel.Instance.Db.Query<McAction> ("SELECT * FROM McAction WHERE MimeMessageId = ? AND AccountId = ?", mimeMessageId, accountId).Count != 0;
         }
 
         public static List<McAction> ActionsForState (int accountId, ActionState state)

@@ -1671,7 +1671,7 @@ namespace NachoCore.Model
 
         public void DetermineIfIsAction (McFolder inFolder)
         {
-            if (inFolder.Type != Xml.FolderHierarchy.TypeCode.DefaultSent_5) {
+            if (inFolder.Type != Xml.FolderHierarchy.TypeCode.DefaultSent_5 && inFolder.Type != Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 && !IsJunk) {
                 if (Intent == IntentType.PleaseRead || Intent == IntentType.ResponseRequired || Intent == IntentType.Urgent) {
                     IsAction = true;
                 } else if (Intent == IntentType.Important && IntentDateType != MessageDeferralType.None) {
