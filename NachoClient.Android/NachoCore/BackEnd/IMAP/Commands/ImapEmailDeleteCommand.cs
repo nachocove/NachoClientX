@@ -64,7 +64,6 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "No mailKitFolder for {0}", folder.ImapFolderNameRedacted ());
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
             }
-            UpdateImapSetting (mailKitFolder, ref folder);
 
             try {
                 mailKitFolder.SetFlags (uids, MessageFlags.Deleted, true, Cts.Token);
