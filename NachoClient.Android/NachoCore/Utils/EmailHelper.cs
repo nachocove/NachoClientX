@@ -837,6 +837,57 @@ namespace NachoCore.Utils
             return subject;
         }
 
+        static MessageDeferralType[] SubjectDeferralTypes = new MessageDeferralType[] {
+            MessageDeferralType.OneHour,
+            MessageDeferralType.EndOfDay,
+            MessageDeferralType.Tomorrow,
+            MessageDeferralType.NextWeek,
+            MessageDeferralType.NextMonth
+        };
+
+        public static void ParseSubject (string rawSubject, DateTime fromDate, out string subject, out McEmailMessage.IntentType intent, out MessageDeferralType deferralType, out DateTime intentDate)
+        {
+            intent = McEmailMessage.IntentType.None;
+            deferralType = MessageDeferralType.None;
+            intentDate = default (DateTime);
+            string remainingSubject = rawSubject;
+            foreach (var intentModel in NcMessageIntent.GetIntentList ()) {
+                var intentString = NcMessageIntent.IntentEnumToString (intentModel.type);
+                if (rawSubject.StartsWith (intentString)) {
+                    intent = intentModel.type;
+                    remainingSubject = rawSubject.Substring (intentString.Length);
+                    break;
+                }
+            }
+            if (intent != McEmailMessage.IntentType.None) {
+                var parts = remainingSubject.Split (new char[] { '-' }, 2);
+                var possibleDate = parts [0].Trim ();
+                subject = parts [1].Trim ();
+                foreach (var deferralOption in SubjectDeferralTypes) {
+                    var deferralString = NcMessageIntent.DeferralTypeToString (deferralOption);
+                    if (deferralString == possibleDate) {
+                        deferralType = deferralOption;
+                        var result = NcMessageDeferral.ComputeDeferral (fromDate, deferralType, fromDate);
+                        if (result.isOK ()) {
+                            intentDate = result.GetValue<DateTime> ();
+                        }
+                        break;
+                    }
+                }
+                if (deferralType == MessageDeferralType.None && !String.IsNullOrEmpty (possibleDate)) {
+                    if (possibleDate.StartsWith ("By ")) {
+                        if (DateTime.TryParseExact (possibleDate.Substring (3), "M/d/yyyy", new System.Globalization.CultureInfo ("en-US"), System.Globalization.DateTimeStyles.None, out intentDate)) {
+                            deferralType = MessageDeferralType.Custom;
+                        } else {
+                            intentDate = default (DateTime);
+                        }
+                    }
+                }
+            } else {
+                subject = rawSubject;
+            }
+        }
+
         public static void SetupReferences (ref MimeMessage mimeMessage, McEmailMessage referencedMessage)
         {
             mimeMessage.InReplyTo = null;

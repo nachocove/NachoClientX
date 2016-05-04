@@ -67,51 +67,62 @@ namespace NachoCore.Brain
             }
         }
 
-        public static string GetIntentString (McEmailMessage.IntentType intent, MessageDeferralType intentDateTypeEnum, DateTime intentDateTime)
+        public static string DeferralTypeToString (MessageDeferralType intentDateTypeEnum, DateTime? customDate = null)
         {
-            string intentString = IntentEnumToString (intent);
-
+            string deferralString = "";
             switch (intentDateTypeEnum) {
             case MessageDeferralType.None:
-                intentString += "";
                 break;
             case MessageDeferralType.OneHour:
-                intentString += " In One Hour";
+                deferralString = "In One Hour";
                 break;
             case MessageDeferralType.TwoHours:
-                intentString += " In Two Hours";
+                deferralString = "In Two Hours";
                 break;
             case MessageDeferralType.Later:
-                intentString += " Later Today";
+                deferralString = "Later Today";
                 break;
             case MessageDeferralType.EndOfDay:
-                intentString += " By End of Day";
+                deferralString = "By End of Day";
                 break;
             case MessageDeferralType.Tonight:
-                intentString += " By Tonight";
+                deferralString = "By Tonight";
                 break;
             case MessageDeferralType.Tomorrow:
-                intentString += " By Tomorrow";
+                deferralString = "By Tomorrow";
                 break;
             case MessageDeferralType.NextWeek:
-                intentString += " By Next Week";
+                deferralString = "By Next Week";
                 break;
             case MessageDeferralType.MonthEnd:
-                intentString += "By Month End";
+                deferralString = "By Month End";
                 break;
             case MessageDeferralType.NextMonth:
-                intentString += " By Next Month";
+                deferralString = "By Next Month";
                 break;
             case MessageDeferralType.Forever:
-                intentString += "";
                 break;
             case MessageDeferralType.Custom:
-                intentString += " By " + intentDateTime.ToShortDateString ();
+                if (customDate.HasValue) {
+                    deferralString = "By " + customDate.Value.ToString ("M/d/yyyy", new System.Globalization.CultureInfo("en-US"));
+                } else {
+                    NcAssert.CaseError ("custom deferral type requires custom date");
+                }
                 break;
             default:
                 NcAssert.CaseError ("Not a recognzized deferral type.");
                 break;
-            } 
+            }
+            return deferralString;
+        }
+
+        public static string GetIntentString (McEmailMessage.IntentType intent, MessageDeferralType intentDateTypeEnum, DateTime intentDateTime)
+        {
+            string intentString = IntentEnumToString (intent);
+            string dateString = DeferralTypeToString (intentDateTypeEnum, intentDateTime);
+            if (!String.IsNullOrEmpty (dateString)) {
+                intentString += " " + dateString;
+            }
             return intentString;
         }
 

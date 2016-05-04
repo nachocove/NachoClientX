@@ -532,6 +532,24 @@ namespace NachoCore.Utils
             }
         }
 
+        static public string ShortSenderString (string sender)
+        {
+            var longSenderString = SenderString (sender).Trim ();
+            var senderString = longSenderString;
+            var spaceIndex = senderString.IndexOf (' ');
+            if (spaceIndex > 0) {
+                senderString = senderString.Substring (0, spaceIndex);
+            }
+            var atIndex = senderString.IndexOf ('@');
+            if (atIndex > 0) { // don't cut if @ is at the start
+                senderString = senderString.Substring (0, atIndex);
+            }
+            if (!String.IsNullOrEmpty (senderString)) {
+                return senderString;
+            }
+            return longSenderString;
+        }
+
         static public string RecipientString (string Recipient)
         {
             if (String.IsNullOrWhiteSpace (Recipient)) {
