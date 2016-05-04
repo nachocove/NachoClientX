@@ -136,7 +136,7 @@ namespace NachoClient.iOS
                 attributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));
             }
             if (message.Intent != McEmailMessage.IntentType.None) {
-                var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (message.Intent);
+                var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (message.Intent, uppercase: false);
                 attributedDateText.Insert (new NSAttributedString (intentString + " "), 0);
                 attributedDateText.AddAttribute (UIStringAttributeKey.Font, DateLabel.Font.WithSize (11.0f), new NSRange(0, intentString.Length));
                 attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB(0xD2, 0x47, 0x47), new NSRange(0, intentString.Length));
