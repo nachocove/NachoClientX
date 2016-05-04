@@ -56,7 +56,7 @@ class BuildInfoFile:
                         print >>f, '             @"%s",' % s
                     print >>f, '        };'
                 else:
-                    raise Exception("Unknown type value %s")
+                    raise Exception("Unknown type value %s=%s" % (key, value))
             print >>f, '    }'
             print >>f, '}'
 
@@ -104,7 +104,7 @@ def create_buildinfo(options):
     build_info.add('BuildNumber', build_number)
     build_info.add('Time', datetime.now().strftime('%m/%d/%Y %H:%M:%S'))
     build_info.add('User', get_username())
-    if source is not None:
+    if source is None:
         build_info.add('Source', '')
     else:
         build_info.add('Source', source)
