@@ -731,7 +731,7 @@ namespace NachoCore.IMAP
             case 0:
                 var uidSet = new UniqueIdSet ();
                 var syncInstList = RegularSyncInstructions (defInbox, ref protocolState, hasPending);
-                if (syncInstList.Any ()) {
+                if (null != syncInstList && syncInstList.Any ()) {
                     foreach (var inst in syncInstList) {
                         uidSet.AddRange (inst.UidSet);
                     }
