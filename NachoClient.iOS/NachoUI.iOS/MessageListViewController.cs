@@ -538,6 +538,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes",
                 changed, adds == null ? 0 : adds.Count, deletes == null ? 0 : deletes.Count);
+            Messages.ClearCache ();
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }

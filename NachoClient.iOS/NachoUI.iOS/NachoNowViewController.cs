@@ -513,6 +513,7 @@ namespace NachoClient.iOS
 
         void HandleReloadHotMessagesResults (bool messagesChanged, List<int> messageAdds, List<int> messageDeletes, bool actionsChanged, List<int> actionAdds, List<int> actionDeletes)
         {
+            HotMessages.ClearCache ();
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
