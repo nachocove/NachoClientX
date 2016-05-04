@@ -374,6 +374,7 @@ namespace NachoClient.iOS
                             Action.DeferralType = MessageDeferralType.Custom;
                         }
                         Action.DueDate = date;
+                        Action.DueDateIncludesTime = false;
                         UpdateDueDateCell ();
                         UpdateDeferals ();
                         if (Action.IsDeferred){

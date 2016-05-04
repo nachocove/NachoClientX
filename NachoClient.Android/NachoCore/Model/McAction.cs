@@ -64,13 +64,7 @@ namespace NachoCore.Model
             action.State = McAction.ActionState.Hot;
             if (message.IntentDate != default(DateTime)) {
                 action.DueDate = message.IntentDate;
-                action.DueDateIncludesTime = (
-                    message.IntentDateType == MessageDeferralType.OneHour ||
-                    message.IntentDateType == MessageDeferralType.TwoHours ||
-                    message.IntentDateType == MessageDeferralType.Later ||
-                    message.IntentDateType == MessageDeferralType.Tonight ||
-                    message.IntentDateType == MessageDeferralType.EndOfDay
-                );
+                action.DueDateIncludesTime = NcMessageIntent.IntentIsToday (message.IntentDateType);
             }
             if (message.Intent != McEmailMessage.IntentType.None) {
                 var sender = Pretty.ShortSenderString (message.From);

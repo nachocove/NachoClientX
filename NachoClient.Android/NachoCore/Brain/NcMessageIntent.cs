@@ -46,6 +46,17 @@ namespace NachoCore.Brain
             return MessageIntentList;
         }
 
+        public static bool IntentIsToday (MessageDeferralType intent)
+        {
+            return (
+                intent == MessageDeferralType.OneHour ||
+                intent == MessageDeferralType.TwoHours ||
+                intent == MessageDeferralType.Later ||
+                intent == MessageDeferralType.Tonight ||
+                intent == MessageDeferralType.EndOfDay
+            );
+        }
+
         public static string IntentEnumToString (McEmailMessage.IntentType type)
         {
             switch (type) {

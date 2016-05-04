@@ -123,7 +123,22 @@ namespace NachoClient.iOS
 
         public void SetMessage (McEmailMessage message)
         {
-            DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
+            NSMutableAttributedString attributedDateText;
+            if (message.IntentDate != default(DateTime)) {
+                if (message.IntentDate < DateTime.UtcNow) {
+                    attributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                } else {
+                    attributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                }
+            } else {
+                attributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));
+            }
+            if (message.Intent != McEmailMessage.IntentType.None) {
+                var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (message.Intent);
+                attributedDateText.Insert (new NSAttributedString (intentString + " "), 0);
+                attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB(0xff, 0x3f, 0x20), new NSRange(0, intentString.Length));
+            }
+            DateLabel.AttributedText = attributedDateText;
             if (UseRecipientName) {
                 TextLabel.Text = Pretty.RecipientString (message.To);
                 PortraitView.Hidden = true;

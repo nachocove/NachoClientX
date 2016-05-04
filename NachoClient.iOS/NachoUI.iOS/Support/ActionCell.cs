@@ -132,9 +132,9 @@ namespace NachoClient.iOS
             }
             if (Action.DueDate != default(DateTime)) {
                 if (Action.DueDate > DateTime.UtcNow) {
-                    DateLabel.Text = "by " + Pretty.FutureDate (Action.DueDate);
+                    DateLabel.Text = "by " + Pretty.FutureDate (Action.DueDate, Action.DueDateIncludesTime);
                 } else {
-                    DateLabel.Text = "due " + Pretty.FutureDate (Action.DueDate);
+                    DateLabel.Text = "due " + Pretty.FutureDate (Action.DueDate, Action.DueDateIncludesTime);
                 }
             } else {
                 DateLabel.Text = "";

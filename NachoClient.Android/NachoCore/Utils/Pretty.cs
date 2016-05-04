@@ -281,6 +281,17 @@ namespace NachoCore.Utils
             return result;
         }
 
+        static public string ShortTime (DateTime time)
+        {
+            var timeString = Time (time);
+            if (timeString.EndsWith (":00 pm")) {
+                timeString = timeString.Substring (0, timeString.Length - 6) + " pm";
+            } else if (timeString.EndsWith (":00 am")) {
+                timeString = timeString.Substring (0, timeString.Length - 6) + " am";
+            }
+            return timeString;
+        }
+
         /// <summary>
         /// "Wed, Oct 21 - 4:28 pm" or "Wed, Oct 21, 2015 - 4:28 pm"
         /// </summary>
@@ -337,12 +348,15 @@ namespace NachoCore.Utils
             return ShortDate (dateTime);
         }
 
-        static public string FutureDate (DateTime dateTime)
+        static public string FutureDate (DateTime dateTime, bool timeMatters)
         {
             var local = dateTime.ToLocalTime ();
             var localStartOfDay = local - local.TimeOfDay;
             var now = DateTime.Now;
             if (now.Year == local.Year && now.Month == local.Month && now.Day == local.Day) {
+                if (timeMatters) {
+                    return ShortTime (local);
+                }
                 return "Today";
             }
             if (now < localStartOfDay) {

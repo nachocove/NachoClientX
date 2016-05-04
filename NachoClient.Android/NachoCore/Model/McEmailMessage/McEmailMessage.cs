@@ -1674,7 +1674,7 @@ namespace NachoCore.Model
             if (inFolder.Type != Xml.FolderHierarchy.TypeCode.DefaultSent_5) {
                 if (Intent == IntentType.PleaseRead || Intent == IntentType.ResponseRequired || Intent == IntentType.Urgent) {
                     IsAction = true;
-                } else if (Intent == IntentType.Important && IntentDateType == MessageDeferralType.Custom) {
+                } else if (Intent == IntentType.Important && IntentDateType != MessageDeferralType.None) {
                     IsAction = true;
                 }
             }

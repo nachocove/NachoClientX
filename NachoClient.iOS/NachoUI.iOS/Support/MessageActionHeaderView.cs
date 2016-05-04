@@ -106,9 +106,9 @@ namespace NachoClient.iOS
                 TitleLabel.Text = _Action.Title;
                 if (!_Action.IsCompleted && _Action.DueDate != default(DateTime)) {
                     if (_Action.DueDate > DateTime.UtcNow) {
-                        DateLabel.Text = "by " + Pretty.FutureDate (_Action.DueDate);
+                        DateLabel.Text = "by " + Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime);
                     } else {
-                        DateLabel.Text = "due " + Pretty.FutureDate (_Action.DueDate);
+                        DateLabel.Text = "due " + Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime);
                     }
                 }else if (_Action.IsDeferred) {
                     DateLabel.Text = "Deferred"; 
