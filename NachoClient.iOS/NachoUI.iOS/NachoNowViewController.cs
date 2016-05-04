@@ -292,7 +292,7 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var action = HotActions.ActionAt (indexPath.Row);
-            NcEmailArchiver.Delete (action.Message);
+            action.RemoveAndDeleteMessage ();
         }
 
         void DemoteAction (NSIndexPath indexPath)
@@ -604,7 +604,7 @@ namespace NachoClient.iOS
                 UpdateVisibleRows ();
                 ReconfigureGroupedRows ();
             }
-            EmptyView.Hidden = HotMessages.Count () > 0 || HotActions.Count () > 0;
+            EmptyView.Hidden = SectionCount > 0;
         }
 
         void DetermineRowChanges (List<int> adds, List<int> deletes, List<NSIndexPath> addedIndexPaths, List<NSIndexPath> deletedIndexPaths, int totalSectionRowsBeforeUpdate, int itemRowsBeforeUpdate, int sectionBeforeUpdate, int totalSectionRows, int itemRows, int section, int maxItemRows)

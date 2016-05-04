@@ -167,7 +167,7 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var action = Actions.ActionAt (indexPath.Row);
-            NcEmailArchiver.Delete (action.Message);
+            action.RemoveAndDeleteMessage ();
             NotifyActionsChanged (action);
         }
 

@@ -336,6 +336,27 @@ namespace NachoCore.Model
                 Account = account,
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged)
             });
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+            });
+        }
+
+        public void RemoveAndDeleteMessage ()
+        {
+            base.Delete ();
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            var message = Message;
+            message = message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                var _message = record as McEmailMessage;
+                _message.IsAction = false;
+                return true;
+            });
+            NcEmailArchiver.Delete (message);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+            });
         }
 
         private class StateCountResult {
