@@ -45,11 +45,42 @@ namespace NachoCore.Utils
         static Regex SymbolRun = new Regex ("[~`\\-\\+=_#<>\\*\\/]{4,}");
         static Regex ConsecutiveWhitespace = new Regex ("\\s+");
 
-        static public string MessagePreview (McEmailMessage message, out int subjectLength)
+        static public string MessagePreview (McEmailMessage message, out int subjectLength, int maxSubjectLength = 50)
         {
             string subject = "";
             if (message.Subject != null) {
                 subject = message.Subject.Trim ();
+            }
+            if (maxSubjectLength > 0) {
+                int flex = 10;
+                if (subject.Length > maxSubjectLength) {
+                    int index = maxSubjectLength;
+                    bool foundSpace = false;
+                    while (index < subject.Length && index < maxSubjectLength + flex) {
+                        var c = subject [index];
+                        if (c == ' ') {
+                            foundSpace = true;
+                            break;
+                        } else {
+                            ++index;
+                        }
+                    }
+                    if (!foundSpace) {
+                        while (index >= 0 && index > maxSubjectLength - flex) {
+                            var c = subject [index];
+                            if (c == ' ') {
+                                foundSpace = true;
+                                break;
+                            } else {
+                                --index;
+                            }
+                        }
+                    }
+                    if (!foundSpace) {
+                        index = maxSubjectLength;
+                    }
+                    subject = subject.Substring (0, index) + "...";
+                }
             }
             string bodyPreview = "";
             if (message.BodyPreview != null) {
