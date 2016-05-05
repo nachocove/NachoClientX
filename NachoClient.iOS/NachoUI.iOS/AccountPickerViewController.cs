@@ -2,6 +2,7 @@
 //
 using System;
 using UIKit;
+using CoreGraphics;
 using NachoCore.Model;
 using System.Collections.Generic;
 using NachoCore;
@@ -14,15 +15,20 @@ namespace NachoClient.iOS
         void AccountPickerDidPickAccount (AccountPickerViewController vc, McAccount account);
     }
 
-    public partial class AccountPickerViewController : NcUITableViewController
+    public partial class AccountPickerViewController : NachoTableViewController
     {
+
+        const string AccountCellIdentifier = "AccountCellIdentifier";
+
+        List<McAccount> _Accounts;
+        McAccount _SelectedAccount;
 
         public McAccount SelectedAccount {
             get {
-                return Source.SelectedAccount;
+                return _SelectedAccount;
             }
             set {
-                Source.SelectedAccount = value;
+                _SelectedAccount = value;
                 if (IsViewLoaded) {
                     TableView.ReloadData ();
                 }
@@ -31,22 +37,19 @@ namespace NachoClient.iOS
 
         public List<McAccount> Accounts {
             get {
-                return Source.Accounts;
+                return _Accounts;
             }
             set {
-                Source.Accounts = value;
+                _Accounts = value;
                 if (IsViewLoaded) {
                     TableView.ReloadData ();
                 }
             }
         }
-        AccountPickerTableViewSource Source;
         public AccountPickerViewControllerDelegate PickerDelegate;
 
         public AccountPickerViewController () : base (UITableViewStyle.Grouped)
         {
-            Source = new AccountPickerTableViewSource ();
-            Source.ViewController = this;
             NavigationItem.Title = "Choose Account";
 
         }
@@ -54,32 +57,14 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RowHeight = 54.0f;
-            TableView.Source = Source;
+            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.RowHeight = AccountPickerTableViewCell.PreferredHeight;
+            TableView.RegisterClassForCellReuse (typeof(AccountPickerTableViewCell), AccountCellIdentifier);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            // Perform any additional setup after loading the view, typically from a nib.
-        }
-
-        public override void DidReceiveMemoryWarning ()
-        {
-            base.DidReceiveMemoryWarning ();
-            // Release any cached data, images, etc that aren't in use.
-        }
-    }
-
-    public class AccountPickerTableViewSource : UITableViewSource
-    {
-
-        public AccountPickerViewController ViewController;
-        public McAccount SelectedAccount;
-        public List<McAccount> Accounts;
-
-        public AccountPickerTableViewSource ()
-        {
         }
 
         public override nint NumberOfSections (UITableView tableView)
@@ -95,20 +80,25 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
             var account = Accounts [indexPath.Row];
-            var cell = tableView.DequeueReusableCell ("account") as AccountPickerTableViewCell;
-            if (cell == null) {
-                cell = new AccountPickerTableViewCell ("account");
-            }
+            var cell = tableView.DequeueReusableCell (AccountCellIdentifier) as AccountPickerTableViewCell;
             cell.Account = account;
-            cell.Accessory = account.Id == SelectedAccount.Id ? UITableViewCellAccessory.Checkmark : UITableViewCellAccessory.None;
+            if (account.Id == SelectedAccount.Id) {
+                if (!(cell.AccessoryView is CheckmarkAccessoryView)) {
+                    cell.AccessoryView = new CheckmarkAccessoryView ();
+                }
+            } else {
+                cell.AccessoryView = null;
+            }
             return cell;
         }
 
         public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
-            var cellView = tableView.CellAt (indexPath);
+            var cellView = tableView.CellAt (indexPath) as AccountPickerTableViewCell;
             if (cellView != null) {
-                cellView.Accessory = UITableViewCellAccessory.Checkmark;
+                if (cellView.AccessoryView == null) {
+                    cellView.AccessoryView = new CheckmarkAccessoryView ();
+                }
             }
             var row = 0;
             for (; row < Accounts.Count; ++row) {
@@ -116,19 +106,26 @@ namespace NachoClient.iOS
                     break;
                 }
             }
-            cellView = tableView.CellAt (Foundation.NSIndexPath.FromRowSection(row, 0));
+            cellView = tableView.CellAt (Foundation.NSIndexPath.FromRowSection(row, 0)) as AccountPickerTableViewCell;
             if (cellView != null) {
-                cellView.Accessory = UITableViewCellAccessory.None;
+                cellView.AccessoryView = null;
             }
             SelectedAccount = Accounts [indexPath.Row];
-            if (ViewController.PickerDelegate != null) {
-                ViewController.PickerDelegate.AccountPickerDidPickAccount (ViewController, SelectedAccount);
+            if (PickerDelegate != null) {
+                PickerDelegate.AccountPickerDidPickAccount (this, SelectedAccount);
             }
         }
-        
+
+        private class CheckmarkAccessoryView : ImageAccessoryView
+        {
+            public CheckmarkAccessoryView () : base ("gen-checkbox-checked")
+            {
+            }
+        }
+
     }
 
-    public class AccountPickerTableViewCell : UITableViewCell
+    public class AccountPickerTableViewCell : SwipeTableViewCell
     {
 
         McAccount _Account;
@@ -142,11 +139,21 @@ namespace NachoClient.iOS
             }
         }
 
-        public AccountPickerTableViewCell (string reuseIdentifier) : base (UITableViewCellStyle.Subtitle, reuseIdentifier)
+        UIImageView IconView;
+        nfloat IconSize = 40.0f;
+        public static nfloat PreferredHeight = 64.0f;
+
+        public AccountPickerTableViewCell (IntPtr handle) : base (handle)
         {
-            ImageView.ClipsToBounds = true;
+            IconView = new UIImageView (new CGRect(0.0f, 0.0f, 40.0f, 40.0f));
+            DetailTextSpacing = 0.0f;
+            IconView.ClipsToBounds = true;
             TextLabel.Font = A.Font_AvenirNextDemiBold17;
-            DetailTextLabel.Font = A.Font_AvenirNextMedium14;
+            TextLabel.TextColor = A.Color_NachoGreen;
+            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+            DetailTextLabel.TextColor = A.Color_NachoTextGray;
+            SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
+            ContentView.AddSubview (IconView);
         }
 
         void Update ()
@@ -154,21 +161,15 @@ namespace NachoClient.iOS
             TextLabel.Text = Account.DisplayName;
             DetailTextLabel.Text = Account.EmailAddr;
             using (var image = Util.ImageForAccount (Account)) {
-                ImageView.Image = image;
+                IconView.Image = image;
             }
         }
 
         public override void LayoutSubviews ()
         {
-            var imageReduction = 10.0f;
             base.LayoutSubviews ();
-            ImageView.Frame = new CoreGraphics.CGRect(
-                ImageView.Frame.X + imageReduction / 2.0f,
-                ImageView.Frame.Y + imageReduction / 2.0f,
-                ImageView.Frame.Width - imageReduction,
-                ImageView.Frame.Height - imageReduction
-            );
-            ImageView.Layer.CornerRadius = ImageView.Frame.Size.Width / 2.0f;
+            IconView.Center = new CGPoint (SeparatorInset.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
+            IconView.Layer.CornerRadius = IconView.Frame.Size.Width / 2.0f;
         }
 
     }

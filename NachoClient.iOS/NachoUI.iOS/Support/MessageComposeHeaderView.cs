@@ -70,12 +70,94 @@ namespace NachoClient.iOS
         }
     }
 
-    public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate
+    public class ComposeActionSelectionView : UIView 
     {
 
-        #region Private Views
+        ActionCheckboxView CheckboxView;
+        public nfloat LeftPadding = 0.0f;
+        public nfloat RightPadding = 0.0f;
+        public readonly UILabel TextLabel;
+        public readonly UILabel DateLabel;
+        public UIColor LabelColor;
+        public Action Action;
 
-        #endregion
+        UITapGestureRecognizer TapRecognizer;
+
+        public ComposeActionSelectionView (CGRect frame) : base(frame)
+        {
+            CheckboxView = new ActionCheckboxView (20.0f);
+            CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+
+            TextLabel = new UILabel ();
+            DateLabel = new UILabel ();
+            DateLabel.TextColor = A.Color_NachoTextGray;
+
+            AddSubview (CheckboxView);
+            AddSubview (TextLabel);
+            AddSubview (DateLabel);
+
+            TapRecognizer = new UITapGestureRecognizer (Tap);
+            AddGestureRecognizer (TapRecognizer);
+        }
+
+        void Tap ()
+        {
+            if (Action != null) {
+                Action ();
+            }
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            CheckboxView.Center = new CGPoint (LeftPadding + CheckboxView.Frame.Width / 2.0f, Bounds.Height / 2.0f);
+            var dateSize = DateLabel.SizeThatFits (new CGSize (Bounds.Width, 0.0f));
+            dateSize.Height = DateLabel.Font.RoundedLineHeight (1.0f);
+            var textHeight = TextLabel.Font.RoundedLineHeight (1.0f);
+            var textTop = (Bounds.Height - textHeight) / 2.0f;
+
+            CGRect frame;
+
+            frame = DateLabel.Frame;
+            frame.Width = dateSize.Width;
+            frame.Height = dateSize.Height;
+            frame.X = Bounds.Width - RightPadding - frame.Width;
+            frame.Y = textTop + ((TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f) - (DateLabel.Font.Ascender + (dateSize.Height - DateLabel.Font.LineHeight) / 2.0f));
+            DateLabel.Frame = frame;
+
+            frame = TextLabel.Frame;
+            frame.X = CheckboxView.Frame.X + CheckboxView.Frame.Width + LeftPadding;
+            frame.Y = textTop;
+            frame.Width = DateLabel.Frame.X - frame.X - 3.0f;
+            frame.Height = textHeight;
+            TextLabel.Frame = frame;
+
+        }
+
+        public void SetIntent (McEmailMessage.IntentType intent, MessageDeferralType intentDateType, DateTime intentDate)
+        {
+            if (intent == McEmailMessage.IntentType.None) {
+                TextLabel.Text = "Request an action for the recipient";
+                TextLabel.TextColor = A.Color_NachoTextGray;
+                DateLabel.Text = "";
+                CheckboxView.IsChecked = false;
+            } else {
+                TextLabel.Text = NachoCore.Brain.NcMessageIntent.IntentEnumToString (intent, uppercase: false);
+                TextLabel.TextColor = LabelColor;
+                if (intentDateType == MessageDeferralType.None) {
+                    DateLabel.Text = "";
+                } else {
+                    DateLabel.Text = NachoCore.Brain.NcMessageIntent.DeferralTypeToString (intentDateType, intentDate);
+                }
+                CheckboxView.IsChecked = true;
+            }
+            SetNeedsLayout ();
+        }
+
+    }
+
+    public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate
+    {
 
         #region Properties
 
@@ -94,7 +176,7 @@ namespace NachoClient.iOS
         public readonly UcAddressBlock BccView;
         public readonly ComposeFieldLabel FromView;
         public readonly NcAdjustableLayoutTextField SubjectField;
-        public readonly ComposeFieldLabel IntentView;
+        public readonly ComposeActionSelectionView IntentView;
         public readonly UcAttachmentBlock AttachmentsView;
         UIView ToSeparator;
         UIView CcSeparator;
@@ -116,7 +198,7 @@ namespace NachoClient.iOS
 
         bool ShouldHideIntent {
             get {
-                return !HasOpenedSubject && String.IsNullOrEmpty(SubjectField.Text);
+                return false;
             }
         }
 
@@ -172,13 +254,11 @@ namespace NachoClient.iOS
             SubjectField.EditingDidBegin += SubjectEditingDidBegin;
             SubjectField.EditingDidEnd += SubjectEditingDidEnd;
 
-            IntentView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
+            IntentView = new ComposeActionSelectionView (new CGRect (0, 0, Bounds.Width, LineHeight));
             IntentView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            IntentView.NameLabel.Font = LabelFont;
-            IntentView.ValueLabel.Font = LabelFont;
-            IntentView.NameLabel.TextColor = LabelColor;
-            IntentView.ValueLabel.TextColor = LabelColor;
-            IntentView.NameLabel.Text = "Intent: ";
+            IntentView.TextLabel.Font = A.Font_AvenirNextRegular17;
+            IntentView.DateLabel.Font = A.Font_AvenirNextRegular14;
+            IntentView.LabelColor = LabelColor;
             IntentView.Action = SelectIntent;
             IntentView.LeftPadding = LeftPadding;
             IntentView.RightPadding = RightPadding;
@@ -201,7 +281,9 @@ namespace NachoClient.iOS
             FromSeparator = SeparatorView ();
             SubjectSeparator = SeparatorView ();
             IntentSeparator = SeparatorView ();
+//            IntentSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.05f);
             AttachmentsSeparator = SeparatorView ();
+            AttachmentsSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.25f);
 
             AddSubview (ToView);
             AddSubview (ToSeparator);
@@ -213,10 +295,10 @@ namespace NachoClient.iOS
             AddSubview (FromSeparator);
             AddSubview (SubjectField);
             AddSubview (SubjectSeparator);
-            AddSubview (IntentView);
-            AddSubview (IntentSeparator);
             AddSubview (AttachmentsView);
             AddSubview (AttachmentsSeparator);
+            AddSubview (IntentView);
+            AddSubview (IntentSeparator);
 
             SetNeedsLayout ();
         }
@@ -417,10 +499,10 @@ namespace NachoClient.iOS
             y += LayoutSubviewAtYPosition (FromSeparator, y);
             y += LayoutSubviewAtYPosition (SubjectField, y);
             y += LayoutSubviewAtYPosition (SubjectSeparator, y);
-            y += LayoutSubviewAtYPosition (IntentView, y);
-            y += LayoutSubviewAtYPosition (IntentSeparator, y);
             y += LayoutSubviewAtYPosition (AttachmentsView, y);
             y += LayoutSubviewAtYPosition (AttachmentsSeparator, y);
+            y += LayoutSubviewAtYPosition (IntentView, y);
+            y += LayoutSubviewAtYPosition (IntentSeparator, y);
 
             preferredHeight = y;
 

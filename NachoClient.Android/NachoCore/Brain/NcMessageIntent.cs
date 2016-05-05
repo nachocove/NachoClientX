@@ -57,25 +57,36 @@ namespace NachoCore.Brain
             );
         }
 
-        public static string IntentEnumToString (McEmailMessage.IntentType type)
+        public static string IntentEnumToString (McEmailMessage.IntentType type, bool uppercase = true)
         {
+            var intentString = "";
             switch (type) {
             case McEmailMessage.IntentType.None:
-                return "NONE";
+                intentString = "None";
+                break;
             case McEmailMessage.IntentType.FYI:
-                return "FYI";
+                intentString = "FYI";
+                break;
             case McEmailMessage.IntentType.PleaseRead:
-                return "PLEASE READ";
+                intentString = "Please Read";
+                break;
             case McEmailMessage.IntentType.ResponseRequired:
-                return "RESPONSE REQUIRED";
+                intentString = "Response Required";
+                break;
             case McEmailMessage.IntentType.Urgent:
-                return "URGENT";
+                intentString = "Urgent";
+                break;
             case McEmailMessage.IntentType.Important:
-                return "IMPORTANT";
+                intentString = "Important";
+                break;
             default:
                 NcAssert.CaseError ("Type not recognized");
-                return null;
+                break;
             }
+            if (uppercase) {
+                return intentString.ToUpper ();
+            }
+            return intentString;
         }
 
         public static string DeferralTypeToString (MessageDeferralType intentDateTypeEnum, DateTime? customDate = null)

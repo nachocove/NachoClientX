@@ -958,7 +958,7 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderIntentView ()
         {
-            HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
+            HeaderView.IntentView.SetIntent (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
         private void UpdateHeaderAttachmentsView ()
