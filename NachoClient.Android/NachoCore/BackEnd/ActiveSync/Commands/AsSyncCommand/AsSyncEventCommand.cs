@@ -38,9 +38,10 @@ namespace NachoCore.ActiveSync
 
         public static void ServerSaysAddOrChangeCalendarItem (int accountId, XElement command, McFolder folder)
         {
+            string cmdNameWithAccount = string.Format ("AsSyncCommand({0})", folder.AccountId);
             var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
             if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeCalendarItem: No ServerId present.");
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeCalendarItem: No ServerId present.", cmdNameWithAccount);
                 return;
             }
             // If the server attempts to overwrite, delete the pre-existing record first.
@@ -57,7 +58,7 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (r.isOK (), "ParseCalendar");
                 NcAssert.NotNull (newItem, "newItem");
             } catch (Exception ex) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeCalendarItem: Exception parsing: {0}", ex.ToString ());
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeCalendarItem: Exception parsing: {1}", cmdNameWithAccount, ex.ToString ());
                 if (null == newItem || null == newItem.ServerId || string.Empty == newItem.ServerId) {
                     newItem = new McCalendar () {
                         ServerId = xmlServerId.Value,
@@ -71,18 +72,18 @@ namespace NachoCore.ActiveSync
             if (string.IsNullOrEmpty (newItem.UID)) {
                 if (null != newItem.attendees && 0 < newItem.attendees.Count) {
                     // An appointment without a UID is OK.  A meeting without a UID is a problem.
-                    Log.Error (Log.LOG_SYNC, "ActiveSync command sent a meeting without a UID.");
+                    Log.Error (Log.LOG_SYNC, "{0}: ActiveSync command sent a meeting without a UID.", cmdNameWithAccount);
                 }
             } else {
                 var sameUid = McCalendar.QueryByUID (newItem.AccountId, newItem.UID);
                 if (null != sameUid && sameUid.ServerId != newItem.ServerId) {
                     // It is normal for there to be duplicate UIDs for a short period of time when the server
                     // changes an event using an add/delete.  So this is probably not an error.
-                    Log.Info (Log.LOG_SYNC, "Two events have the same UID ({0}) but different ServerId ({1} and {2}). This will likely result in a duplicate event.",
+                    Log.Info (Log.LOG_SYNC, "{0}: Two events have the same UID ({1}) but different ServerId ({2} and {3}). This will likely result in a duplicate event.", cmdNameWithAccount,
                         newItem.UID, sameUid.ServerId, newItem.ServerId);
                 }
                 if (null != oldItem && oldItem.UID != newItem.UID) {
-                    Log.Error (Log.LOG_SYNC, "The UID for event {0} is changing from {1} to {2}",
+                    Log.Error (Log.LOG_SYNC, "{0}: The UID for event {1} is changing from {2} to {3}", cmdNameWithAccount,
                         newItem.ServerId, oldItem.UID, newItem.UID);
                 }
             }

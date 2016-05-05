@@ -114,8 +114,8 @@ namespace NachoCore.ActiveSync
                         // with two folders having the same ServerId. The folder will be moved to LAF later,
                         // assuming it was from a prior epoch.
                         if (maybeSame.AsFolderSyncEpoch == folderSyncEpoch) {
-                            Log.Error (Log.LOG_AS, "ApplyFolderAdd Clobber: new: {0}, existing {1}.", 
-                                maybeSame.ToString (), folder.ToString ());
+                            Log.Error (Log.LOG_AS, "{0}: ApplyFolderAdd Clobber: new: {1}, existing {2}.", 
+                                CmdNameWithAccount, maybeSame.ToString (), folder.ToString ());
                         }
                         var newServerId = Guid.NewGuid ().ToString ("N");
                         NcModel.Instance.RunInTransaction (() => {

@@ -164,7 +164,7 @@ namespace NachoCore.ActiveSync
                 if (null != folder) {
                     folder.Delete ();
                 } else {
-                    Log.Error (Log.LOG_AS, "ApplyFolderDelete:ApplyCommandToModel: ServerId missing in DB.");
+                    Log.Error (Log.LOG_AS, "{0}: ApplyFolderDelete:ApplyCommandToModel: ServerId missing in DB.", CmdNameWithAccount);
                 }
             }
         }

@@ -17,10 +17,11 @@ namespace NachoCore.ActiveSync
 
         public static void ServerSaysAddOrChangeTask (XElement command, McFolder folder)
         {
+            string cmdNameWithAccount = string.Format ("AsSyncCommand({0})", folder.AccountId);
             XNamespace Ns = Xml.AirSync.Ns;
             var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
             if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeTask: No ServerId present.");
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeTask: No ServerId present.", cmdNameWithAccount);
                 return;
             }
             var applicationData = command.Element (Ns + Xml.AirSync.ApplicationData);
@@ -38,7 +39,7 @@ namespace NachoCore.ActiveSync
                     var result = task.FromXmlApplicationData (applicationData);
                     NcAssert.True (result.isOK());
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_AS, "Parse of Task failed on Add. ServerId {0}, ex {1}", xmlServerId.Value, ex);
+                    Log.Error (Log.LOG_AS, "{0}: Parse of Task failed on Add. ServerId {1}, ex {2}", cmdNameWithAccount, xmlServerId.Value, ex);
                 }
                 task.ServerId = xmlServerId.Value;
                 task.Insert ();
@@ -48,7 +49,7 @@ namespace NachoCore.ActiveSync
                     var result = task.FromXmlApplicationData (applicationData);
                     NcAssert.True (result.isOK());
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_AS, "Parse of Task failed on Change. ServerId {0}, ex {1}", xmlServerId.Value, ex);
+                    Log.Error (Log.LOG_AS, "{0}: Parse of Task failed on Change. ServerId {1}, ex {2}", cmdNameWithAccount, xmlServerId.Value, ex);
                 }
                 task.Update ();
             }

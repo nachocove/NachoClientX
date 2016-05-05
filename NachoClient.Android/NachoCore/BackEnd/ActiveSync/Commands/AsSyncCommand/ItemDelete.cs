@@ -113,7 +113,7 @@ namespace NachoCore.ActiveSync
                     item = McAbstrFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
                     break;
                 default:
-                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + ClassCode);
+                    Log.Error (Log.LOG_AS, "{0}: ProcessCollectionCommands UNHANDLED class {1}", CmdNameWithAccount, ClassCode);
                     break;
                 }
                 if (null != item) {

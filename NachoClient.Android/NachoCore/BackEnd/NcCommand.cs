@@ -92,7 +92,7 @@ namespace NachoCore
             Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token);
             SavedCredEpoch = BEContext.Cred.Epoch;
             CmdName = GetType ().Name;
-            CmdNameWithAccount = string.Format ("{0}{{{1}}}", CmdName, AccountId);
+            CmdNameWithAccount = string.Format ("{0}({1})", CmdName, AccountId);
         }
 
         /// <summary>

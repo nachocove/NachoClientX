@@ -207,7 +207,7 @@ namespace NachoCore.SFDC
             // before we do anything, make sure we aren't cancelled. We don't want to process
             // anything or move the SM to a new state if we're cancelled.
             if (Cts.Token.IsCancellationRequested) {
-                Log.Info (Log.LOG_SFDC, "{0}({1}): Cancelled", CmdNameWithAccount, AccountId);
+                Log.Info (Log.LOG_SFDC, "{0}: Cancelled", CmdNameWithAccount);
                 return;
             }
             ReportCommResult (serverFailedGenerally);
