@@ -94,6 +94,12 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
+        // Since this is one of the tabs, this view controller should never be cleaned up.
+        // Override Cleanup() to do nothing.
+        protected override void Cleanup ()
+        {
+        }
+
         #endregion
 
         #region Table Delegate & Data Source

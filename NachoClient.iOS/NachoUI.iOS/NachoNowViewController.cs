@@ -177,6 +177,12 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
+        // Since this is one of the tabs, this view controller should never be cleaned up.
+        // Override Cleanup() to do nothing.
+        protected override void Cleanup ()
+        {
+        }
+
         #endregion
 
         #region User Actions
