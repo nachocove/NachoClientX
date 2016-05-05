@@ -398,6 +398,7 @@ namespace NachoCore.IMAP
             } else if (imapSummary.Envelope != null) {
                 try {
                     emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary, attachments);
+                    emailMessage.DetermineIfIsAction (folder);
                     updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                     changed = true;
                     justCreated = true;
@@ -427,6 +428,9 @@ namespace NachoCore.IMAP
                             if (result.isError()){
                                 Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
                             }
+                        }
+                        if (emailMessage.IsAction){
+                            McAction.RunCreateActionFromMessageTask (emailMessage.Id);
                         }
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -722,6 +726,7 @@ namespace NachoCore.IMAP
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
             }
             SetConversationId (emailMessage, summary);
+            emailMessage.ParseIntentFromSubject ();
             emailMessage.IsIncomplete = false;
             emailMessage.DetermineIfIsChat ();
 

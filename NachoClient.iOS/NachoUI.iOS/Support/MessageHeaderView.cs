@@ -115,7 +115,22 @@ namespace NachoClient.iOS
         public void Update ()
         {
             PortraitView.SetPortrait (Message.cachedPortraitId, Message.cachedFromColor, Message.cachedFromLetters);
-            DateLabel.Text = Pretty.FriendlyFullDateTime (Message.DateReceived);
+            var attributedDateText = new NSMutableAttributedString (Pretty.FriendlyFullDateTime (Message.DateReceived));
+            if (!Message.IsAction) {
+                if (Message.Intent != McEmailMessage.IntentType.None) {
+                    var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (Message.Intent);
+                    var location = attributedDateText.Length + 1;
+                    attributedDateText.Append (new NSAttributedString (" " + intentString));
+                    attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB (0xD2, 0x47, 0x47), new NSRange (location, intentString.Length));
+                    if (Message.IntentDateType != MessageDeferralType.None) {
+                        var dueDateString = Pretty.FutureDate (Message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (Message.IntentDateType));
+                        location = attributedDateText.Length;
+                        attributedDateText.Append (new NSAttributedString (" by " + dueDateString));
+                        attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, A.Color_NachoTextGray, new NSRange (location, dueDateString.Length + 3));
+                    }
+                }
+            }
+            DateLabel.AttributedText = attributedDateText;
             FromLabel.Text = Pretty.SenderString (Message.From);
             string prettySubject = "";
             if (String.IsNullOrWhiteSpace (Message.Subject)) {
@@ -160,7 +175,7 @@ namespace NachoClient.iOS
             nfloat subjectHeight = (nfloat)Math.Ceiling (SubjectLabel.SizeThatFits (new CGSize (textWidth, 0.0f)).Height);
             FromLabel.Frame = new CGRect (TextInsets.Left, TextInsets.Top, textWidth, FromLabel.Font.RoundedLineHeight (1.0f));
             SubjectLabel.Frame = new CGRect (FromLabel.Frame.X, FromLabel.Frame.Y + FromLabel.Frame.Height, textWidth, subjectHeight);
-            DateLabel.Frame = new CGRect (FromLabel.Frame.X, SubjectLabel.Frame.Y + SubjectLabel.Frame.Height, textWidth, DateLabel.Font.RoundedLineHeight (1.0f));
+            DateLabel.Frame = new CGRect (FromLabel.Frame.X, SubjectLabel.Frame.Y + SubjectLabel.Frame.Height, Bounds.Width - TextInsets.Right - FromLabel.Frame.X, DateLabel.Font.RoundedLineHeight (1.0f));
             BottomBorder.Frame = new CGRect (TextInsets.Left, Bounds.Height - BorderWidth, Bounds.Width - TextInsets.Left, BorderWidth);
         }
 

@@ -94,6 +94,8 @@ namespace NachoClient.iOS
             }
         }
 
+        UIFont BaseDateLabelFont = A.Font_AvenirNextRegular14;
+
         public MessageCell (IntPtr handle) : base (handle)
         {
             DetailTextSpacing = 0.0f;
@@ -105,7 +107,7 @@ namespace NachoClient.iOS
             DetailTextLabel.Lines = 3;
 
             DateLabel = new UILabel ();
-            DateLabel.Font = A.Font_AvenirNextRegular14;
+            DateLabel.Font = BaseDateLabelFont;
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
@@ -123,7 +125,23 @@ namespace NachoClient.iOS
 
         public void SetMessage (McEmailMessage message)
         {
-            DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
+            NSMutableAttributedString attributedDateText;
+            if (message.IntentDate != default(DateTime)) {
+                if (message.IntentDate < DateTime.UtcNow) {
+                    attributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                } else {
+                    attributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                }
+            } else {
+                attributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));
+            }
+            if (message.Intent != McEmailMessage.IntentType.None) {
+                var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (message.Intent);
+                attributedDateText.Insert (new NSAttributedString (intentString + " "), 0);
+                attributedDateText.AddAttribute (UIStringAttributeKey.Font, DateLabel.Font.WithSize (11.0f), new NSRange(0, intentString.Length));
+                attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB(0xD2, 0x47, 0x47), new NSRange(0, intentString.Length));
+            }
+            DateLabel.AttributedText = attributedDateText;
             if (UseRecipientName) {
                 TextLabel.Text = Pretty.RecipientString (message.To);
                 PortraitView.Hidden = true;
@@ -173,7 +191,7 @@ namespace NachoClient.iOS
 
             frame = DateLabel.Frame;
             frame.X = ContentView.Bounds.Width - dateSize.Width - rightPadding;
-            frame.Y = textTop + (TextLabel.Font.Ascender - DateLabel.Font.Ascender);
+            frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - BaseDateLabelFont.Ascender - (dateSize.Height - BaseDateLabelFont.LineHeight) / 2.0f);
             frame.Width = dateSize.Width;
             frame.Height = dateSize.Height;
             DateLabel.Frame = frame;
@@ -181,7 +199,7 @@ namespace NachoClient.iOS
             frame = TextLabel.Frame;
             frame.X = SeparatorInset.Left;
             frame.Y = textTop;
-            frame.Width = DateLabel.Frame.X - frame.X - RightPadding;
+            frame.Width = DateLabel.Frame.X - frame.X - 3.0f;
             frame.Height = textHeight;
             TextLabel.Frame = frame;
 

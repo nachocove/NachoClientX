@@ -31,6 +31,9 @@ namespace NachoCore.Model
         public DateTime DeferUntilDate { get; set; }
         public DateTime CompletedDate { get; set; }
         public MessageDeferralType DeferralType { get; set; }
+        public bool DueDateIncludesTime { get; set; }
+        [Indexed]
+        public string MimeMessageId { get; set; }
 
         public bool IsHot {
             get {
@@ -61,7 +64,55 @@ namespace NachoCore.Model
             action.AccountId = message.AccountId;
             action.EmailMessageId = message.Id;
             action.State = McAction.ActionState.Hot;
+            action.MimeMessageId = message.MessageID;
+            if (message.IntentDate != default(DateTime)) {
+                action.DueDate = message.IntentDate;
+                action.DueDateIncludesTime = NcMessageIntent.IntentIsToday (message.IntentDateType);
+            }
+            if (message.Intent != McEmailMessage.IntentType.None) {
+                var sender = Pretty.ShortSenderString (message.From);
+                if (message.Intent == McEmailMessage.IntentType.ResponseRequired) {
+                    action.Description = String.Format ("{0} requires a response", sender);
+                } else if (message.Intent == McEmailMessage.IntentType.PleaseRead) {
+                    action.Description = String.Format ("{0} would like you to read this", sender);
+                } else if (message.Intent == McEmailMessage.IntentType.Urgent) {
+                    action.Description = String.Format ("{0} says it's urgent", sender);
+                } else if (message.Intent == McEmailMessage.IntentType.Important) {
+                    action.Description = String.Format ("{0} says it's important", sender);
+                } else if (message.Intent == McEmailMessage.IntentType.FYI) {
+                    action.Description = "FYI";
+                }
+            }
             return action;
+        }
+
+        public static void RunCreateActionFromMessageTask (int messageId)
+        {
+            NcTask.Run (() => {
+                NcModel.Instance.RunInTransaction (() => {
+                    var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+                    if (message != null){
+                        if (String.IsNullOrEmpty (message.MessageID) || !ActionExistsForMimeMessageId(message.AccountId, message.MessageID)){
+                            var action = McAction.FromMessage (message);
+                            action.MoveToFront ();
+                            action.Insert ();
+                        }
+                    }
+                });
+                var _message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+                if (_message != null){
+                    var account = McAccount.QueryById<McAccount> (_message.AccountId);
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                        Account = account,
+                        Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+                    });
+                }
+            }, "McAction_CreateActionFromMessage", NcTask.ActionSerialScheduler);
+        }
+
+        public static bool ActionExistsForMimeMessageId (int accountId, string mimeMessageId)
+        {
+            return NcModel.Instance.Db.Query<McAction> ("SELECT * FROM McAction WHERE MimeMessageId = ? AND AccountId = ?", mimeMessageId, accountId).Count != 0;
         }
 
         public static List<McAction> ActionsForState (int accountId, ActionState state)
@@ -168,13 +219,17 @@ namespace NachoCore.Model
         public void MoveToFront ()
         {
             UserSortOrder = LowestSortOrder (State);
-            Update ();
+            if (Id != 0) {
+                Update ();
+            }
         }
 
         public void MoveToBack ()
         {
             UserSortOrder = HighestSortOrder (State);
-            Update ();
+            if (Id != 0) {
+                Update ();
+            }
         }
 
         public void MoveAfterAction (McAction action)
@@ -187,7 +242,9 @@ namespace NachoCore.Model
                 NcModel.Instance.Db.Execute ("UPDATE McAction SET UserSortOrder = UserSortOrder + 1 WHERE State = ? AND UserSortOrder >= ?", State, targetOrder);
             }
             UserSortOrder = targetOrder;
-            Update ();
+            if (Id != 0) {
+                Update ();
+            }
         }
 
         public void Hot ()
@@ -278,6 +335,27 @@ namespace NachoCore.Model
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
                 Account = account,
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged)
+            });
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+            });
+        }
+
+        public void RemoveAndDeleteMessage ()
+        {
+            base.Delete ();
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            var message = Message;
+            message = message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                var _message = record as McEmailMessage;
+                _message.IsAction = false;
+                return true;
+            });
+            NcEmailArchiver.Delete (message);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
             });
         }
 

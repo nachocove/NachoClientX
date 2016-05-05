@@ -132,9 +132,9 @@ namespace NachoClient.iOS
             }
             if (Action.DueDate != default(DateTime)) {
                 if (Action.DueDate > DateTime.UtcNow) {
-                    DateLabel.Text = "by " + Pretty.FutureDate (Action.DueDate);
+                    DateLabel.Text = "by " + Pretty.FutureDate (Action.DueDate, Action.DueDateIncludesTime);
                 } else {
-                    DateLabel.Text = "due " + Pretty.FutureDate (Action.DueDate);
+                    DateLabel.Text = "due " + Pretty.FutureDate (Action.DueDate, Action.DueDateIncludesTime);
                 }
             } else {
                 DateLabel.Text = "";
@@ -179,7 +179,7 @@ namespace NachoClient.iOS
 
             frame = DateLabel.Frame;
             frame.X = ContentView.Bounds.Width - dateSize.Width - rightPadding;
-            frame.Y = textTop + (TextLabel.Font.Ascender - DateLabel.Font.Ascender);
+            frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - DateLabel.Font.Ascender - (dateSize.Height - DateLabel.Font.LineHeight) / 2.0f);
             frame.Width = dateSize.Width;
             frame.Height = dateSize.Height;
             DateLabel.Frame = frame;

@@ -22,6 +22,18 @@ namespace NachoClient.iOS
             }
         }
 
+
+        public McEmailMessage _Message;
+        public McEmailMessage Message {
+            get {
+                return _Message;
+            }
+            set {
+                _Message = value;
+                Update ();
+            }
+        }
+
         private McAction _Action;
         public McAction Action {
             get {
@@ -33,7 +45,7 @@ namespace NachoClient.iOS
             }
         }
 
-        ActionCheckboxView CheckboxView;
+        public readonly ActionCheckboxView CheckboxView;
         UILabel TitleLabel;
         UILabel DateLabel;
         UIView BottomBorder;
@@ -90,7 +102,7 @@ namespace NachoClient.iOS
 
         void Update ()
         {
-            if (_Action != null) {
+            if (_Action != null && _Message != null) {
                 CheckboxView.IsChecked = _Action.IsCompleted;
                 if (_Action.IsCompleted) {
                     CheckboxView.TintColor = A.Color_NachoTextGray;
@@ -103,12 +115,24 @@ namespace NachoClient.iOS
                         CheckboxView.TintColor = A.Color_NachoGreen;
                     }
                 }
-                TitleLabel.Text = _Action.Title;
+                if (Message.Subject.Equals (_Action.Title)) {
+                    if (Message.Intent == McEmailMessage.IntentType.ResponseRequired) {
+                        TitleLabel.Text = "Response Required";
+                    } else if (Message.Intent == McEmailMessage.IntentType.PleaseRead) {
+                        TitleLabel.Text = "Please Read";
+                    } else if (Message.Intent == McEmailMessage.IntentType.Urgent) {
+                        TitleLabel.Text = "Urgent - Attention Required";
+                    } else {
+                        TitleLabel.Text = _Action.Title;
+                    }
+                } else {
+                    TitleLabel.Text = _Action.Title;
+                }
                 if (!_Action.IsCompleted && _Action.DueDate != default(DateTime)) {
                     if (_Action.DueDate > DateTime.UtcNow) {
-                        DateLabel.Text = "by " + Pretty.FutureDate (_Action.DueDate);
+                        DateLabel.Text = "by " + Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime);
                     } else {
-                        DateLabel.Text = "due " + Pretty.FutureDate (_Action.DueDate);
+                        DateLabel.Text = "due " + Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime);
                     }
                 }else if (_Action.IsDeferred) {
                     DateLabel.Text = "Deferred"; 
@@ -129,6 +153,7 @@ namespace NachoClient.iOS
             var textHeight = TitleLabel.Font.RoundedLineHeight (1.0f);
             var textTop = (Bounds.Height - textHeight) / 2.0f;
             var dateSize = DateLabel.SizeThatFits (new CGSize (0.0f, 0.0f));
+            dateSize.Height = DateLabel.Font.RoundedLineHeight (1.0f);
 
             CGRect frame;
 
@@ -136,7 +161,7 @@ namespace NachoClient.iOS
             frame.Width = dateSize.Width;
             frame.X = Bounds.Width - RightSpacing - frame.Width;
             frame.Height = dateSize.Height;
-            frame.Y = textTop + (TitleLabel.Font.Ascender - DateLabel.Font.Ascender);
+            frame.Y = textTop + (TitleLabel.Font.Ascender + (textHeight - TitleLabel.Font.LineHeight) / 2.0f - DateLabel.Font.Ascender - (dateSize.Height - DateLabel.Font.LineHeight) / 2.0f);
             DateLabel.Frame = frame;
 
             frame = TitleLabel.Frame;
