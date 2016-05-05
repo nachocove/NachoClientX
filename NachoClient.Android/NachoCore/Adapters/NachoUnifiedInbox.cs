@@ -37,13 +37,16 @@ namespace NachoCore
                 list = McEmailMessage.QueryUnifiedInboxItems ();
                 break;
             }
-            return NcMessageThreads.ThreadByConversation (list);
+            var threadList = NcMessageThreads.ThreadByConversation (list);
+            RemoveIgnoredMessages (threadList);
+            return threadList;
         }
 
         public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var threads = QueryMessagesByConversation ();
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                ClearCache ();
                 threadList = threads;
                 return true;
             }
@@ -64,6 +67,7 @@ namespace NachoCore
                     List<int> deletes;
                     bool changed = NcMessageThreads.AreDifferent (threadList, newThreadList, out adds, out deletes);
                     if (changed) {
+                        ClearCache ();
                         threadList = newThreadList;
                     }
                     if (null != completionAction) {

@@ -35,6 +35,7 @@ namespace NachoCore.Model
         Custom,
         Weekend,
         ThisWeek,
+        DueDate,
     };
 
     public enum NcImportance
@@ -333,6 +334,8 @@ namespace NachoCore.Model
 
         public bool IsChat { get; set; }
 
+        public bool IsAction { get; set; }
+
         /// Attachments are separate
 
         [Ignore]
@@ -490,6 +493,11 @@ namespace NachoCore.Model
             }
         }
 
+        public bool StillExists ()
+        {
+            return McEmailMessage.QueryById<McEmailMessage> (Id) != null;
+        }
+
         public static McEmailMessage MessageWithSubject (McAccount account, string subject)
         {
             var message = new McEmailMessage () {
@@ -529,6 +537,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (f.IsClientOwned != 1, 0.9) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 "{1}" +
@@ -557,6 +566,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.5) " +
@@ -583,6 +593,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (e.IsRead = 0, 0.05) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
@@ -610,6 +621,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) " +
                 (groupBy ? " GROUP BY e.ConversationId " : "") +
@@ -630,6 +642,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (e.IsRead = 0, 0.05) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) " +
@@ -672,6 +685,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -722,6 +736,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -753,6 +768,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.05) AND " +
                 " likelihood (e.UserAction > -1, 0.99) AND " +
@@ -779,6 +795,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -809,6 +826,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
+                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (e.Score < ? AND e.Score2 >= ?, 0.1) AND " +
@@ -858,6 +876,7 @@ namespace NachoCore.Model
             " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
             " likelihood (IsRead = 0, 0.5) AND " +
             " likelihood (IsChat = 0, 0.8) AND " +
+            " likelihood (IsAction = 0, 0.8) AND " +
             " CreatedAt > ? AND " +
             " likelihood (DateReceived > ?, 0.01) " +
             " ORDER BY DateReceived ASC ",
@@ -1576,6 +1595,14 @@ namespace NachoCore.Model
             }
         }
 
+        void DeleteAction ()
+        {
+            var action = McAction.ActionForMessage (this);
+            if (action != null) {
+                action.Delete ();
+            }
+        }
+
         public override void DeleteAncillary ()
         {
             NcAssert.True (0 != Id);
@@ -1595,6 +1622,7 @@ namespace NachoCore.Model
             DeleteAttachments ();
             DeleteAddressMaps ();
             DeleteChatMessages ();
+            DeleteAction ();
         }
 
         public override int Delete ()
@@ -1686,6 +1714,30 @@ namespace NachoCore.Model
             if (!IsChat && !String.IsNullOrEmpty (ConversationId)) {
                 var query = "SELECT COUNT(*) FROM McEmailMessage WHERE AccountId = ? AND likelihood(ConversationId = ?, 0.01) AND IsChat = 1";
                 IsChat = NcModel.Instance.Db.ExecuteScalar<int> (query, AccountId, ConversationId) > 0;
+            }
+        }
+
+        public void ParseIntentFromSubject ()
+        {
+            string subject;
+            IntentType intent;
+            MessageDeferralType intentDateType;
+            DateTime intentDate;
+            EmailHelper.ParseSubject (Subject, DateReceived, out subject, out intent, out intentDateType, out intentDate);
+            Subject = subject;
+            Intent = intent;
+            IntentDateType = intentDateType;
+            IntentDate = intentDate;
+        }
+
+        public void DetermineIfIsAction (McFolder inFolder)
+        {
+            if (inFolder.Type != Xml.FolderHierarchy.TypeCode.DefaultSent_5 && inFolder.Type != Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 && !IsJunk) {
+                if (Intent == IntentType.PleaseRead || Intent == IntentType.ResponseRequired || Intent == IntentType.Urgent) {
+                    IsAction = true;
+                } else if (Intent == IntentType.Important && IntentDateType != MessageDeferralType.None) {
+                    IsAction = true;
+                }
             }
         }
 

@@ -563,7 +563,7 @@ namespace NachoCore
             LocalNotificationManager.ScheduleNotifications ();
 
             NcApplicationMonitor.Instance.Start (); // Has a deferred timer start inside.
-            CrlMonitor.StartService ();
+            CrlMonitor.Instance.StartService ();
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
@@ -589,7 +589,7 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            CrlMonitor.StopService ();
+            CrlMonitor.Instance.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();

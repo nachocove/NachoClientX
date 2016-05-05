@@ -91,7 +91,7 @@ namespace NachoCore.IMAP
             }
 
             Finish (changed);
-            ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+            imapProtoControl.Strategy.ResolveOneSync (PendingSingle, Synckit.Folder);
             PendingSingle = null; // we resolved it.
             cap.Dispose ();
             return evt;
@@ -123,7 +123,7 @@ namespace NachoCore.IMAP
             changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
             Event evt;
             var protocolState = BEContext.ProtocolState;
-            if (ImapStrategy.FillInFastSyncKit (ref protocolState, ref Synckit, AccountId)) {
+            if (imapProtoControl.Strategy.FillInFastSyncKit (ref protocolState, ref Synckit, AccountId)) {
                 evt = syncFolder (mailKitFolder, ref changed);
                 changed = true;
             } else {
@@ -395,6 +395,8 @@ namespace NachoCore.IMAP
                 serverId = ImapProtoControl.NonGmailMessageServerId (folder, imapSummary.UniqueId);
                 emailMessage = null;
             }
+            var attachments = SummaryAttachmentCollector.AttachmentsForSummary (imapSummary);
+
             if (null != emailMessage) {
                 try {
                     changed = UpdateEmailMetaData (emailMessage, imapSummary);
@@ -403,7 +405,8 @@ namespace NachoCore.IMAP
                 }
             } else if (imapSummary.Envelope != null) {
                 try {
-                    emailMessage = ParseEmail (accountId, serverId, imapSummary);
+                    emailMessage = ParseEmail (accountId, serverId, imapSummary, attachments);
+                    emailMessage.DetermineIfIsAction (folder);
                     changed = true;
                     justCreated = true;
                 } catch (Exception ex) {
@@ -430,12 +433,15 @@ namespace NachoCore.IMAP
                         if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
                             throw new Exception (string.Format ("Could not link message: {0}", result.GetMessage ()));
                         }
-                        InsertAttachments (emailMessage, imapSummary as MessageSummary);
+                        InsertAttachments (emailMessage, attachments);
                         if (emailMessage.IsChat){
                             result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
                             if (result.isError()){
                                 Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
                             }
+                        }
+                        if (emailMessage.IsAction){
+                            McAction.RunCreateActionFromMessageTask (emailMessage.Id);
                         }
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -674,7 +680,7 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
+        public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary, List<BodyPartBasic> attachments)
         {
             if (null == summary.Envelope) {
                 NcAssert.NotNull (summary.Envelope, "Message Envelope is null!");
@@ -690,7 +696,7 @@ namespace NachoCore.IMAP
                 FromEmailAddressId = 0,
                 cachedFromLetters = string.Empty,
                 cachedFromColor = 1,
-                cachedHasAttachments = summary.Attachments.Any (),
+                cachedHasAttachments = attachments != null && attachments.Count > 0,
                 ImapBodyStructure = summary.Body != null ? summary.Body.ToString () : null,
             };
 
@@ -778,6 +784,7 @@ namespace NachoCore.IMAP
             SetConversationId (emailMessage, summary);
             ParseGmailLabels (emailMessage, summary);
             updateFlags (emailMessage, summary.Flags.GetValueOrDefault (), summary.UserFlags);
+            emailMessage.ParseIntentFromSubject ();
             emailMessage.IsIncomplete = false;
             emailMessage.DetermineIfIsChat ();
 
@@ -835,10 +842,9 @@ namespace NachoCore.IMAP
             return email;
         }
 
-        public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
+        public static void InsertAttachments (McEmailMessage msg, List<BodyPartBasic> attachments)
         {
-            var attachments = imapSummary.BodyParts.Where (part => part.ContentDisposition != null).ToList ();
-            if (attachments.Any ()) {
+            if (attachments != null) {
                 foreach (var att in attachments) {
                     // Create & save the attachment record.
                     var attachment = new McAttachment {
@@ -960,6 +966,78 @@ namespace NachoCore.IMAP
         private void CopyDataAction (Stream inStream, Stream outStream)
         {
             inStream.CopyTo (outStream);
+        }
+
+        private class SummaryAttachmentCollector : BodyPartVisitor
+        {
+
+            List<BodyPartBasic> Attachments;
+            bool IsInAlternative;
+
+            public SummaryAttachmentCollector ()
+            {
+                Attachments = new List<BodyPartBasic> ();
+            }
+
+            public static List<BodyPartBasic> AttachmentsForSummary (MessageSummary summary)
+            {
+                var collector = new SummaryAttachmentCollector ();
+                collector.Visit (summary.Body);
+                return collector.Attachments;
+            }
+
+            protected override void VisitBodyPartMultipart (BodyPartMultipart multipart)
+            {
+                if (multipart.ContentType != null && multipart.ContentType.IsMimeType ("multipart", "alternative")) {
+                    VisitBodyPartAlternative (multipart);
+                }else if (multipart.ContentType != null && multipart.ContentType.IsMimeType ("multipart", "related")) {
+                    VisitBodyPartRelated (multipart);
+                } else {
+                    VisitChildren (multipart);
+                }
+            }
+
+            void VisitBodyPartRelated (BodyPartMultipart multipart)
+            {
+                for (int i = 1; i < multipart.BodyParts.Count; ++i){
+                    multipart.BodyParts [i].Accept (this);
+                }
+            }
+
+            void VisitBodyPartAlternative (BodyPartMultipart multipart)
+            {
+                if (IsInAlternative) {
+                    VisitChildren (multipart);
+                } else {
+                    IsInAlternative = true;
+                    VisitChildren (multipart);
+                    IsInAlternative = false;
+                }
+            }
+
+            protected override void VisitBodyPartBasic (BodyPartBasic entity)
+            {
+                Attachments.Add (entity);
+            }
+
+            protected override void VisitBodyPartMessage (BodyPartMessage entity)
+            {
+                Attachments.Add (entity);
+            }
+
+            protected override void VisitBodyPartText (BodyPartText entity)
+            {
+                bool isAttachment = entity.ContentDisposition != null && entity.ContentDisposition.IsAttachment;
+                if (!isAttachment && !IsInAlternative) {
+                    isAttachment = !entity.ContentType.IsMimeType ("text", "plain") && !entity.ContentType.IsMimeType ("text", "html") && !entity.ContentType.IsMimeType ("text", "rtf");
+                }
+                if (isAttachment && !string.IsNullOrEmpty (entity.FileName) && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
+                    isAttachment = false;
+                }
+                if (isAttachment) {
+                    Attachments.Add (entity);
+                }
+            }
         }
 
     }

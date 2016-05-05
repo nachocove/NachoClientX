@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Schedulers;
 using NachoCore.Model;
 
 namespace NachoCore.Utils
@@ -17,6 +18,7 @@ namespace NachoCore.Utils
         private static ConcurrentDictionary<string,string> UniqueList = new ConcurrentDictionary<string, string> ();
         private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
+        public static TaskScheduler ActionSerialScheduler = new LimitedConcurrencyLevelTaskScheduler (1);
 
         public static int TaskCount {
             get {
@@ -51,6 +53,11 @@ namespace NachoCore.Utils
         public static Task Run (Action action, string name)
         {
             return Run (action, name, false, false);
+        }
+
+        public static Task Run (Action action, string name, TaskScheduler scheduler)
+        {
+            return Run (action, name, false, false, scheduler: scheduler);
         }
 
         public static Task Run (Action action, string name, bool stfu)
@@ -92,8 +99,7 @@ namespace NachoCore.Utils
             "SyncCmd",
             "Telemetry",
             "UpdateUnreadMessageCount",
-            "UpdateUnreadMessageView",
-            "MessageListViewController_RefreshMessages"
+            "UpdateUnreadMessageView"
         };
 
         struct tracer
@@ -102,13 +108,17 @@ namespace NachoCore.Utils
             public int child;
         }
 
-        public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None)
+        public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None, TaskScheduler scheduler = null)
         {
             NcAssert.NotNull (TaskMap);
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
             DateTime spawnTime = DateTime.UtcNow;
+
+            if (scheduler == null) {
+                scheduler = TaskScheduler.Default;
+            }
 
             if (isUnique && !UniqueList.TryAdd (name, taskName)) {
                 string runningTaskName;
@@ -167,7 +177,7 @@ namespace NachoCore.Utils
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec.", taskName, (finishTime - startTime).TotalMilliseconds);
                     }
                 }
-            }, Cts.Token, option);
+            }, Cts.Token, option, scheduler);
             var taskRef = new WeakReference (task);
             if (!TaskMap.TryAdd (taskRef, taskName)) {
                 Log.Error (Log.LOG_SYS, "NcTask: Task already added to TaskMap ({0}).", taskName);

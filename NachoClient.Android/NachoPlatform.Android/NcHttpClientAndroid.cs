@@ -34,6 +34,8 @@ using Javax.Net.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using OkHttp.Okio;
 using System.Net.Http;
+using Java.Security.Cert;
+using Java.Security;
 
 namespace NachoPlatform
 {
@@ -111,6 +113,9 @@ namespace NachoPlatform
             cloned.SetConnectTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
             cloned.SetWriteTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
             cloned.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
+            if (null != request.SSLCerts) {
+                cloned.SetSslSocketFactory (SSLSocketFactoryFromCerts (request.SSLCerts));
+            }
 
             var builder = new Request.Builder ()
                 .Url (new Java.Net.URL (request.RequestUri.AbsoluteUri))
@@ -165,6 +170,7 @@ namespace NachoPlatform
             }
 
             var rq = builder.Build ();
+
             var call = cloned.NewCall (rq);
             if (cancellationToken.IsCancellationRequested) {
                 Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Cancellation requested", request.guid);
@@ -192,6 +198,34 @@ namespace NachoPlatform
             });
             Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Enqueue task", request.guid);
             call.Enqueue (callbacks);
+        }
+
+        static SSLSocketFactory SSLSocketFactoryFromCerts (X509Certificate2Collection certs)
+        {
+            // Create a KeyStore containing our trusted CAs
+            KeyStore keyStore = KeyStore.GetInstance (KeyStore.DefaultType);
+            keyStore.Load (null, null);
+
+            CertificateFactory cf = CertificateFactory.GetInstance ("X.509");
+
+            foreach (var cert in certs) {
+                if (!keyStore.ContainsAlias (cert.SubjectName.Name)) {
+                    using (var mem = new MemoryStream (cert.Export (X509ContentType.Cert))) {
+                        using (var ca = cf.GenerateCertificate (mem)) {
+                            keyStore.SetCertificateEntry (cert.SubjectName.Name, ca);
+                        }
+                    }
+                }
+            }
+
+            // Create a TrustManager that trusts the CAs in our KeyStore
+            TrustManagerFactory tmf = TrustManagerFactory.GetInstance (TrustManagerFactory.DefaultAlgorithm);
+            tmf.Init (keyStore);
+
+            // Create an SSLContext that uses our TrustManager
+            SSLContext context = SSLContext.GetInstance ("TLS");
+            context.Init (null, tmf.GetTrustManagers (), null);
+            return context.SocketFactory;
         }
 
         public class NcOkHttpCallback : Java.Lang.Object, ICallback
@@ -326,7 +360,6 @@ namespace NachoPlatform
                 }
                 return contentType;
             }
-
 
             #endregion
         }

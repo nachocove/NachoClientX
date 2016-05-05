@@ -667,6 +667,10 @@
     <Compile Include="NachoCore\Adapters\NachoFolderMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
     <Compile Include="NachoCore\Utils\MessagesSyncManager.cs" />
+    <Compile Include="NachoCore\Model\McAction.cs" />
+    <Compile Include="NachoCore\Adapters\NachoActions.cs" />
+    <Compile Include="NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs" />
+    <Compile Include="NachoCore\Utils\ActionsHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

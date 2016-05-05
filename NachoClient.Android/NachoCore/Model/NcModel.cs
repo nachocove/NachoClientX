@@ -157,7 +157,8 @@ namespace NachoCore.Model
                     typeof(McEmailMessageNeedsUpdate),
                     typeof(McChat),
                     typeof(McChatMessage),
-                    typeof(McChatParticipant)
+                    typeof(McChatParticipant),
+                    typeof(McAction)
                 };
             }
         }

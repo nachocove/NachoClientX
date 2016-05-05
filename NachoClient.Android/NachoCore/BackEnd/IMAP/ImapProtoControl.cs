@@ -177,12 +177,12 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReFSync,
                             (uint)ImapEvt.E.Wait,
-                            (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDiscHardFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -532,6 +532,7 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
+            Strategy.DoQuickSync = NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }
@@ -563,13 +564,18 @@ namespace NachoCore.IMAP
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
             if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.ImapDiscoveryDone) {
-                var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-                err.Message = "Too many failures";
-                StatusInd (err);
-                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
+                DoDiscHardFail ();
             } else {
                 DoDisc ();
             }
+        }
+
+        void DoDiscHardFail ()
+        {
+            var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+            err.Message = "Too many failures";
+            StatusInd (err);
+            Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
         }
 
         void DoUiServConfReq ()
@@ -959,6 +965,31 @@ namespace NachoCore.IMAP
             return Encoding.UTF8.GetBytes (command);
         }
 
+        bool isGoogle ()
+        {
+            var client = (Sm.Context as ImapStateMachineContext).Client;
+            if (ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault ||
+                (client.Capabilities & MailKit.Net.Imap.ImapCapabilities.GMailExt1) == MailKit.Net.Imap.ImapCapabilities.GMailExt1) {
+                return true;
+            }
+            return false;
+        }
+
+        public TimeSpan IdleRequestTimeoutSec {
+            get {
+                if (isGoogle()) {
+                    // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
+                    // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
+                    // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
+                    // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
+                    //var timeout = new TimeSpan(0, 9, 0);
+                    return new TimeSpan(0, 9, 0);
+                } else {
+                    return new TimeSpan(0, 30, 0);
+                }
+            }
+        }
+
         public PushAssistParameters PushAssistParameters ()
         {
             if (!CanStartPushAssist ()) {
@@ -975,7 +1006,7 @@ namespace NachoCore.IMAP
                 return new PushAssistParameters () {
                     RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
                     Protocol = PushAssistProtocol.IMAP,
-                    ResponseTimeoutMsec = 600 * 1000,
+                    ResponseTimeoutMsec = (int)IdleRequestTimeoutSec.TotalMilliseconds,
                     WaitBeforeUseMsec = 60 * 1000,
 
                     IMAPAuthenticationBlob = PushAssistAuthBlob (),

@@ -36,7 +36,7 @@ namespace NachoCore.Model
             var participants = GetChatParticipants (chatId);
             var map = new Dictionary<int, McChatParticipant> (participants.Count);
             foreach (var participant in participants) {
-                map.Add (participant.EmailAddrId, participant);
+                map [participant.EmailAddrId] = participant;
             }
             return map;
         }

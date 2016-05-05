@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Linq;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -66,6 +68,8 @@ namespace NachoCore.Utils
     {
         public X509Certificate2 PinnedCert { set; get; }
 
+        public X509Certificate2Collection PinnedSigningCerts { set; get; }
+
         public ServerCertificateValidator Validator { set; get; }
     }
 
@@ -92,6 +96,22 @@ namespace NachoCore.Utils
 
         private ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> Policies;
 
+        public class ServerCertificateError
+        {
+            public X509Chain Chain { get; protected set; }
+            public X509Certificate2 Cert { get; protected set; }
+            public SslPolicyErrors SslPolicyError { get; protected set; }
+
+            public ServerCertificateError (X509Chain chain, X509Certificate2 cert, SslPolicyErrors sslPolicyError)
+            {
+                Chain = chain;
+                Cert = cert;
+                SslPolicyError = sslPolicyError;
+            }
+        }
+
+        public ConcurrentDictionary<string, ServerCertificateError> FailedCertificates;
+
         public static ServerCertificatePeek Instance {
             get {
                 if (instance == null) {
@@ -99,6 +119,7 @@ namespace NachoCore.Utils
                         if (instance == null) {
                             instance = new ServerCertificatePeek ();
                             instance.Cache = new ConcurrentDictionary<string, X509Certificate2> ();
+                            instance.FailedCertificates = new ConcurrentDictionary<string, ServerCertificateError> ();
                             var serverComparer = new ServerIdentityComparer ();
                             instance.Policies = new ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> (serverComparer);
                             ServicePointManager.ServerCertificateValidationCallback = CertificateValidationCallback;
@@ -121,10 +142,40 @@ namespace NachoCore.Utils
                                                           SslPolicyErrors sslPolicyErrors)
         {
             var maybeRequest = sender as HttpWebRequest;
-            if (null == maybeRequest) {
-                return SslPolicyErrors.None == sslPolicyErrors;
+            if (null != maybeRequest) {
+                return HttpWebRequestCertificateValidationCallback (maybeRequest, certificate, chain, sslPolicyErrors);
             }
-            IHttpWebRequest request = new MockableHttpWebRequest (maybeRequest);
+
+            string hostname = sender as string;
+            if (null != hostname) {
+                return StringCertificateValidationCallback (hostname, certificate, chain, sslPolicyErrors);
+            }
+
+            return SslPolicyErrors.None == sslPolicyErrors;
+        }
+
+        static bool StringCertificateValidationCallback (string hostname,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (SslPolicyErrors.None == sslPolicyErrors) {
+                return true;
+            }
+            var cert2 = new X509Certificate2 (certificate);
+            var ok = chain.Build (cert2);
+            if (!ok) {
+                Instance.FailedCertificates [hostname] = new ServerCertificateError (chain, cert2, sslPolicyErrors);
+            }
+            return ok;
+        }
+
+        static bool HttpWebRequestCertificateValidationCallback (HttpWebRequest sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            IHttpWebRequest request = new MockableHttpWebRequest (sender);
             X509Certificate2 certificate2 = null;
             if (null != certificate) {
                 certificate2 = new X509Certificate2 (certificate);
@@ -139,26 +190,31 @@ namespace NachoCore.Utils
             if (Instance.Policies.TryGetValue (ident, out policy)) {
                 bool hasPinning = (null != policy.PinnedCert);
                 if (hasPinning) {
-                    // Extract all CRL DP in intermediary certs
-                    foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        var crlUrls = CertificateHelper.CrlDistributionPoint (cert);
-                        CrlMonitor.Register (crlUrls);
+                    if (!chain.ChainPolicy.ExtraStore.Contains (policy.PinnedCert)) {
+                        chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                     }
+                    foreach (var cert in policy.PinnedSigningCerts) {
+                        if (!chain.ChainPolicy.ExtraStore.Contains (cert)) {
+                            chain.ChainPolicy.ExtraStore.Add (cert);
+                        }                            
+                    }
+
+                    CrlMonitor.Instance.Register (chain.ChainPolicy.ExtraStore);
+
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        if (cert.Issuer == cert.Subject) {
+                        if (CompareCerts(cert, policy.PinnedCert) == false && cert.Issuer == cert.Subject) {
                             selfSignedCerts.Add (cert);
                         }
                     }
                     chain.ChainPolicy.ExtraStore.RemoveRange (selfSignedCerts);
-                    chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                 }
 
                 // Remove all revoked certs
                 var revokedCerts = new X509Certificate2Collection ();
                 foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                    if (CrlMonitor.IsRevoked (cert.SerialNumber)) {
+                    if (CrlMonitor.Instance.IsRevoked (cert)) {
                         revokedCerts.Add (cert);
                     }
                 }
@@ -166,7 +222,7 @@ namespace NachoCore.Utils
                 bool ok;
                 if (null == certificate2) {
                     ok = false;
-                } else if (CrlMonitor.IsRevoked (certificate2.SerialNumber)) {
+                } else if (CrlMonitor.Instance.IsRevoked (certificate2)) {
                     ok = false;
                 } else {
                     ok = chain.Build (certificate2);
@@ -203,9 +259,54 @@ namespace NachoCore.Utils
                 Instance.Cache.AddOrUpdate (host, certificate2, (k, v) => certificate2);
                 return true;
             } else {
-                Log.Info (Log.LOG_HTTP, "Certificate validation failed with: {0}", sslPolicyErrors);
+                if (chain.ChainElements.Count == 0 && null != certificate2) {
+                    chain.Build (certificate2);
+                }
+                Instance.FailedCertificates [request.Address.Host] = new ServerCertificateError (chain, certificate2, sslPolicyErrors);
             }
             return false;
+        }
+
+        static bool CompareCerts (X509Certificate2 cert1, X509Certificate2 cert2)
+        {
+            return cert1.SubjectName.Name == cert2.SubjectName.Name &&
+            cert1.SerialNumber == cert2.SerialNumber &&
+            cert1.IssuerName.Name == cert2.IssuerName.Name;
+        }
+
+        public static void LogCertificateChainErrors (ServerCertificateError failedInfo, string tag)
+        {
+            List<string> errors = new List<string> ();
+            if (null != failedInfo.Chain.ChainElements) {
+                foreach (var certEl in failedInfo.Chain.ChainElements) {
+                    errors.Add (string.Format ("Certificate(status={0}):\n{1}", string.Join (",", certEl.ChainElementStatus.Select (x => x.StatusInformation).ToList ()), certEl.Certificate));
+                }
+            }
+            Log.Info (Log.LOG_HTTP, "{0} sslPolicyErrors={1}, chain-errors: {2}\n{3}", tag, failedInfo.SslPolicyError, string.Join (",", failedInfo.Chain.ChainStatus.Select (x => x.StatusInformation)), string.Join ("\n", errors));
+        }
+
+        public string GetServerErrors (int accountId)
+        {
+            string serverErrors = "";
+            foreach (var server in McServer.QueryByAccountId<McServer> (accountId)) {
+                ServerCertificateError failedInfo;
+                if (FailedCertificates.TryRemove (server.Host, out failedInfo)) {
+                    serverErrors += string.Format ("{0}: {1}", server.Host, failedInfo.SslPolicyError);
+                }
+            }
+            return serverErrors;
+        }
+
+        public static Dictionary<string, ServerCertificatePeek.ServerCertificateError> ServerErrors (int accountId)
+        {
+            var serverErrors = new Dictionary<string, ServerCertificatePeek.ServerCertificateError> ();
+            foreach (var server in McServer.QueryByAccountId<McServer> (accountId)) {
+                ServerCertificatePeek.ServerCertificateError failedInfo;
+                if (ServerCertificatePeek.Instance.FailedCertificates.TryRemove (server.Host, out failedInfo)) {
+                    serverErrors [server.Host] = failedInfo;
+                }
+            }
+            return serverErrors;
         }
 
         public static void TestOnlyFlushCache ()

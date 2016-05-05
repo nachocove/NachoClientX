@@ -45,6 +45,14 @@ namespace NachoCore.Model
         public int EmailAddress { set; get; }
     }
 
+    public class NcContactPortraitEmailIndex
+    {
+        public int PortraitId { set; get; }
+        public int EmailAddressId { set; get; }
+        public int ColorIndex { set; get; }
+        public string EmailAddress { set; get; }
+    }
+
     public class McContactComparer : IEqualityComparer<McContact>
     {
         public bool Equals (McContact a, McContact b)
@@ -1434,6 +1442,19 @@ namespace NachoCore.Model
                           " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
                           " likelihood (c.PortraitId <> 0, 0.1)", set);
             return NcModel.Instance.Db.Query<NcContactPortraitIndex> (cmd);
+        }
+
+        public static List<NcContactPortraitEmailIndex> QueryForMessagePortraitEmails (int messageId)
+        {
+            var cmd = "SELECT " +
+                      "e.id as EmailAddressId, " +
+                      "e.CanonicalEmailAddress as EmailAddress, " +
+                      "e.ColorIndex as ColorIndex, " +
+                      "(SELECT MAX(PortraitId) FROM McContact c JOIN McContactEmailAddressAttribute ea ON c.Id = ea.ContactId WHERE ea.EmailAddress = e.Id AND likelihood (c.IsAwaitingDelete = 0, 1.0) AND likelihood (c.PortraitId <> 0, 0.1)) as PortraitId " +
+                      "FROM McMapEmailAddressEntry a " +
+                      "JOIN McEmailAddress e ON a.EmailAddressId = e.Id " +
+                      "WHERE a.ObjectId = ?";
+            return NcModel.Instance.Db.Query<NcContactPortraitEmailIndex> (cmd, messageId);
         }
 
         public static List<McContact> QueryGleanedContactsByEmailAddress (int accountId, string emailAddress)

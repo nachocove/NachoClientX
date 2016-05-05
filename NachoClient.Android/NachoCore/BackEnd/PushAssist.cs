@@ -2,11 +2,9 @@
 //
 using System;
 using System.Net.Http;
-using System.IO;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -42,6 +40,7 @@ namespace NachoCore
         public static int DeferPeriodMsec = 30 * 1000;
         protected static string DeviceToken;
         private static bool IsCertPolicyInstalled;
+        static X509Certificate2Collection SSLCerts;
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
@@ -149,25 +148,25 @@ namespace NachoCore
             };
         }
 
-        public static void InstallCertPolicy ()
+        public void InstallCertPolicy ()
         {
             var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
-            var pem = System.Text.ASCIIEncoding.ASCII.GetBytes (BuildInfo.PingerCertPem);
-            var rootCert = new X509Certificate2 (pem);
-            var crlUrls = CertificateHelper.CrlDistributionPoint (rootCert);
-            CrlMonitor.Register (crlUrls);
+            var rootCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCertPem));
+            SSLCerts = new X509Certificate2Collection ();
+            SSLCerts.Add (rootCert);
+            foreach (var cert in BuildInfo.PingerCrlSigningCerts) {
+                SSLCerts.Add (new X509Certificate2 (Encoding.ASCII.GetBytes (cert)));
+            }
+
+            // TODO We might want to hold off any pinger accesses until the CRL's have been fetched, and stop pinger
+            // if the CRL's can't be fetched. Perhaps a new state. For now, access will fail if the CRL could not be fetched
+            CrlMonitor.Instance.Register (SSLCerts);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
+                PinnedSigningCerts = SSLCerts,
             };
             ServerCertificatePeek.Instance.AddPolicy (identity, policy);
             IsCertPolicyInstalled = true;
-        }
-
-        public static bool ValidatorHack (IHttpWebRequest sender, X509Certificate2 certificate, X509Chain chain, bool result)
-        {
-            // FIXME - Until we have the cert hierarchy fully verified, just accept pinger cert. 
-            Log.Warn (Log.LOG_PUSH, "Blindly accept the certificate. Alpha build only");
-            return true;
         }
 
         public static bool SetDeviceToken (string token)
@@ -534,6 +533,8 @@ namespace NachoCore
             } else {
                 Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
             }
+            // Uncomment for debugging on simulator
+            // SetDeviceToken ("SIMULATOR");
         }
 
         public void Defer ()
@@ -1057,6 +1058,9 @@ namespace NachoCore
                 return;
             }
 
+            if (null != SSLCerts) {
+                request.SetPrivateCerts (SSLCerts);
+            }
             ResetTimeout (timeoutAction);
             HttpClient.SendRequest (request, (MaxTimeoutMsec / 1000),
                 (response, token) => {
@@ -1065,7 +1069,7 @@ namespace NachoCore
                     if (HttpStatusCode.OK == response.StatusCode) {
                         Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
                     } else {
-                        Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
+                        Log.Error (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
                     }
                     resultProcessing (response, null, token);
                     PushAssistFinish ();

@@ -802,7 +802,7 @@ namespace NachoClient.AndroidClient
         public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
             Log.Info (Log.LOG_UI, "OnDeferralSelected: {0}", message);
-            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+            NcMessageDeferral.DeferThread (thread, request, selectedDate);
             Finish ();
         }
 
@@ -819,7 +819,7 @@ namespace NachoClient.AndroidClient
         public void OnDeadlineSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
             Log.Info (Log.LOG_UI, "OnDeferralSelected: {0}", message);
-            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Deadline, thread, request, selectedDate);
+            NcMessageDeferral.SetDueDate (thread, selectedDate);
             Finish ();
         }
 

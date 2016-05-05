@@ -23,6 +23,11 @@ namespace NachoClient.iOS
         UITextView notesTextView;
         INachoNotesControllerParent owner;
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();

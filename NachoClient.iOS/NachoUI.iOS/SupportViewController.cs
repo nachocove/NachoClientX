@@ -35,7 +35,6 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
-            Util.ConfigureNavBar (false, this.NavigationController);
 
             // Looks better without switch account button.
             // If added back, because of crash when called at start up.

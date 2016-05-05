@@ -10,10 +10,10 @@ namespace NachoClient.iOS
     {
         private ErrorIndicatorView ErrorIndicator;
 
-        public ErrorAccessoryView (float width = 30.0f) : base (new CGRect(0.0f, 0.0f, (nfloat)width, 0.0f))
+        public ErrorAccessoryView (float width = 30.0f, float indicatorSize = 24.0f) : base (new CGRect(0.0f, 0.0f, (nfloat)width, 0.0f))
         {
             BackgroundColor = UIColor.White;
-            ErrorIndicator = new ErrorIndicatorView (24.0f);
+            ErrorIndicator = new ErrorIndicatorView ((nfloat)indicatorSize);
             AddSubview (ErrorIndicator);
         }
 

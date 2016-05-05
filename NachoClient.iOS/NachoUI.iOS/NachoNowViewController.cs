@@ -19,6 +19,7 @@ namespace NachoClient.iOS
 
         const string MessageCellIdentifier = "MessageCellIdentifier";
         const string ActionCellIdentifier = "ActionCellIdentifier";
+        const string ButtonCellIdentifier = "ButtonCellIdentifier";
         public const string HotMessageRefreshTaskName = "NachoNowViewController_RefreshHotMessages";
 
         #endregion
@@ -36,6 +37,7 @@ namespace NachoClient.iOS
         NcTimer CalendarUpdateTimer;
 
         NachoEmailMessages HotMessages;
+        NachoHotActions HotActions;
         MessagesSyncManager SyncManager;
 
         EmptyHotView EmptyView;
@@ -45,10 +47,18 @@ namespace NachoClient.iOS
         bool HasLoadedOnce = false;
 
         int NumberOfMessagePreviewLines = 2;
+        int NumberOfActionPreviewLines = 1;
         int SectionCount = 0;
-        int HotMessagesSection;
+        int HotMessagesSection = -1;
+        int ActionsSection = -1;
         int MaximumNumberOfHotMessages = 4;
-        int HotSectionRows;
+        int MaximumNumberOfActions = 4;
+        int MessageSectionRows;
+        int ActionSectionRows;
+        int ActionRows = 0;
+        int ExtraActionRows = 0;
+        int ExtraActionRowHot = -1;
+        int ExtraActionRowNormal = -1;
 
         #endregion
 
@@ -61,20 +71,17 @@ namespace NachoClient.iOS
 
             AutomaticallyAdjustsScrollViewInsets = false;
 
-            using (var image = UIImage.FromBundle ("contact-newemail")) {
-                NewMessageItem = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewEmailMessage);
-                NewMessageItem.AccessibilityLabel = "New message";
-            }
-            using (var image = UIImage.FromBundle ("cal-add")) {
-                NewMeetingItem = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMeeting);
-                NewMeetingItem.AccessibilityLabel = "New meeting";
-            }
+            NewMessageItem = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewEmailMessage);
+            NewMessageItem.AccessibilityLabel = "New message";
+            NewMeetingItem = new NcUIBarButtonItem (UIImage.FromBundle ("cal-add"), UIBarButtonItemStyle.Plain, NewMeeting);
+            NewMeetingItem.AccessibilityLabel = "New meeting";
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { NewMessageItem, NewMeetingItem };
 
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
 
             HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
         }
 
         #endregion
@@ -87,6 +94,7 @@ namespace NachoClient.iOS
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof(ButtonCell), ButtonCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);
         }
 
@@ -141,6 +149,9 @@ namespace NachoClient.iOS
                 ReloadHotMessages ();
             }
             HasAppearedOnce = true;
+            if (HotEventView.Selected) {
+                HotEventView.SetSelected (false, animated: true);
+            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -234,6 +245,14 @@ namespace NachoClient.iOS
             }
         }
 
+        void MakeAction (NSIndexPath indexPath)
+        {
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var viewController = new ActionEditViewController ();
+            viewController.Action = McAction.FromMessage (message);
+            viewController.PresentOverViewController (this);
+        }
+
         void MarkMessageAsUnhot (NSIndexPath indexPath)
         {
             DidEndSwiping (TableView, indexPath);
@@ -267,6 +286,70 @@ namespace NachoClient.iOS
                 NcAssert.NotNull (thread);
                 NcEmailArchiver.Archive (thread);
             }
+        }
+
+        void DeleteAction (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = HotActions.ActionAt (indexPath.Row);
+            action.RemoveAndDeleteMessage ();
+        }
+
+        void DemoteAction (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = HotActions.ActionAt (indexPath.Row);
+            action.RemoveButKeepMessage ();
+        }
+
+        void MarkActionAsUnhot (NSIndexPath indexPath)
+        {
+            DidEndSwiping (TableView, indexPath);
+            var action = HotActions.ActionAt (indexPath.Row);
+            if (action.IsHot) {
+                NcTask.Run (() => {
+                    action.Unhot ();
+                    NotifyActionsChanged (action);
+                }, "NachoNowViewController_MarkActionAsUnhot", NcTask.ActionSerialScheduler);
+            }
+        }
+
+        void DeferAction (NSIndexPath indexPath)
+        {
+            var action = HotActions.ActionAt (indexPath.Row);
+            var alertController = UIAlertController.Create ("", "Defer until...", UIAlertControllerStyle.ActionSheet);
+            alertController.AddAction (UIAlertAction.Create ("An Hour From Now", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.OneHour); }));
+            alertController.AddAction (UIAlertAction.Create ("Tonight", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tonight); }));
+            alertController.AddAction (UIAlertAction.Create ("Tomorrow Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tomorrow); }));
+            alertController.AddAction (UIAlertAction.Create ("Monday Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.NextWeek); }));
+            alertController.AddAction (UIAlertAction.Create ("Saturday Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Weekend); }));
+            alertController.AddAction (UIAlertAction.Create ("Other...", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferActionByEditing(action); }));
+            alertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, null));
+            PresentViewController (alertController, true, null);
+        }
+
+        void DeferAction (McAction action, MessageDeferralType type)
+        {
+            NcTask.Run (() => {
+                action.Defer (type);
+                NotifyActionsChanged (action);
+            }, "NachoNowViewController_DeferAction", NcTask.ActionSerialScheduler);
+        }
+
+        void DeferActionByEditing (McAction action)
+        {
+            var editedCopy = McAction.QueryById<McAction> (action.Id);
+            editedCopy.State = McAction.ActionState.Deferred;
+            EditAction (editedCopy);
+        }
+
+        void NotifyActionsChanged (McAction action)
+        {
+            var account = McAccount.QueryById<McAccount> (action.AccountId);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                Account = account,
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
+            });
         }
 
         #endregion
@@ -415,96 +498,170 @@ namespace NachoClient.iOS
 
         void ReloadHotMessages ()
         {
-            HotMessages.ClearCache ();
-            if (HotMessages.HasBackgroundRefresh ()) {
-                HotMessages.BackgroundRefresh (HandleReloadHotMessagesResults);
-            } else {
-                NcTask.Run (() => {
-                    List<int> adds;
-                    List<int> deletes;
-                    bool changed = HotMessages.Refresh (out adds, out deletes);
-                    BeginInvokeOnMainThread(() => {
-                        HandleReloadHotMessagesResults (changed, adds, deletes);
-                    });
-                }, HotMessageRefreshTaskName);
-            }
+            NcTask.Run (() => {
+                List<int> messageAdds;
+                List<int> messageDeletes;
+                bool messagesChanged = HotMessages.Refresh (out messageAdds, out messageDeletes);
+                List<int> actionAdds;
+                List<int> actionDeletes;
+                bool actionsChanged = HotActions.Refresh (out actionAdds, out actionDeletes);
+                BeginInvokeOnMainThread(() => {
+                    HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
+                });
+            }, HotMessageRefreshTaskName);
         }
 
-        void HandleReloadHotMessagesResults (bool changed, List<int> adds, List<int> deletes)
+        void HandleReloadHotMessagesResults (bool messagesChanged, List<int> messageAdds, List<int> messageDeletes, bool actionsChanged, List<int> actionAdds, List<int> actionDeletes)
         {
+            HotMessages.ClearCache ();
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
             SectionCount = 0;
+            var hotMessagesSectionBeforeUpdate = HotMessagesSection;
+            var actionsSectionBeforeUpdate = ActionsSection;
+            var actionRowsBeforeUpdate = ActionRows;
+            ExtraActionRows = 0;
+            ExtraActionRowHot = -1;
+            ExtraActionRowNormal = -1;
+            ActionRows = Math.Min (MaximumNumberOfActions, HotActions.Count ());
+            if (ActionRows > 0 || HotActions.NonHotCount > 0) {
+                ActionsSection = SectionCount;
+                SectionCount += 1;
+                if (HotActions.Count () > MaximumNumberOfActions) {
+                    ExtraActionRowHot = ExtraActionRows;
+                    ExtraActionRows += 1;
+                }
+                if (HotActions.NonHotCount > 0) {
+                    ExtraActionRowNormal = ExtraActionRows;
+                    ExtraActionRows += 1;
+                }
+            } else {
+                ActionsSection = -1;
+            }
             if (HotMessages.Count () > 0) {
-                SectionCount = 1;
-                HotMessagesSection = 0;
+                HotMessagesSection = SectionCount;
+                SectionCount += 1;
+            } else {
+                HotMessagesSection = -1;
             }
             if (!HasLoadedOnce) {
                 TableView.ReloadData ();
-                HotSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                MessageSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                ActionSectionRows = (int)RowsInSection (TableView, ActionsSection);
                 HasLoadedOnce = true;
             }else{
-                if (changed) {
-                    int rowsBeforeUpdate = HotSectionRows;
-                    int messageRowsBeforeUpate = Math.Min (rowsBeforeUpdate, MaximumNumberOfHotMessages);
-                    HotSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
-                    int messageRows = Math.Min (HotSectionRows, MaximumNumberOfHotMessages);
+                var addedSections = new NSMutableIndexSet ();
+                var deletedSections = new NSMutableIndexSet ();
+                var addedIndexPaths = new List<NSIndexPath> ();
+                var deletedIndexPaths = new List<NSIndexPath> ();
 
-                    var addedIndexPaths = new List<NSIndexPath> ();
-                    var deletedIndexPaths = new List<NSIndexPath> ();
+                if (messagesChanged) {
+                    int messageSectionRowsBeforeUpdate = MessageSectionRows;
+                    MessageSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                    if (hotMessagesSectionBeforeUpdate == -1 && HotMessagesSection >= 0) {
+                        addedSections.Add ((nuint)HotMessagesSection);
+                    } else if (hotMessagesSectionBeforeUpdate >= 0 && HotMessagesSection == -1) {
+                        deletedSections.Add ((nuint)hotMessagesSectionBeforeUpdate);
+                    } else {
+                        int messageRowsBeforeUpate = Math.Min (messageSectionRowsBeforeUpdate, MaximumNumberOfHotMessages);
+                        MessageSectionRows = (int)RowsInSection (TableView, HotMessagesSection);
+                        int messageRows = Math.Min (MessageSectionRows, MaximumNumberOfHotMessages);
 
-                    // Figure out how many of the adds will actually be added to our limited table
-                    foreach (var index in adds){
-                        if (index < MaximumNumberOfHotMessages) {
-                            addedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
-                        }
-                    }
-
-                    // If the newly added rows put us over the row limit, remove rows from the end as necessary
-                    int messageRowsAfterUpdate = messageRowsBeforeUpate + addedIndexPaths.Count;
-                    int deleteIndex = messageRowsBeforeUpate - 1;
-
-                    while (messageRowsAfterUpdate > messageRows) {
-                        deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, HotMessagesSection));
-                        --deleteIndex;
-                        --messageRowsAfterUpdate;
-                    }
-
-                    // If any of the deletes are from the rows not yet deleted, remove them
-                    foreach (var index in deletes){
-                        if (index <= deleteIndex){
-                            deletedIndexPaths.Add (NSIndexPath.FromRowSection (index, HotMessagesSection));
-                            --messageRowsAfterUpdate;
-                        }
-                    }
-
-                    var insertIndex = messageRowsAfterUpdate;
-
-                    // If the deletes left us short of the new count, add rows to the end
-                    while (messageRowsAfterUpdate < messageRows) {
-                        addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, HotMessagesSection));
-                        ++messageRowsAfterUpdate;
-                        ++insertIndex;
-                    }
-
-                    // Finally, add or remove the action row if it has changed
-                    if (rowsBeforeUpdate > MaximumNumberOfHotMessages && HotSectionRows <= MaximumNumberOfHotMessages) {
-                        deletedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
-                    } else if (rowsBeforeUpdate <= MaximumNumberOfHotMessages && HotSectionRows > MaximumNumberOfHotMessages) {
-                        addedIndexPaths.Add (NSIndexPath.FromRowSection (MaximumNumberOfHotMessages, HotMessagesSection));
-                    }
-
-                    if (addedIndexPaths.Count > 0 || deletedIndexPaths.Count > 0) {
-                        TableView.BeginUpdates ();
-                        TableView.DeleteRows (deletedIndexPaths.ToArray(), UITableViewRowAnimation.Fade);
-                        TableView.InsertRows (addedIndexPaths.ToArray(), UITableViewRowAnimation.Top);
-                        TableView.EndUpdates ();
+                        DetermineRowChanges (messageAdds, messageDeletes, addedIndexPaths, deletedIndexPaths, messageSectionRowsBeforeUpdate, messageRowsBeforeUpate, hotMessagesSectionBeforeUpdate, MessageSectionRows, messageRows, HotMessagesSection, MaximumNumberOfHotMessages);
                     }
                 }
+                 
+                if (actionsChanged) {
+                    int actionSectionRowsBeforeUpdate = ActionSectionRows;
+                    ActionSectionRows = (int)RowsInSection (TableView, ActionsSection);
+                    if (actionsSectionBeforeUpdate == -1 && ActionsSection >= 0) {
+                        addedSections.Add ((nuint)ActionsSection);
+                    } else if (actionsSectionBeforeUpdate >= 0 && ActionsSection == -1) {
+                        deletedSections.Add ((nuint)actionsSectionBeforeUpdate);
+                    } else {
+                        DetermineRowChanges (actionAdds, actionDeletes, addedIndexPaths, deletedIndexPaths, actionSectionRowsBeforeUpdate, actionRowsBeforeUpdate, actionsSectionBeforeUpdate, ActionSectionRows, ActionRows, ActionsSection, MaximumNumberOfActions);
+                    }
+                }
+
+                if (addedIndexPaths.Count > 0 || deletedIndexPaths.Count > 0 || addedSections.Count > 0 || deletedSections.Count > 0) {
+                    TableView.BeginUpdates ();
+                    if (deletedIndexPaths.Count > 0) {
+                        TableView.DeleteRows (deletedIndexPaths.ToArray (), UITableViewRowAnimation.Automatic);
+                    }
+                    if (deletedSections.Count > 0) {
+                        TableView.DeleteSections (deletedSections, UITableViewRowAnimation.Automatic);
+                    }
+                    if (addedIndexPaths.Count > 0) {
+                        TableView.InsertRows (addedIndexPaths.ToArray (), UITableViewRowAnimation.Automatic);
+                    }
+                    if (addedSections.Count > 0) {
+                        TableView.InsertSections (addedSections, UITableViewRowAnimation.Automatic);
+                    }
+                    TableView.EndUpdates ();
+                }
+
                 UpdateVisibleRows ();
+                ReconfigureGroupedRows ();
             }
-            EmptyView.Hidden = HotMessages.Count () > 0;
+            EmptyView.Hidden = SectionCount > 0;
+        }
+
+        void DetermineRowChanges (List<int> adds, List<int> deletes, List<NSIndexPath> addedIndexPaths, List<NSIndexPath> deletedIndexPaths, int totalSectionRowsBeforeUpdate, int itemRowsBeforeUpdate, int sectionBeforeUpdate, int totalSectionRows, int itemRows, int section, int maxItemRows)
+        {
+            int itemRowsAfterUpdate = itemRowsBeforeUpdate;
+            int totalRowsAfterUpdate = totalSectionRowsBeforeUpdate;
+            // Figure out how many of the adds will actually be added to our limited table
+            foreach (var index in adds) {
+                if (index < maxItemRows) {
+                    addedIndexPaths.Add (NSIndexPath.FromRowSection (index, section));
+                    ++itemRowsAfterUpdate;
+                    ++totalRowsAfterUpdate;
+                }
+            }
+
+            // If the newly added rows put us over the row limit, remove rows from the end as necessary
+            int deleteIndex = itemRowsBeforeUpdate - 1;
+
+            while (itemRowsAfterUpdate > itemRows) {
+                deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, sectionBeforeUpdate));
+                --deleteIndex;
+                --itemRowsAfterUpdate;
+                --totalRowsAfterUpdate;
+            }
+
+            // If any of the deletes are from the rows not yet deleted, remove them
+            foreach (var index in deletes) {
+                if (index <= deleteIndex) {
+                    deletedIndexPaths.Add (NSIndexPath.FromRowSection (index, sectionBeforeUpdate));
+                    --itemRowsAfterUpdate;
+                    --totalRowsAfterUpdate;
+                }
+            }
+
+            var insertIndex = itemRowsAfterUpdate;
+
+            // If the deletes left us short of the new count, add rows to the end
+            while (itemRowsAfterUpdate < itemRows) {
+                addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, section));
+                ++itemRowsAfterUpdate;
+                ++totalRowsAfterUpdate;
+                ++insertIndex;
+            }
+
+            // Finally, add or remove any non-item rows to match the row count
+            insertIndex = totalRowsAfterUpdate;
+            while (totalRowsAfterUpdate < totalSectionRows) {
+                addedIndexPaths.Add (NSIndexPath.FromRowSection (insertIndex, section));
+                ++totalRowsAfterUpdate;
+                ++insertIndex;
+            }
+            deleteIndex = totalSectionRowsBeforeUpdate - 1;
+            while (totalRowsAfterUpdate > totalSectionRows) {
+                deletedIndexPaths.Add (NSIndexPath.FromRowSection (deleteIndex, sectionBeforeUpdate));
+                --deleteIndex;
+                --totalRowsAfterUpdate;
+            }
         }
 
         void UpdateVisibleRows ()
@@ -518,6 +675,16 @@ namespace NachoClient.iOS
                             var cell = TableView.CellAt (indexPath) as MessageCell;
                             if (cell != null && message != null) {
                                 cell.SetMessage (message);
+                            }
+                        } else {
+                            TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
+                        }
+                    } else if (indexPath.Section == ActionsSection) {
+                        if (indexPath.Row < ActionRows) {
+                            var action = HotActions.ActionAt (indexPath.Row);
+                            var cell = TableView.CellAt (indexPath) as ActionCell;
+                            if (cell != null && action != null) {
+                                cell.SetAction (action);
                             }
                         } else {
                             TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
@@ -548,6 +715,21 @@ namespace NachoClient.iOS
             }
         }
 
+        private InsetLabelView _ActionsHeader;
+        private InsetLabelView ActionsHeader {
+            get {
+                if (_ActionsHeader == null) {
+                    _ActionsHeader = new InsetLabelView ();
+                    _ActionsHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
+                    _ActionsHeader.Label.Text = "Hot Actions";
+                    _ActionsHeader.Label.Font = A.Font_AvenirNextRegular14;
+                    _ActionsHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
+                    _ActionsHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+                }
+                return _ActionsHeader;
+            }
+        }
+
         public override nint NumberOfSections (UITableView tableView)
         {
             return SectionCount;
@@ -562,6 +744,9 @@ namespace NachoClient.iOS
                 }
                 return messageCount;
             }
+            if (section == ActionsSection) {
+                return ActionRows + ExtraActionRows;
+            }
             return 0;
         }
 
@@ -570,6 +755,9 @@ namespace NachoClient.iOS
             if (section == HotMessagesSection) {
                 return HotMessagesHeader.PreferredHeight;
             }
+            if (section == ActionsSection) {
+                return ActionsHeader.PreferredHeight;
+            }
             return 0.0f;
         }
 
@@ -577,6 +765,9 @@ namespace NachoClient.iOS
         {
             if (section == HotMessagesSection) {
                 return HotMessagesHeader;
+            }
+            if (section == ActionsSection) {
+                return ActionsHeader;
             }
             return null;
         }
@@ -587,7 +778,14 @@ namespace NachoClient.iOS
                 if (indexPath.Row < MaximumNumberOfHotMessages) {
                     return MessageCell.PreferredHeight (NumberOfMessagePreviewLines, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
                 } else {
-                    return ActionCell.PreferredHeight;
+                    return ButtonCell.PreferredHeight;
+                }
+            }
+            if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < ActionRows) {
+                    return ActionCell.PreferredHeight (NumberOfActionPreviewLines, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+                } else {
+                    return ButtonCell.PreferredHeight;
                 }
             }
             return 44.0f;
@@ -601,14 +799,71 @@ namespace NachoClient.iOS
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
                     cell.NumberOfPreviewLines = NumberOfMessagePreviewLines;
                     cell.SetMessage (message);
+                    if (HotMessages.IncludesMultipleAccounts ()) {
+                        cell.IndicatorColor = Util.ColorForAccount (message.AccountId);
+                        cell.ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 1.0f);
+                    } else {
+                        cell.IndicatorColor = null;
+                    }
                     return cell;
                 } else {
-                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+                    var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
                     cell.TextLabel.Text = String.Format ("See all {0} hot messages", HotMessages.Count());
                     if (!(cell.AccessoryView is DisclosureAccessoryView)) {
                         cell.AccessoryView = new DisclosureAccessoryView ();
                     }
                     return cell;
+                }
+            }
+            if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < ActionRows) {
+                    var cell = tableView.DequeueReusableCell (ActionCellIdentifier) as ActionCell;
+                    var action = HotActions.ActionAt (indexPath.Row);
+                    cell.NumberOfPreviewLines = NumberOfActionPreviewLines;
+                    cell.UncompleteState = McAction.ActionState.Hot;
+                    cell.SetAction (action);
+                    if (HotActions.IncludesMultipleAccounts ()) {
+                        cell.IndicatorColor = Util.ColorForAccount (action.AccountId);
+                        cell.ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 1.0f);
+                    } else {
+                        cell.IndicatorColor = null;
+                    }
+                    return cell;
+                } else {
+                    var index = indexPath.Row - ActionRows;
+                    if (index == ExtraActionRowHot) {
+                        var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
+                        cell.TextLabel.Text = String.Format ("See all {0} hot actions", HotActions.Count ());
+                        if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                            cell.AccessoryView = new DisclosureAccessoryView ();
+                        }
+                        return cell;
+                    } else if (index == ExtraActionRowNormal) {
+                        var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
+                        if (HotActions.NormalCount > 0) {
+                            if (HotActions.NormalCount > 1) {
+                                cell.TextLabel.Text = String.Format ("See all {0} lower priority actions", HotActions.NormalCount);
+                            } else {
+                                cell.TextLabel.Text = String.Format ("See 1 lower priority action", HotActions.NormalCount);
+                            }
+                        } else if (HotActions.DeferredCount > 0) {
+                            if (HotActions.DeferredCount > 1) {
+                                cell.TextLabel.Text = String.Format ("See all {0} deferred actions", HotActions.DeferredCount);
+                            } else {
+                                cell.TextLabel.Text = String.Format ("See 1 deferred action", HotActions.DeferredCount);
+                            }
+                        } else if (HotActions.CompletedCount > 0) {
+                            if (HotActions.CompletedCount > 1) {
+                                cell.TextLabel.Text = String.Format ("See all {0} completed actions", HotActions.CompletedCount);
+                            } else {
+                                cell.TextLabel.Text = String.Format ("See 1 completed action", HotActions.CompletedCount);
+                            }
+                        }
+                        if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                            cell.AccessoryView = new DisclosureAccessoryView ();
+                        }
+                        return cell;
+                    }
                 }
             }
             return null;
@@ -623,6 +878,18 @@ namespace NachoClient.iOS
                 } else {
                     ShowAllHotMessages ();
                 }
+            } else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < ActionRows) {
+                    var action = HotActions.ActionAt (indexPath.Row);
+                    ShowMessage (action.Message);
+                } else {
+                    var index = indexPath.Row - ActionRows;
+                    if (index == ExtraActionRowHot) {
+                        ShowAllHotActions ();
+                    } else if (index == ExtraActionRowNormal) {
+                        ShowAllActions ();
+                    }
+                }
             }
         }
 
@@ -633,14 +900,21 @@ namespace NachoClient.iOS
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
                     var actions = new List<SwipeTableRowAction> ();
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
-                    if (message.isHot ()) {
-                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
-                    } else {
-                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
+                    actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
+                    actions.Add (new SwipeTableRowAction ("Action", UIImage.FromBundle ("email-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), MakeAction));
+                    return actions;
+                }
+            } else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < ActionRows) {
+                    var action = HotActions.ActionAt (indexPath.Row);
+                    var actions = new List<SwipeTableRowAction> ();
+                    if (!action.IsCompleted) {
+                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsUnhot));
+                        actions.Add (new SwipeTableRowAction ("Defer", UIImage.FromBundle ("email-defer-swipe"), UIColor.FromRGB (0x01, 0xB2, 0xCD), DeferAction));
                     }
                     return actions;
                 }
@@ -655,6 +929,16 @@ namespace NachoClient.iOS
                     var actions = new List<SwipeTableRowAction> ();
                     actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
                     actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
+                    return actions;
+                }
+            }else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row < ActionRows) {
+                    var action = HotActions.ActionAt (indexPath.Row);
+                    var actions = new List<SwipeTableRowAction> ();
+                    actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAction));
+                    if (!action.IsCompleted) {
+                        actions.Add (new SwipeTableRowAction ("Not Action", UIImage.FromBundle ("email-not-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), DemoteAction));
+                    }
                     return actions;
                 }
             }
@@ -705,6 +989,7 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
                 case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                case NcResult.SubKindEnum.Info_ActionSetChanged:
                     ReloadHotMessages ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
@@ -748,6 +1033,18 @@ namespace NachoClient.iOS
             var messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
             viewController.SetEmailMessages (messages);
             NavigationController.PushViewController (viewController, true);
+        }
+
+        void ShowAllActions ()
+        {
+            var viewController = new ActionListViewController (McAction.ActionState.Open);
+            NavigationController.PushViewController (viewController, animated: true);
+        }
+
+        void ShowAllHotActions ()
+        {
+            var viewController = new ActionListViewController (McAction.ActionState.Hot);
+            NavigationController.PushViewController (viewController, animated: true);
         }
 
         void SendImLateMessage ()
@@ -796,11 +1093,8 @@ namespace NachoClient.iOS
 
         void ShowMessage (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.FirstMessageId = message.Id;
-            thread.MessageCount = 1;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 
@@ -809,6 +1103,13 @@ namespace NachoClient.iOS
             var vc = new EventViewController ();
             vc.SetCalendarItem (calendarEvent);
             NavigationController.PushViewController (vc, true);
+        }
+
+        void EditAction (McAction action)
+        {
+            var viewController = new ActionEditViewController ();
+            viewController.Action = action;
+            viewController.PresentOverViewController (this);
         }
 
         void SwitchToAccount (McAccount account)
@@ -820,6 +1121,12 @@ namespace NachoClient.iOS
             Account = account;
             SwitchAccountButton.SetAccountImage (account);
             HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
+            SectionCount = 0;
+            HotMessagesSection = -1;
+            ActionsSection = -1;
+            ActionRows = 0;
+            ExtraActionRows = 0;
             TableView.ReloadData (); // to clear table so we don't show stale data from other account
             HasLoadedOnce = false;
             // Relying on ViewWillAppear to do any reloading
@@ -871,12 +1178,12 @@ namespace NachoClient.iOS
             }
         }
 
-        private class ActionCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
-            public ActionCell (IntPtr handle) : base (handle)
+            public ButtonCell (IntPtr handle) : base (handle)
             {
                 TextLabel.Font = A.Font_AvenirNextRegular14;
                 TextLabel.TextColor = A.Color_NachoGreen;
@@ -902,9 +1209,7 @@ namespace NachoClient.iOS
                 TextLabel.TextAlignment = UITextAlignment.Center;
                 TextLabel.Text = "Your most important items will show up here automatically as Nacho Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
 
-                using (var image = UIImage.FromBundle("empty-hot")){
-                    ImageView = new UIImageView (image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
-                }
+                ImageView = new UIImageView (UIImage.FromBundle("empty-hot").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
 
                 AddSubview(ImageView);
                 AddSubview(TextLabel);
