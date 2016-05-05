@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace NachoCore.Utils
 {
@@ -110,6 +111,7 @@ namespace NachoCore.Utils
         public const string IMAP_RESPONSE = "IMAP_RESPONSE";
 
         public byte[] payload;
+        public int thread_id;
 
         public TelemetryProtocolEvent () : this (TelemetryEventType.WBXML_REQUEST)
         {
@@ -134,6 +136,8 @@ namespace NachoCore.Utils
                 var msg = String.Format ("TelemetryProtocolEvent: unexpected type {0}", type);
                 throw new NcAssert.NachoDefaultCaseFailure (msg);
             }
+
+            thread_id = Thread.CurrentThread.ManagedThreadId;
         }
     }
 
