@@ -965,6 +965,31 @@ namespace NachoCore.IMAP
             return Encoding.UTF8.GetBytes (command);
         }
 
+        bool isGoogle ()
+        {
+            var client = (Sm.Context as ImapStateMachineContext).Client;
+            if (ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault ||
+                (client.Capabilities & MailKit.Net.Imap.ImapCapabilities.GMailExt1) == MailKit.Net.Imap.ImapCapabilities.GMailExt1) {
+                return true;
+            }
+            return false;
+        }
+
+        public TimeSpan IdleRequestTimeoutSec {
+            get {
+                if (isGoogle()) {
+                    // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
+                    // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
+                    // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
+                    // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
+                    //var timeout = new TimeSpan(0, 9, 0);
+                    return new TimeSpan(0, 9, 0);
+                } else {
+                    return new TimeSpan(0, 30, 0);
+                }
+            }
+        }
+
         public PushAssistParameters PushAssistParameters ()
         {
             if (!CanStartPushAssist ()) {
@@ -981,7 +1006,7 @@ namespace NachoCore.IMAP
                 return new PushAssistParameters () {
                     RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
                     Protocol = PushAssistProtocol.IMAP,
-                    ResponseTimeoutMsec = 600 * 1000,
+                    ResponseTimeoutMsec = (int)IdleRequestTimeoutSec.TotalMilliseconds,
                     WaitBeforeUseMsec = 60 * 1000,
 
                     IMAPAuthenticationBlob = PushAssistAuthBlob (),
