@@ -65,22 +65,24 @@ namespace NachoCore.Utils
                             ++index;
                         }
                     }
-                    if (!foundSpace) {
-                        index = maxSubjectLength;
-                        while (index >= 0 && index > maxSubjectLength - flex) {
-                            var c = subject [index];
-                            if (c == ' ') {
-                                foundSpace = true;
-                                break;
-                            } else {
-                                --index;
+                    if (index != subject.Length) {
+                        if (!foundSpace) {
+                            index = maxSubjectLength;
+                            while (index >= 0 && index > maxSubjectLength - flex) {
+                                var c = subject [index];
+                                if (c == ' ') {
+                                    foundSpace = true;
+                                    break;
+                                } else {
+                                    --index;
+                                }
                             }
                         }
+                        if (!foundSpace) {
+                            index = maxSubjectLength;
+                        }
+                        subject = subject.Substring (0, index) + "...";
                     }
-                    if (!foundSpace) {
-                        index = maxSubjectLength;
-                    }
-                    subject = subject.Substring (0, index) + "...";
                 }
             }
             string bodyPreview = "";
