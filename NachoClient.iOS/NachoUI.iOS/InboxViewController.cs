@@ -35,6 +35,12 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
         }
 
+        // Since this is one of the tabs, this view controller should never be cleaned up.
+        // Override Cleanup() to do nothing.
+        protected override void Cleanup ()
+        {
+        }
+
         void ShowAccountSwitcher ()
         {
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
