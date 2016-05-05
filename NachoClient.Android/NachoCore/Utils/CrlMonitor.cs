@@ -720,7 +720,7 @@ namespace NachoCore.Utils
         /// <param name="crl">Crl.</param>
         public static bool IsExpired (X509Crl crl)
         {
-            return crl.NextUpdate.Value >= DateTime.UtcNow;
+            return crl.NextUpdate.Value <= DateTime.UtcNow;
         }
     }
 }
