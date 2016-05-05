@@ -527,20 +527,22 @@ namespace NachoClient.AndroidClient
         {
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
-            var serverErrors = getServerErrors ();
-            if (service == McAccount.AccountServiceEnum.GoogleExchange || service == McAccount.AccountServiceEnum.Office365Exchange) {
-                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
-                if (!string.IsNullOrWhiteSpace (serverErrors)) {
-                    errorText += string.Format ("  ({0})", serverErrors);
+            var certErrors = ServerCertificatePeek.ServerErrors (Account.Id);
+            if (certErrors.Count > 0) {
+                var certErrorStrings = new List<string> ();
+                foreach (var server in certErrors.Keys) {
+                    certErrorStrings.Add (String.Format ("{0}: {1}", server, certErrors [server].SslPolicyError));
                 }
+                string errorText = String.Format ("We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}", String.Join ("; ", certErrorStrings));
+                Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait with cert errors for {0}", service);
+                ShowCredentialsError (errorText);
+            }else if (service == McAccount.AccountServiceEnum.GoogleExchange || service == McAccount.AccountServiceEnum.Office365Exchange) {
+                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for known exchange service {0}, not showing advanced", service);
                 ShowCredentialsError (errorText);
             } else if (service == McAccount.AccountServiceEnum.Exchange || service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for service {0}, showing advanced", service);
                 string errorText = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
-                if (!string.IsNullOrWhiteSpace (serverErrors)) {
-                    errorText += string.Format ("  ({0})", serverErrors);
-                }
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
                     statusLabel.Text = errorText;
@@ -550,10 +552,6 @@ namespace NachoClient.AndroidClient
                 }
             } else {
                 string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
-                if (!string.IsNullOrWhiteSpace (serverErrors)) {
-                    errorText += string.Format ("  ({0})", serverErrors);
-                }
-
                 Log.Info (Log.LOG_UI, "CredentialsFragment got unexpected ServerConfWait for service {0}", service);
                 ShowCredentialsError (errorText);
             }
