@@ -27,6 +27,20 @@ namespace NachoClient.iOS
 
         public NachoTabBarController () : base ()
         {
+        }
+
+        protected UITabBarItem nachoNowItem;
+        protected UITabBarItem settingsItem;
+        protected UITabBarItem foldersItem;
+        protected UITabBarItem deadlinesItem;
+        protected UITabBarItem deferredItem;
+        protected UITabBarItem inboxItem;
+        protected UITabBarItem chatsItem;
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+
             var nowNavController = new UINavigationController (new NachoNowViewController ());
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
@@ -80,19 +94,6 @@ namespace NachoClient.iOS
                 supportNavController,
                 aboutNavController
             };
-        }
-
-        protected UITabBarItem nachoNowItem;
-        protected UITabBarItem settingsItem;
-        protected UITabBarItem foldersItem;
-        protected UITabBarItem deadlinesItem;
-        protected UITabBarItem deferredItem;
-        protected UITabBarItem inboxItem;
-        protected UITabBarItem chatsItem;
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
 
             instance = this;
 
