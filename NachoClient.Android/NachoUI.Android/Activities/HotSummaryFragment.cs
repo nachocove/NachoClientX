@@ -24,12 +24,8 @@ namespace NachoClient.AndroidClient
     {
 
         View inboxView;
-        View deferredView;
-        View deadlinesView;
 
         TextView inboxMessageCountView;
-        TextView deferredMessageCountView;
-        TextView deadlinesMessageCountView;
 
         // Display first message of a thread in a cardview
         public static HotSummaryFragment newInstance ()
@@ -48,12 +44,8 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.HotSummaryFragment, container, false);
 
             inboxView = view.FindViewById<View> (Resource.Id.go_to_inbox);
-            deferredView = view.FindViewById<View> (Resource.Id.go_to_deferred);
-            deadlinesView = view.FindViewById<View> (Resource.Id.go_to_deadlines);
 
             inboxMessageCountView = view.FindViewById<TextView> (Resource.Id.inbox_message_count);
-            deferredMessageCountView = view.FindViewById<TextView> (Resource.Id.deferred_message_count);
-            deadlinesMessageCountView = view.FindViewById<TextView> (Resource.Id.deadlines_message_count);
 
             Update (NcApplication.Instance.Account);
 
@@ -64,16 +56,12 @@ namespace NachoClient.AndroidClient
         {
             base.OnResume ();
             inboxView.Click += InboxView_Click;
-            deferredView.Click += DeferredView_Click;
-            deadlinesView.Click += DeadlinesView_Click;
         }
 
         public override void OnPause ()
         {
             base.OnPause ();
             inboxView.Click -= InboxView_Click;
-            deferredView.Click -= DeferredView_Click;
-            deadlinesView.Click -= DeadlinesView_Click;
         }
 
         void DeadlinesView_Click (object sender, EventArgs e)
@@ -97,13 +85,9 @@ namespace NachoClient.AndroidClient
             NcTask.Run (() => {
                 int unreadCount;
                 int likelyCount;
-                int deferredCount;
-                int deadlineCount;
-                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
+                EmailHelper.GetMessageCounts (account, out unreadCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
-                    deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);
-                    deadlinesMessageCountView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineCount);
                     // FIMXE LTR.
                 });
             }, "UpdateUnreadMessageView");
