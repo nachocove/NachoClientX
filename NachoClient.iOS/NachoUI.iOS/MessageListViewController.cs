@@ -227,28 +227,28 @@ namespace NachoClient.iOS
         {
             EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.All;
-            Reload ();
+            SetNeedsReload ();
         }
 
         void FilterHot ()
         {
             EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.Hot;
-            Reload ();
+            SetNeedsReload ();
         }
 
         void FilterUnread ()
         {
             EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.Unread;
-            Reload ();
+            SetNeedsReload ();
         }
 
         void FilterFocus ()
         {
             EndAllTableEdits ();
             Messages.FilterSetting = FolderFilterOptions.Focused;
-            Reload ();
+            SetNeedsReload ();
         }
 
         void MarkMessageAsRead (NSIndexPath indexPath)
@@ -322,7 +322,7 @@ namespace NachoClient.iOS
                     }, "MessageListViewController.DeleteMessage");
                 }
                 Messages.IgnoreMessage (thread.FirstMessageId);
-                Reload ();
+                TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
             }
         }
 
@@ -337,7 +337,7 @@ namespace NachoClient.iOS
                     NcEmailArchiver.Archive (thread);
                 }, "MessageListViewController.ArchiveMessage");
                 Messages.IgnoreMessage (thread.FirstMessageId);
-                Reload ();
+                TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
             }
         }
 
@@ -374,9 +374,9 @@ namespace NachoClient.iOS
                 NcTask.Run (() => {
                     NcEmailArchiver.Move (messageThread, folder);
                 }, "MessageListViewController.MoveMessage");
-                Messages.IgnoreMessage (messageThread.FirstMessageId);
+                Messages.IgnoreMessage (messageThread.FirstMessageId, removeImmediately: false);
                 vc.DismissFolderChooser (true, () => {
-                    Reload ();
+                    SetNeedsReload ();
                 });
             } else {
                 var selected = SelectedMessages ();
@@ -384,11 +384,11 @@ namespace NachoClient.iOS
                     NcEmailArchiver.Move (selected, folder);
                 }, "MessageListViewController.MoveSelectedMessages");
                 foreach (var message in selected) {
-                    Messages.IgnoreMessage (message.Id);
+                    Messages.IgnoreMessage (message.Id, removeImmediately: false);
                 }
                 vc.DismissFolderChooser (true, () => {
                     CancelEditingTable ();
-                    Reload ();
+                    SetNeedsReload ();
                 });
             }
         }
@@ -435,10 +435,12 @@ namespace NachoClient.iOS
                 NcEmailArchiver.Archive (selected);
             }, "MessageListViewController.ArchiveSelectedMessages");
             foreach (var message in selected) {
-                Messages.IgnoreMessage (message.Id);
+                Messages.IgnoreMessage (message.Id, removeImmediately: false);
             }
+            Messages.RemoveIgnoredMessages ();
+            var indexPaths = TableView.IndexPathsForSelectedRows;
             CancelEditingTable ();
-            Reload ();
+            TableView.DeleteRows (indexPaths, UITableViewRowAnimation.Automatic);
         }
 
         void DeleteSelectedMessages (object sender, EventArgs e)
@@ -448,10 +450,12 @@ namespace NachoClient.iOS
                 NcEmailArchiver.Delete (selected);
             }, "MessageListViewController.DeleteSelectedMessages");
             foreach (var message in selected) {
-                Messages.IgnoreMessage (message.Id);
+                Messages.IgnoreMessage (message.Id, removeImmediately: false);
             }
+            Messages.RemoveIgnoredMessages ();
+            var indexPaths = TableView.IndexPathsForSelectedRows;
             CancelEditingTable ();
-            Reload ();
+            TableView.DeleteRows (indexPaths, UITableViewRowAnimation.Automatic);
         }
 
         void MarkSelectedMessages (object sender, EventArgs e)
@@ -516,21 +520,36 @@ namespace NachoClient.iOS
 
         #region Reloading Messages
 
+        bool NeedsReload;
+        bool IsReloading;
+
+        protected void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                Reload ();
+            }
+        }
+
         protected void Reload ()
         {
-            if (Messages.HasBackgroundRefresh ()) {
-                Log.Info (Log.LOG_UI, "MessageListViewController.Reload: using NachoEmailMessages background refresh");
-                Messages.BackgroundRefresh (HandleReloadResults);
-            } else {
-                Log.Info (Log.LOG_UI, "MessageListViewController.Reload: simulating a background refresh because this NachoEmailMessages doesn't have one");
-                NcTask.Run (() => {
-                    List<int> adds;
-                    List<int> deletes;
-                    bool changed = Messages.Refresh (out adds, out deletes);
-                    BeginInvokeOnMainThread(() => {
-                        HandleReloadResults (changed, adds, deletes);
-                    });
-                }, MessageRefreshTaskName);
+            if (!IsReloading) {
+                IsReloading = true;
+                NeedsReload = false;
+                if (Messages.HasBackgroundRefresh ()) {
+                    Log.Info (Log.LOG_UI, "MessageListViewController.Reload: using NachoEmailMessages background refresh");
+                    Messages.BackgroundRefresh (HandleReloadResults);
+                } else {
+                    Log.Info (Log.LOG_UI, "MessageListViewController.Reload: simulating a background refresh because this NachoEmailMessages doesn't have one");
+                    NcTask.Run (() => {
+                        List<int> adds;
+                        List<int> deletes;
+                        bool changed = Messages.Refresh (out adds, out deletes);
+                        BeginInvokeOnMainThread (() => {
+                            HandleReloadResults (changed, adds, deletes);
+                        });
+                    }, MessageRefreshTaskName);
+                }
             }
         }
 
@@ -559,6 +578,10 @@ namespace NachoClient.iOS
                     // Note that this may do a small amount of double work for any visible row that was just added.
                     UpdateVisibleRows ();
                 }
+            }
+            IsReloading = false;
+            if (NeedsReload) {
+                Reload ();
             }
         }
 
@@ -769,9 +792,7 @@ namespace NachoClient.iOS
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
                     Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
-                    if (isVisible) {
-                        Reload ();
-                    }
+                    SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
                 case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
@@ -779,9 +800,7 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                     Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
-                    if (isVisible) {
-                        UpdateVisibleRows ();
-                    }
+                    UpdateVisibleRows ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
@@ -1024,7 +1043,7 @@ namespace NachoClient.iOS
         {
             if (!SyncManager.SyncEmailMessages (Messages)) {
                 // If we couldn't start a sync, just requery the db
-                Reload ();
+                SetNeedsReload ();
             }
         }
 

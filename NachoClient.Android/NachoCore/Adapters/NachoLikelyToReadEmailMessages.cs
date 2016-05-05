@@ -37,6 +37,11 @@ namespace NachoCore
             return false;
         }
 
+        public override void RemoveIgnoredMessages ()
+        {
+            RemoveIgnoredMessages (ThreadList);
+        }
+
         public override int Count ()
         {
             return ThreadList.Count;

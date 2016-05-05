@@ -142,12 +142,12 @@ namespace NachoClient.iOS
             if (SyncManager.IsSyncing) {
                 SyncManager.ResumeEvents ();
             }
-            StartListeningForStatusInd ();
             HotMessages.RefetchSyncTime ();
             if (HasAppearedOnce) {
                 ReloadCalendar ();
                 ReloadHotMessages ();
             }
+            StartListeningForStatusInd ();
             HasAppearedOnce = true;
             if (HotEventView.Selected) {
                 HotEventView.SetSelected (false, animated: true);
@@ -496,19 +496,38 @@ namespace NachoClient.iOS
 
         #region Reload Data
 
+        bool NeedsReload;
+        bool IsReloading;
+
+        void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                ReloadHotMessages ();
+            }
+        }
+
         void ReloadHotMessages ()
         {
-            NcTask.Run (() => {
-                List<int> messageAdds;
-                List<int> messageDeletes;
-                bool messagesChanged = HotMessages.Refresh (out messageAdds, out messageDeletes);
-                List<int> actionAdds;
-                List<int> actionDeletes;
-                bool actionsChanged = HotActions.Refresh (out actionAdds, out actionDeletes);
-                BeginInvokeOnMainThread(() => {
-                    HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
-                });
-            }, HotMessageRefreshTaskName);
+            if (!IsReloading) {
+                IsReloading = true;
+                NeedsReload = false;
+                NcTask.Run (() => {
+                    List<int> messageAdds;
+                    List<int> messageDeletes;
+                    bool messagesChanged = HotMessages.Refresh (out messageAdds, out messageDeletes);
+                    List<int> actionAdds;
+                    List<int> actionDeletes;
+                    bool actionsChanged = HotActions.Refresh (out actionAdds, out actionDeletes);
+                    BeginInvokeOnMainThread (() => {
+                        HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
+                        IsReloading = false;
+                        if (NeedsReload) {
+                            ReloadHotMessages ();
+                        }
+                    });
+                }, HotMessageRefreshTaskName);
+            }
         }
 
         void HandleReloadHotMessagesResults (bool messagesChanged, List<int> messageAdds, List<int> messageDeletes, bool actionsChanged, List<int> actionAdds, List<int> actionDeletes)
@@ -990,7 +1009,7 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 case NcResult.SubKindEnum.Info_ActionSetChanged:
-                    ReloadHotMessages ();
+                    SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
@@ -1007,7 +1026,7 @@ namespace NachoClient.iOS
         void StartSync ()
         {
             if (!SyncManager.SyncEmailMessages (HotMessages)) {
-                ReloadHotMessages ();
+                SetNeedsReload ();
             }
         }
 

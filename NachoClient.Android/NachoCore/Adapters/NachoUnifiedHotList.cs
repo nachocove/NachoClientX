@@ -39,6 +39,11 @@ namespace NachoCore
             return threadList.Count;
         }
 
+        public override void RemoveIgnoredMessages ()
+        {
+            RemoveIgnoredMessages (threadList);
+        }
+
         public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
