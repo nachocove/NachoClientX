@@ -322,7 +322,12 @@ namespace NachoClient.iOS
                     }, "MessageListViewController.DeleteMessage");
                 }
                 Messages.IgnoreMessage (thread.FirstMessageId);
-                TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                if (!IsReloading) {
+                    Messages.RemoveIgnoredMessages ();
+                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                } else {
+                    SetNeedsReload ();
+                }
             }
         }
 
@@ -337,7 +342,12 @@ namespace NachoClient.iOS
                     NcEmailArchiver.Archive (thread);
                 }, "MessageListViewController.ArchiveMessage");
                 Messages.IgnoreMessage (thread.FirstMessageId);
-                TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                if (!IsReloading) {
+                    Messages.RemoveIgnoredMessages ();
+                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                } else {
+                    SetNeedsReload ();
+                }
             }
         }
 
@@ -374,7 +384,7 @@ namespace NachoClient.iOS
                 NcTask.Run (() => {
                     NcEmailArchiver.Move (messageThread, folder);
                 }, "MessageListViewController.MoveMessage");
-                Messages.IgnoreMessage (messageThread.FirstMessageId, removeImmediately: false);
+                Messages.IgnoreMessage (messageThread.FirstMessageId);
                 vc.DismissFolderChooser (true, () => {
                     SetNeedsReload ();
                 });
@@ -384,7 +394,7 @@ namespace NachoClient.iOS
                     NcEmailArchiver.Move (selected, folder);
                 }, "MessageListViewController.MoveSelectedMessages");
                 foreach (var message in selected) {
-                    Messages.IgnoreMessage (message.Id, removeImmediately: false);
+                    Messages.IgnoreMessage (message.Id);
                 }
                 vc.DismissFolderChooser (true, () => {
                     CancelEditingTable ();
@@ -435,12 +445,16 @@ namespace NachoClient.iOS
                 NcEmailArchiver.Archive (selected);
             }, "MessageListViewController.ArchiveSelectedMessages");
             foreach (var message in selected) {
-                Messages.IgnoreMessage (message.Id, removeImmediately: false);
+                Messages.IgnoreMessage (message.Id);
             }
-            Messages.RemoveIgnoredMessages ();
             var indexPaths = TableView.IndexPathsForSelectedRows;
             CancelEditingTable ();
-            TableView.DeleteRows (indexPaths, UITableViewRowAnimation.Automatic);
+            if (!IsReloading) {
+                Messages.RemoveIgnoredMessages ();
+                TableView.DeleteRows (indexPaths, UITableViewRowAnimation.Automatic);
+            } else {
+                SetNeedsReload ();
+            }
         }
 
         void DeleteSelectedMessages (object sender, EventArgs e)
@@ -450,12 +464,16 @@ namespace NachoClient.iOS
                 NcEmailArchiver.Delete (selected);
             }, "MessageListViewController.DeleteSelectedMessages");
             foreach (var message in selected) {
-                Messages.IgnoreMessage (message.Id, removeImmediately: false);
+                Messages.IgnoreMessage (message.Id);
             }
-            Messages.RemoveIgnoredMessages ();
             var indexPaths = TableView.IndexPathsForSelectedRows;
             CancelEditingTable ();
-            TableView.DeleteRows (indexPaths, UITableViewRowAnimation.Automatic);
+            if (!IsReloading) {
+                Messages.RemoveIgnoredMessages ();
+                TableView.DeleteRows (indexPaths, UITableViewRowAnimation.Automatic);
+            } else {
+                SetNeedsReload ();
+            }
         }
 
         void MarkSelectedMessages (object sender, EventArgs e)

@@ -238,7 +238,7 @@ namespace NachoCore
         DateTime lastIgnoredUpdateTime = default(DateTime);
         object ignoredMessagesLock = new object ();
 
-        public virtual void IgnoreMessage (int messageId, bool removeImmediately = true)
+        public virtual void IgnoreMessage (int messageId)
         {
             lock (ignoredMessagesLock) {
                 if (null == ignoredMessageIds) {
@@ -246,9 +246,6 @@ namespace NachoCore
                 }
                 ignoredMessageIds.Add (messageId);
                 lastIgnoredUpdateTime = DateTime.UtcNow;
-            }
-            if (removeImmediately) {
-                RemoveIgnoredMessages ();
             }
         }
 
