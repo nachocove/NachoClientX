@@ -77,10 +77,20 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
+        private bool _IsLongLived = false;
+        public bool IsLongLived {
+            private get {
+                return _IsLongLived;
+            }
+            set {
+                _IsLongLived = value;
+            }
+        }
+
         protected virtual bool ShouldCleanupDuringDidDisappear
         {
             get {
-                return IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
+                return !IsLongLived && IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
             }
         }
 

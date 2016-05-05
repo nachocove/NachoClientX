@@ -1719,15 +1719,17 @@ namespace NachoCore.Model
 
         public void ParseIntentFromSubject ()
         {
-            string subject;
-            IntentType intent;
-            MessageDeferralType intentDateType;
-            DateTime intentDate;
-            EmailHelper.ParseSubject (Subject, DateReceived, out subject, out intent, out intentDateType, out intentDate);
-            Subject = subject;
-            Intent = intent;
-            IntentDateType = intentDateType;
-            IntentDate = intentDate;
+            if (!string.IsNullOrEmpty (Subject)) {
+                string subject;
+                IntentType intent;
+                MessageDeferralType intentDateType;
+                DateTime intentDate;
+                EmailHelper.ParseSubject (Subject, DateReceived, out subject, out intent, out intentDateType, out intentDate);
+                Subject = subject;
+                Intent = intent;
+                IntentDateType = intentDateType;
+                IntentDate = intentDate;
+            }
         }
 
         public void DetermineIfIsAction (McFolder inFolder)

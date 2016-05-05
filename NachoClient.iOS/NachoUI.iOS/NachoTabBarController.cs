@@ -27,10 +27,24 @@ namespace NachoClient.iOS
 
         public NachoTabBarController () : base ()
         {
-            var nowNavController = new UINavigationController (new NachoNowViewController ());
+        }
+
+        protected UITabBarItem nachoNowItem;
+        protected UITabBarItem settingsItem;
+        protected UITabBarItem foldersItem;
+        protected UITabBarItem deadlinesItem;
+        protected UITabBarItem deferredItem;
+        protected UITabBarItem inboxItem;
+        protected UITabBarItem chatsItem;
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+
+            var nowNavController = new UINavigationController (new NachoNowViewController () { IsLongLived = true });
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
-            var inboxNavController = new UINavigationController (new InboxViewController ());
+            var inboxNavController = new UINavigationController (new InboxViewController () { IsLongLived = true });
             inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");
 
             var chatsNavController = new UINavigationController (new ChatsViewController ());
@@ -48,7 +62,7 @@ namespace NachoClient.iOS
             var filesNavController = new UINavigationController (new FileListViewController ());
             filesNavController.TabBarItem = MakeTabBarItem ("Files", "more-files");
 
-            var settingsNavController = new UINavigationController (new GeneralSettingsViewController ());
+            var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
             settingsItem = settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
 
             var supportNavController = new UINavigationController (new SupportViewController ());
@@ -80,19 +94,6 @@ namespace NachoClient.iOS
                 supportNavController,
                 aboutNavController
             };
-        }
-
-        protected UITabBarItem nachoNowItem;
-        protected UITabBarItem settingsItem;
-        protected UITabBarItem foldersItem;
-        protected UITabBarItem deadlinesItem;
-        protected UITabBarItem deferredItem;
-        protected UITabBarItem inboxItem;
-        protected UITabBarItem chatsItem;
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
 
             instance = this;
 
