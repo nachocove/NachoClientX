@@ -66,6 +66,7 @@ namespace NachoCore.Utils
                         }
                     }
                     if (!foundSpace) {
+                        index = maxSubjectLength;
                         while (index >= 0 && index > maxSubjectLength - flex) {
                             var c = subject [index];
                             if (c == ' ') {
