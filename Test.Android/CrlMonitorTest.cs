@@ -85,7 +85,7 @@ namespace Test.Common
 
         public bool ExtractCrl (string crl)
         {
-            return base.ExtractCrl (new MemoryStream (Encoding.ASCII.GetBytes (crl)), failOnExpired: false);
+            return base.ExtractCrl (new MemoryStream (Encoding.ASCII.GetBytes (crl)), false);
         }
 
         public void CrlGetRevoked ()
@@ -95,7 +95,7 @@ namespace Test.Common
 
         public HashSet<string> getRevoked ()
         {
-            return base.Revoked;
+            return Revoked;
         }
     }
 }
