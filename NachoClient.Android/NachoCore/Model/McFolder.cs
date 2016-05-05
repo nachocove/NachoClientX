@@ -343,6 +343,11 @@ namespace NachoCore.Model
             return false;
         }
 
+        public bool IsDefaultInboxFolder ()
+        {
+            return IsDistinguished && Type == Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
+        }
+
         public bool IsJunkFolder ()
         {
             return JunkFolderIds.ContainsKey (this.Id);

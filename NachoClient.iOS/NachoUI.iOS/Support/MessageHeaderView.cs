@@ -13,219 +13,189 @@ namespace NachoClient.iOS
 {
     public class MessageHeaderView : UIView
     {
-        /// <summary>
-        /// Static message header that might be found on mesasge list or nacho now.
-        /// The size of the content is about 60px.
-        /// </summary>
-        public MessageHeaderView ()
-        {
+
+        McEmailMessage _Message;
+        public McEmailMessage Message {
+            get {
+                return _Message;
+            }
+            set {
+                _Message = value;
+                Update ();
+            }
+        }
+
+        private bool _Selected;
+        public bool Selected {
+            get {
+                return _Selected;
+            }
+            set {
+                SetSelected (value, false);
+            }
+        }
+
+        UILabel FromLabel;
+        UILabel SubjectLabel;
+        UILabel DateLabel;
+        PortraitView PortraitView;
+        public readonly UIView BottomBorder;
+
+        UIEdgeInsets _TextInsets;
+        public UIEdgeInsets TextInsets {
+            get {
+                return _TextInsets;
+            }
+            set {
+                _TextInsets = value;
+                SetNeedsLayout ();
+            }
+        }
+
+        nfloat _PortraitSize = 40.0f;
+        public nfloat PortraitSize {
+            get {
+                return _PortraitSize;
+            }
+            set {
+                _PortraitSize = value;
+                SetNeedsLayout ();
+            }
+        }
+
+        nfloat BorderWidth = 0.5f;
+
+        static NSAttributedString _HotAttachmentString;
+        static NSAttributedString HotAttachmentString {
+            get {
+                if (_HotAttachmentString == null) {
+                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(A.Font_AvenirNextDemiBold17));
+                }
+                return _HotAttachmentString;
+            }
         }
 
         public MessageHeaderView (CGRect rect) : base (rect)
         {
+
+            BackgroundColor = UIColor.White;
+
+            TextInsets = new UIEdgeInsets (7.0f, 14.0f, 7.0f, 14.0f);
+
+            PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
+
+            FromLabel = new UILabel ();
+            FromLabel.Font = A.Font_AvenirNextDemiBold17;
+            FromLabel.TextColor = A.Color_NachoGreen;
+            FromLabel.Lines = 1;
+            FromLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+
+            SubjectLabel = new UILabel ();
+            SubjectLabel.Font = A.Font_AvenirNextRegular17;
+            SubjectLabel.TextColor = A.Color_NachoGreen;
+            SubjectLabel.Lines = 0;
+            SubjectLabel.LineBreakMode = UILineBreakMode.WordWrap;
+
+            DateLabel = new UILabel ();
+            DateLabel.Font = A.Font_AvenirNextRegular14;
+            DateLabel.TextColor = A.Color_NachoTextGray;
+            DateLabel.Lines = 1;
+            DateLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+
+            BottomBorder = new UIView (new CGRect (0.0f, 0.0f, Bounds.Width, BorderWidth));
+            BottomBorder.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+
+            AddSubview (BottomBorder);
+            AddSubview (PortraitView);
+            AddSubview (FromLabel);
+            AddSubview (SubjectLabel);
+            AddSubview (DateLabel);
         }
 
-        public EventHandler OnClickChili;
-
-        const int FROM_TAG = 881;
-        const int SUBJECT_TAG = 882;
-        const int RECEIVED_DATE_TAG = 883;
-        const int USER_CHILI_TAG = 884;
-        const int ATTACHMENT_TAG = 885;
-
-        const int CHILI_WIDTH = 24;
-        const int CHILI_PADDING = 10;
-
-        const int ATTACHMENT_WIDTH = 16;
-        const int ATTACHMENT_PADDING = 10;
-
-        public void CreateView ()
+        public void Update ()
         {
-            nfloat leftMargin = 0;
-            nfloat rightMargin = 15;
-            nfloat parentWidth = this.Frame.Width;
-
-            nfloat yOffset = 15;
-
-            // From label shares a line with the chili
-            var fromLabelWidth = parentWidth - CHILI_WIDTH - CHILI_PADDING - rightMargin;
-            var fromLabelView = new UILabel (new CGRect (leftMargin, yOffset, fromLabelWidth, 20));
-            fromLabelView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            fromLabelView.Font = A.Font_AvenirNextDemiBold17;
-            fromLabelView.TextColor = A.Color_0F424C;
-            fromLabelView.Tag = FROM_TAG;
-            this.AddSubview (fromLabelView);
-
-            // Chili image view, to the far right of From
-            var chiliX = parentWidth - rightMargin - CHILI_WIDTH;
-            var chiliImageView = new UIImageView (new CGRect (chiliX, yOffset, CHILI_WIDTH, CHILI_WIDTH));
-            chiliImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
-            chiliImageView.Tag = USER_CHILI_TAG;
-            this.AddSubview (chiliImageView);
-
-            chiliImageView.UserInteractionEnabled = true;
-            var chiliTapGestureRecognizer = new UITapGestureRecognizer (new Action (() => {
-                if (null != OnClickChili) {
-                    OnClickChili (null, null);
+            PortraitView.SetPortrait (Message.cachedPortraitId, Message.cachedFromColor, Message.cachedFromLetters);
+            var attributedDateText = new NSMutableAttributedString (Pretty.FriendlyFullDateTime (Message.DateReceived));
+            if (!Message.IsAction) {
+                if (Message.Intent != McEmailMessage.IntentType.None) {
+                    var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (Message.Intent, uppercase: false);
+                    var location = attributedDateText.Length + 1;
+                    attributedDateText.Append (new NSAttributedString (" " + intentString));
+                    attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB (0xD2, 0x47, 0x47), new NSRange (location, intentString.Length));
+                    if (Message.IntentDateType != MessageDeferralType.None) {
+                        var dueDateString = Pretty.FutureDate (Message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (Message.IntentDateType));
+                        location = attributedDateText.Length;
+                        attributedDateText.Append (new NSAttributedString (" by " + dueDateString));
+                        attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, A.Color_NachoTextGray, new NSRange (location, dueDateString.Length + 3));
+                    }
                 }
-            }));
-            chiliTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return false;
-            };
-            chiliTapGestureRecognizer.CancelsTouchesInView = true; // Prevents item from being selected
-
-            // Make the chili touch area kind of biggish
-            var chiliHitBox = new UIView (new CGRect (chiliX - 20, 0, parentWidth - chiliX + 20, chiliImageView.Frame.Bottom + 20));
-            chiliHitBox.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
-            chiliHitBox.AddGestureRecognizer (chiliTapGestureRecognizer);
-            chiliHitBox.BackgroundColor = UIColor.Clear;
-            this.AddSubview (chiliHitBox);
-
-            yOffset += 20;
-
-            // Subject label view has a line to itself
-            var subjectLabelView = new UILabel (new CGRect (leftMargin, yOffset, parentWidth - leftMargin - rightMargin, 20));
-            subjectLabelView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
-            subjectLabelView.Font = A.Font_AvenirNextMedium14;
-            subjectLabelView.TextColor = A.Color_0F424C;
-            subjectLabelView.Tag = SUBJECT_TAG;
-            this.AddSubview (subjectLabelView);
-
-            yOffset += 20;
-
-            // Received label view shares a line with the attachment clip
-            var receivedLabelView = new UILabel (new CGRect (leftMargin, yOffset, parentWidth - leftMargin - rightMargin, 20));
-            receivedLabelView.Font = A.Font_AvenirNextRegular14;
-            receivedLabelView.TextColor = A.Color_9B9B9B;
-            receivedLabelView.Tag = RECEIVED_DATE_TAG;
-            this.AddSubview (receivedLabelView);
-
-            // Attachment image view goes near the received label
-            var attachmentX = parentWidth - rightMargin - ATTACHMENT_WIDTH;
-            var attachmentImageView = new UIImageView (new CGRect (attachmentX, yOffset + 2, 16, 16));
-            attachmentImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
-            attachmentImageView.Tag = ATTACHMENT_TAG;
-            this.AddSubview (attachmentImageView);
-
-            this.BringSubviewToFront (chiliImageView);
-            this.BringSubviewToFront (chiliHitBox);
-        }
-
-        public void ConfigureMessageView (McEmailMessageThread thread, McEmailMessage message)
-        {
-            // From label view
-            var fromLabelView = this.ViewWithTag (FROM_TAG) as UILabel;
-            fromLabelView.Text = Pretty.SenderString (message.From);
-            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
-            fromLabelView.Hidden = false;
-
-            // Chili image view
-            string chiliImageIcon;
-            if (thread.HasMultipleMessages ()) {
-                chiliImageIcon = (message.isHot () ? "email-hotthread" : "email-nothothread");
+            }
+            DateLabel.AttributedText = attributedDateText;
+            FromLabel.Text = Pretty.SenderString (Message.From);
+            string prettySubject = "";
+            if (String.IsNullOrWhiteSpace (Message.Subject)) {
+                prettySubject = "(no subject)";
+                SubjectLabel.TextColor = A.Color_NachoTextGray;
             } else {
-                chiliImageIcon = (message.isHot () ? "email-hot" : "email-not-hot");
+                SubjectLabel.TextColor = A.Color_NachoGreen;
+                prettySubject = Pretty.SubjectString (Message.Subject);
             }
-            var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            using (var image = UIImage.FromBundle (chiliImageIcon)) {
-                chiliImageView.Image = image;
-            }
-            chiliImageView.Hidden = false;
-
-            // Subject label view
-            var subjectLabelView = this.ViewWithTag (SUBJECT_TAG) as UILabel;
-            string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
-            if (String.IsNullOrEmpty (subject)) {
-                subjectLabelView.Text = Pretty.NoSubjectString ();
-                subjectLabelView.TextColor = A.Color_9B9B9B;
-                subjectLabelView.Font = A.Font_AvenirNextRegular17;
-            } else {
-                subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Text = subject;
-                subjectLabelView.Font = A.Font_AvenirNextRegular17;
-            }
-            subjectLabelView.Hidden = false;
-
-            // Received label view
-            var receivedLabelView = this.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
-            receivedLabelView.SizeToFit ();
-            receivedLabelView.Hidden = false;
-
-            // Attachment image view
-            var attachmentImageView = this.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
-            if (message.cachedHasAttachments) {
-                attachmentImageView.Hidden = false;
-                using (var image = UIImage.FromBundle ("inbox-icn-attachment")) {
-                    attachmentImageView.Image = image;
+            using (var attributedSubject = new NSMutableAttributedString (prettySubject)) {
+                if (Message.isHot ()) {
+                    attributedSubject.Replace (new NSRange (0, 0), " ");
+                    attributedSubject.Insert (HotAttachmentString, 0);
                 }
-            } else { 
-                attachmentImageView.Hidden = true;
+                SubjectLabel.AttributedText = attributedSubject;
             }
-            var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = receivedLabelView.Frame.Right + 10;
-            attachmentImageView.Frame = attachmentImageRect;
+            SetNeedsLayout ();
         }
 
-        public void ConfigureDraftView (McEmailMessageThread thread, McEmailMessage message)
+        public void SetSelected (bool selected, bool animated = false)
         {
-            // To label view
-            var fromLabelView = this.ViewWithTag (FROM_TAG) as UILabel;
-            fromLabelView.Text = Pretty.RecipientString (message.To);
-            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
-            fromLabelView.Hidden = false;
-
-            // Chili image view
-            var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            chiliImageView.Hidden = true;
-
-            // Subject label view
-            var subjectLabelView = this.ViewWithTag (SUBJECT_TAG) as UILabel;
-            string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
-            if (String.IsNullOrEmpty (subject)) {
-                subjectLabelView.Text = Pretty.NoSubjectString ();
-                subjectLabelView.TextColor = A.Color_9B9B9B;
-                subjectLabelView.Font = A.Font_AvenirNextRegular17;
+            _Selected = selected;
+            if (animated) {
+                UIView.BeginAnimations (null, IntPtr.Zero);
+                UIView.SetAnimationDuration (0.25f);
+            }
+            if (selected) {
+                BackgroundColor = UIColor.FromRGB (0xE0, 0xE0, 0xE0);
             } else {
-                subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Text = subject;
-                subjectLabelView.Font = A.Font_AvenirNextRegular17;
+                BackgroundColor = UIColor.White;
             }
-            subjectLabelView.Hidden = false;
-
-            // Received label view
-            var receivedLabelView = this.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
-            receivedLabelView.SizeToFit ();
-            receivedLabelView.Hidden = false;
-
-            // Attachment image view
-            var attachmentImageView = this.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
-            if (message.cachedHasAttachments) {
-                attachmentImageView.Hidden = false;
-                using (var image = UIImage.FromBundle ("inbox-icn-attachment")) {
-                    attachmentImageView.Image = image;
-                }
-            } else { 
-                attachmentImageView.Hidden = true;
+            if (animated) {
+                UIView.CommitAnimations ();
             }
-            var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = receivedLabelView.Frame.Right + 10;
-            attachmentImageView.Frame = attachmentImageRect;
         }
 
-
-        // Opaque background prevents blending penalty
-        public void SetAllBackgroundColors (UIColor color)
+        public override void LayoutSubviews ()
         {
-            this.BackgroundColor = color;
-            this.ViewWithTag (FROM_TAG).BackgroundColor = color;
-            this.ViewWithTag (SUBJECT_TAG).BackgroundColor = color;
-            this.ViewWithTag (RECEIVED_DATE_TAG).BackgroundColor = color;
-            this.ViewWithTag (USER_CHILI_TAG).BackgroundColor = color;
-            this.ViewWithTag (ATTACHMENT_TAG).BackgroundColor = color;
+            base.LayoutSubviews ();
+            PortraitView.Frame = new CGRect (Bounds.Width - TextInsets.Right - PortraitSize, TextInsets.Top, PortraitSize, PortraitSize);
+            nfloat textWidth = PortraitView.Frame.X - TextInsets.Left;
+            nfloat subjectHeight = (nfloat)Math.Ceiling (SubjectLabel.SizeThatFits (new CGSize (textWidth, 0.0f)).Height);
+            FromLabel.Frame = new CGRect (TextInsets.Left, TextInsets.Top, textWidth, FromLabel.Font.RoundedLineHeight (1.0f));
+            SubjectLabel.Frame = new CGRect (FromLabel.Frame.X, FromLabel.Frame.Y + FromLabel.Frame.Height, textWidth, subjectHeight);
+            DateLabel.Frame = new CGRect (FromLabel.Frame.X, SubjectLabel.Frame.Y + SubjectLabel.Frame.Height, Bounds.Width - TextInsets.Right - FromLabel.Frame.X, DateLabel.Font.RoundedLineHeight (1.0f));
+            BottomBorder.Frame = new CGRect (TextInsets.Left, Bounds.Height - BorderWidth, Bounds.Width - TextInsets.Left, BorderWidth);
         }
+
+        public override CGSize SizeThatFits (CGSize size)
+        {
+            nfloat height = TextInsets.Top + TextInsets.Bottom;
+            nfloat minHeight = height + PortraitSize;
+            nfloat subjectWidth = size.Width - TextInsets.Left - TextInsets.Right - PortraitSize;
+            height += FromLabel.Font.RoundedLineHeight (1.0f);
+            height += DateLabel.Font.RoundedLineHeight (1.0f);
+            height += (nfloat)Math.Ceiling (SubjectLabel.SizeThatFits (new CGSize (subjectWidth, 0.0f)).Height);
+            return new CGSize (size.Width, (nfloat)Math.Max (minHeight, height));
+        }
+
+        public override void SizeToFit ()
+        {
+            var width = Frame.Width;
+            Frame = new CGRect (Frame.X, Frame.Y, width, SizeThatFits (new CGSize (width, 0.0f)).Height);
+        }
+
     }
 }
 

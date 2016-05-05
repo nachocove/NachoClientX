@@ -46,72 +46,105 @@ namespace NachoCore.Brain
             return MessageIntentList;
         }
 
-        public static string IntentEnumToString (McEmailMessage.IntentType type)
+        public static bool IntentIsToday (MessageDeferralType intent)
         {
+            return (
+                intent == MessageDeferralType.OneHour ||
+                intent == MessageDeferralType.TwoHours ||
+                intent == MessageDeferralType.Later ||
+                intent == MessageDeferralType.Tonight ||
+                intent == MessageDeferralType.EndOfDay
+            );
+        }
+
+        public static string IntentEnumToString (McEmailMessage.IntentType type, bool uppercase = true)
+        {
+            var intentString = "";
             switch (type) {
             case McEmailMessage.IntentType.None:
-                return "NONE";
+                intentString = "None";
+                break;
             case McEmailMessage.IntentType.FYI:
-                return "FYI";
+                intentString = "FYI";
+                break;
             case McEmailMessage.IntentType.PleaseRead:
-                return "PLEASE READ";
+                intentString = "Please Read";
+                break;
             case McEmailMessage.IntentType.ResponseRequired:
-                return "RESPONSE REQUIRED";
+                intentString = "Response Required";
+                break;
             case McEmailMessage.IntentType.Urgent:
-                return "URGENT";
+                intentString = "Urgent";
+                break;
             case McEmailMessage.IntentType.Important:
-                return "IMPORTANT";
+                intentString = "Important";
+                break;
             default:
                 NcAssert.CaseError ("Type not recognized");
-                return null;
+                break;
             }
+            if (uppercase) {
+                return intentString.ToUpper ();
+            }
+            return intentString;
+        }
+
+        public static string DeferralTypeToString (MessageDeferralType intentDateTypeEnum, DateTime? customDate = null)
+        {
+            string deferralString = "";
+            switch (intentDateTypeEnum) {
+            case MessageDeferralType.None:
+                break;
+            case MessageDeferralType.OneHour:
+                deferralString = "In One Hour";
+                break;
+            case MessageDeferralType.TwoHours:
+                deferralString = "In Two Hours";
+                break;
+            case MessageDeferralType.Later:
+                deferralString = "Later Today";
+                break;
+            case MessageDeferralType.EndOfDay:
+                deferralString = "By End of Day";
+                break;
+            case MessageDeferralType.Tonight:
+                deferralString = "By Tonight";
+                break;
+            case MessageDeferralType.Tomorrow:
+                deferralString = "By Tomorrow";
+                break;
+            case MessageDeferralType.NextWeek:
+                deferralString = "By Next Week";
+                break;
+            case MessageDeferralType.MonthEnd:
+                deferralString = "By Month End";
+                break;
+            case MessageDeferralType.NextMonth:
+                deferralString = "By Next Month";
+                break;
+            case MessageDeferralType.Forever:
+                break;
+            case MessageDeferralType.Custom:
+                if (customDate.HasValue) {
+                    deferralString = "By " + customDate.Value.ToString ("M/d/yyyy", new System.Globalization.CultureInfo("en-US"));
+                } else {
+                    NcAssert.CaseError ("custom deferral type requires custom date");
+                }
+                break;
+            default:
+                NcAssert.CaseError ("Not a recognzized deferral type.");
+                break;
+            }
+            return deferralString;
         }
 
         public static string GetIntentString (McEmailMessage.IntentType intent, MessageDeferralType intentDateTypeEnum, DateTime intentDateTime)
         {
             string intentString = IntentEnumToString (intent);
-
-            switch (intentDateTypeEnum) {
-            case MessageDeferralType.None:
-                intentString += "";
-                break;
-            case MessageDeferralType.OneHour:
-                intentString += " In One Hour";
-                break;
-            case MessageDeferralType.TwoHours:
-                intentString += " In Two Hours";
-                break;
-            case MessageDeferralType.Later:
-                intentString += " Later Today";
-                break;
-            case MessageDeferralType.EndOfDay:
-                intentString += " By End of Day";
-                break;
-            case MessageDeferralType.Tonight:
-                intentString += " By Tonight";
-                break;
-            case MessageDeferralType.Tomorrow:
-                intentString += " By Tomorrow";
-                break;
-            case MessageDeferralType.NextWeek:
-                intentString += " By Next Week";
-                break;
-            case MessageDeferralType.MonthEnd:
-                intentString += "By Month End";
-                break;
-            case MessageDeferralType.NextMonth:
-                intentString += " By Next Month";
-                break;
-            case MessageDeferralType.Forever:
-                intentString += "";
-                break;
-            case MessageDeferralType.Custom:
-                intentString += " By " + intentDateTime.ToShortDateString ();
-                break;
-            default:
-                NcAssert.CaseError ("Not a recognzized deferral type.");
-                break;
-            } 
+            string dateString = DeferralTypeToString (intentDateTypeEnum, intentDateTime);
+            if (!String.IsNullOrEmpty (dateString)) {
+                intentString += " " + dateString;
+            }
             return intentString;
         }
 

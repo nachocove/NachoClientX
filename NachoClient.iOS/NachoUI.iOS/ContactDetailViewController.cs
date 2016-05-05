@@ -71,6 +71,7 @@ namespace NachoClient.iOS
         protected UIView copyCellView = new UIView ();
         protected List<LongPressPair> longPressRecognizers = new List<LongPressPair> ();
         protected LongPressCopyData longPressData;
+        protected bool disposed = false;
 
         protected class TapGesturePair
         {
@@ -115,7 +116,7 @@ namespace NachoClient.iOS
 
         private void HideMenu (NSNotification notification)
         {
-            if (IsViewLoaded) {
+            if (!disposed && IsViewLoaded) {
                 if (!copyCellView.Hidden) {
                     copyCellView.Hidden = true;
                 }
@@ -134,7 +135,6 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
 
-            Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);
@@ -163,13 +163,18 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIMenuController.WillHideMenuNotification);
             }
 
-            Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);
             if (null != SegmentedControl) {
                 selectedSegment = SegmentedControl.SelectedSegment;
             }
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            base.Dispose (disposing);
+            disposed = true;
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -1113,11 +1118,8 @@ namespace NachoClient.iOS
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             var message = InteractionMessages.GetCachedMessage (indexPath.Row);
-            var thread = new McEmailMessageThread ();
-            thread.MessageCount = 1;
-            thread.FirstMessageId = message.Id;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 

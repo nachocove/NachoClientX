@@ -102,7 +102,12 @@ namespace NachoClient.iOS
         {
             if (_IsAnimating) {
                 _IsAnimating = false;
-                var y = MaskLayer.PresentationLayer.Bounds.Y;
+                nfloat y = MaskLayer.Bounds.Y;
+                if (MaskLayer.PresentationLayer != null) {
+                    // We should always want the value from the presentation layer because that's what's currently being displayed
+                    // however, if Stop is called immedately after Start, the presentation layer will still be null, so we need a safety check
+                    y = MaskLayer.PresentationLayer.Bounds.Y;
+                }
                 MaskLayer.RemoveAnimation (STRIP_ANIMATION_KEY);
                 CATransaction.Begin ();
                 CATransaction.DisableActions = true;

@@ -7,7 +7,6 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MailKit;
 using System.Net.Sockets;
-using NachoCore.Model;
 
 namespace NachoCore.SMTP
 {
@@ -32,6 +31,9 @@ namespace NachoCore.SMTP
 
         protected override Event ExecuteCommand ()
         {
+            ServerCertificatePeek.ServerCertificateError failedInfo;
+            ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo);
+                
             bool Initial = !BEContext.ProtocolState.SmtpDiscoveryDone;
             Log.Info (Log.LOG_SMTP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
@@ -99,10 +101,15 @@ namespace NachoCore.SMTP
                 errResult.Message = ex.Message;
                 serverFailedGenerally = true;
             } catch (IOException ex) {
-                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIOEXTEMP");
                 errResult.Message = ex.Message;
                 serverFailedGenerally = true;
+                if (ServerCertificatePeek.Instance.FailedCertificates.TryGetValue (BEContext.Server.Host, out failedInfo)) {
+                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo, string.Format ("SmtpDiscoveryCommand: Cert Validation Error for {0}", BEContext.Server.Host));
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPCERTHARD");
+                } else {
+                    Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.ToString ());
+                }
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
                 if (Initial) {

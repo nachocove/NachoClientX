@@ -8,7 +8,7 @@ namespace NachoClient.iOS
 {
     public class ImageAccessoryView : UIView
     {
-        UIImageView ImageView;
+        protected UIImageView ImageView;
 
         public ImageAccessoryView (string imageName, float width = 30.0f) : base (new CGRect(0.0f, 0.0f, (nfloat)width, 0.0f))
         {

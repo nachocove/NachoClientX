@@ -25,7 +25,7 @@ using MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, IBodyViewOwner
+    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, IBodyViewOwner, IEditEventViewOwner
     {
         // Model information
         protected McEvent e;
@@ -84,14 +84,10 @@ namespace NachoClient.iOS
         protected UIGestureRecognizer.Token notesTapGestureRecognizerTapToken;
 
         // Helper objects
-        //protected bool isRecurring = false;
-        //protected bool isOrganizer = false;
-        //protected bool isAppointment = false;
         protected bool hasLocation = false;
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
-        //protected bool hasBeenEdited = false;
         protected bool attachmentsDrawerOpen = false;
         // Keep track of the user's Attend/Maybe/Decline choice, so we don't have to worry about
         // whether or not the database item is up to date.
@@ -1367,6 +1363,7 @@ namespace NachoClient.iOS
         void EditEvent ()
         {
             var dc = new EditEventViewController ();
+            dc.SetOwner (this);
             dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
             var navigationController = new UINavigationController (dc);
             Util.ConfigureNavBar (false, navigationController);
@@ -1486,6 +1483,20 @@ namespace NachoClient.iOS
             composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
             composeViewController.Composer.InitialText = body;
             composeViewController.Present ();
+        }
+
+        #endregion
+
+        #region IEditEventViewOwner implementation
+
+        void IEditEventViewOwner.EventWasDeleted (EditEventViewController vc)
+        {
+            // At first glance, it looks like the views are dismissed in the wrong order.
+            // But by closing the event detail view first with no animation, the event
+            // editor view will transition directly to the calendar list view (or whatever
+            // the parent view is) without the user seeing the event detail view in between.
+            NavigationController.PopViewController (false);
+            vc.DismissViewController (true, null);
         }
 
         #endregion

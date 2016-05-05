@@ -396,8 +396,8 @@ namespace NachoClient.iOS
                 UpdateHeaderSubjectView ();
             }
             if (Composer.IsMessagePrepared) {
-                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText());
-                EvaluateJavaScript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
+                var userText = response.body + Composer.SignatureText ();
+                EvaluateJavaScript (String.Format ("Editor.defaultEditor.replaceUserText({0});", userText.JavascriptEscapedString ()));
             } else {
                 Composer.InitialText = response.body;
             }
@@ -855,17 +855,6 @@ namespace NachoClient.iOS
             }
         }
 
-        string JavaScriptEscapedString (string s)
-        {
-            var primitive = new System.Json.JsonPrimitive (s);
-            string escaped = "";
-            using (var writer = new StringWriter ()) {
-                primitive.Save (writer);
-                escaped = writer.ToString ();
-            }
-            return escaped.Replace("\n", "\\n");
-        }
-
         [Foundation.Export("scrollViewWillBeginDragging:")]
         public void DraggingStarted (UIScrollView scrollView)
         {
@@ -969,7 +958,7 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderIntentView ()
         {
-            HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
+            HeaderView.IntentView.SetIntent (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
         private void UpdateHeaderAttachmentsView ()

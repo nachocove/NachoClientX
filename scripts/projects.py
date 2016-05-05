@@ -44,7 +44,8 @@ projects = {
         },
         'pinger': {
             'hostname': 'pinger.officetaco.com',
-            'root_cert': 'pinger.pem'
+            'root_cert': 'pinger.pem',
+            'crl_signing_certs': ['nachocove-crl-cert.pem', 'officetaco-crl-cert.pem'],
         },
         'google': {
             'client_id': '135541750674-l44k46h09u2obl3upnchl9lt3nicfd52.apps.googleusercontent.com',
@@ -88,7 +89,8 @@ projects = {
         },
         'pinger': {
             'hostname': 'alphapinger.officetaco.com',
-            'root_cert': 'beta-pinger.pem'
+            'root_cert': 'beta-pinger.pem',
+            'crl_signing_cert': [],
         },
         'google': {
             'client_id': '135541750674-ggdpk07n9rd91j9479u685ud6usqodrq.apps.googleusercontent.com',
@@ -132,7 +134,8 @@ projects = {
         },
         'pinger': {
             'hostname': 'dk65t.pxs001.com',
-            'root_cert': 'beta-pinger.pem'
+            'root_cert': 'beta-pinger.pem',
+            'crl_signing_cert': [],
         },
         'google': {
             'client_id': '135541750674-d6o0v1h299isdh155thlo01r7d1sj22v.apps.googleusercontent.com',
@@ -176,7 +179,8 @@ projects = {
         },
         'pinger': {
             'hostname': 'p745x.pxs001.com',
-            'root_cert': 'beta-pinger.pem'
+            'root_cert': 'beta-pinger.pem',
+            'crl_signing_cert': [],
         },
         'google': {
             'client_id': '135541750674-f307j8582mi397cd0hcsbtn8ts1djmdv.apps.googleusercontent.com',

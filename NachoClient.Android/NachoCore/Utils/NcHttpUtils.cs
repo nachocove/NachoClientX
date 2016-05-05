@@ -81,6 +81,9 @@ namespace NachoCore.Utils
 
         public string guid { get; protected set; }
 
+
+        public X509Certificate2Collection SSLCerts { get; protected set; }
+
         public NcHttpRequest (HttpMethod method, Uri uri)
         {
             RequestUri = uri;
@@ -151,6 +154,14 @@ namespace NachoCore.Utils
                     Headers.Add ("Content-Length", len.Value.ToString ());
                 }
             }
+        }
+
+        public void SetPrivateCerts (X509Certificate2Collection certs)
+        {
+            if (null == SSLCerts) {
+                SSLCerts = new X509Certificate2Collection ();
+            }
+            SSLCerts.AddRange (certs);
         }
 
         #region IDisposable implementation

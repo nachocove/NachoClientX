@@ -72,15 +72,6 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
         }
 
-        bool isGoogle ()
-        {
-            if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault ||
-                (Client.Capabilities & ImapCapabilities.GMailExt1) == ImapCapabilities.GMailExt1) {
-                return true;
-            }
-            return false;
-        }
-
         /// <summary>
         /// Use the IMAP IDLE command to wait for new things to happen.
         /// </summary>
@@ -126,17 +117,7 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
-                TimeSpan timeout;
-                if (isGoogle()) {
-                    // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
-                    // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
-                    // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
-                    // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
-                    //var timeout = new TimeSpan(0, 9, 0);
-                    timeout = new TimeSpan(0, 9, 0);
-                } else {
-                    timeout = new TimeSpan(0, 30, 0);
-                }
+                TimeSpan timeout = imapProtoControl.IdleRequestTimeoutSec;
                 Log.Info (Log.LOG_IMAP, "Setting IDLE timeout to {0} on folder {1}", timeout, IdleFolder.ImapFolderNameRedacted ());
                 done.CancelAfter (timeout);
                 Client.Idle (done.Token, CancellationToken.None);

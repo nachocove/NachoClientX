@@ -14,7 +14,7 @@ namespace NachoClient.iOS
 			color.GetRGBA (out r, out g, out b, out a);
 			nfloat factor = (1.0f - amount);
 			return UIColor.FromRGBA (r * factor, g * factor, b * factor, a);
-		}
+        }
 	}
 }
 

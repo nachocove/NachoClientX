@@ -48,7 +48,15 @@ class BuildInfoFile:
             print >>f, '    public class BuildInfo'
             print >>f, '    {'
             for (key, value) in self.entries.items():
-                print >>f, '        public const string %s = @"%s";' % (key, value)
+                if isinstance(value, basestring):
+                    print >>f, '        public const string %s = @"%s";' % (key, value)
+                elif isinstance(value, list):
+                    print >>f, '        public static string[] %s = {' % key
+                    for s in value:
+                        print >>f, '             @"%s",' % s
+                    print >>f, '        };'
+                else:
+                    raise Exception("Unknown type value %s=%s" % (key, value))
             print >>f, '    }'
             print >>f, '}'
 
@@ -82,15 +90,21 @@ def create_buildinfo(options):
     google = project['google']
     hockeyapp = project[options.architecture].get('hockeyapp')
 
-    # Get the pinger pinned root cert
+    # Get the pinger pinned signing certs
     with open(os.path.join('..', 'Resources', pinger['root_cert'])) as f:
         pinger_cert = f.read()
+
+    pinger_crl_signing_certs = []
+    certs = pinger.get('crl_signing_certs', [])
+    for cert in certs:
+        with open(os.path.join('..', 'Resources', cert)) as f:
+            pinger_crl_signing_certs.append(f.read())
 
     build_info.add('Version', version)
     build_info.add('BuildNumber', build_number)
     build_info.add('Time', datetime.now().strftime('%m/%d/%Y %H:%M:%S'))
     build_info.add('User', get_username())
-    if source is not None:
+    if source is None:
         build_info.add('Source', '')
     else:
         build_info.add('Source', source)
@@ -103,6 +117,7 @@ def create_buildinfo(options):
     build_info.add('AwsAuthRoleArn', aws['auth_role_arn'])
     build_info.add('PingerHostname', pinger['hostname'])
     build_info.add('PingerCertPem', pinger_cert)
+    build_info.add('PingerCrlSigningCerts', pinger_crl_signing_certs)
     build_info.add('GoogleClientId', google['client_id'])
     build_info.add('GoogleClientSecret', google['client_secret'])
     build_info.add('S3Bucket', aws['s3_bucket'])

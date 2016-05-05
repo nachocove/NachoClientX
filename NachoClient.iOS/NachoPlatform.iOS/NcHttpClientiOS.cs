@@ -482,12 +482,6 @@ namespace NachoPlatform
                 goto sslErrorVerify;
             }
 
-            if (serverCertChain.Count == 1) {
-                Log.Info (Log.LOG_HTTP, "serverCertChain.Count == 1");
-                errors = SslPolicyErrors.RemoteCertificateChainErrors;
-                goto sslErrorVerify;
-            }
-
             var netCerts = Enumerable.Range (0, serverCertChain.Count)
                 .Select (x => serverCertChain [x].ToX509Certificate2 ())
                 .ToArray ();
@@ -498,7 +492,13 @@ namespace NachoPlatform
 
             cert = netCerts [0];
 
-            sslErrorVerify:
+            if (serverCertChain.Count == 1) {
+                Log.Info (Log.LOG_HTTP, "serverCertChain.Count == 1");
+                errors = SslPolicyErrors.RemoteCertificateChainErrors;
+                goto sslErrorVerify;
+            }
+
+sslErrorVerify:
             if (NcHttpCertificateValidation.CertValidation (new Uri (Url.ToString ()), cert, chain, errors)) {
                 return new Tuple<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> (NSUrlSessionAuthChallengeDisposition.UseCredential,
                     NSUrlCredential.FromTrust (challenge.ProtectionSpace.ServerSecTrust));

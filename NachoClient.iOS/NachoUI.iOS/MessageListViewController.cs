@@ -71,13 +71,9 @@ namespace NachoClient.iOS
 
             AutomaticallyAdjustsScrollViewInsets = false;
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
-            using (var image = UIImage.FromBundle ("contact-newemail")) {
-                NewMessageButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewMessage);
-            }
-            using (var image = UIImage.FromBundle ("folder-edit")) {
-                EditTableButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, EditTable);
-                EditTableButton.AccessibilityLabel = "Folder edit";
-            }
+            NewMessageButton = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewMessage);
+            EditTableButton = new UIBarButtonItem ("Edit", UIBarButtonItemStyle.Plain, EditTable);
+            EditTableButton.AccessibilityLabel = "Folder edit";
             CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
             DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
 
@@ -112,6 +108,7 @@ namespace NachoClient.iOS
             TableView.AccessibilityLabel = "Message list";
             TableView.TintColor = A.Color_NachoGreen;
             TableView.BackgroundColor = UIColor.White;
+            TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
 
             FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, View.Bounds.Width, MessageListFilterBar.PreferredHeight));
             FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -157,6 +154,30 @@ namespace NachoClient.iOS
             SyncManager.PauseEvents ();
             StopListeningForStatusInd ();
             base.ViewDidDisappear (animated);
+        }
+
+        protected override void Cleanup ()
+        {
+            // Clean up nav bar
+            SearchButton.Clicked -= ShowSearch;
+            NewMessageButton.Clicked -= NewMessage;
+            EditTableButton.Clicked -= EditTable;
+            CancelEditingButton.Clicked -= CancelEditingTable;
+            DoneSwipingButton.Clicked -= EndSwiping;
+
+            // Clean up filterbar
+            FilterBar.Cleanup ();
+
+            // Clean up sync manager
+            SyncManager.Delegate = null;
+
+            // Clean up search
+            if (SearchController != null) {
+                SearchController.Delegate = null;
+            }
+            SearchResultsViewController = null;
+            
+            base.Cleanup ();
         }
 
         #endregion
@@ -287,15 +308,21 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 if (Messages.HasOutboxSemantics ()) {
-                    EmailHelper.DeleteEmailThreadFromOutbox (thread);
+                    NcTask.Run (() => {
+                        EmailHelper.DeleteEmailThreadFromOutbox (thread);
+                    }, "MessageListViewController.DeleteOutboxMessage");
                 } else if (Messages.HasDraftsSemantics ()) {
-                    EmailHelper.DeleteEmailThreadFromDrafts (thread);
+                    NcTask.Run (() => {
+                        EmailHelper.DeleteEmailThreadFromDrafts (thread);
+                    }, "MessageListViewController.DeleteDraftMessage");
                 } else {
                     NcAssert.NotNull (thread);
-                    Log.Debug (Log.LOG_UI, "DeleteMessage");
-                    NcEmailArchiver.Delete (thread);
+                    NcTask.Run (() => {
+                        NcEmailArchiver.Delete (thread);
+                    }, "MessageListViewController.DeleteMessage");
                 }
-                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+                Messages.IgnoreMessage (thread.FirstMessageId);
+                Reload ();
             }
         }
 
@@ -306,8 +333,11 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 NcAssert.NotNull (thread);
-                NcEmailArchiver.Archive (thread);
-                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+                NcTask.Run (() => {
+                    NcEmailArchiver.Archive (thread);
+                }, "MessageListViewController.ArchiveMessage");
+                Messages.IgnoreMessage (thread.FirstMessageId);
+                Reload ();
             }
         }
 
@@ -341,12 +371,25 @@ namespace NachoClient.iOS
         {
             var messageThread = cookie as McEmailMessageThread;
             if (messageThread != null) {
-                NcAssert.NotNull (messageThread);
-                NcEmailArchiver.Move (messageThread, folder);
-                // TODO: remove from Messages & update table immediately?  Or wait for status ind?
+                NcTask.Run (() => {
+                    NcEmailArchiver.Move (messageThread, folder);
+                }, "MessageListViewController.MoveMessage");
+                Messages.IgnoreMessage (messageThread.FirstMessageId);
+                vc.DismissFolderChooser (true, () => {
+                    Reload ();
+                });
             } else {
-                NcEmailArchiver.Move (SelectedMessages (), folder);
-                CancelEditingTable ();
+                var selected = SelectedMessages ();
+                NcTask.Run (() => {
+                    NcEmailArchiver.Move (selected, folder);
+                }, "MessageListViewController.MoveSelectedMessages");
+                foreach (var message in selected) {
+                    Messages.IgnoreMessage (message.Id);
+                }
+                vc.DismissFolderChooser (true, () => {
+                    CancelEditingTable ();
+                    Reload ();
+                });
             }
         }
 
@@ -387,25 +430,47 @@ namespace NachoClient.iOS
 
         void ArchiveSelectedMessages (object sender, EventArgs e)
         {
-            NcEmailArchiver.Archive (SelectedMessages ());
+            var selected = SelectedMessages ();
+            NcTask.Run (() => {
+                NcEmailArchiver.Archive (selected);
+            }, "MessageListViewController.ArchiveSelectedMessages");
+            foreach (var message in selected) {
+                Messages.IgnoreMessage (message.Id);
+            }
             CancelEditingTable ();
+            Reload ();
         }
 
         void DeleteSelectedMessages (object sender, EventArgs e)
         {
-            NcEmailArchiver.Delete (SelectedMessages ());
+            var selected = SelectedMessages ();
+            NcTask.Run (() => {
+                NcEmailArchiver.Delete (selected);
+            }, "MessageListViewController.DeleteSelectedMessages");
+            foreach (var message in selected) {
+                Messages.IgnoreMessage (message.Id);
+            }
             CancelEditingTable ();
+            Reload ();
         }
 
         void MarkSelectedMessages (object sender, EventArgs e)
         {
             var alertView = UIAlertController.Create (String.Format ("Mark {0} messages", TableView.IndexPathsForSelectedRows.Length), null, UIAlertControllerStyle.ActionSheet);
-            alertView.AddAction(UIAlertAction.Create("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
-            alertView.AddAction(UIAlertAction.Create("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
+            alertView.AddAction (UIAlertAction.Create ("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
+            alertView.AddAction (UIAlertAction.Create ("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
             alertView.AddAction (UIAlertAction.Create ("As Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsHot));
             alertView.AddAction (UIAlertAction.Create ("As Not Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsNotHot));
             alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
             PresentViewController (alertView, true, null);
+        }
+
+        void MakeAction (NSIndexPath indexPath)
+        {
+            var message = Messages.GetCachedMessage (indexPath.Row);
+            var viewController = new ActionEditViewController ();
+            viewController.Action = McAction.FromMessage (message);
+            viewController.PresentOverViewController (this);
         }
 
         void MarkSelectedMessagesAsRead (UIAlertAction action)
@@ -453,10 +518,11 @@ namespace NachoClient.iOS
 
         protected void Reload ()
         {
-            Messages.ClearCache ();
             if (Messages.HasBackgroundRefresh ()) {
+                Log.Info (Log.LOG_UI, "MessageListViewController.Reload: using NachoEmailMessages background refresh");
                 Messages.BackgroundRefresh (HandleReloadResults);
             } else {
+                Log.Info (Log.LOG_UI, "MessageListViewController.Reload: simulating a background refresh because this NachoEmailMessages doesn't have one");
                 NcTask.Run (() => {
                     List<int> adds;
                     List<int> deletes;
@@ -470,6 +536,9 @@ namespace NachoClient.iOS
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
         {
+            Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes",
+                changed, adds == null ? 0 : adds.Count, deletes == null ? 0 : deletes.Count);
+            Messages.ClearCache ();
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
@@ -497,6 +566,7 @@ namespace NachoClient.iOS
         {
             var indexPaths = TableView.IndexPathsForVisibleRows;
             if (indexPaths != null) {
+                Log.Info (Log.LOG_UI, "MessageListViewController.UpdateVisibleRows: {0} visible rows", indexPaths.Length);
                 foreach (var indexPath in indexPaths) {
                     var message = Messages.GetCachedMessage (indexPath.Row);
                     var cell = TableView.CellAt (indexPath) as MessageCell;
@@ -504,6 +574,8 @@ namespace NachoClient.iOS
                         cell.SetMessage (message);
                     }
                 }
+            } else {
+                Log.Info (Log.LOG_UI, "MessageListViewController.UpdateVisibleRows: no visible rows");
             }
         }
 
@@ -598,7 +670,7 @@ namespace NachoClient.iOS
                     } else if (thread.HasMultipleMessages ()) {
                         ShowThread (thread);
                     } else {
-                        ShowMessage (thread);
+                        ShowMessage (message);
                     }
                 }
             }
@@ -623,15 +695,16 @@ namespace NachoClient.iOS
                 var actions = new List<SwipeTableRowAction> ();
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("gen-unread-msgs"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
                     if (message.isHot ()) {
                         actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
                     } else {
                         actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
                     }
+                    actions.Add (new SwipeTableRowAction ("Action", UIImage.FromBundle ("email-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), MakeAction));
                 }
                 return actions;
             }
@@ -695,6 +768,7 @@ namespace NachoClient.iOS
 
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     if (isVisible) {
                         Reload ();
                     }
@@ -704,12 +778,14 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     if (isVisible) {
                         UpdateVisibleRows ();
                     }
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
+                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     Messages.RefetchSyncTime ();
                     break;
                 }
@@ -724,6 +800,11 @@ namespace NachoClient.iOS
         public void MessagesSyncDidTimeOut (MessagesSyncManager manager)
         {
             EndRefreshing ();
+        }
+
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
         }
 
         #endregion
@@ -845,10 +926,10 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
-        void ShowMessage (McEmailMessageThread thread)
+        void ShowMessage (McEmailMessage message)
         {
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
         }
 
@@ -917,7 +998,9 @@ namespace NachoClient.iOS
             MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
             if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
                 ToolbarItems = new UIBarButtonItem[] {
-                    DeleteButton
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
+                    DeleteButton,
+                    new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace)
                 };
             } else {
                 ToolbarItems = new UIBarButtonItem[] {
@@ -1102,7 +1185,6 @@ namespace NachoClient.iOS
 
         public void SearchForText (string searchText)
         {
-            SearchResults.ClearCache ();
             SearchResults.SearchFor (searchText);
         }
 
@@ -1137,11 +1219,8 @@ namespace NachoClient.iOS
 
         void ShowMessage (McEmailMessage message)
         {
-            var thread = new McEmailMessageThread ();
-            thread.MessageCount = 1;
-            thread.FirstMessageId = message.Id;
             var messageViewController = new MessageViewController ();
-            messageViewController.SetSingleMessageThread (thread);
+            messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
             NavigationController.SetNavigationBarHidden (false, true);
         }

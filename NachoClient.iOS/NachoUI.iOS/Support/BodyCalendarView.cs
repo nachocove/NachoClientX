@@ -50,9 +50,16 @@ namespace NachoClient.iOS
 
         private nfloat preferredHeight;
 
-        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot, Action dismissView, BodyWebView.LinkSelectedCallback onLinkSelected)
+        public UIEdgeInsets SeparatorInsets;
+        public UIColor SeparatorColor;
+
+        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot, Action dismissView, BodyWebView.LinkSelectedCallback onLinkSelected, UIEdgeInsets? separatorInsets = null, UIColor separatorColor = null)
             : base (new CGRect (0, Y, width, 150))
         {
+
+            SeparatorInsets = separatorInsets.HasValue ? separatorInsets.Value : new UIEdgeInsets (0.0f, 0.0f, 0.0f, 0.0f);
+            SeparatorColor = separatorColor == null ? A.Color_NachoBorderGray : separatorColor;
+
             this.parentMessage = parentMessage;
             meetingInfo = parentMessage.MeetingRequest;
             NcAssert.NotNull (meetingInfo, "BodyCalendarView was given a message without a MeetingRequest.");
@@ -99,7 +106,7 @@ namespace NachoClient.iOS
 
         private void CreateSubviews ()
         {
-            topLineView = Util.AddHorizontalLine (0, 0, Bounds.Width, A.Color_NachoBorderGray, this);
+            topLineView = Util.AddHorizontalLine (SeparatorInsets.Left, 0, Bounds.Width - SeparatorInsets.Left - SeparatorInsets.Right, SeparatorColor, this);
             topLineView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
             whenHeadingView = Util.AddTextLabelWithImageView (0, "WHEN", "event-when", 0, this);
@@ -132,7 +139,7 @@ namespace NachoClient.iOS
             attendessListView.BackgroundColor = UIColor.Clear;
             attendeesView.AddSubview (attendessListView);
 
-            bottomLineView = Util.AddHorizontalLine (0, 0, Bounds.Width, A.Color_NachoBorderGray, this);
+            bottomLineView = Util.AddHorizontalLine (SeparatorInsets.Left, 0, Bounds.Width - SeparatorInsets.Left - SeparatorInsets.Right, SeparatorColor, this);
             bottomLineView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
         }
 
@@ -711,16 +718,25 @@ namespace NachoClient.iOS
 
         protected override void Dispose (bool disposing)
         {
+            Cleanup ();
+            base.Dispose (disposing);
+        }
+
+        public void Cleanup ()
+        {
+            onLinkSelected = null;
+            dismissView = null;
             if (requestActions) {
                 acceptButton.TouchUpInside -= AcceptButtonClicked;
                 tentativeButton.TouchUpInside -= TentativeButtonClicked;
                 declineButton.TouchUpInside -= DeclineButtonClicked;
+                requestActions = false;
             }
             if (cancelActions) {
                 declineButton.TouchUpInside -= RemoveFromCalendarClicked;
                 removeFromCalendarButton.TouchUpInside -= RemoveFromCalendarClicked;
+                cancelActions = false;
             }
-            base.Dispose (disposing);
         }
 
         private void AcceptButtonClicked (object sender, EventArgs e)
