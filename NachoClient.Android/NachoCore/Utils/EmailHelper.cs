@@ -1184,6 +1184,10 @@ namespace NachoCore.Utils
                     return true;
                 }
             }
+            // A single em-dash, used by github emails
+            if (trimmedLine == "\u2014") {
+                return true;
+            }
             return false;
         }
 
