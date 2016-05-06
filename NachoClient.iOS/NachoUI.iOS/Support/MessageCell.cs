@@ -24,6 +24,17 @@ namespace NachoClient.iOS
                 return _ColorIndicatorView;
             }
         }
+        ThreadIndicatorView _ThreadIndicator;
+        ThreadIndicatorView ThreadIndicator {
+            get {
+                if (_ThreadIndicator == null) {
+                    _ThreadIndicator = new ThreadIndicatorView (new CGRect(0.0f, 0.0f, 20.0f, Bounds.Height));
+                    _ThreadIndicator.TintColor = UIColor.FromRGB (0x01, 0xB2, 0xCD);
+                    ContentView.AddSubview (_ThreadIndicator);
+                }
+                return _ThreadIndicator;
+            }
+        }
         public UIColor IndicatorColor {
             get {
                 if (_ColorIndicatorView != null) {
@@ -123,7 +134,7 @@ namespace NachoClient.iOS
             SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
         }
 
-        public void SetMessage (McEmailMessage message)
+        public void SetMessage (McEmailMessage message, int threadCount = 0)
         {
             NSMutableAttributedString attributedDateText;
             if (message.IntentDate != default(DateTime)) {
@@ -171,11 +182,23 @@ namespace NachoClient.iOS
                 }
                 DetailTextLabel.AttributedText = attributedPreview;
             }
+            if (threadCount > 1) {
+                ThreadIndicator.SetCount (threadCount);
+            } else {
+                if (_ThreadIndicator != null) {
+                    _ThreadIndicator.RemoveFromSuperview ();
+                    _ThreadIndicator = null;
+                }
+            }
             UnreadIndicator.Hidden = message.IsRead;
         }
 
         public override void LayoutSubviews ()
         {
+            nfloat threadWidth = 0.0f;
+            if (_ThreadIndicator != null) {
+                threadWidth = _ThreadIndicator.SizeThatFits (new CGSize (0.0f, Bounds.Height)).Width;
+            }
             var rightPadding = RightPadding + (_ColorIndicatorView != null ? ColorIndicatorInsets.Right : 0.0f);
             base.LayoutSubviews ();
             var dateSize = DateLabel.SizeThatFits (new CGSize (0.0f, 0.0f));
@@ -184,7 +207,7 @@ namespace NachoClient.iOS
             var detailTextHeight = (nfloat)Math.Ceiling (DetailTextLabel.Font.LineHeight * DetailTextLabel.Lines);
             var totalTextHeight = textHeight + DetailTextSpacing + detailTextHeight;
             var textTop = (Bounds.Height - totalTextHeight) / 2.0f;
-            var detailWidth = ContentView.Bounds.Width - rightPadding - SeparatorInset.Left;
+            var detailWidth = ContentView.Bounds.Width - rightPadding - SeparatorInset.Left - threadWidth;
             var detailHeight = DetailTextLabel.SizeThatFits (new CGSize (detailWidth, 0.0f)).Height;
 
             CGRect frame;
@@ -216,6 +239,10 @@ namespace NachoClient.iOS
             if (_ColorIndicatorView != null) {
                 _ColorIndicatorView.Frame = new CGRect (ContentView.Bounds.Width - ColorIndicatorInsets.Right - ColorIndicatorSize, ColorIndicatorInsets.Top, ColorIndicatorSize, ContentView.Bounds.Height - ColorIndicatorInsets.Top - ColorIndicatorInsets.Bottom);
             }
+
+            if (_ThreadIndicator != null) {
+                _ThreadIndicator.Frame = new CGRect (ContentView.Bounds.Width - rightPadding - threadWidth, DateLabel.Frame.Y + DateLabel.Frame.Height, threadWidth, Bounds.Height - DateLabel.Frame.Y - DateLabel.Frame.Height);
+            }
         }
 
         public static nfloat PreferredHeight (int numberOfPreviewLines, UIFont mainFont, UIFont previewFont)
@@ -225,6 +252,53 @@ namespace NachoClient.iOS
             var textHeight = mainFont.RoundedLineHeight (1.0f);
             var detailHeight = (nfloat)Math.Ceiling (previewFont.LineHeight * numberOfPreviewLines);
             return textHeight + detailHeight + detailSpacing + topPadding * 2.0f;
+        }
+
+        private class ThreadIndicatorView : UIView
+        {
+
+            UILabel CountLabel;
+            UIImageView ArrowView;
+
+            public ThreadIndicatorView(CGRect frame) : base (frame)
+            {
+                CountLabel = new UILabel ();
+                CountLabel.Font = A.Font_AvenirNextRegular12;
+                CountLabel.TextColor = TintColor;
+
+                ArrowView = new UIImageView(UIImage.FromBundle("thread-arrows").ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate));
+                ArrowView.TintColor = TintColor;
+
+                AddSubview (CountLabel);
+                AddSubview (ArrowView);
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                CountLabel.SizeToFit ();
+                CountLabel.Center = new CGPoint (CountLabel.Frame.Width / 2.0f, Bounds.Height / 2.0f);
+                ArrowView.Center = new CGPoint (CountLabel.Frame.Width + ArrowView.Frame.Width / 2.0f, Bounds.Height / 2.0f);
+            }
+
+            public override void TintColorDidChange ()
+            {
+                base.TintColorDidChange ();
+                CountLabel.TextColor = TintColor;
+                ArrowView.TintColor = TintColor;
+            }
+
+            public void SetCount (int count)
+            {
+                CountLabel.Text = count.ToString ();
+            }
+
+            public override CGSize SizeThatFits (CGSize size)
+            {
+                var countSize = CountLabel.SizeThatFits (size);
+                return new CGSize (countSize.Width + ArrowView.Frame.Width, size.Height);
+            }
+
         }
 
     }
