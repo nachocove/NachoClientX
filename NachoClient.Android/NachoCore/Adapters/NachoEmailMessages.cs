@@ -249,6 +249,10 @@ namespace NachoCore
             }
         }
 
+        public virtual void RemoveIgnoredMessages ()
+        {
+        }
+
         protected void RemoveIgnoredMessages (List<McEmailMessageThread> threadList)
         {
             HashSet<int> copy;
