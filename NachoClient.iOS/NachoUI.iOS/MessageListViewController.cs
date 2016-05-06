@@ -1021,6 +1021,7 @@ namespace NachoClient.iOS
         {
             TableView.SetEditing (false, animated);
             UpdateNavigationItem ();
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom - NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
             NavigationController.SetToolbarHidden (true, true);
         }
 
@@ -1055,6 +1056,7 @@ namespace NachoClient.iOS
             }
             UpdateToolbarEnabled ();
             NavigationController.SetToolbarHidden (false, true);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom + NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
         }
 
         void StartSync ()
