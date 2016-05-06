@@ -80,7 +80,7 @@ namespace NachoClient.iOS
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
 
-            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions:false);
             HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
         }
 
@@ -1139,7 +1139,7 @@ namespace NachoClient.iOS
             CancelSyncing ();
             Account = account;
             SwitchAccountButton.SetAccountImage (account);
-            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions:false);
             HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
             SectionCount = 0;
             HotMessagesSection = -1;

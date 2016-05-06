@@ -33,16 +33,20 @@ namespace NachoCore
             }
         }
 
-        public static NachoEmailMessages PriorityInbox (int accountId)
+        public static NachoEmailMessages PriorityInbox (int accountId, bool includeActions = true)
         {
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
-                return new NachoUnifiedHotList ();
+                var hotList = new NachoUnifiedHotList ();
+                hotList.IncludeActions = includeActions;
+                return hotList;
             }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Hot List");
             } else {
-                return new NachoPriorityEmailMessages (inboxFolder);
+                var messages = new NachoPriorityEmailMessages (inboxFolder);
+                messages.IncludeActions = includeActions;
+                return messages;
             }
         }
 
