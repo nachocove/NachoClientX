@@ -318,16 +318,10 @@ namespace NachoClient.AndroidClient
             NcTask.Run (() => {
                 int unreadCount;
                 int likelyCount;
-                int deferredCount;
-                int deadlineCount;
-                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
+                EmailHelper.GetMessageCounts (account, out unreadCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     var unreadView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_inbox);
-                    var deadlineView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deadlines);
-                    var deferredView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deferred);
                     unreadView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
-                    deadlineView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineCount);
-                    deferredView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);
                     // FIMXE LTR.
                 });
             }, "UpdateUnreadMessageView");
@@ -352,8 +346,6 @@ namespace NachoClient.AndroidClient
                 case 0:
                     break;
                 case Resource.Id.go_to_inbox:
-                case Resource.Id.go_to_deferred:
-                case Resource.Id.go_to_deadlines:
                 case Resource.Id.account_settings:
                     if (null != AccountShortcut) {
                         AccountShortcut (this, resourceId);

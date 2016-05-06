@@ -932,11 +932,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int likelyMessageCount)
         {
             unreadMessageCount = 0;
-            deadlineMessageCount = 0;
-            deferredMessageCount = 0;
             likelyMessageCount = 0;
 
             foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
@@ -945,8 +943,6 @@ namespace NachoCore.Utils
                     if (null != inboxFolder) {
                         var newSince = GetNewSincePreference (accountId);
                         unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
-                        deadlineMessageCount += 0;
-                        deferredMessageCount += 0;
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
                     }
                 }
