@@ -186,6 +186,9 @@ namespace NachoClient.iOS
             if (!action.IsHot) {
                 NcTask.Run (() => {
                     action.Hot ();
+                    if (State == McAction.ActionState.Deferred){
+                        action.UpdateMessageFlag ();
+                    }
                     NotifyActionsChanged (action);
                 }, "ActionListViewController_MarkActionAsHot", NcTask.ActionSerialScheduler);
             }
