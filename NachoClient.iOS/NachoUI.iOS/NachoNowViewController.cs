@@ -899,7 +899,12 @@ namespace NachoClient.iOS
             if (indexPath.Section == HotMessagesSection) {
                 if (indexPath.Row < MaximumNumberOfHotMessages) {
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
-                    ShowMessage (message);
+                    var thread = HotMessages.GetEmailThread (indexPath.Row);
+                    if (thread.HasMultipleMessages ()) {
+                        ShowThread (thread);
+                    } else {
+                        ShowMessage (message);
+                    }
                 } else {
                     ShowAllHotMessages ();
                 }
@@ -1122,6 +1127,13 @@ namespace NachoClient.iOS
             var navigationController = new UINavigationController (vc);
             Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
+        }
+
+        void ShowThread (McEmailMessageThread thread)
+        {
+            var vc = new MessageThreadViewController ();
+            vc.SetEmailMessages (HotMessages.GetAdapterForThread (thread));
+            NavigationController.PushViewController (vc, true);
         }
 
         void ShowMessage (McEmailMessage message)

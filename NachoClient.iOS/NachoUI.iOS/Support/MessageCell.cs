@@ -241,7 +241,7 @@ namespace NachoClient.iOS
             }
 
             if (_ThreadIndicator != null) {
-                _ThreadIndicator.Frame = new CGRect (ContentView.Bounds.Width - rightPadding - threadWidth, DateLabel.Frame.Y + DateLabel.Frame.Height, threadWidth, Bounds.Height - DateLabel.Frame.Y - DateLabel.Frame.Height);
+                _ThreadIndicator.Frame = new CGRect (ContentView.Bounds.Width - rightPadding - threadWidth, DetailTextLabel.Frame.Y, threadWidth, detailTextHeight);
             }
         }
 
