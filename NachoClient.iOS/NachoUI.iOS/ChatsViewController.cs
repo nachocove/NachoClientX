@@ -26,10 +26,14 @@ namespace NachoClient.iOS
 
         SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
+        UIBarButtonItem SearchButton;
         ChatsSearchResultsViewController SearchResultsViewController;
         NachoSearchController SearchController;
-        bool needsReload;
         bool IsListeningForStatusInd;
+        bool HasAppearedOnce;
+
+        bool IsReloading;
+        bool NeedsReload;
 
         #endregion
 
@@ -39,13 +43,16 @@ namespace NachoClient.iOS
         {
             AutomaticallyAdjustsScrollViewInsets = false;
             Account = NcApplication.Instance.Account;
-            NavigationItem.LeftBarButtonItem = new UIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
-            using (var image = UIImage.FromBundle ("chat-newmsg")) {
-                NavigationItem.RightBarButtonItem = NewChatButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewChat);
-            }
+            SearchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
+            NewChatButton = new UIBarButtonItem (UIImage.FromBundle ("chat-newmsg"), UIBarButtonItemStyle.Plain, NewChat);
+            NavigationItem.LeftBarButtonItem = SearchButton;
+            NavigationItem.RightBarButtonItem = NewChatButton;
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "Chats";
             DefinesPresentationContext = true;
+
+            Chats = new List<McChat> ();
+            UnreadCountsByChat = new Dictionary<int, int> ();
         }
 
         public override UIStatusBarStyle PreferredStatusBarStyle ()
@@ -79,11 +86,9 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (Account.Id != NcApplication.Instance.Account.Id) {
                 SwitchToAccount (NcApplication.Instance.Account);
-                needsReload = true;
             }
-            if (needsReload) {
+            if (HasAppearedOnce) {
                 Reload ();
-                needsReload = false;
             }
             StartListeningForStatusInd ();
             SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -92,18 +97,20 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            HasAppearedOnce = true;
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            needsReload = true;
             StopListeningForStatusInd ();
             base.ViewWillDisappear (animated);
         }
 
         public override void Cleanup ()
         {
-            // TODO
+            // Clean up nav bar
+            SearchButton.Clicked -= ShowSearch;
+            NewChatButton.Clicked -= NewChat;
 
             // Clean up search
             if (SearchController != null) {
@@ -175,7 +182,7 @@ namespace NachoClient.iOS
             if (s.Account != null) {
                 if (NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified || NcApplication.Instance.Account.Id == s.Account.Id) {
                     if (s.Status.SubKind == NcResult.SubKindEnum.Info_ChatSetChanged || s.Status.SubKind == NcResult.SubKindEnum.Info_ChatMessageAdded) {
-                        Reload ();
+                        SetNeedsReload ();
                     }
                 }
             }
@@ -185,16 +192,40 @@ namespace NachoClient.iOS
 
         #region Reloading Data
 
+        protected void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                Reload ();
+            }
+        }
+
         void Reload ()
         {
             Sync ();
-            if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
-                Chats = McChat.LastestChats ();
-                UnreadCountsByChat = McChat.UnreadCountsByChat ();
-            } else {
-                Chats = McChat.LastestChatsForAccount (Account.Id);
-                UnreadCountsByChat = McChat.UnreadCountsByChat (Account.Id);
+            if (!IsReloading) {
+                NcTask.Run (() => {
+                    List<McChat> chats;
+                    Dictionary<int, int> unreadCounts;
+                    if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                        chats = McChat.LastestChats ();
+                        unreadCounts = McChat.UnreadCountsByChat ();
+                    } else {
+                        chats = McChat.LastestChatsForAccount (Account.Id);
+                        unreadCounts = McChat.UnreadCountsByChat (Account.Id);
+                    }
+                    BeginInvokeOnMainThread(() => {
+                        HandleReloadResults (chats, unreadCounts);
+                        IsReloading = false;
+                    });
+                }, "ChatsViewController_Reload");
             }
+        }
+
+        void HandleReloadResults (List<McChat> chats, Dictionary<int, int> unreadCounts)
+        {
+            Chats = chats;
+            UnreadCountsByChat = unreadCounts;
             TableView.ReloadData ();
         }
 
@@ -275,6 +306,8 @@ namespace NachoClient.iOS
         void SwitchToAccount (McAccount account)
         {
             Account = account;
+            Chats.Clear ();
+            UnreadCountsByChat.Clear ();
             NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
         }
 
