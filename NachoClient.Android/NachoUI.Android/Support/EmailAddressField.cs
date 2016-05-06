@@ -100,7 +100,9 @@ namespace NachoClient.AndroidClient
                     }
                 } else {
                     var mailbox = wrapper.EmailAddress.ToMailboxAddress ();
-                    if (!String.IsNullOrEmpty (mailbox.Name)) {
+                    if (null == mailbox) {
+                        textView.Text = wrapper.EmailAddress.address;
+                    } else if (!String.IsNullOrEmpty (mailbox.Name)) {
                         textView.Text = mailbox.Name;
                     } else {
                         textView.Text = mailbox.Address;
