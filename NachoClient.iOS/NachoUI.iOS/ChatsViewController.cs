@@ -2,6 +2,7 @@
 //
 using System;
 using UIKit;
+using Foundation;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -12,99 +13,160 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     [Foundation.Register ("ChatsViewController")]
-    public class ChatsViewController : NcUITableViewController, IUISearchResultsUpdating, IUISearchControllerDelegate
+    public class ChatsViewController : NachoWrappedTableViewController, NachoSearchControllerDelegate
     {
 
-        ChatsTableViewSource Source;
+        #region Properties
+
+        const string ChatCellIdentifier = "ChatCellIdentifier";
+
+        McAccount Account;
+        List<McChat> Chats;
+        Dictionary<int, int> UnreadCountsByChat;
+
         SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
-        UISearchController SearchController;
         ChatsSearchResultsViewController SearchResultsViewController;
-        NcIndex SearchIndex;
-        Dictionary<int, McChat> ChatsByMessageId;
+        NachoSearchController SearchController;
         bool needsReload;
-        bool hasAppeared;
+        bool IsListeningForStatusInd;
 
-        public ChatsViewController () : base()
+        #endregion
+
+        #region Constructors
+
+        public ChatsViewController () : base(UITableViewStyle.Plain)
         {
+            AutomaticallyAdjustsScrollViewInsets = false;
+            Account = NcApplication.Instance.Account;
             NavigationItem.LeftBarButtonItem = new UIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             using (var image = UIImage.FromBundle ("chat-newmsg")) {
                 NavigationItem.RightBarButtonItem = NewChatButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewChat);
             }
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "Chats";
-            SearchResultsViewController = new ChatsSearchResultsViewController (this);
-            SearchController = new UISearchController (SearchResultsViewController);
-            SearchController.SearchResultsUpdater = this;
-            SearchController.Delegate = this;
             DefinesPresentationContext = true;
-            hasAppeared = false;
         }
 
-        [Foundation.Export("willPresentSearchController:")]
-        public virtual void WillPresentSearchController (UISearchController searchController)
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
         {
-            NavigationController.NavigationBar.Translucent = true;
-            var chatsById = new Dictionary<int, McChat> ();
-            foreach (var chat in Source.Chats) {
-                chatsById.Add (chat.Id, chat);
-            }
-            ChatsByMessageId = new Dictionary<int, McChat> ();
-            foreach (var chatMessage in NcModel.Instance.Db.Table<McChatMessage>()) {
-                McChat chat = null;
-                chatsById.TryGetValue (chatMessage.ChatId, out chat);
-                ChatsByMessageId.Add (chatMessage.MessageId, chat);
-            }
+            return UIStatusBarStyle.LightContent;
         }
 
-        [Foundation.Export("didDismissSearchController:")]
-        public virtual void DidDismissSearchController (UISearchController searchController)
+        #endregion
+
+        #region View Lifecycle
+
+        public override void LoadView ()
         {
-            NavigationController.NavigationBar.Translucent = false;
-            ChatsByMessageId.Clear ();
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof(ChatTableViewCell), ChatCellIdentifier);
+            TableView.RowHeight = ChatTableViewCell.HEIGHT;
+            TableView.SeparatorInset = new UIEdgeInsets (0.0f, TableView.RowHeight, 0.0f, 0.0f);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
             SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = SwitchAccountButton;
-
             SwitchToAccount (NcApplication.Instance.Account);
-
-            TableView.RowHeight = ChatTableViewCell.HEIGHT;
-            TableView.TableHeaderView = SearchController.SearchBar;
+            Reload ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (Source.Account.Id != NcApplication.Instance.Account.Id) {
+            if (Account.Id != NcApplication.Instance.Account.Id) {
                 SwitchToAccount (NcApplication.Instance.Account);
+                needsReload = true;
             }
             if (needsReload) {
                 Reload ();
                 needsReload = false;
             }
-            if (!hasAppeared) {
-                TableView.ContentOffset = new CGPoint (0.0f, TableView.TableHeaderView.Frame.Height);
-            }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            StartListeningForStatusInd ();
             SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            hasAppeared = true;
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            base.ViewWillDisappear (animated);
             needsReload = true;
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            StopListeningForStatusInd ();
+            base.ViewWillDisappear (animated);
+        }
+
+        public override void Cleanup ()
+        {
+            // TODO
+
+            // Clean up search
+            if (SearchController != null) {
+                SearchController.Delegate = null;
+            }
+            if (SearchResultsViewController != null) {
+                SearchResultsViewController.Cleanup ();
+                SearchResultsViewController = null;
+            }
+
+            base.Cleanup ();
+        }
+
+        #endregion
+
+        #region Table View Delegate & Data Source
+
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        public override nint RowsInSection (UITableView tableview, nint section)
+        {
+            return Chats.Count;
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, Foundation.NSIndexPath indexPath)
+        {
+            var chat = Chats [indexPath.Row];
+            var cell = tableView.DequeueReusableCell (ChatCellIdentifier) as ChatTableViewCell;
+            cell.Chat = chat;
+            int unreadCount = 0;
+            UnreadCountsByChat.TryGetValue (chat.Id, out unreadCount);
+            cell.ShowUnreadIndicator = unreadCount > 0;
+            return cell;
+        }
+
+        public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
+        {
+            var chat = Chats [indexPath.Row];
+            ShowChat (chat);
+        }
+
+        #endregion
+
+        #region System Events
+
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd) {
+                IsListeningForStatusInd = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                IsListeningForStatusInd = false;
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -119,46 +181,47 @@ namespace NachoClient.iOS
             }
         }
 
+        #endregion
+
+        #region Reloading Data
+
         void Reload ()
         {
             Sync ();
-            Source.Reset ();
+            if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                Chats = McChat.LastestChats ();
+                UnreadCountsByChat = McChat.UnreadCountsByChat ();
+            } else {
+                Chats = McChat.LastestChatsForAccount (Account.Id);
+                UnreadCountsByChat = McChat.UnreadCountsByChat (Account.Id);
+            }
             TableView.ReloadData ();
         }
 
         void Sync ()
         {
-            if (Source.Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+            if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
                 EmailHelper.SyncUnified ();
                 EmailHelper.SyncUnifiedSent ();
             } else {
-                var inbox = McFolder.GetDefaultInboxFolder (Source.Account.Id);
+                var inbox = McFolder.GetDefaultInboxFolder (Account.Id);
                 if (inbox != null) {
                     BackEnd.Instance.SyncCmd (inbox.AccountId, inbox.Id);
                 }
-                var sent = McFolder.GetDefaultInboxFolder (Source.Account.Id);
+                var sent = McFolder.GetDefaultInboxFolder (Account.Id);
                 if (sent != null) {
                     BackEnd.Instance.SyncCmd (sent.AccountId, sent.Id);
                 }
             }
         }
 
+        #endregion
+
+        #region User Actions
+
         void SwitchAccountButtonPressed ()
         {
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            SearchIndex = new NcIndex (NcModel.Instance.GetIndexPath(account.Id));
-            if (Source == null) {
-                TableView.Source = Source = new ChatsTableViewSource (account, this);
-                Sync ();
-            } else {
-                Source.Account = account;
-                Reload ();
-            }
-            NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
         }
 
         void NewChat (object sender, EventArgs args)
@@ -170,57 +233,83 @@ namespace NachoClient.iOS
 
         void ShowSearch (object sender, EventArgs args)
         {
-            TableView.SetContentOffset (new CGPoint (0.0f, 0.0f), false);
-            SearchController.SearchBar.BecomeFirstResponder ();
+            if (SearchController == null) {
+                SearchResultsViewController = new ChatsSearchResultsViewController () { IsLongLived = true };
+                SearchController = new NachoSearchController (SearchResultsViewController);
+                SearchController.Delegate = this;
+            }
+            SearchResultsViewController.PrepareForSearching ();
+            SearchController.PresentOverViewController (this);
         }
 
-        public void ChatSelected (McChat chat)
+        #endregion
+
+        #region Search
+
+        public void DidChangeSearchText (NachoSearchController searchController, string text)
         {
-            NavigationController.NavigationBar.Translucent = false;
+            SearchResultsViewController.SearchForText (text);
+        }
+
+        public void DidSelectSearch (NachoSearchController searchController)
+        {
+        }
+
+        public void DidEndSearch (NachoSearchController searchController)
+        {
+            SearchResultsViewController.EndSearching ();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void ShowChat (McChat chat)
+        {
             var messagesViewController = new ChatMessagesViewController ();
             messagesViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);
             messagesViewController.Chat = chat;
             NavigationController.PushViewController (messagesViewController, true);
         }
 
-        public virtual void UpdateSearchResultsForSearchController (UISearchController searchController)
+        void SwitchToAccount (McAccount account)
         {
-            var foundChatsById = new Dictionary<int, McChat> ();
-            var chats = new List<McChat> ();
-            var text = searchController.SearchBar.Text;
-            if (!String.IsNullOrEmpty (text)) {
-                var results = SearchIndex.SearchAllEmailMessageFields (text);
-                foreach (var result in results) {
-                    McChat chat = null;
-                    ChatsByMessageId.TryGetValue (int.Parse (result.Id), out chat);
-                    if (chat != null && !foundChatsById.ContainsKey(chat.Id)) {
-                        chats.Add (chat);
-                        foundChatsById.Add (chat.Id, chat);
-                    }
-                }
-            }
-            SearchResultsViewController.UpdateChats (chats);
+            Account = account;
+            NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
         }
+
+        #endregion
 
     }
 
-    public class ChatsSearchResultsViewController : NcUITableViewController
+    public class ChatsSearchResultsViewController : NachoTableViewController
     {
 
-        ChatsSearchResultsTableViewSource Source;
-        ChatsViewController ChatsViewController;
+        NSObject KeyboardWillShowNotificationToken;
+        NSObject KeyboardWillHideNotificationToken;
 
-        public ChatsSearchResultsViewController (ChatsViewController viewController) : base()
+        ChatSearcher Searcher;
+
+        const string ChatCellIdentifier = "ChatCellIdentifier";
+        List<McChat> Chats;
+
+        public ChatsSearchResultsViewController () : base(UITableViewStyle.Plain)
         {
-            AutomaticallyAdjustsScrollViewInsets = false;
-            ChatsViewController = viewController;
+            Searcher = new ChatSearcher (UpdateChats);
+            Chats = new List<McChat> ();
+        }
+
+        public override void Cleanup ()
+        {
+            Searcher = null;
+            base.Cleanup ();
         }
 
         public override void LoadView ()
         {
-            TableView = new UITableView ();
-            TableView.Source = Source = new ChatsSearchResultsTableViewSource (this);
-            TableView.ContentInset = new UIEdgeInsets (64.0f, 0.0f, 50.0f, 0.0f);
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof(ChatTableViewCell), ChatCellIdentifier);
+            TableView.RowHeight = ChatTableViewCell.HEIGHT;
         }
 
         public override void ViewDidLoad ()
@@ -232,36 +321,68 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            if (!NavigationController.NavigationBarHidden) {
+                NavigationController.SetNavigationBarHidden (true, true);
+            }
+            KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, KeyboardWillShow);
+            KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, KeyboardWillHide);
         }
 
-        public override void ViewWillDisappear (bool animated)
+        public override void ViewDidAppear (bool animated)
         {
-            base.ViewWillDisappear (animated);
+            base.ViewDidAppear (animated);
+            if (NcKeyboardSpy.Instance.keyboardShowing) {
+                AdjustInsetsForKeyboard ();
+            }
         }
 
-        public void ChatSelected (McChat chat)
+        public override void ViewDidDisappear (bool animated)
         {
-            ChatsViewController.ChatSelected (chat);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
+            base.ViewDidDisappear (animated);
+        }
+
+        void KeyboardWillShow (NSNotification notification)
+        {
+            if (IsViewLoaded && View.Window != null) {
+                AdjustInsetsForKeyboard ();
+            }
+        }
+
+        void KeyboardWillHide (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                AdjustInsetsForKeyboard ();
+            }
+        }
+
+        void AdjustInsetsForKeyboard ()
+        {
+            nfloat keyboardHeight = NcKeyboardSpy.Instance.KeyboardHeightInView (View);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, 0.0f, keyboardHeight, 0.0f);
+            TableView.ScrollIndicatorInsets = new UIEdgeInsets (TableView.ScrollIndicatorInsets.Top, TableView.ScrollIndicatorInsets.Left, keyboardHeight, TableView.ScrollIndicatorInsets.Right);
+        }
+
+        public void PrepareForSearching ()
+        {
+            Searcher.Prepare ();
+        }
+
+        public void EndSearching ()
+        {
+            Searcher.End ();
+        }
+
+        public void SearchForText (string searchText)
+        {
+            Searcher.SearchForText (searchText);
         }
 
         public void UpdateChats (List<McChat> chats)
         {
-            Source.Chats = chats;
+            Chats = chats;
             TableView.ReloadData ();
-        }
-
-    }
-
-    public class ChatsSearchResultsTableViewSource : UITableViewSource
-    {
-        const string ChatCellIdentifier = "Chat";
-        public List<McChat> Chats { get; set; }
-        ChatsSearchResultsViewController ViewController;
-
-        public ChatsSearchResultsTableViewSource (ChatsSearchResultsViewController viewController) : base ()
-        {
-            Chats = new List<McChat> ();
-            ViewController = viewController;
         }
 
         public override nint NumberOfSections (UITableView tableView)
@@ -278,9 +399,6 @@ namespace NachoClient.iOS
         {
             var chat = Chats [indexPath.Row];
             var cell = tableView.DequeueReusableCell (ChatCellIdentifier) as ChatTableViewCell;
-            if (cell == null) {
-                cell = new ChatTableViewCell (ChatCellIdentifier);
-            }
             cell.Chat = chat;
             cell.ShowUnreadIndicator = false;
             return cell;
@@ -289,70 +407,138 @@ namespace NachoClient.iOS
         public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
             var chat = Chats [indexPath.Row];
-            ViewController.ChatSelected (chat);
+            ShowChat (chat);
+        }
+
+        void ShowChat (McChat chat)
+        {
+            var messagesViewController = new ChatMessagesViewController ();
+            messagesViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);
+            messagesViewController.Chat = chat;
+            NavigationController.PushViewController (messagesViewController, true);
+            NavigationController.SetNavigationBarHidden (false, true);
         }
 
     }
 
-    public class ChatsTableViewSource : UITableViewSource
+    public class ChatSearcher : NSObject
     {
-        const string ChatCellIdentifier = "Chat";
-        public List<McChat> Chats { get; private set; }
-        public Dictionary<int, int> UnreadCountsByChat { get; private set; }
-        ChatsViewController ViewController;
-        public McAccount Account;
 
-        public ChatsTableViewSource (McAccount account, ChatsViewController viewController) : base ()
+        NcIndex SearchIndex;
+        McAccount Account;
+        Action<List<McChat>> ResultsCallback;
+
+        Dictionary<int, McChat> ChatsByMessageId;
+
+        string SearchText;
+        object SearchLockObject = new object();
+        bool IsSearching;
+        bool IsSearchCanceled;
+
+        public ChatSearcher (Action<List<McChat>> resultsCallback)
         {
-            ViewController = viewController;
-            Account = account;
-            Reset ();
+            ResultsCallback = resultsCallback;
         }
 
-        public void Reset ()
+        public void Prepare ()
         {
+            Account = NcApplication.Instance.Account;
+            SearchIndex = new NcIndex (NcModel.Instance.GetIndexPath (Account.Id));
+            ChatsByMessageId = null;
+            IsSearchCanceled = false;
+        }
+
+        void PopulateChatsCache ()
+        {
+            List<McChat> allChats;
             if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
-                Chats = McChat.LastestChats ();
-                UnreadCountsByChat = McChat.UnreadCountsByChat ();
+                allChats = McChat.LastestChats ();
             } else {
-                Chats = McChat.LastestChatsForAccount (Account.Id);
-                UnreadCountsByChat = McChat.UnreadCountsByChat (Account.Id);
+                allChats = McChat.LastestChatsForAccount (Account.Id);
+            }
+
+            var chatsById = new Dictionary<int, McChat> ();
+            foreach (var chat in allChats) {
+                chatsById.Add (chat.Id, chat);
+            }
+            ChatsByMessageId = new Dictionary<int, McChat> ();
+            foreach (var chatMessage in NcModel.Instance.Db.Table<McChatMessage>()) {
+                McChat chat = null;
+                chatsById.TryGetValue (chatMessage.ChatId, out chat);
+                ChatsByMessageId.Add (chatMessage.MessageId, chat);
             }
         }
 
-        public override nint NumberOfSections (UITableView tableView)
+        public void End ()
         {
-            return 1;
-        }
-
-        public override nint RowsInSection (UITableView tableview, nint section)
-        {
-            return Chats.Count;
-        }
-
-        public override UITableViewCell GetCell (UITableView tableView, Foundation.NSIndexPath indexPath)
-        {
-            var chat = Chats [indexPath.Row];
-            var cell = tableView.DequeueReusableCell (ChatCellIdentifier) as ChatTableViewCell;
-            if (cell == null) {
-                cell = new ChatTableViewCell (ChatCellIdentifier);
+            lock (SearchLockObject) {
+                IsSearchCanceled = true;
             }
-            cell.Chat = chat;
-            int unreadCount = 0;
-            UnreadCountsByChat.TryGetValue (chat.Id, out unreadCount);
-            cell.ShowUnreadIndicator = unreadCount > 0;
-            return cell;
+            if (ChatsByMessageId != null) {
+                ChatsByMessageId.Clear ();
+            }
         }
 
-        public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
+        public void SearchForText (string text)
         {
-            var chat = Chats [indexPath.Row];
-            ViewController.ChatSelected (chat);
+            lock (SearchLockObject) {
+                SearchText = text;
+                if (!IsSearching) {
+                    IsSearching = true;
+                    NcTask.Run (SearchTask, "ChatSearcher_Search");
+                }
+            }
+        }
+
+        void StartSearch ()
+        {
+        }
+
+        void SearchTask ()
+        {
+            bool shouldSearchAgain = false;
+            string searchText;
+
+            if (ChatsByMessageId == null) {
+                PopulateChatsCache ();
+            }
+
+            do {
+                lock (SearchLockObject) {
+                    searchText = SearchText;
+                }
+
+                var foundChatsById = new Dictionary<int, McChat> ();
+                var chats = new List<McChat> ();
+                if (!String.IsNullOrEmpty (searchText)) {
+                    var results = SearchIndex.SearchAllEmailMessageFields (searchText);
+                    foreach (var result in results) {
+                        McChat chat = null;
+                        ChatsByMessageId.TryGetValue (int.Parse (result.Id), out chat);
+                        if (chat != null && !foundChatsById.ContainsKey(chat.Id)) {
+                            chats.Add (chat);
+                            foundChatsById.Add (chat.Id, chat);
+                        }
+                    }
+                }
+
+                if (!IsSearchCanceled){
+                    BeginInvokeOnMainThread(() => {
+                        ResultsCallback (chats);
+                    });
+                }
+
+                lock (SearchLockObject) {
+                    shouldSearchAgain = !IsSearchCanceled && SearchText != searchText;
+                    IsSearching = shouldSearchAgain;
+                }
+            } while (shouldSearchAgain);
+
         }
 
     }
 
-    public class ChatTableViewCell : UITableViewCell
+    public class ChatTableViewCell : SwipeTableViewCell
     {
         McChat _Chat;
         public McChat Chat {
@@ -383,7 +569,7 @@ namespace NachoClient.iOS
         nfloat RightSpacing = 7.0f;
         public static nfloat HEIGHT = 72.0f;
 
-        public ChatTableViewCell (string reuseIdentifier) : base (UITableViewCellStyle.Default, reuseIdentifier)
+        public ChatTableViewCell (IntPtr handle) : base (handle)
         {
             CGSize photoSize = new CGSize (40.0, 40.0);
             nfloat photoSpacing = (HEIGHT - photoSize.Height) / 2.0f;
