@@ -647,7 +647,7 @@ namespace NachoClient.iOS
             }
         }
 
-        void RestoreBackgroundColors ()
+        protected virtual void RestoreBackgroundColors ()
         {
             if (ShowingAlertateBackgroundColors) {
                 foreach (var pair in PreservedBackgroundColors) {

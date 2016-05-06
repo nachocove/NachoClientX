@@ -861,8 +861,13 @@ namespace NachoCore.Utils
             }
             if (intent != McEmailMessage.IntentType.None) {
                 var parts = remainingSubject.Split (new char[] { '-' }, 2);
-                var possibleDate = parts [0].Trim ();
-                subject = parts [1].Trim ();
+                string possibleDate = "";
+                if (parts.Length == 2) {
+                    possibleDate = parts [0].Trim ();
+                    subject = parts [1].Trim ();
+                } else {
+                    subject = "";
+                }
                 foreach (var deferralOption in SubjectDeferralTypes) {
                     var deferralString = NcMessageIntent.DeferralTypeToString (deferralOption);
                     if (deferralString == possibleDate) {
