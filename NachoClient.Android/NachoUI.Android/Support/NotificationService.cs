@@ -107,6 +107,9 @@ namespace NachoClient.AndroidClient
 
             var fromString = Pretty.SenderString (message.From);
             var subjectString = Pretty.SubjectString (message.Subject);
+            if (message.Intent != McEmailMessage.IntentType.None) {
+                subjectString = EmailHelper.CreateSubjectWithIntent (subjectString, message.Intent, message.IntentDateType, message.IntentDate);
+            }
             if (!String.IsNullOrEmpty (subjectString)) {
                 subjectString += " ";
             }
