@@ -54,7 +54,7 @@ namespace NachoCore.ActiveSync
         {
             var index = MoveKit.Pendings.IndexOf (pending);
             if (0 > index) {
-                Log.Error (Log.LOG_AS, "MoveItems: FindClassCode: McPending not in list");
+                Log.Error (Log.LOG_AS, "{0}: FindClassCode: McPending not in list", CmdNameWithAccount);
                 return null;
             }
             return MoveKit.ClassCodes [index];
@@ -74,7 +74,7 @@ namespace NachoCore.ActiveSync
                 case McAbstrFolderEntry.ClassCodeEnum.Tasks:
                     return (didSucceed) ? NcResult.SubKindEnum.Info_TaskMoveSucceeded : NcResult.SubKindEnum.Error_TaskMoveFailed;
                 default:
-                    Log.Error (Log.LOG_AS, "MoveItems: AppropriateSubKind: Unknown classCode {0}", classCode);
+                    Log.Error (Log.LOG_AS, "{0}: AppropriateSubKind: Unknown classCode {1}", CmdNameWithAccount, classCode);
                     break;
                 }
             }
@@ -101,17 +101,17 @@ namespace NachoCore.ActiveSync
             foreach (var xmlResponse in xmlResponses) {
                 var xmlStatus = xmlResponse.Element (m_ns + Xml.Mov.Status);
                 if (null == xmlStatus) {
-                    Log.Error (Log.LOG_AS, "MoveItems: missing Status in Response");
+                    Log.Error (Log.LOG_AS, "{0}: missing Status in Response", CmdNameWithAccount);
                     continue;
                 }
                 var xmlSrcMsgId = xmlResponse.Element (m_ns + Xml.Mov.SrcMsgId);
                 if (null == xmlSrcMsgId) {
-                    Log.Error (Log.LOG_AS, "MoveItems: missing SrcMsgId in Response with Status {0}", xmlStatus.Value);
+                    Log.Error (Log.LOG_AS, "{0}: missing SrcMsgId in Response with Status {1}", CmdNameWithAccount, xmlStatus.Value);
                     continue;
                 }
                 var pending = FindPending (xmlSrcMsgId);
                 if (null == pending) {
-                    Log.Error (Log.LOG_AS, "MoveItems: can't find McPending with ServerId {0}", xmlSrcMsgId.Value);
+                    Log.Error (Log.LOG_AS, "{0}: can't find McPending with ServerId {1}", CmdNameWithAccount, xmlSrcMsgId.Value);
                     continue;
                 }
                 switch ((Xml.Mov.StatusCode)xmlStatus.Value.ToInt ()) {
@@ -160,7 +160,7 @@ namespace NachoCore.ActiveSync
                                     break;
 
                                 default:
-                                    Log.Error (Log.LOG_AS, "AsMoveItemsCommand: Unknown classCode: {0}", classCode);
+                                    Log.Error (Log.LOG_AS, "{0}: Unknown classCode: {1}", CmdNameWithAccount, classCode);
                                     break;
                                 }
                                 if (null != item) {
@@ -180,7 +180,7 @@ namespace NachoCore.ActiveSync
                         }
                         var pathElem = McPath.QueryByServerId (AccountId, oldServerId);
                         if (null == pathElem) {
-                            Log.Error (Log.LOG_AS, "AsMoveItemsCommand: can't find McPath for {0}", oldServerId);
+                            Log.Error (Log.LOG_AS, "{0}: can't find McPath for {1}", CmdNameWithAccount, oldServerId);
                         } else {
                             pathElem.Delete ();
                         }
@@ -195,7 +195,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.Mov.StatusCode.SrcDestSame_4:
-                    Log.Error (Log.LOG_AS, "MoveItems: Attempted to move where the destination folder == the source folder.");
+                    Log.Error (Log.LOG_AS, "{0}: Attempted to move where the destination folder == the source folder.", CmdNameWithAccount);
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (AppropriateSubKind (pending, true)));
                     PendingList.Remove (pending);
                     break;
@@ -222,7 +222,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 default:
-                    Log.Error (Log.LOG_AS, "Unknown status code in AsMoveItemsCommand response: {0}", xmlStatus.Value);
+                    Log.Error (Log.LOG_AS, "{0}: Unknown status code in response: {0}", CmdNameWithAccount, xmlStatus.Value);
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (AppropriateSubKind (pending, false), NcResult.WhyEnum.Unknown));
                     PendingList.Remove (pending);

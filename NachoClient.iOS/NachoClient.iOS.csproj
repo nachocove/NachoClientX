@@ -224,7 +224,6 @@
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="Content\" />
-    <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
     <Folder Include="NachoCore\Mockables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
     <Folder Include="NachoUI.iOS\ViewControllers\" />

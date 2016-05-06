@@ -116,7 +116,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.TempFail, "PINGSE", null, "Xml.Ping.StatusCode.ServerError");
 
             default:
-                Log.Error (Log.LOG_AS, "AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
+                Log.Error (Log.LOG_AS, "{0} ProcessResponse UNHANDLED status {1}", CmdNameWithAccount, statusString);
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD1");
             }
         }

@@ -33,7 +33,7 @@ namespace NachoCore.ActiveSync
                     request.Add (new XElement (m_ns + Xml.MeetingResp.InstanceId, 
                         PendingSingle.CalResponseInstance.ToAsUtcString ()));
                 } else {
-                    Log.Error (Log.LOG_AS, "AsMeetingResponseCommand:InstanceId specified without protocol support.");
+                    Log.Error (Log.LOG_AS, "{0}:InstanceId specified without protocol support.", CmdNameWithAccount);
                 }
             }
             var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse, request);
