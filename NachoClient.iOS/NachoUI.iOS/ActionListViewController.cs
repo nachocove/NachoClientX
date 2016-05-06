@@ -533,6 +533,10 @@ namespace NachoClient.iOS
 
         void EditAction (McAction action)
         {
+            if (action.IsNew) {
+                action.IsNew = false;
+                action.Update ();
+            }
             var viewController = new ActionEditViewController ();
             viewController.Action = action;
             viewController.PresentOverViewController (this);

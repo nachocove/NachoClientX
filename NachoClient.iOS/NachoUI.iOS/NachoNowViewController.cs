@@ -881,6 +881,14 @@ namespace NachoClient.iOS
             } else if (indexPath.Section == ActionsSection) {
                 if (indexPath.Row < ActionRows) {
                     var action = HotActions.ActionAt (indexPath.Row);
+                    if (action.IsNew) {
+                        // Unless something goes wrong, this item will become IsNew = false when the message is shown,
+                        // which means when we come back the row should have a white background instead of the tinted
+                        // background used for new items.  Normally the row would be deselected upon when the user returns,
+                        // but the default animation will restore the tinted background that it saved when selecting the row.
+                        // Deselecting the row now will ensure that no animation will restore the wrong background color later.
+                        tableView.DeselectRow (indexPath, false);
+                    }
                     ShowMessage (action.Message);
                 } else {
                     var index = indexPath.Row - ActionRows;
@@ -1107,6 +1115,10 @@ namespace NachoClient.iOS
 
         void EditAction (McAction action)
         {
+            if (action.IsNew) {
+                action.IsNew = false;
+                action.Update ();
+            }
             var viewController = new ActionEditViewController ();
             viewController.Action = action;
             viewController.PresentOverViewController (this);
