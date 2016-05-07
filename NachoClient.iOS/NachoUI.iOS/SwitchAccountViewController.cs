@@ -29,7 +29,6 @@ namespace NachoClient.iOS
         }
 
         UITableView accountsTableView;
-        SwitchAccountButton switchAccountButton;
         AccountsTableViewSource accountsTableViewSource;
         UIStoryboard accountStoryboard;
 
@@ -50,8 +49,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            switchAccountButton.SetImage ("gen-avatar-backarrow");
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -61,7 +58,6 @@ namespace NachoClient.iOS
             accountsTableViewSource.Setup (this, showAccessory: false, showUnreadCount: true);
             accountsTableView.Source = accountsTableViewSource;
             View.AddSubview (accountsTableView);
-            NavigationItem.TitleView = switchAccountButton;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -79,8 +75,6 @@ namespace NachoClient.iOS
         // TitleView button
         void SwitchAccountButtonPressed ()
         {
-            // No double presses
-            switchAccountButton.UserInteractionEnabled = false;
 
             Deactivate (null, (McAccount account) => {
                 DismissViewController (false, null);
@@ -226,9 +220,6 @@ namespace NachoClient.iOS
 
         private void InboxClicked (object sender)
         {
-            // No double presses
-            switchAccountButton.UserInteractionEnabled = false;
-
             Deactivate (null, (McAccount account) => {
                 DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();
@@ -238,9 +229,6 @@ namespace NachoClient.iOS
 
         private void DeferredClicked (object sender)
         {
-            // No double presses
-            switchAccountButton.UserInteractionEnabled = false;
-
             Deactivate (null, (McAccount account) => {
                 DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();
@@ -250,9 +238,6 @@ namespace NachoClient.iOS
 
         private void DeadlinesClicked (object sender)
         {
-            // No double presses
-            switchAccountButton.UserInteractionEnabled = false;
-
             Deactivate (null, (McAccount account) => {
                 DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();

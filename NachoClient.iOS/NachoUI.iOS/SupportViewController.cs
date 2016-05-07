@@ -16,8 +16,6 @@ namespace NachoClient.iOS
         public bool HideNavTitle = true;
         protected static readonly nfloat INDENT = 18;
 
-        // SwitchAccountButton switchAccountButton;
-
         protected UITapGestureRecognizer messageTapGesture;
         protected UITapGestureRecognizer.Token messageTapGestureHandlerToken;
         protected const int MESSAGE_TAP_VIEW_TAG = 111;
@@ -36,10 +34,6 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            // Looks better without switch account button.
-            // If added back, because of crash when called at start up.
-            // switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            // NavigationItem.TitleView = switchAccountButton;
             if (HideNavTitle) {
                 NavigationItem.TitleView = new UIView ();
             }
@@ -166,7 +160,6 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            // switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         private void MessageSingleTapHandler (NSObject sender)
@@ -191,16 +184,6 @@ namespace NachoClient.iOS
             if (null != gesture) {
                 UIApplication.SharedApplication.OpenUrl (new NSUrl ("telprompt://19718036226"));
             }
-        }
-
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            // switchAccountButton.SetAccountImage (account);
         }
 
         protected override void Cleanup ()

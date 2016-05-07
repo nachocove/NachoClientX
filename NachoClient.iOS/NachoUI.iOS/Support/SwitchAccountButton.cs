@@ -81,11 +81,6 @@ namespace NachoClient.iOS
 
         public void UpdateBeacon()
         {
-            if (NcAccountMonitor.Instance.HasNewEmail) {
-                SetHaloColor (A.Color_NachoBlue);
-            } else {
-                SetHaloColor (A.Color_NachoGreen);
-            }
         }
     }
 

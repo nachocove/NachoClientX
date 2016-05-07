@@ -39,35 +39,25 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            var nowNavController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
-            nowNavController.ViewControllers = new UIViewController[] { new NachoNowViewController () { IsLongLived = true } };
-            nowNavController.Delegate = this;
+            var nowNavController = CreateAccountSwitchingNavigationController (new NachoNowViewController () { IsLongLived = true });
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
-            var inboxNavController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
-            inboxNavController.ViewControllers = new UIViewController[] { new InboxViewController () { IsLongLived = true } };
-            inboxNavController.Delegate = this;
+            var inboxNavController = CreateAccountSwitchingNavigationController (new InboxViewController () { IsLongLived = true });
             inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");
 
-            var chatsNavController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
-            chatsNavController.ViewControllers = new UIViewController[] { new ChatsViewController () };
-            chatsNavController.Delegate = this;
+            var chatsNavController = CreateAccountSwitchingNavigationController (new ChatsViewController ());
             chatsItem = chatsNavController.TabBarItem = MakeTabBarItem ("Chats", "nav-chat");
 
-            var calendarNavController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
-            calendarNavController.ViewControllers = new UIViewController[] { new CalendarViewController () };
-            calendarNavController.Delegate = this;
+            var calendarNavController = CreateAccountSwitchingNavigationController (new CalendarViewController ());
             calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");
 
-            var contactsNavController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
-            contactsNavController.ViewControllers = new UIViewController[] { new ContactListViewController () };
-            contactsNavController.Delegate = this;
+            var contactsNavController = CreateAccountSwitchingNavigationController (new ContactListViewController ());
             contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
 
-            var foldersNavController = new UINavigationController (new FoldersViewController ());
+            var foldersNavController = CreateAccountSwitchingNavigationController (new FoldersViewController ());
             foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
 
-            var filesNavController = new UINavigationController (new FileListViewController ());
+            var filesNavController = CreateAccountSwitchingNavigationController (new FileListViewController ());
             filesNavController.TabBarItem = MakeTabBarItem ("Files", "more-files");
 
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
@@ -145,10 +135,6 @@ namespace NachoClient.iOS
                 UpdateNotificationBadge ();
             };
 
-            ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
-                LayoutMoreTable ();
-            };
-
             InsertAccountInfoIntoMoreTab ();
         }
 
@@ -158,6 +144,14 @@ namespace NachoClient.iOS
         }
 
         SwitchAccountControl MoreAccountSwitcher;
+
+        UINavigationController CreateAccountSwitchingNavigationController (UIViewController rootViewController)
+        {
+            var navController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
+            navController.ViewControllers = new UIViewController[] { rootViewController };
+            navController.Delegate = this;
+            return navController;
+        }
 
         [Export ("navigationController:willShowViewController:animated:")]
         public void WillShowViewController (UINavigationController navigationController, UIViewController viewController, bool animated)
@@ -176,33 +170,11 @@ namespace NachoClient.iOS
                 showsAccountSwitcher = viewController is IAccountSwitching;
             }
             if (accountSwitcher != null){
-                bool isDifferent = showsAccountSwitcher != !accountSwitcher.Hidden;
-                if (isDifferent) {
-                    if (animated) {
-                        accountSwitcher.Hidden = false;
-                        if (showsAccountSwitcher) {
-                            accountSwitcher.Alpha = 0.0f;
-                            accountSwitcher.Transform = CGAffineTransform.MakeScale (0.01f, 0.01f);
-                        } else {
-                            accountSwitcher.Alpha = 1.0f;
-                            accountSwitcher.Transform = CGAffineTransform.MakeIdentity ();
-                        }
-                        var coordinator = viewController.GetTransitionCoordinator ();
-                        coordinator.AnimateAlongsideTransition ((IUIViewControllerTransitionCoordinatorContext context) => {
-                            if (showsAccountSwitcher) {
-                                accountSwitcher.Alpha = 1.0f;
-                                accountSwitcher.Transform = CGAffineTransform.MakeIdentity ();
-                            } else {
-                                accountSwitcher.Alpha = 0.0f;
-                                accountSwitcher.Transform = CGAffineTransform.MakeScale (0.01f, 0.01f);
-                            }
-                        }, (IUIViewControllerTransitionCoordinatorContext context) => {
-                            accountSwitcher.Hidden = !showsAccountSwitcher;
-                        });
-                    } else {
-                        accountSwitcher.Hidden = !showsAccountSwitcher;
-                    }
+                IUIViewControllerTransitionCoordinator coordinator = null;
+                if (animated) {
+                    coordinator = viewController.GetTransitionCoordinator ();
                 }
+                accountSwitcher.SetHidden (!showsAccountSwitcher, animationCoordinator: coordinator);
             }
         }
             
@@ -471,20 +443,10 @@ namespace NachoClient.iOS
             moreScrollView.ContentSize = new CGSize (moreScrollView.Bounds.Width, moreTableView.Frame.Bottom + A.Card_Vertical_Indent);
         }
 
-        public static void ReconfigureMoreTab ()
-        {
-        }
-
-        public static void UpdateMoreTab ()
-        {
-        }
-
         protected void ViewControllerSelectedHandler (object sender, UITabBarSelectionEventArgs e)
         {
             if (e.ViewController == MoreNavigationController) {
-                // The user has tapped on the "More" tab in the tab bar. Do what we can to
-                // make sure the "More" view is up to date.
-                UpdateMoreTab ();
+                LayoutMoreTable ();
                 // Tweak the table cells to be closer to what we want.  We would like to
                 // make other changes, but this event is triggered at the wrong time, so
                 // those other changes won't stick.  The one change that does seem to stick
