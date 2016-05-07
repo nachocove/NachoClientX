@@ -24,6 +24,9 @@ namespace NachoClient.iOS
             SwitchAccountButton = new SwitchAccountButton (ShowAccountSwitcher);
             NavigationItem.TitleView = SwitchAccountButton;
             SwitchAccountButton.SetAccountImage (Account);
+            if (NcApplication.Instance.Account.Id != Account.Id) {
+                SwitchToAccount (NcApplication.Instance.Account);
+            }
             base.ViewDidLoad ();
         }
 
@@ -55,7 +58,7 @@ namespace NachoClient.iOS
             UpdateFilterBar ();
             TableView.ReloadData ();  // to clear the table
             HasLoadedOnce = false;
-            // Relying on ViewWillAppear to call Reload
+            SetNeedsReload ();
         }
 
         protected override void UpdateNavigationItem ()

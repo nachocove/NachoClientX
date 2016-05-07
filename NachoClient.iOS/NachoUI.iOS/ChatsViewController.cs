@@ -309,6 +309,7 @@ namespace NachoClient.iOS
             Chats.Clear ();
             UnreadCountsByChat.Clear ();
             NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
+            SetNeedsReload ();
         }
 
         #endregion
