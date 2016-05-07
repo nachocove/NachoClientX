@@ -375,7 +375,16 @@ namespace NachoCore.ActiveSync
             if (null != globEvent) {
                 return globEvent;
             }
-            switch ((Xml.AirSync.StatusCode)status) {
+
+            var adjustedStatus = (Xml.AirSync.StatusCode)status;
+            if (Xml.AirSync.StatusCode.FolderChange_12 == adjustedStatus && ((AsProtoControl)BEContext.ProtoControl).TooManyFolderReSyncs) {
+                // The server keeps sending FolderChange responses, but doesn't send any actual folder changes.
+                // To avoid looping forever, pretend that the status is Success.
+                adjustedStatus = Xml.AirSync.StatusCode.Success_1;
+            }
+
+            switch (adjustedStatus) {
+
             case Xml.AirSync.StatusCode.Success_1:
                 return null;
 
