@@ -63,15 +63,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            ReloadAccounts ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (!IsMovingFromParentViewController){
-                ReloadAccounts ();
-            }
+            ReloadAccounts ();
         }
 
         public override void ViewDidAppear (bool animated)

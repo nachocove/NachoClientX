@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, IAccountSwitching
+    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, INachoFolderChooserParent, IAccountSwitching
     {
         #region Constants
 
@@ -201,12 +201,13 @@ namespace NachoClient.iOS
         void MarkMessageAsRead (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsRead (message, true);
                 message.IsRead = true;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -214,12 +215,13 @@ namespace NachoClient.iOS
         void MarkMessageAsUnread (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsUnread (message, true);
                 message.IsRead = false;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -227,11 +229,12 @@ namespace NachoClient.iOS
         void MarkMessageAsHot (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -248,11 +251,12 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -264,7 +268,16 @@ namespace NachoClient.iOS
             var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 NcAssert.NotNull (thread);
-                NcEmailArchiver.Delete (thread);
+                NcTask.Run (() => {
+                    NcEmailArchiver.Delete (thread);
+                }, "NachoNowViewController.DeleteMessage");
+                HotMessages.IgnoreMessage (thread.FirstMessageId);
+                if (!IsReloading) {
+                    HotMessages.RemoveIgnoredMessages ();
+                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                } else {
+                    SetNeedsReload ();
+                }
             }
         }
 
@@ -275,8 +288,83 @@ namespace NachoClient.iOS
             var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 NcAssert.NotNull (thread);
-                NcEmailArchiver.Archive (thread);
+                NcTask.Run (() => {
+                    NcEmailArchiver.Archive (thread);
+                }, "MessageListViewController.ArchiveMessage");
+                HotMessages.IgnoreMessage (thread.FirstMessageId);
+                if (!IsReloading) {
+                    HotMessages.RemoveIgnoredMessages ();
+                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                } else {
+                    SetNeedsReload ();
+                }
             }
+        }
+
+        void ShowMoreActionsForMessage (NSIndexPath indexPath)
+        {
+            var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
+            if (message != null) {
+                var alertView = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
+                alertView.AddAction(UIAlertAction.Create("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove(thread, message); }));
+                alertView.AddAction (UIAlertAction.Create ("Create Event", UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Forward", UIAlertActionStyle.Default, (UIAlertAction action) => { Forward(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { Reply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply All", UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
+                PresentViewController (alertView, true, null);
+            }
+        }
+
+        void ShowFoldersForMove (McEmailMessageThread thread, McEmailMessage selectedMessage)
+        {
+            var vc = new FoldersViewController ();
+            var accountId = selectedMessage.AccountId;
+            NcAssert.False (0 == accountId);
+            vc.SetOwner (this, true, accountId, thread);
+            PresentViewController (vc, true, null);
+        }
+
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            var messageThread = cookie as McEmailMessageThread;
+            if (messageThread != null) {
+                NcTask.Run (() => {
+                    NcEmailArchiver.Move (messageThread, folder);
+                }, "MessageListViewController.MoveMessage");
+                HotMessages.IgnoreMessage (messageThread.FirstMessageId);
+                vc.DismissFolderChooser (true, () => {
+                    SetNeedsReload ();
+                });
+            }
+        }
+
+        void QuickReply (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Reply, quickReply: true);
+        }
+
+        void Reply (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Reply);
+        }
+
+        void ReplyAll (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.ReplyAll);
+        }
+
+        void Forward (McEmailMessage message)
+        {
+            ComposeReply (message, EmailHelper.Action.Forward);
+        }
+
+        void CreateEvent (McEmailMessage message)
+        {
+            var c = CalendarHelper.CreateMeeting (message);
+            EditEvent (c);
         }
 
         void DeleteAction (NSIndexPath indexPath)
@@ -682,9 +770,10 @@ namespace NachoClient.iOS
                     if (indexPath.Section == HotMessagesSection) {
                         if (indexPath.Row < MaximumNumberOfHotMessages) {
                             var message = HotMessages.GetCachedMessage (indexPath.Row);
+                            var thread = HotMessages.GetEmailThread (indexPath.Row);
                             var cell = TableView.CellAt (indexPath) as MessageCell;
                             if (cell != null && message != null) {
-                                cell.SetMessage (message);
+                                cell.SetMessage (message, thread.MessageCount);
                             }
                         } else {
                             TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
@@ -807,8 +896,9 @@ namespace NachoClient.iOS
                 if (indexPath.Row < MaximumNumberOfHotMessages) {
                     var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
+                    var thread = HotMessages.GetEmailThread (indexPath.Row);
                     cell.NumberOfPreviewLines = NumberOfMessagePreviewLines;
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                     if (HotMessages.IncludesMultipleAccounts ()) {
                         cell.IndicatorColor = Util.ColorForAccount (message.AccountId);
                         cell.ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 1.0f);
@@ -884,7 +974,12 @@ namespace NachoClient.iOS
             if (indexPath.Section == HotMessagesSection) {
                 if (indexPath.Row < MaximumNumberOfHotMessages) {
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
-                    ShowMessage (message);
+                    var thread = HotMessages.GetEmailThread (indexPath.Row);
+                    if (thread.HasMultipleMessages ()) {
+                        ShowThread (thread);
+                    } else {
+                        ShowMessage (message);
+                    }
                 } else {
                     ShowAllHotMessages ();
                 }
@@ -947,6 +1042,7 @@ namespace NachoClient.iOS
                     var actions = new List<SwipeTableRowAction> ();
                     actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
                     actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
+                    actions.Add (new SwipeTableRowAction ("More", UIImage.FromBundle ("gen-more-active"), UIColor.FromRGB (0x4F, 0x64, 0x6D), ShowMoreActionsForMessage));
                     return actions;
                 }
             }else if (indexPath.Section == ActionsSection) {
@@ -1100,6 +1196,17 @@ namespace NachoClient.iOS
             composeViewController.Present ();
         }
 
+        void ComposeReply (McEmailMessage message, EmailHelper.Action kind, bool quickReply = false)
+        {
+            var thread = new McEmailMessageThread ();
+            thread.FirstMessageId = message.Id;
+            var composeViewController = new MessageComposeViewController (McAccount.QueryById<McAccount> (message.AccountId));
+            composeViewController.Composer.RelatedThread = thread;
+            composeViewController.Composer.Kind = kind;
+            composeViewController.StartWithQuickResponse = quickReply;
+            composeViewController.Present ();
+        }
+
         void EditEvent (McCalendar calendarEvent)
         {
             var vc = new EditEventViewController ();
@@ -1107,6 +1214,13 @@ namespace NachoClient.iOS
             var navigationController = new UINavigationController (vc);
             Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
+        }
+
+        void ShowThread (McEmailMessageThread thread)
+        {
+            var vc = new MessageThreadViewController ();
+            vc.SetEmailMessages (HotMessages.GetAdapterForThread (thread));
+            NavigationController.PushViewController (vc, true);
         }
 
         void ShowMessage (McEmailMessage message)
@@ -1186,6 +1300,16 @@ namespace NachoClient.iOS
                     RefreshLabel.Text = "";
                 }
             }
+        }
+
+        #endregion
+
+        #region Folder Chooser Parent (for Move)
+
+        // The folder chooser should really just close itself, but it's easier to just add this than change its interface
+        public void DismissChildFolderChooser (INachoFolderChooser vc)
+        {
+            DismissViewController (true, null);
         }
 
         #endregion

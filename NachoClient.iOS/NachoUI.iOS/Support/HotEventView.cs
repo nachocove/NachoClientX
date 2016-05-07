@@ -41,8 +41,11 @@ namespace NachoClient.iOS
         UIImageView IconView;
         nfloat IconSize = 16.0f;
         NcTimer ChangeDateLabelTimer;
+        UIView BottomBorder;
 
         PressGestureRecognizer EventPressGestureRecognizer;
+
+        nfloat BorderWidth = 0.5f;
 
         private bool _Selected;
         public bool Selected {
@@ -106,6 +109,10 @@ namespace NachoClient.iOS
             DateLabel.Font = A.Font_AvenirNextRegular14;
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
+
+            BottomBorder = new UIView (new CGRect (0.0f, 0.0f, Bounds.Width, BorderWidth));
+            BottomBorder.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+            ContentView.AddSubview (BottomBorder);
 
             EventPressGestureRecognizer = new PressGestureRecognizer (EventPressed);
             EventPressGestureRecognizer.IsCanceledByPanning = true;
@@ -251,6 +258,8 @@ namespace NachoClient.iOS
 
                 IconView.Center = new CGPoint (ContentInsets.Left + TextInsets.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
             }
+
+            BottomBorder.Frame = new CGRect (0.0f, ContentView.Bounds.Height - BorderWidth, ContentView.Bounds.Width, BorderWidth);
         }
 
     }

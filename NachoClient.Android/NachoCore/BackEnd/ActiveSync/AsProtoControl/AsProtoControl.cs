@@ -473,7 +473,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoNop, State = (uint)Lst.FSync2W },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -501,7 +501,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSync2W },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSync2W },
                         }
                     },
 
@@ -529,7 +529,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -557,7 +557,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -585,7 +585,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -613,7 +613,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -641,7 +641,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -669,7 +669,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoReFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -909,6 +909,12 @@ namespace NachoCore.ActiveSync
         {
             SetCmd (new AsFolderSyncCommand (this));
             ExecuteCmd ();
+        }
+
+        private void DoReFSync ()
+        {
+            FolderReSyncHappened ();
+            DoFSync ();
         }
 
         private void DoNopOrPick ()
@@ -1223,6 +1229,30 @@ namespace NachoCore.ActiveSync
                 if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
                 }
+            }
+        }
+
+        // A server has been encountered that repeatedly sends a sync response status of FolderChange_12,
+        // but the ensuing FolderSync command doesn't return any changes to the folder structure.
+        // Keep track of the number of folder resync requests that happen without any folder changes,
+        // so the Sync/FSync looping can be stopped before it goes on too long.
+        // https://github.com/nachocove/qa/issues/2057
+
+        private int FolderReSyncCount = 0;
+
+        public void FolderReSyncHappened ()
+        {
+            ++FolderReSyncCount;
+        }
+
+        public void ResetFolderReSyncCount ()
+        {
+            FolderReSyncCount = 0;
+        }
+
+        public bool TooManyFolderReSyncs {
+            get {
+                return 5 < FolderReSyncCount;
             }
         }
 

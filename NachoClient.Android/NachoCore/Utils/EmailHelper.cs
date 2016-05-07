@@ -298,6 +298,27 @@ namespace NachoCore.Utils
             return Action.Forward == action;
         }
 
+        static int LengthOfPrefix (string subject)
+        {
+            if (subject.StartsWith ("RE:", StringComparison.OrdinalIgnoreCase)) {
+                return 3;
+            }
+            if (subject.StartsWith ("FWD:", StringComparison.OrdinalIgnoreCase)) {
+                return 4;
+            }
+            return 0;
+        }
+
+        static string StripAllPrefixes (string subject)
+        {
+            int prefixLength = LengthOfPrefix (subject);
+            while (prefixLength > 0) {
+                subject = subject.Substring (prefixLength).Trim ();
+                prefixLength = LengthOfPrefix (subject);
+            }
+            return subject;
+        }
+
         public static string CreateInitialSubjectLine (Action action, string referencedSubject)
         {
             if (IsSendAction (action)) {
@@ -306,15 +327,12 @@ namespace NachoCore.Utils
             if (null == referencedSubject) {
                 referencedSubject = "";
             }
+            referencedSubject = StripAllPrefixes (referencedSubject);
             if (IsForwardAction (action)) {
                 return Pretty.Join ("Fwd:", referencedSubject, " ");
             }
             NcAssert.True (IsReplyAction (action));
-            if (referencedSubject.StartsWith ("Re:")) {
-                return referencedSubject;
-            } else {
-                return Pretty.Join ("Re:", referencedSubject, " ");
-            }
+            return Pretty.Join ("Re:", referencedSubject, " ");
         }
 
         public static string AttributionLineForMessage (McEmailMessage message)
@@ -1194,6 +1212,10 @@ namespace NachoCore.Utils
                 if (pattern.IsMatch (trimmedLine)) {
                     return true;
                 }
+            }
+            // A single em-dash, used by github emails
+            if (trimmedLine == "\u2014") {
+                return true;
             }
             return false;
         }
