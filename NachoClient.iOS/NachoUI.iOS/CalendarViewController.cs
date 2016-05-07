@@ -13,12 +13,11 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : NcUIViewController, ICalendarTableViewSourceDelegate
+    public partial class CalendarViewController : NcUIViewController, ICalendarTableViewSourceDelegate, IAccountSwitching
     {
         protected CalendarTableViewSource calendarSource;
         protected INcEventProvider eventCalendarMap;
         protected UITableView calendarTableView;
-        SwitchAccountButton switchAccountButton;
         NcUIBarButtonItem todayButton;
         protected DateTime todayButtonDate;
         public DateBarView DateDotView;
@@ -73,9 +72,6 @@ namespace NachoClient.iOS
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
 
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = switchAccountButton;
-
             // Adjust the icon; calendar covers all account
             SwitchToAccount (NcApplication.Instance.Account);
 
@@ -93,8 +89,6 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
 
             eventCalendarMap.UiRefresh = () => {
                 ReloadDataWithoutScrolling ();
@@ -952,14 +946,8 @@ namespace NachoClient.iOS
             calendarSource.MaybeExtendTableView (calendarTableView);
         }
 
-        void SwitchAccountButtonPressed ()
+        public void SwitchToAccount (McAccount account)
         {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            switchAccountButton.SetAccountImage (account);
         }
     }
 

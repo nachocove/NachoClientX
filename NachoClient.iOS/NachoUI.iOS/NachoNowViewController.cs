@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate
+    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, IAccountSwitching
     {
         #region Constants
 
@@ -30,7 +30,6 @@ namespace NachoClient.iOS
         UIBarButtonItem NewMeetingItem;
 
         McAccount Account;
-        SwitchAccountButton SwitchAccountButton;
 
         HotEventView HotEventView;
         McEvent HotEvent;
@@ -102,10 +101,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             Account = NcApplication.Instance.Account;
-            SwitchAccountButton.SetAccountImage (Account);
-            NavigationItem.TitleView = SwitchAccountButton;
 
             HotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, HotEventView.PreferredHeight));
             HotEventView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -195,11 +191,6 @@ namespace NachoClient.iOS
         void NewMeeting (object sender, EventArgs e)
         {
             EditEvent (null);
-        }
-
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
         void ShowHotEvent ()
@@ -1143,14 +1134,13 @@ namespace NachoClient.iOS
             viewController.PresentOverViewController (this);
         }
 
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             if (SwipingIndexPath != null) {
                 EndSwiping ();
             }
             CancelSyncing ();
             Account = account;
-            SwitchAccountButton.SetAccountImage (account);
             HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions:false);
             HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
             SectionCount = 0;

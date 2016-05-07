@@ -12,11 +12,10 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     [Foundation.Register ("ChatsViewController")]
-    public class ChatsViewController : NcUITableViewController, IUISearchResultsUpdating, IUISearchControllerDelegate
+    public class ChatsViewController : NcUITableViewController, IUISearchResultsUpdating, IUISearchControllerDelegate, IAccountSwitching
     {
 
         ChatsTableViewSource Source;
-        SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
         UISearchController SearchController;
         ChatsSearchResultsViewController SearchResultsViewController;
@@ -68,9 +67,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = SwitchAccountButton;
-
             SwitchToAccount (NcApplication.Instance.Account);
 
             TableView.RowHeight = ChatTableViewCell.HEIGHT;
@@ -91,7 +87,6 @@ namespace NachoClient.iOS
                 TableView.ContentOffset = new CGPoint (0.0f, TableView.TableHeaderView.Frame.Height);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -143,12 +138,7 @@ namespace NachoClient.iOS
             }
         }
 
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             SearchIndex = new NcIndex (NcModel.Instance.GetIndexPath(account.Id));
             if (Source == null) {

@@ -1699,6 +1699,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ActionsHelper.cs">
       <Link>NachoCore\Utils\ActionsHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountControl.cs" />
+    <Compile Include="NachoUI.iOS\Support\NachoNavigationBar.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
