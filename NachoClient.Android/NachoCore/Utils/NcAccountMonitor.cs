@@ -28,6 +28,7 @@ namespace NachoCore
             }
         }
 
+        McAccount Account;
         bool IsReloading;
         bool NeedsReload;
         public List<AccountInfo> Accounts { get; private set; }
@@ -38,6 +39,7 @@ namespace NachoCore
         {
             Accounts = new List<AccountInfo> ();
             ReloadAccounts ();
+            Account = NcApplication.Instance.Account;
             NcApplication.Instance.StatusIndEvent += StatusInd;
         }
 
@@ -124,8 +126,13 @@ namespace NachoCore
 
         void AccountChanged ()
         {
-            if (AccountSwitched != null) {
-                AccountSwitched.Invoke (this, null);
+            if (NcApplication.Instance.Account != null) {
+                if (Account == null || (Account.Id != NcApplication.Instance.Account.Id)) {
+                    Account = NcApplication.Instance.Account;
+                    if (AccountSwitched != null) {
+                        AccountSwitched.Invoke (this, null);
+                    }
+                }
             }
         }
 

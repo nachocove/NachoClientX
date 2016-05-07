@@ -21,6 +21,7 @@ namespace NachoClient.iOS
         void Initialize ()
         {
             AccountSwitcher = new SwitchAccountControl ();
+            AccountSwitcher.AccountSwitched = SwitchToAccount;
             AddSubview (AccountSwitcher);
         }
 
@@ -30,10 +31,15 @@ namespace NachoClient.iOS
             AccountSwitcher.Center = new CGPoint (Bounds.Width / 2.0f, Bounds.Height / 2.0f + 4.0f);
         }
 
+        public void Cleanup ()
+        {
+            AccountSwitcher.AccountSwitched = null;
+        }
+
         void SwitchToAccount (McAccount account)
         {
             UINavigationController navController;
-            if (NavigationController.TryGetTarget (out navController)) {
+            if (NavigationController != null && NavigationController.TryGetTarget (out navController)) {
                 var switchingViewController = navController.TopViewController as IAccountSwitching;
                 if (switchingViewController != null) {
                     switchingViewController.SwitchToAccount (account);

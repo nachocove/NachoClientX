@@ -17,10 +17,10 @@ namespace NachoClient.iOS
 
         UIView BackgroundView;
         UIImageView SelectedAccountView;
-        UIImageView ChangedAccountViewRight;
-        UIImageView ChangedAccountViewLeft;
+        ChangedAccountView ChangedAccountViewRight;
+        ChangedAccountView ChangedAccountViewLeft;
         nfloat BorderWidth = 2.0f;
-        Action<McAccount> AccountSwitched;
+        public Action<McAccount> AccountSwitched;
 
         enum ControlState {
             Collapsed,
@@ -29,7 +29,6 @@ namespace NachoClient.iOS
         }
 
         ControlState State;
-        bool NeedsUpdate;
 
         public SwitchAccountControl () : base (new CGRect(0.0f, 0.0f, 44.0f, 44.0f))
         {
@@ -52,6 +51,14 @@ namespace NachoClient.iOS
             NcAccountMonitor.Instance.AccountSwitched += HandleAccountSwitched;
         }
 
+        void SwitchToChangedAccountView (ChangedAccountView changedView)
+        {
+            NcApplication.Instance.Account = changedView.AccountInfo.Account;
+            if (changedView == ChangedAccountViewRight) {
+            } else if (changedView == ChangedAccountViewLeft) {
+            }
+        }
+
         void HandleAccountSwitched (object sender, EventArgs e)
         {
             if (AccountSwitched != null) {
@@ -67,7 +74,6 @@ namespace NachoClient.iOS
 
         void Update ()
         {
-            NeedsUpdate = false;
             var selectedAccount = NcApplication.Instance.Account;
             SelectedAccountView.Image = Util.ImageForAccount (selectedAccount);
             var accountsWithChanges = new List<NcAccountMonitor.AccountInfo> ();
@@ -87,32 +93,33 @@ namespace NachoClient.iOS
 
             if (accountsWithChanges.Count > 0) {
                 if (ChangedAccountViewRight == null) {
-                    ChangedAccountViewRight = new UIImageView (SelectedAccountView.Frame.Inset (5.0f, 5.0f));
-                    ChangedAccountViewRight.Layer.CornerRadius = ChangedAccountViewRight.Frame.Width / 2.0f;
-                    ChangedAccountViewRight.Alpha = 0.5f;
+                    ChangedAccountViewRight = new ChangedAccountView (SelectedAccountView.Frame.Inset (5.0f, 5.0f));
                     ChangedAccountViewRight.Transform = CGAffineTransform.MakeTranslation (ChangedAccountViewRight.Frame.Width, 0.0f);
+                    ChangedAccountViewRight.SwitchControl = new WeakReference<SwitchAccountControl> (this);
                     InsertSubviewBelow (ChangedAccountViewRight, BackgroundView);
                 }
-                ChangedAccountViewRight.Image = Util.ImageForAccount (accountsWithChanges [0].Account);
+                ChangedAccountViewRight.SetAccountInfo (accountsWithChanges [0]);
             } else {
                 if (ChangedAccountViewRight != null) {
                     ChangedAccountViewRight.RemoveFromSuperview ();
+                    ChangedAccountViewRight.Cleanup ();
                     ChangedAccountViewRight = null;
                 }
             }
 
             if (accountsWithChanges.Count > 1) {
                 if (ChangedAccountViewLeft == null) {
-                    ChangedAccountViewLeft = new UIImageView (SelectedAccountView.Frame.Inset (5.0f, 5.0f));
-                    ChangedAccountViewLeft.Layer.CornerRadius = ChangedAccountViewLeft.Frame.Width / 2.0f;
-                    ChangedAccountViewLeft.Alpha = 0.5f;
+                    ChangedAccountViewLeft = new ChangedAccountView (SelectedAccountView.Frame.Inset (5.0f, 5.0f));
+                    ChangedAccountViewLeft.UnreadOnLeft = true;
                     ChangedAccountViewLeft.Transform = CGAffineTransform.MakeTranslation (-ChangedAccountViewLeft.Frame.Width, 0.0f);
+                    ChangedAccountViewLeft.SwitchControl = new WeakReference<SwitchAccountControl> (this);
                     InsertSubviewBelow (ChangedAccountViewLeft, BackgroundView);
                 }
-                ChangedAccountViewLeft.Image = Util.ImageForAccount (accountsWithChanges [1].Account);
+                ChangedAccountViewLeft.SetAccountInfo (accountsWithChanges [1]);
             } else {
                 if (ChangedAccountViewLeft != null) {
                     ChangedAccountViewLeft.RemoveFromSuperview ();
+                    ChangedAccountViewLeft.Cleanup ();
                     ChangedAccountViewLeft = null;
                 }
             }
@@ -124,6 +131,18 @@ namespace NachoClient.iOS
             }
         }
 
+        public override UIView HitTest (CGPoint point, UIEvent uievent)
+        {
+            var view = base.HitTest (point, uievent);
+            if (view == null && ChangedAccountViewRight != null && ChangedAccountViewRight.PointInside(ConvertPointToView(point, ChangedAccountViewRight), uievent)) {
+                return ChangedAccountViewRight;
+            }
+            if (view == null && ChangedAccountViewLeft != null && ChangedAccountViewLeft.PointInside(ConvertPointToView(point, ChangedAccountViewLeft), uievent)) {
+                return ChangedAccountViewLeft;
+            }
+            return view;
+        }
+
         bool IsCustomHidden;
 
         public void SetHidden (bool hidden, IUIViewControllerTransitionCoordinator animationCoordinator = null)
@@ -132,6 +151,11 @@ namespace NachoClient.iOS
                 IsCustomHidden = hidden;
                 if (animationCoordinator != null) {
                     Hidden = false;
+                    if (IsCustomHidden) {
+                        Unhide ();
+                    } else {
+                        Hide ();
+                    }
                     animationCoordinator.AnimateAlongsideTransition ((IUIViewControllerTransitionCoordinatorContext context) => {
                         if (IsCustomHidden) {
                             Hide ();
@@ -206,6 +230,89 @@ namespace NachoClient.iOS
             if (ChangedAccountViewLeft != null) {
                 ChangedAccountViewLeft.Transform = CGAffineTransform.MakeTranslation (-ChangedAccountViewLeft.Frame.Width, 0.0f);
             }
+        }
+
+        private class ChangedAccountView : UIView
+        {
+
+            UIImageView AccountImageView;
+            UILabel UnreadIndicator;
+            public bool UnreadOnLeft;
+            public NcAccountMonitor.AccountInfo AccountInfo { get; private set; }
+
+            nfloat IndicatorSize = 14.0f;
+            UIOffset IndicatorOffset = new UIOffset (-3.0f, -3.0f);
+
+            PressGestureRecognizer PressRecognizer;
+            public WeakReference<SwitchAccountControl> SwitchControl;
+
+            public ChangedAccountView (CGRect frame) : base (frame)
+            {
+                AccountImageView = new UIImageView (Bounds);
+                AccountImageView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
+                AccountImageView.Alpha = 0.5f;
+
+                UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
+                UnreadIndicator.BackgroundColor = A.Color_NachoGreen;
+                UnreadIndicator.ClipsToBounds = true;
+                UnreadIndicator.Layer.BorderWidth = 1.0f;
+                UnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
+                UnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (9.0f);
+                UnreadIndicator.TextAlignment = UITextAlignment.Center;
+                UnreadIndicator.TextColor = A.Color_NachoBlue;
+                UnreadIndicator.Layer.CornerRadius = IndicatorSize / 2.0f;
+
+                PressRecognizer = new PressGestureRecognizer (Press);
+                AddGestureRecognizer (PressRecognizer);
+
+                AddSubview (AccountImageView);
+                AddSubview (UnreadIndicator);
+            }
+
+            public void Cleanup ()
+            {
+                RemoveGestureRecognizer (PressRecognizer);
+                PressRecognizer = null;
+            }
+
+            void Press ()
+            {
+                if (PressRecognizer.State == UIGestureRecognizerState.Began) {
+                    AccountImageView.Alpha = 1.0f;
+                } else if (PressRecognizer.State == UIGestureRecognizerState.Ended) {
+                    SwitchAccountControl switcher;
+                    if (SwitchControl.TryGetTarget (out switcher)) {
+                        switcher.SwitchToChangedAccountView (this);
+                    }
+                }else if (PressRecognizer.State == UIGestureRecognizerState.Changed) {
+                    AccountImageView.Alpha = PressRecognizer.IsInsideView ? 1.0f : 0.5f;
+                } else if (PressRecognizer.State == UIGestureRecognizerState.Failed) {
+                    AccountImageView.Alpha = 0.5f;
+                } else if (PressRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                    AccountImageView.Alpha = 0.5f;
+                }
+            }
+
+            public void SetAccountInfo (NcAccountMonitor.AccountInfo info)
+            {
+                AccountInfo = info;
+                AccountImageView.Image = Util.ImageForAccount (info.Account);
+                UnreadIndicator.Text = info.RecentUnreadCount.ToString ();
+                SetNeedsLayout ();
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                var size = UnreadIndicator.SizeThatFits (new CGSize (IndicatorSize, IndicatorSize));
+                var frame = UnreadIndicator.Frame;
+                frame.Width = (nfloat)Math.Max (IndicatorSize, size.Width);
+                frame.X = UnreadOnLeft ? IndicatorOffset.Horizontal : Bounds.Width - IndicatorOffset.Horizontal - IndicatorSize;
+                frame.Y = IndicatorOffset.Vertical;
+                frame.Height = IndicatorSize;
+                UnreadIndicator.Frame = frame;
+            }
+
         }
     }
 }

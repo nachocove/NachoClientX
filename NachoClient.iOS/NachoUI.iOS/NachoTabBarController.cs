@@ -106,6 +106,7 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, MoreNavigationController);
 
             MoreAccountSwitcher = new SwitchAccountControl ();
+            MoreAccountSwitcher.AccountSwitched = SwitchMoreToAccount;
 
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem.Title = "";
@@ -136,6 +137,14 @@ namespace NachoClient.iOS
             };
 
             InsertAccountInfoIntoMoreTab ();
+        }
+
+        void SwitchMoreToAccount (McAccount account)
+        {
+            var switchingViewController = MoreNavigationController.TopViewController as IAccountSwitching;
+            if (switchingViewController != null) {
+                switchingViewController.SwitchToAccount (account);
+            }
         }
 
         void LayoutMoreAccountSwitcher ()

@@ -122,6 +122,10 @@ namespace NachoClient.iOS
             EmptyView.Hidden = true;
             View.AddSubview (EmptyView);
 
+            if (NcApplication.Instance.Account.Id != Account.Id) {
+                SwitchToAccount (NcApplication.Instance.Account);
+            }
+
             ReloadHotMessages ();
             ReloadCalendar ();
         }
@@ -566,8 +570,8 @@ namespace NachoClient.iOS
             if (NcApplication.Instance.Account.ContainsAccount (notificationAccount.Id)) {
                 return true;
             }
+            // We'll get a callback to SwitchToAccount
             NcApplication.Instance.Account = notificationAccount;
-            SwitchToAccount (notificationAccount);
             return true;
         }
 
@@ -1264,7 +1268,7 @@ namespace NachoClient.iOS
             ExtraActionRows = 0;
             TableView.ReloadData (); // to clear table so we don't show stale data from other account
             HasLoadedOnce = false;
-            // Relying on ViewWillAppear to do any reloading
+            SetNeedsReload ();
         }
 
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
