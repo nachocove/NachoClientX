@@ -69,7 +69,7 @@ namespace NachoCore.ActiveSync
                         options));
                 break;
             default:
-                NcAssert.CaseError (string.Format ("Bad Operation {0}", PendingSingle.Operation));
+                NcAssert.CaseError (string.Format ("{0}: Bad Operation {1}", CmdNameWithAccount, PendingSingle.Operation));
                 search = null;
                 break;
             }
@@ -114,7 +114,7 @@ namespace NachoCore.ActiveSync
                         });
                         break;
                     default:
-                        NcAssert.CaseError (string.Format ("Bad Operation {0}", PendingSingle.Operation));
+                        NcAssert.CaseError (string.Format ("{0}: Bad Operation {1}", CmdNameWithAccount, PendingSingle.Operation));
                         break;
                     }
                     return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");
@@ -224,7 +224,7 @@ namespace NachoCore.ActiveSync
                 return false;
             }
             if (1 != existingItems.Count) {
-                Log.Error (Log.LOG_AS, "{0} GAL-cache entries for email address {1}", existingItems.Count, emailAddress);
+                Log.Error (Log.LOG_AS, "{0}: {1} GAL-cache entries for email address {2}", CmdNameWithAccount, existingItems.Count, emailAddress);
             }
             var original = McContact.QueryByEmailAddressInFolder (accountId, galFolderId, emailAddress).First ();
             var existing = existingItems.First ();
@@ -283,21 +283,21 @@ namespace NachoCore.ActiveSync
                 var xmlProperties = xmlResult.ElementAnyNs (Xml.Search.Properties);
                 if (null == xmlProperties) {
                     // You can get success and an empty response.
-                    Log.Info (Log.LOG_AS, "Search result without Properties");
+                    Log.Info (Log.LOG_AS, "{0}: Search result without Properties", CmdNameWithAccount);
                 } else {
                     var xmlFrom = xmlProperties.ElementAnyNs (Xml.Email.From);
                     var xmlDateReceived = xmlProperties.ElementAnyNs (Xml.Email.DateReceived);
                     if (null == xmlFrom || null == xmlFrom.Value || null == xmlDateReceived || null == xmlDateReceived.Value) {
-                        Log.Error (Log.LOG_AS, "Search result without From or DateReceived");
+                        Log.Error (Log.LOG_AS, "{0}: Search result without From or DateReceived", CmdNameWithAccount);
                     } else {
                         var dateRecv = AsHelpers.ParseAsDateTime (xmlDateReceived.Value);
                         var hopefullyOne = McEmailMessage.QueryByDateReceivedAndFrom (AccountId, dateRecv, xmlFrom.Value);
                         if (1 < hopefullyOne.Count) {
-                            Log.Warn (Log.LOG_AS, "Search result with > 1 match: {0}", hopefullyOne.Count);
+                            Log.Warn (Log.LOG_AS, "{0}: Search result with > 1 match: {1}", CmdNameWithAccount, hopefullyOne.Count);
                         } else if (1 == hopefullyOne.Count) {
                             vector.Add (hopefullyOne.First ());
                         } else {
-                            Log.Warn (Log.LOG_AS, "Search result not found in DB {0}", hopefullyOne.Count);
+                            Log.Warn (Log.LOG_AS, "{0}: Search result not found in DB {1}", CmdNameWithAccount, hopefullyOne.Count);
                         }
                     }
                 }

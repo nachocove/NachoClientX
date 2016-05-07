@@ -537,7 +537,6 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (f.IsClientOwned != 1, 0.9) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 "{1}" +
@@ -566,7 +565,6 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.5) " +
@@ -593,7 +591,6 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (e.IsRead = 0, 0.05) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
@@ -621,7 +618,6 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) " +
                 (groupBy ? " GROUP BY e.ConversationId " : "") +
@@ -642,7 +638,6 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (e.IsRead = 0, 0.05) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) " +
@@ -685,7 +680,6 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -725,7 +719,7 @@ namespace NachoCore.Model
                 limit);
         }
 
-        public static List<McEmailMessageThread> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore, bool includeActions = true)
         {
             var queryFormat =
                 "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
@@ -736,7 +730,7 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
+                (includeActions ? "" : " likelihood (e.IsAction = 0, 0.8) AND ") +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -757,7 +751,7 @@ namespace NachoCore.Model
         }
 
 
-        public static List<McEmailMessageThread> QueryUnifiedInboxItemsByScore (double hotScore)
+        public static List<McEmailMessageThread> QueryUnifiedInboxItemsByScore (double hotScore, bool includeActions = true)
         {
             var queryFormat =
                 "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
@@ -768,7 +762,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
+                (includeActions ? "" : " likelihood (e.IsAction = 0, 0.8) AND ") +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.05) AND " +
                 " likelihood (e.UserAction > -1, 0.99) AND " +
@@ -795,7 +789,6 @@ namespace NachoCore.Model
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -826,7 +819,6 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (e.IsAction = 0, 0.8) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (e.Score < ? AND e.Score2 >= ?, 0.1) AND " +
@@ -876,7 +868,6 @@ namespace NachoCore.Model
             " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
             " likelihood (IsRead = 0, 0.5) AND " +
             " likelihood (IsChat = 0, 0.8) AND " +
-            " likelihood (IsAction = 0, 0.8) AND " +
             " CreatedAt > ? AND " +
             " likelihood (DateReceived > ?, 0.01) " +
             " ORDER BY DateReceived ASC ",

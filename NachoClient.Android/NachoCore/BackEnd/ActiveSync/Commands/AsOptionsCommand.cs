@@ -66,12 +66,13 @@ namespace NachoCore.ActiveSync
 
         internal static bool ProcessOptionsHeaders (NcHttpHeaders headers, IBEContext beContext)
         {
+            string cmdNameWithAccount = string.Format ("AsOptionsCommand({0})", beContext.Account.Id);
             IEnumerable<string> values = null;
             McProtocolState protocolState = beContext.ProtocolState;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
             if (retval && null != values && 0 < values.Count ()) {
                 if (1 != values.Count ()) {
-                    Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
+                    Log.Warn (Log.LOG_AS, "{0}: more than one MS-ASProtocolVersions header.", cmdNameWithAccount);
                 }
                 var value = values.First ();
                 string[] serverVersions = Regex.Split (value, @"\s*,\s*");
@@ -90,16 +91,16 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 if (!foundMatch) {
-                    Log.Error (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions does not contain a version supported by this client. Defaulting to version 12.0.");
+                    Log.Error (Log.LOG_AS, "{0}: MS-ASProtocolVersions does not contain a version supported by this client. Defaulting to version 12.0.", cmdNameWithAccount);
                     protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                         var target = (McProtocolState)record;
                         target.AsProtocolVersion = "12.0";
                         return true;
                     });
                 }
-                Log.Info (Log.LOG_AS, "AsOptionsCommand: Selected version {0} from MS-ASProtocolVersions: {1}", protocolState.AsProtocolVersion, value);
+                Log.Info (Log.LOG_AS, "{0}: Selected version {1} from MS-ASProtocolVersions: {2}", cmdNameWithAccount, protocolState.AsProtocolVersion, value);
             } else {
-                Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
+                Log.Error (Log.LOG_AS, "{0}: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0", cmdNameWithAccount);
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.AsProtocolVersion = "12.0";
@@ -110,10 +111,10 @@ namespace NachoCore.ActiveSync
             retval = headers.TryGetValues ("MS-ASProtocolCommands", out values);
             if (retval && null != values && 0 < values.Count ()) {
                 if (1 != values.Count ()) {
-                    Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
+                    Log.Warn (Log.LOG_AS, "{0}: more than one MS-ASProtocolVersions header.", cmdNameWithAccount);
                 }
                 var value = values.First ();
-                Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolCommands: {0}", value);
+                Log.Info (Log.LOG_AS, "{0}: MS-ASProtocolCommands: {1}", cmdNameWithAccount, value);
                 string[] commands = value.Split (',');
                 // TODO: check for other potentially missing commands. ensure that all fundamental commands are listed.
                 if (!commands.Contains ("Provision")) {

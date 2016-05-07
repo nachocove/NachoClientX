@@ -80,7 +80,7 @@ namespace NachoClient.iOS
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
 
-            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions:false);
             HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
         }
 
@@ -142,12 +142,12 @@ namespace NachoClient.iOS
             if (SyncManager.IsSyncing) {
                 SyncManager.ResumeEvents ();
             }
-            StartListeningForStatusInd ();
             HotMessages.RefetchSyncTime ();
             if (HasAppearedOnce) {
                 ReloadCalendar ();
                 ReloadHotMessages ();
             }
+            StartListeningForStatusInd ();
             HasAppearedOnce = true;
             if (HotEventView.Selected) {
                 HotEventView.SetSelected (false, animated: true);
@@ -496,19 +496,38 @@ namespace NachoClient.iOS
 
         #region Reload Data
 
+        bool NeedsReload;
+        bool IsReloading;
+
+        void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                ReloadHotMessages ();
+            }
+        }
+
         void ReloadHotMessages ()
         {
-            NcTask.Run (() => {
-                List<int> messageAdds;
-                List<int> messageDeletes;
-                bool messagesChanged = HotMessages.Refresh (out messageAdds, out messageDeletes);
-                List<int> actionAdds;
-                List<int> actionDeletes;
-                bool actionsChanged = HotActions.Refresh (out actionAdds, out actionDeletes);
-                BeginInvokeOnMainThread(() => {
-                    HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
-                });
-            }, HotMessageRefreshTaskName);
+            if (!IsReloading) {
+                IsReloading = true;
+                NeedsReload = false;
+                NcTask.Run (() => {
+                    List<int> messageAdds;
+                    List<int> messageDeletes;
+                    bool messagesChanged = HotMessages.Refresh (out messageAdds, out messageDeletes);
+                    List<int> actionAdds;
+                    List<int> actionDeletes;
+                    bool actionsChanged = HotActions.Refresh (out actionAdds, out actionDeletes);
+                    BeginInvokeOnMainThread (() => {
+                        HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
+                        IsReloading = false;
+                        if (NeedsReload) {
+                            ReloadHotMessages ();
+                        }
+                    });
+                }, HotMessageRefreshTaskName);
+            }
         }
 
         void HandleReloadHotMessagesResults (bool messagesChanged, List<int> messageAdds, List<int> messageDeletes, bool actionsChanged, List<int> actionAdds, List<int> actionDeletes)
@@ -881,6 +900,14 @@ namespace NachoClient.iOS
             } else if (indexPath.Section == ActionsSection) {
                 if (indexPath.Row < ActionRows) {
                     var action = HotActions.ActionAt (indexPath.Row);
+                    if (action.IsNew) {
+                        // Unless something goes wrong, this item will become IsNew = false when the message is shown,
+                        // which means when we come back the row should have a white background instead of the tinted
+                        // background used for new items.  Normally the row would be deselected upon when the user returns,
+                        // but the default animation will restore the tinted background that it saved when selecting the row.
+                        // Deselecting the row now will ensure that no animation will restore the wrong background color later.
+                        tableView.DeselectRow (indexPath, false);
+                    }
                     ShowMessage (action.Message);
                 } else {
                     var index = indexPath.Row - ActionRows;
@@ -990,7 +1017,7 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 case NcResult.SubKindEnum.Info_ActionSetChanged:
-                    ReloadHotMessages ();
+                    SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
@@ -1007,7 +1034,7 @@ namespace NachoClient.iOS
         void StartSync ()
         {
             if (!SyncManager.SyncEmailMessages (HotMessages)) {
-                ReloadHotMessages ();
+                SetNeedsReload ();
             }
         }
 
@@ -1107,6 +1134,10 @@ namespace NachoClient.iOS
 
         void EditAction (McAction action)
         {
+            if (action.IsNew) {
+                action.IsNew = false;
+                action.Update ();
+            }
             var viewController = new ActionEditViewController ();
             viewController.Action = action;
             viewController.PresentOverViewController (this);
@@ -1120,7 +1151,7 @@ namespace NachoClient.iOS
             CancelSyncing ();
             Account = account;
             SwitchAccountButton.SetAccountImage (account);
-            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions:false);
             HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
             SectionCount = 0;
             HotMessagesSection = -1;

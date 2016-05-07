@@ -15,9 +15,10 @@ namespace NachoCore.ActiveSync
     {
         public static McEmailMessage ServerSaysAddOrChangeEmail (XElement command, McFolder folder)
         {
+            string cmdNameWithAccount = string.Format ("AsSyncCommand({0})", folder.AccountId);
             var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
             if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeEmail: No ServerId present.");
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeEmail: No ServerId present.", cmdNameWithAccount);
                 return null;
             }
             // If the server attempts to overwrite, delete the pre-existing record first.
@@ -33,7 +34,7 @@ namespace NachoCore.ActiveSync
                 var r = aHelp.ParseEmail (Ns, command, folder);
                 emailMessage = r.GetValue<McEmailMessage> ();
             } catch (Exception ex) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeEmail: Exception parsing: {1}", cmdNameWithAccount, ex.ToString ());
                 if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
                     emailMessage = new McEmailMessage () {
                         ServerId = xmlServerId.Value,
@@ -74,7 +75,7 @@ namespace NachoCore.ActiveSync
                     if (emailMessage.IsChat) {
                         var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
                         if (result.isError()){
-                            Log.Error(Log.LOG_AS, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                            Log.Error(Log.LOG_AS, "{0}: ServerSaysAddOrChangeEmail: could not start download for chat message: {1}", cmdNameWithAccount, result);
                         }
                     }
                     if (emailMessage.IsAction){

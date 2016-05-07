@@ -861,8 +861,13 @@ namespace NachoCore.Utils
             }
             if (intent != McEmailMessage.IntentType.None) {
                 var parts = remainingSubject.Split (new char[] { '-' }, 2);
-                var possibleDate = parts [0].Trim ();
-                subject = parts [1].Trim ();
+                string possibleDate = "";
+                if (parts.Length == 2) {
+                    possibleDate = parts [0].Trim ();
+                    subject = parts [1].Trim ();
+                } else {
+                    subject = "";
+                }
                 foreach (var deferralOption in SubjectDeferralTypes) {
                     var deferralString = NcMessageIntent.DeferralTypeToString (deferralOption);
                     if (deferralString == possibleDate) {
@@ -932,11 +937,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int likelyMessageCount)
         {
             unreadMessageCount = 0;
-            deadlineMessageCount = 0;
-            deferredMessageCount = 0;
             likelyMessageCount = 0;
 
             foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
@@ -945,8 +948,6 @@ namespace NachoCore.Utils
                     if (null != inboxFolder) {
                         var newSince = GetNewSincePreference (accountId);
                         unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
-                        deadlineMessageCount += 0;
-                        deferredMessageCount += 0;
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
                     }
                 }

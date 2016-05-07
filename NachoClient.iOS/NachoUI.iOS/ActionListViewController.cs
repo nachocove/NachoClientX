@@ -251,9 +251,24 @@ namespace NachoClient.iOS
 
         #region Reloading Data
 
+        bool NeedsReload;
+        bool IsReloading;
+
+        void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                Reload ();
+            }
+        }
+
         void Reload ()
         {
-            Actions.BackgroundRefresh (HandleReloadResults);
+            if (!IsReloading) {
+                IsReloading = true;
+                NeedsReload = false;
+                Actions.BackgroundRefresh (HandleReloadResults);
+            }
         }
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
@@ -265,6 +280,10 @@ namespace NachoClient.iOS
                 Util.UpdateTable (TableView, adds, deletes);
             }
             UpdateVisibleRows ();
+            IsReloading = false;
+            if (NeedsReload) {
+                Reload ();
+            }
         }
 
         void UpdateVisibleRows ()
@@ -468,14 +487,10 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (s.Account == null || (Actions != null && Account.ContainsAccount (s.Account.Id))) {
-
-                bool isVisible = IsViewLoaded && View.Window != null;
-
+                
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_ActionSetChanged:
-                    if (isVisible) {
-                        Reload ();
-                    }
+                    SetNeedsReload ();
                     break;
                 }
             }
@@ -533,6 +548,10 @@ namespace NachoClient.iOS
 
         void EditAction (McAction action)
         {
+            if (action.IsNew) {
+                action.IsNew = false;
+                action.Update ();
+            }
             var viewController = new ActionEditViewController ();
             viewController.Action = action;
             viewController.PresentOverViewController (this);

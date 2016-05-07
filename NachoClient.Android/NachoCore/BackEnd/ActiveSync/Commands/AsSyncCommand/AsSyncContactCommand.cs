@@ -14,9 +14,10 @@ namespace NachoCore.ActiveSync
     {
         public static void ServerSaysAddOrChangeContact (XElement command, McFolder folder)
         {
+            string cmdNameWithAccount = string.Format ("AsSyncCommand({0})", folder.AccountId);
             var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
             if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeContact: No ServerId present.");
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeContact: No ServerId present.", cmdNameWithAccount);
                 return;
             }
             // If the server attempts to overwrite, delete the pre-existing record first.
@@ -37,7 +38,7 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (mcResult.isOK ());
                 NcAssert.NotNull (mcContact, "mcContact");
             } catch (Exception ex) {
-                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeContact: Exception parsing: {0}", ex.ToString ());
+                Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeContact: Exception parsing: {1}", cmdNameWithAccount, ex.ToString ());
                 if (null == mcContact || null == mcContact.ServerId || string.Empty == mcContact.ServerId) {
                     mcContact = new McContact () {
                         ServerId = xmlServerId.Value,
