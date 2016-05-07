@@ -156,7 +156,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected override void Cleanup ()
+        public override void Cleanup ()
         {
             // Clean up nav bar
             SearchButton.Clicked -= ShowSearch;
@@ -175,7 +175,10 @@ namespace NachoClient.iOS
             if (SearchController != null) {
                 SearchController.Delegate = null;
             }
-            SearchResultsViewController = null;
+            if (SearchResultsViewController != null) {
+                SearchResultsViewController.Cleanup ();
+                SearchResultsViewController = null;
+            }
             
             base.Cleanup ();
         }
@@ -194,7 +197,7 @@ namespace NachoClient.iOS
         {
             EndAllTableEdits ();
             if (SearchController == null) {
-                SearchResultsViewController = new MessageSearchResultsViewController ();
+                SearchResultsViewController = new MessageSearchResultsViewController () { IsLongLived = true };
                 SearchController = new NachoSearchController (SearchResultsViewController);
                 SearchController.Delegate = this;
             }
@@ -1158,6 +1161,12 @@ namespace NachoClient.iOS
         public MessageSearchResultsViewController () : base (UITableViewStyle.Plain)
         {
             SearchResults = new EmailSearch (UpdateResults);
+        }
+
+        public override void Cleanup ()
+        {
+            SearchResults = null;
+            base.Cleanup ();
         }
 
         public override void LoadView ()

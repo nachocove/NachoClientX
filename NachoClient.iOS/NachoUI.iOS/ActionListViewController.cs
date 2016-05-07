@@ -115,7 +115,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected override void Cleanup ()
+        public override void Cleanup ()
         {
 
             EditTableButton.Clicked -= EditTable;

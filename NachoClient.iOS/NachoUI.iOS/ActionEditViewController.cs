@@ -177,7 +177,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected override void Cleanup ()
+        public override void Cleanup ()
         {
             // Cleanup nav bar
             SaveButton.Clicked -= SaveButtonPressed;
