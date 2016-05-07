@@ -210,12 +210,13 @@ namespace NachoClient.iOS
         void MarkMessageAsRead (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsRead (message, true);
                 message.IsRead = true;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -223,12 +224,13 @@ namespace NachoClient.iOS
         void MarkMessageAsUnread (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsUnread (message, true);
                 message.IsRead = false;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -236,11 +238,12 @@ namespace NachoClient.iOS
         void MarkMessageAsHot (NSIndexPath indexPath)
         {
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -257,11 +260,12 @@ namespace NachoClient.iOS
         {
             DidEndSwiping (TableView, indexPath);
             var message = HotMessages.GetCachedMessage (indexPath.Row);
+            var thread = HotMessages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -691,9 +695,10 @@ namespace NachoClient.iOS
                     if (indexPath.Section == HotMessagesSection) {
                         if (indexPath.Row < MaximumNumberOfHotMessages) {
                             var message = HotMessages.GetCachedMessage (indexPath.Row);
+                            var thread = HotMessages.GetEmailThread (indexPath.Row);
                             var cell = TableView.CellAt (indexPath) as MessageCell;
                             if (cell != null && message != null) {
-                                cell.SetMessage (message);
+                                cell.SetMessage (message, thread.MessageCount);
                             }
                         } else {
                             TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
@@ -816,8 +821,9 @@ namespace NachoClient.iOS
                 if (indexPath.Row < MaximumNumberOfHotMessages) {
                     var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
+                    var thread = HotMessages.GetEmailThread (indexPath.Row);
                     cell.NumberOfPreviewLines = NumberOfMessagePreviewLines;
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                     if (HotMessages.IncludesMultipleAccounts ()) {
                         cell.IndicatorColor = Util.ColorForAccount (message.AccountId);
                         cell.ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 1.0f);
@@ -893,7 +899,12 @@ namespace NachoClient.iOS
             if (indexPath.Section == HotMessagesSection) {
                 if (indexPath.Row < MaximumNumberOfHotMessages) {
                     var message = HotMessages.GetCachedMessage (indexPath.Row);
-                    ShowMessage (message);
+                    var thread = HotMessages.GetEmailThread (indexPath.Row);
+                    if (thread.HasMultipleMessages ()) {
+                        ShowThread (thread);
+                    } else {
+                        ShowMessage (message);
+                    }
                 } else {
                     ShowAllHotMessages ();
                 }
@@ -1116,6 +1127,13 @@ namespace NachoClient.iOS
             var navigationController = new UINavigationController (vc);
             Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
+        }
+
+        void ShowThread (McEmailMessageThread thread)
+        {
+            var vc = new MessageThreadViewController ();
+            vc.SetEmailMessages (HotMessages.GetAdapterForThread (thread));
+            NavigationController.PushViewController (vc, true);
         }
 
         void ShowMessage (McEmailMessage message)
