@@ -127,11 +127,21 @@ namespace NachoCore
         void AccountChanged ()
         {
             if (NcApplication.Instance.Account != null) {
-                if (Account == null || (Account.Id != NcApplication.Instance.Account.Id)) {
-                    Account = NcApplication.Instance.Account;
-                    if (AccountSwitched != null) {
-                        AccountSwitched.Invoke (this, null);
-                    }
+                ChangeAccount (NcApplication.Instance.Account);
+            }
+        }
+
+        // This method exists so NcApplication.Instance.Account can be updated and the AccountSwitched
+        // callback can be invoked all at once.  It's useful for the account switch control to update
+        // the selected account and update views all in an animation block.
+        public void ChangeAccount (McAccount account)
+        {
+            if (Account == null || (Account.Id != account.Id)) {
+                Account = account;
+                // this will cause an echo, but we'll ingore it because we've already updated Account
+                NcApplication.Instance.Account = Account;
+                if (AccountSwitched != null) {
+                    AccountSwitched.Invoke (this, null);
                 }
             }
         }

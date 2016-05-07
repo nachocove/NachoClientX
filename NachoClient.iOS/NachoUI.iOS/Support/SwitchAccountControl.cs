@@ -53,17 +53,19 @@ namespace NachoClient.iOS
 
         void SwitchToChangedAccountView (ChangedAccountView changedView)
         {
-            NcApplication.Instance.Account = changedView.AccountInfo.Account;
-            if (changedView == ChangedAccountViewRight) {
-            } else if (changedView == ChangedAccountViewLeft) {
-            }
+            var account = changedView.AccountInfo.Account;
+            LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+            LoginHelpers.SetMostRecentAccount (account.Id);
+            UIView.Transition (UIApplication.SharedApplication.Delegate.GetWindow (), 0.5f, UIViewAnimationOptions.TransitionFlipFromRight, () => {
+                NcAccountMonitor.Instance.ChangeAccount (account);
+                if (AccountSwitched != null) {
+                    AccountSwitched (account);
+                }
+            }, null);
         }
 
         void HandleAccountSwitched (object sender, EventArgs e)
         {
-            if (AccountSwitched != null) {
-                AccountSwitched (NcApplication.Instance.Account);
-            }
             Update ();
         }
 
@@ -250,6 +252,7 @@ namespace NachoClient.iOS
             {
                 AccountImageView = new UIImageView (Bounds);
                 AccountImageView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
+                AccountImageView.ClipsToBounds = true;
                 AccountImageView.Alpha = 0.5f;
 
                 UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
@@ -284,6 +287,7 @@ namespace NachoClient.iOS
                     if (SwitchControl.TryGetTarget (out switcher)) {
                         switcher.SwitchToChangedAccountView (this);
                     }
+                    AccountImageView.Alpha = 0.5f;
                 }else if (PressRecognizer.State == UIGestureRecognizerState.Changed) {
                     AccountImageView.Alpha = PressRecognizer.IsInsideView ? 1.0f : 0.5f;
                 } else if (PressRecognizer.State == UIGestureRecognizerState.Failed) {
