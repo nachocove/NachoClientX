@@ -8,6 +8,7 @@ using Foundation;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using CoreAnimation;
 
 namespace NachoClient.iOS
 {
@@ -21,6 +22,9 @@ namespace NachoClient.iOS
         ChangedAccountView ChangedAccountViewLeft;
         nfloat BorderWidth = 2.0f;
         public Action<McAccount> AccountSwitched;
+        SwitchAccountView FullSwitchView;
+
+        PercentagePressGestureRecognizer SelectedAccountPressRecognizer;
 
         enum ControlState {
             Collapsed,
@@ -45,15 +49,132 @@ namespace NachoClient.iOS
             AddSubview (BackgroundView);
             AddSubview (SelectedAccountView);
 
+            SelectedAccountPressRecognizer = new PercentagePressGestureRecognizer (PressSelectedAccount);
+            SelectedAccountPressRecognizer.MaximumOffset = new UIOffset (0.0f, 22.0f);
+            SelectedAccountPressRecognizer.MinimumTime = 0.05;
+            SelectedAccountPressRecognizer.MaximumTime = 2.55;
+            BackgroundView.AddGestureRecognizer (SelectedAccountPressRecognizer);
+
             Update ();
 
             NcAccountMonitor.Instance.AccountSetChanged += HandleAccountSetChanged;
             NcAccountMonitor.Instance.AccountSwitched += HandleAccountSwitched;
         }
 
+        public override void TouchesMoved (NSSet touches, UIEvent evt)
+        {
+            if (FullSwitchView != null) {
+                FullSwitchView.TouchesMoved (touches, evt);
+            } else {
+                base.TouchesMoved (touches, evt);
+            }
+        }
+
+        public override void TouchesEnded (NSSet touches, UIEvent evt)
+        {
+            if (FullSwitchView != null) {
+                FullSwitchView.TouchesEnded (touches, evt);
+            } else {
+                base.TouchesEnded (touches, evt);
+            }
+        }
+
+        void PressSelectedAccount ()
+        {
+            if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Began) {
+                SelectedAccountView.Alpha = 0.6f;
+            } else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Ended) {
+                SelectedAccountView.Alpha = 1.0f;
+                FullSwitchView.SetPresentationPercentage (1.0);
+            }else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Changed) {
+                if (FullSwitchView == null) {
+                    if (SelectedAccountPressRecognizer.PercentComplete > 0.0) {
+                        FullSwitchView = new SwitchAccountView (Window.Bounds);
+                        FullSwitchView.Canceled = CloseFullSwitchView;
+                        FullSwitchView.AccountPicked = FullSwitchViewPickedAccount;
+                        FullSwitchView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                        Window.AddSubview (FullSwitchView);
+                        FullSwitchView.SetVisibleAccounts (
+                            FullSwitchView.ConvertPointFromView(SelectedAccountView.Center, SelectedAccountView.Superview),
+                            NcApplication.Instance.Account.Id,
+                            ChangedAccountViewLeft != null ? ChangedAccountViewLeft.AccountInfo.Account.Id : 0,
+                            ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
+                        );
+                        FullSwitchView.PrepareForInteractivePresentation ();
+                        FullSwitchView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
+                        SelectedAccountView.Hidden = true;
+                        if (ChangedAccountViewRight != null) {
+                            ChangedAccountViewRight.Hidden = true;
+                        }
+                        if (ChangedAccountViewLeft != null) {
+                            ChangedAccountViewLeft.Hidden = true;
+                        }
+                    }
+                } else {
+                    FullSwitchView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
+                }
+            } else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Failed) {
+                SelectedAccountView.Alpha = 1.0f;
+            } else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                SelectedAccountView.Alpha = 1.0f;
+            }
+        }
+
+        void CloseFullSwitchView ()
+        {
+            if (ChangedAccountViewRight != null) {
+                ChangedAccountViewRight.Hidden = true;
+            }
+            if (ChangedAccountViewLeft != null) {
+                ChangedAccountViewLeft.Hidden = true;
+            }
+            FullSwitchView.SetVisibleAccounts (
+                FullSwitchView.ConvertPointFromView(SelectedAccountView.Center, SelectedAccountView.Superview),
+                NcApplication.Instance.Account.Id,
+                ChangedAccountViewLeft != null ? ChangedAccountViewLeft.AccountInfo.Account.Id : 0,
+                ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
+            );
+            FullSwitchView.AnimateClosed (() => {
+                FullSwitchView.RemoveFromSuperview ();
+                FullSwitchView.Cleanup ();
+                FullSwitchView = null;
+                SelectedAccountView.Hidden = false;
+                if (ChangedAccountViewRight != null) {
+                    ChangedAccountViewRight.Hidden = false;
+                }
+                if (ChangedAccountViewLeft != null) {
+                    ChangedAccountViewLeft.Hidden = false;
+                }
+            });
+        }
+
+        void FullSwitchViewPickedAccount (McAccount account)
+        {
+            if (account.Id == NcApplication.Instance.Account.Id) {
+                CloseFullSwitchView ();
+            } else {
+                SelectedAccountView.Hidden = false;
+                if (ChangedAccountViewRight != null) {
+                    ChangedAccountViewRight.Hidden = false;
+                }
+                if (ChangedAccountViewLeft != null) {
+                    ChangedAccountViewLeft.Hidden = false;
+                }
+                SwitchToAccount (account);
+                FullSwitchView.RemoveFromSuperview ();
+                FullSwitchView.Cleanup ();
+                FullSwitchView = null;
+            }
+        }
+
         void SwitchToChangedAccountView (ChangedAccountView changedView)
         {
             var account = changedView.AccountInfo.Account;
+            SwitchToAccount (account);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
             LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
             LoginHelpers.SetMostRecentAccount (account.Id);
             UIView.Transition (UIApplication.SharedApplication.Delegate.GetWindow (), 0.5f, UIViewAnimationOptions.TransitionFlipFromRight, () => {

@@ -1702,6 +1702,8 @@
     <Compile Include="NachoUI.iOS\Support\SwitchAccountControl.cs" />
     <Compile Include="NachoUI.iOS\Support\NachoNavigationBar.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
+    <Compile Include="NachoUI.iOS\Support\PercentagePressGestureRecognizer.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
