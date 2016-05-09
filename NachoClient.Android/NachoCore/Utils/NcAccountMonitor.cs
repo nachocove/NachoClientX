@@ -126,6 +126,7 @@ namespace NachoCore
 
         void AccountChanged ()
         {
+            ReloadAccounts ();
             if (NcApplication.Instance.Account != null) {
                 ChangeAccount (NcApplication.Instance.Account);
             }
@@ -139,7 +140,9 @@ namespace NachoCore
             if (Account == null || (Account.Id != account.Id)) {
                 Account = account;
                 // this will cause an echo, but we'll ingore it because we've already updated Account
-                NcApplication.Instance.Account = Account;
+                if (NcApplication.Instance.Account.Id != Account.Id) {
+                    NcApplication.Instance.Account = Account;
+                }
                 if (AccountSwitched != null) {
                     AccountSwitched.Invoke (this, null);
                 }

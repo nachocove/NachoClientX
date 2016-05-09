@@ -2788,6 +2788,9 @@
     <BundleResource Include="Resources\thread-arrows.png" />
     <BundleResource Include="Resources\thread-arrows%402x.png" />
     <BundleResource Include="Resources\thread-arrows%403x.png" />
+    <BundleResource Include="Resources\add-account.png" />
+    <BundleResource Include="Resources\add-account%402x.png" />
+    <BundleResource Include="Resources\add-account%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

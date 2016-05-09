@@ -324,6 +324,8 @@ namespace NachoCore.Model
                 NcApplication.Instance.StartClass4Services ();
                 Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
             }
+
+            NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
         }
     }
 }

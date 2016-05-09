@@ -107,6 +107,7 @@ namespace NachoClient.iOS
 
             MoreAccountSwitcher = new SwitchAccountControl ();
             MoreAccountSwitcher.AccountSwitched = SwitchMoreToAccount;
+            MoreAccountSwitcher.ParentViewController = new WeakReference<UIViewController> (MoreNavigationController);
 
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem.Title = "";

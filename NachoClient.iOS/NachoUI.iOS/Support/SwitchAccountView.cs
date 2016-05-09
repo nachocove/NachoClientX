@@ -19,8 +19,10 @@ namespace NachoClient.iOS
         UIView FakeNavigationBar;
         UIView NavigationBarExtension;
         UILabel TitleLabel;
+        AccountActionButton AddButton;
 
         public Action Canceled;
+        public Action AddAccount;
         public Action<McAccount> AccountPicked;
 
         bool _IsCollapsed;
@@ -35,13 +37,13 @@ namespace NachoClient.iOS
         }
 
         List<AccountView> AccountViews;
+        AccountView SelectedAccountView;
 
         int SelectedAccountId;
         int LeftAccountId;
         int RightAccountId;
 
         int ColumnsPerRow = 3;
-        nfloat RowHeight = 64.0f;
 
         UITapGestureRecognizer BackgroundTapRecognizer;
 
@@ -63,10 +65,17 @@ namespace NachoClient.iOS
             NavigationBarExtension.BackgroundColor = A.Color_NachoGreen;
 
             TitleLabel = new UILabel (new CGRect (0.0f, 20.0f, Bounds.Width, 44.0f));
+            TitleLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             TitleLabel.TextAlignment = UITextAlignment.Center;
             TitleLabel.Font = A.Font_AvenirNextDemiBold17;
             TitleLabel.TextColor = UIColor.White;
             TitleLabel.Text = "Switch Accounts";
+
+            AddButton = new AccountActionButton (new CGRect (0.0f, 0.0f, 40.0f, 40.0f));
+            AddButton.ImageView.Image = UIImage.FromBundle ("add-account").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
+            AddButton.ImageView.TintColor = A.Color_NachoBlue;
+            AddButton.TitleLabel.Text = "Add Account";
+            AddButton.Action = HandleAddAccount;
 
             BackgroundTapRecognizer = new UITapGestureRecognizer (TapBackground);
             BackgroundView.AddGestureRecognizer (BackgroundTapRecognizer);
@@ -75,6 +84,7 @@ namespace NachoClient.iOS
             AddSubview (FakeNavigationBar);
             AddSubview (NavigationBarExtension);
             AddSubview (TitleLabel);
+            AddSubview (AddButton);
 
             AccountViews = new List<AccountView> ();
 
@@ -85,6 +95,13 @@ namespace NachoClient.iOS
             AccountPicked (accountView.AccountInfo.Account);
         }
 
+        void HandleAddAccount ()
+        {
+            if (AddAccount != null) {
+                AddAccount ();
+            }
+        }
+
         public void Cleanup ()
         {
             BackgroundView.RemoveGestureRecognizer (BackgroundTapRecognizer);
@@ -92,7 +109,10 @@ namespace NachoClient.iOS
             foreach (var accountView in AccountViews) {
                 accountView.Cleanup ();
             }
+            SelectedAccountView = null;
             AccountViews.Clear ();
+            AddButton.Action = null;
+            AddButton.Cleanup ();
         }
 
         public void TapBackground ()
@@ -105,19 +125,14 @@ namespace NachoClient.iOS
         public void PrepareForInteractivePresentation ()
         {
             UpdateAccountViews ();
+            OrderSubviews ();
+            DisableUserInteraction ();
             IsCollapsed = true;
             LayoutIfNeeded ();
-            UIView.BeginAnimations (null, IntPtr.Zero);
-            UIView.SetAnimationDuration (InteractiveAnimationDuration);
-            UIView.SetAnimationCurve (UIViewAnimationCurve.EaseInOut);
-            CATransaction.Begin ();
-            CATransaction.AnimationDuration = InteractiveAnimationDuration;
-            CATransaction.AnimationTimingFunction = CAMediaTimingFunction.FromName(CAMediaTimingFunction.EaseInEaseOut);
-            CATransaction.DisableActions = false;
-            IsCollapsed = false;
-            LayoutIfNeeded ();
-            CATransaction.Commit ();
-            UIView.CommitAnimations ();
+            UIView.Animate (InteractiveAnimationDuration, 0.0f, UIViewAnimationOptions.CurveEaseInOut, () => {
+                IsCollapsed = false;
+                LayoutIfNeeded ();
+            }, null);
             Layer.Speed = 0.0f;
             Layer.TimeOffset = 0.0;
         }
@@ -137,8 +152,15 @@ namespace NachoClient.iOS
             foreach (var view in AccountViews) {
                 reusableViews.Enqueue (view);
             }
+            var accounts = new List<NcAccountMonitor.AccountInfo> ();
             AccountViews.Clear ();
-            foreach (var accountInfo in NcAccountMonitor.Instance.Accounts) {
+            if (NcAccountMonitor.Instance.Accounts.Count > 1) {
+                accounts.Add (new NcAccountMonitor.AccountInfo () {
+                    Account = McAccount.GetUnifiedAccount ()
+                });
+            }
+            accounts.AddRange (NcAccountMonitor.Instance.Accounts);
+            foreach (var accountInfo in accounts) {
                 if (reusableViews.Count > 0) {
                     accountView = reusableViews.Dequeue ();
                 } else {
@@ -147,6 +169,10 @@ namespace NachoClient.iOS
                     AddSubview (accountView);
                     AccountViews.Add (accountView);
                 }
+                if (accountInfo.Account.Id == SelectedAccountId) {
+                    SelectedAccountView = accountView;
+                }
+                accountView.SetHighlighted (false);
                 accountView.SetAccountInfo (accountInfo);
             }
             while (reusableViews.Count > 0){
@@ -158,10 +184,33 @@ namespace NachoClient.iOS
 
         public void AnimateClosed (Action completionHandler)
         {
+            DisableUserInteraction ();
             UIView.Animate (0.25f, 0.0f, UIViewAnimationOptions.CurveEaseIn, () => {
                 IsCollapsed = true;
                 LayoutIfNeeded ();
             }, completionHandler);
+        }
+
+        public void Close ()
+        {
+            IsCollapsed = true;
+            LayoutIfNeeded ();
+        }
+
+        void EnableUserInteraction ()
+        {
+            foreach (var view in AccountViews) {
+                view.UserInteractionEnabled = true;
+            }
+            AddButton.UserInteractionEnabled = true;
+        }
+
+        void DisableUserInteraction ()
+        {
+            foreach (var view in AccountViews) {
+                view.UserInteractionEnabled = false;
+            }
+            AddButton.UserInteractionEnabled = false;
         }
 
         public void SetPresentationPercentage (double percentage)
@@ -173,6 +222,7 @@ namespace NachoClient.iOS
                 // doesn't always result in a completed animation.  Setting the layer to run at normal speed
                 // seems to help the animation system run all the way to completion.
                 Layer.Speed = 1.0f;
+                EnableUserInteraction ();
             }
         }
 
@@ -184,25 +234,82 @@ namespace NachoClient.iOS
             TitleLabel.Transform = CGAffineTransform.MakeIdentity ();
             int itemCount = AccountViews.Count;
             int rows = itemCount / ColumnsPerRow + ((itemCount % ColumnsPerRow) > 0 ? 1 : 0);
-            NavigationBarExtension.Frame = new CGRect (0.0f, FakeNavigationBar.Frame.Y + FakeNavigationBar.Frame.Height, Bounds.Width, rows * RowHeight);
             int row = 0;
             int col = 0;
+            nfloat expandedAccountViewHeight = 40.0f + A.Font_AvenirNextRegular14.RoundedLineHeight (1.0f) * 1.5f;
+            nfloat rowSpacing = 30.0f;
+            nfloat rowHeight = expandedAccountViewHeight + rowSpacing;
             nfloat colWidth = Bounds.Width / (ColumnsPerRow + 1);
-            var center0 = new CGPoint (colWidth, NavigationBarExtension.Frame.Y + RowHeight / 2.0f);
+            var center0 = new CGPoint (colWidth, NavigationBarExtension.Frame.Y + rowSpacing + expandedAccountViewHeight / 2.0f);
+            NavigationBarExtension.Frame = new CGRect (0.0f, FakeNavigationBar.Frame.Y + FakeNavigationBar.Frame.Height, Bounds.Width, rowSpacing + rows * rowHeight);
             foreach (var accountView in AccountViews) {
                 accountView.Alpha = 1.0f;
                 accountView.Transform = CGAffineTransform.MakeIdentity ();
                 accountView.AccountImageView.Alpha = 1.0f;
                 accountView.UnreadIndicator.Alpha = 1.0f;
                 accountView.UnreadOnLeft = false;
-                accountView.Frame = new CGRect (0.0f, 0.0f, 40.0f, 40.0f);
-                accountView.Center = new CGPoint (center0.X + col * colWidth, center0.Y + row * RowHeight);
+                accountView.ImageSize = 40.0f;
+                accountView.NameLabel.Alpha = 1.0f;
+                accountView.RecentUnreadIndicator.Alpha = 0.0f;
+                accountView.UnreadIndicator.Alpha = 1.0f;
+                accountView.HighlightView.Alpha = 1.0f;
+                DelayLabelOpacityAnimation (accountView.NameLabel.Layer);
+                accountView.Frame = new CGRect (0.0f, 0.0f, colWidth, expandedAccountViewHeight);
+                accountView.Center = new CGPoint (center0.X + col * colWidth, center0.Y + row * rowHeight);
                 accountView.LayoutIfNeeded ();
                 col += 1;
                 if (col == ColumnsPerRow) {
                     row += 1;
                     col = 0;
                 }
+            }
+            AddButton.ImageView.Alpha = 1.0f;
+            AddButton.TitleLabel.Alpha = 1.0f;
+            DelayLabelOpacityAnimation (AddButton.TitleLabel.Layer);
+            AddButton.Frame = new CGRect (0.0f, 0.0f, colWidth, expandedAccountViewHeight);
+            AddButton.Center = new CGPoint (center0.X + col * colWidth, center0.Y + row * rowHeight);
+            AddButton.LayoutIfNeeded ();
+        }
+
+        static void DelayLabelOpacityAnimation (CALayer layer)
+        {
+            var animation = layer.AnimationForKey ("opacity");
+            if (animation != null) {
+                var adjustedAnimation = CAKeyFrameAnimation.FromKeyPath ("opacity");
+                adjustedAnimation.Duration = animation.Duration;
+                adjustedAnimation.Values = new NSObject[] {
+                    new NSNumber(0.0f),
+                    new NSNumber(0.0f),
+                    new NSNumber(1.0f),
+                };
+                adjustedAnimation.KeyTimes = new NSNumber[] {
+                    new NSNumber (0.0f),
+                    new NSNumber (0.5f),
+                    new NSNumber (1.0f)
+                };
+                layer.RemoveAnimation ("opacity");
+                layer.AddAnimation (adjustedAnimation, "opacity");
+            }
+        }
+
+        static void SpeedLabelOpacityAnimation (CALayer layer)
+        {
+            var animation = layer.AnimationForKey ("opacity");
+            if (animation != null) {
+                var adjustedAnimation = CAKeyFrameAnimation.FromKeyPath ("opacity");
+                adjustedAnimation.Duration = animation.Duration;
+                adjustedAnimation.Values = new NSObject[] {
+                    new NSNumber(1.0f),
+                    new NSNumber(0.0f),
+                    new NSNumber(0.0f),
+                };
+                adjustedAnimation.KeyTimes = new NSNumber[] {
+                    new NSNumber (0.0f),
+                    new NSNumber (0.5f),
+                    new NSNumber (1.0f)
+                };
+                layer.RemoveAnimation ("opacity");
+                layer.AddAnimation (adjustedAnimation, "opacity");
             }
         }
 
@@ -214,30 +321,44 @@ namespace NachoClient.iOS
             TitleLabel.Transform = CGAffineTransform.MakeTranslation (0.0f, -44.0f);
             NavigationBarExtension.Frame = new CGRect (0.0f, FakeNavigationBar.Frame.Y + FakeNavigationBar.Frame.Height, Bounds.Width, 0.0f);
             foreach (var accountView in AccountViews) {
-                accountView.Frame = new CGRect(0.0f, 0.0f, 40.0f, 40.0f);
-                accountView.Center = SelectedAccountCenter;
+                accountView.ImageSize = 40.0f;
                 accountView.UnreadOnLeft = false;
+                accountView.UnreadIndicator.Alpha = 0.0f;
+                accountView.HighlightView.Alpha = 0.0f;
                 if (accountView.AccountInfo.Account.Id == SelectedAccountId) {
                     accountView.Alpha = 1.0f;
-                    accountView.UnreadIndicator.Alpha = 0.0f;
+                    accountView.RecentUnreadIndicator.Alpha = 0.0f;
+                    accountView.Transform = CGAffineTransform.MakeIdentity ();
                 } else if (accountView.AccountInfo.Account.Id == LeftAccountId) {
-                    accountView.Frame = new CGRect (0.0f, 0.0f, 30.0f, 30.0f);
-                    accountView.Center = SelectedAccountCenter;
-                    accountView.Transform = CGAffineTransform.MakeTranslation (-accountView.Frame.Width, 0.0f);
+                    accountView.ImageSize = 30.0f;
+                    accountView.RecentUnreadIndicator.Alpha = 1.0f;
+                    accountView.Transform = CGAffineTransform.MakeTranslation (-accountView.ImageSize, 0.0f);
                     accountView.Alpha = 1.0f;
                     accountView.AccountImageView.Alpha = 0.5f;
                     accountView.UnreadOnLeft = true;
                 } else if (accountView.AccountInfo.Account.Id == RightAccountId) {
-                    accountView.Frame = new CGRect (0.0f, 0.0f, 30.0f, 30.0f);
-                    accountView.Center = SelectedAccountCenter;
-                    accountView.Transform = CGAffineTransform.MakeTranslation (accountView.Frame.Width, 0.0f);
+                    accountView.ImageSize = 30.0f;
+                    accountView.RecentUnreadIndicator.Alpha = 1.0f;
+                    accountView.Transform = CGAffineTransform.MakeTranslation (accountView.ImageSize, 0.0f);
                     accountView.Alpha = 1.0f;
                     accountView.AccountImageView.Alpha = 0.5f;
                 } else {
                     accountView.Alpha = 0.0f;
+                    accountView.RecentUnreadIndicator.Alpha = 0.0f;
+                    accountView.Transform = CGAffineTransform.MakeIdentity ();
                 }
+                accountView.NameLabel.Alpha = 0.0f;
+                SpeedLabelOpacityAnimation (accountView.NameLabel.Layer);
+                accountView.Frame = new CGRect(0.0f, 0.0f, accountView.ImageSize, accountView.ImageSize);
+                accountView.Center = SelectedAccountCenter;
                 accountView.LayoutIfNeeded ();
             }
+            AddButton.ImageView.Alpha = 0.0f;
+            AddButton.TitleLabel.Alpha = 0.0f;
+            SpeedLabelOpacityAnimation (AddButton.TitleLabel.Layer);
+            AddButton.Frame = new CGRect (0.0f, 0.0f, 40.0f, 40.0f);
+            AddButton.Center = SelectedAccountCenter;
+            AddButton.LayoutIfNeeded ();
         }
 
         public override void LayoutSubviews ()
@@ -252,54 +373,85 @@ namespace NachoClient.iOS
 
         void OrderSubviews ()
         {
-            AccountView selectedView = null;
-            foreach (var accountView in AccountViews) {
-                if (accountView.AccountInfo.Account.Id == SelectedAccountId) {
-                    selectedView = accountView;
-                    break;
-                }
-            }
-            if (selectedView != null) {
-                AddSubview (selectedView);
+            if (SelectedAccountView != null) {
+                AddSubview (SelectedAccountView);
             }
         }
 
-        private class AccountView : UIView
+        void HighlightView (AccountView view)
+        {
+            foreach (var accountView in AccountViews) {
+                if (view == accountView) {
+                    accountView.SetHighlighted (true);
+                    accountView.SetPressed (true);
+                } else {
+                    accountView.SetHighlighted (false);
+                    accountView.SetPressed (false);
+                }
+            }
+        }
+
+        AccountView TouchedAccountView (NSSet touches, UIEvent evt)
+        {
+            var touch = touches.AnyObject as UITouch;
+            var location = touch.LocationInView (this);
+            AccountView touchtedView = null;
+            foreach (var view in AccountViews) {
+                if (view.PointInside (view.ConvertPointFromView (location, this), evt)) {
+                    touchtedView = view;
+                    break;
+                }
+            }
+            return touchtedView;
+        }
+
+        public override void TouchesBegan (NSSet touches, UIEvent evt)
+        {
+            var touchedView = TouchedAccountView (touches, evt);
+            HighlightView (touchedView);
+        }
+
+        public override void TouchesMoved (NSSet touches, UIEvent evt)
+        {
+            var touchedView = TouchedAccountView (touches, evt);
+            HighlightView (touchedView);
+        }
+
+        public override void TouchesEnded (NSSet touches, UIEvent evt)
+        {
+            var touchedView = TouchedAccountView (touches, evt);
+            if (touchedView != null) {
+                SwitchToAccountView (touchedView);
+            }
+        }
+
+        private class AccountActionButton : UIView
         {
 
-            public readonly UIImageView AccountImageView;
-            public readonly UILabel UnreadIndicator;
-            public bool UnreadOnLeft;
-            public NcAccountMonitor.AccountInfo AccountInfo { get; private set; }
+            public readonly UIImageView ImageView;
+            public readonly UILabel TitleLabel;
 
-            public nfloat IndicatorSize = 14.0f;
-            public UIOffset IndicatorOffset = new UIOffset (-3.0f, -3.0f);
+            public Action Action;
 
             PressGestureRecognizer PressRecognizer;
-            public WeakReference<SwitchAccountView> SwitchView;
 
-            public AccountView (CGRect frame) : base (frame)
+            nfloat ImageSize = 40.0f;
+
+            public AccountActionButton (CGRect frame) : base (frame)
             {
-                AccountImageView = new UIImageView (Bounds);
-                AccountImageView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
-                AccountImageView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
-                AccountImageView.ClipsToBounds = true;
+                ImageView = new UIImageView (new CGRect(0.0f, 0.0f, ImageSize, ImageSize));
 
-                UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
-                UnreadIndicator.BackgroundColor = A.Color_NachoGreen;
-                UnreadIndicator.ClipsToBounds = true;
-                UnreadIndicator.Layer.BorderWidth = 1.0f;
-                UnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
-                UnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (9.0f);
-                UnreadIndicator.TextAlignment = UITextAlignment.Center;
-                UnreadIndicator.TextColor = A.Color_NachoBlue;
-                UnreadIndicator.Layer.CornerRadius = IndicatorSize / 2.0f;
+                TitleLabel = new UILabel ();
+                TitleLabel.Font = A.Font_AvenirNextRegular14;
+                TitleLabel.TextColor = UIColor.White;
+                TitleLabel.TextAlignment = UITextAlignment.Center;
+                TitleLabel.LineBreakMode = UILineBreakMode.Clip;
 
                 PressRecognizer = new PressGestureRecognizer (Press);
                 AddGestureRecognizer (PressRecognizer);
 
-                AddSubview (AccountImageView);
-                AddSubview (UnreadIndicator);
+                AddSubview (ImageView);
+                AddSubview (TitleLabel);
             }
 
             public void Cleanup ()
@@ -311,18 +463,126 @@ namespace NachoClient.iOS
             void Press ()
             {
                 if (PressRecognizer.State == UIGestureRecognizerState.Began) {
-                    AccountImageView.Alpha = 0.6f;
+                    SetPressed (true);
                 } else if (PressRecognizer.State == UIGestureRecognizerState.Ended) {
-                    SwitchAccountView switcher;
-                    if (SwitchView.TryGetTarget (out switcher)) {
-                        switcher.SwitchToAccountView (this);
-                    }
-                    AccountImageView.Alpha = 1.0f;
+                    Action ();
+                    SetPressed (false);
                 }else if (PressRecognizer.State == UIGestureRecognizerState.Changed) {
-                    AccountImageView.Alpha = PressRecognizer.IsInsideView ? 0.6f : 1.0f;
+                    SetPressed (PressRecognizer.IsInsideView);
                 } else if (PressRecognizer.State == UIGestureRecognizerState.Failed) {
-                    AccountImageView.Alpha = 1.0f;
+                    SetPressed (false);
                 } else if (PressRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                    SetPressed (false);
+                }
+            }
+
+            public void SetPressed (bool pressed)
+            {
+                if (pressed) {
+                    TitleLabel.Alpha = 0.5f;
+                    ImageView.Alpha = 0.5f;
+                } else {
+                    TitleLabel.Alpha = 1.0f;
+                    ImageView.Alpha = 1.0f;
+                }
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                ImageView.Frame = new CGRect ((Bounds.Width - ImageSize) / 2.0f, 0.0f, ImageSize, ImageSize);
+
+                var titleHeight = TitleLabel.Font.RoundedLineHeight (1.0f) * 1.5f;
+                var titleSize = TitleLabel.SizeThatFits (new CGSize (0.0f, 0.0f));
+                TitleLabel.Frame = new CGRect ((Bounds.Width - titleSize.Width) / 2.0f, Bounds.Height - titleHeight, titleSize.Width, titleHeight);
+            }
+        }
+
+        private class AccountView : UIView
+        {
+
+            public readonly UIImageView AccountImageView;
+            public readonly UILabel RecentUnreadIndicator;
+            public readonly UILabel UnreadIndicator;
+            public readonly UILabel NameLabel;
+            public readonly UIView HighlightView;
+            public bool UnreadOnLeft;
+            public NcAccountMonitor.AccountInfo AccountInfo { get; private set; }
+
+            public nfloat ImageSize = 40.0f;
+            public nfloat RecentIndicatorSize = 14.0f;
+            public nfloat IndicatorSize = 18.0f;
+            public UIOffset IndicatorOffset = new UIOffset (-6.0f, -6.0f);
+            public UIOffset RecentIndicatorOffset = new UIOffset (-3.0f, -3.0f);
+
+            public WeakReference<SwitchAccountView> SwitchView;
+
+            public AccountView (CGRect frame) : base (frame)
+            {
+                AccountImageView = new UIImageView (new CGRect(0.0f, 0.0f, ImageSize, ImageSize));
+                AccountImageView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
+                AccountImageView.ClipsToBounds = true;
+
+                HighlightView = new UIView (new CGRect(0.0f, 0.0f, ImageSize + 3.0f, ImageSize + 3.0f));
+                HighlightView.BackgroundColor = A.Color_NachoGreen;
+                HighlightView.Layer.BorderWidth = 2.0f;
+                HighlightView.Layer.BorderColor = A.Color_NachoBlue.CGColor;
+                HighlightView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
+                HighlightView.Hidden = true;
+
+                UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
+                UnreadIndicator.BackgroundColor = A.Color_NachoGreen;
+                UnreadIndicator.ClipsToBounds = true;
+                UnreadIndicator.Layer.BorderWidth = 1.0f;
+                UnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
+                UnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (12.0f);
+                UnreadIndicator.TextAlignment = UITextAlignment.Center;
+                UnreadIndicator.TextColor = A.Color_NachoBlue;
+                UnreadIndicator.Layer.CornerRadius = IndicatorSize / 2.0f;
+
+                RecentUnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, RecentIndicatorSize, RecentIndicatorSize));
+                RecentUnreadIndicator.BackgroundColor = A.Color_NachoGreen;
+                RecentUnreadIndicator.ClipsToBounds = true;
+                RecentUnreadIndicator.Layer.BorderWidth = 1.0f;
+                RecentUnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
+                RecentUnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (9.0f);
+                RecentUnreadIndicator.TextAlignment = UITextAlignment.Center;
+                RecentUnreadIndicator.TextColor = A.Color_NachoBlue;
+                RecentUnreadIndicator.Layer.CornerRadius = RecentIndicatorSize / 2.0f;
+
+                NameLabel = new UILabel ();
+                NameLabel.Font = A.Font_AvenirNextRegular14;
+                NameLabel.TextColor = UIColor.White;
+                NameLabel.TextAlignment = UITextAlignment.Center;
+                NameLabel.LineBreakMode = UILineBreakMode.Clip;
+
+                AddSubview (NameLabel);
+                AddSubview (HighlightView);
+                AddSubview (AccountImageView);
+                AddSubview (UnreadIndicator);
+                AddSubview (RecentUnreadIndicator);
+            }
+
+            public void Cleanup ()
+            {
+            }
+
+            public void SetHighlighted (bool highlighted)
+            {
+                if (highlighted) {
+                    HighlightView.Hidden = false;
+                } else {
+                    HighlightView.Hidden = true;
+                }
+            }
+
+            public void SetPressed (bool pressed)
+            {
+                if (pressed) {
+                    NameLabel.Alpha = 0.5f;
+                    AccountImageView.Alpha = 0.5f;
+                } else {
+                    NameLabel.Alpha = 1.0f;
                     AccountImageView.Alpha = 1.0f;
                 }
             }
@@ -331,14 +591,21 @@ namespace NachoClient.iOS
             {
                 AccountInfo = info;
                 AccountImageView.Image = Util.ImageForAccount (info.Account);
-                UnreadIndicator.Text = info.UnreadCount.ToString ();
+                UnreadIndicator.Text = Pretty.LimitedBadgeCount (info.UnreadCount);
                 UnreadIndicator.Hidden = info.UnreadCount == 0;
+                RecentUnreadIndicator.Text = Pretty.LimitedBadgeCount (info.RecentUnreadCount);
+                RecentUnreadIndicator.Hidden = info.RecentUnreadCount == 0;
+                NameLabel.Text = AccountInfo.Account.DisplayName;
                 SetNeedsLayout ();
             }
 
             public override void LayoutSubviews ()
             {
                 base.LayoutSubviews ();
+
+                AccountImageView.Frame = new CGRect ((Bounds.Width - ImageSize) / 2.0f, 0.0f, ImageSize, ImageSize);
+                var hightlightSize = HighlightView.Layer.BorderWidth + 1.0f;
+                HighlightView.Frame = AccountImageView.Frame.Inset (-hightlightSize, -hightlightSize);
                 var animations = Layer.AnimationKeys;
                 if (animations != null && animations.Length > 0) {
                     var animation = Layer.AnimationForKey (animations [0]);
@@ -349,16 +616,38 @@ namespace NachoClient.iOS
                     AccountImageView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
                     cornerAnimation.To = new NSNumber (AccountImageView.Layer.CornerRadius);
                     AccountImageView.Layer.AddAnimation (cornerAnimation, "cornerRadius");
+
+                    cornerAnimation = CABasicAnimation.FromKeyPath ("cornerRadius");
+                    cornerAnimation.Duration = animation.Duration;
+                    cornerAnimation.TimingFunction = animation.TimingFunction;
+                    cornerAnimation.From = new NSNumber (HighlightView.Layer.CornerRadius);
+                    HighlightView.Layer.CornerRadius = HighlightView.Frame.Width / 2.0f;
+                    cornerAnimation.To = new NSNumber (HighlightView.Layer.CornerRadius);
+                    HighlightView.Layer.AddAnimation (cornerAnimation, "cornerRadius");
                 } else {
                     AccountImageView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
+                    HighlightView.Layer.CornerRadius = HighlightView.Frame.Width / 2.0f;
                 }
+
                 var size = UnreadIndicator.SizeThatFits (new CGSize (IndicatorSize, IndicatorSize));
                 var frame = UnreadIndicator.Frame;
-                frame.Width = (nfloat)Math.Max (IndicatorSize, size.Width);
-                frame.X = UnreadOnLeft ? IndicatorOffset.Horizontal : Bounds.Width - IndicatorOffset.Horizontal - IndicatorSize;
+                frame.Width = (nfloat)Math.Max (IndicatorSize, size.Width + IndicatorSize / 3.0f);
+                frame.X = UnreadOnLeft ? AccountImageView.Frame.X + IndicatorOffset.Horizontal : AccountImageView.Frame.X + AccountImageView.Frame.Width - IndicatorOffset.Horizontal - frame.Width;
                 frame.Y = IndicatorOffset.Vertical;
                 frame.Height = IndicatorSize;
                 UnreadIndicator.Frame = frame;
+
+                size = RecentUnreadIndicator.SizeThatFits (new CGSize (RecentIndicatorSize, RecentIndicatorSize));
+                frame = RecentUnreadIndicator.Frame;
+                frame.Width = (nfloat)Math.Max (RecentIndicatorSize, size.Width + IndicatorSize / 3.0f);
+                frame.X = UnreadOnLeft ? AccountImageView.Frame.X + RecentIndicatorOffset.Horizontal : AccountImageView.Frame.X + AccountImageView.Frame.Width - RecentIndicatorOffset.Horizontal - frame.Width;
+                frame.Y = RecentIndicatorOffset.Vertical;
+                frame.Height = RecentIndicatorSize;
+                RecentUnreadIndicator.Frame = frame;
+
+                var nameHeight = NameLabel.Font.RoundedLineHeight (1.0f) * 1.5f;
+                var nameSize = NameLabel.SizeThatFits (new CGSize (0.0f, 0.0f));
+                NameLabel.Frame = new CGRect ((Bounds.Width - nameSize.Width) / 2.0f, Bounds.Height - nameHeight, nameSize.Width, nameHeight);
             }
 
         }

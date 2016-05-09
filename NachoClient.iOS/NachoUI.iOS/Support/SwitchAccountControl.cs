@@ -16,27 +16,24 @@ namespace NachoClient.iOS
     public class SwitchAccountControl : UIView
     {
 
+        #region Properties
+
         UIView BackgroundView;
         UIImageView SelectedAccountView;
         ChangedAccountView ChangedAccountViewRight;
         ChangedAccountView ChangedAccountViewLeft;
         nfloat BorderWidth = 2.0f;
         public Action<McAccount> AccountSwitched;
-        SwitchAccountView FullSwitchView;
+        public WeakReference<UIViewController> ParentViewController;
 
         PercentagePressGestureRecognizer SelectedAccountPressRecognizer;
 
-        enum ControlState {
-            Collapsed,
-            Expanded,
-            Animating
-        }
+        #endregion
 
-        ControlState State;
+        #region Constructors
 
         public SwitchAccountControl () : base (new CGRect(0.0f, 0.0f, 44.0f, 44.0f))
         {
-            State = ControlState.Collapsed;
 
             BackgroundView = new UIView (Bounds);
             BackgroundView.Layer.CornerRadius = Bounds.Width / 2.0f;
@@ -50,9 +47,10 @@ namespace NachoClient.iOS
             AddSubview (SelectedAccountView);
 
             SelectedAccountPressRecognizer = new PercentagePressGestureRecognizer (PressSelectedAccount);
+            SelectedAccountPressRecognizer.CancelsTouchesInView = false;
             SelectedAccountPressRecognizer.MaximumOffset = new UIOffset (0.0f, 22.0f);
             SelectedAccountPressRecognizer.MinimumTime = 0.05;
-            SelectedAccountPressRecognizer.MaximumTime = 2.55;
+            SelectedAccountPressRecognizer.MaximumTime = 0.3;
             BackgroundView.AddGestureRecognizer (SelectedAccountPressRecognizer);
 
             Update ();
@@ -61,23 +59,9 @@ namespace NachoClient.iOS
             NcAccountMonitor.Instance.AccountSwitched += HandleAccountSwitched;
         }
 
-        public override void TouchesMoved (NSSet touches, UIEvent evt)
-        {
-            if (FullSwitchView != null) {
-                FullSwitchView.TouchesMoved (touches, evt);
-            } else {
-                base.TouchesMoved (touches, evt);
-            }
-        }
+        #endregion
 
-        public override void TouchesEnded (NSSet touches, UIEvent evt)
-        {
-            if (FullSwitchView != null) {
-                FullSwitchView.TouchesEnded (touches, evt);
-            } else {
-                base.TouchesEnded (touches, evt);
-            }
-        }
+        #region User Actions
 
         void PressSelectedAccount ()
         {
@@ -85,33 +69,18 @@ namespace NachoClient.iOS
                 SelectedAccountView.Alpha = 0.6f;
             } else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Ended) {
                 SelectedAccountView.Alpha = 1.0f;
-                FullSwitchView.SetPresentationPercentage (1.0);
+                if (IsFullSwitchViewAttached) {
+                    SwitchController.SwitchAccountView.SetPresentationPercentage (1.0);
+                }
             }else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Changed) {
-                if (FullSwitchView == null) {
+                if (SwitchController == null) {
                     if (SelectedAccountPressRecognizer.PercentComplete > 0.0) {
-                        FullSwitchView = new SwitchAccountView (Window.Bounds);
-                        FullSwitchView.Canceled = CloseFullSwitchView;
-                        FullSwitchView.AccountPicked = FullSwitchViewPickedAccount;
-                        FullSwitchView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
-                        Window.AddSubview (FullSwitchView);
-                        FullSwitchView.SetVisibleAccounts (
-                            FullSwitchView.ConvertPointFromView(SelectedAccountView.Center, SelectedAccountView.Superview),
-                            NcApplication.Instance.Account.Id,
-                            ChangedAccountViewLeft != null ? ChangedAccountViewLeft.AccountInfo.Account.Id : 0,
-                            ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
-                        );
-                        FullSwitchView.PrepareForInteractivePresentation ();
-                        FullSwitchView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
-                        SelectedAccountView.Hidden = true;
-                        if (ChangedAccountViewRight != null) {
-                            ChangedAccountViewRight.Hidden = true;
-                        }
-                        if (ChangedAccountViewLeft != null) {
-                            ChangedAccountViewLeft.Hidden = true;
-                        }
+                        SetupFullSwitchView ();
                     }
                 } else {
-                    FullSwitchView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
+                    if (IsFullSwitchViewAttached) {
+                        SwitchController.SwitchAccountView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
+                    }
                 }
             } else if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Failed) {
                 SelectedAccountView.Alpha = 1.0f;
@@ -120,32 +89,93 @@ namespace NachoClient.iOS
             }
         }
 
-        void CloseFullSwitchView ()
+        #endregion
+
+        #region Handling Full Switch View Events
+
+        SwitchAccountViewController SwitchController;
+        bool IsFullSwitchViewAttached;
+
+        void SetupFullSwitchView ()
         {
+            IsFullSwitchViewAttached = false;
+            SwitchController = new SwitchAccountViewController () { IsLongLived = true };
+            SwitchController.ModalPresentationStyle = UIModalPresentationStyle.OverFullScreen;
+            SwitchController.CreatedAccount = SwitchControllerCreatedAccount;
+            UIViewController parent;
+            if (ParentViewController.TryGetTarget (out parent)) {
+                parent.PresentViewController (SwitchController, false, HandleFullSwitchViewAttached);
+                SwitchController.SwitchAccountView.Canceled = CancelFullSwitchView;
+                SwitchController.SwitchAccountView.AccountPicked = FullSwitchViewPickedAccount;
+                SwitchController.SwitchAccountView.SetVisibleAccounts (
+                    SwitchController.SwitchAccountView.ConvertPointFromView(SelectedAccountView.Center, SelectedAccountView.Superview),
+                    NcApplication.Instance.Account.Id,
+                    ChangedAccountViewLeft != null ? ChangedAccountViewLeft.AccountInfo.Account.Id : 0,
+                    ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
+                );
+                SwitchController.SwitchAccountView.Close ();
+            }
+        }
+
+        void HandleFullSwitchViewAttached ()
+        {
+            SwitchController.SwitchAccountView.PrepareForInteractivePresentation ();
+            if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Changed) {
+                SwitchController.SwitchAccountView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
+            } else {
+                SwitchController.SwitchAccountView.SetPresentationPercentage (1.0);
+            }
+            SelectedAccountView.Hidden = true;
             if (ChangedAccountViewRight != null) {
                 ChangedAccountViewRight.Hidden = true;
             }
             if (ChangedAccountViewLeft != null) {
                 ChangedAccountViewLeft.Hidden = true;
             }
-            FullSwitchView.SetVisibleAccounts (
-                FullSwitchView.ConvertPointFromView(SelectedAccountView.Center, SelectedAccountView.Superview),
-                NcApplication.Instance.Account.Id,
-                ChangedAccountViewLeft != null ? ChangedAccountViewLeft.AccountInfo.Account.Id : 0,
-                ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
-            );
-            FullSwitchView.AnimateClosed (() => {
-                FullSwitchView.RemoveFromSuperview ();
-                FullSwitchView.Cleanup ();
-                FullSwitchView = null;
-                SelectedAccountView.Hidden = false;
-                if (ChangedAccountViewRight != null) {
-                    ChangedAccountViewRight.Hidden = false;
-                }
-                if (ChangedAccountViewLeft != null) {
-                    ChangedAccountViewLeft.Hidden = false;
-                }
+            IsFullSwitchViewAttached = true;
+        }
+
+        void SwitchControllerCreatedAccount (McAccount account)
+        {
+            SelectedAccountView.Hidden = false;
+            if (ChangedAccountViewRight != null) {
+                ChangedAccountViewRight.Hidden = false;
+            }
+            if (ChangedAccountViewLeft != null) {
+                ChangedAccountViewLeft.Hidden = false;
+            }
+            SwitchController.SwitchAccountView.Close ();
+            SwitchToAccount (account, animated: false);
+            IsFullSwitchViewAttached = false;
+            SwitchController.DismissViewController (true, () => {
+                SwitchController.DismissViewController(false, () => {
+                    SwitchController.Cleanup ();
+                    SwitchController = null;
+                });
             });
+        }
+
+        public override void TouchesMoved (NSSet touches, UIEvent evt)
+        {
+            if (SwitchController != null) {
+                SwitchController.SwitchAccountView.TouchesMoved (touches, evt);
+            } else {
+                base.TouchesMoved (touches, evt);
+            }
+        }
+
+        public override void TouchesEnded (NSSet touches, UIEvent evt)
+        {
+            if (SwitchController != null) {
+                SwitchController.SwitchAccountView.TouchesEnded (touches, evt);
+            } else {
+                base.TouchesEnded (touches, evt);
+            }
+        }
+
+        void CancelFullSwitchView ()
+        {
+            CloseFullSwitchView ();
         }
 
         void FullSwitchViewPickedAccount (McAccount account)
@@ -161,39 +191,17 @@ namespace NachoClient.iOS
                     ChangedAccountViewLeft.Hidden = false;
                 }
                 SwitchToAccount (account);
-                FullSwitchView.RemoveFromSuperview ();
-                FullSwitchView.Cleanup ();
-                FullSwitchView = null;
+                IsFullSwitchViewAttached = false;
+                SwitchController.DismissViewController (false, () => {
+                    SwitchController.Cleanup ();
+                    SwitchController = null;
+                });
             }
         }
 
-        void SwitchToChangedAccountView (ChangedAccountView changedView)
-        {
-            var account = changedView.AccountInfo.Account;
-            SwitchToAccount (account);
-        }
+        #endregion
 
-        void SwitchToAccount (McAccount account)
-        {
-            LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
-            LoginHelpers.SetMostRecentAccount (account.Id);
-            UIView.Transition (UIApplication.SharedApplication.Delegate.GetWindow (), 0.5f, UIViewAnimationOptions.TransitionFlipFromRight, () => {
-                NcAccountMonitor.Instance.ChangeAccount (account);
-                if (AccountSwitched != null) {
-                    AccountSwitched (account);
-                }
-            }, null);
-        }
-
-        void HandleAccountSwitched (object sender, EventArgs e)
-        {
-            Update ();
-        }
-
-        void HandleAccountSetChanged (object sender, EventArgs e)
-        {
-            Update ();
-        }
+        #region View Configuration
 
         void Update ()
         {
@@ -246,11 +254,65 @@ namespace NachoClient.iOS
                     ChangedAccountViewLeft = null;
                 }
             }
+        }
 
+        #endregion
 
-            if (State == ControlState.Collapsed) {
-            } else if (State == ControlState.Expanded) {
+        #region Private Helpers
+
+        void CloseFullSwitchView (Action completionHandler = null)
+        {
+            if (ChangedAccountViewRight != null) {
+                ChangedAccountViewRight.Hidden = true;
+            }
+            if (ChangedAccountViewLeft != null) {
+                ChangedAccountViewLeft.Hidden = true;
+            }
+            SwitchController.SwitchAccountView.SetVisibleAccounts (
+                SwitchController.SwitchAccountView.ConvertPointFromView(SelectedAccountView.Center, SelectedAccountView.Superview),
+                NcApplication.Instance.Account.Id,
+                ChangedAccountViewLeft != null ? ChangedAccountViewLeft.AccountInfo.Account.Id : 0,
+                ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
+            );
+            SwitchController.SwitchAccountView.AnimateClosed (() => {
+                IsFullSwitchViewAttached = false;
+                SwitchController.DismissViewController (false, () => {
+                    SwitchController.Cleanup ();
+                    SwitchController = null;
+                });
+                SelectedAccountView.Hidden = false;
+                if (ChangedAccountViewRight != null) {
+                    ChangedAccountViewRight.Hidden = false;
+                }
+                if (ChangedAccountViewLeft != null) {
+                    ChangedAccountViewLeft.Hidden = false;
+                }
+                if (completionHandler != null){
+                    completionHandler ();
+                }
+            });
+        }
+
+        void SwitchToChangedAccountView (ChangedAccountView changedView)
+        {
+            var account = changedView.AccountInfo.Account;
+            SwitchToAccount (account);
+        }
+
+        void SwitchToAccount (McAccount account, bool animated = true)
+        {
+            LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+            LoginHelpers.SetMostRecentAccount (account.Id);
+            Action changes = () => {
+                NcAccountMonitor.Instance.ChangeAccount (account);
+                if (AccountSwitched != null) {
+                    AccountSwitched (account);
+                }
+            };
+            if (animated) {
+                UIView.Transition (UIApplication.SharedApplication.Delegate.GetWindow (), 0.5f, UIViewAnimationOptions.TransitionFlipFromRight, changes, null);
             } else {
+                changes ();
             }
         }
 
@@ -265,6 +327,24 @@ namespace NachoClient.iOS
             }
             return view;
         }
+
+        #endregion
+
+        #region Account Monitor Events
+
+        void HandleAccountSwitched (object sender, EventArgs e)
+        {
+            Update ();
+        }
+
+        void HandleAccountSetChanged (object sender, EventArgs e)
+        {
+            Update ();
+        }
+
+        #endregion
+
+        #region Hiding & Showing
 
         bool IsCustomHidden;
 
@@ -355,6 +435,10 @@ namespace NachoClient.iOS
             }
         }
 
+        #endregion
+
+        #region Private Classes
+
         private class ChangedAccountView : UIView
         {
 
@@ -422,7 +506,7 @@ namespace NachoClient.iOS
             {
                 AccountInfo = info;
                 AccountImageView.Image = Util.ImageForAccount (info.Account);
-                UnreadIndicator.Text = info.RecentUnreadCount.ToString ();
+                UnreadIndicator.Text = Pretty.LimitedBadgeCount (info.RecentUnreadCount);
                 SetNeedsLayout ();
             }
 
@@ -431,14 +515,16 @@ namespace NachoClient.iOS
                 base.LayoutSubviews ();
                 var size = UnreadIndicator.SizeThatFits (new CGSize (IndicatorSize, IndicatorSize));
                 var frame = UnreadIndicator.Frame;
-                frame.Width = (nfloat)Math.Max (IndicatorSize, size.Width);
-                frame.X = UnreadOnLeft ? IndicatorOffset.Horizontal : Bounds.Width - IndicatorOffset.Horizontal - IndicatorSize;
+                frame.Width = (nfloat)Math.Max (IndicatorSize, size.Width + IndicatorSize / 3.0f);
+                frame.X = UnreadOnLeft ? IndicatorOffset.Horizontal : Bounds.Width - IndicatorOffset.Horizontal - frame.Width;
                 frame.Y = IndicatorOffset.Vertical;
                 frame.Height = IndicatorSize;
                 UnreadIndicator.Frame = frame;
             }
 
         }
+
+        #endregion
     }
 }
 

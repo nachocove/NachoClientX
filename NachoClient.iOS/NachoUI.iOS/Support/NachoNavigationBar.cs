@@ -11,7 +11,19 @@ namespace NachoClient.iOS
     {
 
         public SwitchAccountControl AccountSwitcher { get; private set; }
-        public WeakReference<UINavigationController> NavigationController;
+        WeakReference<UINavigationController> _NavigationController;
+        public WeakReference<UINavigationController> NavigationController {
+            get {
+                return _NavigationController;
+            }
+            set {
+                _NavigationController = value;
+                UINavigationController navController;
+                if (_NavigationController.TryGetTarget (out navController)) {
+                    AccountSwitcher.ParentViewController = new WeakReference<UIViewController> (navController);
+                }
+            }
+        }
 
         public NachoNavigationBar (IntPtr handle) : base (handle)
         {
