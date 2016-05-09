@@ -182,6 +182,7 @@ namespace NachoClient.iOS
                 BodyView.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
             }
             BodyView.Delegate = this;
+            BodyView.Hidden = false;
 
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (AttachmentsView);
