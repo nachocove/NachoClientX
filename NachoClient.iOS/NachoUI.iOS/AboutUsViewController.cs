@@ -40,7 +40,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationController.NavigationBar.Translucent = false;
+            NavigationItem.Title = "About Nacho Mail";
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 

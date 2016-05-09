@@ -45,6 +45,7 @@ namespace NachoClient.iOS
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+            NavigationItem.Title = "Settings";
         }
 
         #endregion

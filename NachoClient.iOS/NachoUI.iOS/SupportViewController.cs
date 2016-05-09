@@ -13,7 +13,6 @@ namespace NachoClient.iOS
 {
     public partial class SupportViewController : NcUIViewControllerNoLeaks
     {
-        public bool HideNavTitle = true;
         protected static readonly nfloat INDENT = 18;
 
         protected UITapGestureRecognizer messageTapGesture;
@@ -34,9 +33,7 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            if (HideNavTitle) {
-                NavigationItem.TitleView = new UIView ();
-            }
+            NavigationItem.Title = "Support";
 
             UIView supportView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
