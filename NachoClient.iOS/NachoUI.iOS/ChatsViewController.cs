@@ -24,7 +24,6 @@ namespace NachoClient.iOS
         List<McChat> Chats;
         Dictionary<int, int> UnreadCountsByChat;
 
-        SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
         UIBarButtonItem SearchButton;
         ChatsSearchResultsViewController SearchResultsViewController;
@@ -299,7 +298,9 @@ namespace NachoClient.iOS
             Account = account;
             Chats.Clear ();
             UnreadCountsByChat.Clear ();
+            TableView.ReloadData ();
             NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
+            SetNeedsReload ();
         }
 
         #endregion
