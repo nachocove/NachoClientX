@@ -1216,17 +1216,17 @@ namespace NachoClient.iOS
             }
 
             var fromString = Pretty.SenderString (message.From);
-            var subjectString = Pretty.SubjectString (message.Subject);
-            var previewString = Pretty.PreviewString (message.BodyPreview);
-            if (!String.IsNullOrEmpty (subjectString)) {
-                subjectString += " ";
+            int subjectLength;
+            var previewString = Pretty.MessagePreview (message, out subjectLength, maxSubjectLength: 30);
+            if (message.Intent != McEmailMessage.IntentType.None) {
+                previewString = EmailHelper.CreateSubjectWithIntent (previewString, message.Intent, message.IntentDateType, message.IntentDate);
             }
 
             if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
                 // Add debugging info for dev & alpha
                 var latency = (DateTime.UtcNow - message.DateReceived).TotalSeconds;
                 var cause = (null == fetchCause ? "BG" : fetchCause);
-                subjectString += String.Format ("[{0}:{1:N1}s]", cause, latency);
+                fromString += String.Format (" [{0}:{1:N1}s]", cause, latency);
                 Log.Info (Log.LOG_PUSH, "[PA] notify email message: client_id={0}, message_id={1}, cause={2}, delay={3}",
                     NcApplication.Instance.ClientId, message.Id, cause, latency);
             }
@@ -1235,7 +1235,7 @@ namespace NachoClient.iOS
                 if (NotificationCanAlert) {
                     var notif = new UILocalNotification ();
                     notif.Category = NotificationCategoryIdentifierMessage;
-                    notif.AlertBody = String.Format ("{0}\n{1}\n{2}", fromString, subjectString, previewString);
+                    notif.AlertBody = String.Format ("{0}\n{1}", fromString, previewString);
                     if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
                         notif.AlertTitle = "New Email";
                     }

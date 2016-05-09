@@ -44,6 +44,11 @@ namespace NachoCore
             return threadList;
         }
 
+        public override void RemoveIgnoredMessages ()
+        {
+            RemoveIgnoredMessages (threadList);
+        }
+
         public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var threads = QueryMessagesByConversation ();

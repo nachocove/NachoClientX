@@ -12,6 +12,7 @@ namespace NachoCore
     public class NachoUnifiedHotList : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
+        public bool IncludeActions = true;
 
         public NachoUnifiedHotList ()
         {
@@ -23,7 +24,7 @@ namespace NachoCore
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
-            var list = McEmailMessage.QueryUnifiedInboxItemsByScore (threshold);
+            var list = McEmailMessage.QueryUnifiedInboxItemsByScore (threshold, includeActions:IncludeActions);
             var threads = NcMessageThreads.ThreadByConversation (list);
             RemoveIgnoredMessages (threads);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
@@ -37,6 +38,11 @@ namespace NachoCore
         public override int Count ()
         {
             return threadList.Count;
+        }
+
+        public override void RemoveIgnoredMessages ()
+        {
+            RemoveIgnoredMessages (threadList);
         }
 
         public override McEmailMessageThread GetEmailThread (int i)

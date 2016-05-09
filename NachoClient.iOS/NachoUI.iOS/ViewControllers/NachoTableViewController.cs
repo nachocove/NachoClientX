@@ -77,14 +77,24 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected virtual bool ShouldCleanupDuringDidDisappear
-        {
-            get {
-                return IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
+        private bool _IsLongLived = false;
+        public bool IsLongLived {
+            private get {
+                return _IsLongLived;
+            }
+            set {
+                _IsLongLived = value;
             }
         }
 
-        protected virtual void Cleanup ()
+        protected virtual bool ShouldCleanupDuringDidDisappear
+        {
+            get {
+                return !IsLongLived && IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
+            }
+        }
+
+        public virtual void Cleanup ()
         {
             if (TableView.VisibleCells != null) {
                 foreach (var cell in TableView.VisibleCells) {

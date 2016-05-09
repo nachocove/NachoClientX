@@ -42,6 +42,11 @@ namespace NachoCore
             return false;
         }
 
+        public override void RemoveIgnoredMessages ()
+        {
+            RemoveIgnoredMessages (threadList);
+        }
+
         public override bool HasBackgroundRefresh ()
         {
             return true;

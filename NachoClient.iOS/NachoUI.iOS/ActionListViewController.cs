@@ -115,7 +115,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected override void Cleanup ()
+        public override void Cleanup ()
         {
 
             EditTableButton.Clicked -= EditTable;
@@ -186,6 +186,9 @@ namespace NachoClient.iOS
             if (!action.IsHot) {
                 NcTask.Run (() => {
                     action.Hot ();
+                    if (State == McAction.ActionState.Deferred){
+                        action.UpdateMessageFlag ();
+                    }
                     NotifyActionsChanged (action);
                 }, "ActionListViewController_MarkActionAsHot", NcTask.ActionSerialScheduler);
             }
@@ -251,9 +254,24 @@ namespace NachoClient.iOS
 
         #region Reloading Data
 
+        bool NeedsReload;
+        bool IsReloading;
+
+        void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                Reload ();
+            }
+        }
+
         void Reload ()
         {
-            Actions.BackgroundRefresh (HandleReloadResults);
+            if (!IsReloading) {
+                IsReloading = true;
+                NeedsReload = false;
+                Actions.BackgroundRefresh (HandleReloadResults);
+            }
         }
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
@@ -265,6 +283,10 @@ namespace NachoClient.iOS
                 Util.UpdateTable (TableView, adds, deletes);
             }
             UpdateVisibleRows ();
+            IsReloading = false;
+            if (NeedsReload) {
+                Reload ();
+            }
         }
 
         void UpdateVisibleRows ()
@@ -468,14 +490,10 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (s.Account == null || (Actions != null && Account.ContainsAccount (s.Account.Id))) {
-
-                bool isVisible = IsViewLoaded && View.Window != null;
-
+                
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_ActionSetChanged:
-                    if (isVisible) {
-                        Reload ();
-                    }
+                    SetNeedsReload ();
                     break;
                 }
             }
@@ -533,6 +551,10 @@ namespace NachoClient.iOS
 
         void EditAction (McAction action)
         {
+            if (action.IsNew) {
+                action.IsNew = false;
+                action.Update ();
+            }
             var viewController = new ActionEditViewController ();
             viewController.Action = action;
             viewController.PresentOverViewController (this);
@@ -558,7 +580,6 @@ namespace NachoClient.iOS
         void StartEditingTable ()
         {
             HasMadeEdits = false;
-            // TODO: adjust insets
             TableView.SetEditing(true, true);
             UpdateNavigationItem ();
             DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedActions);
@@ -569,13 +590,14 @@ namespace NachoClient.iOS
             };
             UpdateToolbarEnabled ();
             NavigationController.SetToolbarHidden (false, true);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom + NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
         }
 
         protected void CancelEditingTable (bool animated = true)
         {
-            // TODO: adjust insets
             TableView.SetEditing (false, animated);
             UpdateNavigationItem ();
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom - NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
             NavigationController.SetToolbarHidden (true, true);
         }
 

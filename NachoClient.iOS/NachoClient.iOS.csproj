@@ -224,7 +224,6 @@
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="Content\" />
-    <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
     <Folder Include="NachoCore\Mockables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
     <Folder Include="NachoUI.iOS\ViewControllers\" />
@@ -2781,6 +2780,9 @@
     <BundleResource Include="Resources\email-not-action-swipe.png" />
     <BundleResource Include="Resources\email-not-action-swipe%402x.png" />
     <BundleResource Include="Resources\email-not-action-swipe%403x.png" />
+    <BundleResource Include="Resources\thread-arrows.png" />
+    <BundleResource Include="Resources\thread-arrows%402x.png" />
+    <BundleResource Include="Resources\thread-arrows%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

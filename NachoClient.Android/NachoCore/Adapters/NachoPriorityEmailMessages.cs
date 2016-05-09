@@ -13,6 +13,7 @@ namespace NachoCore
     {
         List<McEmailMessageThread> threadList;
         McFolder folder;
+        public bool IncludeActions = true;
 
         public NachoPriorityEmailMessages (McFolder folder)
         {
@@ -25,7 +26,7 @@ namespace NachoCore
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
-            var list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
+            var list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold, includeActions: IncludeActions);
             var threads = NcMessageThreads.ThreadByConversation (list);
             RemoveIgnoredMessages (threads);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
@@ -34,6 +35,11 @@ namespace NachoCore
                 return true;
             }
             return false;
+        }
+
+        public override void RemoveIgnoredMessages ()
+        {
+            RemoveIgnoredMessages (threadList);
         }
 
         public override int Count ()

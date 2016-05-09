@@ -16,7 +16,6 @@ namespace NachoClient.iOS
 
         McAction Action;
         public readonly ActionCheckboxView CheckboxView;
-        UIImageView UnreadIndicator;
         UIView _ColorIndicatorView;
         UIView ColorIndicatorView {
             get {
@@ -89,6 +88,9 @@ namespace NachoClient.iOS
 
         public ActionCell (IntPtr handle) : base (handle)
         {
+            BackgroundView = new UIView ();
+            BackgroundView.BackgroundColor = UIColor.White;
+
             DetailTextSpacing = 0.0f;
             HideDetailWhenEmpty = true;
 
@@ -103,16 +105,10 @@ namespace NachoClient.iOS
             DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
-            using (var image = UIImage.FromBundle ("chat-stat-online")) {
-                UnreadIndicator = new UIImageView (image);
-            }
-            UnreadIndicator.Hidden = true;
-
             CheckboxView = new ActionCheckboxView (viewSize: 44.0f, checkboxSize: 20.0f);
             CheckboxView.Changed = CheckboxChanged;
 
             ContentView.AddSubview (CheckboxView);
-            ContentView.AddSubview (UnreadIndicator);
 
             SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
         }
@@ -155,7 +151,11 @@ namespace NachoClient.iOS
                 }
             }
             CheckboxView.IsChecked = Action.IsCompleted;
-            // UnreadIndicator.Hidden = message.IsRead;
+            if (Action.IsNew) {
+                ContentView.BackgroundColor = UIColor.FromRGB (0xFF, 0xFB, 0xEF);
+            } else {
+                ContentView.BackgroundColor = UIColor.White;
+            }
         }
 
         public override void LayoutSubviews ()

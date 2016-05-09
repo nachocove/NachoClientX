@@ -22,7 +22,7 @@ namespace NachoCore.ActiveSync
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var syncKey = BEContext.ProtocolState.AsSyncKey;
-            Log.Info (Log.LOG_AS, "AsFolderSyncCommand: AsSyncKey={0}", syncKey);
+            Log.Info (Log.LOG_AS, "{0}: AsSyncKey={1}", CmdNameWithAccount, syncKey);
             var folderSync = new XElement (m_ns + Xml.FolderHierarchy.FolderSync, new XElement (m_ns + Xml.FolderHierarchy.SyncKey, syncKey));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderSync);
@@ -41,10 +41,12 @@ namespace NachoCore.ActiveSync
                 target.AsLastFolderSync = DateTime.UtcNow;
                 return true;
             });
+
             switch (status) {
+
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
-                Log.Info (Log.LOG_AS, "AsFolderSyncCommand process response: SyncKey={0}", syncKey);
+                Log.Info (Log.LOG_AS, "{0}: process response: SyncKey={1}", CmdNameWithAccount, syncKey);
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.AsSyncKey = syncKey;
@@ -60,7 +62,7 @@ namespace NachoCore.ActiveSync
                             HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                             if (McFolder.GMail_All_ServerId == serverId) {
-                                Log.Info (Log.LOG_AS, "Ignoring GMail folder {0}.", serverId);
+                                Log.Info (Log.LOG_AS, "{0}: Ignoring GMail folder {1}.", CmdNameWithAccount, serverId);
                                 break;
                             }
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
@@ -118,6 +120,7 @@ namespace NachoCore.ActiveSync
 
                 if (HadFolderChanges) {
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
+                    ((AsProtoControl)BEContext.ProtoControl).ResetFolderReSyncCount ();
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "FSYNCSUCCESS");
 
@@ -141,7 +144,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "FSYNCBADFMT");
 
             default:
-                Log.Error (Log.LOG_AS, "ASFoldersyncCommand: UNHANDLED status {0}", status);
+                Log.Error (Log.LOG_AS, "{0}: UNHANDLED status {1}", CmdNameWithAccount, status);
                 return Event.Create ((uint)SmEvt.E.HardFail, "FSYNCHARD");
             }
         }
@@ -156,14 +159,14 @@ namespace NachoCore.ActiveSync
 
         private void PerformFolderSyncEpochScrub ()
         {
-            Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub");
+            Log.Info (Log.LOG_AS, "{0}: PerformFolderSyncEpochScrub", CmdNameWithAccount);
             var laf = McFolder.GetLostAndFoundFolder (AccountId);
             var orphaned = McFolder.QueryByIsClientOwned (AccountId, false)
                 .Where (x => x.AsFolderSyncEpoch < BEContext.ProtocolState.AsFolderSyncEpoch).ToList ();
-            Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: {0} folders.", orphaned.Count);
+            Log.Info (Log.LOG_AS, "{0}: PerformFolderSyncEpochScrub: {1} folders.", CmdNameWithAccount, orphaned.Count);
             foreach (var iterFolder in orphaned) {
                 var folder = iterFolder;
-                Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old folder {0} under LAF.", folder.Id);
+                Log.Info (Log.LOG_AS, "{0}: PerformFolderSyncEpochScrub: moving old folder {1} under LAF.", CmdNameWithAccount, folder.Id);
                 // If an Add command from the server re-used this folder's ServerId, then
                 // we changed that server id to a GUID when applying the Add to the model.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {

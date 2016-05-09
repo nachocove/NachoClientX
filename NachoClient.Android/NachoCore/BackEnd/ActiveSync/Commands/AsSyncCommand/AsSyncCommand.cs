@@ -375,12 +375,21 @@ namespace NachoCore.ActiveSync
             if (null != globEvent) {
                 return globEvent;
             }
-            switch ((Xml.AirSync.StatusCode)status) {
+
+            var adjustedStatus = (Xml.AirSync.StatusCode)status;
+            if (Xml.AirSync.StatusCode.FolderChange_12 == adjustedStatus && ((AsProtoControl)BEContext.ProtoControl).TooManyFolderReSyncs) {
+                // The server keeps sending FolderChange responses, but doesn't send any actual folder changes.
+                // To avoid looping forever, pretend that the status is Success.
+                adjustedStatus = Xml.AirSync.StatusCode.Success_1;
+            }
+
+            switch (adjustedStatus) {
+
             case Xml.AirSync.StatusCode.Success_1:
                 return null;
 
             case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: SyncKeyInvalid_3");
+                Log.Warn (Log.LOG_AS, "{0}: Status: SyncKeyInvalid_3", CmdNameWithAccount);
                 // FoldersInRequest is NOT stale here.
                 foreach (var folder in FoldersInRequest) {
                     folder.UpdateResetSyncState ();
@@ -394,7 +403,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPFOOF");
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ProtocolError_4");
+                Log.Warn (Log.LOG_AS, "{0}: Status: ProtocolError_4", CmdNameWithAccount);
                 var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
                 lock (PendingResolveLockObj) {
                     if (0 == PendingList.Count) {
@@ -415,18 +424,18 @@ namespace NachoCore.ActiveSync
                     }
                 }
             case Xml.AirSync.StatusCode.ServerError_5:
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerError_5");
+                Log.Warn (Log.LOG_AS, "{0}: Status: ServerError_5", CmdNameWithAccount);
                 // TODO: detect a loop, and reset folder state if looping.
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPRS");
 
             case Xml.AirSync.StatusCode.FolderChange_12:
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: FolderChange_12");
+                Log.Warn (Log.LOG_AS, "{0}: Status: FolderChange_12", CmdNameWithAccount);
                 ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "ASYNCTOPRFS");
 
             case Xml.AirSync.StatusCode.TooMany_15:
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
+                Log.Warn (Log.LOG_AS, "{0}: Status: TooMany_15", CmdNameWithAccount);
                 var xmlLimit = doc.Root.ElementAnyNs (Xml.AirSync.Limit);
                 if (null != xmlLimit && null != xmlLimit.Value) {
                     try {
@@ -438,21 +447,21 @@ namespace NachoCore.ActiveSync
                             return true;
                         });
                     } catch (Exception ex) {
-                        Log.Error (Log.LOG_AS, "AsSyncCommand: exception parsing Limit: {0}", ex.ToString ());
+                        Log.Error (Log.LOG_AS, "{0}: exception parsing Limit: {1}", CmdNameWithAccount, ex.ToString ());
                     }
                 } else {
-                    Log.Error (Log.LOG_AS, "AsSyncCommand: TLS TooMany_15 w/out Limit");
+                    Log.Error (Log.LOG_AS, "{0}: TLS TooMany_15 w/out Limit", CmdNameWithAccount);
                 }
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPTM");
 
             case Xml.AirSync.StatusCode.Retry_16:
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: Retry_16");
+                Log.Warn (Log.LOG_AS, "{0}: Status: Retry_16", CmdNameWithAccount);
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPRRR");
 
             default:
-                Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED Top Level status: {0}", status);
+                Log.Error (Log.LOG_AS, "{0}: ProcessResponse UNHANDLED Top Level status: {1}", CmdNameWithAccount, status);
                 return null;
             }
         }
@@ -504,7 +513,7 @@ namespace NachoCore.ActiveSync
                 }
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 if (HasBeenCancelled) {
-                    Log.Info (Log.LOG_HTTP, "Bypassing folder update and commands due to cancellation: {0}", NcXmlFilterState.ShortHash (folder.ServerId));
+                    Log.Info (Log.LOG_HTTP, "{0}: Bypassing folder update and commands due to cancellation: {1}", CmdNameWithAccount, NcXmlFilterState.ShortHash (folder.ServerId));
                 } else {
                     // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                     // If we have been cancelled, don't advance sync state for the folder.
@@ -522,10 +531,10 @@ namespace NachoCore.ActiveSync
                             return true;
                         });
                     } else {
-                        Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
+                        Log.Warn (Log.LOG_SYNC, "{0}: SyncKey missing from XML.", CmdNameWithAccount);
                     }
-                    Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != xmlMoreAvailable));
-                    Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", NcXmlFilterState.ShortHash (folder.ServerId), oldSyncKey, folder.AsSyncKey);
+                    Log.Info (Log.LOG_SYNC, "{0}: MoreAvailable presence {1}", CmdNameWithAccount, (null != xmlMoreAvailable));
+                    Log.Info (Log.LOG_SYNC, "{0}: Folder:{1}, Old SyncKey:{2}, New SyncKey:{3}", CmdNameWithAccount, NcXmlFilterState.ShortHash (folder.ServerId), oldSyncKey, folder.AsSyncKey);
                 }
                 processedFolders.Add (folder);
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
@@ -574,11 +583,11 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
                 case Xml.AirSync.StatusCode.ServerError_5:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status.ToString ());
+                    Log.Warn (Log.LOG_AS, "{0}: Status: {1}", CmdNameWithAccount, status.ToString ());
                     if (4 > folder.AsSyncFailRun) {
                         // Let the scrubber re-enable.
                         folder = folder.UpdateIncrement_AsSyncFailRunToClientExpected (false);
-                        Log.Warn (Log.LOG_AS, "AsSyncCommand: AsSyncFailRun {0}", folder.AsSyncFailRun);
+                        Log.Warn (Log.LOG_AS, "{0}: AsSyncFailRun {1}", CmdNameWithAccount, folder.AsSyncFailRun);
                         lock (PendingResolveLockObj) {
                             // Defer all the outbound commands until after ReSync.
                             pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
@@ -591,7 +600,7 @@ namespace NachoCore.ActiveSync
                         }
                     } else {
                         // Initiate re-sync of folder.
-                        Log.Error (Log.LOG_AS, "AsSyncCommand: UpdateResetSyncState after AsSyncFailRun {0}", folder.AsSyncFailRun);
+                        Log.Error (Log.LOG_AS, "{0}: UpdateResetSyncState after AsSyncFailRun {1}", CmdNameWithAccount, folder.AsSyncFailRun);
                         folder = folder.UpdateReset_AsSyncFailRun ();
                         folder = folder.UpdateResetSyncState ();
                         // Overkill, but ensure that UI knows that the rug was pulled from under it.
@@ -613,7 +622,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.ProtocolError_4:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ProtocolError_4");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: ProtocolError_4", CmdNameWithAccount);
                     lock (PendingResolveLockObj) {
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                         var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
@@ -634,7 +643,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.FolderChange_12:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: FolderChange_12");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: FolderChange_12", CmdNameWithAccount);
                     FolderSyncIsMandated = true;
                     lock (PendingResolveLockObj) {
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
@@ -648,7 +657,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.Retry_16:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: Retry_16");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: Retry_16", CmdNameWithAccount);
                     folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
                     lock (PendingResolveLockObj) {
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
@@ -660,7 +669,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 default:
-                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED Collection status: {0}", status);
+                    Log.Error (Log.LOG_AS, "{0}: ProcessResponse UNHANDLED Collection status: {1}", CmdNameWithAccount, status);
                     break;
                 }
             }
@@ -670,7 +679,7 @@ namespace NachoCore.ActiveSync
                 foreach (var errFolder in SawMoreAvailableNoCommands) {
                     // We've seen this be innocuous in Office365.
                     // http://localhost:8000/bugfix/alpha/logs/us-east-1:d4d26796-9ff3-4d36-bfee-f7e4138c0237/2015-02-20T01:11:29.955Z/1/
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands in folder ServerId {0}.", errFolder.ServerId);
+                    Log.Warn (Log.LOG_AS, "{0}: MoreAvailable with no commands in folder ServerId {1}.", CmdNameWithAccount, errFolder.ServerId);
                 }
             }
 
@@ -683,7 +692,7 @@ namespace NachoCore.ActiveSync
                     // This was the old code:
                     // folder = folder.UpdateSet_AsSyncMetaToClientExpected (false);
                     // I suspect it may have been driven by GOOG doing the opposite - omitting when there is nothing. We will have to test and see.
-                    Log.Info (Log.LOG_AS, "McFolder {0} not included in Sync response.", folder.ServerId);
+                    Log.Info (Log.LOG_AS, "{0}: McFolder {1} not included in Sync response.", CmdNameWithAccount, folder.ServerId);
                 }
             }
             if (HadEmailMessageSetChanges) {
@@ -839,7 +848,7 @@ namespace NachoCore.ActiveSync
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
                     var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
-                    Log.Debug (Log.LOG_AS, "AsSyncCommand: Command Add {0} ServerId {1}", classCode, addServerId);
+                    Log.Debug (Log.LOG_AS, "{0}: Command Add {1} ServerId {2}", CmdNameWithAccount, classCode, addServerId);
                     var pathElem = new McPath (AccountId);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
@@ -878,7 +887,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.AirSync.Change:
                     var chgServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
-                    Log.Info (Log.LOG_AS, "AsSyncCommand: Command Change {0} ServerId {1}", classCode, chgServerId);
+                    Log.Info (Log.LOG_AS, "{0}: Command Change {1} ServerId {2}", CmdNameWithAccount, classCode, chgServerId);
                     var applyChange = new ApplyItemChange (AccountId) {
                         ClassCode = classCode,
                         ServerId = chgServerId,
@@ -900,7 +909,7 @@ namespace NachoCore.ActiveSync
                         HadTaskChanges = true;
                         break;
                     default:
-                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        Log.Error (Log.LOG_AS, "{0}: ProcessCollectionCommands UNHANDLED class {1}", CmdNameWithAccount, classCode);
                         break;
                     }
                     break;
@@ -908,13 +917,13 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.Delete:
                 case Xml.AirSync.SoftDelete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
-                    Log.Info (Log.LOG_AS, "AsSyncCommand: Command (Soft)Delete {0} ServerId {1}", classCode, delServerId);
+                    Log.Info (Log.LOG_AS, "{0}: Command (Soft)Delete {1} ServerId {2}", CmdNameWithAccount, classCode, delServerId);
                     NcModel.Instance.RunInTransaction (() => {
                         pathElem = McPath.QueryByServerId (AccountId, delServerId);
                         if (null != pathElem) {
                             pathElem.Delete ();
                         } else {
-                            Log.Info (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB - may have been subject of MoveItems.", command.Name.LocalName, delServerId);
+                            Log.Info (Log.LOG_AS, "{0}: McPath for Command {1}, ServerId {2} not in DB - may have been subject of MoveItems.", CmdNameWithAccount, command.Name.LocalName, delServerId);
                         }
                         var applyDelete = new ApplyItemDelete (AccountId) {
                             ClassCode = classCode,
@@ -936,13 +945,13 @@ namespace NachoCore.ActiveSync
                         HadTaskSetChanges = true;
                         break;
                     default:
-                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        Log.Error (Log.LOG_AS, "{0}: ProcessCollectionCommands UNHANDLED class {1}", CmdNameWithAccount, classCode);
                         break;
                     }
                     break;
 
                 default:
-                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
+                    Log.Error (Log.LOG_AS, "{0}: ProcessResponse UNHANDLED command {1}", CmdNameWithAccount, command.Name.LocalName);
                     break;
                 }
             }
@@ -969,7 +978,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     default:
-                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED response " + response.Name.LocalName);
+                        Log.Error (Log.LOG_AS, "{0}: ProcessCollectionResponses UNHANDLED response {1}", CmdNameWithAccount, response.Name.LocalName);
                         break;
                     }
                 }
@@ -984,18 +993,18 @@ namespace NachoCore.ActiveSync
         // The list MUST be a subset of the OBJECTs in the PendingList.
         private void ProcessImplicitResponses (IEnumerable<McPending> fromPendingList)
         {
-            Log.Info (Log.LOG_AS, "ProcessImplicitResponses: Start");
+            Log.Info (Log.LOG_AS, "{0}: ProcessImplicitResponses: Start", CmdNameWithAccount);
             var cachedFromPendingList = fromPendingList.ToList ();
             foreach (var pending in cachedFromPendingList) {
                 // For Adds we need to add to McPath, and for Deletes we need to delete from McPath.
                 if (IsSyncAddCommand (pending.Operation)) {
-                    Log.Error (Log.LOG_AS, "ProcessImplicitResponses: Add command did not receive response.");
+                    Log.Error (Log.LOG_AS, "{0}: ProcessImplicitResponses: Add command did not receive response.", CmdNameWithAccount);
                 }
                 if (IsSyncDeleteCommand (pending.Operation)) {
                     HadDeletes = true;
                     var pathElem = McPath.QueryByServerId (pending.AccountId, pending.ServerId);
                     if (null == pathElem) {
-                        Log.Error (Log.LOG_AS, "ProcessImplicitResponses: McPath entry missing for Delete of {0}", pending.ServerId);
+                        Log.Error (Log.LOG_AS, "{0}: ProcessImplicitResponses: McPath entry missing for Delete of {1}", CmdNameWithAccount, pending.ServerId);
                     } else {
                         NcModel.Instance.RunInTransaction (() => {
                             pathElem.Delete ();
@@ -1006,7 +1015,7 @@ namespace NachoCore.ActiveSync
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 PendingList.RemoveAll (x => pending.Id == x.Id);
             }
-            Log.Info (Log.LOG_AS, "ProcessImplicitResponses: Finished");
+            Log.Info (Log.LOG_AS, "{0}: ProcessImplicitResponses: Finished", CmdNameWithAccount);
         }
 
         private void ProcessCollectionAddResponse (McFolder folder, XElement xmlAdd, string classCode)
@@ -1022,8 +1031,8 @@ namespace NachoCore.ActiveSync
             lock (PendingResolveLockObj) {
                 pending = McPending.QueryByClientId (folder.AccountId, clientId); 
                 if (null == pending) {
-                    Log.Error (Log.LOG_AS, "ProcessCollectionAddResponse: could not find McPending with ClientId of {0}.",
-                        clientId);
+                    Log.Error (Log.LOG_AS, "{0}: ProcessCollectionAddResponse: could not find McPending with ClientId of {1}.",
+                        CmdNameWithAccount, clientId);
                     return;
                 }
                 var xmlStatus = xmlAdd.Element (m_ns + Xml.AirSync.Status);
@@ -1038,7 +1047,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.ProtocolError_4:
                 case Xml.AirSync.StatusCode.ClientError_6:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
+                    Log.Warn (Log.LOG_AS, "{0}: Status: {1}", CmdNameWithAccount, status);
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
@@ -1050,25 +1059,25 @@ namespace NachoCore.ActiveSync
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
                     if (null != xmlServerId && null != xmlServerId.Value) {
-                        Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerError_5 w/ServerId");
+                        Log.Warn (Log.LOG_AS, "{0}: Status: ServerError_5 w/ServerId", CmdNameWithAccount);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                         success = true;
                     } else {
-                        Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerError_5");
+                        Log.Warn (Log.LOG_AS, "{0}: Status: ServerError_5", CmdNameWithAccount);
                         pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow,
                             NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable));
                     }
                     break;
 
                 case Xml.AirSync.StatusCode.ServerWins_7:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerWins_7");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: ServerWins_7", CmdNameWithAccount);
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
                     break;
 
                 case Xml.AirSync.StatusCode.NoSpace_9:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: NoSpace_9");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: NoSpace_9", CmdNameWithAccount);
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                         McPending.BlockReasonEnum.UserRemediation,
@@ -1076,7 +1085,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.LimitReWait_14:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: LimitReWait_14");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: LimitReWait_14", CmdNameWithAccount);
                     Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsSuccess (BEContext.ProtoControl);
@@ -1084,7 +1093,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.TooMany_15:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
+                    Log.Warn (Log.LOG_AS, "{0}: Status: TooMany_15", CmdNameWithAccount);
                     var protocolState = BEContext.ProtoControl.ProtocolState;
                     if (null != Limit) {
                         protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -1102,7 +1111,7 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.StatusCode.NotFound_8:
                 // Note: we don't send partial Sync requests.
                 case Xml.AirSync.StatusCode.ResendFull_13:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
+                    Log.Warn (Log.LOG_AS, "{0}: Status: {1}", CmdNameWithAccount, status);
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
@@ -1127,17 +1136,17 @@ namespace NachoCore.ActiveSync
                 item = McAbstrItem.QueryByClientId<McTask> (AccountId, clientId);
                 break;
             default:
-                Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                Log.Error (Log.LOG_AS, "{0} ProcessCollectionResponses UNHANDLED class {1}", CmdNameWithAccount, classCode);
                 return;
             }
             if (null == item) {
-                Log.Warn (Log.LOG_AS, "AsSyncCommand: item not found ClientId {0}", clientId);
+                Log.Warn (Log.LOG_AS, "{0}: item not found ClientId {1}", CmdNameWithAccount, clientId);
                 return;
             }
             xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
             var serverId = xmlServerId.Value;
             if (null == serverId) {
-                Log.Error (Log.LOG_AS, "AsSyncCommand: Add command response without ServerId.");
+                Log.Error (Log.LOG_AS, "{0}: Add command response without ServerId.", CmdNameWithAccount);
             } else {
                 var pathElem = new McPath (AccountId) {
                     ServerId = serverId,
@@ -1176,8 +1185,8 @@ namespace NachoCore.ActiveSync
                     lock (PendingResolveLockObj) {
                         var pending = McPending.QueryByServerId (folder.AccountId, serverId).FirstOrDefault ();
                         if (null == pending) {
-                            Log.Error (Log.LOG_AS, "ProcessCollectionChangeResponse: could not find McPending with ServerId of {0}.",
-                                serverId);
+                            Log.Error (Log.LOG_AS, "{0}: ProcessCollectionChangeResponse: could not find McPending with ServerId of {1}.",
+                                CmdNameWithAccount, serverId);
                             return;
                         }
                         switch (status) {
@@ -1187,21 +1196,21 @@ namespace NachoCore.ActiveSync
 
                         case Xml.AirSync.StatusCode.ProtocolError_4:
                         case Xml.AirSync.StatusCode.ClientError_6:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
+                            Log.Warn (Log.LOG_AS, "{0}: Status: {1}", CmdNameWithAccount, status);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsHardFail (BEContext.ProtoControl, 
                                 NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
                             break;
 
                         case Xml.AirSync.StatusCode.ServerWins_7:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerWins_7");
+                            Log.Warn (Log.LOG_AS, "{0}: Status: ServerWins_7", CmdNameWithAccount);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsHardFail (BEContext.ProtoControl,
                                 NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
                             break;
 
                         case Xml.AirSync.StatusCode.NotFound_8:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: NotFound_8");
+                            Log.Warn (Log.LOG_AS, "{0}: Status: NotFound_8", CmdNameWithAccount);
                             folder.UpdateSet_AsSyncMetaToClientExpected (true);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsDeferred (BEContext.ProtoControl,
@@ -1210,7 +1219,7 @@ namespace NachoCore.ActiveSync
                             break;
 
                         case Xml.AirSync.StatusCode.NoSpace_9:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: NoSpace_9");
+                            Log.Warn (Log.LOG_AS, "{0}: Status: NoSpace_9", CmdNameWithAccount);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                                 McPending.BlockReasonEnum.UserRemediation,
@@ -1218,13 +1227,13 @@ namespace NachoCore.ActiveSync
                             break;
 
                         case Xml.AirSync.StatusCode.LimitReWait_14:
-                            Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
+                            Log.Warn (Log.LOG_AS, "{0}: Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.", CmdNameWithAccount);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsSuccess (BEContext.ProtoControl);
                             break;
 
                         case Xml.AirSync.StatusCode.TooMany_15:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
+                            Log.Warn (Log.LOG_AS, "{0}: Status: TooMany_15", CmdNameWithAccount);
                             var protocolState = BEContext.ProtoControl.ProtocolState;
                             if (null != Limit) {
                                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -1240,7 +1249,7 @@ namespace NachoCore.ActiveSync
                         default:
                         // Note: we don't send partial Sync requests.
                         case Xml.AirSync.StatusCode.ResendFull_13:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
+                            Log.Warn (Log.LOG_AS, "{0}: Status: {1}", CmdNameWithAccount, status);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResponsegXmlStatus = (uint)status;
                             pending.ResolveAsHardFail (BEContext.ProtoControl,
@@ -1251,7 +1260,7 @@ namespace NachoCore.ActiveSync
                 }
                 return;
             default:
-                Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                Log.Error (Log.LOG_AS, "{0}: ProcessCollectionResponses UNHANDLED class {1}", CmdNameWithAccount, classCode);
                 return;
             }
         }

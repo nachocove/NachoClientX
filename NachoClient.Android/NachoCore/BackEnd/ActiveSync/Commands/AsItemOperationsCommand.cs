@@ -160,7 +160,7 @@ namespace NachoCore.ActiveSync
                 NcModel.Instance.RunInTransaction (() => {
                     var attachment = Attachments.Where (x => x.FileReference == xmlFileReference.Value).FirstOrDefault ();
                     if (null == attachment) {
-                        Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find FileReference {0}", xmlFileReference.Value);
+                        Log.Error (Log.LOG_AS, "{0}: MaybeErrorFileDesc: could not find FileReference {1}", CmdNameWithAccount, xmlFileReference.Value);
                     } else {
                         attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
                         attachment.Update ();
@@ -172,7 +172,7 @@ namespace NachoCore.ActiveSync
                     McPending.EmailBodyError(AccountId, xmlServerId.Value);
                 });
             } else {
-                Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: null xmlFileReference and xmlServerId");
+                Log.Error (Log.LOG_AS, "{0}: MaybeErrorFileDesc: null xmlFileReference and xmlServerId", CmdNameWithAccount);
             }
         }
 
@@ -192,7 +192,7 @@ namespace NachoCore.ActiveSync
             var xmlStatus = doc.Root.Element (m_ns + Xml.ItemOperations.Status);
             var outerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);
             if (Xml.ItemOperations.StatusCode.Success_1 != outerStatus) {
-                Log.Warn (Log.LOG_AS, "ItemOperations: Status {0}", outerStatus);
+                Log.Warn (Log.LOG_AS, "{0} ItemOperations: Status {1}", CmdNameWithAccount, outerStatus);
             }
             switch (outerStatus) {
             case Xml.ItemOperations.StatusCode.Success_1:
@@ -211,7 +211,7 @@ namespace NachoCore.ActiveSync
                     xmlStatus = xmlFetch.ElementAnyNs (Xml.ItemOperations.Status);
                     var innerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);
                     if (Xml.ItemOperations.StatusCode.Success_1 != innerStatus) {
-                        Log.Warn (Log.LOG_AS, "ItemOperations: Status {0}", innerStatus);
+                        Log.Warn (Log.LOG_AS, "{0} ItemOperations: Status {1}", CmdNameWithAccount, innerStatus);
                     }
                     switch (innerStatus) {
                     case Xml.ItemOperations.StatusCode.Success_1:
@@ -258,9 +258,9 @@ namespace NachoCore.ActiveSync
                                     successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
                                 }
                                 if (null != pending) {
-                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1} for email {2}", item.AccountId, pending, item.Id);
+                                    Log.Info (Log.LOG_AS, "{0} Processing DnldEmailBodyCmd({1}) {2} for email {3}", CmdNameWithAccount, item.AccountId, pending, item.Id);
                                 } else {
-                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) for email {1}", item.AccountId, item.Id);
+                                    Log.Info (Log.LOG_AS, "{0} Processing DnldEmailBodyCmd({1}) for email {2}", CmdNameWithAccount, item.AccountId, item.Id);
                                 }
                                 BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, item.Id);
                                 break;
@@ -277,7 +277,7 @@ namespace NachoCore.ActiveSync
                                 successInd = NcResult.SubKindEnum.Info_TaskBodyDownloadSucceeded;
                                 break;
                             default:
-                                NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
+                                NcAssert.True (false, string.Format ("{0} ItemOperations: inappropriate McPending Operation {1}", CmdNameWithAccount, pending.Operation));
                                 break;
                             }
                             if (null != item) {
@@ -294,7 +294,7 @@ namespace NachoCore.ActiveSync
                                         return true;
                                     });
                                     if (item.BodyId == 0) {
-                                        Log.Error (Log.LOG_AS, "ItemOperations: BodyId == 0 after message body download");
+                                        Log.Error (Log.LOG_AS, "{0} ItemOperations: BodyId == 0 after message body download", CmdNameWithAccount);
                                         successInd = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
                                     }
                                 } else {
@@ -302,7 +302,7 @@ namespace NachoCore.ActiveSync
                                     item.Update ();
                                 }
                             }
-                            Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", serverId, 
+                            Log.Info (Log.LOG_AS, "{0} ItemOperations item {1} {2}fetched.", CmdNameWithAccount, serverId, 
                                 (null == pending) ? "pre" : "");
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);
@@ -316,7 +316,7 @@ namespace NachoCore.ActiveSync
                             }
                         } else {
                             // Can't figure out WTF here.
-                            Log.Error (Log.LOG_AS, "ItemOperations: no ServerId and no FileReference.");
+                            Log.Error (Log.LOG_AS, "{0} ItemOperations: no ServerId and no FileReference.", CmdNameWithAccount);
                         }
                         break;
 

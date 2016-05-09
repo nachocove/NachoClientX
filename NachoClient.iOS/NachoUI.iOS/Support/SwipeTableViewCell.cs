@@ -382,6 +382,7 @@ namespace NachoClient.iOS
                             newAnimation.To = layerAnimation.To;
                             newAnimation.Duration = animation.Duration;
                             newAnimation.TimingFunction = animation.TimingFunction;
+                            newAnimation.RemovedOnCompletion = true;
                             layer.AddAnimation (newAnimation, key);
                         }
                     }
@@ -458,32 +459,28 @@ namespace NachoClient.iOS
                     GroupedBottomBorder.RemoveFromSuperLayer ();
                 }
             } else {
-                if (GroupedTopBorder == null) {
-                    if (GroupedBottomBorder != null) {
-                        GroupedTopBorder = GroupedBottomBorder;
-                        GroupedBottomBorder = null;
-                    } else {
+                if (position.HasFlag (GroupPosition.First)) {
+                    if (GroupedTopBorder == null) {
                         GroupedTopBorder = new CALayer ();
                         GroupedTopBorder.Bounds = new CGRect (0.0f, 0.0f, GroupBorderWidth, GroupBorderWidth);
                         GroupedTopBorder.BackgroundColor = borderColor.CGColor;
                     }
-                }
-                if (GroupedTopBorder.SuperLayer == null) {
-                    base.ContentView.Layer.AddSublayer (GroupedTopBorder);
+                    if (GroupedTopBorder.SuperLayer == null) {
+                        base.ContentView.Layer.AddSublayer (GroupedTopBorder);
+                    }
+                } else {
+                    if (GroupedTopBorder != null && GroupedTopBorder.SuperLayer != null) {
+                        GroupedTopBorder.RemoveFromSuperLayer ();
+                    }
                 }
                 if (position.HasFlag (GroupPosition.Last)) {
-                    if (position.HasFlag (GroupPosition.First)) {
-                        if (GroupedBottomBorder == null) {
-                            GroupedBottomBorder = new CALayer ();
-                            GroupedBottomBorder.Bounds = new CGRect (0.0f, 0.0f, GroupBorderWidth, GroupBorderWidth);
-                            GroupedBottomBorder.BackgroundColor = borderColor.CGColor;
-                        }
-                        if (GroupedBottomBorder.SuperLayer == null) {
-                            base.ContentView.Layer.AddSublayer (GroupedBottomBorder);
-                        }
-                    } else {
-                        GroupedBottomBorder = GroupedTopBorder;
-                        GroupedTopBorder = null;
+                    if (GroupedBottomBorder == null) {
+                        GroupedBottomBorder = new CALayer ();
+                        GroupedBottomBorder.Bounds = new CGRect (0.0f, 0.0f, GroupBorderWidth, GroupBorderWidth);
+                        GroupedBottomBorder.BackgroundColor = borderColor.CGColor;
+                    }
+                    if (GroupedBottomBorder.SuperLayer == null) {
+                        base.ContentView.Layer.AddSublayer (GroupedBottomBorder);
                     }
                 } else {
                     if (GroupedBottomBorder != null && GroupedBottomBorder.SuperLayer != null) {
@@ -647,7 +644,7 @@ namespace NachoClient.iOS
             }
         }
 
-        void RestoreBackgroundColors ()
+        protected virtual void RestoreBackgroundColors ()
         {
             if (ShowingAlertateBackgroundColors) {
                 foreach (var pair in PreservedBackgroundColors) {

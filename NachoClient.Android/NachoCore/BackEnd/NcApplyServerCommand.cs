@@ -11,11 +11,13 @@ namespace NachoCore
     {
         protected int AccountId;
         protected List<McPending.ReWrite> ReWrites;
+        protected string CmdNameWithAccount;
 
         public NcApplyServerCommand (int accountId)
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();
+            CmdNameWithAccount = string.Format ("{0}({1})", GetType ().Name, accountId);
         }
 
         // TODO per-account caching.
