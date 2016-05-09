@@ -41,7 +41,9 @@ namespace NachoCore.ActiveSync
                 target.AsLastFolderSync = DateTime.UtcNow;
                 return true;
             });
+
             switch (status) {
+
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 Log.Info (Log.LOG_AS, "{0}: process response: SyncKey={1}", CmdNameWithAccount, syncKey);
@@ -118,6 +120,7 @@ namespace NachoCore.ActiveSync
 
                 if (HadFolderChanges) {
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
+                    ((AsProtoControl)BEContext.ProtoControl).ResetFolderReSyncCount ();
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "FSYNCSUCCESS");
 

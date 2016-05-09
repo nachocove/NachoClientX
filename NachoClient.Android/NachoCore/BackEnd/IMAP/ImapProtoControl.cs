@@ -983,7 +983,9 @@ namespace NachoCore.IMAP
                     // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
                     // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
                     //var timeout = new TimeSpan(0, 9, 0);
-                    return new TimeSpan(0, 9, 0);
+                    //
+                    // UPDATE: Based on my tests, gmail seems to drop the connection after 5 minutes now.
+                    return new TimeSpan(0, 4, 30);
                 } else {
                     return new TimeSpan(0, 30, 0);
                 }

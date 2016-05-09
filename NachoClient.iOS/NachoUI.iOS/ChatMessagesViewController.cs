@@ -568,8 +568,8 @@ namespace NachoClient.iOS
             }else if (String.Equals (address.address, Account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
                 NcAlertView.ShowMessage (NavigationController.TopViewController, "Cannot Add Self", String.Format ("Sorry, but it's not possible to setup a chat with yourself ({0})", Account.EmailAddr));
             } else {
-                var mailbox = MimeKit.MailboxAddress.Parse (address.address);
-                if (mailbox == null) {
+                MimeKit.MailboxAddress mailbox;
+                if (!MimeKit.MailboxAddress.TryParse (address.address, out mailbox) || null == mailbox) {
                     NcAlertView.ShowMessage (NavigationController.TopViewController, "Invalid Email Address", String.Format ("Sorry, the email address you provided does not appear to be valid."));
                 } else {
                     if (Chat != null) {
@@ -577,7 +577,7 @@ namespace NachoClient.iOS
                         ReloadMessages ();
                         HeaderView.ToView.Clear ();
                         foreach (var participant in ParticipantsByEmailId.Values) {
-                            var participantAddress = new NcEmailAddress(NcEmailAddress.Kind.To, participant.EmailAddress);
+                            var participantAddress = new NcEmailAddress (NcEmailAddress.Kind.To, participant.EmailAddress);
                             HeaderView.ToView.Append (participantAddress);
                         }
                         ParticipantsByEmailId = null;

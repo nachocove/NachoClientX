@@ -444,11 +444,6 @@ namespace NachoCore.IMAP
                             McAction.RunCreateActionFromMessageTask (emailMessage.Id);
                         }
                     } else {
-                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                            var target = (McEmailMessage)record;
-                            updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
-                            return true;
-                        });
                         result = folder.Link (emailMessage, imapSummary.UniqueId);
                         if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
                             throw new Exception (string.Format ("Could not link message: {0}", result.GetMessage ()));

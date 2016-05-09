@@ -88,6 +88,9 @@ namespace NachoClient.iOS
 
         public ActionCell (IntPtr handle) : base (handle)
         {
+            BackgroundView = new UIView ();
+            BackgroundView.BackgroundColor = UIColor.White;
+
             DetailTextSpacing = 0.0f;
             HideDetailWhenEmpty = true;
 

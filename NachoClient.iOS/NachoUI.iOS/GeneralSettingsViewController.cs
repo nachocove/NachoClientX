@@ -69,15 +69,12 @@ namespace NachoClient.iOS
             NavigationItem.TitleView = switchAccountButton;
 
             SwitchToAccount (NcApplication.Instance.Account);
-            ReloadAccounts ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (!IsMovingFromParentViewController){
-                ReloadAccounts ();
-            }
+            ReloadAccounts ();
         }
 
         public override void ViewDidAppear (bool animated)

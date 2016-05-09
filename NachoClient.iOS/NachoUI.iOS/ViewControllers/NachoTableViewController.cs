@@ -94,7 +94,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected virtual void Cleanup ()
+        public virtual void Cleanup ()
         {
             if (TableView.VisibleCells != null) {
                 foreach (var cell in TableView.VisibleCells) {

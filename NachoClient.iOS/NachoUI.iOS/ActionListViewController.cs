@@ -115,7 +115,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected override void Cleanup ()
+        public override void Cleanup ()
         {
 
             EditTableButton.Clicked -= EditTable;
@@ -186,6 +186,9 @@ namespace NachoClient.iOS
             if (!action.IsHot) {
                 NcTask.Run (() => {
                     action.Hot ();
+                    if (State == McAction.ActionState.Deferred){
+                        action.UpdateMessageFlag ();
+                    }
                     NotifyActionsChanged (action);
                 }, "ActionListViewController_MarkActionAsHot", NcTask.ActionSerialScheduler);
             }
@@ -577,7 +580,6 @@ namespace NachoClient.iOS
         void StartEditingTable ()
         {
             HasMadeEdits = false;
-            // TODO: adjust insets
             TableView.SetEditing(true, true);
             UpdateNavigationItem ();
             DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedActions);
@@ -588,13 +590,14 @@ namespace NachoClient.iOS
             };
             UpdateToolbarEnabled ();
             NavigationController.SetToolbarHidden (false, true);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom + NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
         }
 
         protected void CancelEditingTable (bool animated = true)
         {
-            // TODO: adjust insets
             TableView.SetEditing (false, animated);
             UpdateNavigationItem ();
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom - NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
             NavigationController.SetToolbarHidden (true, true);
         }
 

@@ -25,7 +25,7 @@ namespace NachoCore.IMAP
             McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
             try {
                 if (PendingSingle.EmailSetFlag_FlagType == McPending.MarkAnsweredFlag) {
-                    mailKitFolder.SetFlags (email.GetImapUid (folder), MessageFlags.Answered, true, Cts.Token);
+                    mailKitFolder.AddFlags (email.GetImapUid (folder), MessageFlags.Answered, true, Cts.Token);
                 } else {
                     mailKitFolder.RemoveFlags (email.GetImapUid (folder), MessageFlags.Answered, true, Cts.Token);
                 }

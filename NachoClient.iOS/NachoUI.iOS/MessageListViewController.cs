@@ -156,7 +156,7 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
         }
 
-        protected override void Cleanup ()
+        public override void Cleanup ()
         {
             // Clean up nav bar
             SearchButton.Clicked -= ShowSearch;
@@ -175,7 +175,10 @@ namespace NachoClient.iOS
             if (SearchController != null) {
                 SearchController.Delegate = null;
             }
-            SearchResultsViewController = null;
+            if (SearchResultsViewController != null) {
+                SearchResultsViewController.Cleanup ();
+                SearchResultsViewController = null;
+            }
             
             base.Cleanup ();
         }
@@ -194,7 +197,7 @@ namespace NachoClient.iOS
         {
             EndAllTableEdits ();
             if (SearchController == null) {
-                SearchResultsViewController = new MessageSearchResultsViewController ();
+                SearchResultsViewController = new MessageSearchResultsViewController () { IsLongLived = true };
                 SearchController = new NachoSearchController (SearchResultsViewController);
                 SearchController.Delegate = this;
             }
@@ -254,12 +257,13 @@ namespace NachoClient.iOS
         void MarkMessageAsRead (NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsRead (message, true);
                 message.IsRead = true;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -267,12 +271,13 @@ namespace NachoClient.iOS
         void MarkMessageAsUnread (NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 EmailHelper.MarkAsUnread (message, true);
                 message.IsRead = false;
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -280,11 +285,12 @@ namespace NachoClient.iOS
         void MarkMessageAsHot (NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -292,11 +298,12 @@ namespace NachoClient.iOS
         void MarkMessageAsUnhot (NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 var cell = TableView.CellAt (indexPath) as MessageCell;
                 if (cell != null) {
-                    cell.SetMessage (message);
+                    cell.SetMessage (message, thread.MessageCount);
                 }
             }
         }
@@ -610,9 +617,10 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "MessageListViewController.UpdateVisibleRows: {0} visible rows", indexPaths.Length);
                 foreach (var indexPath in indexPaths) {
                     var message = Messages.GetCachedMessage (indexPath.Row);
+                    var thread = Messages.GetEmailThread (indexPath.Row);
                     var cell = TableView.CellAt (indexPath) as MessageCell;
                     if (cell != null && message != null) {
-                        cell.SetMessage (message);
+                        cell.SetMessage (message, thread.MessageCount);
                     }
                 }
             } else {
@@ -640,12 +648,13 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
+            var thread = Messages.GetEmailThread (indexPath.Row);
             if (message == null) {
                 return tableView.DequeueReusableCell (UnavailableCellIdentifier);
             }
             var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
             cell.UseRecipientName = Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics () || Messages.HasSentSemantics ();
-            cell.SetMessage (message);
+            cell.SetMessage (message, thread.MessageCount);
             cell.NumberOfPreviewLines = NumberOfPreviewLines;
             if (Messages.IncludesMultipleAccounts ()) {
                 cell.IndicatorColor = Util.ColorForAccount (message.AccountId);
@@ -1021,6 +1030,7 @@ namespace NachoClient.iOS
         {
             TableView.SetEditing (false, animated);
             UpdateNavigationItem ();
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom - NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
             NavigationController.SetToolbarHidden (true, true);
         }
 
@@ -1055,6 +1065,7 @@ namespace NachoClient.iOS
             }
             UpdateToolbarEnabled ();
             NavigationController.SetToolbarHidden (false, true);
+            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, TableView.ContentInset.Left, TableView.ContentInset.Bottom + NavigationController.Toolbar.Frame.Height, TableView.ContentInset.Right);
         }
 
         void StartSync ()
@@ -1152,6 +1163,12 @@ namespace NachoClient.iOS
             SearchResults = new EmailSearch (UpdateResults);
         }
 
+        public override void Cleanup ()
+        {
+            SearchResults = null;
+            base.Cleanup ();
+        }
+
         public override void LoadView ()
         {
             base.LoadView ();
@@ -1244,7 +1261,8 @@ namespace NachoClient.iOS
         {
             var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
             var message = SearchResults.GetCachedMessage (indexPath.Row);
-            cell.SetMessage (message);
+            var thread = SearchResults.GetEmailThread (indexPath.Row);
+            cell.SetMessage (message, thread.MessageCount);
             return cell;
         }
 

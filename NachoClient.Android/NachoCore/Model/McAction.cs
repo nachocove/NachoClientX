@@ -282,6 +282,7 @@ namespace NachoCore.Model
             }
             MoveToFront ();
             ActionsHelper.Instance.ScheduleNextUndeferCheck ();
+            UpdateMessageFlag ();
         }
 
         public void Undefer ()
@@ -290,6 +291,7 @@ namespace NachoCore.Model
             DeferUntilDate = default(DateTime);
             DeferralType = MessageDeferralType.None;
             MoveToFront ();
+            UpdateMessageFlag ();
         }
 
         public void Complete ()
@@ -298,6 +300,7 @@ namespace NachoCore.Model
                 CompletedDate = DateTime.UtcNow;
                 State = ActionState.Completed;
                 MoveToFront ();
+                UpdateMessageFlag ();
             }
         }
 
@@ -306,6 +309,7 @@ namespace NachoCore.Model
             if (State == ActionState.Completed) {
                 State = toState;
                 MoveToFront ();
+                UpdateMessageFlag ();
             }
         }
 
@@ -313,7 +317,7 @@ namespace NachoCore.Model
         {
             if (IsDeferred) {
                 NcMessageDeferral.DeferMessage (Message, DeferralType, DeferUntilDate);
-            } else if (DueDate != default(DateTime)) {
+            } else if (!IsCompleted && DueDate != default(DateTime)) {
                 NcMessageDeferral.SetDueDate (Message, DueDate);
             } else {
                 // works for defer or due date clearing
