@@ -281,12 +281,7 @@ namespace NachoClient.iOS
                     NcEmailArchiver.Delete (thread);
                 }, "NachoNowViewController.DeleteMessage");
                 HotMessages.IgnoreMessage (thread.FirstMessageId);
-                if (!IsReloading) {
-                    HotMessages.RemoveIgnoredMessages ();
-                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
-                } else {
-                    SetNeedsReload ();
-                }
+                SetNeedsReload ();
             }
         }
 
@@ -301,12 +296,7 @@ namespace NachoClient.iOS
                     NcEmailArchiver.Archive (thread);
                 }, "MessageListViewController.ArchiveMessage");
                 HotMessages.IgnoreMessage (thread.FirstMessageId);
-                if (!IsReloading) {
-                    HotMessages.RemoveIgnoredMessages ();
-                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
-                } else {
-                    SetNeedsReload ();
-                }
+                SetNeedsReload ();
             }
         }
 
