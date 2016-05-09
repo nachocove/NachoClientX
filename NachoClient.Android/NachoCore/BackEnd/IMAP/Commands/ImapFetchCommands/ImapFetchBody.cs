@@ -96,7 +96,7 @@ namespace NachoCore.IMAP
             if (string.IsNullOrEmpty (email.ImapBodyStructure)) {
                 // backwards compatibility: Current code fills this in, but older code didn't. So fetch it now.
                 try {
-                    email = FillInBodyStructure (email,folder, mailKitFolder, Cts.Token);
+                    email = FillInBodyStructure (email, folder, mailKitFolder, Cts.Token);
                 } catch (MessageNotFoundException ex) {
                     Log.Info (Log.LOG_IMAP, "FillInBodyStructure error: {0}", ex);
                     email = null;
