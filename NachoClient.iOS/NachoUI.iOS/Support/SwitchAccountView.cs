@@ -232,7 +232,7 @@ namespace NachoClient.iOS
             FakeNavigationBar.Alpha = 1.0f;
             TitleLabel.Alpha = 1.0f;
             TitleLabel.Transform = CGAffineTransform.MakeIdentity ();
-            int itemCount = AccountViews.Count;
+            int itemCount = AccountViews.Count + 1;
             int rows = itemCount / ColumnsPerRow + ((itemCount % ColumnsPerRow) > 0 ? 1 : 0);
             int row = 0;
             int col = 0;
