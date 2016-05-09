@@ -27,9 +27,9 @@ namespace NachoCore.IMAP
             UpdateImapSetting (mailKitFolder, ref folder);
             try {
                 if (PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag) {
-		    mailKitFolder.AddFlags (email.GetImapUid (folder), MessageFlags.Seen, true, Cts.Token);
+                    mailKitFolder.AddFlags (email.GetImapUid (folder), MessageFlags.Seen, true, Cts.Token);
                 } else {
-		    mailKitFolder.RemoveFlags (email.GetImapUid (folder), MessageFlags.Seen, true, Cts.Token);
+                    mailKitFolder.RemoveFlags (email.GetImapUid (folder), MessageFlags.Seen, true, Cts.Token);
                 }
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, 
