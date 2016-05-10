@@ -65,8 +65,6 @@ namespace NachoCore.Brain
         private object ProcessLoopLockObj;
         private object SyncRoot;
 
-        private NcTimer periodicTimer;
-
         private NcBrainNotification NotificationRateLimiter;
 
         public NcBrain (string prefix = "Brain")
@@ -83,8 +81,6 @@ namespace NachoCore.Brain
 
             ProcessLoopLockObj = new object ();
             SyncRoot = new object ();
-
-            periodicTimer = null;
 
             InitializeEventHandler ();
         }
@@ -131,16 +127,6 @@ namespace NachoCore.Brain
                     // the previous run of the brain, not this session.
                     while (null != brain.EventQueue.DequeueIf (evt => { return evt.Type == NcBrainEventType.TERMINATE; })) {
                     }
-                    brain.periodicTimer = new NcTimer ("NcBrain.periodicTimer", (state) => {
-                        if (NcApplication.Instance.IsForegroundOrBackground) {
-                            try {
-                                SharedInstance.EnqueueIfNotAlreadyThere (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
-                            } catch (OperationCanceledException) {
-                                // The timer filed at about the same time that the brain was shut down.
-                            }
-                        }
-                    }, null, TimeSpan.FromSeconds (NcContactGleaner.GLEAN_PERIOD), TimeSpan.FromSeconds (NcContactGleaner.GLEAN_PERIOD));
-                    brain.periodicTimer.Stfu = true;
                 }
                 try {
                     brain.Process ();
@@ -159,10 +145,6 @@ namespace NachoCore.Brain
                 if (brain.IsRunning) {
                     brain.IsRunning = false;
                     brain.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
-                    if (null != brain.periodicTimer) {
-                        brain.periodicTimer.Dispose ();
-                        brain.periodicTimer = null;
-                    }
                 }
             }
         }
@@ -333,23 +315,14 @@ namespace NachoCore.Brain
         {
             StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
             switch (eventArgs.Status.SubKind) {
+
             case NcResult.SubKindEnum.Info_RicInitialSyncCompleted:
-                // Status indication handler for Info_RicInitialSyncCompleted. We do not 
-                // generate initial email address scores from RIC in this function for 2
-                // reasons. First, we do not want to hold up the status indication callback
-                // for a long duration. Second, the callback may be in a different threads
-                // as NcBrain task. So, we may have two threads updating the same object.
-                // Therefore, we enqueue a brain event and let brain task to do the actual
-                // processing.
-                var initialRicEvent = new NcBrainInitialRicEvent (eventArgs.Account.Id);
-                NcBrain.SharedInstance.Enqueue (initialRicEvent);
+                NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
                 break;
+
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                // If the brain is asleep, wake it up.
-                var brain = NcBrain.SharedInstance;
-                if (brain.EventQueue.IsEmpty ()) {
-                    brain.EventQueue.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
-                }
+            case NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded:
+                NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
                 break;
             }
         }
