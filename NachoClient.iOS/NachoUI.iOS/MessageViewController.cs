@@ -524,6 +524,10 @@ namespace NachoClient.iOS
         void StartActivityIndicator ()
         {
             ActivityShowTimer = null;
+            // Download may have finished as the timer was firing and schedling this method
+            if (BodyDownloader == null) {
+                return;
+            }
             if (ActivityIndicator == null) {
                 ActivityIndicator = new NcActivityIndicatorView (new CGRect(0.0f, 0.0f, ActivityIndicatorSize, ActivityIndicatorSize));
                 ActivityIndicator.Speed = 1.5f;
