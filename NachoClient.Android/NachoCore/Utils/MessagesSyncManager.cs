@@ -113,7 +113,9 @@ namespace NachoCore.Utils
             SyncTokens = null;
             SyncTimeoutTimer = null;
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                Delegate.MessagesSyncDidTimeOut (this);
+                if (Delegate != null){
+                    Delegate.MessagesSyncDidTimeOut (this);
+                }
             });
         }
 
@@ -144,7 +146,9 @@ namespace NachoCore.Utils
             }
             SyncTokens = null;
             StopListeningForStatusInd ();
-            Delegate.MessagesSyncDidComplete (this);
+            if (Delegate != null) {
+                Delegate.MessagesSyncDidComplete (this);
+            }
         }
     }
 }
