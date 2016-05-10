@@ -960,6 +960,7 @@ namespace NachoClient.iOS
             startDatePicker.ValueChanged += StartDatePickerValueChanged;
             startDatePicker.Mode = allDaySwitch.On ? UIDatePickerMode.Date : UIDatePickerMode.DateAndTime;
             startDatePicker.Date = startDate.ToNSDate ();
+            startDatePicker.MinuteInterval = 5;
             Util.ConstrainDatePicker (startDatePicker, startDate);
             startView.AddSubview (startDatePicker);
         }
@@ -975,6 +976,7 @@ namespace NachoClient.iOS
             endDatePicker.ValueChanged += EndDatePickerValueChanged;
             endDatePicker.Mode = allDaySwitch.On ? UIDatePickerMode.Date : UIDatePickerMode.DateAndTime;
             endDatePicker.Date = endDate.ToNSDate ();
+            endDatePicker.MinuteInterval = 5;
             Util.ConstrainDatePicker (endDatePicker, endDate);
             endView.AddSubview (endDatePicker);
         }
@@ -1561,6 +1563,7 @@ namespace NachoClient.iOS
                 if (null != startDatePicker) {
                     startDatePicker.Date = startDate.ToNSDate ();
                     startDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                    startDatePicker.MinuteInterval = 5;
                 }
                 startDateLabel.Text = Pretty.MediumFullDateTime (startDate);
                 startDateLabel.SizeToFit ();
@@ -1568,6 +1571,7 @@ namespace NachoClient.iOS
                 if (null != endDatePicker) {
                     endDatePicker.Date = endDate.ToNSDate ();
                     endDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                    endDatePicker.MinuteInterval = 5;
                 }
                 endDateLabel.Text = Pretty.MediumFullDateTime (endDate);
                 endDateLabel.SizeToFit ();
