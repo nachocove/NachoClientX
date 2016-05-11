@@ -75,6 +75,9 @@ namespace NachoClient.AndroidClient
         {
             if (string.IsNullOrEmpty (searchField.Text)) {
                 this.Activity.SetResult (Result.Canceled);
+            } else if (!searchField.Text.Contains("@")) {
+                NcAlertView.ShowMessage (this.Activity, "Invalid email address", "The value must be an email address containing '@'");
+                return;
             } else {
                 this.Activity.SetResult (Result.Ok, ContactEmailChooserActivity.ResultIntent (searchField.Text, null));
             }
