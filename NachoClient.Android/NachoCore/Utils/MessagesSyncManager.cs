@@ -128,6 +128,8 @@ namespace NachoCore.Utils
                         if (pending.State == McPending.StateEnum.Failed || pending.State == McPending.StateEnum.Deleted) {
                             SyncTokens.Remove (token);
                         }
+                    } else {
+                        SyncTokens.Remove (token);
                     }
                 }
                 if (SyncTokens.Count == 0) {
