@@ -559,7 +559,11 @@ namespace NachoClient.iOS
                 var duration = 0.15f;
                 var opacity = 1.0f;
                 if (animation != null) {
-                    opacity = ActivityIndicator.Layer.PresentationLayer.Opacity;
+                    if (ActivityIndicator.Layer.PresentationLayer == null) {
+                        opacity = 0.0f;
+                    } else {
+                        opacity = ActivityIndicator.Layer.PresentationLayer.Opacity;
+                    }
                 }
                 duration = duration * opacity;
                 ActivityIndicator.Layer.RemoveAnimation ("opacity");
