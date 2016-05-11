@@ -41,13 +41,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            CreateInitialView ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            tv.Center = new CGPoint (View.Frame.Width / 2.0f, View.Frame.Height / 2.0f - 32.0f);
+            InitializePageViewController ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -67,6 +66,7 @@ namespace NachoClient.iOS
         {
             UIView dotsAndDismissContainerView = new UIView (); // contain pageDots and the dismiss button
             dotsAndDismissContainerView.Frame = new CoreGraphics.CGRect (0, this.View.Bounds.Bottom - 35, this.View.Bounds.Width, 35);
+            dotsAndDismissContainerView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleTopMargin;
             dotsAndDismissContainerView.BackgroundColor = UIColor.White;
 
             pageDots = new UIPageControl (); // page indicators; will get updates as datasource updates
@@ -80,6 +80,7 @@ namespace NachoClient.iOS
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
             closeTutorial = new UIButton (new CoreGraphics.CGRect (View.Frame.Width - 145, 0, 130, 35));
+            closeTutorial.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
             closeTutorial.AccessibilityLabel = "Dismiss";
@@ -95,7 +96,8 @@ namespace NachoClient.iOS
             };
             dotsAndDismissContainerView.Add (closeTutorial);
 
-            Util.AddHorizontalLine (0, 0, dotsAndDismissContainerView.Frame.Width, A.Color_NachoBorderGray, dotsAndDismissContainerView);
+            var line = Util.AddHorizontalLine (0, 0, dotsAndDismissContainerView.Frame.Width, A.Color_NachoBorderGray, dotsAndDismissContainerView);
+            line.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
             View.Add (dotsAndDismissContainerView);
 
@@ -118,6 +120,7 @@ namespace NachoClient.iOS
 
 
             this.pageController.View.Frame = this.View.Bounds;
+            this.pageController.View.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             this.View.AddSubview (this.pageController.View);
 
             // KLUDGE!
