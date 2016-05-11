@@ -208,6 +208,8 @@ namespace NachoClient.iOS
             if ((null == textField.Text) || (0 == textField.Text.Length)) {
                 owner.DeleteEmailAddress (this, address);
                 owner.DismissINachoContactChooser (this);
+            } else if (!textField.Text.Contains ("@")) {
+                NcAlertView.ShowMessage (this, "Invalid email address", "The value must be an email address containing '@'");
             } else {
                 UpdateEmailAddress (null, textField.Text);
             }
