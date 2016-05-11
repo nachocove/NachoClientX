@@ -65,6 +65,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
+            EndRefreshing ();
             base.ViewWillDisappear (animated);
         }
 
