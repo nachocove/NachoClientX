@@ -19,17 +19,28 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             McFolder folder = McFolder.QueryByServerId (AccountId, PendingSingle.ParentId);
-            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
             IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
             }
             UpdateImapSetting (mailKitFolder, ref folder);
+            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
             try {
                 if (PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag) {
-                    mailKitFolder.SetFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                    mailKitFolder.AddFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
                 } else {
                     mailKitFolder.RemoveFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                }
+                if (email.IsRead != (PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag)) {
+                    Log.Warn (Log.LOG_IMAP, "{0}: Setting IsRead={0} because DB doesn't have the right value", CmdNameWithAccount, PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag);
+                    email = email.UpdateWithOCApply<McEmailMessage> (((record) => {
+                        var target = (McEmailMessage)record;
+                        target.IsRead = (PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag);
+                        return true;
+                    }));
+                    var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageChanged);
+                    result.Value = email.Id;
+                    BEContext.ProtoControl.StatusInd (result);
                 }
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, 

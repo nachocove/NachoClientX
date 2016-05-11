@@ -349,6 +349,13 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (contactInfoScrollView);
 
             //INTERACTIONS
+
+            // since InteractionMessages is the data source for InteractionsTableView, we need to make sure
+            // it exists before we set it as the WeakDataSource, so when the OS decides to asynchronously
+            // checks the data, we don't crash with a null reference.
+            // (see qa#2040)
+            InteractionMessages = new UserInteractionEmailMessages (contact);
+
             InteractionsTableView = new UITableView (new CGRect (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             InteractionsTableView.WeakDelegate = this;
             InteractionsTableView.WeakDataSource = this;
@@ -566,9 +573,6 @@ namespace NachoClient.iOS
                 SetViewHeight (contactInfoScrollView, View.Frame.Height - segmentedViewHolder.Frame.Top - 80);
             }
             contactInfoScrollView.ContentSize = new CGSize (contactInfoScrollView.Frame.Width, contactInfoHeight);
-
-            //CONFIGURE INTERACTIONS VIEW
-            InteractionMessages = new UserInteractionEmailMessages (contact);
 
             // CONFIGURE NOTES VIEW
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);

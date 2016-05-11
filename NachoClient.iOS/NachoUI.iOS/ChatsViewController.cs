@@ -143,6 +143,11 @@ namespace NachoClient.iOS
             int unreadCount = 0;
             UnreadCountsByChat.TryGetValue (chat.Id, out unreadCount);
             cell.ShowUnreadIndicator = unreadCount > 0;
+            if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                cell.IndicatorColor = Util.ColorForAccount (chat.AccountId);
+            } else {
+                cell.IndicatorColor = null;
+            }
             return cell;
         }
 
@@ -583,6 +588,49 @@ namespace NachoClient.iOS
                 UnreadIndicator.Hidden = !value;
             }
         }
+        UIView _ColorIndicatorView;
+        UIView ColorIndicatorView {
+            get {
+                if (_ColorIndicatorView == null) {
+                    _ColorIndicatorView = new UIView ();
+                    ContentView.AddSubview (ColorIndicatorView);
+                }
+                return _ColorIndicatorView;
+            }
+        }
+        public UIColor IndicatorColor {
+            get {
+                if (_ColorIndicatorView != null) {
+                    return _ColorIndicatorView.BackgroundColor;
+                }
+                return null;
+            }
+            set {
+                if (value == null) {
+                    if (_ColorIndicatorView != null) {
+                        _ColorIndicatorView.RemoveFromSuperview ();
+                        _ColorIndicatorView = null;
+                    }
+                } else {
+                    if (_ColorIndicatorView == null) {
+                        SetNeedsLayout ();
+                    }
+                    ColorIndicatorView.BackgroundColor = value;
+                }
+            }
+        }
+        nfloat ColorIndicatorSize = 3.0f;
+        UIEdgeInsets _ColorIndicatorInsets = new UIEdgeInsets (1.0f, 0.0f, 1.0f, 7.0f);
+        public UIEdgeInsets ColorIndicatorInsets {
+            get {
+                return _ColorIndicatorInsets;
+            }
+            set {
+                _ColorIndicatorInsets = value;
+                SetNeedsLayout ();
+            }
+        }
+
 
         UILabel ParticipantsLabel;
         UILabel DateLabel;
@@ -614,7 +662,6 @@ namespace NachoClient.iOS
             ParticipantsLabel.Lines = 1;
             ParticipantsLabel.LineBreakMode = UILineBreakMode.TailTruncation;
 
-            MessageLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             MessageLabel.Font = messageFont;
             MessageLabel.TextColor = A.Color_NachoTextGray;
             MessageLabel.Lines = 2;
@@ -645,13 +692,16 @@ namespace NachoClient.iOS
 
         public override void LayoutSubviews ()
         {
+            nfloat rightSpacing = RightSpacing + (_ColorIndicatorView != null ? ColorIndicatorInsets.Right : 0.0f);
             base.LayoutSubviews ();
             DateLabel.SizeToFit ();
             var frame = MessageLabel.Frame;
-            MessageLabel.SizeToFit ();
-            frame.Height = MessageLabel.Frame.Height;
+            var messageWidth = ContentView.Bounds.Width - rightSpacing - frame.X;
+            var messageSize = MessageLabel.SizeThatFits (new CGSize(messageWidth, 0.0f));
+            frame.Height = messageSize.Height;
+            frame.Width = messageWidth;
             MessageLabel.Frame = frame;
-            DateLabel.Frame = new CGRect (Bounds.Width - DateLabel.Frame.Width - RightSpacing, DateLabel.Frame.Y, DateLabel.Frame.Width, DateLabel.Frame.Height);
+            DateLabel.Frame = new CGRect (Bounds.Width - DateLabel.Frame.Width - rightSpacing, DateLabel.Frame.Y, DateLabel.Frame.Width, DateLabel.Frame.Height);
             ParticipantsLabel.Frame = new CGRect (ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Y, DateLabel.Frame.X - ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Height);
             UnreadIndicator.Frame = new CGRect (PhotoContainerView.Bounds.Width - UnreadIndicator.Frame.Width, 0.0f, UnreadIndicator.Frame.Width, UnreadIndicator.Frame.Height);
             if (Chat == null || Chat.ParticipantCount <= 1) {
@@ -660,6 +710,10 @@ namespace NachoClient.iOS
                 var size = new CGSize (PhotoContainerView.Bounds.Width * 0.67, PhotoContainerView.Bounds.Width * 0.67);
                 PortraitView1.Frame = new CGRect (0.0f, 0.0f, size.Width, size.Height);
                 PortraitView2.Frame = new CGRect (PhotoContainerView.Bounds.Width - size.Width, PhotoContainerView.Bounds.Height - size.Height, size.Width, size.Height);
+            }
+
+            if (_ColorIndicatorView != null) {
+                _ColorIndicatorView.Frame = new CGRect (ContentView.Bounds.Width - ColorIndicatorInsets.Right - ColorIndicatorSize, ColorIndicatorInsets.Top, ColorIndicatorSize, ContentView.Bounds.Height - ColorIndicatorInsets.Top - ColorIndicatorInsets.Bottom);
             }
         }
 

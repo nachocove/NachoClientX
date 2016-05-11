@@ -174,15 +174,29 @@ namespace NachoClient.AndroidClient
 
         #region User Actions - Navbar
 
+        bool BasicAddressValidation (List<NcEmailAddress> addresses)
+        {
+            foreach (var address in addresses) {
+                if (!address.address.Contains ("@")) {
+                    NcAlertView.ShowMessage (this.Activity, "Invalid Email Address",
+                        string.Format ("The email address \"{0}\" is missing a '@' character.", address.address));
+                    return false;
+                }
+            }
+            return true;
+        }
+
         void SendButton_Click (object sender, EventArgs e)
         {
-            if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
-                var alert = new AlertDialog.Builder (Activity).SetTitle ("Empty Subject").SetMessage ("This message does not have a subject.  How would you like to proceed?");
-                alert.SetNeutralButton ("Send Anyway", SendWithoutSubject);
-                alert.SetPositiveButton ("Add Subject", AddSubject);
-                alert.Show ();
-            } else {
-                CheckSizeBeforeSending ();
+            if (BasicAddressValidation (HeaderView.ToField.AddressList) && BasicAddressValidation (HeaderView.CcField.AddressList) && BasicAddressValidation (HeaderView.BccField.AddressList)) {
+                if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
+                    var alert = new AlertDialog.Builder (Activity).SetTitle ("Empty Subject").SetMessage ("This message does not have a subject.  How would you like to proceed?");
+                    alert.SetNeutralButton ("Send Anyway", SendWithoutSubject);
+                    alert.SetPositiveButton ("Add Subject", AddSubject);
+                    alert.Show ();
+                } else {
+                    CheckSizeBeforeSending ();
+                }
             }
         }
 
