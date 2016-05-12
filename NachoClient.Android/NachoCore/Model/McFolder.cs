@@ -177,7 +177,17 @@ namespace NachoCore.Model
 
         public override string ToString ()
         {
-            return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
+            return string.Format ("McFolder({0}) sid={1} pid={2} skey={3} dn={4} type={5} fsep={6} sep={7} scrub={8} awaitingDelete={9}",
+                Id,
+                ServerId,
+                ParentId,
+                AsSyncKey,
+                DisplayName,
+                Type,
+                AsFolderSyncEpoch,
+                AsSyncEpoch,
+                AsSyncEpochScrubNeeded,
+                IsAwaitingDelete);
         }
 
         public string ImapFolderNameRedacted ()
@@ -370,18 +380,35 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
+        /// <summary>
+        /// Get the folder with the highest AsFolderSyncEpoch for the given account of the given type.
+        /// </summary>
+        /// <returns>The distinguished folder.</returns>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="typeCode">Type code.</param>
         public static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " likelihood (f.AccountId = ?, 1.0) AND " +
                           " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
                           " likelihood (f.IsClientOwned = 0, 1.0) AND " +
-                          " likelihood (f.Type = ?, 0.05) ",
+                          " likelihood (f.Type = ?, 0.05) " +
+                          " ORDER BY AsFolderSyncEpoch DESC",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
                 return null;
             }
-            NcAssert.True (1 == folders.Count);
+            if (folders.Count > 1) {
+                Log.Error (Log.LOG_SYS, "GetDistinguishedFolder({0}, {1}): Count {2}", accountId, typeCode, folders.Count);
+                McFolder previous = null;
+                foreach (var folder in folders) {
+                    Log.Warn (Log.LOG_SYS, "GetDistinguishedFolder: {0}", folder);
+                    if (previous != null && previous.AsFolderSyncEpoch == folder.AsFolderSyncEpoch) {
+                        Log.Error (Log.LOG_SYS, "GetDistinguishedFolder: Folder id={0} has same AsFolderSyncEpoch as id={1}", previous.Id, folder.Id);
+                    }
+                    previous = folder;
+                }
+            }
             return folders.First ();
         }
 
