@@ -35,7 +35,6 @@ namespace NachoClient.iOS
 
         List<McAccount> Accounts;
         bool HasSalesforce;
-        SwitchAccountButton switchAccountButton;
         UINavigationController AddAccountNavigationController;
 
         #endregion
@@ -46,6 +45,7 @@ namespace NachoClient.iOS
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+            NavigationItem.Title = "Settings";
         }
 
         #endregion
@@ -64,11 +64,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = switchAccountButton;
-
-            SwitchToAccount (NcApplication.Instance.Account);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -331,20 +326,6 @@ namespace NachoClient.iOS
             DismissViewController (true, () => {
                 AddAccountNavigationController = null;
             });
-        }
-
-        #endregion
-
-        #region Account Switching
-
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            switchAccountButton.SetAccountImage (account);
         }
 
         #endregion

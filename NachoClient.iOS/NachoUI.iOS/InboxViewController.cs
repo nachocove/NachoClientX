@@ -7,10 +7,9 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public class InboxViewController : MessageListViewController
+    public class InboxViewController : MessageListViewController, IAccountSwitching
     {
-
-        SwitchAccountButton SwitchAccountButton;
+        
         McAccount Account;
 
         public InboxViewController () : base ()
@@ -21,9 +20,6 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            SwitchAccountButton = new SwitchAccountButton (ShowAccountSwitcher);
-            NavigationItem.TitleView = SwitchAccountButton;
-            SwitchAccountButton.SetAccountImage (Account);
             if (NcApplication.Instance.Account.Id != Account.Id) {
                 SwitchToAccount (NcApplication.Instance.Account);
             }
@@ -38,12 +34,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
         }
 
-        void ShowAccountSwitcher ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             Account = account;
             CancelSyncing ();
@@ -53,18 +44,11 @@ namespace NachoClient.iOS
             if (SwipingIndexPath != null) {
                 EndSwiping ();
             }
-            SwitchAccountButton.SetAccountImage (account);
             SetEmailMessages (NcEmailManager.Inbox (account.Id));
             UpdateFilterBar ();
             TableView.ReloadData ();  // to clear the table
             HasLoadedOnce = false;
             SetNeedsReload ();
-        }
-
-        protected override void UpdateNavigationItem ()
-        {
-            base.UpdateNavigationItem ();
-            NavigationItem.TitleView = SwitchAccountButton;
         }
     }
 }

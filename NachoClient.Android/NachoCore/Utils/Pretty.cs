@@ -1142,6 +1142,15 @@ namespace NachoCore.Utils
             }
             return String.Join (" ", cooked);
         }
+
+        public static string LimitedBadgeCount (int count)
+        {
+            if (count < 100000) {
+                return String.Format ("{0:N0}", count);
+            } else {
+                return "100K+";
+            }
+        }
     }
 }
 

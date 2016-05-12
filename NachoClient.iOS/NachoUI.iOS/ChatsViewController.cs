@@ -13,7 +13,7 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     [Foundation.Register ("ChatsViewController")]
-    public class ChatsViewController : NachoWrappedTableViewController, NachoSearchControllerDelegate
+    public class ChatsViewController : NachoWrappedTableViewController, NachoSearchControllerDelegate, IAccountSwitching
     {
 
         #region Properties
@@ -24,7 +24,6 @@ namespace NachoClient.iOS
         List<McChat> Chats;
         Dictionary<int, int> UnreadCountsByChat;
 
-        SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
         UIBarButtonItem SearchButton;
         ChatsSearchResultsViewController SearchResultsViewController;
@@ -75,8 +74,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = SwitchAccountButton;
             SwitchToAccount (NcApplication.Instance.Account);
             Reload ();
         }
@@ -91,7 +88,6 @@ namespace NachoClient.iOS
                 Reload ();
             }
             StartListeningForStatusInd ();
-            SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -250,15 +246,9 @@ namespace NachoClient.iOS
                 }
             }
         }
-
         #endregion
 
         #region User Actions
-
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
 
         void NewChat (object sender, EventArgs args)
         {
@@ -308,11 +298,12 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messagesViewController, true);
         }
 
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             Account = account;
             Chats.Clear ();
             UnreadCountsByChat.Clear ();
+            TableView.ReloadData ();
             NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
             SetNeedsReload ();
         }

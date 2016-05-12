@@ -13,6 +13,8 @@ namespace NachoClient.iOS
 
         public event EventHandler ViewDisappearing;
 
+        public bool IsLongLived;
+
         protected nfloat keyboardHeight;
 
         NSObject KeyboardWillShowNotificationToken;
@@ -91,7 +93,7 @@ namespace NachoClient.iOS
         protected virtual bool ShouldCleanupDuringDidDisappear
         {
             get {
-                return IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
+                return !IsLongLived && IsViewLoaded && (IsBeingDismissed || IsMovingFromParentViewController);
             }
         }
 

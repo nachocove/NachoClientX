@@ -192,7 +192,6 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController showing support");
             var vc = new SupportViewController ();
-            vc.HideNavTitle = false;
             NavigationController.PushViewController (vc, true);
         }
 

@@ -33,7 +33,6 @@ namespace NachoClient.iOS
         UIButton showOpenSourceButton;
         UIButton showReleaseNotesButton;
         UIButton showPrivacyPolicyButton;
-        SwitchAccountButton switchAccountButton;
 
         public AboutUsViewController () : base ()
         {
@@ -41,10 +40,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationController.NavigationBar.Translucent = false;
-
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = switchAccountButton;
+            NavigationItem.Title = "About Nacho Mail";
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -222,22 +218,11 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            switchAccountButton.SetAccountImage (account);
-        }
-
         protected override void ConfigureAndLayout ()
         {
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         protected override void Cleanup ()
