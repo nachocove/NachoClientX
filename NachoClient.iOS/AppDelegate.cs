@@ -1326,6 +1326,7 @@ namespace NachoClient.iOS
             } else {
                 badgeCount = EmailHelper.GetUnreadMessageCountForBadge();
                 badgeCount += McChat.UnreadMessageCountForBadge ();
+                badgeCount += McAction.CountOfNewActionsForBadge ();
                 Log.Info (Log.LOG_UI, "UpdateBadgeCount: badge count = {0}", badgeCount);
             }
             InvokeOnUIThread.Instance.Invoke (() => {

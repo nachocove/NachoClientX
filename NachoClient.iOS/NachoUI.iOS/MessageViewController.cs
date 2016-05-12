@@ -221,6 +221,13 @@ namespace NachoClient.iOS
                     EmailHelper.MarkAsRead (Message);
                 }
             }
+            if (Action != null && Action.IsNew) {
+                NcTask.Run (() => {
+                    Action.IsNew = false;
+                    Action.Update ();
+                    NcApplication.Instance.InvokeStatusIndEventInfo(McAccount.QueryById<McAccount>(Action.AccountId), NcResult.SubKindEnum.Info_ActionMarkedNotNew);
+                }, "MessageViewController_MakeActionNotNew");
+            }
             UpdateNavigationItem ();
         }
 
