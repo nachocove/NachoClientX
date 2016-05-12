@@ -18,8 +18,6 @@ namespace NachoClient.iOS
     {
         void SelectFile (INachoFileChooser vc, McAbstrObject file);
 
-        void DismissChildFileChooser (INachoFileChooser vc);
-
         void Append (McAttachment attachment);
 
         void AttachmentUpdated (McAttachment attachment);
