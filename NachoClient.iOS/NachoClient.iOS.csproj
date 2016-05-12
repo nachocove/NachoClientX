@@ -1699,6 +1699,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ActionsHelper.cs">
       <Link>NachoCore\Utils\ActionsHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountControl.cs" />
+    <Compile Include="NachoUI.iOS\Support\NachoNavigationBar.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
+    <Compile Include="NachoUI.iOS\Support\PercentagePressGestureRecognizer.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2783,6 +2788,9 @@
     <BundleResource Include="Resources\thread-arrows.png" />
     <BundleResource Include="Resources\thread-arrows%402x.png" />
     <BundleResource Include="Resources\thread-arrows%403x.png" />
+    <BundleResource Include="Resources\add-account.png" />
+    <BundleResource Include="Resources\add-account%402x.png" />
+    <BundleResource Include="Resources\add-account%403x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

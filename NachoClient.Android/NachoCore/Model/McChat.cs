@@ -155,6 +155,21 @@ namespace NachoCore.Model
                 "AND likelihood (m.IsRead = 0, 0.1)", accountId);
         }
 
+        public static int UnreadMessageCountForAccountSince (int accountId, DateTime since)
+        {
+            var retardedSince = since.AddDays (-1.0);
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.AccountId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1) " +
+                "AND m.CreatedAt > ? " +
+                "AND likelihood (m.DateReceived > ?, 0.01)",
+                accountId, since, retardedSince);
+        }
+
         public static int UnreadMessageCountForBadge ()
         {
             var unreadPref = EmailHelper.HowToDisplayUnreadCount ();

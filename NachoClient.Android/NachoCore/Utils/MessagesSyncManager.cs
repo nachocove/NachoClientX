@@ -113,7 +113,9 @@ namespace NachoCore.Utils
             SyncTokens = null;
             SyncTimeoutTimer = null;
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                Delegate.MessagesSyncDidTimeOut (this);
+                if (Delegate != null){
+                    Delegate.MessagesSyncDidTimeOut (this);
+                }
             });
         }
 
@@ -128,6 +130,8 @@ namespace NachoCore.Utils
                         if (pending.State == McPending.StateEnum.Failed || pending.State == McPending.StateEnum.Deleted) {
                             SyncTokens.Remove (token);
                         }
+                    } else {
+                        SyncTokens.Remove (token);
                     }
                 }
                 if (SyncTokens.Count == 0) {
@@ -144,7 +148,9 @@ namespace NachoCore.Utils
             }
             SyncTokens = null;
             StopListeningForStatusInd ();
-            Delegate.MessagesSyncDidComplete (this);
+            if (Delegate != null) {
+                Delegate.MessagesSyncDidComplete (this);
+            }
         }
     }
 }

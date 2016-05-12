@@ -11,7 +11,7 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public class ActionListViewController : NachoTableViewController
+    public class ActionListViewController : NachoTableViewController, IAccountSwitching
     {
 
         #region Properties
@@ -21,7 +21,6 @@ namespace NachoClient.iOS
 
         NachoActions Actions;
 
-        SwitchAccountButton SwitchAccountButton;
         McAction.ActionState State;
         McAccount Account;
 
@@ -89,9 +88,6 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            SwitchAccountButton = new SwitchAccountButton (ShowAccountSwitcher);
-            NavigationItem.TitleView = SwitchAccountButton;
-            SwitchAccountButton.SetAccountImage (Account);
             base.ViewDidLoad ();
             Reload ();
         }
@@ -129,11 +125,6 @@ namespace NachoClient.iOS
         #endregion
 
         #region User Actions
-
-        void ShowAccountSwitcher ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
 
         void EditTable (object sender, EventArgs e)
         {
@@ -560,7 +551,7 @@ namespace NachoClient.iOS
             viewController.PresentOverViewController (this);
         }
 
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             Account = account;
             // CancelSyncing ();
@@ -570,7 +561,6 @@ namespace NachoClient.iOS
             if (SwipingIndexPath != null) {
                 EndSwiping ();
             }
-            SwitchAccountButton.SetAccountImage (account);
             Actions = new NachoActions (Account.Id, State);
             TableView.ReloadData ();  // to clear the table
             HasLoadedOnce = false;
