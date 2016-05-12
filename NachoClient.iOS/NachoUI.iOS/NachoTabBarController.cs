@@ -258,7 +258,7 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
                 UpdateNotificationBadge ();
             }
-            if (NcResult.SubKindEnum.Info_ChatMessageAdded == s.Status.SubKind || NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_ChatMessageAdded == s.Status.SubKind || NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded == s.Status.SubKind || NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
                 UpdateChatsBadge ();
             }
         }
