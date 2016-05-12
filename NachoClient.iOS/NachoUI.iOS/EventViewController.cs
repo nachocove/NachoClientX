@@ -501,6 +501,9 @@ namespace NachoClient.iOS
                 return;
             }
 
+            scrollView.ScrollEnabled = true;
+            scrollView.UserInteractionEnabled = true;
+
             if (detail.CanEdit) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
@@ -826,6 +829,8 @@ namespace NachoClient.iOS
             contentView.Hidden = false;
             scrollView.Hidden = false;
             View.Hidden = false;
+            scrollView.ScrollEnabled = false;
+            scrollView.UserInteractionEnabled = false;
             titleLabelView.Text = "Information is unavailable";
             titleLabelView.Lines = 0;
             titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
