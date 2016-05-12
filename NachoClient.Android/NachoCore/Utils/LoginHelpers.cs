@@ -199,8 +199,13 @@ namespace NachoCore.Utils
         public static McAccount PickStartupAccount ()
         {
             McAccount account = GetMostRecentAccount ();
+            var normalAccounts = McAccount.GetAllConfiguredNormalAccounts ();
             if (null != account) {
-                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+                if (account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                    if (normalAccounts.Count > 1) {
+                        return account;
+                    }
+                } else if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     return account;
                 }
             }
@@ -212,8 +217,7 @@ namespace NachoCore.Utils
                     continue;
                 }
                 if (McAccount.AccountTypeEnum.Unified == a.AccountType) {
-                    var normalAccounts = McAccount.GetAllConfiguredNormalAccounts ();
-                    if (1 != normalAccounts.Count) {
+                    if (normalAccounts.Count <= 1) {
                         continue;
                     }
                 }
