@@ -488,7 +488,7 @@ namespace NachoCore.ActiveSync
                     target.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
                     return true;
                 });
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS144");
 
             case Xml.StatusCode.ExternallyManagedDevicesNotAllowed_145:
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
