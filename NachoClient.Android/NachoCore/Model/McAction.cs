@@ -35,6 +35,8 @@ namespace NachoCore.Model
         [Indexed]
         public string MimeMessageId { get; set; }
         public bool IsNew { get; set; }
+        [Indexed]
+        public DateTime NewAt { get; set; }
 
         public bool IsHot {
             get {
@@ -102,6 +104,7 @@ namespace NachoCore.Model
                         if (String.IsNullOrEmpty (message.MessageID) || !ActionExistsForMimeMessageId(message.AccountId, message.MessageID)){
                             var action = McAction.FromMessage (message);
                             action.IsNew = true;
+                            action.NewAt = DateTime.UtcNow;
                             action.MoveToFront ();
                             action.Insert ();
                         }
@@ -116,6 +119,42 @@ namespace NachoCore.Model
                     });
                 }
             }, "McAction_CreateActionFromMessage", NcTask.ActionSerialScheduler);
+        }
+
+        public static int CountOfNewActions (int accountId, DateTime since, bool excludingUnreadMessages = false)
+        {
+            string sql = "SELECT COUNT(*) " +
+                "FROM McAction a ";
+            if (excludingUnreadMessages) {
+                sql += "JOIN McEmailMessage m ON a.EmailMessageId = m.Id ";
+            }
+            sql += "WHERE a.NewAt > ? " +
+                "AND a.IsNew = 1 ";
+            if (excludingUnreadMessages) {
+                sql += "AND m.IsRead = 1 ";
+            }
+            if (accountId == McAccount.GetUnifiedAccount ().Id) {
+                return NcModel.Instance.Db.ExecuteScalar<int> (sql, since);
+            } else {
+                sql += "AND a.accountId = ?";
+                return NcModel.Instance.Db.ExecuteScalar<int> (sql, since, accountId);
+            }
+        }
+
+        public static int CountOfNewActionsForBadge ()
+        {
+            var unreadPref = EmailHelper.HowToDisplayUnreadCount ();
+            DateTime cutoffDate = default(DateTime);
+            if (unreadPref == EmailHelper.ShowUnreadEnum.AllMessages) {
+                cutoffDate = default(DateTime).AddDays (2);
+            } else if (unreadPref == EmailHelper.ShowUnreadEnum.TodaysMessages) {
+                cutoffDate = DateTime.Now.Date.ToUniversalTime ();
+            } else if (unreadPref == EmailHelper.ShowUnreadEnum.RecentMessages) {
+                cutoffDate = LoginHelpers.GetBackgroundTime ();
+            } else {
+                NcAssert.CaseError ();
+            }
+            return CountOfNewActions (McAccount.GetUnifiedAccount ().Id, since: cutoffDate, excludingUnreadMessages: true);
         }
 
         public static bool ActionExistsForMimeMessageId (int accountId, string mimeMessageId)
@@ -257,6 +296,7 @@ namespace NachoCore.Model
 
         public void Hot ()
         {
+            IsNew = false;
             State = ActionState.Hot;
             MoveToFront ();
         }
@@ -290,6 +330,8 @@ namespace NachoCore.Model
             State = ActionState.Hot;
             DeferUntilDate = default(DateTime);
             DeferralType = MessageDeferralType.None;
+            IsNew = true;
+            NewAt = DateTime.UtcNow;
             MoveToFront ();
             UpdateMessageFlag ();
         }
@@ -299,6 +341,7 @@ namespace NachoCore.Model
             if (State != ActionState.Completed) {
                 CompletedDate = DateTime.UtcNow;
                 State = ActionState.Completed;
+                IsNew = false;
                 MoveToFront ();
                 UpdateMessageFlag ();
             }

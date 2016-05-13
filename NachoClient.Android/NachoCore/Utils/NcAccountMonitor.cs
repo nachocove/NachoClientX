@@ -51,6 +51,7 @@ namespace NachoCore
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
             case NcResult.SubKindEnum.Info_ChatMessageAdded:
+            case NcResult.SubKindEnum.Info_ActionMarkedNotNew:
                 ReloadAccounts ();
                 break;
             case NcResult.SubKindEnum.Info_AccountChanged:
@@ -92,6 +93,7 @@ namespace NachoCore
                     info.UnreadCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, unreadCutoff);
                 }
                 info.UnreadCount += McChat.UnreadMessageCountForAccountSince (account.Id, unreadCutoff);
+                info.UnreadCount += McAction.CountOfNewActions (account.Id, since: unreadCutoff, excludingUnreadMessages: true);
                 if (unreadCountType == EmailHelper.ShowUnreadEnum.RecentMessages) {
                     info.RecentUnreadCount = info.UnreadCount;
                 } else {
@@ -99,6 +101,7 @@ namespace NachoCore
                         info.RecentUnreadCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, recentCutoff);
                     }
                     info.RecentUnreadCount += McChat.UnreadMessageCountForAccountSince (account.Id, recentCutoff);
+                    info.RecentUnreadCount += McAction.CountOfNewActions (account.Id, since: recentCutoff, excludingUnreadMessages: true);
                 }
                 infos.Add (info);
             }
