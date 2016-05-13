@@ -1355,14 +1355,6 @@ namespace NachoClient.iOS
         /// <summary>
         /// INachoFileChooserParent delegate
         /// </summary>
-        public void DismissChildFileChooser (INachoFileChooser vc)
-        {
-            vc.DismissFileChooser (true, null);
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
         public void Append (McAttachment attachment)
         {
             attachmentView.Append (attachment);

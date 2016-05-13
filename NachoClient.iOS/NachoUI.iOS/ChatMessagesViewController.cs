@@ -293,12 +293,6 @@ namespace NachoClient.iOS
         }
 
         // Not really a direct user action, but caused by the user selecting a date for the intent
-        public void DismissChildFileChooser (INachoFileChooser vc)
-        {
-            DismissViewController (true, null);
-        }
-
-        // Not really a direct user action, but caused by the user selecting a date for the intent
         public void DismissPhotoPicker ()
         {
             DismissViewController (true, null);
