@@ -14,6 +14,7 @@ namespace NachoCore.IMAP
 
         public NcImapClient () : base (getLogger ())
         {
+            ServerCertificateValidationCallback = ServerCertificatePeek.CertificateValidationCallback;
         }
 
         protected override ImapFolder CreateImapFolder (ImapFolderConstructorArgs args)

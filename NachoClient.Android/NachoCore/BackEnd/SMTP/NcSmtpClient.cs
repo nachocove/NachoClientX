@@ -12,6 +12,7 @@ namespace NachoCore.SMTP
 
         public NcSmtpClient () : base(getLogger())
         {
+            ServerCertificateValidationCallback = ServerCertificatePeek.CertificateValidationCallback;
         }
 
         private static IProtocolLogger getLogger ()

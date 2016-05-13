@@ -135,7 +135,6 @@ namespace NachoCore.Utils
             ServicePointManager.ServerCertificateValidationCallback = ServerCertificatePeek.CertificateValidationCallback;
         }
 
-        // Note: public only for test code!
         public static bool CertificateValidationCallback (Object sender,
                                                           X509Certificate certificate,
                                                           X509Chain chain,
