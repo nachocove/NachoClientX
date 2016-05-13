@@ -569,8 +569,9 @@ namespace NachoClient.iOS
                     NcTask.Run (() => {
                         List<int> adds;
                         List<int> deletes;
-                        bool changed = Messages.Refresh (out adds, out deletes);
+                        bool changed = Messages.BeginRefresh (out adds, out deletes);
                         BeginInvokeOnMainThread (() => {
+                            Messages.CommitRefresh ();
                             HandleReloadResults (changed, adds, deletes);
                         });
                     }, MessageRefreshTaskName);

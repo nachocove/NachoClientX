@@ -12,29 +12,41 @@ namespace NachoCore
     public class NachoPriorityEmailMessages : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
+        List<McEmailMessageThread> updatedThreadList;
         McFolder folder;
         public bool IncludeActions = true;
+        int _CountIgnoringLimit;
+        int UpdatedCountIgnoringLimit;
 
         public NachoPriorityEmailMessages (McFolder folder)
         {
             this.folder = folder;
             threadList = new List<McEmailMessageThread> ();
+            _CountIgnoringLimit = 0;
         }
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
             var list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold, includeActions: IncludeActions);
-            var threads = NcMessageThreads.ThreadByConversation (list);
-            RemoveIgnoredMessages (threads);
-            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
-                ClearCache ();
-                threadList = threads;
-                return true;
+            updatedThreadList = NcMessageThreads.ThreadByConversation (list);
+            RemoveIgnoredMessages (updatedThreadList);
+            UpdatedCountIgnoringLimit = updatedThreadList.Count;
+            if (MessageLimit > 0 && updatedThreadList.Count > MessageLimit) {
+                updatedThreadList = updatedThreadList.GetRange (0, MessageLimit);
             }
-            return false;
+            return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
+        }
+
+        public override void CommitRefresh ()
+        {
+            ClearCache ();
+            threadList = updatedThreadList;
+            updatedThreadList = null;
+            _CountIgnoringLimit = UpdatedCountIgnoringLimit;
+            UpdatedCountIgnoringLimit = 0;
         }
 
         public override void RemoveIgnoredMessages ()
@@ -45,6 +57,11 @@ namespace NachoCore
         public override int Count ()
         {
             return threadList.Count;
+        }
+
+        public override int CountIgnoringLimit ()
+        {
+            return _CountIgnoringLimit;
         }
 
         public override McEmailMessageThread GetEmailThread (int i)

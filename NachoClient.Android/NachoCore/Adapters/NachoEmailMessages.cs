@@ -12,16 +12,34 @@ namespace NachoCore
     public class NachoEmailMessages
     {
 
+        public int MessageLimit = 0;
+
         public virtual int Count ()
         {
             return 0;
         }
 
-        public virtual bool Refresh (out List<int> adds, out List<int> deletes)
+        public virtual int CountIgnoringLimit ()
+        {
+            return Count ();
+        }
+
+        public virtual bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             adds = null;
             deletes = null;
             return false;
+        }
+
+        public virtual void CommitRefresh ()
+        {
+        }
+
+        public virtual bool Refresh (out List<int> adds, out List<int> deletes)
+        {
+            bool changed = BeginRefresh (out adds, out deletes);
+            CommitRefresh ();
+            return changed;
         }
 
         public virtual bool HasBackgroundRefresh ()

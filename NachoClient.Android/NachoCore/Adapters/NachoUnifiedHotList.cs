@@ -12,32 +12,49 @@ namespace NachoCore
     public class NachoUnifiedHotList : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
+        List<McEmailMessageThread> updatedThreadList;
         public bool IncludeActions = true;
+        int _CountIngoringLimit;
+        int UpdatedCountIgnoringLimit;
 
         public NachoUnifiedHotList ()
         {
             threadList = new List<McEmailMessageThread> ();
+            _CountIngoringLimit = 0;
         }
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
             var list = McEmailMessage.QueryUnifiedInboxItemsByScore (threshold, includeActions:IncludeActions);
-            var threads = NcMessageThreads.ThreadByConversation (list);
-            RemoveIgnoredMessages (threads);
-            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
-                ClearCache ();
-                threadList = threads;
-                return true;
+            updatedThreadList = NcMessageThreads.ThreadByConversation (list);
+            RemoveIgnoredMessages (updatedThreadList);
+            UpdatedCountIgnoringLimit = updatedThreadList.Count;
+            if (MessageLimit > 0 && updatedThreadList.Count > MessageLimit) {
+                updatedThreadList = updatedThreadList.GetRange (0, MessageLimit);
             }
-            return false;
+            return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
+        }
+
+        public override void CommitRefresh ()
+        {
+            ClearCache ();
+            threadList = updatedThreadList;
+            updatedThreadList = null;
+            _CountIngoringLimit = UpdatedCountIgnoringLimit;
+            UpdatedCountIgnoringLimit = 0;
         }
 
         public override int Count ()
         {
             return threadList.Count;
+        }
+
+        public override int CountIgnoringLimit ()
+        {
+            return _CountIngoringLimit;
         }
 
         public override void RemoveIgnoredMessages ()
