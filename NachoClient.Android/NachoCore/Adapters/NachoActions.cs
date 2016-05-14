@@ -167,7 +167,7 @@ namespace NachoCore
         {
             base.CommitRefresh ();
             NormalCount = UpdatedNormalCount;
-            DeferredCount = UpdatedNormalCount;
+            DeferredCount = UpdatedDeferredCount;
             CompletedCount = UpdatedCompletedCount;
         }
 
