@@ -91,7 +91,9 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (NachoEmailMessages messages)
         {
-            Messages = messages;
+            lock (MessagesLock) {
+                Messages = messages;
+            }
         }
 
         #endregion
@@ -548,6 +550,8 @@ namespace NachoClient.iOS
         bool NeedsReload;
         bool IsReloading;
 
+        object MessagesLock = new object();
+
         protected void SetNeedsReload ()
         {
             NeedsReload = true;
@@ -569,10 +573,26 @@ namespace NachoClient.iOS
                     NcTask.Run (() => {
                         List<int> adds;
                         List<int> deletes;
-                        bool changed = Messages.BeginRefresh (out adds, out deletes);
+                        NachoEmailMessages messages;
+                        lock (MessagesLock){
+                            messages = Messages;
+                        }
+                        bool changed = messages.BeginRefresh (out adds, out deletes);
                         BeginInvokeOnMainThread (() => {
-                            Messages.CommitRefresh ();
-                            HandleReloadResults (changed, adds, deletes);
+                            bool handledResults = false;
+                            lock (MessagesLock){
+                                if (messages == Messages) {
+                                    Messages.CommitRefresh ();
+                                    HandleReloadResults (changed, adds, deletes);
+                                    handledResults = true;
+                                }
+                            }
+                            if (!handledResults) {
+                                IsReloading = false;
+                                if (NeedsReload) {
+                                    Reload ();
+                                }
+                            }
                         });
                     }, MessageRefreshTaskName);
                 }

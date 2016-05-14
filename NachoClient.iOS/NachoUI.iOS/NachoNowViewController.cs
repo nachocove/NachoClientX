@@ -575,6 +575,8 @@ namespace NachoClient.iOS
         bool NeedsReload;
         bool IsReloading;
 
+        object SourcesLock = new object ();
+
         void SetNeedsReload ()
         {
             NeedsReload = true;
@@ -591,14 +593,24 @@ namespace NachoClient.iOS
                 NcTask.Run (() => {
                     List<int> messageAdds;
                     List<int> messageDeletes;
-                    bool messagesChanged = HotMessages.BeginRefresh (out messageAdds, out messageDeletes);
+                    NachoEmailMessages hotMessages;
+                    NachoHotActions hotActions;
+                    lock (SourcesLock){
+                        hotMessages = HotMessages;
+                        hotActions = HotActions;
+                    }
+                    bool messagesChanged = hotMessages.BeginRefresh (out messageAdds, out messageDeletes);
                     List<int> actionAdds;
                     List<int> actionDeletes;
-                    bool actionsChanged = HotActions.BeginRefresh (out actionAdds, out actionDeletes);
+                    bool actionsChanged = hotActions.BeginRefresh (out actionAdds, out actionDeletes);
                     BeginInvokeOnMainThread (() => {
-                        HotActions.CommitRefresh ();
-                        HotMessages.CommitRefresh ();
-                        HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
+                        lock (SourcesLock){
+                            if (hotMessages == HotMessages && hotActions == HotActions){
+                                HotActions.CommitRefresh ();
+                                HotMessages.CommitRefresh ();
+                                HandleReloadHotMessagesResults (messagesChanged, messageAdds, messageDeletes, actionsChanged, actionAdds, actionDeletes);
+                            }
+                        }
                         IsReloading = false;
                         if (NeedsReload) {
                             ReloadHotMessages ();
@@ -1226,10 +1238,12 @@ namespace NachoClient.iOS
             }
             CancelSyncing ();
             Account = account;
-            HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions:false);
-            HotMessages.MessageLimit = MaximumNumberOfHotMessages;
-            HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
-            HotActions.ActionLimit = MaximumNumberOfActions;
+            lock (SourcesLock) {
+                HotMessages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id, includeActions: false);
+                HotMessages.MessageLimit = MaximumNumberOfHotMessages;
+                HotActions = new NachoHotActions (NcApplication.Instance.Account.Id);
+                HotActions.ActionLimit = MaximumNumberOfActions;
+            }
             SectionCount = 0;
             HotMessagesSection = -1;
             ActionsSection = -1;
