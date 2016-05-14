@@ -22,7 +22,6 @@ namespace NachoClient.iOS
         protected UIView contentView;
         protected UIScrollView scrollView;
 
-        UIBarButtonItem backButton;
         UIImageView accountImageView;
         UILabel EmailAddress;
         UcNameValuePair DisplayNameTextBlock;
@@ -89,14 +88,6 @@ namespace NachoClient.iOS
         {
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
-
-            backButton = new NcUIBarButtonItem ();
-            backButton.Image = UIImage.FromBundle ("nav-backarrow");
-            backButton.TintColor = A.Color_NachoBlue;
-            backButton.AccessibilityLabel = "Back";
-            backButton.Clicked += BackButton_Clicked;
-
-            NavigationItem.SetLeftBarButtonItem (backButton, true);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -387,8 +378,6 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            backButton.Clicked -= BackButton_Clicked;
-
             accountImageView = null;
 
             if (null != FixAccountButton) {
@@ -404,12 +393,16 @@ namespace NachoClient.iOS
             }
         }
 
-        void BackButton_Clicked (object sender, EventArgs e)
+        public override void ViewDidDisappear (bool animated)
         {
-            if (account.Id == NcApplication.Instance.Account.Id) {
-                NcApplication.Instance.Account = McAccount.QueryById<McAccount> (account.Id);
+            if (IsMovingFromParentViewController) {
+                if (account.Id == NcApplication.Instance.Account.Id) {
+                    // reload the account, just in case something changed, since we did
+                    // just come back out of the editing that account.
+                    NcApplication.Instance.Account = McAccount.QueryById<McAccount> (account.Id);
+                }
             }
-            NavigationController.PopViewController (true);
+            base.ViewDidDisappear (animated);
         }
 
         public bool TextFieldShouldReturn (UITextField whatField)
@@ -622,12 +615,10 @@ namespace NachoClient.iOS
         void onDeleteAccount (object sender, EventArgs e)
         {
             contentView.Hidden = true;
-            backButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
             Action action = () => {
                 NcAccountHandler.Instance.RemoveAccount (account.Id);
                 InvokeOnMainThread (() => {
-                    backButton.Enabled = true;
                     ToggleDeleteAccountSpinnerView ();
                     // go back to main screen
                     NcUIRedirector.Instance.GoBackToMainScreen ();  
