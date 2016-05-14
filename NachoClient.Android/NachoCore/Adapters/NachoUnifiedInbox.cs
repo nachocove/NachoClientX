@@ -13,6 +13,7 @@ namespace NachoCore
     public class NachoUnifiedInbox : NachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
+        List<McEmailMessageThread> updatedThreadList;
 
         public NachoUnifiedInbox ()
         {
@@ -47,15 +48,17 @@ namespace NachoCore
             RemoveIgnoredMessages (threadList);
         }
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
-            var threads = QueryMessagesByConversation ();
-            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
-                ClearCache ();
-                threadList = threads;
-                return true;
-            }
-            return false;
+            updatedThreadList = QueryMessagesByConversation ();
+            return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
+        }
+
+        public override void CommitRefresh ()
+        {
+            ClearCache ();
+            threadList = updatedThreadList;
+            updatedThreadList = null;
         }
 
         public override bool HasBackgroundRefresh ()
@@ -66,15 +69,11 @@ namespace NachoCore
         public override void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
         {
             NcTask.Run (() => {
-                var newThreadList = QueryMessagesByConversation ();
+                List<int> adds;
+                List<int> deletes;
+                bool changed = BeginRefresh (out adds, out deletes);
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                    List<int> adds;
-                    List<int> deletes;
-                    bool changed = NcMessageThreads.AreDifferent (threadList, newThreadList, out adds, out deletes);
-                    if (changed) {
-                        ClearCache ();
-                        threadList = newThreadList;
-                    }
+                    CommitRefresh ();
                     if (null != completionAction) {
                         completionAction (changed, adds, deletes);
                     }

@@ -12,6 +12,7 @@ namespace NachoCore
     public class NachoLikelyToReadEmailMessages : NachoEmailMessages
     {
         List<McEmailMessageThread> ThreadList;
+        List<McEmailMessageThread> UpdatedThreadList;
         McFolder Folder;
 
         public NachoLikelyToReadEmailMessages (McFolder folder)
@@ -23,18 +24,20 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryActiveMessageItemsByScore2 (Folder.AccountId, Folder.Id, 
                            McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
-            var threads = NcMessageThreads.ThreadByConversation (list);
-            RemoveIgnoredMessages (threads);
-            if (NcMessageThreads.AreDifferent (ThreadList, threads, out adds, out deletes)) {
-                ClearCache ();
-                ThreadList = threads;
-                return true;
-            }
-            return false;
+            UpdatedThreadList = NcMessageThreads.ThreadByConversation (list);
+            RemoveIgnoredMessages (UpdatedThreadList);
+            return NcMessageThreads.AreDifferent (ThreadList, UpdatedThreadList, out adds, out deletes);
+        }
+
+        public override void CommitRefresh ()
+        {
+            ClearCache ();
+            ThreadList = UpdatedThreadList;
+            UpdatedThreadList = null;
         }
 
         public override void RemoveIgnoredMessages ()

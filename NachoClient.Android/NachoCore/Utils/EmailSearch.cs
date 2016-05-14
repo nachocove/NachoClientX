@@ -102,13 +102,17 @@ namespace NachoCore.Utils
 
         #region INachoEmailMessages
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             // TODO  Should this rerun the search??
 
             adds = null;
             deletes = null;
             return false;
+        }
+
+        public override void CommitRefresh ()
+        {
         }
 
         public override int Count ()
