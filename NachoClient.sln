@@ -79,6 +79,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OkHttp", "..\OkHttp-Xamarin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClientShare.iOS", "NachoClientShare.iOS\NachoClientShare.iOS.csproj", "{4E723051-3DD7-4CD4-A2D9-C82E5B7E2560}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NachoCore", "NachoCore\NachoCore.shproj", "{85F06863-53BA-4EA6-A94A-2B322341815C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

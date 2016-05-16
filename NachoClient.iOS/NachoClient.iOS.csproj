@@ -206,45 +206,21 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
-    <Folder Include="NachoCore\" />
     <Folder Include="sqlite-net\" />
-    <Folder Include="NachoCore\Extensions\" />
     <Folder Include="Resources\xsd\" />
     <Folder Include="Resources\xsd\request\" />
     <Folder Include="Resources\xsd\response\" />
     <Folder Include="Resources\xsd\common\" />
     <Folder Include="NachoUI.iOS\" />
-    <Folder Include="NachoCore\Brain\" />
-    <Folder Include="NachoCore\Utils\" />
-    <Folder Include="NachoCore\Adapters\" />
-    <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\" />
     <Folder Include="NachoPlatform.iOS\" />
     <Folder Include="NachoPlatform\" />
     <Folder Include="NachoUI.iOS\Support\" />
     <Folder Include="NachoUI.iOS\Interfaces\" />
-    <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="Content\" />
-    <Folder Include="NachoCore\Mockables\" />
-    <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
     <Folder Include="NachoUI.iOS\ViewControllers\" />
-    <Folder Include="NachoCore\Model\McContact\" />
-    <Folder Include="NachoCore\Model\McEmailMessage\" />
-    <Folder Include="NachoCore\Index\" />
-    <Folder Include="NachoCore\Model\Migration\" />
-    <Folder Include="NachoCore\BackEnd\IMAP\" />
-    <Folder Include="NachoCore\BackEnd\SMTP\" />
-    <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
-    <Folder Include="NachoCore\BackEnd\Device\" />
-    <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
-    <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
-    <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
-    <Folder Include="NachoCore\Model\McEmailAddress\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
-    <None Include="..\NachoClient.Android\NachoCore\Model\README.md">
-      <Link>NachoCore\Model\README.md</Link>
-    </None>
     <None Include="Entitlements.plist" />
   </ItemGroup>
   <ItemGroup>
@@ -256,12 +232,6 @@
     <Compile Include="..\NachoClient.Android\sqlite-net\SQLiteAsync.cs">
       <Link>sqlite-net\SQLiteAsync.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
-      <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
-      <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
@@ -271,194 +241,17 @@
     <Compile Include="NachoUI.iOS\HomePageViewController.designer.cs">
       <DependentUpon>HomePageViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
-      <Link>NachoCore\Model\McAccount.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAttachment.cs">
-      <Link>NachoCore\Model\McAttachment.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCred.cs">
-      <Link>NachoCore\Model\McCred.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolder.cs">
-      <Link>NachoCore\Model\McFolder.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPolicy.cs">
-      <Link>NachoCore\Model\McPolicy.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McProtocolState.cs">
-      <Link>NachoCore\Model\McProtocolState.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
-      <Link>NachoCore\Model\McServer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McSQLiteMaster.cs">
-      <Link>NachoCore\Model\McSQLiteMaster.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
-      <Link>NachoCore\NcEnforcer.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\LabelSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactSearchViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
-      <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcStateMachine.cs">
-      <Link>NachoCore\Utils\NcStateMachine.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCapture.cs">
-      <Link>NachoCore\Utils\NcCapture.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Log.cs">
-      <Link>NachoCore\Utils\Log.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\MessageListViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MimeHelpers.cs">
-      <Link>NachoCore\Utils\MimeHelpers.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPending.cs">
-      <Link>NachoCore\Model\McPending.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\NachoNowViewController.cs" />
     <Compile Include="NachoUI.iOS\StartupViewController.cs" />
     <Compile Include="NachoUI.iOS\StartupViewController.designer.cs">
       <DependentUpon>StartupViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageThreads.cs">
-      <Link>NachoCore\Brain\NcMessageThreads.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageDeferral.cs">
-      <Link>NachoCore\Brain\NcMessageDeferral.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\DatePickerViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\DateTime+ToString.cs">
-      <Link>NachoCore\Extensions\DateTime+ToString.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
-      <Link>NachoCore\Adapters\NachoFolders.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoFolders.cs">
-      <Link>NachoCore\Adapters\INachoFolders.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoContacts.cs">
-      <Link>NachoCore\Adapters\NachoContacts.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
-      <Link>NachoCore\Adapters\INachoContacts.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\BackEnd.cs">
-      <Link>NachoCore\BackEnd\BackEnd.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IBackEnd.cs">
-      <Link>NachoCore\BackEnd\IBackEnd.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IBackEndOwner.cs">
-      <Link>NachoCore\BackEnd\IBackEndOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IProtoControlOwner.cs">
-      <Link>NachoCore\BackEnd\IProtoControlOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\StatusIndEventArgs.cs">
-      <Link>NachoCore\BackEnd\StatusIndEventArgs.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsConstants.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsConstants.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsContact.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsContact.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsHelpers.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsHelpers.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsItemOperationsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsItemOperationsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsMoveItemsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsMoveItemsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsOptionsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsOptionsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsPingCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsPingCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsProvisionCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsProvisionCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSearchCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSearchCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSendMailCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSendMailCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSettingsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSettingsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\StepRobot.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\StepRobot.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderDelete.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderDelete.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderUpdate.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderUpdate.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Operations\AsDnsOperation.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Operations\AsDnsOperation.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Operations\AsHttpOperation.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Operations\AsHttpOperation.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Operations\IAsDnsOperationOwner.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Operations\IAsDnsOperationOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Operations\IAsHttpOperationOwner.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Operations\IAsHttpOperationOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Operations\IAsOperation.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Operations\IAsOperation.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\NcCommStatus.cs">
-      <Link>NachoCore\BackEnd\NcCommStatus\NcCommStatus.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\NcCommStatusServerEventArgs.cs">
-      <Link>NachoCore\BackEnd\NcCommStatus\NcCommStatusServerEventArgs.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartForwardCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartForwardCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartReplyCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartReplyCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\AssetsiOS.cs" />
     <Compile Include="NachoPlatform.iOS\DeviceiOS.cs" />
     <Compile Include="NachoPlatform.iOS\InvokeOnUIThreadiOS.cs" />
@@ -470,472 +263,55 @@
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
-      <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderCreateCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderCreateCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\SegueHolder.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Pretty.cs">
-      <Link>NachoCore\Utils\Pretty.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcContactManager.cs">
-      <Link>NachoCore\Adapters\NcContactManager.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderFolderEntry.cs">
-      <Link>NachoCore\Model\McMapFolderFolderEntry.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\IHttpClient.cs">
-      <Link>NachoCore\Mockables\IHttpClient.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableHttpClient.cs">
-      <Link>NachoCore\Mockables\MockableHttpClient.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsTimeZone.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsTimeZone.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEmailManager.cs">
-      <Link>NachoCore\Adapters\NcEmailManager.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoPriorityEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoPriorityEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageArchiver.cs">
-      <Link>NachoCore\Brain\NcMessageArchiver.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McTask.cs">
-      <Link>NachoCore\Model\McTask.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McRecurrence.cs">
-      <Link>NachoCore\Model\McRecurrence.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXML.cs">
-      <Link>NachoCore\Utils\ASWBXML.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXMLByteQueue.cs">
-      <Link>NachoCore\Utils\ASWBXMLByteQueue.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXMLCodePage.cs">
-      <Link>NachoCore\Utils\ASWBXMLCodePage.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Helpers.cs">
-      <Link>NachoCore\Utils\Helpers.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcResult.cs">
-      <Link>NachoCore\Utils\NcResult.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimer.cs">
-      <Link>NachoCore\Utils\NcTimer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ServerCertificatePeek.cs">
-      <Link>NachoCore\Utils\ServerCertificatePeek.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\WBXML.cs">
-      <Link>NachoCore\Utils\WBXML.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcXmlFilter.cs">
-      <Link>NachoCore\Utils\NcXmlFilter.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncBase.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncBase.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterCalendar.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterCalendar.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts2.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts2.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterDocumentLibrary.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterDocumentLibrary.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail2.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail2.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoTasks.cs">
-      <Link>NachoCore\Adapters\INachoTasks.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+SanitizeFileName.cs">
-      <Link>NachoCore\Extensions\String+SanitizeFileName.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBody.cs">
-      <Link>NachoCore\Model\McBody.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGAL.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGAL.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchRequest.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcModel.cs">
-      <Link>NachoCore\Model\NcModel.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailAddress.cs">
-      <Link>NachoCore\Utils\NcEmailAddress.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
-      <Link>NcApplication.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry.cs">
-      <Link>NachoCore\Utils\Telemetry.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcQueue.cs">
-      <Link>NachoCore\Utils\NcQueue.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs">
-      <Link>NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCalendarController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McTelemetryEvent.cs">
-      <Link>NachoCore\Model\McTelemetryEvent.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoFileChooser.cs" />
     <Compile Include="BuildInfo.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\IHttpWebRequest.cs">
-      <Link>NachoCore\Mockables\IHttpWebRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableHttpWebRequest.cs">
-      <Link>NachoCore\Mockables\MockableHttpWebRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMutables.cs">
-      <Link>NachoCore\Model\McMutables.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCounter.cs">
-      <Link>NachoCore\Utils\NcCounter.cs</Link>
-    </Compile>
     <Compile Include="LogSettings.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUIViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUITableViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPendDep.cs">
-      <Link>NachoCore\Model\McPendDep.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoFolderChooser.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\GatedMemoryStream.cs">
-      <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\A.cs" />
     <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
-      <Link>NachoCore\Utils\NcAssert.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTask.cs">
-      <Link>NachoCore\Utils\NcTask.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPath.cs">
-      <Link>NachoCore\Model\McPath.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\DateBarView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcRateLimiter.cs">
-      <Link>NachoCore\Utils\NcRateLimiter.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Scoring.cs">
-      <Link>NachoCore\Utils\Scoring.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\IScorable.cs">
-      <Link>NachoCore\Model\IScorable.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrain.cs">
-      <Link>NachoCore\Brain\NcBrain.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainEvent.cs">
-      <Link>NachoCore\Brain\NcBrainEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcEmailAnalyzer.cs">
-      <Link>NachoCore\Brain\NcEmailAnalyzer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTimeVariance.cs">
-      <Link>NachoCore\Brain\NcTimeVariance.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\MessageComposeViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAttachmentBlock.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAttachmentBlock.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcScoreCombiner.cs">
-      <Link>NachoCore\Brain\NcScoreCombiner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\IStopwatch.cs">
-      <Link>NachoCore\Utils\IStopwatch.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
-      <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ITimer.cs">
-      <Link>NachoCore\Utils\ITimer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformTimer.cs">
-      <Link>NachoCore\Utils\PlatformTimer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcPausableTimer.cs">
-      <Link>NachoCore\Utils\NcPausableTimer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcDistribution.cs">
-      <Link>NachoCore\Utils\NcDistribution.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\NotifiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McConference.cs">
-      <Link>NachoCore\Model\McConference.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessageCategory.cs">
-      <Link>NachoCore\Model\McEmailMessageCategory.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrObject.cs">
-      <Link>NachoCore\Model\McAbstrObject.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrObjectPerAcc.cs">
-      <Link>NachoCore\Model\McAbstrObjectPerAcc.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFolderEntry.cs">
-      <Link>NachoCore\Model\McAbstrFolderEntry.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrItem.cs">
-      <Link>NachoCore\Model\McAbstrItem.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrCalendarRoot.cs">
-      <Link>NachoCore\Model\McAbstrCalendarRoot.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAttendee.cs">
-      <Link>NachoCore\Model\McAttendee.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCalendar.cs">
-      <Link>NachoCore\Model\McCalendar.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCalendarCategory.cs">
-      <Link>NachoCore\Model\McCalendarCategory.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McException.cs">
-      <Link>NachoCore\Model\McException.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrContactAttribute.cs">
-      <Link>NachoCore\Model\McAbstrContactAttribute.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactAddressAttribute.cs">
-      <Link>NachoCore\Model\McContactAddressAttribute.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactDateAttribute.cs">
-      <Link>NachoCore\Model\McContactDateAttribute.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactStringAttribute.cs">
-      <Link>NachoCore\Model\McContactStringAttribute.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessageDependency.cs">
-      <Link>NachoCore\Model\McEmailMessageDependency.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContact\McContact.cs">
-      <Link>NachoCore\Model\McContact\McContact.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessage.cs">
-      <Link>NachoCore\Model\McEmailMessage\McEmailMessage.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\EmailMessageScore.cs">
-      <Link>NachoCore\Model\McEmailMessage\EmailMessageScore.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimerPool.cs">
-      <Link>NachoCore\Utils\NcTimerPool.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\PlatformUserColorIndex.cs" />
     <Compile Include="NachoUI.iOS\EventViewController.cs" />
     <Compile Include="NachoUI.iOS\ChooseCalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\AlertChooserViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactEmailAddressAttribute.cs">
-      <Link>NachoCore\Model\McContactEmailAddressAttribute.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\ContactsiOS.cs" />
     <Compile Include="NachoUI.iOS\SupportViewController.cs" />
     <Compile Include="NachoUI.iOS\NotesViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\ContactDetailViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceContacts.cs">
-      <Link>NachoCore\Adapters\NcDeviceContacts.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceCalendars.cs">
-      <Link>NachoCore\Adapters\NcDeviceCalendars.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\CalendarsiOS.cs" />
     <Compile Include="NachoUI.iOS\EditEventViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McNote.cs">
-      <Link>NachoCore\Model\McNote.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\RegexUtilities.cs">
-      <Link>NachoCore\Utils\RegexUtilities.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\EventAttendeeViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\IFilesViewItem.cs">
-      <Link>NachoCore\Model\IFilesViewItem.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McDocument.cs">
-      <Link>NachoCore\Model\McDocument.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactEditViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAttendeeListChooser.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
-      <Link>NachoCore\Model\McPortrait.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\CertificateView.cs" />
     <Compile Include="NachoUI.iOS\SupportMessageViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttachmentTableViewSourceDelegate.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMeetingRequest.cs">
-      <Link>NachoCore\Model\McMeetingRequest.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
-      <Link>NachoCore\Model\McEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INcEventProvider.cs">
-      <Link>NachoCore\Adapters\INcEventProvider.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventManager.cs">
-      <Link>NachoCore\Adapters\NcEventManager.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\UserInteractionEmailMessages.cs">
-      <Link>NachoCore\Adapters\UserInteractionEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CalendarHelper.cs">
-      <Link>NachoCore\Utils\CalendarHelper.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
-      <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQuickResponse.cs">
-      <Link>NachoCore\Brain\NcQuickResponse.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
     <Compile Include="NachoUI.iOS\NachoTabBarController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
-      <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\FoldersViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyWebView.cs" />
@@ -959,148 +335,22 @@
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\SignatureEditViewController.cs" />
     <Compile Include="NachoUI.iOS\AboutUsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
-      <Link>NachoCore\Utils\CertificateHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsHelpers.cs">
-      <Link>NachoCore\Utils\ContactsHelpers.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAbate.cs">
-      <Link>NachoCore\Utils\NcAbate.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryAWS.cs">
-      <Link>NachoCore\Utils\TelemetryAWS.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Index\Index.cs">
-      <Link>NachoCore\Index\Index.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Index\IndexDocument.cs">
-      <Link>NachoCore\Index\IndexDocument.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailHelper.cs">
-      <Link>NachoCore\Utils\EmailHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
-      <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
-      <Link>NachoCore\Utils\HashHelper.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SetHelper.cs">
-      <Link>NachoCore\Utils\SetHelper.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration.cs">
-      <Link>NachoCore\Model\Migration\NcMigration.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration1.cs">
-      <Link>NachoCore\Model\Migration\NcMigration1.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMigration.cs">
-      <Link>NachoCore\Model\McMigration.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration2.cs">
-      <Link>NachoCore\Model\Migration\NcMigration2.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapEmailAddressEntry.cs">
-      <Link>NachoCore\Model\McMapEmailAddressEntry.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration3.cs">
-      <Link>NachoCore\Model\Migration\NcMigration3.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcObjectParser.cs">
-      <Link>NachoCore\Brain\NcObjectParser.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTokenizer.cs">
-      <Link>NachoCore\Brain\NcTokenizer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
-      <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IBEContext.cs">
-      <Link>NachoCore\BackEnd\IBEContext.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssist.cs">
-      <Link>NachoCore\BackEnd\PushAssist.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IPushAssistOwner.cs">
-      <Link>NachoCore\BackEnd\IPushAssistOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssistJson.cs">
-      <Link>NachoCore\BackEnd\PushAssistJson.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCalendarMap.cs">
-      <Link>NachoCore\Adapters\NcEventsCalendarMap.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration5.cs">
-      <Link>NachoCore\Model\Migration\NcMigration5.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainActions.cs">
-      <Link>NachoCore\Brain\NcBrainActions.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\MessageThreadViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoThreadedEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration7.cs">
-      <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\NotesViewerViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration6.cs">
-      <Link>NachoCore\Model\Migration\NcMigration6.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration8.cs">
-      <Link>NachoCore\Model\Migration\NcMigration8.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration9.cs">
-      <Link>NachoCore\Model\Migration\NcMigration9.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ManageItemsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ManageItems.cs">
-      <Link>NachoCore\Utils\ManageItems.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration10.cs">
-      <Link>NachoCore\Model\Migration\NcMigration10.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CrlMonitor.cs">
-      <Link>NachoCore\Utils\CrlMonitor.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
-      <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
-      <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration13.cs">
-      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
-      <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
-      <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\StoreHandleriOS.cs" />
     <Compile Include="NachoPlatform.iOS\CloudHandlerIOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+ToDateTime.cs">
-      <Link>NachoCore\Extensions\String+ToDateTime.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
-      <Link>NachoCore\Utils\LoginHelpers.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration14.cs">
-      <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
     <Compile Include="NachoPlatform.iOS\NcFileHandleriOS.cs" />
     <Compile Include="NachoUI.iOS\Support\UcNameValuePair.cs" />
@@ -1108,100 +358,16 @@
     <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
     <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
     <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration15.cs">
-      <Link>NachoCore\Model\Migration\NcMigration15.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDraftMessages.cs">
-      <Link>NachoCore\Adapters\NachoDraftMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
-      <Link>NachoCore\Model\McLicenseInformation.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
-      <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\NotificationChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBrainEvent.cs">
-      <Link>NachoCore\Model\McBrainEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainApi.cs">
-      <Link>NachoCore\Brain\NcBrainApi.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration17.cs">
-      <Link>NachoCore\Model\Migration\NcMigration17.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration18.cs">
-      <Link>NachoCore\Model\Migration\NcMigration18.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NotificationHelper.cs">
-      <Link>NachoCore\Utils\NotificationHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration19.cs">
-      <Link>NachoCore\Model\Migration\NcMigration19.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ErrorHelper.cs">
-      <Link>NachoCore\Utils\ErrorHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration20.cs">
-      <Link>NachoCore\Model\Migration\NcMigration20.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration21.cs">
-      <Link>NachoCore\Model\Migration\NcMigration21.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration22.cs">
-      <Link>NachoCore\Model\Migration\NcMigration22.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration23.cs">
-      <Link>NachoCore\Model\Migration\NcMigration23.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\FileListViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountsTableViewSource.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcProtoControl.cs">
-      <Link>NachoCore\BackEnd\NcProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration24.cs">
-      <Link>NachoCore\Model\Migration\NcMigration24.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration25.cs">
-      <Link>NachoCore\Model\Migration\NcMigration25.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\PermissionManager.cs">
-      <Link>NachoCore\Utils\PermissionManager.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapProtoControl.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryEvent.cs">
-      <Link>NachoCore\Utils\TelemetryEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonEvent.cs">
-      <Link>NachoCore\Utils\TelemetryJsonEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcSamples.cs">
-      <Link>NachoCore\Utils\NcSamples.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
-      <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
-      <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
-      <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
-      <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\AccountTypeViewController.cs" />
@@ -1210,183 +376,15 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AdvancedTextField.cs" />
     <Compile Include="NachoUI.iOS\Support\ExchangeFields.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration27.cs">
-      <Link>NachoCore\Model\Migration\NcMigration27.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration28.cs">
-      <Link>NachoCore\Model\Migration\NcMigration28.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
     <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommand.cs">
-      <Link>NachoCore\BackEnd\NcCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\INcCommand.cs">
-      <Link>NachoCore\BackEnd\INcCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration30.cs">
-      <Link>NachoCore\Model\Migration\NcMigration30.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainHelpers.cs">
-      <Link>NachoCore\Brain\NcBrainHelpers.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainEventHandler.cs">
-      <Link>NachoCore\Brain\NcBrainEventHandler.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\UnreadMessagesView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountMonitor.cs">
-      <Link>NachoCore\Utils\NcAccountMonitor.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScore.cs">
-      <Link>NachoCore\Model\McEmailAddressScore.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScore.cs">
-      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScore.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\IScoreStates.cs">
-      <Link>NachoCore\Model\IScoreStates.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration29.cs">
-      <Link>NachoCore\Model\Migration\NcMigration29.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\Device\DeviceProtoControl.cs">
-      <Link>NachoCore\BackEnd\Device\DeviceProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcMdmConfig.cs">
-      <Link>NachoCore\Adapters\NcMdmConfig.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\NcImapClient.cs">
-      <Link>NachoCore\BackEnd\IMAP\NcImapClient.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\NcSmtpClient.cs">
-      <Link>NachoCore\BackEnd\SMTP\NcSmtpClient.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcMailKitProtocolLogger.cs">
-      <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\ILoginProtocol.cs">
-      <Link>NachoCore\Adapters\ILoginProtocol.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginProtocolControl.cs">
-      <Link>NachoCore\Utils\LoginProtocolControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration31.cs">
-      <Link>NachoCore\Model\Migration\NcMigration31.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration32.cs">
-      <Link>NachoCore\Model\Migration\NcMigration32.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration33.cs">
-      <Link>NachoCore\Model\Migration\NcMigration33.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapProtoControlApis.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapProtoControlApis.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcServiceHelper.cs">
-      <Link>NachoCore\Utils\NcServiceHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration34.cs">
-      <Link>NachoCore\Model\Migration\NcMigration34.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountValidationViewController.cs" />
     <Compile Include="NachoUI.iOS\CertAskViewController.cs" />
     <Compile Include="NachoUI.iOS\CertAskViewController.designer.cs">
       <DependentUpon>CertAskViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsBinningHelper.cs">
-      <Link>NachoCore\Utils\ContactsBinningHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration35.cs">
-      <Link>NachoCore\Model\Migration\NcMigration35.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapValidateConfig.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapValidateConfig.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SearchHelper.cs">
-      <Link>NachoCore\Utils\SearchHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration36.cs">
-      <Link>NachoCore\Model\Migration\NcMigration36.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration37.cs">
-      <Link>NachoCore\Model\Migration\NcMigration37.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQualifier.cs">
-      <Link>NachoCore\Brain\NcQualifier.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration38.cs">
-      <Link>NachoCore\Model\Migration\NcMigration38.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration39.cs">
-      <Link>NachoCore\Model\Migration\NcMigration39.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration40.cs">
-      <Link>NachoCore\Model\Migration\NcMigration40.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration41.cs">
-      <Link>NachoCore\Model\Migration\NcMigration41.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcActivityIndicatorView.cs" />
     <Compile Include="NachoUI.iOS\StartupMigrationViewController.cs" />
@@ -1420,9 +418,6 @@
       <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AccountAdvancedFieldsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
     <Compile Include="NachoUI.iOS\StandardCredentialsViewController.designer.cs">
       <DependentUpon>StandardCredentialsViewController.cs</DependentUpon>
@@ -1432,210 +427,24 @@
     <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.designer.cs">
       <DependentUpon>GoogleCredentialsViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TestMode.cs">
-      <Link>NachoCore\Utils\TestMode.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration42.cs">
-      <Link>NachoCore\Model\Migration\NcMigration42.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcPreFetchHints.cs">
-      <Link>NachoCore\BackEnd\NcPreFetchHints.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\HotHelpMessageView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration43.cs">
-      <Link>NachoCore\Model\Migration\NcMigration43.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailMessageBundle.cs">
-      <Link>NachoCore\Utils\NcEmailMessageBundle.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBundleStorage.cs">
-      <Link>NachoCore\Utils\NcBundleStorage.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Html.cs">
-      <Link>NachoCore\Utils\Html.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration44.cs">
-      <Link>NachoCore\Model\Migration\NcMigration44.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
-      <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessageDownloader.cs">
-      <Link>NachoCore\Utils\MessageDownloader.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessageComposer.cs">
-      <Link>NachoCore\Utils\MessageComposer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration45.cs">
-      <Link>NachoCore\Model\Migration\NcMigration45.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\EmailAddressScore.cs">
-      <Link>NachoCore\Model\McEmailAddress\EmailAddressScore.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\McEmailAddress.cs">
-      <Link>NachoCore\Model\McEmailAddress\McEmailAddress.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration46.cs">
-      <Link>NachoCore\Model\Migration\NcMigration46.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEventDetail.cs">
-      <Link>NachoCore\Utils\NcEventDetail.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
     <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration47.cs">
-      <Link>NachoCore\Model\Migration\NcMigration47.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapAttachmentItem.cs">
-      <Link>NachoCore\Model\McMapAttachmentItem.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration48.cs">
-      <Link>NachoCore\Model\Migration\NcMigration48.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\DnsiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration49.cs">
-      <Link>NachoCore\Model\Migration\NcMigration49.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimeStamp.cs">
-      <Link>NachoCore\Utils\NcTimeStamp.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\NcHttpClientiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBase64.cs">
-      <Link>NachoCore\Utils\NcBase64.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcHttpUtils.cs">
-      <Link>NachoCore\Utils\NcHttpUtils.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBuildInfo.cs">
-      <Link>NachoCore\Model\McBuildInfo.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\PushAssistiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedInbox.cs">
-      <Link>NachoCore\Adapters\NachoUnifiedInbox.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedHotList.cs">
-      <Link>NachoCore\Adapters\NachoUnifiedHotList.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
-      <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs">
-      <Link>NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\Oauth2Refresh.cs">
-      <Link>NachoCore\Utils\Oauth2\Oauth2Refresh.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs">
-      <Link>NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
-      <Link>NachoCore\Utils\ContactsSearch.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcApplicationMonitor.cs">
-      <Link>NachoCore\Utils\NcApplicationMonitor.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
-      <Link>NachoCore\Utils\EmailSearch.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SFDCCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SFDCCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs">
-      <Link>NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
-      <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChat.cs">
-      <Link>NachoCore\Model\McChat.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChatMessage.cs">
-      <Link>NachoCore\Model\McChatMessage.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChatParticipant.cs">
-      <Link>NachoCore\Model\McChatParticipant.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ChatsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ChatMessageComposer.cs">
-      <Link>NachoCore\Utils\ChatMessageComposer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\FolderTableViewSource.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\FolderLists.cs">
-      <Link>NachoCore\Utils\FolderLists.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ChatMessagesViewController.cs" />
     <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
     <Compile Include="NachoUI.iOS\ChatParticipantListViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
-      <Link>NachoCore\Model\Migration\NcMigration52.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\UnreadMessageIndicator.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration53.cs">
-      <Link>NachoCore\Model\Migration\NcMigration53.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration54.cs">
-      <Link>NachoCore\Model\Migration\NcMigration54.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\SettingsTextPropertyViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFileTable.cs">
-      <Link>NachoCore\Utils\TelemetryJsonFileTable.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration55.cs">
-      <Link>NachoCore\Model\Migration\NcMigration55.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration56.cs">
-      <Link>NachoCore\Model\Migration\NcMigration56.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
     <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
       <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
@@ -1650,42 +459,18 @@
     <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
     <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkAnsweredCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControlApis.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolderMessages.cs">
-      <Link>NachoCore\Adapters\NachoFolderMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
-      <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\InboxViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\CornerLayer.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageListFilterBar.cs" />
     <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageCell.cs" />
     <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessagesSyncManager.cs">
-      <Link>NachoCore\Utils\MessagesSyncManager.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\SubjectAttachment.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentsView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\AttachmentDownloader.cs">
-      <Link>NachoCore\Utils\AttachmentDownloader.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\MessageHeaderDetailViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\NameValueCell.cs" />
     <Compile Include="NachoUI.iOS\MessageRawBodyViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageMimePartViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoActions.cs">
-      <Link>NachoCore\Adapters\NachoActions.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAction.cs">
-      <Link>NachoCore\Model\McAction.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\ActionCell.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionCheckboxView.cs" />
     <Compile Include="NachoUI.iOS\ActionEditViewController.cs" />
@@ -1693,12 +478,6 @@
     <Compile Include="NachoUI.iOS\Support\MessageActionHeaderView.cs" />
     <Compile Include="NachoUI.iOS\ActionListViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\DatePickerView.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs">
-      <Link>NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ActionsHelper.cs">
-      <Link>NachoCore\Utils\ActionsHelper.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountControl.cs" />
     <Compile Include="NachoUI.iOS\Support\NachoNavigationBar.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
@@ -1712,6 +491,7 @@
     <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\AccountCreation.storyboard" />
   </ItemGroup>
+  <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
     <BundleResource Include="Resources\Icon.png" />
