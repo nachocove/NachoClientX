@@ -536,6 +536,12 @@ namespace NachoClient.AndroidClient
                     account = McAccount.QueryById<McAccount> (selectedFolder.AccountId);
                     bool newIsAppEvent = McAccount.AccountTypeEnum.Device != account.AccountType;
                     if (isAppEvent && !newIsAppEvent) {
+                        // if attendees have been added, don't show the device calendars,
+                        // since we can't edit/add device cal entries with attendees.
+                        // David says: The app doesn’t know what email address to use for the owner of the meeting.
+                        //    Even if it can figure out the owner’s email address, it might not control that email address,
+                        //    so the app can’t correctly manage the meeting responses or other meeting related email messages.
+                        cal.attendees = new List<McAttendee> ();
                         FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Gone;
                     } else if (!isAppEvent && newIsAppEvent) {
                         FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Visible;
