@@ -95,6 +95,7 @@ namespace NachoClient.iOS
 
         SwitchAccountViewController SwitchController;
         bool IsFullSwitchViewAttached;
+        bool IsFullPresentCalled;
 
         void SetupFullSwitchView ()
         {
@@ -104,7 +105,9 @@ namespace NachoClient.iOS
             SwitchController.CreatedAccount = SwitchControllerCreatedAccount;
             UIViewController parent;
             if (ParentViewController.TryGetTarget (out parent)) {
+                IsFullPresentCalled = false;
                 parent.PresentViewController (SwitchController, false, HandleFullSwitchViewAttached);
+                IsFullPresentCalled = true;
                 SwitchController.SwitchAccountView.Canceled = CancelFullSwitchView;
                 SwitchController.SwitchAccountView.AccountPicked = FullSwitchViewPickedAccount;
                 SwitchController.SwitchAccountView.SetVisibleAccounts (
@@ -114,11 +117,18 @@ namespace NachoClient.iOS
                     ChangedAccountViewRight != null ? ChangedAccountViewRight.AccountInfo.Account.Id : 0
                 );
                 SwitchController.SwitchAccountView.Close ();
+                if (IsFullSwitchViewAttached) {
+                    HandleFullSwitchViewAttached ();
+                }
             }
         }
 
         void HandleFullSwitchViewAttached ()
         {
+            if (!IsFullPresentCalled) {
+                IsFullSwitchViewAttached = true;
+                return;
+            }
             SwitchController.SwitchAccountView.PrepareForInteractivePresentation ();
             if (SelectedAccountPressRecognizer.State == UIGestureRecognizerState.Changed) {
                 SwitchController.SwitchAccountView.SetPresentationPercentage (SelectedAccountPressRecognizer.PercentComplete);
