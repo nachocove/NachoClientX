@@ -454,6 +454,7 @@ namespace NachoClient.iOS
             descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
             descriptionTextView.ScrollEnabled = false;
 
+            descriptionTextView.Started += DescriptionTextViewStarted;
             descriptionTextView.Changed += DescriptionTextViewChanged;
             descriptionTextView.SelectionChanged += DescriptionTextViewSelectionChanged;
             descriptionTextView.Ended += DescriptionTextViewEnded;
@@ -767,6 +768,9 @@ namespace NachoClient.iOS
                 break;
             }
             descriptionTextView.SizeToFit ();
+            if (descriptionTextView.Frame.Height > 100) {
+                ViewFramer.Create (descriptionTextView).Height (100);
+            }
             descriptionTextView.Frame = new CGRect (15, 12.438f, SCREEN_WIDTH - 30, descriptionTextView.Frame.Height);
             DESCRIPTION_OFFSET = descriptionTextView.Frame.Height;
 
@@ -1425,6 +1429,18 @@ namespace NachoClient.iOS
         {
             textField.ResignFirstResponder ();
             return true;
+        }
+
+        private void DescriptionTextViewStarted (object sender, EventArgs args)
+        {
+            var oldHeight = descriptionTextView.Frame.Height;
+            descriptionTextView.SizeToFit ();
+            var newheight = descriptionTextView.Frame.Height;
+            ViewFramer.Create (descriptionTextView).Width (SCREEN_WIDTH - 30);
+            if (oldHeight != newheight) {
+                // The height of the description field has changed, so the entire view layout needs to be redone.
+                LayoutView ();
+            }
         }
 
         private void DescriptionTextViewChanged (object sender, EventArgs args)
