@@ -421,6 +421,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\Oauth2Refresh.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\IPlatform.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\sqlite-net\SQLite.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\sqlite-net\SQLiteAsync.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

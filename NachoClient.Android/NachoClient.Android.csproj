@@ -107,8 +107,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="sqlite-net\SQLite.cs" />
-    <Compile Include="sqlite-net\SQLiteAsync.cs" />
     <Compile Include="NachoPlatform.Android\AssetsAndroid.cs" />
     <Compile Include="NachoPlatform.Android\DeviceAndroid.cs" />
     <Compile Include="NachoPlatform.Android\InvokeOnUIThreadAndroid.cs" />
@@ -277,7 +275,6 @@
     <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="sqlite-net\" />
     <Folder Include="Resources\raw\" />
     <Folder Include="Assets\xsd\" />
     <Folder Include="Assets\xsd\response\" />

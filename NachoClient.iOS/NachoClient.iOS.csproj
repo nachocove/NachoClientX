@@ -206,7 +206,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
-    <Folder Include="sqlite-net\" />
     <Folder Include="Resources\xsd\" />
     <Folder Include="Resources\xsd\request\" />
     <Folder Include="Resources\xsd\response\" />
@@ -225,12 +224,6 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
-    <Compile Include="..\NachoClient.Android\sqlite-net\SQLite.cs">
-      <Link>sqlite-net\SQLite.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\sqlite-net\SQLiteAsync.cs">
-      <Link>sqlite-net\SQLiteAsync.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
