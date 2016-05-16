@@ -740,6 +740,16 @@ namespace NachoCore.Utils
             return addressList;
         }
 
+        public static bool AddressIsInList (int accountId, string targetAddress, List<NcEmailAddress> addresses)
+        {
+            foreach (var address in addresses) {
+                if (String.Equals (address.address, targetAddress, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // Build up the text for the header part of the message being forwarded or replied to.
         public static string FormatBasicHeaders (McEmailMessage message)
         {
