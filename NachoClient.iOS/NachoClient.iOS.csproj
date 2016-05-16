@@ -213,7 +213,6 @@
     <Folder Include="Resources\xsd\common\" />
     <Folder Include="NachoUI.iOS\" />
     <Folder Include="NachoPlatform.iOS\" />
-    <Folder Include="NachoPlatform\" />
     <Folder Include="NachoUI.iOS\Support\" />
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="Content\" />
@@ -256,9 +255,6 @@
     <Compile Include="NachoPlatform.iOS\DeviceiOS.cs" />
     <Compile Include="NachoPlatform.iOS\InvokeOnUIThreadiOS.cs" />
     <Compile Include="NachoPlatform.iOS\RegDomiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoPlatform\IPlatform.cs">
-      <Link>NachoPlatform\IPlatform.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\Locale.cs" />
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />

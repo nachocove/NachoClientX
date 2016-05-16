@@ -420,6 +420,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\Oauth2Refresh.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\IPlatform.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

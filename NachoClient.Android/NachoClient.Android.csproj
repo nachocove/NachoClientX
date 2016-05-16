@@ -109,7 +109,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="sqlite-net\SQLite.cs" />
     <Compile Include="sqlite-net\SQLiteAsync.cs" />
-    <Compile Include="NachoPlatform\IPlatform.cs" />
     <Compile Include="NachoPlatform.Android\AssetsAndroid.cs" />
     <Compile Include="NachoPlatform.Android\DeviceAndroid.cs" />
     <Compile Include="NachoPlatform.Android\InvokeOnUIThreadAndroid.cs" />
@@ -290,7 +289,6 @@
     <Folder Include="lib\x86\" />
     <Folder Include="NachoUI.Android\" />
     <Folder Include="Resources\menu\" />
-    <Folder Include="NachoPlatform\" />
     <Folder Include="NachoPlatform.Android\" />
     <Folder Include="NachoPlatform.Android\libs\" />
     <Folder Include="Resources\drawable\" />
