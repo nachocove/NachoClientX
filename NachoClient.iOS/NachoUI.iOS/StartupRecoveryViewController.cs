@@ -19,6 +19,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
