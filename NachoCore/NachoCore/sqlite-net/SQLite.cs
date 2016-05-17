@@ -229,7 +229,7 @@ namespace SQLite
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 		
-#if __IOS__
+#if !__ANDROID__
 		static SQLiteConnection ()
 		{
 			if (_preserveDuringLinkMagic) {
@@ -247,7 +247,7 @@ namespace SQLite
         #pragma warning restore 649
 #endif
 
-#if !USE_SQLITEPCL_RAW && !__IOS__
+#if !USE_SQLITEPCL_RAW && __ANDROID__
         public void EnableLoadExtension(int onoff)
         {
             SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
@@ -3178,10 +3178,10 @@ namespace SQLite
 
 		public delegate void ErrorLogCallback (IntPtr pArg, int iErrCode, string zMsg);
 
-#if __IOS__
-		const string KDllPath = "__Internal";
-#else
-        const string KDllPath = "nachoplatform";
+    #if __ANDROID__
+    const string KDllPath = "nachoplatform";
+    #else
+    const string KDllPath = "__Internal";
 #endif
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
@@ -3200,7 +3200,7 @@ namespace SQLite
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr db);
 
-#if !__IOS__
+#if __ANDROID__
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_enable_load_extension", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
 #endif
@@ -3220,7 +3220,7 @@ namespace SQLite
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option, ErrorLogCallback callback, IntPtr pArg);
 
-#if !__IOS__
+#if __ANDROID__
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
 #endif

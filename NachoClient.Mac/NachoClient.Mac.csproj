@@ -39,7 +39,7 @@
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
-    <MonoBundlingExtraArgs>--link_flags="-v -L../native.Mac -lNachoPlatformSDK -lresolv -lcrypto -force_load ../native.Mac/libNachoPlatformSDK.a"</MonoBundlingExtraArgs>
+    <MonoBundlingExtraArgs>--link_flags="-v -L../native.Mac -lNachoPlatformSDK -lresolv -lcrypto -force_load ../native.Mac/libNachoPlatformSDK.a -L../../NachoPlatformBinding/NachoPlatformLib.Mac -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib.Mac/libNachoPlatformLibSDK.a"</MonoBundlingExtraArgs>
     <XamMacArch>x86_64</XamMacArch>
     <PackageSigningKey>Developer ID Installer</PackageSigningKey>
   </PropertyGroup>
@@ -188,5 +188,19 @@
       <Project>{4E8016CD-33E3-4961-A954-119A623527D4}</Project>
       <Name>AWSSDK_Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="..\NachoClient.iOS\Resources\chat-email.html">
+      <Link>Resources\chat-email.html</Link>
+    </BundleResource>
+    <BundleResource Include="..\NachoClient.iOS\Resources\nacho.css">
+      <Link>Resources\nacho.css</Link>
+    </BundleResource>
+    <BundleResource Include="..\NachoClient.iOS\Resources\nacho.html">
+      <Link>Resources\nacho.html</Link>
+    </BundleResource>
+    <BundleResource Include="..\NachoClient.iOS\Resources\nacho.js">
+      <Link>Resources\nacho.js</Link>
+    </BundleResource>
   </ItemGroup>
 </Project>
