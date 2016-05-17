@@ -12,7 +12,7 @@ namespace NachoCore.Utils
 {
     public partial class Telemetry
     {
-        public static bool ENABLED = true;
+        public static bool ENABLED = false;
 
         // AWS Redshift has a limit of 65,535 for varchar.
         private const int MAX_AWS_LEN = 65535;

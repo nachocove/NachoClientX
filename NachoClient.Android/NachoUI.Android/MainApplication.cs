@@ -109,7 +109,7 @@ namespace NachoClient.AndroidClient
 
         void CopyAssetsToDocuments ()
         {
-            var documentsPath = System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments);
+            var documentsPath = NcApplication.GetDocumentsPath ();
             string[] assets = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var assetName in assets) {
                 var destinationPath = Path.Combine (documentsPath, assetName);

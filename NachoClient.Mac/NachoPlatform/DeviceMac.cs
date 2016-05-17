@@ -130,7 +130,7 @@ namespace NachoPlatform
             var ident = Keychain.Instance.GetIdentifierForVendor ();
             if (null == ident) {
                 // FIXME
-                ident = "FIXME Mac"; //UIDevice.CurrentDevice.IdentifierForVendor.AsString ();
+                ident = "FIXMEFIXMEFIXMEFIXMEFIXMEFIXME"; //UIDevice.CurrentDevice.IdentifierForVendor.AsString ();
             }
             NcAssert.NotNull (ident, "Could not create ident.");
             // Set this before any logs, since otherwise we loop/recurse forever
@@ -158,7 +158,7 @@ namespace NachoPlatform
 
         public OsCode BaseOs ()
         {
-            return OsCode.iOS;
+            return OsCode.Mac;
         }
 
         public string OsLanguage ()

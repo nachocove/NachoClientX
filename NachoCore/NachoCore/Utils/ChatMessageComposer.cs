@@ -66,7 +66,7 @@ namespace NachoCore.Utils
 
         protected override void PrepareMessageBody ()
         {
-            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var documentsPath = NcApplication.GetDocumentsPath ();
             var htmlPath = Path.Combine (documentsPath, "chat-email.html");
             var doc = new HtmlDocument ();
             using (var stream = new FileStream (htmlPath, FileMode.Open, FileAccess.Read)) {

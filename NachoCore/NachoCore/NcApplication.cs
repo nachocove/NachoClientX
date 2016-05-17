@@ -1044,7 +1044,7 @@ namespace NachoCore
         public static string GetDocumentsPath ()
         {
             if (Documents == null) {
-                Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+                Documents = NachoPlatform.NcFileHandler.Instance.NachoDocumentsPath ();
             }
             return Documents;
         }

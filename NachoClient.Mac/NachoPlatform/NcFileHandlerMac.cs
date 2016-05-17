@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using NachoCore.Utils;
 using Foundation;
+using AppKit;
 
 namespace NachoPlatform
 {
@@ -45,6 +46,15 @@ namespace NachoPlatform
         {
             // Not used in iOS
             throw new NotImplementedException ();
+        }
+
+        public string NachoDocumentsPath ()
+        {
+            var libraries = NSFileManager.DefaultManager.GetUrls (NSSearchPathDirectory.LibraryDirectory, NSSearchPathDomain.User);
+            if (libraries.Length > 0) {
+                return Path.Combine (libraries [0].Path, "NachoMail");
+            }
+            return Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), ".nachomail");
         }
     }
 }

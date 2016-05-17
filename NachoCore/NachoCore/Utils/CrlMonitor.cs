@@ -71,7 +71,7 @@ namespace NachoCore.Utils
 
         private CrlMonitor ()
         {
-            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var documentsPath = NcApplication.GetDocumentsPath ();
             CrlDocumentPath = Path.Combine (documentsPath, "crl");
             Directory.CreateDirectory (CrlDocumentPath); // checks first, so no need to check here.
 

@@ -76,6 +76,12 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System.Net.Http.Extensions">
+      <HintPath>..\..\aws-sdk-xamarin\AWS.XamarinSDK\packages\Microsoft.Net.Http.2.2.28\lib\portable-net40+sl4+win8+wp71+wpa81\System.Net.Http.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Primitives">
+      <HintPath>..\..\aws-sdk-xamarin\AWS.XamarinSDK\packages\Microsoft.Net.Http.2.2.28\lib\portable-net40+sl4+win8+wp71+wpa81\System.Net.Http.Primitives.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\Contents.json" />
@@ -107,7 +113,6 @@
     <Compile Include="NachoPlatform\CalendarsMac.cs" />
     <Compile Include="NachoPlatform\CloudHandlerMac.cs" />
     <Compile Include="NachoPlatform\ContactsMac.cs" />
-    <Compile Include="NachoPlatform\DataFileMigrationMac.cs" />
     <Compile Include="NachoPlatform\DeviceMac.cs" />
     <Compile Include="NachoPlatform\DnsMac.cs" />
     <Compile Include="NachoPlatform\ImageMac.cs" />

@@ -28,6 +28,7 @@ namespace NachoPlatform
     {
         iOS,
         Android,
+        Mac,
     };
 
     public interface IPlatformDevice
@@ -320,6 +321,7 @@ namespace NachoPlatform
     {
         void MarkFileForSkipBackup (string filename);
         bool SkipFile (string filename);
+        string NachoDocumentsPath ();
     }
 
     public interface IPlatformMdmConfig

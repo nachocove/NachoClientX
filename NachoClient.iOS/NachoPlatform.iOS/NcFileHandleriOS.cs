@@ -45,6 +45,11 @@ namespace NachoPlatform
             // Not used in iOS
             throw new NotImplementedException ();
         }
+
+        public string NachoDocumentsPath ()
+        {
+            return Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+        }
     }
 }
 

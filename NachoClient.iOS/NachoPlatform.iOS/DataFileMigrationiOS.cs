@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoPlatform
 {
@@ -12,7 +13,7 @@ namespace NachoPlatform
         public static void MigrateDataFilesIfNeeded ()
         {
             string KDataPathSegment = "Data";
-            string Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            string Documents = NcApplication.GetDocumentsPath ();
             string DataDirPath = Path.Combine (Documents, KDataPathSegment);
 
             if (!Directory.Exists (DataDirPath)) {

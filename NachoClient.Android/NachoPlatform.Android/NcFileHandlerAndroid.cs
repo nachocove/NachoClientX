@@ -37,6 +37,11 @@ namespace NachoPlatform
         {
             return ExcludePaths.Contains (filename);
         }
+
+        public string NachoDocumentsPath ()
+        {
+            return Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+        }
     }
 }
 

@@ -558,7 +558,7 @@ namespace NachoClient.iOS
             style.SetAttributeValue ("type", "text/css");
             style.SetAttributeValue ("href", "nacho.css");
             head.AppendChild (style);
-            var baseUrl = new NSUrl (String.Format ("file://{0}/", Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments)));
+            var baseUrl = new NSUrl (String.Format ("file://{0}/", NcApplication.GetDocumentsPath ()));
             var html = "";
             using (var writer = new StringWriter ()) {
                 doc.Save (writer);

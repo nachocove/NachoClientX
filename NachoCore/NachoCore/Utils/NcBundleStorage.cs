@@ -125,7 +125,7 @@ namespace NachoCore.Utils
 
         public override Uri BaseUrl ()
         {
-            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var documentsPath = NcApplication.GetDocumentsPath ();
             return new Uri (String.Format ("file://{0}/", documentsPath));
         }
 
@@ -231,7 +231,7 @@ namespace NachoCore.Utils
 
         public override Uri RelativeUrlForDocumentsPath (string path)
         {
-            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var documentsPath = NcApplication.GetDocumentsPath ();
             var documentUri = new Uri (String.Format ("file://{0}/{1}", documentsPath, path));
             var indexUri = UrlForPath ("x", "");
             return indexUri.MakeRelativeUri (documentUri);

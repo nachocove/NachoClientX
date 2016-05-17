@@ -706,7 +706,7 @@ namespace NachoClient.iOS
                     // if (url.Scheme.ToLowerInvariant().Equals("file")){
                     //    var selector = new ObjCRuntime.Selector ("loadFileURL:allowingReadAccessToURL:");
                     //     if (WebView.RespondsToSelector (selector)) {
-                    //         var baseUrl = new NSUrl (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments));
+                    //         var baseUrl = new NSUrl (NcApplication.GetDocumentsPath ());
                     //         WebView.PerformSelector (selector, url, baseUrl);
                     //     } else {
                     //         // need a workaround for iOS 8
