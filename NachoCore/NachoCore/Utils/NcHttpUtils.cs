@@ -444,7 +444,8 @@ namespace NachoCore.Utils
             }
 
 sslErrorVerify:
-            return ServicePointManager.ServerCertificateValidationCallback (new HttpWebRequest (Url), cert, chain, errors);
+            var request = HttpWebRequest.Create (Url);
+            return ServicePointManager.ServerCertificateValidationCallback (request, cert, chain, errors);
         }
 
         static bool MatchHostnameToPattern (string hostname, string pattern)

@@ -23,6 +23,10 @@ projects = {
             'app_group': 'group.com.nachocove.nachomail',
             'display_name': '[dev] Nacho Mail'
         },
+        'mac': {
+            'bundle_id': 'com.nachocove.nachomail',
+            'display_name': '[dev] Nacho Mail'
+        },
         'android': {
             'package_name': 'com.nachocove.nachomail.dev',
             'label': '[dev] Nacho Mail',

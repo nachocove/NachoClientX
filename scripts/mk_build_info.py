@@ -192,7 +192,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--csproj-file', help='Xamarin project file', default=None)
     parser.add_argument('--root', help='Root directory of the project', default=None)
-    parser.add_argument('--architecture', help='Target architecture', default=None, choices=('ios', 'android'))
+    parser.add_argument('--architecture', help='Target architecture', default=None, choices=('ios', 'android', 'mac'))
     options = parser.parse_args()
 
     if not options.csproj_file or not options.root or not options.architecture:

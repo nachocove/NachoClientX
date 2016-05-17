@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectTypeGuids>{A3F8F2AB-B479-4A4A-A458-A89E7DC349F1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{58E5D19B-A679-49DD-9926-463B985E4450}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NachoClient.Mac</RootNamespace>
+    <MonoMacResourcePrefix>Resources</MonoMacResourcePrefix>
+    <AssemblyName>NachoClient.Mac</AssemblyName>
+    <UseXamMacFullFramework>true</UseXamMacFullFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <Profiling>true</Profiling>
+    <UseRefCounting>true</UseRefCounting>
+    <UseSGen>true</UseSGen>
+    <IncludeMonoRuntime>false</IncludeMonoRuntime>
+    <CreatePackage>false</CreatePackage>
+    <CodeSigningKey>Mac Developer</CodeSigningKey>
+    <EnableCodeSigning>false</EnableCodeSigning>
+    <EnablePackageSigning>false</EnablePackageSigning>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture mac" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <Profiling>false</Profiling>
+    <UseRefCounting>true</UseRefCounting>
+    <UseSGen>true</UseSGen>
+    <IncludeMonoRuntime>true</IncludeMonoRuntime>
+    <CreatePackage>true</CreatePackage>
+    <CodeSigningKey>Developer ID Application</CodeSigningKey>
+    <EnableCodeSigning>true</EnableCodeSigning>
+    <EnablePackageSigning>false</EnablePackageSigning>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Xamarin.Mac" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="HockeyApp.iOS">
+      <HintPath>..\NachoClient.iOS\HockeyApp\hockeyappios-3.8.2.1\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-128.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-128%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-16.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-16%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-256.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-256%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-32.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-32%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-512.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcons.appiconset\AppIcon-512%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Info.plist" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Main.cs" />
+    <Compile Include="AppDelegate.cs" />
+    <Compile Include="ViewController.cs" />
+    <Compile Include="ViewController.designer.cs">
+      <DependentUpon>ViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BuildInfo.cs" />
+    <Compile Include="FIXME_PlatformProcess.cs" />
+    <Compile Include="LogSettings.cs" />
+    <Compile Include="NachoPlatform\AssetsMac.cs" />
+    <Compile Include="NachoPlatform\CalendarsMac.cs" />
+    <Compile Include="NachoPlatform\CloudHandlerMac.cs" />
+    <Compile Include="NachoPlatform\ContactsMac.cs" />
+    <Compile Include="NachoPlatform\DataFileMigrationMac.cs" />
+    <Compile Include="NachoPlatform\DeviceMac.cs" />
+    <Compile Include="NachoPlatform\DnsMac.cs" />
+    <Compile Include="NachoPlatform\ImageMac.cs" />
+    <Compile Include="NachoPlatform\InvokeOnUIThreadMac.cs" />
+    <Compile Include="NachoPlatform\KeychainMac.cs" />
+    <Compile Include="NachoPlatform\MdmConfigMac.cs" />
+    <Compile Include="NachoPlatform\NcFileHandlerMac.cs" />
+    <Compile Include="NachoPlatform\NcHttpClientMac.cs" />
+    <Compile Include="NachoPlatform\NcUIRedirectorMac.cs" />
+    <Compile Include="NachoPlatform\NetStatusMac.cs" />
+    <Compile Include="NachoPlatform\NotifMac.cs" />
+    <Compile Include="NachoPlatform\PlatformUserColorIndex.cs" />
+    <Compile Include="NachoPlatform\PowerMac.cs" />
+    <Compile Include="NachoPlatform\PushAssistMac.cs" />
+    <Compile Include="NachoPlatform\RegDomMac.cs" />
+    <Compile Include="NachoPlatform\RtfConverterMac.cs" />
+    <Compile Include="NachoPlatform\StoreHandlerMac.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterfaceDefinition Include="Main.storyboard" />
+  </ItemGroup>
+  <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Mac\Xamarin.Mac.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr\antlr.runtime\antlr.runtime.csproj">
+      <Project>{CB7CC882-ED47-46C0-AAAE-7A437F22F1C6}</Project>
+      <Name>antlr.runtime</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
+      <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
+      <Name>CSharpNameParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net\Lucene.Net.csproj">
+      <Project>{5B0CBAEC-6681-423C-B2B1-E3886A5BDF6C}</Project>
+      <Name>Lucene.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\Portable.Text.Encoding\Portable.Text.Encoding\Portable.Text.Encoding.csproj">
+      <Project>{EEE48C75-11BE-4B50-B759-F85B5052D473}</Project>
+      <Name>Portable.Text.Encoding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.csproj">
+      <Project>{4C235092-820C-4DEB-9074-D356FB797D8B}</Project>
+      <Name>BouncyCastle</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.csproj">
+      <Project>{D5F54A4F-D84B-430F-9271-F7861E285B3E}</Project>
+      <Name>MimeKit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.csproj">
+      <Project>{7264D469-A390-4C10-9C87-DAA37EDD3C1D}</Project>
+      <Name>MailKit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.Collections\DDay.Collections\DDay.Collections.csproj">
+      <Project>{E04EFEB6-4625-4D58-AC91-7B8B8A2C97BB}</Project>
+      <Name>DDay.Collections</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal\DDay.iCal.csproj">
+      <Project>{F88DB6D3-CB95-4707-9C88-B53403AADC61}</Project>
+      <Name>DDay.iCal</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns\DnDns.csproj">
+      <Project>{53089CAB-AE06-4BE6-9E23-CCCC03730EEA}</Project>
+      <Name>DnDns</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Xamarin.Auth\src\Xamarin.Auth\Xamarin.Auth.csproj">
+      <Project>{C9FF1919-78DD-4084-976D-BDABC0A7E80B}</Project>
+      <Name>Xamarin.Auth</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\JetBlack.Caching\JetBlack.Caching\JetBlack.Caching.csproj">
+      <Project>{EE216426-A161-43CB-AD3C-4A209FB2DB6F}</Project>
+      <Name>JetBlack.Caching</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_Core\AWSSDK_Core.csproj">
+      <Project>{4E8016CD-33E3-4961-A954-119A623527D4}</Project>
+      <Name>AWSSDK_Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

@@ -125,12 +125,19 @@ namespace NachoCore.Utils
                 }
                 Client = new AmazonDynamoDBClient (credentials, config);
 
-                LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);
-                SupportTable = Table.LoadTableAsync (Client, TableName ("support"), NcTask.Cts.Token);
-                CounterTable = Table.LoadTableAsync (Client, TableName ("counter"), NcTask.Cts.Token);
-                CaptureTable = Table.LoadTableAsync (Client, TableName ("capture"), NcTask.Cts.Token);
-                UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
-                WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
+                // FIXME:
+//                LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);
+//                SupportTable = Table.LoadTableAsync (Client, TableName ("support"), NcTask.Cts.Token);
+//                CounterTable = Table.LoadTableAsync (Client, TableName ("counter"), NcTask.Cts.Token);
+//                CaptureTable = Table.LoadTableAsync (Client, TableName ("capture"), NcTask.Cts.Token);
+//                UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
+//                WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
+                LogTable = Table.LoadTable (Client, TableName ("log"));
+                SupportTable = Table.LoadTable (Client, TableName ("support"));
+                CounterTable = Table.LoadTable (Client, TableName ("counter"));
+                CaptureTable = Table.LoadTable (Client, TableName ("capture"));
+                UiTable = Table.LoadTable (Client, TableName ("ui"));
+                WbxmlTable = Table.LoadTable (Client, TableName ("wbxml"));
             });
 
             Retry (() => {
