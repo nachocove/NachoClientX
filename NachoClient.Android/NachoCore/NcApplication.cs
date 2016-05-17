@@ -965,6 +965,7 @@ namespace NachoCore
                     }
                 }
 
+                #if !NO_HOCKEY_APP
                 // Check if HockeyApp has any queued crash reports
                 if (!crashReportingDone) {
                     numCrashes = NumberOfCrashReports ();
@@ -972,6 +973,9 @@ namespace NachoCore
                         crashReportingDone = true;
                     }
                 }
+                #else
+                crashReportingDone = true;
+                #endif
 
                 Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: telemetryEvents={0}, crashes={1}", numTelemetryEvents, numCrashes);
 

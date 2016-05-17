@@ -1,3 +1,5 @@
+//#define NO_HOCKEY_APP
+
 using System;
 using Android.App;
 using Android.Runtime;
@@ -15,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace NachoClient.AndroidClient
 {
-#if !DEBUG
+    #if !DEBUG
     // DO NOT PUT THE [Application ...] tag here when running unit tests.
     [Application (AllowBackup = true, BackupAgent = typeof(NcBackupAgentHelper), RestoreAnyVersion = true)]
 #endif
@@ -84,7 +86,7 @@ namespace NachoClient.AndroidClient
                 Calendars.Instance.DeviceCalendarChanged ();
             };
 
-            MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));
+            MainApplication.Instance.StartService (new Intent (MainApplication.Instance, typeof(NotificationService)));
 
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
 
@@ -96,7 +98,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
         }
 
-        public static bool CheckOnceForUpdates ()
+        static bool CheckOnceForUpdates ()
         {
             if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsBeta) {
                 var check = checkForUpdates;
@@ -124,6 +126,8 @@ namespace NachoClient.AndroidClient
 
         #region HockeyApp
 
+        #if !NO_HOCKEY_APP
+
         public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
         {
             public override void OnUpdateAvailable ()
@@ -138,21 +142,39 @@ namespace NachoClient.AndroidClient
                 base.OnNoUpdateAvailable ();
             }
         }
+        #endif
 
+        static bool updateRegistered = false;
         public static void RegisterHockeyAppUpdateManager (Activity activity)
         {
+            #if !NO_HOCKEY_APP
             if (BuildInfoHelper.IsDev) {
                 return;
             }
-            //Register to with the Update Manager
-            HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
+            if (CheckOnceForUpdates ()) {
+                updateRegistered = true;
+               //Register to with the Update Manager
+                HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
+            }
+            #else
+            Log.Info (Log.LOG_SYS, "RegisterHockeyAppUpdateManager: HockeyAppDisabled");
+            #endif
         }
 
         public static void UnregisterHockeyAppUpdateManager ()
         {
-            HockeyApp.UpdateManager.Unregister ();
+            #if !NO_HOCKEY_APP
+            if (updateRegistered) {
+                HockeyApp.UpdateManager.Unregister ();
+                updateRegistered = false;
+            }
+            #else
+            Log.Info (Log.LOG_SYS, "UnregisterHockeyAppUpdateManager: HockeyAppDisabled");
+            #endif
         }
-            
+
+        #if !NO_HOCKEY_APP
+
         public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
         {
             public string LastTrace { get; set; }
@@ -206,10 +228,19 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        [Activity]
+        public class NcHAUpdateActivity : HockeyApp.UpdateActivity
+        {
+        }
+
         static bool IsHockeyInitialized;
+
+        #endif
 
         public static void SetupHockeyAppCrashManager (Activity activity)
         {
+            #if !NO_HOCKEY_APP
+
             if (BuildInfoHelper.IsDev) {
                 return;
             }
@@ -246,6 +277,9 @@ namespace NachoClient.AndroidClient
             };
 
             Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
+            #else
+            Log.Info (Log.LOG_SYS, "SetupHockeyAppCrashManager: HockeyAppDisabled");
+            #endif
         }
 
         #endregion
