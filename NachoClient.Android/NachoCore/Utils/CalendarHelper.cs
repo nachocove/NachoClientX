@@ -186,6 +186,7 @@ namespace NachoCore.Utils
 
         private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McCalendar c, IList<McAttendee> attendees)
         {
+            NcAssert.False (string.IsNullOrEmpty (c.OrganizerEmail), "OrganizerEmail is empty/null");
             evt.Organizer = new Organizer (c.OrganizerEmail);
             evt.Organizer.CommonName = c.OrganizerName;
             foreach (var mcAttendee in attendees) {
