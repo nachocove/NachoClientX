@@ -39,6 +39,9 @@
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
+    <MonoBundlingExtraArgs>--link_flags="-L${ProjectDir}/../native.Mac -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.Mac/libNachoPlatformSDK.a"</MonoBundlingExtraArgs>
+    <XamMacArch>x86_64</XamMacArch>
+    <PackageSigningKey>Developer ID Installer</PackageSigningKey>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>

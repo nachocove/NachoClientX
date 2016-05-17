@@ -12,6 +12,7 @@ all:
 	make -C ../MailKit SOLUTION=MailKit.Mobile.sln
 	make -C native.iOS
 	make -C native.Android
+	make -C native.Mac
 	make
 
 clean:
@@ -26,4 +27,5 @@ clean:
 	make -C ../MailKit SOLUTION=MailKit.Mobile.sln clean
 	make -C native.iOS clean
 	make -C native.Android clean
+	make -C native.Mac clean
 	make clean

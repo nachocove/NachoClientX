@@ -15,6 +15,8 @@
 NachoClient.iOS/Info.plist.rewritten
 native.iOS/src/tld-canon.h
 native.iOS/build
+native.Mac/src/tld-canon.h
+native.Mac/build
 native.Android/src/tld-canon.h
 native.Android/jni/*.h
 native.Android/jni/*.c
