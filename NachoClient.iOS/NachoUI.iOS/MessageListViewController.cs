@@ -834,12 +834,9 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
-
-                bool isVisible = IsViewLoaded && View.Window != null;
-
+                Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}", s.Status.SubKind.ToString ());
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
@@ -847,12 +844,10 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     UpdateVisibleRows ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     Messages.RefetchSyncTime ();
                     break;
                 }
