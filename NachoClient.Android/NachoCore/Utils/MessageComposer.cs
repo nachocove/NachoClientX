@@ -318,7 +318,7 @@ namespace NachoCore.Utils
                 Delegate.MessageComposerDidFailToLoadMessage (this);
             } else if (downloader == RelatedMessageDownloader) {
                 Log.Info (Log.LOG_UI, "MessageComposer related message download failed");
-                FinishPreparingMessage ();
+                PrepareMessageBody ();
             } else {
                 NcAssert.CaseError ();
             }
