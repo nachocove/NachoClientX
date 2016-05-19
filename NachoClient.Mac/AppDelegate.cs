@@ -75,8 +75,6 @@ namespace NachoClient.Mac
             
         public void CopyResourcesToDocuments ()
         {
-            return;
-            // FIXME: GetFolderPath returns the user's home folder (e.g., /Users/oshaw), totally wrong for us 
             var documentsPath = NcApplication.GetDocumentsPath ();
             string[] resources = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var resourceName in resources) {
