@@ -15,33 +15,33 @@ namespace NachoPlatformBinding
 
         public static long GetUsedMemory ()
         {
-            return 0;
+            throw new NotImplementedException ();
         }
 
         public static int GetCurrentNumberOfFileDescriptors ()
         {
-            return 0;
+            throw new NotImplementedException ();
         }
 
         public static int GetCurrentNumberOfInUseFileDescriptors ()
         {
-            return 0;
+            throw new NotImplementedException ();
         }
 
         public static string[] GetCurrentInUseFileDescriptors ()
         {
-            return new string[]{ };
+            throw new NotImplementedException ();
         }
 
 
         public static string GetFileNameForDescriptor (int fd)
         {
-            return "";
+            throw new NotImplementedException ();
         }
 
         public static int GetNumberOfSystemThreads ()
         {
-            return 0;
+            throw new NotImplementedException ();
         }
 
         public static string[] GetStackTrace ()

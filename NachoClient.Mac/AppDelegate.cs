@@ -15,6 +15,9 @@ namespace NachoClient.Mac
     [Register ("AppDelegate")]
     public class AppDelegate : NSApplicationDelegate
     {
+
+        NSWindowController WindowController;
+
         public AppDelegate ()
         {
         }
@@ -38,19 +41,31 @@ namespace NachoClient.Mac
 
             NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
-            // TODO: do we need this?
-            // NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
 
             NcApplication.Instance.StartBasalServices ();
             NcApplication.Instance.AppStartupTasks ();
 
             // TODO: register for remote notifications
 
-
             // TODO: Do we need this?
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
                 Telemetry.Instance.Throttling = false;
             };
+                
+            if (NcApplication.ReadyToStartUI ()) {
+                // todo: start main ui
+            } else {
+                // Skip tutorial because we don't have one on mac, and ReadyToStartUI requires that we mark it as viewed
+                if (!LoginHelpers.HasViewedTutorial ()) {
+                    LoginHelpers.SetHasViewedTutorial (true);
+                }
+                var storyboard = NSStoryboard.FromName ("Welcome", null);
+                // WindowController must be member var or it gets garbage collected!
+                WindowController = storyboard.InstantiateInitialController () as NSWindowController;
+                WindowController.ShowWindow (null);
+            }
+
         }
 
         public override void WillTerminate (NSNotification notification)

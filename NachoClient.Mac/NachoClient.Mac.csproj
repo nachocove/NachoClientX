@@ -102,10 +102,6 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
-    <Compile Include="ViewController.cs" />
-    <Compile Include="ViewController.designer.cs">
-      <DependentUpon>ViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="BuildInfo.cs" />
     <Compile Include="FIXME_PlatformProcess.cs" />
     <Compile Include="LogSettings.cs" />
@@ -130,8 +126,25 @@
     <Compile Include="NachoPlatform\RegDomMac.cs" />
     <Compile Include="NachoPlatform\RtfConverterMac.cs" />
     <Compile Include="NachoPlatform\StoreHandlerMac.cs" />
+    <Compile Include="StandardCredentialsViewController.cs" />
+    <Compile Include="StandardCredentialsViewController.designer.cs">
+      <DependentUpon>StandardCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WelcomeViewController.cs" />
+    <Compile Include="WelcomeViewController.designer.cs">
+      <DependentUpon>WelcomeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AccountTypeViewController.cs" />
+    <Compile Include="AccountTypeViewController.designer.cs">
+      <DependentUpon>AccountTypeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WelcomePageController.cs" />
+    <Compile Include="WelcomePageController.designer.cs">
+      <DependentUpon>WelcomePageController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <InterfaceDefinition Include="Welcome.storyboard" />
     <InterfaceDefinition Include="Main.storyboard" />
   </ItemGroup>
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
