@@ -45,7 +45,7 @@ namespace NachoPlatform
             // http://stackoverflow.com/questions/4891562/ios-keychain-services-only-specific-values-allowed-for-ksecattrgeneric-key/5008417#5008417
             return new SecRecord (SecKind.GenericPassword) {
                 Account = KDefaultAccount,
-                Service = service,
+                Service = string.Format ("NachoMail:{0}", service),
             };
         }
 
@@ -240,10 +240,15 @@ namespace NachoPlatform
             SecStatusCode res;
             var match = SecKeyChain.QueryAsRecord (query, out res);
             if (SecStatusCode.Success == res) {
-                match.ValueData = value;
-                res = SecKeyChain.Update (query, match);
+                var update = new SecRecord (SecKind.GenericPassword) {
+                    Account = match.Account,
+                    Service = match.Service,
+                    Accessible = accessible,
+                    ValueData = value,
+                };
+                res = SecKeyChain.Update (query, update);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Remove returned {0}:{1}", res.ToString (), DumpQuery (query));
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Update returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
             } else {
