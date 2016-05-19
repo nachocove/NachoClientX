@@ -76,6 +76,9 @@ namespace NachoClient.Mac
         public void CopyResourcesToDocuments ()
         {
             var documentsPath = NcApplication.GetDocumentsPath ();
+            if (!Directory.Exists (documentsPath)) {
+                Directory.CreateDirectory (documentsPath);
+            }
             string[] resources = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var resourceName in resources) {
                 var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
