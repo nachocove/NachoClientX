@@ -98,7 +98,7 @@ namespace NachoCore.Utils
 
         public void Report (string kind)
         {
-            Telemetry.RecordStatistics2 (kind, Count, Min, Max, Total, Total2);
+            NcApplication.Instance.TelemetryService.RecordStatistics2 (kind, Count, Min, Max, Total, Total2);
             Reset ();
         }
     }

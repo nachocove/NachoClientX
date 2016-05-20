@@ -229,7 +229,7 @@ namespace NachoCore.Utils
                     Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
-                Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
+                NcApplication.Instance.TelemetryService.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
             }
             LogElement elem;
             int maxIndirect = 5;
@@ -270,7 +270,7 @@ namespace NachoCore.Utils
 
         static bool ReadyToLog ()
         {
-            return NachoCore.Model.NcModel.IsInitialized && Telemetry.Initialized;
+            return NachoCore.Model.NcModel.IsInitialized && NcApplication.Instance.TelemetryService != null;
         }
 
         private void _TryLog (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,

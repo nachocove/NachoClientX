@@ -1,5 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
+#define TELEMETRY_NOOP
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -144,6 +146,23 @@ namespace NachoCore
         public string ClientId {
             get {
                 return Device.Instance.Identity ();
+            }
+        }
+
+        object TelemetryServiceLockObj = new object ();
+        public ITelemetry TelemetryService;
+        public void InitTelemetryService ()
+        {
+            if (TelemetryService == null) {
+                lock (TelemetryServiceLockObj) {
+                    if (TelemetryService == null) {
+                        #if !TELEMETRY_NOOP
+                        TelemetryService = new Telemetry ();
+                        #else
+                        TelemetryService = new Telemetry_NOOP ();
+                        #endif
+                    }
+                }
             }
         }
 
@@ -443,7 +462,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
-            Telemetry.StartService ();
+            InitTelemetryService ();
             NcCommStatus.Instance.Reset ("StartBasalServices");
 
             // Pick most recently used account
@@ -459,7 +478,7 @@ namespace NachoCore
 
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
-                Telemetry.Instance.Throttling = false;
+                TelemetryService.Throttling = false;
 
                 // Submit a support request, to make the chances even higher that this will be noticed and investigated.
                 var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
@@ -467,7 +486,7 @@ namespace NachoCore
                 supportInfo.Add ("Message", "Safe mode was triggered. Please investigate.");
                 supportInfo.Add ("BuildVersion", BuildInfo.Version);
                 supportInfo.Add ("BuildNumber", BuildInfo.BuildNumber);
-                Telemetry.RecordSupport (supportInfo);
+                TelemetryService.RecordSupport (supportInfo);
 
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
@@ -913,7 +932,7 @@ namespace NachoCore
                 return false;
             }
             if (new FileInfo (StartupLog).Length > 2) {
-                Telemetry.Instance.FinalizeAll (); // close of all JSON files
+                TelemetryService.FinalizeAll (); // close of all JSON files
                 return true;
             }
             return false;

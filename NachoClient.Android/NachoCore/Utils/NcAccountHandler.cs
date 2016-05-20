@@ -128,7 +128,7 @@ namespace NachoCore.Model
                 }
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
-                Telemetry.RecordAccountEmailAddress (account);
+                NcApplication.Instance.TelemetryService.RecordAccountEmailAddress (account);
             });
             return account;
         }

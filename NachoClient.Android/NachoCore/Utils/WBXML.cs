@@ -261,7 +261,7 @@ namespace NachoCore.Wbxml
                 // forward to the telemetry server.
                 Log.Debug (Log.LOG_XML, "response_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("response_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
-                Telemetry.RecordWbxmlEvent (false, filter.Finalize ());
+                NcApplication.Instance.TelemetryService.RecordWbxmlEvent (false, filter.Finalize ());
             }
         }
 
@@ -286,7 +286,7 @@ namespace NachoCore.Wbxml
                 // can hold and forward to the telemetry server.
                 Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
-                Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
+                NcApplication.Instance.TelemetryService.RecordWbxmlEvent (true, filter.Finalize ());
             }
         }
 
@@ -313,7 +313,7 @@ namespace NachoCore.Wbxml
                 // can hold and forward to the telemetry server.
                 Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
-                Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
+                NcApplication.Instance.TelemetryService.RecordWbxmlEvent (true, filter.Finalize ());
             }
 
             return byteList.ToArray ();
