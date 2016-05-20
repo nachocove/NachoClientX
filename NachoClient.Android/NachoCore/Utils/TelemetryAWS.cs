@@ -25,12 +25,6 @@ namespace NachoCore.Utils
 
         private bool FreshInstall;
 
-        private static string ClientId {
-            get {
-                return Device.Instance.Identity ();
-            }
-        }
-
         public static string _HashUserId;
 
         private static string HashUserId {
@@ -111,7 +105,12 @@ namespace NachoCore.Utils
 
         public string GetUserName ()
         {
-            return ClientId;
+            return Device.Instance.Identity ();
+        }
+
+        public bool SupportsSupportMessage ()
+        {
+            return true;
         }
 
         /// <summary>
@@ -277,7 +276,7 @@ namespace NachoCore.Utils
 
             // Create the temporary JSON .gz file
             var timestamp = jsonEvent.Timestamp ();
-            var readFilePath = Telemetry.TelemetryJsonFileTable.GetReadFilePath (
+            var readFilePath = TelemetryJsonFileTable.GetReadFilePath (
                                    Path.Combine (NcApplication.GetDataDirPath (), "device_info"),
                                    timestamp, timestamp);
             string s3Bucket;

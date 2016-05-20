@@ -11,23 +11,16 @@ using NachoClient.Build;
 
 namespace NachoCore.Utils
 {
-    public partial class Telemetry
+    public class Telemetry
     {
         public static bool ENABLED = true;
 
         // AWS Redshift has a limit of 65,535 for varchar.
         private const int MAX_AWS_LEN = 65535;
 
-        // Maximnum number of events to query per write to telemetry server
-        private const int MAX_QUERY_ITEMS = 10;
-
         // Maximum number of seconds without any event to send before a message is generated
         // to confirm that telemetry is still running.
         private const double MAX_IDLE_PERIOD = 30.0;
-
-        // The amount of pause (in milliseconds) between successive uploads when throttling is enabled.
-        // Assuming typical upload time of 50 msec, 200 msec pause gives roughly 4 uploads per seconds.
-        private const int THROTTLING_IDLE_PERIOD = 200;
 
         private static Telemetry _Instance;
         private static object lockObject = new object ();
@@ -47,21 +40,17 @@ namespace NachoCore.Utils
 
         public static bool Initialized { get; protected set; }
 
-        public bool TelemetryPending ()
-        {
-            return Telemetry.TelemetryJsonFileTable.Instance.GetNextReadFile () != null;
-        }
-
         public void FinalizeAll ()
         {
-            Telemetry.TelemetryJsonFileTable.Instance.FinalizeAll ();
+            DBBackEnd.FinalizeAll ();
         }
 
         CancellationToken Token;
 
         private AutoResetEvent DbUpdated;
 
-        private ITelemetryBE BackEnd;
+        ITelemetryBE BackEnd;
+        ITelementryDB DBBackEnd;
 
         NcCounter[] Counters;
         NcCounter FailToSend;
@@ -79,7 +68,11 @@ namespace NachoCore.Utils
 
         Telemetry ()
         {
-            Telemetry.TelemetryJsonFileTable.Instance.Initialize ();
+            #if !TELEMETRY_BE_NOOP
+            DBBackEnd = new TelemetryJsonFileTable ();
+            #else
+            DBBackEnd = new TelemetryJsonFileTable_NOOP ();
+            #endif
             BackEnd = null;
             DbUpdated = new AutoResetEvent (false);
             Counters = new NcCounter[(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
@@ -135,7 +128,7 @@ namespace NachoCore.Utils
         private static void RecordJsonEvent (TelemetryEventType eventType, TelemetryJsonEvent jsonEvent)
         {
             Instance.Counters [(int)eventType].Click ();
-            Telemetry.TelemetryJsonFileTable.Instance.Add (jsonEvent);
+            Instance.DBBackEnd.Add (jsonEvent);
             MayPurgeEvents ();
             Telemetry.Instance.DbUpdated.Set ();
         }
@@ -484,7 +477,11 @@ namespace NachoCore.Utils
         private void Process ()
         {
             try {
+                #if !TELEMETRY_BE_NOOP
                 BackEnd = new TelemetryBES3 ();
+                #else
+                BackEnd = new TelemetryBE_NOOP ();
+                #endif
 
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.
@@ -498,7 +495,6 @@ namespace NachoCore.Utils
 
                 Log.Info (Log.LOG_LIFECYCLE, "Telemetry starts running");
 
-                int eventDeleted = 0;
                 SendSha1AccountEmailAddresses ();
                 DateTime heartBeat = DateTime.Now;
                 while (true) {
@@ -522,13 +518,13 @@ namespace NachoCore.Utils
                     bool succeed = false;
                     NcAssert.True (NcApplication.Instance.UiThreadId != Thread.CurrentThread.ManagedThreadId);
 
-                    var readFile = Telemetry.TelemetryJsonFileTable.Instance.GetNextReadFile ();
+                    var readFile = DBBackEnd.GetNextReadFile ();
                     if (null != readFile) {
                         // New log file-based telemetry
                         succeed = BackEnd.UploadEvents (readFile);
                         if (succeed) {
                             Action supportCallback;
-                            Telemetry.TelemetryJsonFileTable.Instance.Remove (readFile, out supportCallback);
+                            DBBackEnd.Remove (readFile, out supportCallback);
                             if (null != supportCallback) {
                                 InvokeOnUIThread.Instance.Invoke (supportCallback);
                             }
@@ -562,5 +558,18 @@ namespace NachoCore.Utils
         string GetUserName ();
 
         bool UploadEvents (string jsonFilePath);
+
+        bool SupportsSupportMessage ();
+    }
+
+    public interface ITelementryDB
+    {
+        string GetNextReadFile ();
+
+        void FinalizeAll ();
+
+        bool Add (TelemetryJsonEvent jsonEvent);
+
+        void Remove (string fileName, out Action supportCallback);
     }
 }

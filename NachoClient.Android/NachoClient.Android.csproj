@@ -669,6 +669,7 @@
     <Compile Include="NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs" />
     <Compile Include="NachoCore\Utils\ActionsHelper.cs" />
     <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryBE_NOOP.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
