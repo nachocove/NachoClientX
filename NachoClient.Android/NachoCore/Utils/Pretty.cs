@@ -90,7 +90,7 @@ namespace NachoCore.Utils
                 var reader = new System.IO.StringReader (message.BodyPreview);
                 var line = reader.ReadLine ();
                 while (line != null) {
-                    if (EmailHelper.IsQuoteLine (line)) {
+                    if (EmailHelper.IsQuoteLine (line) || line.StartsWith(">")) {
                         line = null;
                     } else {
                         bodyPreview += line + " ";
