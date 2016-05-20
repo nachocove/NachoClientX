@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using NachoCore.Model;
 using Newtonsoft.Json;
 using NachoPlatform;
-using NachoClient.Build;
 
 namespace NachoCore.Utils
 {
