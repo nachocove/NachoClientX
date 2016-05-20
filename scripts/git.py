@@ -84,6 +84,10 @@ class Checkout(GitCommand):
     def __init__(self, branch_name):
         super(Checkout, self).__init__(['checkout', '-q', branch_name])
 
+class Update(GitCommand):
+    def __init__(self):
+        super(Update, self).__init__(['pull', '--all', '--prune'])
+
 class SubModuleUpdate(GitCommand):
     def __init__(self):
         super(SubModuleUpdate, self).__init__(['submodule', 'update', '--recursive'])
