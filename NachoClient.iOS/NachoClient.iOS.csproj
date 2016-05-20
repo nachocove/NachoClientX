@@ -1701,6 +1701,9 @@
     <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
     <Compile Include="NachoUI.iOS\Support\PercentagePressGestureRecognizer.cs" />
     <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryBE_NOOP.cs">
+      <Link>NachoCore\Utils\TelemetryBE_NOOP.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
