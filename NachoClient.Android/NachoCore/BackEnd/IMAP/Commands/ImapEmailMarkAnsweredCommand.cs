@@ -16,13 +16,23 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
+            NcAssert.NotNull (PendingSingle, "PendingSingle is null");
+            NcAssert.NotNull (Cts, "Cts is null");
             McFolder folder = McFolder.QueryByServerId (AccountId, PendingSingle.ParentId);
+            if (null == folder) {
+                Log.Warn (Log.LOG_IMAP, "{0}: folder {1} seems to have disappeared", CmdNameWithAccount, PendingSingle.ParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKANSNOFOLDER");
+            }
             IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKANSWOPEN");
             }
             UpdateImapSetting (mailKitFolder, ref folder);
             McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
+            if (null == email) {
+                Log.Warn (Log.LOG_IMAP, "{0}: Email {1} seems to have disappeared", CmdNameWithAccount, PendingSingle.ServerId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKANSWNOEMAIL");
+            }
             try {
                 if (PendingSingle.EmailSetFlag_FlagType == McPending.MarkAnsweredFlag) {
                     mailKitFolder.AddFlags (new UniqueId (email.ImapUid), MessageFlags.Answered, true, Cts.Token);
@@ -36,10 +46,9 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKANSWSUC");
             } catch (MessageNotFoundException) {
                 email.Delete ();
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMarkedAnsweredFailed, NcResult.WhyEnum.MissingOnServer));
-                });
+                var protoControl = BEContext.ProtoControl;
+                NcAssert.NotNull (protoControl, "protoControl is null");
+                PendingResolveApply ((pending) => pending.ResolveAsHardFail (protoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMarkedAnsweredFailed, NcResult.WhyEnum.MissingOnServer)));
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKANSWMISS");
             }
         }

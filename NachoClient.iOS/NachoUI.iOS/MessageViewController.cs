@@ -723,6 +723,12 @@ namespace NachoClient.iOS
         protected void CreateEvent ()
         {
             var c = CalendarHelper.CreateMeeting (Message);
+            if (null != Bundle) {
+                string plainText = Bundle.FullText;
+                if (!string.IsNullOrEmpty (plainText)) {
+                    c.SetDescription (plainText, McBody.BodyTypeEnum.PlainText_1);
+                }
+            }
             EditEvent (c);
         }
 
