@@ -9,9 +9,27 @@ using NachoCore.Model;
 
 namespace NachoClient.Mac
 {
+    public interface WelcomeViewDelegate 
+    {
+        void WelcomeViewDidContinueWithAccount (McAccount account);
+    }
     
 	public partial class WelcomeViewController : NSViewController
 	{
+
+        WeakReference<WelcomeViewDelegate> _WelcomeDelegate;
+        public WelcomeViewDelegate WelcomeDelegate {
+            get {
+                WelcomeViewDelegate d;
+                if (_WelcomeDelegate.TryGetTarget(out d)){
+                    return d;
+                }
+                return null;
+            }
+            set {
+                _WelcomeDelegate = new WeakReference<WelcomeViewDelegate>(value);
+            }
+        }
        
 		public WelcomeViewController (IntPtr handle) : base (handle)
 		{
@@ -20,17 +38,16 @@ namespace NachoClient.Mac
         partial void getStarted (NSObject sender)
         {
             var configAccount = McAccount.GetAccountBeingConfigured ();
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            var mdmAccount = McAccount.GetMDMAccount ();
+//            var mdmAccount = McAccount.GetMDMAccount ();
 
-            var pageController = ParentViewController as WelcomePageController;
-            if (pageController != null){
-
+            WelcomeViewDelegate welcomeDelegate;
+            if (_WelcomeDelegate.TryGetTarget(out welcomeDelegate)){
+                McAccount account = null;;
                 if (configAccount != null) {
-                    pageController.ContinueWithAccount (configAccount);
-                }else{
-                    pageController.GetStarted ();
+                    account = configAccount;
                 }
+                // TODO: mdm account?
+                welcomeDelegate.WelcomeViewDidContinueWithAccount (configAccount);
             }
         }
 	}

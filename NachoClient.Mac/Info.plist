@@ -24,8 +24,6 @@
 	<string>oshaw</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>XSAppIconAssets</key>
-	<string>Resources/Images.xcassets/AppIcons.appiconset</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSAppTransportSecurity</key>
@@ -33,5 +31,7 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>XSAppIconAssets</key>
+	<string>Resources/Images.xcassets/AppIcons.appiconset</string>
 </dict>
 </plist>

@@ -10,8 +10,29 @@ using NachoCore.Utils;
 
 namespace NachoClient.Mac
 {
+
+    public interface AccountTypeViewDelegate {
+
+        void AccountTypeViewDidSelectService (McAccount.AccountServiceEnum service);
+
+    }
+
     public partial class AccountTypeViewController : NSViewController, INSTableViewDelegate, INSTableViewDataSource
     {
+
+        WeakReference<AccountTypeViewDelegate> _AccountDelegate;
+        public AccountTypeViewDelegate AccountDelegate {
+            get {
+                AccountTypeViewDelegate d;
+                if (_AccountDelegate.TryGetTarget(out d)){
+                    return d;
+                }
+                return null;
+            }
+            set {
+                _AccountDelegate = new WeakReference<AccountTypeViewDelegate>(value);
+            }
+        }
 
         protected static McAccount.AccountServiceEnum[] DefaultAccountTypes = new McAccount.AccountServiceEnum[] {
             McAccount.AccountServiceEnum.Exchange,
@@ -48,9 +69,9 @@ namespace NachoClient.Mac
         public void SelectionDidChange (Foundation.NSNotification notification)
         {
             var accountType = DefaultAccountTypes [TableView.SelectedRow];
-            var pageController = ParentViewController as WelcomePageController;
-            if (pageController != null) {
-                pageController.ContinueWithAccountType (accountType);
+            AccountTypeViewDelegate accountDelegate;
+            if (_AccountDelegate.TryGetTarget (out accountDelegate)) {
+                accountDelegate.AccountTypeViewDidSelectService (accountType);
             }
         }
 

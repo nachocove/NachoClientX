@@ -7,14 +7,12 @@ using NachoCore.Model;
 
 namespace NachoClient.Mac
 {
-	public partial class WelcomePageController : NSViewController
+    public partial class WelcomePageController : NachoPageController, WelcomeViewDelegate, AccountTypeViewDelegate, CredentialsViewDelegate
 	{
-
-        List<NSViewController> ViewControllers;
+        
         
 		public WelcomePageController (IntPtr handle) : base (handle)
 		{
-            ViewControllers = new List<NSViewController> ();
 		}
 
         public override void ViewDidLoad ()
@@ -25,6 +23,7 @@ namespace NachoClient.Mac
         public override void ViewWillAppear ()
         {
             var welcomeViewController = Storyboard.InstantiateControllerWithIdentifier ("WelcomeViewController") as WelcomeViewController;
+            welcomeViewController.WelcomeDelegate = this;
             PushViewController (welcomeViewController, animated: false);
 
 //            if (null != configAccount) {
@@ -54,65 +53,31 @@ namespace NachoClient.Mac
             View.Window.MovableByWindowBackground = true;
         }
 
-        public void GetStarted ()
+        public void WelcomeViewDidContinueWithAccount (McAccount account)
         {
-            var accountTypeController = Storyboard.InstantiateControllerWithIdentifier ("AccountTypeViewController") as AccountTypeViewController;
-            PushViewController (accountTypeController, animated: true);
+            if (account == null) {
+                var accountTypeController = Storyboard.InstantiateControllerWithIdentifier ("AccountTypeViewController") as AccountTypeViewController;
+                accountTypeController.AccountDelegate = this;
+                PushViewController (accountTypeController, animated: true);
+            } else {
+                var credentialsViewController = Storyboard.InstantiateControllerWithIdentifier ("StandardCredentialsViewController") as StandardCredentialsViewController;
+                credentialsViewController.Service = account.AccountService;
+                credentialsViewController.Account = account;
+                PushViewController (credentialsViewController, animated: false);
+            }
         }
 
-        public void ContinueWithAccountType (McAccount.AccountServiceEnum accountType)
+        public void AccountTypeViewDidSelectService (McAccount.AccountServiceEnum service)
         {
             var credentialsViewController = Storyboard.InstantiateControllerWithIdentifier ("StandardCredentialsViewController") as StandardCredentialsViewController;
-            credentialsViewController.Service = accountType;
+            credentialsViewController.Service = service;
+            credentialsViewController.AccountDelegate = this;
             PushViewController (credentialsViewController, animated: true);
         }
 
-        public void ContinueWithAccount (McAccount account)
-        {
-            var credentialsViewController = Storyboard.InstantiateControllerWithIdentifier ("StandardCredentialsViewController") as StandardCredentialsViewController;
-            credentialsViewController.Service = account.AccountService;
-            credentialsViewController.Account = account;
-            PushViewController (credentialsViewController, animated: false);
-        }
-
-        public void Complete (McAccount account)
+        public void CredentialsViewDidCreateAccount (McAccount account)
         {
             View.Window.Close ();
-        }
-
-        void PushViewController (NSViewController viewController, bool animated = true)
-        {
-            animated = false; // TODO: support animation
-            viewController.View.Frame = View.Bounds;
-            AddChildViewController (viewController);
-            View.AddSubview (viewController.View);
-            NSViewController topViewController = null;
-            if (ViewControllers.Count > 0) {
-                topViewController = ViewControllers [ViewControllers.Count - 1];
-            }
-            ViewControllers.Add (viewController);
-            if (animated) {
-            } else {
-                if (topViewController != null) {
-                    topViewController.View.RemoveFromSuperview ();
-                }
-            }
-        }
-
-        void PopViewController (bool animated = true)
-        {
-            animated = false; // TODO: support animation
-            if (ViewControllers.Count > 0) {
-                var topViewController = ViewControllers [ViewControllers.Count - 1];
-                if (animated) {
-                } else {
-                    topViewController.RemoveFromParentViewController ();
-                    topViewController.View.RemoveFromSuperview ();
-                    ViewControllers.RemoveAt (ViewControllers.Count - 1);
-                    var viewController = ViewControllers [ViewControllers.Count - 1];
-                    View.AddSubview (viewController.View);
-                }
-            }
         }
 
 	}

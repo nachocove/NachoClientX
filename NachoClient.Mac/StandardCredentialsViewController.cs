@@ -13,8 +13,28 @@ using NachoCore;
 
 namespace NachoClient.Mac
 {
+
+    public interface CredentialsViewDelegate
+    {
+        void CredentialsViewDidCreateAccount (McAccount account);
+    }
+
     public partial class StandardCredentialsViewController : NSViewController, ILoginEvents
     {
+
+        WeakReference<CredentialsViewDelegate> _AccountDelegate;
+        public CredentialsViewDelegate AccountDelegate {
+            get {
+                CredentialsViewDelegate d;
+                if (_AccountDelegate.TryGetTarget(out d)){
+                    return d;
+                }
+                return null;
+            }
+            set {
+                _AccountDelegate = new WeakReference<CredentialsViewDelegate>(value);
+            }
+        }
 
         public McAccount Account;
         public McAccount.AccountServiceEnum Service;
@@ -258,9 +278,9 @@ namespace NachoClient.Mac
             Account.Update ();
             IsConnecting = false;
             Log.Info (Log.LOG_UI, "StandardCredentialsViewController PostAutoDPreInboxSync for reader or writer");
-            var pageController = ParentViewController as WelcomePageController;
-            if (pageController != null) {
-                pageController.Complete (Account);
+            CredentialsViewDelegate accountDelegate;
+            if (_AccountDelegate.TryGetTarget (out accountDelegate)) {
+                accountDelegate.CredentialsViewDidCreateAccount (Account);
             }
         }
 

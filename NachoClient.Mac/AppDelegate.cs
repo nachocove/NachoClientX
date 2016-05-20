@@ -16,7 +16,7 @@ namespace NachoClient.Mac
     public class AppDelegate : NSApplicationDelegate
     {
 
-        NSWindowController WindowController;
+        NSWindowController WelcomeWindowController;
 
         public AppDelegate ()
         {
@@ -60,12 +60,24 @@ namespace NachoClient.Mac
                 if (!LoginHelpers.HasViewedTutorial ()) {
                     LoginHelpers.SetHasViewedTutorial (true);
                 }
-                var storyboard = NSStoryboard.FromName ("Welcome", null);
-                // WindowController must be member var or it gets garbage collected!
-                WindowController = storyboard.InstantiateInitialController () as NSWindowController;
-                WindowController.ShowWindow (null);
+                ShowWelcome ();
             }
 
+        }
+
+        public void ShowWelcome ()
+        {
+            var storyboard = NSStoryboard.FromName ("Main", null);
+            // WindowController must be member var or it gets garbage collected!
+            WelcomeWindowController = storyboard.InstantiateControllerWithIdentifier ("WelcomeWindow") as NSWindowController;
+            WelcomeWindowController.ShowWindow (null);
+            WelcomeWindowController.Window.WillClose += WelcomeWindowWillClose;
+        }
+
+        void WelcomeWindowWillClose (object sender, EventArgs e)
+        {
+            WelcomeWindowController.Window.WillClose -= WelcomeWindowWillClose;
+            WelcomeWindowController = null;
         }
 
         public override void WillTerminate (NSNotification notification)

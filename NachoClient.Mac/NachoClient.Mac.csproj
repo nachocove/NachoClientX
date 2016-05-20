@@ -143,10 +143,23 @@
     <Compile Include="WelcomePageController.designer.cs">
       <DependentUpon>WelcomePageController.cs</DependentUpon>
     </Compile>
+    <Compile Include="AccountsViewController.cs" />
+    <Compile Include="AccountsViewController.designer.cs">
+      <DependentUpon>AccountsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GeneralSettingsViewController.cs" />
+    <Compile Include="GeneralSettingsViewController.designer.cs">
+      <DependentUpon>GeneralSettingsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoPageController.cs" />
+    <Compile Include="AddAccountPageController.cs" />
+    <Compile Include="AddAccountPageController.designer.cs">
+      <DependentUpon>AddAccountPageController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <InterfaceDefinition Include="Welcome.storyboard" />
     <InterfaceDefinition Include="Main.storyboard" />
+    <InterfaceDefinition Include="Resources\AccountsViewController.xib" />
   </ItemGroup>
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Mac\Xamarin.Mac.CSharp.targets" />
