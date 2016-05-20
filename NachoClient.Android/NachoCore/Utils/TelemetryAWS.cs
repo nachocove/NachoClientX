@@ -108,11 +108,6 @@ namespace NachoCore.Utils
             return Device.Instance.Identity ();
         }
 
-        public bool SupportsSupportMessage ()
-        {
-            return true;
-        }
-
         /// <summary>
         /// Handles the AWS exception.
         /// </summary>

@@ -557,8 +557,6 @@ namespace NachoCore.Utils
         string GetUserName ();
 
         bool UploadEvents (string jsonFilePath);
-
-        bool SupportsSupportMessage ();
     }
 
     public interface ITelementryDB

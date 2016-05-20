@@ -20,11 +20,6 @@ namespace NachoCore.Utils
             return true;
         }
 
-        public bool SupportsSupportMessage ()
-        {
-            return false;
-        }
-
         #endregion
     }
 
