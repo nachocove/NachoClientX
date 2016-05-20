@@ -177,8 +177,6 @@ namespace NachoCore.Model
 
         public string DbFileName { set; get; }
 
-        public string TeleDbFileName { set; get; }
-
         public object WriteNTransLockObj { private set; get; }
 
         public enum AutoVacuumEnum
@@ -224,23 +222,6 @@ namespace NachoCore.Model
                 if (DbConns.TryRemove (threadId, out db)) {
                     Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < connection", threadId);
                     ConnectionPool.Enqueue (db);
-                }
-            }
-        }
-
-        private object _TeleDbLock;
-        private SQLiteConnection _TeleDb = null;
-
-        public SQLiteConnection TeleDb {
-            get {
-                lock (_TeleDbLock) {
-                    if (null == _TeleDb) {
-                        _TeleDb = new SQLiteConnection (TeleDbFileName,
-                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
-                            storeDateTimeAsTicks: true);
-                        _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                    }
-                    return _TeleDb;
                 }
             }
         }
@@ -466,18 +447,6 @@ namespace NachoCore.Model
             ConfigureDb (Db);
         }
 
-        private void InitializeTeleDb ()
-        {
-            if (null == _TeleDbLock) {
-                _TeleDbLock = new object ();
-            }
-            AutoVacuum = AutoVacuumEnum.INCREMENTAL;
-            ConfigureDb (TeleDb);
-            // Auto-vacuum setting requires the table to be created after.
-            TeleDb.CreateTable<McTelemetryEvent> ();
-            TeleDb.CreateTable<McTelemetrySupportEvent> ();
-        }
-
         private void QueueLogInfo (string message)
         {
             Log.IndirectQ.Enqueue (new LogElement () {
@@ -515,8 +484,6 @@ namespace NachoCore.Model
             DbFileName = Path.Combine (GetDataDirPath (), "db");
             FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
-            InitializeTeleDb ();
             NcApplicationMonitor.Instance.MonitorEvent += (sender, e) => Scrub ();
             //mark all the files for skip backup
             MarkDataDirForSkipBackup ();
@@ -832,27 +799,6 @@ namespace NachoCore.Model
         private static void Scrub ()
         {
             // The contents of this method change, depending on what we are scrubbing for.
-        }
-
-        public void ResetTeleDb ()
-        {
-            lock (_TeleDbLock) {
-                // Close the connection
-                _TeleDb.Close ();
-                _TeleDb.Dispose ();
-                _TeleDb = null; // next reference will re-initialize the connection
-
-                // Rename the db file
-                var timestamp = DateTime.Now.ToString ().Replace (' ', '_').Replace ('/', '-');
-                File.Replace (TeleDbFileName, TeleDbFileName + "." + timestamp, null);
-                File.Replace (TeleDbFileName + "-wal", TeleDbFileName + "-wal." + timestamp, null);
-                File.Replace (TeleDbFileName + "-shm", TeleDbFileName + "-shm." + timestamp, null);
-
-                // Recreate the db
-                InitializeTeleDb ();
-
-                Log.Error (Log.LOG_DB, "TeleDB corrupted. Reset.");
-            }
         }
 
         public static void MayIncrementallyVacuum (SQLiteConnection db, int numberOfPages)

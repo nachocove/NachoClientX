@@ -693,9 +693,6 @@
       <Link>NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCalendarController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McTelemetryEvent.cs">
-      <Link>NachoCore\Model\McTelemetryEvent.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoFileChooser.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Mockables\IHttpWebRequest.cs">

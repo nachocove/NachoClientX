@@ -253,7 +253,6 @@
     <Compile Include="NachoCore\Utils\Telemetry.cs" />
     <Compile Include="NachoCore\Utils\NcQueue.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs" />
-    <Compile Include="NachoCore\Model\McTelemetryEvent.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="NachoCore\Mockables\IHttpWebRequest.cs" />
     <Compile Include="NachoCore\Mockables\MockableHttpWebRequest.cs" />
@@ -391,7 +390,6 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration22.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration23.cs" />
     <Compile Include="NachoCore\BackEnd\NcProtoControl.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration24.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration25.cs" />
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
@@ -670,6 +668,7 @@
     <Compile Include="NachoCore\Adapters\NachoActions.cs" />
     <Compile Include="NachoCore\Utils\LimitedConcurrencyLevelTaskScheduler.cs" />
     <Compile Include="NachoCore\Utils\ActionsHelper.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

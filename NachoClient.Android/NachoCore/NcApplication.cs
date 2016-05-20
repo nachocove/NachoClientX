@@ -933,7 +933,6 @@ namespace NachoCore
             // a couple of seconds so the user has time to read it.
             Thread.Sleep (TimeSpan.FromSeconds (2));
 
-            bool telemetryDone = false;
             bool crashReportingDone = false;
             SafeModeStarted = true;
             int numTelemetryEvents, numCrashes;
@@ -957,14 +956,6 @@ namespace NachoCore
                     }
                 }
 
-                // Check if we have caught up in telemetry upload
-                if (!telemetryDone) {
-                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
-                    if ((0 == numTelemetryEvents) && !Telemetry.Instance.TelemetryPending ()) {
-                        telemetryDone = true;
-                    }
-                }
-
                 // Check if HockeyApp has any queued crash reports
                 if (!crashReportingDone) {
                     numCrashes = NumberOfCrashReports ();
@@ -975,7 +966,7 @@ namespace NachoCore
 
                 Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: telemetryEvents={0}, crashes={1}", numTelemetryEvents, numCrashes);
 
-                if (crashReportingDone && telemetryDone) {
+                if (crashReportingDone) {
                     break;
                 }
                 if (!NcTask.CancelableSleep (1000)) {

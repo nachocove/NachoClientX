@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NachoCore.Model;
 using Newtonsoft.Json;
 using NachoPlatform;
+using NachoClient.Build;
 
 namespace NachoCore.Utils
 {
@@ -29,7 +30,7 @@ namespace NachoCore.Utils
         private const int THROTTLING_IDLE_PERIOD = 200;
 
         private static Telemetry _Instance;
-        private static object lockObject = new object();
+        private static object lockObject = new object ();
 
         public static Telemetry Instance {
             get {
@@ -483,10 +484,8 @@ namespace NachoCore.Utils
         private void Process ()
         {
             try {
-                bool ranOnce = false;
+                BackEnd = new TelemetryBES3 ();
 
-                BackEnd = new TelemetryBEAWS ();
-                BackEnd.Initialize ();
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.
                     // This happens because some AWS initialization routines are synchronous
@@ -496,11 +495,6 @@ namespace NachoCore.Utils
                     return;
                 }
                 Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
-
-                // Capture the transaction time to telemetry server
-                const string CAPTURE_NAME = "Telemetry.SendEvent";
-                NcCapture.AddKind (CAPTURE_NAME);
-                NcCapture transactionTime = NcCapture.Create (CAPTURE_NAME);
 
                 Log.Info (Log.LOG_LIFECYCLE, "Telemetry starts running");
 
@@ -516,21 +510,6 @@ namespace NachoCore.Utils
                         WaitOrCancel (500);
                     }
 
-                    if (!ranOnce) {
-                        // Record how much back log we have in telemetry db
-                        Dictionary<string, string> dict = new Dictionary<string, string> ();
-                        var numEvents = McTelemetryEvent.QueryCount ();
-                        dict.Add ("num_events", numEvents.ToString ());
-                        if (0 < numEvents) {
-                            // Get the oldest event and report its timestamp
-                            var oldestDbEvent = McTelemetryEvent.QueryMultiple (1) [0];
-                            var oldestTeleEvent = oldestDbEvent.GetTelemetryEvent ();
-                            dict.Add ("oldest_event", oldestTeleEvent.Timestamp.ToString ("yyyy-MM-ddTHH:mm:ssK"));
-                            RecordSupport (dict);
-                        }
-                        ranOnce = true;
-                    }
-
                     // TODO - We need to be smart about when we run. 
                     // For example, if we don't have WiFi, it may not be a good
                     // idea to upload a lot of data. The exact algorithm is TBD.
@@ -541,102 +520,34 @@ namespace NachoCore.Utils
                     }
 
                     bool succeed = false;
-                    // Old teledb-based telemetry
                     NcAssert.True (NcApplication.Instance.UiThreadId != Thread.CurrentThread.ManagedThreadId);
-                    List<TelemetryEvent> tEvents = null;
-                    List<McTelemetryEvent> dbEvents = null;
-                    // Always check for support event first
-                    dbEvents = McTelemetrySupportEvent.QueryOne ();
-                    if (0 == dbEvents.Count) {
-                        // If doesn't have any, check for other events
-                        dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
-                    }
-                    if (0 == dbEvents.Count) {
-                        var readFile = Telemetry.TelemetryJsonFileTable.Instance.GetNextReadFile ();
-                        if (null != readFile) {
-                            // New log file-based telemetry
-                            succeed = BackEnd.UploadEvents (readFile);
-                            if (succeed) {
-                                Action supportCallback;
-                                Telemetry.TelemetryJsonFileTable.Instance.Remove (readFile, out supportCallback);
-                                if (null != supportCallback) {
-                                    InvokeOnUIThread.Instance.Invoke (supportCallback);
-                                }
-                            } else {
-                                FailToSend.Click ();
-                                if (FailToSendLogLimiter.TakeToken ()) {
-                                    Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
-                                }
+
+                    var readFile = Telemetry.TelemetryJsonFileTable.Instance.GetNextReadFile ();
+                    if (null != readFile) {
+                        // New log file-based telemetry
+                        succeed = BackEnd.UploadEvents (readFile);
+                        if (succeed) {
+                            Action supportCallback;
+                            Telemetry.TelemetryJsonFileTable.Instance.Remove (readFile, out supportCallback);
+                            if (null != supportCallback) {
+                                InvokeOnUIThread.Instance.Invoke (supportCallback);
                             }
                         } else {
-                            // No pending event. Wait for one.
-                            DateTime then = DateTime.Now;
-                            while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
-                                NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                                if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
-                                    Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
-                                        MAX_IDLE_PERIOD);
-                                    then = DateTime.Now;
-                                }
-                            }
-                        }
-                        continue;
-                    } else {
-                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                    }
-                    tEvents = new List<TelemetryEvent> ();
-                    foreach (var dbEvent in dbEvents) {
-                        tEvents.Add (dbEvent.GetTelemetryEvent ());
-                    }
-
-                    // Send it to the telemetry server
-                    transactionTime.Start ();
-                    succeed = BackEnd.SendEvents (tEvents);
-                    transactionTime.Stop ();
-                    transactionTime.Reset ();
-
-                    if (succeed) {
-                        // If it is a support, make the callback.
-                        if ((1 == tEvents.Count) && (tEvents [0].IsSupportRequestEvent ()) && (null != tEvents [0].Callback)) {
-                            InvokeOnUIThread.Instance.Invoke (tEvents [0].Callback);
-                        }
-
-                        // Delete the ones that are sent
-                        foreach (var dbEvent in dbEvents) {
-                            var rowsDeleted = dbEvent.Delete ();
-                            if (1 != rowsDeleted) {
-                                Log.Error (Log.LOG_UTILS, "Telemetry fails to delete event. (rowsDeleted={0}, id={1})",
-                                    rowsDeleted, dbEvent.Id);
-                                NcTask.Dump ();
-                                if (0 == rowsDeleted) {
-                                    Log.Error (Log.LOG_UTILS, "Duplicate telemetry task exits.");
-                                    return;
-                                }
-                            }
-                            NcAssert.True (1 == rowsDeleted);
-                            eventDeleted = (eventDeleted + 1) & 0xfff;
-                            if (0 == eventDeleted) {
-                                // 4K events deleted. Try to vacuum
-                                NcModel.MayIncrementallyVacuum (NcModel.Instance.TeleDb, 256);
-                            }
-                        }
-
-                        if ((MAX_QUERY_ITEMS > dbEvents.Count) && !(dbEvents [0] is McTelemetrySupportEvent)) {
-                            // We have completely caught up. Don't want to continue
-                            // to the next message immediately because we want to
-                            // send multiple messages at a time. This leads to a more
-                            // efficient utilization of write capacity.
-                            WaitOrCancel (5000);
-                        } else {
-                            // We still have more events to upload. Check if we are throttling still.
-                            if (Throttling) {
-                                WaitOrCancel (THROTTLING_IDLE_PERIOD);
+                            FailToSend.Click ();
+                            if (FailToSendLogLimiter.TakeToken ()) {
+                                Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
                             }
                         }
                     } else {
-                        FailToSend.Click ();
-                        if (FailToSendLogLimiter.TakeToken ()) {
-                            Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
+                        // No pending event. Wait for one.
+                        DateTime then = DateTime.Now;
+                        while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
+                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                            if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
+                                Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
+                                    MAX_IDLE_PERIOD);
+                                then = DateTime.Now;
+                            }
                         }
                     }
                 }
@@ -648,11 +559,7 @@ namespace NachoCore.Utils
 
     public interface ITelemetryBE
     {
-        void Initialize ();
-
         string GetUserName ();
-
-        bool SendEvents (List<TelemetryEvent> tEvents);
 
         bool UploadEvents (string jsonFilePath);
     }
