@@ -726,6 +726,7 @@ namespace NachoCore.ActiveSync
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
             } else {
+                ((AsProtoControl)BEContext.ProtoControl).ResetFolderReSyncCount ();
                 return SuccessEvent ("SYNCSUCCESS0");
             }
         }
