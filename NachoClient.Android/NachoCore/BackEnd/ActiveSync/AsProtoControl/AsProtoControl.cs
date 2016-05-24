@@ -1198,6 +1198,7 @@ namespace NachoCore.ActiveSync
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
+            ResetFolderReSyncCount ();
         }
 
         public override void ValidateConfig (McServer server, McCred cred)
