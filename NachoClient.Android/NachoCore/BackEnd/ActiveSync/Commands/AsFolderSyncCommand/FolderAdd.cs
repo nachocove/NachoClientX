@@ -82,16 +82,9 @@ namespace NachoCore.ActiveSync
                 var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
                 var folderSyncEpoch = protocolState.AsFolderSyncEpoch;
 
-                var folder = new McFolder () {
-                    AccountId = AccountId,
-                    ServerId = ServerId,
-                    ParentId = ParentId,
-                    DisplayName = DisplayName,
-                    Type = FolderType,
-                    AsSyncKey = McFolder.AsSyncKey_Initial,
-                    AsFolderSyncEpoch = folderSyncEpoch,
-                    AsSyncMetaToClientExpected = true,
-                };
+                var folder = McFolder.Create (AccountId, false, false, false, ParentId, ServerId, DisplayName, FolderType);
+                folder.AsFolderSyncEpoch = folderSyncEpoch;
+                folder.AsSyncMetaToClientExpected = true;
 
                 var maybeSame = McFolder.QueryByServerId<McFolder> (AccountId, ServerId);
                 if (null != maybeSame &&
