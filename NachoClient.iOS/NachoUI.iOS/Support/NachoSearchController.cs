@@ -123,6 +123,10 @@ namespace NachoClient.iOS
             UIView.Transition (View.Superview, 0.25f, UIViewAnimationOptions.TransitionCrossDissolve, () => {
                 View.RemoveFromSuperview ();
             }, () => {
+                SearchBar.Text = "";
+                if (SearchResultsController.View.Superview != null) {
+                    SearchResultsController.View.RemoveFromSuperview ();
+                }
                 Delegate.DidEndSearch (this);
                 SearchResultsController.RemoveFromParentViewController ();
             });
