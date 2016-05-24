@@ -100,10 +100,21 @@ namespace NachoCore.Model
 
         public string AsPolicyKey { get; set; }
 
+        /// <summary>
+        /// The top-level SyncKey, as opposed to the folder-level syncKey, which lives in McFolder.
+        /// WARNING: Don't *reset* this (to AsSyncKey_Initial) directly. Use IncrementAsFolderSyncEpoch().
+        /// </summary>
+        /// <value>As sync key.</value>
         public string AsSyncKey { get; set; }
 
         public uint AsSyncLimit { get; set; }
 
+        /// <summary>
+        /// Relates to the AsSyncKey. If we need to resync everything, we'll increment this epoch, instead
+        /// of deleting all state. Then we can look at the old (previous epoch) state and see if we can reuse
+        /// it, rather than resyncing it (which is expensive).
+        /// </summary>
+        /// <value>As folder sync epoch.</value>
         public uint AsFolderSyncEpoch { get; set; }
 
         public bool AsFolderSyncEpochScrubNeeded { get; set; }
