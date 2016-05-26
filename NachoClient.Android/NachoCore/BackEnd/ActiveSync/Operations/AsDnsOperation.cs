@@ -68,7 +68,7 @@ namespace NachoCore.ActiveSync
             // Start the task on another thread. DoExecuteWithRetries takes care of
             // reporting its results, so there is no need to wait for the task to
             // complete or to check its value.
-            Task.Run ((Action)DoExecuteWithRetries);
+            NcTask.Run (DoExecuteWithRetries, "DnsDoExecuteWithRetries");
         }
 
         public void Cancel ()
