@@ -376,14 +376,7 @@ namespace NachoCore.ActiveSync
                 return globEvent;
             }
 
-            var adjustedStatus = (Xml.AirSync.StatusCode)status;
-            if (Xml.AirSync.StatusCode.FolderChange_12 == adjustedStatus && ((AsProtoControl)BEContext.ProtoControl).TooManyFolderReSyncs) {
-                // The server keeps sending FolderChange responses, but doesn't send any actual folder changes.
-                // To avoid looping forever, pretend that the status is Success.
-                adjustedStatus = Xml.AirSync.StatusCode.Success_1;
-            }
-
-            switch (adjustedStatus) {
+            switch ((Xml.AirSync.StatusCode)status) {
 
             case Xml.AirSync.StatusCode.Success_1:
                 return null;
@@ -733,6 +726,7 @@ namespace NachoCore.ActiveSync
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
             } else {
+                ((AsProtoControl)BEContext.ProtoControl).ResetFolderReSyncCount ();
                 return SuccessEvent ("SYNCSUCCESS0");
             }
         }

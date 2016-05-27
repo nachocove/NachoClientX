@@ -801,16 +801,6 @@ namespace NachoCore
                     target.IsRead = read;
                     return true;
                 });
-                if (emailMessage.IsAction) {
-                    var action = McAction.ActionForMessage (emailMessage);
-                    if (action != null){
-                        if (action.IsNew){
-                            action.IsNew = false;
-                            action.Update ();
-                        }
-
-                    }
-                }
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCMRMSG");

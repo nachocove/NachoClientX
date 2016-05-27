@@ -102,13 +102,17 @@ namespace NachoCore.Utils
 
         #region INachoEmailMessages
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             // TODO  Should this rerun the search??
 
             adds = null;
             deletes = null;
             return false;
+        }
+
+        public override void CommitRefresh ()
+        {
         }
 
         public override int Count ()
@@ -173,7 +177,9 @@ namespace NachoCore.Utils
                         if (!string.IsNullOrEmpty (searchString)) {
                             int maxResults = Math.Min (100 * searchString.Length, 1000);
                             foreach (var account in accounts) {
-                                indexMatches.AddRange (new NcIndex (NcModel.Instance.GetIndexPath (account.Id)).SearchAllEmailMessageFields (searchString, maxResults));
+                                using (var index = new NcIndex (NcModel.Instance.GetIndexPath (account.Id))) {
+                                    indexMatches.AddRange (index.SearchAllEmailMessageFields (searchString, maxResults));
+                                }
                             }
                         }
                         indexResults = indexMatches;

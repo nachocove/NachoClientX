@@ -14,7 +14,7 @@ using CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public partial class FileListViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
+    public partial class FileListViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate, IAccountSwitching
     {
         public FileListViewController () : base ()
         {
@@ -31,8 +31,6 @@ namespace NachoClient.iOS
         protected UITableView tableView;
         protected UISegmentedControl segmentedControl;
         protected UIView segmentedControlView;
-
-        SwitchAccountButton switchAccountButton;
 
         UILabel EmptyListLabel;
 
@@ -94,9 +92,6 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            if (null != switchAccountButton) {
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            }
             RefreshTableSource ();
         }
 
@@ -149,9 +144,6 @@ namespace NachoClient.iOS
                 yOffset += navbar.Frame.Height;
             } else {
                 View.BackgroundColor = UIColor.White;
-                switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-                NavigationItem.TitleView = switchAccountButton; 
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
             segmentedControlView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 40));
@@ -337,15 +329,9 @@ namespace NachoClient.iOS
             }
         }
 
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             Account = account;
-            switchAccountButton.SetAccountImage (account);
             RefreshTableSource ();
         }
 

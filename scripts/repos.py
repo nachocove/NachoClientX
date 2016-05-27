@@ -93,6 +93,16 @@ class RepoGroup:
 
         return self.for_all_repos(action=action, exception_handler=None)
 
+    def update(self):
+        def action(repo):
+            update_cmd = git.Update()
+            if not update_cmd.ran_ok():
+                print '%s: %s -> ERROR!' % (repo, update_cmd)
+                print update_cmd.stderr
+                return False
+
+        return self.for_all_repos(action=action, exception_handler=None)
+
     def create_tag(self, tag, message=None):
         def action(repo):
             tag_cmd = git.CreateTag(tag, message)
@@ -250,7 +260,10 @@ def main():
                                                      'output for all repositories.')
     status_parser.add_argument('--brief', action='store_true', help='One line per repo format')
 
-    # Determine the top directory
+    update_parser = subparser.add_parser('update',
+                                         help='update all repositories',
+                                         description='update all repositories.')
+
     def is_top(d):
         return 'NachoClientX' in os.listdir(d)
 
@@ -323,6 +336,8 @@ def main():
         ok = repo_group.delete_tag(get_tag(options))
     elif options.command == 'status':
         ok = repo_group.get_status(options.brief)
+    elif options.command == 'update':
+        ok = repo_group.update()
     if not ok:
         sys.exit(1)
 

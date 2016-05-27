@@ -14,7 +14,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoTabBarController : UITabBarController
+    public partial class NachoTabBarController : UITabBarController, IUINavigationControllerDelegate
     {
         protected static string TabBarOrderKey = "TabBarOrder";
 
@@ -22,8 +22,6 @@ namespace NachoClient.iOS
         protected UITableView moreTableView;
         protected UIScrollView moreScrollView;
         protected static NachoTabBarController instance;
-
-        SwitchAccountButton switchAccountButton;
 
         public NachoTabBarController () : base ()
         {
@@ -41,25 +39,25 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            var nowNavController = new UINavigationController (new NachoNowViewController () { IsLongLived = true });
+            var nowNavController = CreateAccountSwitchingNavigationController (new NachoNowViewController () { IsLongLived = true });
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
-            var inboxNavController = new UINavigationController (new InboxViewController () { IsLongLived = true });
+            var inboxNavController = CreateAccountSwitchingNavigationController (new InboxViewController () { IsLongLived = true });
             inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");
 
-            var chatsNavController = new UINavigationController (new ChatsViewController () { IsLongLived = true });
+            var chatsNavController = CreateAccountSwitchingNavigationController (new ChatsViewController () { IsLongLived = true });
             chatsItem = chatsNavController.TabBarItem = MakeTabBarItem ("Chats", "nav-chat");
 
-            var calendarNavController = new UINavigationController (new CalendarViewController ());
+            var calendarNavController = CreateAccountSwitchingNavigationController (new CalendarViewController ());
             calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");
 
-            var contactsNavController = new UINavigationController (new ContactListViewController ());
+            var contactsNavController = CreateAccountSwitchingNavigationController (new ContactListViewController ());
             contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
 
-            var foldersNavController = new UINavigationController (new FoldersViewController ());
+            var foldersNavController = CreateAccountSwitchingNavigationController (new FoldersViewController ());
             foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
 
-            var filesNavController = new UINavigationController (new FileListViewController ());
+            var filesNavController = CreateAccountSwitchingNavigationController (new FileListViewController ());
             filesNavController.TabBarItem = MakeTabBarItem ("Files", "more-files");
 
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
@@ -107,10 +105,16 @@ namespace NachoClient.iOS
 
             Util.ConfigureNavBar (false, MoreNavigationController);
 
+            MoreAccountSwitcher = new SwitchAccountControl ();
+            MoreAccountSwitcher.AccountSwitched = SwitchMoreToAccount;
+            MoreAccountSwitcher.ParentViewController = new WeakReference<UIViewController> (MoreNavigationController);
+
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             MoreNavigationController.TopViewController.NavigationItem.BackBarButtonItem.Title = "";
-
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            MoreNavigationController.TopViewController.NavigationItem.Title = "";
+            MoreNavigationController.Delegate = this;
+            MoreNavigationController.NavigationBar.AddSubview (MoreAccountSwitcher);
+            LayoutMoreAccountSwitcher ();
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -133,12 +137,57 @@ namespace NachoClient.iOS
                 UpdateNotificationBadge ();
             };
 
-            ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
-                LayoutMoreTable ();
-            };
-
             InsertAccountInfoIntoMoreTab ();
         }
+
+        void SwitchMoreToAccount (McAccount account)
+        {
+            var switchingViewController = MoreNavigationController.TopViewController as IAccountSwitching;
+            if (switchingViewController != null) {
+                switchingViewController.SwitchToAccount (account);
+            }
+        }
+
+        void LayoutMoreAccountSwitcher ()
+        {
+            MoreAccountSwitcher.Center = new CGPoint (MoreAccountSwitcher.Superview.Bounds.Width / 2.0f, MoreAccountSwitcher.Superview.Bounds.Height / 2.0f + 4.0f);
+        }
+
+        SwitchAccountControl MoreAccountSwitcher;
+
+        UINavigationController CreateAccountSwitchingNavigationController (UIViewController rootViewController)
+        {
+            var navController = new UINavigationController (typeof(NachoNavigationBar), typeof(UIToolbar));
+            navController.ViewControllers = new UIViewController[] { rootViewController };
+            navController.Delegate = this;
+            return navController;
+        }
+
+        [Export ("navigationController:willShowViewController:animated:")]
+        public void WillShowViewController (UINavigationController navigationController, UIViewController viewController, bool animated)
+        {
+            SwitchAccountControl accountSwitcher = null;
+            bool showsAccountSwitcher = false;
+            if (navigationController == MoreNavigationController) {
+                accountSwitcher = MoreAccountSwitcher;
+                showsAccountSwitcher = (viewController == navigationController.ViewControllers [0]) || (viewController is IAccountSwitching);
+            } else if (navigationController.NavigationBar is NachoNavigationBar) {
+                var nachoBar = navigationController.NavigationBar as NachoNavigationBar;
+                if (nachoBar.NavigationController == null) {
+                    nachoBar.NavigationController = new WeakReference<UINavigationController> (navigationController);
+                }
+                accountSwitcher = nachoBar.AccountSwitcher;
+                showsAccountSwitcher = viewController is IAccountSwitching;
+            }
+            if (accountSwitcher != null){
+                IUIViewControllerTransitionCoordinator coordinator = null;
+                if (animated) {
+                    coordinator = viewController.GetTransitionCoordinator ();
+                }
+                accountSwitcher.SetHidden (!showsAccountSwitcher, animationCoordinator: coordinator);
+            }
+        }
+            
 
         public override void ViewDidAppear (bool animated)
         {
@@ -209,10 +258,7 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
                 UpdateNotificationBadge ();
             }
-            if (NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
-                UpdateSwitchAccountButton ();
-            }
-            if (NcResult.SubKindEnum.Info_ChatMessageAdded == s.Status.SubKind || NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_ChatMessageAdded == s.Status.SubKind || NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded == s.Status.SubKind || NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
                 UpdateChatsBadge ();
             }
         }
@@ -372,8 +418,6 @@ namespace NachoClient.iOS
         {
             var moreTabController = MoreNavigationController.TopViewController;
 
-            moreTabController.NavigationItem.TitleView = switchAccountButton;
-
             moreTableView = (UITableView)moreTabController.View;
             moreTableView.TintColor = A.Color_NachoGreen;
 
@@ -401,7 +445,6 @@ namespace NachoClient.iOS
         // ViewDidAppear is not reliable
         protected void LayoutMoreTable ()
         {
-            UpdateSwitchAccountButton ();
             if (null != moreTableView) {
                 var tableHeight = (moreTableView.NumberOfRowsInSection (0) * 44);
                 moreTableView.Frame = new CGRect (moreTableView.Frame.X, moreTableView.Frame.Y, moreTableView.Frame.Width, tableHeight);
@@ -410,27 +453,10 @@ namespace NachoClient.iOS
             moreScrollView.ContentSize = new CGSize (moreScrollView.Bounds.Width, moreTableView.Frame.Bottom + A.Card_Vertical_Indent);
         }
 
-        protected void UpdateSwitchAccountButton ()
-        {
-            if ((null != switchAccountButton) && (null != NcApplication.Instance.Account)) {
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            }
-        }
-
-        public static void ReconfigureMoreTab ()
-        {
-        }
-
-        public static void UpdateMoreTab ()
-        {
-        }
-
         protected void ViewControllerSelectedHandler (object sender, UITabBarSelectionEventArgs e)
         {
             if (e.ViewController == MoreNavigationController) {
-                // The user has tapped on the "More" tab in the tab bar. Do what we can to
-                // make sure the "More" view is up to date.
-                UpdateMoreTab ();
+                LayoutMoreTable ();
                 // Tweak the table cells to be closer to what we want.  We would like to
                 // make other changes, but this event is triggered at the wrong time, so
                 // those other changes won't stick.  The one change that does seem to stick
@@ -453,16 +479,7 @@ namespace NachoClient.iOS
             }
             return true;
         }
-
-        void SwitchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (MoreNavigationController.ViewControllers [0], SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            switchAccountButton.SetAccountImage (account);
-        }
+            
     }
 
     public static class UIView_Debugging

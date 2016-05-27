@@ -1731,6 +1731,14 @@ namespace NachoCore.Model
                 } else if (Intent == IntentType.Important && IntentDateType != MessageDeferralType.None) {
                     IsAction = true;
                 }
+                if (IsAction) {
+                    var account = McAccount.QueryById<McAccount> (AccountId);
+                    // Make sure if the message is from the account and not to the account, that it's not considered an action
+                    // We see this is gmail, where a sent message is duplicated in the All Mail folder and therefore not caught by the previous Sent folder check
+                    if (EmailHelper.AddressIsInList(account.Id, account.EmailAddr, EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, From)) && !EmailHelper.AddressIsInList(account.Id, account.EmailAddr, EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, To, Cc))) {
+                        IsAction = false;
+                    }
+                }
             }
         }
 

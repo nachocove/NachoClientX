@@ -44,6 +44,7 @@ namespace NachoClient.AndroidClient
         private const string EXTRA_EVENT_TO_EDIT = "com.nachocove.nachomail.EXTRA_EVENT_TO_EDIT";
         private const string EXTRA_MESSAGE_FOR_MEETING = "com.nachocove.nachomail.EXTRA_MESSAGE_FOR_MEETING";
         private const string EXTRA_START_DATE = "com.nachocove.nachomail.EXTRA_START_DATE";
+        private const string EXTRA_EVENT_DESCRIPTION = "com.nachocove.nachomail.EXTRA_EVENT_DESCRIPTION";
 
         private const int ATTENDEE_ACTIVITY_REQUEST = 1;
 
@@ -126,6 +127,11 @@ namespace NachoClient.AndroidClient
             deleteButton = FindViewById<View> (Resource.Id.event_delete_button);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
+            // When the editor first appears, the description field view is limited to four lines,
+            // so the description doesn't crowd out all of the interesting fields below it.  The
+            // description field will expand to its full height when the user taps on it.
+            descriptionField.FocusChange += DescriptionField_FocusChange;
+            descriptionField.SetMaxLines (4);
 
             if (null != preConfigChange) {
                 cal = preConfigChange.CalendarItem;
@@ -150,6 +156,9 @@ namespace NachoClient.AndroidClient
 
                     if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
                         cal = CalendarHelper.CreateMeeting (dataFromIntent.EmailMessage, startDate);
+                        if (Intent.HasExtra (EXTRA_EVENT_DESCRIPTION)) {
+                            cal.SetDescription (Intent.GetStringExtra (EXTRA_EVENT_DESCRIPTION), McBody.BodyTypeEnum.PlainText_1);
+                        }
                         titleField.Text = cal.Subject;
                         descriptionField.Text = cal.Description;
                     } else {
@@ -395,11 +404,14 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        public static Intent MeetingFromMessageIntent (Context context, McEmailMessage message)
+        public static Intent MeetingFromMessageIntent (Context context, McEmailMessage message, string description)
         {
             var intent = new Intent (context, typeof(EventEditActivity));
             intent.SetAction (Intent.ActionCreateDocument);
             intent.PutExtra (EXTRA_MESSAGE_FOR_MEETING, IntentHelper.StoreValue (message));
+            if (null != description) {
+                intent.PutExtra (EXTRA_EVENT_DESCRIPTION, description);
+            }
             return intent;
         }
 
@@ -536,6 +548,12 @@ namespace NachoClient.AndroidClient
                     account = McAccount.QueryById<McAccount> (selectedFolder.AccountId);
                     bool newIsAppEvent = McAccount.AccountTypeEnum.Device != account.AccountType;
                     if (isAppEvent && !newIsAppEvent) {
+                        // if we're switching to a device calendar, make sure to delete the attendees,
+                        // since we can't edit/add device cal entries with attendees.
+                        // David says: The app doesn’t know what email address to use for the owner of the meeting.
+                        //    Even if it can figure out the owner’s email address, it might not control that email address,
+                        //    so the app can’t correctly manage the meeting responses or other meeting related email messages.
+                        cal.attendees = new List<McAttendee> ();
                         FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Gone;
                     } else if (!isAppEvent && newIsAppEvent) {
                         FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Visible;
@@ -649,6 +667,13 @@ namespace NachoClient.AndroidClient
         private void DescriptionField_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
             descriptionChanged = true;
+        }
+
+        private void DescriptionField_FocusChange (object sender, View.FocusChangeEventArgs e)
+        {
+            if (e.HasFocus) {
+                descriptionField.SetMaxLines (int.MaxValue);
+            }
         }
 
         private void AllDayField_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)

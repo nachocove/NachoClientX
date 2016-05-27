@@ -15,6 +15,7 @@ namespace NachoCore
         McFolder folder;
 
         List<McEmailMessageThread> threadList;
+        List<McEmailMessageThread> updatedThreadList;
 
         public NachoDraftMessages (McFolder folder)
         {
@@ -25,17 +26,19 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public override bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id, false);
-            var threads = NcMessageThreads.ThreadByMessage (list);
-            RemoveIgnoredMessages (threads);
-            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
-                ClearCache ();
-                threadList = threads;
-                return true;
-            }
-            return false;
+            updatedThreadList = NcMessageThreads.ThreadByMessage (list);
+            RemoveIgnoredMessages (updatedThreadList);
+            return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
+        }
+
+        public override void CommitRefresh ()
+        {
+            ClearCache ();
+            threadList = updatedThreadList;
+            updatedThreadList = null;
         }
 
         public override void RemoveIgnoredMessages ()

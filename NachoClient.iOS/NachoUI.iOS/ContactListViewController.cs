@@ -16,13 +16,12 @@ using SwipeViewBinding;
 namespace NachoClient.iOS
 {
 
-    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate, INachoContactDefaultSelector
+    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate, INachoContactDefaultSelector, IAccountSwitching
     {
         SwipeView swipeView;
         LettersSwipeViewDataSource swipeViewDateSource;
         UITableView TableView;
 
-        SwitchAccountButton switchAccountButton;
         NcUIBarButtonItem addContactButton;
 
         protected bool contactsNeedsRefresh;
@@ -99,9 +98,6 @@ namespace NachoClient.iOS
 
             NavigationController.NavigationBar.Translucent = false;
 
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = switchAccountButton;
-
             // Adjust the icon; contacts covers all account
             SwitchToAccount (NcApplication.Instance.Account);
 
@@ -150,7 +146,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             searcher = new ContactsGeneralSearch (UpdateSearchResultsUi);
             SearchDisplayController.Delegate = new ContactsSearchDisplayDelegate (searcher);
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             MaybeRefreshContacts ();
         }
 
@@ -169,14 +164,8 @@ namespace NachoClient.iOS
             SearchDisplayController.Delegate = null;
         }
 
-        void SwitchAccountButtonPressed ()
+        public void SwitchToAccount (McAccount account)
         {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
-        {
-            switchAccountButton.SetAccountImage (account);
             // If no account supports adding contacts, hide the button
             bool hide = (0 == McAccount.GetCanAddContactAccounts ().Count);
             NavigationItem.RightBarButtonItem = hide ? null : addContactButton;

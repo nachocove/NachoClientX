@@ -10,137 +10,146 @@ namespace NachoCore
 {
     public class NcAccountMonitor
     {
-        public bool HasNewEmail;
 
-        class AccountInfo
+        public class AccountInfo
         {
-            public bool hasNewEmail;
-            public DateTime lastChanged;
-            public DateTime lastChecked;
+            public McAccount Account;
+            public int UnreadCount;
+            public int RecentUnreadCount;
         }
 
-        // Deleted account ids are never reused
-        Dictionary<int,AccountInfo> accountInfo;
-
-        public NcAccountMonitor ()
-        {
-            HasNewEmail = false;
-            accountInfo = new Dictionary<int, AccountInfo> ();
-
-            Update (null);
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-        }
-
-        private static NcAccountMonitor instance;
-        private static object syncRoot = new Object ();
-
+        private static NcAccountMonitor _Instance;
         public static NcAccountMonitor Instance {
             get {
-                if (instance == null) {
-                    lock (syncRoot) {
-                        if (instance == null)
-                            instance = new NcAccountMonitor ();
-                    }
+                if (_Instance == null) {
+                    _Instance = new NcAccountMonitor ();
                 }
-                return instance; 
+                return _Instance;
             }
         }
 
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
+        McAccount Account;
+        bool IsReloading;
+        bool NeedsReload;
+        public List<AccountInfo> Accounts { get; private set; }
+        public event EventHandler AccountSetChanged;
+        public event EventHandler AccountSwitched;
 
+        private NcAccountMonitor () : base ()
+        {
+            Accounts = new List<AccountInfo> ();
+            ReloadAccounts ();
+            Account = NcApplication.Instance.Account;
+            NcApplication.Instance.StatusIndEvent += StatusInd;
+        }
+
+        void StatusInd (object sender, EventArgs e)
+        {
+            var s = e as StatusIndEventArgs;
             switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_AccountSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
-            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
+            case NcResult.SubKindEnum.Info_ChatMessageAdded:
+            case NcResult.SubKindEnum.Info_ActionMarkedNotNew:
+                ReloadAccounts ();
+                break;
+            case NcResult.SubKindEnum.Info_AccountChanged:
+                AccountChanged ();
                 break;
             }
         }
 
-        AccountInfo GetInfo (int accountId)
+        void ReloadAccounts ()
         {
-            AccountInfo info;
-            if (accountInfo.TryGetValue (accountId, out info)) {
-                return info;
-            }
-            info = new AccountInfo ();
-            info.hasNewEmail = false;
-            info.lastChecked = DateTime.MinValue;
-            info.lastChanged = DateTime.MinValue.AddSeconds (1);
-            return info;
-        }
-
-        void Update (McAccount account)
-        {
-            if (null != account) {
-                var info = GetInfo (account.Id);
-                info.lastChanged = DateTime.UtcNow;
-            }
-            // Optimization: Updates to current account won't affect new mail beacon
-            if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
-                return;
-            }
-            // Notify on changes
-            if (IsThereNewEmail () != HasNewEmail) {
-                HasNewEmail = !HasNewEmail;
-                // Send status ind
-                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_AccountBeaconChanged);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = result,
-                    Account = NcApplication.Instance.Account,
-                });
+            if (IsReloading) {
+                NeedsReload = true;
+            } else {
+                NeedsReload = false;
+                NcTask.Run (LoadAccountsTask, "AccountSource_Reload");
             }
         }
 
-        bool IsThereNewEmail ()
+        void LoadAccountsTask ()
         {
-            int deviceId = McAccount.GetDeviceAccount ().Id;
-
-            int currentId = 0;
-            if (null != NcApplication.Instance.Account) {
-                currentId = NcApplication.Instance.Account.Id;
+            var accounts = McAccount.GetAllConfiguredNormalAccounts ();
+            var infos = new List<AccountInfo> (accounts.Count);
+            var unreadCountType = EmailHelper.HowToDisplayUnreadCount ();
+            DateTime unreadCutoff = DateTime.Now;
+            DateTime recentCutoff = DateTime.Now;
+            if (unreadCountType != EmailHelper.ShowUnreadEnum.RecentMessages) {
+                unreadCutoff = EmailHelper.GetNewSincePreference (0, unreadCountType);
             }
+            foreach (var account in accounts) {
+                var info = new AccountInfo ();
+                info.Account = account;
+                var inboxFolder = NcEmailManager.InboxFolder (account.Id);
+                if (unreadCountType == EmailHelper.ShowUnreadEnum.RecentMessages) {
+                    unreadCutoff = recentCutoff = EmailHelper.GetNewSincePreference (account.Id);
+                } else {
+                    recentCutoff = EmailHelper.GetNewSincePreference (account.Id, EmailHelper.ShowUnreadEnum.RecentMessages);
+                }
+                if (inboxFolder != null) {
+                    info.UnreadCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, unreadCutoff);
+                }
+                info.UnreadCount += McChat.UnreadMessageCountForAccountSince (account.Id, unreadCutoff);
+                info.UnreadCount += McAction.CountOfNewActions (account.Id, since: unreadCutoff, excludingUnreadMessages: true);
+                if (unreadCountType == EmailHelper.ShowUnreadEnum.RecentMessages) {
+                    info.RecentUnreadCount = info.UnreadCount;
+                } else {
+                    if (inboxFolder != null) {
+                        info.RecentUnreadCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, recentCutoff);
+                    }
+                    info.RecentUnreadCount += McChat.UnreadMessageCountForAccountSince (account.Id, recentCutoff);
+                    info.RecentUnreadCount += McAction.CountOfNewActions (account.Id, since: recentCutoff, excludingUnreadMessages: true);
+                }
+                infos.Add (info);
+            }
+            infos.Sort ((AccountInfo x, AccountInfo y) => {
+                return x.Account.Id - y.Account.Id;
+            });
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                if (NeedsReload){
+                    IsReloading = false;
+                    ReloadAccounts ();
+                }else{
+                    HandleReloadResults (infos);
+                    IsReloading = false;
+                }
+            });
+        }
 
-            // Check up to date accounts.
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (deviceId == account.Id) {
-                    continue;
+        void HandleReloadResults (List<AccountInfo> accounts)
+        {
+            Accounts = accounts;
+            if (AccountSetChanged != null) {
+                AccountSetChanged.Invoke (this, null);
+            }
+        }
+
+        void AccountChanged ()
+        {
+            ReloadAccounts ();
+            if (NcApplication.Instance.Account != null) {
+                ChangeAccount (NcApplication.Instance.Account);
+            }
+        }
+
+        // This method exists so NcApplication.Instance.Account can be updated and the AccountSwitched
+        // callback can be invoked all at once.  It's useful for the account switch control to update
+        // the selected account and update views all in an animation block.
+        public void ChangeAccount (McAccount account)
+        {
+            if (Account == null || (Account.Id != account.Id)) {
+                Account = account;
+                // this will cause an echo, but we'll ingore it because we've already updated Account
+                if (NcApplication.Instance.Account.Id != Account.Id) {
+                    NcApplication.Instance.Account = Account;
                 }
-                if (currentId == account.Id) {
-                    continue;
-                }
-                var info = GetInfo (account.Id);
-                if (info.lastChecked < info.lastChanged) {
-                    continue;
-                }
-                if (info.hasNewEmail) {
-                    return true;
+                if (AccountSwitched != null) {
+                    AccountSwitched.Invoke (this, null);
                 }
             }
-
-            // Bring accounts up to date until we get a hit
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (deviceId == account.Id) {
-                    continue;
-                }
-                if (currentId == account.Id) {
-                    continue;
-                }
-                var info = GetInfo (account.Id);
-                if (info.lastChecked >= info.lastChanged) {
-                    continue;
-                }
-                var lastTime = EmailHelper.GetNewSincePreference (account.Id);
-                var hot = McEmailMessage.QueryUnreadAndHotAfter (lastTime);
-                info.lastChecked = DateTime.UtcNow;
-                info.hasNewEmail = (0 < hot.Count);
-                if (info.hasNewEmail) {
-                    return true;
-                }
-            }
-            return false;
         }
 
     }

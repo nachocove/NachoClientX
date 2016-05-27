@@ -148,6 +148,7 @@ namespace NachoClient.iOS
         {
             loadingComplete = true;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            EvaluateJavascript ("document.body.style.margin = '4px 0'");
             // Force a re-layout of this web view now that the JavaScript magic has been applied.
             // The ScrollView.ContentSize is never smaller than the frame size, so in order to
             // figure out how big the content really is, we have to set the frame height to a

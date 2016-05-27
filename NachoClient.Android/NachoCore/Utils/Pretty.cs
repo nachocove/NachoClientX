@@ -90,7 +90,7 @@ namespace NachoCore.Utils
                 var reader = new System.IO.StringReader (message.BodyPreview);
                 var line = reader.ReadLine ();
                 while (line != null) {
-                    if (EmailHelper.IsQuoteLine (line)) {
+                    if (EmailHelper.IsQuoteLine (line) || line.StartsWith(">")) {
                         line = null;
                     } else {
                         bodyPreview += line + " ";
@@ -1141,6 +1141,15 @@ namespace NachoCore.Utils
                 }
             }
             return String.Join (" ", cooked);
+        }
+
+        public static string LimitedBadgeCount (int count)
+        {
+            if (count < 100000) {
+                return String.Format ("{0:N0}", count);
+            } else {
+                return "100K+";
+            }
         }
     }
 }

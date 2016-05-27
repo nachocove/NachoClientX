@@ -16,14 +16,12 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class FoldersViewController : NcUIViewController, INachoFolderChooser
+    public partial class FoldersViewController : NcUIViewController, INachoFolderChooser, IAccountSwitching
     {
         UITableView TableView;
         FolderTableViewSource folderTableViewSource;
 
         bool EventHandlersAreSet;
-
-        SwitchAccountButton switchAccountButton;
 
         public FoldersViewController () : base ()
         {
@@ -109,9 +107,6 @@ namespace NachoClient.iOS
                     ComposeMessage ();
                 };
                 NavigationItem.RightBarButtonItem = composeButton;
-                switchAccountButton = new SwitchAccountButton (switchAccountButtonPressed);
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-                NavigationItem.TitleView = switchAccountButton;
                 accountId = NcApplication.Instance.Account.Id;
             }
         }
@@ -127,11 +122,6 @@ namespace NachoClient.iOS
             } else {
                 folderTableViewSource.Refresh (accountId);
                 TableView.ReloadData ();
-            }
-
-            if (null != switchAccountButton) {
-                NcAssert.False (modal);
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
             if (!EventHandlersAreSet) {
@@ -220,16 +210,10 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (viewController, true);
         }
 
-        void switchAccountButtonPressed ()
-        {
-            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
-        }
-
-        void SwitchToAccount (McAccount account)
+        public void SwitchToAccount (McAccount account)
         {
             NcAssert.False (modal);
             accountId = account.Id;
-            switchAccountButton.SetAccountImage (account);
             folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
             TableView.ReloadData ();
         }

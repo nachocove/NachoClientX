@@ -193,6 +193,7 @@ namespace NachoCore.Utils
             Info_EmailMessageMarkedAnsweredSucceeded,
             Error_EmailMessageMarkedAnsweredFailed,
             Info_ActionSetChanged,
+            Info_ActionMarkedNotNew,
             Info_ItemOrphaned,
         };
 

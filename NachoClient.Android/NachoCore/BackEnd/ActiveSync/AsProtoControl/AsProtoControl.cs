@@ -913,6 +913,23 @@ namespace NachoCore.ActiveSync
 
         private void DoReFSync ()
         {
+            // FIXME: This is probably not a good solution. But we also shouldn't get here.
+            // The assumption here is that it's better to crash than keep resyncing over and
+            // over and eating battery. (Could also called ForceStop or alter the UI
+            // that something is wrong, but I'm not sure what the user could possibly do).
+            NcAssert.True (FolderReSyncCount <= 5, string.Format ("{0}: Repeated FolderResync Failed!", Sm.Name));
+
+            var protocolState = ProtocolState;
+            if (FolderReSyncCount >= 2) {
+                // We tried doing a normal FolderSync and that didn't seem to work, so reset the SyncKey
+                // to "0" (AsSyncKey_Initial) and see if that works.
+                Log.Warn (Log.LOG_AS, "{0}: Tried {1} FolderSyncs. Resetting Sync State", Sm.Name, FolderReSyncCount);
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
+            }
             FolderReSyncHappened ();
             DoFSync ();
         }
@@ -1248,12 +1265,6 @@ namespace NachoCore.ActiveSync
         public void ResetFolderReSyncCount ()
         {
             FolderReSyncCount = 0;
-        }
-
-        public bool TooManyFolderReSyncs {
-            get {
-                return 5 < FolderReSyncCount;
-            }
         }
 
         // PushAssist support.

@@ -91,7 +91,9 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (NachoEmailMessages messages)
         {
-            Messages = messages;
+            lock (MessagesLock) {
+                Messages = messages;
+            }
         }
 
         #endregion
@@ -548,6 +550,8 @@ namespace NachoClient.iOS
         bool NeedsReload;
         bool IsReloading;
 
+        object MessagesLock = new object();
+
         protected void SetNeedsReload ()
         {
             NeedsReload = true;
@@ -569,9 +573,26 @@ namespace NachoClient.iOS
                     NcTask.Run (() => {
                         List<int> adds;
                         List<int> deletes;
-                        bool changed = Messages.Refresh (out adds, out deletes);
+                        NachoEmailMessages messages;
+                        lock (MessagesLock){
+                            messages = Messages;
+                        }
+                        bool changed = messages.BeginRefresh (out adds, out deletes);
                         BeginInvokeOnMainThread (() => {
-                            HandleReloadResults (changed, adds, deletes);
+                            bool handledResults = false;
+                            lock (MessagesLock){
+                                if (messages == Messages) {
+                                    Messages.CommitRefresh ();
+                                    HandleReloadResults (changed, adds, deletes);
+                                    handledResults = true;
+                                }
+                            }
+                            if (!handledResults) {
+                                IsReloading = false;
+                                if (NeedsReload) {
+                                    Reload ();
+                                }
+                            }
                         });
                     }, MessageRefreshTaskName);
                 }
@@ -813,12 +834,9 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
-
-                bool isVisible = IsViewLoaded && View.Window != null;
-
+                Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}", s.Status.SubKind.ToString ());
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
@@ -826,12 +844,10 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     UpdateVisibleRows ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     Messages.RefetchSyncTime ();
                     break;
                 }
@@ -1225,6 +1241,7 @@ namespace NachoClient.iOS
         public void PrepareForSearching ()
         {
             SearchResults.EnterSearchMode (NcApplication.Instance.Account);
+            TableView.ReloadData ();
         }
 
         public void StartServerSearch ()

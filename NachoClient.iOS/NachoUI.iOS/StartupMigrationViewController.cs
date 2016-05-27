@@ -23,6 +23,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
         void StartListeningForApplicationStatus ()
         {
             if (!StatusIndCallbackIsSet) {

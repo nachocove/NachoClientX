@@ -90,20 +90,48 @@ namespace NachoClient.iOS
             public void DidPickDocument (UIDocumentPickerViewController controller, NSUrl url)
             {
                 if (url.IsFileUrl) {
-                    var path = url.Path;
-                    if (Directory.Exists (path)) {
-                        url = url.AppendPathExtension ("zip");
-                        System.IO.Compression.ZipFile.CreateFromDirectory (path, url.Path);
-                        Directory.Delete (path, true);
-                        path = url.Path;
+                    try {
+                        var path = url.Path;
+                        if (Directory.Exists (path)) {
+                            url = url.AppendPathExtension ("zip");
+                            System.IO.Compression.ZipFile.CreateFromDirectory (path, url.Path);
+                            Directory.Delete (path, true);
+                            path = url.Path;
+                        }
+                        var attachment = McAttachment.InsertSaveStart (account.Id);
+                        attachment.SetDisplayName (url.LastPathComponent);
+                        attachment.UpdateFileMove (path);
+                        owner.Append (attachment);
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_UI, "DidPickDocument: Could not insert file into attachment: {0}", ex);
+                        presentError (ex);
                     }
-                    var attachment = McAttachment.InsertSaveStart (account.Id);
-                    attachment.SetDisplayName (url.LastPathComponent);
-                    attachment.UpdateFileMove (path);
-                    owner.Append (attachment);
                 } else {
-                    Log.Error (Log.LOG_UI, "DidPickDocument received non-file URL: {0}", url);
+                    Log.Error (Log.LOG_UI, "DidPickDocument: received non-file URL: {0}", url);
+                    presentError ("The picked file is not local to this device.");
                 }
+            }
+
+            void presentError (Exception ex)
+            {
+                string message;
+                if (ex is FileNotFoundException) {
+                    message = "The file could not be found.";
+                } else {
+                    message = string.Format ("An Unknown error occurred ({0}).", ex.Message);
+                }
+                message += " Please try again.";
+                presentError (message);
+            }
+
+            void presentError (string message, string title = null)
+            {
+                if (string.IsNullOrEmpty (title)) {
+                    title = "Could not attach file";
+                }
+                var alert = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
+                alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default, null));
+                owner.PresentFileChooserViewController (alert);
             }
 
             public void ShowPhotoPicker (bool useCamera, UIViewController fromViewController = null)

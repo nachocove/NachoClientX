@@ -740,6 +740,16 @@ namespace NachoCore.Utils
             return addressList;
         }
 
+        public static bool AddressIsInList (int accountId, string targetAddress, List<NcEmailAddress> addresses)
+        {
+            foreach (var address in addresses) {
+                if (String.Equals (address.address, targetAddress, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // Build up the text for the header part of the message being forwarded or replied to.
         public static string FormatBasicHeaders (McEmailMessage message)
         {
@@ -933,9 +943,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static DateTime GetNewSincePreference (int accountId)
+        public static DateTime GetNewSincePreference (int accountId, ShowUnreadEnum showUnread)
         {
-            switch (HowToDisplayUnreadCount ()) {
+            switch (showUnread) {
             case ShowUnreadEnum.AllMessages:
                 return DateTime.MinValue.AddDays(2);  // Some code will subtract a day from this value
             case ShowUnreadEnum.TodaysMessages:
@@ -953,6 +963,11 @@ namespace NachoCore.Utils
                 NcAssert.CaseError ();
                 return DateTime.MinValue;
             }
+        }
+
+        public static DateTime GetNewSincePreference (int accountId)
+        {
+            return GetNewSincePreference (accountId, HowToDisplayUnreadCount ());
         }
 
         public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int likelyMessageCount)
@@ -1024,18 +1039,24 @@ namespace NachoCore.Utils
             TodaysMessages = 3,
         };
 
+        static ShowUnreadEnum? CachedHowToDisplayUnread;
+
         /// <summary>
         /// Shoulds the display all unread count if true.  Just new unread if false.
         /// </summary>
         /// <returns><c>true</c>, if display all unread count is set, <c>false</c> otherwise display new unread.</returns>
         public static ShowUnreadEnum HowToDisplayUnreadCount ()
         {
-            var accountId = McAccount.GetDeviceAccount ().Id;
-            return (ShowUnreadEnum) McMutables.GetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) ShowUnreadEnum.AllMessages);
+            if (!CachedHowToDisplayUnread.HasValue) {
+                var accountId = McAccount.GetDeviceAccount ().Id;
+                CachedHowToDisplayUnread = (ShowUnreadEnum)McMutables.GetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int)ShowUnreadEnum.AllMessages);
+            }
+            return CachedHowToDisplayUnread.Value;
         }
 
         public static void SetHowToDisplayUnreadCount (ShowUnreadEnum showUnreader)
         {
+            CachedHowToDisplayUnread = showUnreader;
             var accountId = McAccount.GetDeviceAccount ().Id;
             McMutables.SetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) showUnreader);
         }
