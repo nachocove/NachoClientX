@@ -133,7 +133,9 @@ namespace NachoCore.Utils
                     }
                     var monitor = new CrlMonitorItem (Interlocked.Increment (ref NextId), cert, urls, signerCerts);
                     Monitors.Add (cert.SubjectName.Name, monitor);
-                    monitor.StartUpdate (Cts.Token);
+                    if (null != Cts && !Cts.IsCancellationRequested) {
+                        monitor.StartUpdate (Cts.Token);
+                    }
                 }
             }
         }
