@@ -88,6 +88,10 @@ namespace NachoCore.Utils
 
         private ServerCertificatePeek ()
         {
+            Cache = new ConcurrentDictionary<string, X509Certificate2> ();
+            FailedCertificates = new ConcurrentDictionary<string, ServerCertificateError> ();
+            var serverComparer = new ServerIdentityComparer ();
+            Policies = new ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> (serverComparer);
         }
 
         public event ServerCertificateEventHandler ValidationEvent;
@@ -118,10 +122,6 @@ namespace NachoCore.Utils
                     lock (syncRoot) {
                         if (instance == null) {
                             instance = new ServerCertificatePeek ();
-                            instance.Cache = new ConcurrentDictionary<string, X509Certificate2> ();
-                            instance.FailedCertificates = new ConcurrentDictionary<string, ServerCertificateError> ();
-                            var serverComparer = new ServerIdentityComparer ();
-                            instance.Policies = new ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> (serverComparer);
                             ServicePointManager.ServerCertificateValidationCallback = CertificateValidationCallback;
                         }
                     }

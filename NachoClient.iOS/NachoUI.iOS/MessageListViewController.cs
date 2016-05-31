@@ -1241,6 +1241,7 @@ namespace NachoClient.iOS
         public void PrepareForSearching ()
         {
             SearchResults.EnterSearchMode (NcApplication.Instance.Account);
+            TableView.ReloadData ();
         }
 
         public void StartServerSearch ()
