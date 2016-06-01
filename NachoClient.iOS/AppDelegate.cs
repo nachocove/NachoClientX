@@ -734,7 +734,13 @@ namespace NachoClient.iOS
         private bool fetchStatusHandlerRegistered = false;
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
-        private NcTimer performFetchTimer = null;
+        /// <summary>
+        /// The PerformFetch timer. This needs to be a Timer, not an NcTimer,
+        /// because performFetchTimer needs to keep running after FinalShutdown()
+        /// has been called to make sure the badge count update code completes in
+        /// time. If it is an NcTimer, then it will get killed during FinalShutdown().
+        /// </summary>
+        private Timer performFetchTimer = null;
         private string fetchCause;
         // A list of all account ids that are waiting to be synced.
         private List<int> fetchAccounts;
@@ -974,30 +980,32 @@ namespace NachoClient.iOS
             // ten seconds left.
             var performFetchTime = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "Starting PerformFetch timer: {0:n2} seconds of background time remaining.", performFetchTime);
-            performFetchTimer = new NcTimer ("performFetchTimer", (state) => InvokeOnUIThread.Instance.Invoke (() => {
-                var remaining = application.BackgroundTimeRemaining;
-                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer: {0:n2} seconds remaining.", remaining);
-                if (((PerformFetchCountObject)state).count == performFetchCount) {
-                    if (10.0 >= remaining && PerformFetchState.Active == backEndState) {
-                        Log.Info (Log.LOG_LIFECYCLE, "PerformFetch ran out of time. Shutting down the app.");
-                        if (PerformFetchState.Active == badgeCountState) {
-                            FinalQuickSyncBadgeNotifications ();
+            performFetchTimer = new Timer (((object state) => {
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    var remaining = application.BackgroundTimeRemaining;
+                    Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer: {0:n2} seconds remaining.", remaining);
+                    if (((PerformFetchCountObject)state).count == performFetchCount) {
+                        if (10.0 >= remaining && PerformFetchState.Active == backEndState) {
+                            Log.Info (Log.LOG_LIFECYCLE, "PerformFetch ran out of time. Shutting down the app.");
+                            if (PerformFetchState.Active == badgeCountState) {
+                                FinalQuickSyncBadgeNotifications ();
+                            }
+                            CompletePerformFetch ();
                         }
-                        CompletePerformFetch ();
+                        if (4.0 >= remaining) {
+                            Log.Error (Log.LOG_LIFECYCLE, "PerformFetch didn't shut down in time. Calling the completion handler now.");
+                            FinalizePerformFetch (fetchResult);
+                        }
+                    } else if (null != performFetchTimer) {
+                        Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired after perform fetch completed. Disabling the timer.");
+                        try {
+                            performFetchTimer.Change (Timeout.Infinite, Timeout.Infinite);
+                        } catch (Exception ex) {
+                            // Wrapper to protect against unknown C# timer stupidity.
+                            Log.Error (Log.LOG_LIFECYCLE, "PerformFetch timer exception: {0}", ex);
+                        }
                     }
-                    if (4.0 >= remaining) {
-                        Log.Error (Log.LOG_LIFECYCLE, "PerformFetch didn't shut down in time. Calling the completion handler now.");
-                        FinalizePerformFetch (fetchResult);
-                    }
-                } else if (null != performFetchTimer) {
-                    Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired after perform fetch completed. Disabling the timer.");
-                    try {
-                        performFetchTimer.Change (Timeout.Infinite, Timeout.Infinite);
-                    } catch (Exception ex) {
-                        // Wrapper to protect against unknown C# timer stupidity.
-                        Log.Error (Log.LOG_LIFECYCLE, "PerformFetch timer exception: {0}", ex);
-                    }
-                }
+                });
             }), new PerformFetchCountObject (performFetchCount), TimeSpan.FromSeconds (5), TimeSpan.FromSeconds (1));
         }
 
