@@ -281,14 +281,17 @@ namespace NachoCore.Model
             ReplaceFile (tmp);
         }
 
+        /// <summary>
         /// Replace the contents of this McAbstrFileDesc with the given file. The file
         /// will be moved into the file store area and will no longer exist at the
         /// given location.
+        /// </summary>
         public void UpdateFileMove (string srcPath)
         {
             ReplaceFile (srcPath);
         }
 
+        /// <summary>
         /// Gets the contents as a string.
         /// Not callable on Instance.
         /// </summary>
