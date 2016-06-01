@@ -306,10 +306,10 @@ namespace NachoCore
                 // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                 return true;
             }
-            if (ex is SocketException && ex.Message.Contains ("The requested address is not valid in this context")) {
+            if (ex is SocketException && message.Contains ("The requested address is not valid in this context")) {
                 // XAMMIT. Best guess is that something triggers the network connection to close and mono tries to clean up,
                 // which throws this error. Bug has been filed with xamarin: https://bugzilla.xamarin.com/show_bug.cgi?id=41436
-                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: SocketException {0}", ex.Message);
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: SocketException {0}", message);
                 return true;
             }
             if (message.Contains ("Amazon.Runtime")) {
