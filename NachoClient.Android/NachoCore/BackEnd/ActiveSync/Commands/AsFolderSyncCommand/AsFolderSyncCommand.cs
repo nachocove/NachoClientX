@@ -66,6 +66,12 @@ namespace NachoCore.ActiveSync
                                 break;
                             }
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
+                            pathElem = McPath.QueryByServerId (AccountId, serverId);
+                            if (null != pathElem) {
+                                NcModel.Instance.RunInTransaction (() => {
+                                    pathElem.Delete ();
+                                });
+                            }
                             pathElem = new McPath (AccountId);
                             pathElem.ServerId = serverId;
                             pathElem.ParentId = parentId;

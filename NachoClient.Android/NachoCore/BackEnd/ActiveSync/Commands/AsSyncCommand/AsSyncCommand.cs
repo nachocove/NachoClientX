@@ -425,6 +425,14 @@ namespace NachoCore.ActiveSync
 
             case Xml.AirSync.StatusCode.FolderChange_12:
                 Log.Warn (Log.LOG_AS, "{0}: Status: FolderChange_12", logCmd);
+                int folderResyncCount = ((BEContext.ProtoControl) as AsProtoControl).FolderReSyncCount;
+                if (folderResyncCount > 2) {
+                    // one of the synckeys in the original request might be old. Reset them all.
+                    Log.Warn (Log.LOG_AS, "{0}: FolderChange_12 folderResyncCount={1}, resetting synckeys for folders in request", logCmd, folderResyncCount);
+                    foreach (var folder in FoldersInRequest) {
+                        folder.UpdateResetSyncState ();
+                    }
+                }
                 ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "ASYNCTOPRFS");
 
