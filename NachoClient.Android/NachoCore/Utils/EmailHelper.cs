@@ -894,8 +894,10 @@ namespace NachoCore.Utils
                     possibleDate = parts [0].Trim ();
                     subject = parts [1].Trim ();
                 } else {
+                    possibleDate = remainingSubject.Trim ();
                     subject = "";
                 }
+                bool foundMatch = false;
                 foreach (var deferralOption in SubjectDeferralTypes) {
                     var deferralString = NcMessageIntent.DeferralTypeToString (deferralOption);
                     if (deferralString == possibleDate) {
@@ -903,6 +905,7 @@ namespace NachoCore.Utils
                         var result = NcMessageDeferral.ComputeDeferral (fromDate, deferralType, fromDate);
                         if (result.isOK ()) {
                             intentDate = result.GetValue<DateTime> ();
+                            foundMatch = true;
                         }
                         break;
                     }
@@ -915,6 +918,11 @@ namespace NachoCore.Utils
                             intentDate = default (DateTime);
                         }
                     }
+                }
+                if (!String.IsNullOrEmpty (possibleDate) && deferralType == MessageDeferralType.None) {
+                    // we didn't match any deferral dates of types. This must not be one of our intent strings.
+                    intent = McEmailMessage.IntentType.None;
+                    subject = rawSubject;
                 }
             } else {
                 subject = rawSubject;
