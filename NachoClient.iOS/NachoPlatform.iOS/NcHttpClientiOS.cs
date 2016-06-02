@@ -286,6 +286,27 @@ namespace NachoPlatform
                 }
             }
 
+            string stringFromException (Exception ex)
+            {
+                string message = null;
+                if (null == ex) {
+                    message = "Exception is null";
+                } else {
+                    try {
+                        message = ex.ToString ();
+                    } catch (Exception ex1){
+                        Log.Error (Log.LOG_HTTP, "NcHttpClient: stringFromException: Could not convert ex to string! {0} {1}", ex.GetType ().Name, ex.Message);
+                    }
+                    if (message == null) {
+                        message = ex.Message;
+                    }
+                    if (string.IsNullOrEmpty (message)) {
+                        message = string.Format ("unknown exception. Could not convert to string. {0}", ex.GetType ().Name);
+                    }
+                }
+                return message;
+            }
+
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
                 try {
@@ -301,7 +322,7 @@ namespace NachoPlatform
                     }
                     session.FinishTasksAndInvalidate ();
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidCompleteWithError exception {1}", taskDescriptionOrUnknown (task), ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidCompleteWithError exception {1}", taskDescriptionOrUnknown (task), stringFromException (ex));
                 } finally {
                     OriginalRequest.Dispose ();
                 }

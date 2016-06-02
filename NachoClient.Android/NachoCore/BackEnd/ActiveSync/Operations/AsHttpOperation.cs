@@ -237,7 +237,7 @@ namespace NachoCore.ActiveSync
 
         private void DoHttp ()
         {
-            if (0 < TriesLeft) {
+            if (TriesLeft > 0 && (Cts == null || !Cts.IsCancellationRequested)) {
                 --TriesLeft;
                 Log.Info (Log.LOG_HTTP, "{0}: TriesLeft: {1}", CmdNameWithAccount, TriesLeft);
                 // Using response.Content.ReadAsStreamAsync causes lock-ups sometimes.
@@ -245,7 +245,7 @@ namespace NachoCore.ActiveSync
                 // We switched back to ReadAsByteArrayAsync to avoid lock-ups. 
                 // This will have the side-effect of big responses being memory-resident
                 // until NachoHttp comes in.
-                Cts = new CancellationTokenSource ();
+                Cts = CancellationTokenSource.CreateLinkedTokenSource (BEContext.ProtoControl.Cts.Token);
                 AttemptHttp ();
             } else {
                 Owner.ResolveAllDeferred ();
@@ -268,8 +268,16 @@ namespace NachoCore.ActiveSync
 
         private void DoTimeoutHttp ()
         {
-            DoCancelHttp ();
-            DoHttp ();
+            if (Cts != null && Cts.IsCancellationRequested) {
+                // DoCancelHttp cancels Cts and sets it to null, so don't move this outside and
+                // above the if statement, since we won't know if we've been cancelled.
+                // Remember, the Cts is a linked token source, linked to BEContext.ProtoControl.Cts.
+                DoCancelHttp ();
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOHCAN", null, "Cancelled."));
+            } else {
+                DoCancelHttp ();
+                DoHttp ();
+            }
         }
 
         private void DoFinal ()

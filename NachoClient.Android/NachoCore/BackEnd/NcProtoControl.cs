@@ -94,13 +94,20 @@ namespace NachoCore
             }
         }
 
+        /// <summary>
+        /// Cached account type. In some cases Account might already be deleted, but we want to make
+        /// sure we clean up properly (in Remove ()), so cache the type value here.
+        /// </summary>
+        protected McAccount.AccountTypeEnum AccountType;
+
         public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
             NewCancellation ();
-            if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
+            AccountType = Account.AccountType;
+            if (AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             }
@@ -438,7 +445,7 @@ namespace NachoCore
 
         public virtual void Remove ()
         {
-            if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
+            if (AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             }
