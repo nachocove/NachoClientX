@@ -920,6 +920,7 @@ namespace NachoCore.Utils
                 if (!String.IsNullOrEmpty (possibleDate) && deferralType == MessageDeferralType.None) {
                     // we didn't match any deferral dates of types. This must not be one of our intent strings.
                     intent = McEmailMessage.IntentType.None;
+                    intentDate = default (DateTime);
                     subject = rawSubject;
                 }
             } else {
