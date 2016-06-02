@@ -492,6 +492,116 @@ namespace Test.Android
                 }
             }
         }
+
+        #region ParseSubject
+
+        class SubjectTestInfo
+        {
+            public string Subject;
+            public DateTime FromDate;
+            public string ExpectedSubject;
+            public McEmailMessage.IntentType ExpectedIntent;
+            public MessageDeferralType ExpectedDeferralType;
+            public DateTime ExpectedIntentDate;
+
+            public override string ToString ()
+            {
+                return string.Format ("SubjectTestInfo: subject=<{0}> fromDate={1}", Subject, FromDate);
+            }
+        }
+
+        readonly SubjectTestInfo[] Subjects = {
+            new SubjectTestInfo () {
+                Subject = "",
+                FromDate = DateTime.UtcNow,
+                ExpectedSubject = "",
+                ExpectedIntent = McEmailMessage.IntentType.None,
+                ExpectedDeferralType = MessageDeferralType.None,
+                ExpectedIntentDate = DateTime.MinValue,
+            },
+            new SubjectTestInfo () {
+                Subject = "Some witty subject here.",
+                FromDate = DateTime.UtcNow,
+                ExpectedSubject = "Some witty subject here.",
+                ExpectedIntent = McEmailMessage.IntentType.None,
+                ExpectedDeferralType = MessageDeferralType.None,
+                ExpectedIntentDate = DateTime.MinValue,
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT",
+                FromDate = DateTime.UtcNow,
+                ExpectedSubject = "",
+                ExpectedIntent = McEmailMessage.IntentType.Urgent,
+                ExpectedDeferralType = MessageDeferralType.None,
+                ExpectedIntentDate = DateTime.MinValue,
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT - Foo",
+                FromDate = DateTime.UtcNow,
+                ExpectedSubject = "Foo",
+                ExpectedIntent = McEmailMessage.IntentType.Urgent,
+                ExpectedDeferralType = MessageDeferralType.None,
+                ExpectedIntentDate = DateTime.MinValue,
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT By End of Day",
+                FromDate = new DateTime(2016, 5, 31, 01, 02, 03, DateTimeKind.Utc),
+                ExpectedSubject = "",
+                ExpectedIntent = McEmailMessage.IntentType.Urgent,
+                ExpectedDeferralType = MessageDeferralType.EndOfDay,
+                ExpectedIntentDate = new DateTime(2016, 5, 31, 05, 00, 00, DateTimeKind.Utc),
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT By End of Day - Foo",
+                FromDate = new DateTime(2016, 5, 31, 01, 02, 03, DateTimeKind.Utc),
+                ExpectedSubject = "Foo",
+                ExpectedIntent = McEmailMessage.IntentType.Urgent,
+                ExpectedDeferralType = MessageDeferralType.EndOfDay,
+                ExpectedIntentDate = new DateTime(2016, 5, 31, 05, 00, 00, DateTimeKind.Utc),
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT By 6/1/2016",
+                FromDate = new DateTime(2016, 5, 31, 02, 03, 04, DateTimeKind.Utc),
+                ExpectedSubject = "",
+                ExpectedIntent = McEmailMessage.IntentType.Urgent,
+                ExpectedDeferralType = MessageDeferralType.Custom,
+                ExpectedIntentDate = new DateTime(2016, 6, 1, 00, 00, 00, DateTimeKind.Utc),
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT By 6/1/2016 - Bar",
+                FromDate = new DateTime(2016, 5, 31, 02, 03, 04, DateTimeKind.Utc),
+                ExpectedSubject = "Bar",
+                ExpectedIntent = McEmailMessage.IntentType.Urgent,
+                ExpectedDeferralType = MessageDeferralType.Custom,
+                ExpectedIntentDate = new DateTime(2016, 6, 1, 00, 00, 00, DateTimeKind.Utc),
+            },
+            new SubjectTestInfo () {
+                Subject = "URGENT: Send us money!",
+                FromDate = new DateTime(2016, 5, 31, 02, 03, 04, DateTimeKind.Utc),
+                ExpectedSubject = "URGENT: Send us money!",
+                ExpectedIntent = McEmailMessage.IntentType.None,
+                ExpectedDeferralType = MessageDeferralType.None,
+                ExpectedIntentDate = DateTime.MinValue,
+            },
+        };
+
+        [Test]
+        public void ParseSubjectTest ()
+        {
+            foreach (var subjectInfo in Subjects) {
+                string subject;
+                McEmailMessage.IntentType intent;
+                MessageDeferralType deferralType;
+                DateTime intentDate;
+                EmailHelper.ParseSubject (subjectInfo.Subject, subjectInfo.FromDate, out subject, out intent, out deferralType, out intentDate);
+                Assert.AreEqual (subjectInfo.ExpectedSubject, subject, string.Format ("Parsed subject is wrong. raw={0}, parsed={1}", subjectInfo.Subject, subject));
+                Assert.AreEqual (subjectInfo.ExpectedIntent, intent, string.Format ("Parsed intent is wrong. raw={0}, parsed={1}", subjectInfo.Subject, intent));
+                Assert.AreEqual (subjectInfo.ExpectedDeferralType, deferralType, string.Format ("Parsed deferralType is wrong. raw={0}, parsed={1}", subjectInfo.Subject, deferralType));
+                Assert.AreEqual (subjectInfo.ExpectedIntentDate, intentDate, string.Format ("Parsed intentDate is wrong. raw={0}, parsed={1}", subjectInfo.Subject, intentDate));
+            }
+        }
+
+        #endregion
     }
 }
 
