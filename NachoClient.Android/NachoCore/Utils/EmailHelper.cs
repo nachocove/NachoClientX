@@ -897,7 +897,6 @@ namespace NachoCore.Utils
                     possibleDate = remainingSubject.Trim ();
                     subject = "";
                 }
-                bool foundMatch = false;
                 foreach (var deferralOption in SubjectDeferralTypes) {
                     var deferralString = NcMessageIntent.DeferralTypeToString (deferralOption);
                     if (deferralString == possibleDate) {
@@ -905,7 +904,6 @@ namespace NachoCore.Utils
                         var result = NcMessageDeferral.ComputeDeferral (fromDate, deferralType, fromDate);
                         if (result.isOK ()) {
                             intentDate = result.GetValue<DateTime> ();
-                            foundMatch = true;
                         }
                         break;
                     }
