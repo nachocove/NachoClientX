@@ -305,6 +305,11 @@ namespace NachoCore
                 // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                 return true;
             }
+            if (ex is NullReferenceException && message.Contains ("System.IO.Stream.<BeginReadInternal>")) {
+                // XAMMIT. Best guess is that something triggers the network connection to close and mono tries to clean up
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException/BeginReadInternal: {0}", message);
+                return true;
+            }
             if (message.Contains ("Amazon.Runtime")) {
                 Log.Error (Log.LOG_SYS, "AMAXAMMIT Unobserved Exception: {0}", message);
                 // Don't let AWS SDK exception brain damage take down the app.
