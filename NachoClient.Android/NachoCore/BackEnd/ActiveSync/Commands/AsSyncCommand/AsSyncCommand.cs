@@ -376,13 +376,14 @@ namespace NachoCore.ActiveSync
                 return globEvent;
             }
 
+            string logCmd = CmdNameWithAccount + "/ProcessTopLevelStatus";
             switch ((Xml.AirSync.StatusCode)status) {
 
             case Xml.AirSync.StatusCode.Success_1:
                 return null;
 
             case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
-                Log.Warn (Log.LOG_AS, "{0}: Status: SyncKeyInvalid_3", CmdNameWithAccount);
+                Log.Warn (Log.LOG_AS, "{0}: Status: SyncKeyInvalid_3", logCmd);
                 // FoldersInRequest is NOT stale here.
                 foreach (var folder in FoldersInRequest) {
                     folder.UpdateResetSyncState ();
@@ -396,7 +397,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPFOOF");
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
-                Log.Warn (Log.LOG_AS, "{0}: Status: ProtocolError_4", CmdNameWithAccount);
+                Log.Warn (Log.LOG_AS, "{0}: Status: ProtocolError_4", logCmd);
                 var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
                 lock (PendingResolveLockObj) {
                     if (0 == PendingList.Count) {
@@ -417,17 +418,17 @@ namespace NachoCore.ActiveSync
                     }
                 }
             case Xml.AirSync.StatusCode.ServerError_5:
-                Log.Warn (Log.LOG_AS, "{0}: Status: ServerError_5", CmdNameWithAccount);
+                Log.Warn (Log.LOG_AS, "{0}: Status: ServerError_5", logCmd);
                 // TODO: detect a loop, and reset folder state if looping.
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPRS");
 
             case Xml.AirSync.StatusCode.FolderChange_12:
-                Log.Warn (Log.LOG_AS, "{0}: Status: FolderChange_12", CmdNameWithAccount);
+                Log.Warn (Log.LOG_AS, "{0}: Status: FolderChange_12", logCmd);
                 int folderResyncCount = ((BEContext.ProtoControl) as AsProtoControl).FolderReSyncCount;
                 if (folderResyncCount > 2) {
                     // one of the synckeys in the original request might be old. Reset them all.
-                    Log.Warn (Log.LOG_AS, "{0}: FolderChange_12 folderResyncCount={1}, resetting synckeys for folders in request", CmdNameWithAccount, folderResyncCount);
+                    Log.Warn (Log.LOG_AS, "{0}: FolderChange_12 folderResyncCount={1}, resetting synckeys for folders in request", logCmd, folderResyncCount);
                     foreach (var folder in FoldersInRequest) {
                         folder.UpdateResetSyncState ();
                     }
@@ -436,7 +437,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "ASYNCTOPRFS");
 
             case Xml.AirSync.StatusCode.TooMany_15:
-                Log.Warn (Log.LOG_AS, "{0}: Status: TooMany_15", CmdNameWithAccount);
+                Log.Warn (Log.LOG_AS, "{0}: Status: TooMany_15", logCmd);
                 var xmlLimit = doc.Root.ElementAnyNs (Xml.AirSync.Limit);
                 if (null != xmlLimit && null != xmlLimit.Value) {
                     try {
@@ -448,21 +449,21 @@ namespace NachoCore.ActiveSync
                             return true;
                         });
                     } catch (Exception ex) {
-                        Log.Error (Log.LOG_AS, "{0}: exception parsing Limit: {1}", CmdNameWithAccount, ex.ToString ());
+                        Log.Error (Log.LOG_AS, "{0}: exception parsing Limit: {1}", logCmd, ex.ToString ());
                     }
                 } else {
-                    Log.Error (Log.LOG_AS, "{0}: TLS TooMany_15 w/out Limit", CmdNameWithAccount);
+                    Log.Error (Log.LOG_AS, "{0}: TLS TooMany_15 w/out Limit", logCmd);
                 }
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPTM");
 
             case Xml.AirSync.StatusCode.Retry_16:
-                Log.Warn (Log.LOG_AS, "{0}: Status: Retry_16", CmdNameWithAccount);
+                Log.Warn (Log.LOG_AS, "{0}: Status: Retry_16", logCmd);
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPRRR");
 
             default:
-                Log.Error (Log.LOG_AS, "{0}: ProcessResponse UNHANDLED Top Level status: {1}", CmdNameWithAccount, status);
+                Log.Error (Log.LOG_AS, "{0}: ProcessResponse UNHANDLED Top Level status: {1}", logCmd, status);
                 return null;
             }
         }
@@ -472,6 +473,7 @@ namespace NachoCore.ActiveSync
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL0");
             }
+            string logCmd = CmdNameWithAccount + "/ProcessResponse";
             List<McFolder> SawMoreAvailableNoCommands = new List<McFolder> ();
             bool SawCommandsInAnyFolder = false;
             bool HasBeenCancelled = false;
@@ -644,7 +646,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.FolderChange_12:
-                    Log.Warn (Log.LOG_AS, "{0}: Status: FolderChange_12", CmdNameWithAccount);
+                    Log.Warn (Log.LOG_AS, "{0}/ProcessResponse: Status: FolderChange_12", CmdNameWithAccount);
                     FolderSyncIsMandated = true;
                     lock (PendingResolveLockObj) {
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
