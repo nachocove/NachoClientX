@@ -387,8 +387,13 @@ namespace NachoCore.Model
 
         private void ReplaceFile (string newFile)
         {
+            NcAssert.True (File.Exists (newFile), "newFile doesn't exist");
             var tmp = NcModel.Instance.TmpPath (AccountId);
             var filePath = GetFilePath ();
+            if (newFile == filePath) {
+                Log.Error (Log.LOG_DB, "Trying to move newFile to filePath, but they are the same file: {0}", newFile);
+                return;
+            }
             if (File.Exists (filePath)) {
                 File.Move (filePath, tmp); // Shouldn't fail, since destination shouldn't exist
             }
