@@ -59,6 +59,8 @@ namespace Test.iOS
             settings.Info.CallerInfo = false;
             settings.Debug.CallerInfo = false;
 
+            Logger.OverrideReadyToLog = true;
+
             // Swap the writeline function to our mock version
             Log.SharedInstance.WriteLine = MockConsole.WriteLine;
 
