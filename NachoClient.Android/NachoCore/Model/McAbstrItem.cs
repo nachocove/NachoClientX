@@ -116,18 +116,20 @@ namespace NachoCore.Model
                         DeleteAncillary ();
                         returnVal = result;
                     } else {
-                        if (this is McEmailMessage) {
-                            var message = UpdateWithOCApply<McEmailMessage> ((record) => {
-                                var target = (McEmailMessage)record;
-                                target.IsAwaitingDelete = true;
-                                return true;
-                            });
+                        var message = this as McEmailMessage;
+                        if (message != null) {
                             if (message.IsChat){
                                 var chatMessages = McChatMessage.QueryByMessageId (Id);
                                 foreach (var chatMessage in chatMessages) {
                                     chatMessage.UpdateLatestDuplicate ();
                                 }
                             }
+                            // McEmailMessage is not allowed to use Update. Need to UpdateWithOCApply
+                            UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.IsAwaitingDelete = true;
+                                return true;
+                            });
                         } else {
                             IsAwaitingDelete = true;
                             Update ();
