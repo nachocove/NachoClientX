@@ -118,18 +118,18 @@ namespace NachoCore.Model
                     } else {
                         var message = this as McEmailMessage;
                         if (message != null) {
-                            if (message.IsChat){
-                                var chatMessages = McChatMessage.QueryByMessageId (Id);
-                                foreach (var chatMessage in chatMessages) {
-                                    chatMessage.UpdateLatestDuplicate ();
-                                }
-                            }
                             // McEmailMessage is not allowed to use Update. Need to UpdateWithOCApply
                             UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
                                 target.IsAwaitingDelete = true;
                                 return true;
                             });
+                            if (message.IsChat){
+                                var chatMessages = McChatMessage.QueryByMessageId (Id);
+                                foreach (var chatMessage in chatMessages) {
+                                    chatMessage.UpdateLatestDuplicate ();
+                                }
+                            }
                         } else {
                             IsAwaitingDelete = true;
                             Update ();
@@ -227,7 +227,7 @@ namespace NachoCore.Model
             where T : McAbstrObjectPerAcc
         {
             if (null == dbCollection) {
-                if (0 == this.Id) {
+                if (0 == Id) {
                     dbCollection = new List<T> ();
                 } else {
                     dbCollection = CollectionFromDb ();
