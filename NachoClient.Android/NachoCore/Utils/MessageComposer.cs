@@ -8,6 +8,7 @@ using NachoCore.Model;
 using NachoPlatform;
 using HtmlAgilityPack;
 using MimeKit;
+using NachoCore.Brain;
 
 namespace NachoCore.Utils
 {
@@ -554,6 +555,7 @@ namespace NachoCore.Utils
             if (invalidateBundle) {
                 Bundle.Invalidate ();
             }
+            NcBrain.IndexMessage (Message);
         }
 
         void WriteBody ()
