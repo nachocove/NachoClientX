@@ -37,8 +37,6 @@ namespace NachoClient.iOS
         UISwitch DefaultCalendarSwitch;
         UIButton FixAccountButton;
         UIButton DeleteAccountButton;
-        UIView DeleteAccountBackgroundView;
-        UIActivityIndicatorView DeleteAccountActivityIndicator;
 
         McAccount account;
 
@@ -297,34 +295,38 @@ namespace NachoClient.iOS
             yOffset = DeleteAccountButton.Frame.Bottom;
 
             ViewFramer.Create (contentView).Height (yOffset);
+        }
 
+        void PresentDeletingModal ()
+        {
             // Delete Account Spinner - Keeping this separate from the validate credential spinner 
-            DeleteAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            DeleteAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
-            DeleteAccountBackgroundView.Hidden = true;
-            DeleteAccountBackgroundView.Alpha = 0.0f;
-            View.AddSubview (DeleteAccountBackgroundView);
+            var deleteAccountBackgroundView = new NcUIViewController ();
+            deleteAccountBackgroundView.ModalPresentationStyle = UIModalPresentationStyle.OverFullScreen;
+            deleteAccountBackgroundView.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+            deleteAccountBackgroundView.View.BackgroundColor = UIColor.Black.ColorWithAlpha (.6f);
 
-            UIView AlertMimicView = new UIView (new CGRect (DeleteAccountBackgroundView.Frame.Width / 2 - 90, DeleteAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
+            UIView AlertMimicView = new UIView (new CGRect (deleteAccountBackgroundView.View.Frame.Width / 2 - 90, deleteAccountBackgroundView.View.Frame.Height / 2 - 80, 180, 110));
             AlertMimicView.BackgroundColor = UIColor.White;
             AlertMimicView.Layer.CornerRadius = 6.0f;
-            DeleteAccountBackgroundView.AddSubview (AlertMimicView);
+            deleteAccountBackgroundView.View.AddSubview (AlertMimicView);
 
-            UILabel DeleteAccountStatusMessage = new UILabel (new CGRect (8, 10, AlertMimicView.Frame.Width - 16, 25));
-            DeleteAccountStatusMessage.BackgroundColor = UIColor.White;
-            DeleteAccountStatusMessage.Alpha = 1.0f;
-            DeleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
-            DeleteAccountStatusMessage.TextColor = UIColor.Black;
-            DeleteAccountStatusMessage.Text = "Deleting Account";
-            DeleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
-            AlertMimicView.AddSubview (DeleteAccountStatusMessage);
+            UILabel statusMessage = new UILabel (new CGRect (8, 10, AlertMimicView.Frame.Width - 16, 25));
+            statusMessage.BackgroundColor = UIColor.White;
+            statusMessage.Alpha = 1.0f;
+            statusMessage.Font = UIFont.SystemFontOfSize (17);
+            statusMessage.TextColor = UIColor.Black;
+            statusMessage.Text = "Deleting Account";
+            statusMessage.TextAlignment = UITextAlignment.Center;
+            AlertMimicView.AddSubview (statusMessage);
 
-            DeleteAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
-            DeleteAccountActivityIndicator.Frame = new CGRect (AlertMimicView.Frame.Width / 2 - 20, DeleteAccountStatusMessage.Frame.Bottom + 15, 40, 40);
-            DeleteAccountActivityIndicator.Color = A.Color_SystemBlue;
-            DeleteAccountActivityIndicator.Alpha = 1.0f;
-            DeleteAccountActivityIndicator.StartAnimating ();
-            AlertMimicView.AddSubview (DeleteAccountActivityIndicator);
+            var activityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
+            activityIndicator.Frame = new CGRect (AlertMimicView.Frame.Width / 2 - 20, statusMessage.Frame.Bottom + 15, 40, 40);
+            activityIndicator.Color = A.Color_SystemBlue;
+            activityIndicator.Alpha = 1.0f;
+            activityIndicator.StartAnimating ();
+            AlertMimicView.AddSubview (activityIndicator);
+
+            PresentViewController (deleteAccountBackgroundView, true, null);
         }
 
         protected override void ConfigureAndLayout ()
@@ -615,31 +617,15 @@ namespace NachoClient.iOS
         void onDeleteAccount (object sender, EventArgs e)
         {
             contentView.Hidden = true;
-            ToggleDeleteAccountSpinnerView ();
+            PresentDeletingModal ();
             Action action = () => {
                 NcAccountHandler.Instance.RemoveAccount (account.Id);
                 InvokeOnMainThread (() => {
-                    ToggleDeleteAccountSpinnerView ();
                     // go back to main screen
                     NcUIRedirector.Instance.GoBackToMainScreen ();  
                 });
             };
             NcTask.Run (action, "RemoveAccount");
-        }
-
-        void ToggleDeleteAccountSpinnerView ()
-        {
-            DeleteAccountBackgroundView.Hidden = !DeleteAccountBackgroundView.Hidden;
-
-            if (DeleteAccountBackgroundView.Hidden) {
-                DeleteAccountActivityIndicator.StopAnimating ();
-                DeleteAccountBackgroundView.Alpha = 0.0f;
-            } else {
-                UIView.Animate (.15, () => {
-                    DeleteAccountBackgroundView.Alpha = 1.0f;
-                });
-                DeleteAccountActivityIndicator.StartAnimating ();
-            }
         }
 
         bool MaybeStartGmailAuth (McAccount account)
