@@ -294,7 +294,7 @@ namespace NachoPlatform
                 } else {
                     try {
                         message = ex.ToString ();
-                    } catch (Exception ex1){
+                    } catch (Exception){
                         Log.Error (Log.LOG_HTTP, "NcHttpClient: stringFromException: Could not convert ex to string! {0} {1}", ex.GetType ().Name, ex.Message);
                     }
                     if (message == null) {
