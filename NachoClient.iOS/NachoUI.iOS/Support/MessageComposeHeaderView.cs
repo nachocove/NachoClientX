@@ -186,7 +186,6 @@ namespace NachoClient.iOS
         UIView IntentSeparator;
         UIView AttachmentsSeparator;
         UcAddressBlock ActiveAddressView;
-        bool HasOpenedSubject;
         bool CcFieldsAreCollapsed;
         nfloat preferredHeight = 0.0f;
 
@@ -404,7 +403,6 @@ namespace NachoClient.iOS
 
         public void SubjectEditingDidBegin (object sender, EventArgs e)
         {
-            HasOpenedSubject = true;
             SetNeedsLayout ();
             UIView.Animate (0.2, () => {
                 LayoutIfNeeded ();
@@ -448,7 +446,6 @@ namespace NachoClient.iOS
 
         public void ShowIntentField ()
         {
-            HasOpenedSubject = true;
             SetNeedsLayout ();
         }
 

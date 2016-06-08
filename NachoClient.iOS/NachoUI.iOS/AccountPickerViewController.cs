@@ -140,7 +140,6 @@ namespace NachoClient.iOS
         }
 
         UIImageView IconView;
-        nfloat IconSize = 40.0f;
         public static nfloat PreferredHeight = 64.0f;
 
         public AccountPickerTableViewCell (IntPtr handle) : base (handle)

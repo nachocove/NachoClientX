@@ -29,7 +29,6 @@ namespace NachoClient.iOS
         UIBarButtonItem CancelEditingButton;
         UIBarButtonItem DoneEditingButton;
 
-        UIBarButtonItem DeferButton;
         UIBarButtonItem DeleteButton;
 
         int NumberOfPreviewLines = 1;
