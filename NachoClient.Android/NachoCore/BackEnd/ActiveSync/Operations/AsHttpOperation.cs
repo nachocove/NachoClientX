@@ -358,21 +358,20 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CmdNameWithAccount, doc);
                 if (Owner.UseWbxml (this)) {
-                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
-                                     (state) => {
-                            if (!cToken.IsCancellationRequested) {
-                                Log.Error (Log.LOG_HTTP, "{0}:ToWbxmlStream wedged (#1313)", CmdNameWithAccount);
-                            }
-                        },
-                                     cToken, 
-                        // We only want to see this Error if truly wedged.
-                        // This timer doesn't perform any recovery action.
-                                     60 * 1000, 
-                                     System.Threading.Timeout.Infinite);
-                    var capture = NcCapture.CreateAndStart (KToWbxmlStream);
-                    var stream = doc.ToWbxmlStream (AccountId, cToken);
-                    capture.Stop ();
-                    diaper.Dispose ();
+                    FileStream stream;
+                    using (var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
+                                            (state) => { 
+                                                if (!cToken.IsCancellationRequested) {
+                                                    Log.Error (Log.LOG_HTTP, "{0}:ToWbxmlStream wedged (#1313)", CmdNameWithAccount);
+                                                }
+                                            },
+                                            cToken, 
+                                            60 * 1000, 
+                                            Timeout.Infinite)) {
+                        var capture = NcCapture.CreateAndStart (KToWbxmlStream);
+                        stream = doc.ToWbxmlStream (AccountId, cToken);
+                        capture.Stop ();
+                    }
                     request.SetContent (stream, ContentTypeWbxml, true);
                 } else {
                     // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
@@ -421,13 +420,19 @@ namespace NachoCore.ActiveSync
                 baseTimeout = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
             }
             var timeoutValue = TimeSpan.FromSeconds (baseTimeout * Math.Pow (TimeoutExpander, MaxRetries - TriesLeft));
-            TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, timeoutValue,
-                System.Threading.Timeout.InfiniteTimeSpan);
+            TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, timeoutValue, Timeout.InfiniteTimeSpan);
             NcHttpRequest request = null;
-            if (!CreateHttpRequest (out request, cToken)) {
-                Log.Info (Log.LOG_HTTP, "{0}: Intentionally aborting HTTP operation.", CmdNameWithAccount);
+            try {
+                if (!CreateHttpRequest (out request, cToken)) {
+                    Log.Info (Log.LOG_HTTP, "{0}: Intentionally aborting HTTP operation.", CmdNameWithAccount);
+                    CancelTimeoutTimer ("Intentional");
+                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                    return;
+                }
+            } catch (OperationCanceledException) {
+                Log.Info (Log.LOG_HTTP, "{0}: OperationCanceledException aborting HTTP operation.", CmdNameWithAccount);
                 CancelTimeoutTimer ("Intentional");
-                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPCANCEL2"));
                 return;
             }
             request.Cred = cred; // NB: can be null
