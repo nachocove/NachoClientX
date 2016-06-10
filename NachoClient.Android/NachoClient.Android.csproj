@@ -594,7 +594,6 @@
     <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
-    <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
     <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
     <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />

@@ -920,22 +920,13 @@ namespace NachoCore.ActiveSync
             NcAssert.True (FolderReSyncCount <= 5, string.Format ("{0}: Repeated FolderResync Failed!", Sm.Name));
 
             var protocolState = ProtocolState;
-            if (FolderReSyncCount >= 4) {
-                // We've re-tried a folder sync with the SyncKey "0" (AsSyncKey_Initial) a few times, 
-                // and that didn't appear to work, so try resetting everything, including the epoch.
+            if (FolderReSyncCount >= 1) {
+                // We tried doing a normal FolderSync and that didn't seem to work, so reset the SyncKey
+                // to "0" (AsSyncKey_Initial) and see if that works.
                 Log.Warn (Log.LOG_AS, "{0}: Tried {1} FolderSyncs. Resetting Sync State", Sm.Name, FolderReSyncCount);
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.IncrementAsFolderSyncEpoch ();
-                    return true;
-                });
-            } else if (FolderReSyncCount >= 2) {
-                // We tried doing a normal FolderSync and that didn't seem to work, so reset the SyncKey
-                // to "0" (AsSyncKey_Initial) and see if that works.
-                Log.Warn (Log.LOG_AS, "{0}: Tried {1} FolderSyncs. Resetting SyncKey", Sm.Name, FolderReSyncCount);
-                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                    var target = (McProtocolState)record;
-                    target.AsSyncKey = McProtocolState.AsSyncKey_Initial;
                     return true;
                 });
             }
@@ -1207,6 +1198,7 @@ namespace NachoCore.ActiveSync
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
+            ResetFolderReSyncCount ();
         }
 
         public override void ValidateConfig (McServer server, McCred cred)
@@ -1264,7 +1256,7 @@ namespace NachoCore.ActiveSync
         // so the Sync/FSync looping can be stopped before it goes on too long.
         // https://github.com/nachocove/qa/issues/2057
 
-        private int FolderReSyncCount = 0;
+        public int FolderReSyncCount { get; protected set; }
 
         public void FolderReSyncHappened ()
         {

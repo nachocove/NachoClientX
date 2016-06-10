@@ -268,9 +268,20 @@ namespace NachoCore.Utils
             });
         }
 
+        /// <summary>
+        /// Used by tests to override the check for NcModel and Telemetry initialization.
+        /// Setting this to false has no effect (so that logging can't be disabled by
+        /// external entities).
+        /// </summary>
+        public static bool? OverrideReadyToLog;
+
         static bool ReadyToLog ()
         {
-            return NachoCore.Model.NcModel.IsInitialized && NcApplication.Instance.TelemetryService != null;
+            if (OverrideReadyToLog.HasValue && OverrideReadyToLog.Value) {
+                return true;
+            } else {
+                return NachoCore.Model.NcModel.IsInitialized && NcApplication.Instance.TelemetryService != null;
+            }
         }
 
         private void _TryLog (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,

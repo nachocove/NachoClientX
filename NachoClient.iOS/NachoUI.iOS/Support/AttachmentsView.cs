@@ -91,6 +91,11 @@ namespace NachoClient.iOS
 
             TableView.WeakDelegate = null;
             TableView.WeakDataSource = null;
+
+            foreach (var pair in DownloadersByAttachmentId) {
+                pair.Value.Delegate = null;
+            }
+            DownloadersByAttachmentId.Clear ();
         }
 
         void HeaderPressed ()

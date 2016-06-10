@@ -281,14 +281,17 @@ namespace NachoCore.Model
             ReplaceFile (tmp);
         }
 
+        /// <summary>
         /// Replace the contents of this McAbstrFileDesc with the given file. The file
         /// will be moved into the file store area and will no longer exist at the
         /// given location.
+        /// </summary>
         public void UpdateFileMove (string srcPath)
         {
             ReplaceFile (srcPath);
         }
 
+        /// <summary>
         /// Gets the contents as a string.
         /// Not callable on Instance.
         /// </summary>
@@ -384,8 +387,13 @@ namespace NachoCore.Model
 
         private void ReplaceFile (string newFile)
         {
+            NcAssert.True (File.Exists (newFile), "newFile doesn't exist");
             var tmp = NcModel.Instance.TmpPath (AccountId);
             var filePath = GetFilePath ();
+            if (newFile == filePath) {
+                Log.Error (Log.LOG_DB, "Trying to move newFile to filePath, but they are the same file: {0}", newFile);
+                return;
+            }
             if (File.Exists (filePath)) {
                 File.Move (filePath, tmp); // Shouldn't fail, since destination shouldn't exist
             }

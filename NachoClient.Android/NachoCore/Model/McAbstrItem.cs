@@ -116,8 +116,10 @@ namespace NachoCore.Model
                         DeleteAncillary ();
                         returnVal = result;
                     } else {
-                        if (this is McEmailMessage) {
-                            var message = UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var message = this as McEmailMessage;
+                        if (message != null) {
+                            // McEmailMessage is not allowed to use Update. Need to UpdateWithOCApply
+                            UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
                                 target.IsAwaitingDelete = true;
                                 return true;
@@ -225,7 +227,7 @@ namespace NachoCore.Model
             where T : McAbstrObjectPerAcc
         {
             if (null == dbCollection) {
-                if (0 == this.Id) {
+                if (0 == Id) {
                     dbCollection = new List<T> ();
                 } else {
                     dbCollection = CollectionFromDb ();

@@ -894,6 +894,7 @@ namespace NachoCore.Utils
                     possibleDate = parts [0].Trim ();
                     subject = parts [1].Trim ();
                 } else {
+                    possibleDate = remainingSubject.Trim ();
                     subject = "";
                 }
                 foreach (var deferralOption in SubjectDeferralTypes) {
@@ -915,6 +916,12 @@ namespace NachoCore.Utils
                             intentDate = default (DateTime);
                         }
                     }
+                }
+                if (!String.IsNullOrEmpty (possibleDate) && deferralType == MessageDeferralType.None) {
+                    // we didn't match any deferral dates of types. This must not be one of our intent strings.
+                    intent = McEmailMessage.IntentType.None;
+                    intentDate = default (DateTime);
+                    subject = rawSubject;
                 }
             } else {
                 subject = rawSubject;
