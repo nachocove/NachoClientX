@@ -12,6 +12,9 @@ namespace NachoCore.Utils
     public class Telemetry_NOOP : ITelemetry
     {
         #region ITelemetry implementation
+        public void StartService ()
+        {
+        }
         public void FinalizeAll ()
         {
         }

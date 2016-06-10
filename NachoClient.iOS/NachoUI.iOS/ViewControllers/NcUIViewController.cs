@@ -4,6 +4,7 @@ using System;
 using UIKit;
 using Foundation;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -42,7 +43,7 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             if (HandlesKeyboardNotifications) {
                 KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
@@ -52,13 +53,13 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR);
             base.ViewDidAppear (animated);
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
             base.ViewWillDisappear (animated);
             if (null != ViewDisappearing) {
                 ViewDisappearing (this, EventArgs.Empty);
@@ -74,7 +75,7 @@ namespace NachoClient.iOS
 
         public override void ViewDidDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
             base.ViewDidDisappear (animated);
         }
 

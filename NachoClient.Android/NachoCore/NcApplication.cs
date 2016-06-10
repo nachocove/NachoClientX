@@ -1,7 +1,5 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
-#define TELEMETRY_NOOP
-
 using System;
 using System.Linq;
 using System.Threading;
@@ -151,19 +149,21 @@ namespace NachoCore
         }
 
         object TelemetryServiceLockObj = new object ();
-        public ITelemetry TelemetryService;
-        public void InitTelemetryService ()
-        {
-            if (TelemetryService == null) {
-                lock (TelemetryServiceLockObj) {
-                    if (TelemetryService == null) {
-                        #if !TELEMETRY_NOOP
-                        TelemetryService = new Telemetry ();
-                        #else
-                        TelemetryService = new Telemetry_NOOP ();
-                        #endif
+        ITelemetry _TelemetryService;
+        public ITelemetry TelemetryService {
+            get {
+                if (_TelemetryService == null) {
+                    lock (TelemetryServiceLockObj) {
+                        if (_TelemetryService == null) {
+                            #if TELEMETRY_AWS
+                            _TelemetryService = new Telemetry ();
+                            #else
+                            _TelemetryService = new Telemetry_NOOP ();
+                            #endif
+                        }
                     }
                 }
+                return _TelemetryService;
             }
         }
 
@@ -474,7 +474,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
-            InitTelemetryService ();
+            TelemetryService.StartService ();
             NcCommStatus.Instance.Reset ("StartBasalServices");
 
             // Pick most recently used account

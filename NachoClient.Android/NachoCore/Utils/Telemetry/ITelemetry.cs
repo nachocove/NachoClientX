@@ -8,6 +8,8 @@ namespace NachoCore.Utils
 {
     public interface ITelemetry
     {
+        void StartService ();
+
         bool Throttling { get; set; }
 
         void FinalizeAll ();

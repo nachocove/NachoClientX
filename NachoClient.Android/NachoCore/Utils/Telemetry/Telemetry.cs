@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NachoCore.Model;
 using Newtonsoft.Json;
 using NachoPlatform;
+using NachoClient.Build;
 
 namespace NachoCore.Utils
 {
@@ -79,8 +80,6 @@ namespace NachoCore.Utils
             // is chosen so that the arithematic is exact.
             FailToSendLogLimiter = new NcRateLimter (1.0 / 64.0, 64.0);
             FailToSendLogLimiter.Enabled = true;
-
-            StartService ();
         }
 
         // This is kind of a hack. When Telemetry is reporting the counter values,
@@ -368,7 +367,7 @@ namespace NachoCore.Utils
             RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
         }
 
-        void StartService ()
+        public void StartService ()
         {
             Throttling = true;
 
@@ -402,7 +401,15 @@ namespace NachoCore.Utils
         {
             try {
                 #if !TELEMETRY_BE_NOOP
-                BackEnd = new TelemetryBES3 ();
+                if (!string.IsNullOrEmpty (BuildInfo.AwsAccountId) &&
+                    !string.IsNullOrEmpty (BuildInfo.AwsAuthRoleArn) &&
+                    !string.IsNullOrEmpty (BuildInfo.AwsIdentityPoolId)) {
+                    BackEnd = new TelemetryBES3 ();
+                } else {
+                    BackEnd = new TelemetryBE_NOOP ();
+                    Log.Error (Log.LOG_SYS, "No AWS setting available. Using TelemetryBE_NOOP");
+                    BackEnd = new TelemetryBE_NOOP ();
+                }
                 #else
                 BackEnd = new TelemetryBE_NOOP ();
                 #endif

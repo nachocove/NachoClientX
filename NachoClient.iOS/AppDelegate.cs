@@ -234,33 +234,33 @@ namespace NachoClient.iOS
         private void StartUIMonitor ()
         {
             NachoUIMonitor.SetupUIButton (delegate(string description) {
-                Telemetry.RecordUiButton (description);
+                NcApplication.Instance.TelemetryService.RecordUiButton (description);
             });
 
             NachoUIMonitor.SetupUISegmentedControl (delegate(string description, int index) {
-                Telemetry.RecordUiSegmentedControl (description, index);
+                NcApplication.Instance.TelemetryService.RecordUiSegmentedControl (description, index);
             });
 
             NachoUIMonitor.SetupUISwitch (delegate(string description, string onOff) {
-                Telemetry.RecordUiSwitch (description, onOff);
+                NcApplication.Instance.TelemetryService.RecordUiSwitch (description, onOff);
             });
 
             NachoUIMonitor.SetupUIDatePicker (delegate(string description, string date) {
-                Telemetry.RecordUiDatePicker (description, date);
+                NcApplication.Instance.TelemetryService.RecordUiDatePicker (description, date);
             });
 
             NachoUIMonitor.SetupUITextField (delegate(string description) {
-                Telemetry.RecordUiTextField (description);
+                NcApplication.Instance.TelemetryService.RecordUiTextField (description);
             });
 
             NachoUIMonitor.SetupUIPageControl (delegate(string description, int page) {
-                Telemetry.RecordUiPageControl (description, page);
+                NcApplication.Instance.TelemetryService.RecordUiPageControl (description, page);
             });
 
             // Alert views are monitored inside NcAlertView
 
             NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
-                Telemetry.RecordUiActionSheet (description, index);
+                NcApplication.Instance.TelemetryService.RecordUiActionSheet (description, index);
             });
 
             NachoUIMonitor.SetupUITapGestureRecognizer (delegate(string description, int numTouches,
@@ -275,11 +275,11 @@ namespace NachoClient.iOS
                         }
                     }
                 }
-                Telemetry.RecordUiTapGestureRecognizer (description, touches);
+                NcApplication.Instance.TelemetryService.RecordUiTapGestureRecognizer (description, touches);
             });
 
             NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
-                Telemetry.RecordUiTableView (description, operation);
+                NcApplication.Instance.TelemetryService.RecordUiTableView (description, operation);
             });
         }
 
@@ -387,7 +387,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.Instance.Throttling = false;
+                NcApplication.Instance.TelemetryService.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
@@ -587,7 +587,7 @@ namespace NachoClient.iOS
             if (DateTime.MinValue != foregroundTime) {
                 // Log the duration of foreground for usage analytics
                 var duration = (int)(DateTime.UtcNow - foregroundTime).TotalMilliseconds;
-                Telemetry.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
+                NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
                 foregroundTime = DateTime.MinValue;
             }
 
