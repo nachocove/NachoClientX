@@ -63,9 +63,6 @@ namespace NachoClient.iOS
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
             settingsItem = settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
 
-            var supportNavController = new UINavigationController (new SupportViewController ());
-            supportNavController.TabBarItem = MakeTabBarItem ("Support", "more-support");
-
             var aboutNavController = new UINavigationController (new AboutUsViewController ());
             aboutNavController.TabBarItem = MakeTabBarItem ("About Nacho Mail", "more-nachomail");
 
@@ -77,7 +74,6 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, foldersNavController);
             Util.ConfigureNavBar (false, filesNavController);
             Util.ConfigureNavBar (false, settingsNavController);
-            Util.ConfigureNavBar (false, supportNavController);
             Util.ConfigureNavBar (false, aboutNavController);
 
             ViewControllers = new UIViewController[] {
@@ -89,7 +85,6 @@ namespace NachoClient.iOS
                 foldersNavController,
                 filesNavController,
                 settingsNavController,
-                supportNavController,
                 aboutNavController
             };
 
