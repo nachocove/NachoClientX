@@ -91,7 +91,7 @@ namespace NachoClient.AndroidClient
                 supportInfo.Add ("BuildVersion", Build.BuildInfo.Version);
                 supportInfo.Add ("BuildNumber", Build.BuildInfo.BuildNumber);
 
-                NcApplication.Instance.InitTelemetryService ();
+                NcApplication.Instance.TelemetryService.StartService ();
                 // Close all JSON files so they can be immediately uploaded while the user enters the
                 NcApplication.Instance.TelemetryService.FinalizeAll ();
                 NcApplication.Instance.TelemetryService.RecordSupport (supportInfo, () => {
