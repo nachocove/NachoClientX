@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
         <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
@@ -157,20 +158,8 @@
                                             <action selector="Submit:" destination="AaL-5e-fUA" eventType="touchUpInside" id="7kC-DO-75F"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="phn-YJ-6LK">
-                                        <rect key="frame" x="237" y="394" width="126" height="33"/>
-                                        <accessibility key="accessibilityConfiguration" label="Customer Support"/>
-                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="15"/>
-                                        <state key="normal" title="Customer Support">
-                                            <color key="titleColor" red="0.0" green="0.81568627449999997" blue="0.76470588240000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="Support:" destination="AaL-5e-fUA" eventType="touchUpInside" id="ckG-VZ-xtM"/>
-                                        </connections>
-                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xOP-hg-BDu">
-                                        <rect key="frame" x="241" y="432" width="119" height="33"/>
+                                        <rect key="frame" x="241" y="394" width="119" height="33"/>
                                         <accessibility key="accessibilityConfiguration" label="Advanced Sign In"/>
                                         <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="15"/>
                                         <state key="normal" title="Advanced Sign In">
@@ -186,15 +175,12 @@
                                     <constraint firstAttribute="centerX" secondItem="hQf-G7-Ypx" secondAttribute="centerX" id="0rX-Ht-kLN"/>
                                     <constraint firstItem="53m-EO-fBv" firstAttribute="top" secondItem="hQf-G7-Ypx" secondAttribute="bottom" constant="12" id="2gg-f8-bey"/>
                                     <constraint firstAttribute="centerX" secondItem="53m-EO-fBv" secondAttribute="centerX" id="3fO-Tx-h1Q"/>
-                                    <constraint firstItem="phn-YJ-6LK" firstAttribute="top" secondItem="53m-EO-fBv" secondAttribute="bottom" constant="20" id="4J8-wl-SrR"/>
-                                    <constraint firstAttribute="centerX" secondItem="phn-YJ-6LK" secondAttribute="centerX" id="8cQ-au-kVb"/>
                                     <constraint firstAttribute="centerX" secondItem="6JY-dT-aJa" secondAttribute="centerX" id="G35-Q5-gPs"/>
                                     <constraint firstItem="dCm-mU-vPx" firstAttribute="top" secondItem="yZe-2C-eOT" secondAttribute="bottom" constant="8" id="GnX-46-qpr"/>
                                     <constraint firstItem="hQf-G7-Ypx" firstAttribute="top" secondItem="dCm-mU-vPx" secondAttribute="bottom" constant="8" id="I2c-pC-eXF"/>
                                     <constraint firstAttribute="centerX" secondItem="dCm-mU-vPx" secondAttribute="centerX" id="JbP-LS-JoP"/>
                                     <constraint firstAttribute="bottom" secondItem="xOP-hg-BDu" secondAttribute="bottom" constant="20" id="Kwm-qq-EXS"/>
                                     <constraint firstItem="71q-HD-Ejm" firstAttribute="centerX" secondItem="6JY-dT-aJa" secondAttribute="centerX" id="LA7-ej-nt5"/>
-                                    <constraint firstItem="xOP-hg-BDu" firstAttribute="top" secondItem="phn-YJ-6LK" secondAttribute="bottom" constant="5" id="NIc-Gv-4Y2"/>
                                     <constraint firstItem="71q-HD-Ejm" firstAttribute="centerY" secondItem="6JY-dT-aJa" secondAttribute="centerY" id="SdT-SI-Nrb"/>
                                     <constraint firstItem="IzI-ua-2Rd" firstAttribute="top" secondItem="6JY-dT-aJa" secondAttribute="bottom" constant="30" id="X4Q-Gn-H5V"/>
                                     <constraint firstAttribute="centerX" secondItem="xOP-hg-BDu" secondAttribute="centerX" constant="-0.5" id="Xfm-71-n3L"/>
@@ -202,6 +188,7 @@
                                     <constraint firstItem="IzI-ua-2Rd" firstAttribute="leading" secondItem="elK-iM-9C1" secondAttribute="leading" constant="18" id="d33-fw-aUb"/>
                                     <constraint firstAttribute="trailing" secondItem="IzI-ua-2Rd" secondAttribute="trailing" constant="18" id="hVE-o6-0nF"/>
                                     <constraint firstItem="6JY-dT-aJa" firstAttribute="top" secondItem="elK-iM-9C1" secondAttribute="top" constant="44" id="jC1-Gq-H57"/>
+                                    <constraint firstItem="xOP-hg-BDu" firstAttribute="top" secondItem="53m-EO-fBv" secondAttribute="bottom" constant="20" id="sd0-Ed-KDD"/>
                                     <constraint firstAttribute="centerX" secondItem="yZe-2C-eOT" secondAttribute="centerX" id="tCm-uY-7us"/>
                                     <constraint firstItem="yZe-2C-eOT" firstAttribute="top" secondItem="IzI-ua-2Rd" secondAttribute="bottom" constant="30" id="uH3-Q6-axe"/>
                                 </constraints>
@@ -228,7 +215,6 @@
                         <outlet property="scrollView" destination="elK-iM-9C1" id="u3W-sA-aRJ"/>
                         <outlet property="statusLabel" destination="IzI-ua-2Rd" id="E9A-JZ-ng2"/>
                         <outlet property="submitButton" destination="53m-EO-fBv" id="vdf-dZ-0H2"/>
-                        <outlet property="supportButton" destination="phn-YJ-6LK" id="JbF-xJ-ko3"/>
                         <segue destination="FKi-cK-xjj" kind="presentation" identifier="cert-ask" id="PTf-oF-gIe"/>
                     </connections>
                 </viewController>

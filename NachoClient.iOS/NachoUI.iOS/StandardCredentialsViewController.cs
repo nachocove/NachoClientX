@@ -280,7 +280,7 @@ namespace NachoClient.iOS
                 passwordField.Enabled = false;
                 submitButton.Enabled = false;
                 submitButton.Alpha = 0.5f;
-                supportButton.Hidden = true;
+//                supportButton.Hidden = true;
                 advancedButton.Hidden = true;
                 if (IsShowingAdvanced) {
                     advancedFieldsViewController.SetFieldsEnabled (false);
@@ -293,7 +293,7 @@ namespace NachoClient.iOS
                     emailField.Enabled = true;
                 }
                 passwordField.Enabled = true;
-                supportButton.Hidden = false;
+//                supportButton.Hidden = false;
                 advancedButton.Hidden = HideAdvancedButton;
                 UpdateSubmitEnabled ();
                 if (IsShowingAdvanced) {
