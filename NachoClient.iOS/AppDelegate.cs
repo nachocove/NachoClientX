@@ -23,7 +23,7 @@ using NachoClient.iOS;
 using Newtonsoft.Json;
 using ObjCRuntime;
 using NachoClient.Build;
-#if !NO_HOCKEY_APP
+#if HOCKEY_APP
 using HockeyApp;
 #endif
 using NachoUIMonitorBinding;
@@ -118,7 +118,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            #if !NO_HOCKEY_APP
+            #if HOCKEY_APP
 
             //We MUST wrap our setup in this block to wire up
             // Mono's SIGSEGV and SIGBUS signals
@@ -314,7 +314,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
             }
 
-            #if !NO_HOCKEY_APP
+            #if HOCKEY_APP
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
@@ -1532,7 +1532,7 @@ namespace NachoClient.iOS
 
     }
 
-    #if !NO_HOCKEY_APP
+    #if HOCKEY_APP
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
     {

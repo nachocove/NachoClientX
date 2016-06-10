@@ -987,7 +987,7 @@ namespace NachoCore
                     }
                 }
 
-                #if !NO_HOCKEY_APP
+                #if HOCKEY_APP
                 // Check if HockeyApp has any queued crash reports
                 if (!crashReportingDone) {
                     numCrashes = NumberOfCrashReports ();

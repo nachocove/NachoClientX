@@ -10,7 +10,7 @@ using NachoPlatform;
 using Android.Content;
 using System.IO;
 using System.Threading;
-#if !NO_HOCKEY_APP
+#if HOCKEY_APP
 using NachoClient.Build;
 using System.Threading.Tasks;
 #endif
@@ -86,7 +86,7 @@ namespace NachoClient.AndroidClient
                 Calendars.Instance.DeviceCalendarChanged ();
             };
 
-            MainApplication.Instance.StartService (new Intent (MainApplication.Instance, typeof(NotificationService)));
+            MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));
 
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
 
@@ -128,7 +128,7 @@ namespace NachoClient.AndroidClient
 
         public static void RegisterHockeyAppUpdateManager (Activity activity)
         {
-            #if !NO_HOCKEY_APP
+            #if HOCKEY_APP
             if (BuildInfoHelper.IsDev) {
                 return;
             }
@@ -142,7 +142,7 @@ namespace NachoClient.AndroidClient
 
         public static void UnregisterHockeyAppUpdateManager ()
         {
-            #if !NO_HOCKEY_APP
+            #if HOCKEY_APP
             if (updateRegistered) {
                 HockeyApp.UpdateManager.Unregister ();
                 updateRegistered = false;
@@ -152,7 +152,7 @@ namespace NachoClient.AndroidClient
 
         public static void SetupHockeyAppCrashManager (Activity activity)
         {
-            #if !NO_HOCKEY_APP
+            #if HOCKEY_APP
             if (BuildInfoHelper.IsDev) {
                 return;
             }
@@ -192,7 +192,7 @@ namespace NachoClient.AndroidClient
             #endif
         }
 
-        #if !NO_HOCKEY_APP
+        #if HOCKEY_APP
 
         static bool updateRegistered = false;
 
