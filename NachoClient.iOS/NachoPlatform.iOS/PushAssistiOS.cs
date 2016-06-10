@@ -10,6 +10,16 @@ namespace NachoPlatform
         {
         }
 
+        public static bool SetDeviceToken (string token)
+        {
+            return true;
+        }
+
+        public static bool ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
+        {
+            return true;
+        }
+
         #region IPushAssist implementation
 
         public void Dispose ()
