@@ -15,7 +15,7 @@ projects = {
             'display_name': '[dev] Nacho Mail',
             'file_sharing': True,
             'app_group': 'group.com.nachocove.nachomail',
-            'hockeyapp': {'app_id': 'b22a505d784d64901ab1abde0728df67', 'api_token': 'dbccf0190d5b410e8f43ef2b5e7d6b43'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'icloud_container': 'iCloud.com.nachocove.nachomail'
         },
         'ios_share': {
@@ -26,7 +26,7 @@ projects = {
         'android': {
             'package_name': 'com.nachocove.nachomail.dev',
             'label': '[dev] Nacho Mail',
-            'hockeyapp': {'app_id': '6308748f44bb7da155f7c44c076e8201', 'api_token': 'd7565337373147299f4b75adfacd6efa'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': '',
                          'alias': '',
                          },

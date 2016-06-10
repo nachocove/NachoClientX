@@ -9,26 +9,23 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using CoreGraphics;
 using System.Security.Cryptography.X509Certificates;
-using System.Xml.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Drawing;
 using Foundation;
 using UIKit;
 using NachoCore;
-using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
 using NachoPlatform;
 using NachoClient.iOS;
-using SQLite;
 using Newtonsoft.Json;
-using NachoCore.Wbxml;
 using ObjCRuntime;
 using NachoClient.Build;
+#if HOCKEY_APP
 using HockeyApp;
+#endif
 using NachoUIMonitorBinding;
 
 namespace NachoClient.iOS
@@ -121,6 +118,8 @@ namespace NachoClient.iOS
                 return;
             }
 
+            #if HOCKEY_APP
+
             //We MUST wrap our setup in this block to wire up
             // Mono's SIGSEGV and SIGBUS signals
             HockeyApp.Setup.EnableCustomCrashReporting (() => {
@@ -172,6 +171,7 @@ namespace NachoClient.iOS
                 NcApplication.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.Exception);
             });
+            #endif
         }
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
@@ -314,11 +314,13 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
             }
 
+            #if HOCKEY_APP
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
             }
+            #endif
 
             NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
@@ -1530,6 +1532,8 @@ namespace NachoClient.iOS
 
     }
 
+    #if HOCKEY_APP
+
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
     {
         public HockeyAppCrashDelegate () : base ()
@@ -1586,4 +1590,5 @@ namespace NachoClient.iOS
             });
         }
     }
+    #endif
 }
