@@ -124,11 +124,11 @@ def edit_plist(plist_file, ios, build, version, project_dir, release_dir):
 
 
 def edit_entitlements(entitlements_file, ios, build, version, project_dir, release_dir):
-    app_group = ios['app_group']
+    # app_group = ios['app_group']
     entitlements_plist = PlistFile(entitlements_file)
     entitlements_plist.write(os.path.join(project_dir, 'Entitlements.plist.rewritten'))
-    entitlements_plist.remove_list_index('com.apple.security.application-groups', 0)
-    entitlements_plist.append('com.apple.security.application-groups', app_group)
+    # entitlements_plist.remove_list_index('com.apple.security.application-groups', 0)
+    # entitlements_plist.append('com.apple.security.application-groups', app_group)
     icloud_container = ios['icloud_container']
     entitlements_plist.remove_list_index('com.apple.developer.icloud-container-identifiers', 0)
     entitlements_plist.append('com.apple.developer.icloud-container-identifiers', icloud_container)
