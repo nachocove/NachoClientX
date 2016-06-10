@@ -148,6 +148,25 @@ namespace NachoCore
             }
         }
 
+        object TelemetryServiceLockObj = new object ();
+        ITelemetry _TelemetryService;
+        public ITelemetry TelemetryService {
+            get {
+                if (_TelemetryService == null) {
+                    lock (TelemetryServiceLockObj) {
+                        if (_TelemetryService == null) {
+                            #if TELEMETRY_AWS
+                            _TelemetryService = new Telemetry ();
+                            #else
+                            _TelemetryService = new Telemetry_NOOP ();
+                            #endif
+                        }
+                    }
+                }
+                return _TelemetryService;
+            }
+        }
+
         public static string ApplicationLogForCrashManager ()
         {
             // TODO: UtcNow isn't really the launch-time, nor is it really what we want.
@@ -455,7 +474,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
-            Telemetry.StartService ();
+            TelemetryService.StartService ();
             NcCommStatus.Instance.Reset ("StartBasalServices");
 
             // Pick most recently used account
@@ -471,7 +490,7 @@ namespace NachoCore
 
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
-                Telemetry.Instance.Throttling = false;
+                TelemetryService.Throttling = false;
 
                 // Submit a support request, to make the chances even higher that this will be noticed and investigated.
                 var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
@@ -479,7 +498,7 @@ namespace NachoCore
                 supportInfo.Add ("Message", "Safe mode was triggered. Please investigate.");
                 supportInfo.Add ("BuildVersion", BuildInfo.Version);
                 supportInfo.Add ("BuildNumber", BuildInfo.BuildNumber);
-                Telemetry.RecordSupport (supportInfo);
+                TelemetryService.RecordSupport (supportInfo);
 
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
@@ -925,7 +944,7 @@ namespace NachoCore
                 return false;
             }
             if (new FileInfo (StartupLog).Length > 2) {
-                Telemetry.Instance.FinalizeAll (); // close of all JSON files
+                TelemetryService.FinalizeAll (); // close of all JSON files
                 return true;
             }
             return false;
@@ -945,7 +964,6 @@ namespace NachoCore
             // a couple of seconds so the user has time to read it.
             Thread.Sleep (TimeSpan.FromSeconds (2));
 
-            bool telemetryDone = false;
             bool crashReportingDone = false;
             SafeModeStarted = true;
             int numTelemetryEvents, numCrashes;
@@ -969,14 +987,6 @@ namespace NachoCore
                     }
                 }
 
-                // Check if we have caught up in telemetry upload
-                if (!telemetryDone) {
-                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
-                    if ((0 == numTelemetryEvents) && !Telemetry.Instance.TelemetryPending ()) {
-                        telemetryDone = true;
-                    }
-                }
-
                 // Check if HockeyApp has any queued crash reports
                 if (!crashReportingDone) {
                     numCrashes = NumberOfCrashReports ();
@@ -987,7 +997,7 @@ namespace NachoCore
 
                 Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: telemetryEvents={0}, crashes={1}", numTelemetryEvents, numCrashes);
 
-                if (crashReportingDone && telemetryDone) {
+                if (crashReportingDone) {
                     break;
                 }
                 if (!NcTask.CancelableSleep (1000)) {

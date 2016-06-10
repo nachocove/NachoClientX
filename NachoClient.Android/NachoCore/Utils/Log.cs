@@ -229,7 +229,7 @@ namespace NachoCore.Utils
                     Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
-                Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
+                NcApplication.Instance.TelemetryService.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
             }
             LogElement elem;
             int maxIndirect = 5;
@@ -280,7 +280,10 @@ namespace NachoCore.Utils
             if (OverrideReadyToLog.HasValue && OverrideReadyToLog.Value) {
                 return true;
             } else {
-                return NachoCore.Model.NcModel.IsInitialized && Telemetry.Initialized;
+                // technically, we probably don't even need to wait for the DB. That's
+                // most likely an artifact from when we stored telemetry in a separate DB
+                // table, which we no longer do.
+                return NachoCore.Model.NcModel.IsInitialized;
             }
         }
 

@@ -3,6 +3,7 @@
 using System;
 using UIKit;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -21,7 +22,7 @@ namespace NachoClient.iOS
             var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
             foreach (var action in actions) {
                 alertController.AddAction (UIAlertAction.Create (action.Title, action.UIStyle (), (UIAlertAction obj) => {
-                    Telemetry.RecordUiAlertView (title, action.Title);
+                    NcApplication.Instance.TelemetryService.RecordUiAlertView (title, action.Title);
                     if (null != action.Action) {
                         action.Action ();
                     }
