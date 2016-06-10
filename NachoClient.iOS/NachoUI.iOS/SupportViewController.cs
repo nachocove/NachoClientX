@@ -145,7 +145,7 @@ namespace NachoClient.iOS
 
             if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev) {
                 telemetryFlushGesture = new UITapGestureRecognizer (() => {
-                    Telemetry.Instance.FinalizeAll ();
+                    NcApplication.Instance.TelemetryService.FinalizeAll ();
                     Console.WriteLine ("Flush all telemetry files");
                 });
                 telemetryFlushGesture.NumberOfTapsRequired = 3;

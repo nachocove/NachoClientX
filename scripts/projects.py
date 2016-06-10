@@ -35,12 +35,12 @@ projects = {
         },
         'aws': {
             'prefix': 'dev',
-            'account_id': '263277746520',
-            'identity_pool_id': 'us-east-1:b3323849-deda-440a-a225-03043e591ec7',
-            'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_dev_UnAuth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': 'c6ae00d0-dev-t3-',
-            'support_s3_bucket': 'c6ae00d0-dev-t3-trouble-tickets',
+            'account_id': '',
+            'identity_pool_id': '',
+            'unauth_role_arn': '',
+            'auth_role_arn': '',
+            's3_bucket': '',
+            'support_s3_bucket': '',
         },
         'pinger': {
             'hostname': 'pinger.officetaco.com',

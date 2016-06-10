@@ -271,7 +271,7 @@ namespace NachoCore.Utils
         private void ReportInternal (DateTime utcNow)
         {
             Console.WriteLine ("Counter: {0} = {1} [{2}-{3}]", Name, Count, UtcStart, utcNow);
-            Telemetry.RecordCounter (Name, Count, UtcStart, utcNow);
+            NcApplication.Instance.TelemetryService.RecordCounter (Name, Count, UtcStart, utcNow);
             foreach (NcCounter child in Children) {
                 child.ReportInternal (utcNow);
             }

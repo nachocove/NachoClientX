@@ -82,7 +82,7 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.AppStartupTasks ();
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.Instance.Throttling = false;
+                NcApplication.Instance.TelemetryService.Throttling = false;
                 Calendars.Instance.DeviceCalendarChanged ();
             };
 

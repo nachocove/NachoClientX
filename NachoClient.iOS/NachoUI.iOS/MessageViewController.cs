@@ -264,12 +264,12 @@ namespace NachoClient.iOS
             // Record information about the read email and then reset them.
             if (null != Message) {
                 var now = DateTime.UtcNow;
-                Telemetry.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
-                Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, Message.Id);
-                Telemetry.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, Message.Score);
+                NcApplication.Instance.TelemetryService.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
+                NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, Message.Id);
+                NcApplication.Instance.TelemetryService.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, Message.Score);
                 var body = McBody.QueryById<McBody> (Message.BodyId);
                 if (McBody.IsComplete (body)) {
-                    Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                    NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
                 }
             }
             base.ViewWillDisappear (animated);
