@@ -17,7 +17,6 @@ namespace Test.Common
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
             NcModel.Instance.InitializeDirs (1);
             NcModel.Instance.InitializeDirs (2);
-            Telemetry.ENABLED = false;
             McPendingHelper.IsUnitTest = true;
         }
 

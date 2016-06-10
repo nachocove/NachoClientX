@@ -159,7 +159,7 @@ namespace Test.Common
         [SetUp]
         public void Setup ()
         {
-            Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
+            Assert.IsTrue (NcApplication.Instance.TelemetryService is Telemetry_NOOP, "Telemetry needs to be disabled");
             NcTask.StartService ();
 
             // Set up credential
