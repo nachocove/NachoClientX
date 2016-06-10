@@ -132,6 +132,7 @@ namespace NachoClient.AndroidClient
             if (BuildInfoHelper.IsDev) {
                 return;
             }
+            NcAssert.False(string.IsNullOrEmpty (BuildInfo.HockeyAppAppId));
             if (CheckOnceForUpdates ()) {
                 updateRegistered = true;
                 //Register to with the Update Manager
