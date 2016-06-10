@@ -68,17 +68,20 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             using (var capture = CaptureWithStart ("Insert")) {
-                var preExists = McPath.QueryByServerId (AccountId, ServerId);
-                Log.Debug (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
-                if (null != preExists) {
-                    // In a move, expect the server to send one Add, which is not an error.
-                    if (!preExists.WasMoveDest) {
-                        Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
-                            preExists.ParentId, preExists.ServerId,
-                            ParentId, ServerId, new StackTrace ().ToString ()));
+                NcModel.Instance.RunInTransaction (() => {
+                    // preExists.Delete wants to be in a transaction. So let's accomodate it.
+                    var preExists = McPath.QueryByServerId (AccountId, ServerId);
+                    Log.Debug (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
+                    if (null != preExists) {
+                        // In a move, expect the server to send one Add, which is not an error.
+                        if (!preExists.WasMoveDest) {
+                            Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                                preExists.ParentId, preExists.ServerId,
+                                ParentId, ServerId, new StackTrace ().ToString ()));
+                        }
+                        preExists.Delete ();
                     }
-                    preExists.Delete ();
-                }
+                });
                 return base.Insert ();
             }
         }

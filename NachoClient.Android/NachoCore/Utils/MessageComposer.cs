@@ -8,6 +8,7 @@ using NachoCore.Model;
 using NachoPlatform;
 using HtmlAgilityPack;
 using MimeKit;
+using NachoCore.Brain;
 
 namespace NachoCore.Utils
 {
@@ -157,6 +158,10 @@ namespace NachoCore.Utils
         public void SetAccount(McAccount account)
         {
             Account = account;
+            if (Account.Id == account.Id) {
+                // same account. Nothing to do.
+                return;
+            }
             if (Message != null) {
                 Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                     var message = record as McEmailMessage;
@@ -318,7 +323,7 @@ namespace NachoCore.Utils
                 Delegate.MessageComposerDidFailToLoadMessage (this);
             } else if (downloader == RelatedMessageDownloader) {
                 Log.Info (Log.LOG_UI, "MessageComposer related message download failed");
-                FinishPreparingMessage ();
+                PrepareMessageBody ();
             } else {
                 NcAssert.CaseError ();
             }
@@ -550,6 +555,7 @@ namespace NachoCore.Utils
             if (invalidateBundle) {
                 Bundle.Invalidate ();
             }
+            NcBrain.IndexMessage (Message);
         }
 
         void WriteBody ()

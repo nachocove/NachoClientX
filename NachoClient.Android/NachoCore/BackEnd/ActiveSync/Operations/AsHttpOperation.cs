@@ -237,7 +237,7 @@ namespace NachoCore.ActiveSync
 
         private void DoHttp ()
         {
-            if (0 < TriesLeft) {
+            if (TriesLeft > 0 && (Cts == null || !Cts.IsCancellationRequested)) {
                 --TriesLeft;
                 Log.Info (Log.LOG_HTTP, "{0}: TriesLeft: {1}", CmdNameWithAccount, TriesLeft);
                 // Using response.Content.ReadAsStreamAsync causes lock-ups sometimes.
@@ -245,7 +245,7 @@ namespace NachoCore.ActiveSync
                 // We switched back to ReadAsByteArrayAsync to avoid lock-ups. 
                 // This will have the side-effect of big responses being memory-resident
                 // until NachoHttp comes in.
-                Cts = new CancellationTokenSource ();
+                Cts = CancellationTokenSource.CreateLinkedTokenSource (BEContext.ProtoControl.Cts.Token);
                 AttemptHttp ();
             } else {
                 Owner.ResolveAllDeferred ();
@@ -268,8 +268,16 @@ namespace NachoCore.ActiveSync
 
         private void DoTimeoutHttp ()
         {
-            DoCancelHttp ();
-            DoHttp ();
+            if (Cts != null && Cts.IsCancellationRequested) {
+                // DoCancelHttp cancels Cts and sets it to null, so don't move this outside and
+                // above the if statement, since we won't know if we've been cancelled.
+                // Remember, the Cts is a linked token source, linked to BEContext.ProtoControl.Cts.
+                DoCancelHttp ();
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOHCAN", null, "Cancelled."));
+            } else {
+                DoCancelHttp ();
+                DoHttp ();
+            }
         }
 
         private void DoFinal ()
@@ -350,21 +358,20 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CmdNameWithAccount, doc);
                 if (Owner.UseWbxml (this)) {
-                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
-                                     (state) => {
-                            if (!cToken.IsCancellationRequested) {
-                                Log.Error (Log.LOG_HTTP, "{0}:ToWbxmlStream wedged (#1313)", CmdNameWithAccount);
-                            }
-                        },
-                                     cToken, 
-                        // We only want to see this Error if truly wedged.
-                        // This timer doesn't perform any recovery action.
-                                     60 * 1000, 
-                                     System.Threading.Timeout.Infinite);
-                    var capture = NcCapture.CreateAndStart (KToWbxmlStream);
-                    var stream = doc.ToWbxmlStream (AccountId, cToken);
-                    capture.Stop ();
-                    diaper.Dispose ();
+                    FileStream stream;
+                    using (var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
+                                            (state) => { 
+                                                if (!cToken.IsCancellationRequested) {
+                                                    Log.Error (Log.LOG_HTTP, "{0}:ToWbxmlStream wedged (#1313)", CmdNameWithAccount);
+                                                }
+                                            },
+                                            cToken, 
+                                            60 * 1000, 
+                                            Timeout.Infinite)) {
+                        var capture = NcCapture.CreateAndStart (KToWbxmlStream);
+                        stream = doc.ToWbxmlStream (AccountId, cToken);
+                        capture.Stop ();
+                    }
                     request.SetContent (stream, ContentTypeWbxml, true);
                 } else {
                     // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
@@ -413,13 +420,19 @@ namespace NachoCore.ActiveSync
                 baseTimeout = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
             }
             var timeoutValue = TimeSpan.FromSeconds (baseTimeout * Math.Pow (TimeoutExpander, MaxRetries - TriesLeft));
-            TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, timeoutValue,
-                System.Threading.Timeout.InfiniteTimeSpan);
+            TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, timeoutValue, Timeout.InfiniteTimeSpan);
             NcHttpRequest request = null;
-            if (!CreateHttpRequest (out request, cToken)) {
-                Log.Info (Log.LOG_HTTP, "{0}: Intentionally aborting HTTP operation.", CmdNameWithAccount);
+            try {
+                if (!CreateHttpRequest (out request, cToken)) {
+                    Log.Info (Log.LOG_HTTP, "{0}: Intentionally aborting HTTP operation.", CmdNameWithAccount);
+                    CancelTimeoutTimer ("Intentional");
+                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                    return;
+                }
+            } catch (OperationCanceledException) {
+                Log.Info (Log.LOG_HTTP, "{0}: OperationCanceledException aborting HTTP operation.", CmdNameWithAccount);
                 CancelTimeoutTimer ("Intentional");
-                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPCANCEL2"));
                 return;
             }
             request.Cred = cred; // NB: can be null

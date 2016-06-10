@@ -244,8 +244,10 @@ namespace NachoClient.iOS
         protected void ReconfigureGroupedRows ()
         {
             if (TableView.Style == UITableViewStyle.Grouped) {
-                foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
-                    WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
+                if (TableView.IndexPathsForVisibleRows != null) {
+                    foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                        WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
+                    }
                 }
             }
         }

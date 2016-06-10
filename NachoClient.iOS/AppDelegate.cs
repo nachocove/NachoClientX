@@ -625,6 +625,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartBasalServices complete");
             FinalShutdownHasHappened = false;
+            NcTask.Run (() => NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20), "ReverseFinalShutdownCleanupOldDbConnections");
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
         }
 
@@ -735,6 +736,12 @@ namespace NachoClient.iOS
         private bool fetchStatusHandlerRegistered = false;
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
+        /// <summary>
+        /// The PerformFetch timer. This needs to be a Timer, not an NcTimer,
+        /// because performFetchTimer needs to keep running after FinalShutdown()
+        /// has been called to make sure the badge count update code completes in
+        /// time. If it is an NcTimer, then it will get killed during FinalShutdown().
+        /// </summary>
         private Timer performFetchTimer = null;
         private string fetchCause;
         // A list of all account ids that are waiting to be synced.

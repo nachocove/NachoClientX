@@ -743,7 +743,11 @@ namespace NachoClient.AndroidClient
         void CreateEvent_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "CreateEvent_Click");
-            StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message));
+            string plainTextBody = null;
+            if (null != bundle) {
+                plainTextBody = bundle.FullText;
+            }
+            StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message, plainTextBody));
         }
 
         void HeaderFill (TextView view, string rawAddressString, NcEmailAddress.Kind kind)
