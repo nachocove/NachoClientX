@@ -17,10 +17,10 @@ using System.Threading.Tasks;
 
 namespace NachoClient.AndroidClient
 {
-    #if !DEBUG
+#if !DEBUG
     // DO NOT PUT THE [Application ...] tag here when running unit tests.
     [Application (AllowBackup = true, BackupAgent = typeof(NcBackupAgentHelper), RestoreAnyVersion = true)]
-    #endif
+#endif
     public class MainApplication : Application
     {
         /// <summary>
