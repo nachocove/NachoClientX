@@ -30,7 +30,7 @@ projects = {
             'keystore': {'filename': '',
                          'alias': '',
                          },
-            'backup.api_key': 'AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw',
+            'backup.api_key': '',
             'fileprovider': 'com.nachocove.dev.fileprovider',
         },
         'aws': {
@@ -48,8 +48,8 @@ projects = {
             'crl_signing_certs': ['nachocove-crl-cert.pem', 'officetaco-crl-cert.pem'],
         },
         'google': {
-            'client_id': '135541750674-l44k46h09u2obl3upnchl9lt3nicfd52.apps.googleusercontent.com',
-            'client_secret': '3NKmUHorCm8_IS4lkOWuN_7i',
+            'client_id': '',
+            'client_secret': '',
         }
     },
     'alpha': {
@@ -59,7 +59,7 @@ projects = {
             'icon_script': 'alpha/copy.sh',
             'file_sharing': True,
             'app_group': 'group.com.nachocove.nachomail.alpha',
-            'hockeyapp': {'app_id': 'f0c98aa84e693061fbbf3d60bb6ab1fc', 'api_token': '4a472c5e774a4004a4eb1dd648b8af8a'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'icloud_container': 'iCloud.com.nachocove.nachomail.alpha'
         },
         'ios_share': {
@@ -71,19 +71,19 @@ projects = {
             'package_name': 'com.nachocove.nachomail.alpha',
             'label': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
-            'hockeyapp': {'app_id': '3f057536fb00405eb9e3542231831964', 'api_token': '4c8a0529cb7241cf8bcc49b2e8387db8'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': 'com.nachocove.mail.alpha.keystore',
                          'alias': 'com.nachocove.mail.alpha',
                          },
-            'backup.api_key': 'AEdPqrEAAAAI6nEa_tRWJ5NsItWcRQ4vDQVTyXlzBZA34k1MJQ',
+            'backup.api_key': '',
             'fileprovider': 'com.nachocove.alpha.fileprovider',
         },
         'aws': {
             'prefix': 'alpha',
-            'account_id': '263277746520',
-            'identity_pool_id': 'us-east-1:667b2a39-05d8-4035-a078-2f5afb82a6b8',
-            'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_alpha_UnAuth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            'account_id': '',
+            'identity_pool_id': '',
+            'unauth_role_arn': '',
+            'auth_role_arn': '',
             's3_bucket': 'd3daf3ef-alpha-t3-',
             'support_s3_bucket': 'd3daf3ef-alpha-t3-trouble-tickets',
         },
@@ -93,8 +93,8 @@ projects = {
             'crl_signing_cert': [],
         },
         'google': {
-            'client_id': '135541750674-ggdpk07n9rd91j9479u685ud6usqodrq.apps.googleusercontent.com',
-            'client_secret': 'uCnNdx_SuZnsa9UZkhlUcbf6',
+            'client_id': '',
+            'client_secret': '',
         }
     },
     'beta': {
@@ -104,7 +104,7 @@ projects = {
             'icon_script': 'beta/copy.sh',
             'file_sharing': False,
             'app_group': 'group.com.nachocove.nachomail.beta',
-            'hockeyapp': {'app_id': '44dae4a6ae9134930c64c623d5023ac4', 'api_token': '1c08642c07d244f7a0600ef5654e0dad'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'icloud_container': 'iCloud.com.nachocove.nachomail.beta'
         },
         'ios_share': {
@@ -116,30 +116,30 @@ projects = {
             'package_name': 'com.nachocove.nachomail',
             'label': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
-            'hockeyapp': {'app_id': 'bf2582dd142f473dbfdc3bdb8349a3b5', 'api_token': '059371f4a7db486fbbb1bebcb3965aaa'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': 'com.nachocove.mail.keystore',
                          'alias': 'com.nachocove.mail',
                          },
-            'backup.api_key': 'AEdPqrEAAAAIWORF8SdqdCn_lVgJTP6lxCod1PGW3He-2OIV0g',
+            'backup.api_key': '',
             'fileprovider': 'com.nachocove.fileprovider',
         },
         'aws': {
             'prefix': 'beta',
-            'account_id': '610813048224',
-            'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
-            'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_beta_UnAuth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            'account_id': '',
+            'identity_pool_id': '',
+            'unauth_role_arn': '',
+            'auth_role_arn': '',
             's3_bucket': '3ca28b5e-beta-t3-',
             'support_s3_bucket': '3ca28b5e-beta-t3-trouble-tickets',
         },
         'pinger': {
-            'hostname': 'dk65t.pxs001.com',
+            'hostname': '',
             'root_cert': 'beta-pinger.pem',
             'crl_signing_cert': [],
         },
         'google': {
-            'client_id': '135541750674-d6o0v1h299isdh155thlo01r7d1sj22v.apps.googleusercontent.com',
-            'client_secret': 'w_STpstIgIVrPYcCEYclC3KT',
+            'client_id': '',
+            'client_secret': '',
         }
     },
     'appstore': {
@@ -149,7 +149,7 @@ projects = {
             'icon_script': 'appstore/copy.sh',
             'file_sharing': False,
             'app_group': 'group.com.nachocove.mail',
-            'hockeyapp': {'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa', 'api_token': '0344908b24aa498288268a726d028332'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'icloud_container': 'iCloud.com.nachocove.mail'
         },
         'ios_share': {
@@ -161,30 +161,30 @@ projects = {
             'package_name': 'com.nachocove.nachomail',
             'label': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
-            'hockeyapp': {'app_id': 'a62575b6e71e118ecc44e775d6f5db88', 'api_token': 'c1c7e717a6da4ba7b4a3408c9ec60418'},
+            'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': 'com.nachocove.mail.keystore',
                          'alias': 'com.nachocove.mail',
                          },
-            'backup.api_key': 'AEdPqrEAAAAIEP3e9PW3CpJ8D8MpJDOAg2dugLzFunXiC9LbfA',
+            'backup.api_key': '',
             'fileprovider': 'com.nachocove.fileprovider',
         },
         'aws': {
             'prefix': 'prod',
-            'account_id': '610813048224',
-            'identity_pool_id': 'us-east-1:2e5f8d44-3f75-4f94-9539-696849b9bca5',
-            'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_prod_UnAuth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            'account_id': '',
+            'identity_pool_id': '',
+            'unauth_role_arn': '',
+            'auth_role_arn': '',
             's3_bucket': '59f1d07a-prod-t3-',
             'support_s3_bucket': '59f1d07a-prod-t3-trouble-tickets',
         },
         'pinger': {
-            'hostname': 'p745x.pxs001.com',
+            'hostname': '',
             'root_cert': 'beta-pinger.pem',
             'crl_signing_cert': [],
         },
         'google': {
-            'client_id': '135541750674-f307j8582mi397cd0hcsbtn8ts1djmdv.apps.googleusercontent.com',
-            'client_secret': '5iBJeVUWnYs4jkHbDZziV0Gl',
+            'client_id': '',
+            'client_secret': '',
         }
     },
 }
