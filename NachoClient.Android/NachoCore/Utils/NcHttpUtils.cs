@@ -504,14 +504,15 @@ sslErrorVerify:
         /// <param name="cipherSuite"></param>
         public static bool verifyClientCiphers (Uri uri, string protocol, string cipherSuite)
         {
-            var callback = ServicePointManager.ClientCipherSuitesCallback;
-            if (callback == null)
-                return true;
+            return true;
+            //var callback = ServicePointManager.ClientCipherSuitesCallback;
+            //if (callback == null)
+            //    return true;
 
-            var SSLProto = protocol.StartsWith ("SSL", StringComparison.InvariantCulture) ? SecurityProtocolType.Ssl3 : SecurityProtocolType.Tls;
-            var acceptedCiphers = callback (SSLProto, new[] { cipherSuite });
+            //var SSLProto = protocol.StartsWith ("SSL", StringComparison.InvariantCulture) ? SecurityProtocolType.Ssl3 : SecurityProtocolType.Tls;
+            //var acceptedCiphers = callback (SSLProto, new[] { cipherSuite });
 
-            return acceptedCiphers.Contains (cipherSuite);
+            //return acceptedCiphers.Contains (cipherSuite);
         }
     }
 }
