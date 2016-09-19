@@ -1858,8 +1858,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
-    <BundleResource Include="Resources\Icon.png" />
-    <BundleResource Include="Resources\Icon%402x.png" />
     <BundleResource Include="Resources\ic_action_add_alarm.png" />
     <BundleResource Include="Resources\ic_action_alarms.png" />
     <BundleResource Include="Resources\ic_action_event.png" />
@@ -1898,13 +1896,6 @@
     <BundleResource Include="Resources\btn-mtng-tenative-pressed.png" />
     <BundleResource Include="Resources\btn-mtng-tenative-pressed%402x.png" />
     <BundleResource Include="Resources\btn-mtng-tenative%402x.png" />
-    <BundleResource Include="Resources\Icon-60%402x.png" />
-    <BundleResource Include="Resources\Icon-76%402x.png" />
-    <BundleResource Include="Resources\Icon-76.png" />
-    <BundleResource Include="Resources\Icon-Small.png" />
-    <BundleResource Include="Resources\Icon-Small%402x.png" />
-    <BundleResource Include="Resources\Icon-Small-40.png" />
-    <BundleResource Include="Resources\Icon-Small-40%402x.png" />
     <BundleResource Include="Resources\icn-file-complete%402x.png" />
     <BundleResource Include="Resources\icn-file-complete.png" />
     <BundleResource Include="Resources\iPhoneIcon.png" />
@@ -3052,5 +3043,20 @@
     <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\Contents.json" />
     <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\nav-inbox-active%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\nav-inbox-active%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-settings%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-spotlight%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-phone-app%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-spotlight.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-app.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-padpro-app%402x.png" />
   </ItemGroup>
 </Project>
