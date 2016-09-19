@@ -41,7 +41,7 @@ namespace NachoClient.iOS
             nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
             var inboxNavController = CreateAccountSwitchingNavigationController (new InboxViewController () { IsLongLived = true });
-            inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-mail");
+            inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-inbox");
 
             var calendarNavController = CreateAccountSwitchingNavigationController (new CalendarViewController ());
             calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");

@@ -30,11 +30,31 @@
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchArch>i386, x86_64</MtouchArch>
@@ -55,12 +75,36 @@
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
@@ -87,11 +131,31 @@
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
@@ -113,12 +177,36 @@
     </IpaPackageName>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
@@ -141,12 +229,36 @@
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
@@ -170,13 +282,40 @@
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/remove_itunesmetadata.sh</command>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <IpaPackageName>
@@ -239,6 +378,8 @@
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
+    <Folder Include="Resources\Images.xcassets\nav-inbox.imageset\" />
+    <Folder Include="Resources\Images.xcassets\nav-inbox-active.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -2905,5 +3046,11 @@
     <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose.png" />
     <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox.imageset\nav-inbox%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox.imageset\nav-inbox%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\nav-inbox-active%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\nav-inbox-active%403x.png" />
   </ItemGroup>
 </Project>
