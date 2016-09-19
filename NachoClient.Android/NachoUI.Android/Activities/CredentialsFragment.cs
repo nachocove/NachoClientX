@@ -284,7 +284,7 @@ namespace NachoClient.AndroidClient
                 BackEnd.Instance.Start (Account.Id);
             } else {
                 Log.Info (Log.LOG_UI, "CredentialsFragment issue found: {0}", issue);
-                NcAlertView.ShowMessage (Activity, "Nacho Mail", issue);
+                NcAlertView.ShowMessage (Activity, "Apollo Mail", issue);
             }
         }
 

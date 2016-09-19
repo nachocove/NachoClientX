@@ -184,7 +184,7 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Start (Account.Id);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
-                NcAlertView.ShowMessage (this, "Nacho Mail", issue);
+                NcAlertView.ShowMessage (this, "Apollo Mail", issue);
             }
         }
 

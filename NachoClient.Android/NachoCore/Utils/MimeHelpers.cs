@@ -282,7 +282,7 @@ namespace NachoCore.Utils
 
             var body = message.GetBody ();
             if (!McBody.IsNontruncatedBodyComplete (body)) {
-                error = "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty ();
+                error = "Apollo Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }
 
@@ -295,12 +295,12 @@ namespace NachoCore.Utils
             }
 
             if (McAbstrFileDesc.BodyTypeEnum.HTML_2 == body.BodyType) {
-                error = "Nacho Mail has not converted the HTML to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+                error = "Apollo Mail has not converted the HTML to reply text.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }
 
             if (McAbstrFileDesc.BodyTypeEnum.RTF_3 == body.BodyType) {
-                error = "Nacho Mail has not converted the RTF to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+                error = "Apollo Mail has not converted the RTF to reply text.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }
 
