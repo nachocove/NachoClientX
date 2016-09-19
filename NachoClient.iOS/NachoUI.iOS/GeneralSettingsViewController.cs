@@ -23,11 +23,14 @@ namespace NachoClient.iOS
 
         const int SectionGeneralSettings = 0;
         const int SectionAccounts = 1;
+        const int SectionAbout = 2;
 
         const int GeneralSettingsRowUnreadCount = 0;
 
         const int AccountsExtraRowAddAccount = 0;
         const int AccountsExtraRowConnectToSalesforce = 1;
+
+        const int AboutRowAbout = 0;
 
         #endregion
 
@@ -105,7 +108,7 @@ namespace NachoClient.iOS
 
         public override nint NumberOfSections (UITableView tableView)
         {
-            return 2;
+            return 3;
         }
 
         public override nint RowsInSection (UITableView tableView, nint section)
@@ -114,7 +117,10 @@ namespace NachoClient.iOS
                 return 1;
             }
             if (section == SectionAccounts) {
-                return Accounts.Count + (HasSalesforce ? 1 : 2);
+                return Accounts.Count + 1;
+            }
+            if (section == SectionAbout) {
+                return 1;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.RowsInSection unknown table section {0}", section));
         }
@@ -129,6 +135,9 @@ namespace NachoClient.iOS
                     return AccountCell.PreferredHeight;
                 }
                 return ButtonCell.PreferredHeight;
+            }
+            if (indexPath.Section == SectionAbout) {
+                return NameValueCell.PreferredHeight;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetHeightForRow unknown table section {0}", indexPath.Section));
         }
@@ -192,7 +201,7 @@ namespace NachoClient.iOS
                 } else {
                     var actionRow = indexPath.Row - Accounts.Count;
                     var cell = tableView.DequeueReusableCell (ButttonCellIdentifier) as ButtonCell;
-//                    cell.SeparatorInset = new UIEdgeInsets (0.0f, AccountCell.PreferredHeight, 0.0f, 0.0f);
+                    //                    cell.SeparatorInset = new UIEdgeInsets (0.0f, AccountCell.PreferredHeight, 0.0f, 0.0f);
                     if (actionRow == AccountsExtraRowAddAccount) {
                         cell.TextLabel.Text = "Add Account";
                         if ((cell.AccessoryView as AddAccessoryView) == null) {
@@ -207,6 +216,14 @@ namespace NachoClient.iOS
                         return cell;
                     }
                 }
+            } else if (indexPath.Section == SectionAbout){
+                var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as NameValueCell;
+                cell.TextLabel.Text = "About Nacho Mail";
+                cell.ValueLabel.Text = "";
+                if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
+                    cell.AccessoryView = new DisclosureAccessoryView ();
+                }
+                return cell;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetCell unknown table row {0}.{1}", indexPath.Section, indexPath.Row));
         }
@@ -234,12 +251,22 @@ namespace NachoClient.iOS
                         ConnectToSalesforce ();
                     }
                 }
+            } else if (indexPath.Section == SectionAbout) {
+                if (indexPath.Row == AboutRowAbout) {
+                    ShowAbout ();
+                }
             }
         }
 
         #endregion
 
         #region Private Helpers
+
+        private void ShowAbout ()
+        {
+            var vc = new AboutUsViewController ();
+            NavigationController.PushViewController (vc, true);
+        }
 
         private void ShowAccount (McAccount account)
         {
