@@ -44,7 +44,7 @@ namespace NachoClient.iOS
             nfloat yOffset = INDENT;
 
             UIImageView nachoLogoImageView;
-            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var nachoLogo = UIImage.FromBundle ("AboutLogo")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
             nachoLogoImageView.Frame = new CGRect (supportView.Frame.Width / 2 - 40, yOffset, 80, 80);

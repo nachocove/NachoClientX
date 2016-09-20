@@ -367,7 +367,7 @@ namespace NachoClient.iOS
             pageContainerView.AddSubview (theNachos);
 
             UIImageView nachoLogoImageView;
-            using (var image = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var image = UIImage.FromBundle ("LaunchPlane")) {
                 nachoLogoImageView = new UIImageView (image);
             }
             nachoLogoImageView.Center = new CGPoint (pageContainerView.Center.X, 130 * GetPositionScale () + nachoLogoImageView.Frame.Width / 2);

@@ -62,7 +62,7 @@ namespace NachoClient.iOS
             yOffset = A.Card_Vertical_Indent;
 
             UIImageView nachoLogoImageView;
-            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var nachoLogo = UIImage.FromBundle ("AboutLogo")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
             nachoLogoImageView.Frame = new CGRect (aboutUsView.Frame.Width / 2 - 40, yOffset, 80, 80);

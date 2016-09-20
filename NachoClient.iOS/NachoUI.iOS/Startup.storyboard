@@ -40,7 +40,7 @@
                                         <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <imageView userInteractionEnabled="NO" tag="1" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="NachoMailCircle" translatesAutoresizingMaskIntoConstraints="NO" id="Dcc-F0-6qo">
+                                    <imageView userInteractionEnabled="NO" tag="1" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchPlane" translatesAutoresizingMaskIntoConstraints="NO" id="Dcc-F0-6qo">
                                         <rect key="frame" x="18" y="10" width="119" height="119"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="119" id="XZk-DQ-3Ho"/>
@@ -264,7 +264,7 @@
     </scenes>
     <resources>
         <image name="LeftBottomDarkTriangles" width="88" height="39"/>
-        <image name="NachoMailCircle" width="119" height="119"/>
+        <image name="LaunchPlane" width="119" height="119"/>
         <image name="RightBottomDarkTriangles" width="88" height="39"/>
     </resources>
 </document>

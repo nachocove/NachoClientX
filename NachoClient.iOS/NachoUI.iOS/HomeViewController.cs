@@ -150,7 +150,7 @@ namespace NachoClient.iOS
             nfloat yOffset = 0;
 
             UIImageView nachoLogoImageView;
-            using (var image = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var image = UIImage.FromBundle ("LaunchPlane")) {
                 nachoLogoImageView = new UIImageView (image);
             }
             nachoLogoImageView.Center = new CGPoint (tv.Frame.Width / 2, 130 * GetPositionScale () + nachoLogoImageView.Frame.Width / 2 - 100);

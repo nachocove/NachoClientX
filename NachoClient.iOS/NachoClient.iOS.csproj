@@ -380,6 +380,8 @@
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\Images.xcassets\nav-inbox.imageset\" />
     <Folder Include="Resources\Images.xcassets\nav-inbox-active.imageset\" />
+    <Folder Include="Resources\Images.xcassets\LaunchPlane.imageset\" />
+    <Folder Include="Resources\Images.xcassets\AboutLogo.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -3058,5 +3060,13 @@
     <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-app.png" />
     <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-pad-app%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-Blue-padpro-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\LaunchPlane.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\LaunchPlane%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\LaunchPlane%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo%403x.png" />
   </ItemGroup>
 </Project>
