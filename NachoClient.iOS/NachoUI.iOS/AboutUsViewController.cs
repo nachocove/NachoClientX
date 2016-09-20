@@ -40,7 +40,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationItem.Title = "About Nacho Mail";
+            NavigationItem.Title = "About Apollo Mail";
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -62,7 +62,7 @@ namespace NachoClient.iOS
             yOffset = A.Card_Vertical_Indent;
 
             UIImageView nachoLogoImageView;
-            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var nachoLogo = UIImage.FromBundle ("AboutLogo")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
             nachoLogoImageView.Frame = new CGRect (aboutUsView.Frame.Width / 2 - 40, yOffset, 80, 80);
@@ -76,7 +76,7 @@ namespace NachoClient.iOS
             aboutUsHeaderLabel.TextAlignment = UITextAlignment.Center;
             aboutUsHeaderLabel.Lines = 4;
             aboutUsHeaderLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            aboutUsHeaderLabel.Text = "Nacho Cove believes that productivity software is more than " +
+            aboutUsHeaderLabel.Text = "Apollo Mail believes that productivity software is more than " +
             "just a great email app with contacts and calendar capability.";
             aboutUsView.AddSubview (aboutUsHeaderLabel);
 
@@ -104,7 +104,7 @@ namespace NachoClient.iOS
             versionLabel.Font = A.Font_AvenirNextMedium14;
             versionLabel.TextColor = A.Color_NachoGreen;
             versionLabel.TextAlignment = UITextAlignment.Center;
-            versionLabel.Text = "Nacho Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
+            versionLabel.Text = "Apollo Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
             contentView.AddSubview (versionLabel);
 
             yOffset += versionLabel.Frame.Height + A.Card_Vertical_Indent;

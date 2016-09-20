@@ -218,7 +218,7 @@ namespace NachoClient.iOS
                 }
             } else if (indexPath.Section == SectionAbout){
                 var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as NameValueCell;
-                cell.TextLabel.Text = "About Nacho Mail";
+                cell.TextLabel.Text = "About Apollo Mail";
                 cell.ValueLabel.Text = "";
                 if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
                     cell.AccessoryView = new DisclosureAccessoryView ();

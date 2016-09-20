@@ -1577,7 +1577,7 @@ namespace NachoClient.iOS
 
                 UIAlertView av = new UIAlertView ();
                 av.Title = "Authentication Required";
-                av.Message = "In order to run this Nacho Mail beta client, you must authenticate with HockeyApp. " +
+                av.Message = "In order to run this Apollo Mail beta client, you must authenticate with HockeyApp. " +
                 "Please enter your HockeyApp credential in the next screen.";
                 av.AddButton ("Continue");
                 av.Clicked += (sender, buttonArgs) => {

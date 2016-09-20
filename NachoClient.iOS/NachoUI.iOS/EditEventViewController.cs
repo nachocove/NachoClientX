@@ -322,7 +322,7 @@ namespace NachoClient.iOS
 
             if (noCalendarAccess) {
                 NcAlertView.Show (this, "No Calendar Access",
-                    "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.",
+                    "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Apollo Mail access to the calendar.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                         DismissView ();
                     }));

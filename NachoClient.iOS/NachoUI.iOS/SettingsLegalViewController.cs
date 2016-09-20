@@ -66,7 +66,7 @@ namespace NachoClient.iOS
             interiorView.Layer.CornerRadius = A.Card_Corner_Radius;
             interiorView.Tag = INTERIOR_VIEW_TAG;
             UIImageView nachoLogoImageView;
-            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var nachoLogo = UIImage.FromBundle ("AboutLogo")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
             nachoLogoImageView.Frame = new CGRect (interiorView.Frame.Width / 2 - 40, 18, 80, 80);

@@ -58,7 +58,7 @@
                                         <color key="textColor" red="0.97254902119999997" green="0.97254902119999997" blue="0.97254902119999997" alpha="1" colorSpace="calibratedRGB"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="NachoMailCircle" translatesAutoresizingMaskIntoConstraints="NO" id="n14-LN-Wkj">
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchPlane" translatesAutoresizingMaskIntoConstraints="NO" id="n14-LN-Wkj">
                                         <rect key="frame" x="139" y="8" width="80" height="80"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="80" id="PyC-ge-WeR"/>
@@ -146,7 +146,7 @@
     </scenes>
     <resources>
         <image name="LeftBottomDarkTriangles" width="88" height="39"/>
-        <image name="NachoMailCircle" width="119" height="119"/>
+        <image name="LaunchPlane" width="119" height="119"/>
         <image name="RightBottomDarkTriangles" width="88" height="39"/>
     </resources>
 </document>

@@ -1168,7 +1168,7 @@ namespace NachoClient
                 imageName = "avatar-salesforce";
                 break;
             default:
-                imageName = "Icon";
+                imageName = "avatar-unknown";
                 break;
             }
             return imageName;
