@@ -1,31 +1,31 @@
 {
   "images": [
     {
-      "filename": "Apollo-iOS-Blue-phone-settings.png",
+      "filename": "Apollo-iOS-phone-settings.png",
       "size": "29x29",
       "scale": "1x",
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-phone-settings@2x.png",
+      "filename": "Apollo-iOS-phone-settings@2x.png",
       "size": "29x29",
       "scale": "2x",
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-phone-settings@3x.png",
+      "filename": "Apollo-iOS-phone-settings@3x.png",
       "size": "29x29",
       "scale": "3x",
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-phone-spotlight@2x.png",
+      "filename": "Apollo-iOS-phone-spotlight@2x.png",
       "size": "40x40",
       "scale": "2x",
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-phone-spotlight@3x.png",
+      "filename": "Apollo-iOS-phone-spotlight@3x.png",
       "size": "40x40",
       "scale": "3x",
       "idiom": "iphone"
@@ -41,37 +41,37 @@
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-phone-app@2x.png",
+      "filename": "Apollo-iOS-phone-app@2x.png",
       "size": "60x60",
       "scale": "2x",
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-phone-app@3x.png",
+      "filename": "Apollo-iOS-phone-app@3x.png",
       "size": "60x60",
       "scale": "3x",
       "idiom": "iphone"
     },
     {
-      "filename": "Apollo-iOS-Blue-pad-settings.png",
+      "filename": "Apollo-iOS-pad-settings.png",
       "size": "29x29",
       "scale": "1x",
       "idiom": "ipad"
     },
     {
-      "filename": "Apollo-iOS-Blue-pad-settings@2x.png",
+      "filename": "Apollo-iOS-pad-settings@2x.png",
       "size": "29x29",
       "scale": "2x",
       "idiom": "ipad"
     },
     {
-      "filename": "Apollo-iOS-Blue-pad-spotlight.png",
+      "filename": "Apollo-iOS-pad-spotlight.png",
       "size": "40x40",
       "scale": "1x",
       "idiom": "ipad"
     },
     {
-      "filename": "Apollo-iOS-Blue-pad-spotlight@2x.png",
+      "filename": "Apollo-iOS-pad-spotlight@2x.png",
       "size": "40x40",
       "scale": "2x",
       "idiom": "ipad"
@@ -87,7 +87,7 @@
       "idiom": "ipad"
     },
     {
-      "filename": "Apollo-iOS-Blue-padpro-app@2x.png",
+      "filename": "Apollo-iOS-padpro-app@2x.png",
       "size": "83.5x83.5",
       "scale": "2x",
       "idiom": "ipad"
@@ -103,13 +103,13 @@
       "idiom": "ipad"
     },
     {
-      "filename": "Apollo-iOS-Blue-pad-app.png",
+      "filename": "Apollo-iOS-pad-app.png",
       "size": "76x76",
       "scale": "1x",
       "idiom": "ipad"
     },
     {
-      "filename": "Apollo-iOS-Blue-pad-app@2x.png",
+      "filename": "Apollo-iOS-pad-app@2x.png",
       "size": "76x76",
       "scale": "2x",
       "idiom": "ipad"
