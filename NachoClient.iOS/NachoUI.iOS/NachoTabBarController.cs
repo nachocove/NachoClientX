@@ -71,10 +71,7 @@ namespace NachoClient.iOS
             ViewControllerSelected += ViewControllerSelectedHandler;
             ShouldSelectViewController += ViewControllerShouldSelectHandler;
 
-            TabBar.BarTintColor = UIColor.White;
-            TabBar.TintColor = A.Color_NachoIconGray;
-            TabBar.SelectedImageTintColor = A.Color_NachoGreen;
-            TabBar.Translucent = false;
+            TabBar.Translucent = !Theme.Active.IsTabBarOpaque;
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -286,7 +283,7 @@ namespace NachoClient.iOS
 
         protected UITabBarItem MakeTabBarItem (string title, string imageName)
         {
-            using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+            using (var image = UIImage.FromBundle (imageName).WithColor(Theme.Active.TabBarTintColor).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                 using (var selectedImage = UIImage.FromBundle (imageName + "-active").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
                     return new UITabBarItem (title, image, selectedImage);
                 }
