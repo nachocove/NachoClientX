@@ -382,6 +382,7 @@
     <Folder Include="Resources\Images.xcassets\nav-inbox-active.imageset\" />
     <Folder Include="Resources\Images.xcassets\LaunchPlane.imageset\" />
     <Folder Include="Resources\Images.xcassets\AboutLogo.imageset\" />
+    <Folder Include="Resources\Images.xcassets\avatar-unknown.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -3068,5 +3069,8 @@
     <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo.png" />
     <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\avatar-unknown%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\avatar-unknown%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\Contents.json" />
   </ItemGroup>
 </Project>
