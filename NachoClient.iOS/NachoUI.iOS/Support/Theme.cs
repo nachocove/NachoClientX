@@ -67,6 +67,7 @@ namespace NachoClient.iOS
         public UIColor AccountCreationButtonColor { get; protected set; }
         public UIColor AccountCreationButtonTitleColor { get; protected set; }
         public UIColor AccountCreationTextColor { get; protected set; }
+        public UIColor AccountCreationFieldLabelTextColor { get; protected set; }
 
         #endregion
 
@@ -184,6 +185,7 @@ namespace NachoClient.iOS
             AccountCreationButtonColor = AccentColor;
             AccountCreationButtonTitleColor = UIColor.White;
             AccountCreationTextColor = UIColor.White;
+            AccountCreationFieldLabelTextColor = MainColor;
 
             // Account Switcher
             AccountSwitcherTextColor = UIColor.White;

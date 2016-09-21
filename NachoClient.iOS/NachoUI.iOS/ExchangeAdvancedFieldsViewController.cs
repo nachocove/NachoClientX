@@ -13,7 +13,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class ExchangeAdvancedFieldsViewController : AccountAdvancedFieldsViewController
+    public partial class ExchangeAdvancedFieldsViewController : AccountAdvancedFieldsViewController, ThemeAdopter
 	{
 
         private bool LockServerField = false;
@@ -45,6 +45,22 @@ namespace NachoClient.iOS
             serverField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
             serverField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
             serverField.LeftView = label;
+        }
+
+        public override void AdoptTheme (Theme theme)
+        {
+            usernameField.Font = theme.DefaultFont.WithSize (usernameField.Font.PointSize);
+            domainField.Font = theme.DefaultFont.WithSize (domainField.Font.PointSize);
+            serverField.Font = theme.DefaultFont.WithSize (serverField.Font.PointSize);
+            var label = usernameField.LeftView as UILabel;
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
+            label = domainField.LeftView as UILabel;
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
+            label = serverField.LeftView as UILabel;
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
         }
 
         private UILabel FieldLabel (String text)

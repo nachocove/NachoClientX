@@ -55,6 +55,12 @@ namespace NachoClient.iOS
                 submitButton.Font = theme.DefaultFont.WithSize (submitButton.Font.PointSize);
                 submitButton.SetTitleColor (theme.AccountCreationButtonTitleColor, UIControlState.Normal);
                 advancedButton.SetTitleColor (theme.AccountCreationButtonColor, UIControlState.Normal);
+                advancedButton.Font = theme.DefaultFont.WithSize (advancedButton.Font.PointSize);
+                emailField.Font = theme.DefaultFont.WithSize (emailField.Font.PointSize);
+                passwordField.Font = theme.DefaultFont.WithSize (emailField.Font.PointSize);
+                if (IsShowingAdvanced) {
+                    advancedFieldsViewController.AdoptTheme (theme);
+                }
             }
         }
 
@@ -268,6 +274,9 @@ namespace NachoClient.iOS
                         }
                     }
                     if (advancedSubview != null) {
+                        if (adoptedTheme != null) {
+                            advancedFieldsViewController.AdoptTheme (adoptedTheme);
+                        }
                         IsShowingAdvanced = true;
                         advancedButton.SetTitle ("Hide Advanced", UIControlState.Normal);
                         advancedFieldsViewController.PopulateFieldsWithAccount (Account);
