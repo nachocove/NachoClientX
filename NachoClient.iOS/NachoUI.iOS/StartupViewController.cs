@@ -46,6 +46,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            View.BackgroundColor = Theme.Active.AccountCreationBackgroundColor;
+
             Log.Info (Log.LOG_UI, "StartupViewController: viewdidload");
 
             if (!NcMigration.IsCompatible ()) {

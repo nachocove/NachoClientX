@@ -14,7 +14,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoTabBarController : UITabBarController, IUINavigationControllerDelegate
+    public partial class NachoTabBarController : UITabBarController, IUINavigationControllerDelegate, ThemeAdopter
     {
         protected static string TabBarOrderKey = "TabBarOrder";
 
@@ -32,6 +32,20 @@ namespace NachoClient.iOS
         protected UITabBarItem foldersItem;
         protected UITabBarItem inboxItem;
         protected UITabBarItem chatsItem;
+
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TabBar.Translucent = !theme.IsTabBarOpaque;
+            }
+        }
+
+        #endregion
 
         public override void ViewDidLoad ()
         {
@@ -70,8 +84,6 @@ namespace NachoClient.iOS
 
             ViewControllerSelected += ViewControllerSelectedHandler;
             ShouldSelectViewController += ViewControllerShouldSelectHandler;
-
-            TabBar.Translucent = !Theme.Active.IsTabBarOpaque;
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -122,6 +134,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            AdoptTheme (Theme.Active);
             UpdateNotificationBadge ();
             UpdateChatsBadge ();
         }

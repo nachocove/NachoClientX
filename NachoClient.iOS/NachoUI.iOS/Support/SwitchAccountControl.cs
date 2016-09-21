@@ -37,7 +37,7 @@ namespace NachoClient.iOS
 
             BackgroundView = new UIView (Bounds);
             BackgroundView.Layer.CornerRadius = Bounds.Width / 2.0f;
-            BackgroundView.BackgroundColor = A.Color_NachoGreen;
+            BackgroundView.BackgroundColor = Theme.Active.NavigationBarBackgroundColor;
 
             SelectedAccountView = new UIImageView (Bounds.Inset (BorderWidth, BorderWidth));
             SelectedAccountView.Layer.CornerRadius = SelectedAccountView.Frame.Width / 2.0f;
@@ -471,7 +471,7 @@ namespace NachoClient.iOS
                 AccountImageView.Alpha = 0.5f;
 
                 UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
-                UnreadIndicator.BackgroundColor = A.Color_NachoGreen;
+                UnreadIndicator.BackgroundColor = Theme.Active.NavigationBarBackgroundColor;
                 UnreadIndicator.ClipsToBounds = true;
                 UnreadIndicator.Layer.BorderWidth = 1.0f;
                 UnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;

@@ -58,11 +58,11 @@ namespace NachoClient.iOS
 
             FakeNavigationBar = new UIView (new CGRect (0.0f, 0.0f, Bounds.Width, 64.0f));
             FakeNavigationBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FakeNavigationBar.BackgroundColor = A.Color_NachoGreen;
+            FakeNavigationBar.BackgroundColor = Theme.Active.NavigationBarBackgroundColor;
 
             NavigationBarExtension = new UIView (new CGRect (0.0f, 64.0f, Bounds.Width, 128.0f));
             NavigationBarExtension.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            NavigationBarExtension.BackgroundColor = A.Color_NachoGreen;
+            NavigationBarExtension.BackgroundColor = Theme.Active.NavigationBarBackgroundColor;
 
             TitleLabel = new UILabel (new CGRect (0.0f, 20.0f, Bounds.Width, 44.0f));
             TitleLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;

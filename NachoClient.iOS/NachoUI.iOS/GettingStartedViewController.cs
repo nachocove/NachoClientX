@@ -22,7 +22,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class GettingStartedViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate
+    public partial class GettingStartedViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate, ThemeAdopter
     {
 
         #region Properties
@@ -59,6 +59,25 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                View.BackgroundColor = theme.AccountCreationBackgroundColor;
+                getStartedButton.BackgroundColor = theme.AccountCreationButtonColor;
+                getStartedButton.SetTitleColor (theme.AccountCreationButtonTitleColor, UIControlState.Normal);
+                getStartedButton.Font = theme.DefaultFont.WithSize (17.0f);
+                introLabel.Font = theme.DefaultFont.WithSize (introLabel.Font.PointSize);
+                introLabel.TextColor = theme.AccountCreationFontColor;
+                adoptedTheme = theme;
+            }
+        }
+
+        #endregion
+
         #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
@@ -70,6 +89,7 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
             getStartedButton.Hidden = false;
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             var mdmAccount = McAccount.GetMDMAccount ();

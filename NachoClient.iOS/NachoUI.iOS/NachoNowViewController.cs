@@ -93,8 +93,8 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.BackgroundColor = Theme.Active.TableViewGroupedBackgroundColor;
+            View.BackgroundColor = TableView.BackgroundColor;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ButtonCell), ButtonCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);

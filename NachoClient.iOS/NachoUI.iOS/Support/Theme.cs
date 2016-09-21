@@ -7,30 +7,19 @@ using CoreGraphics;
 namespace NachoClient.iOS
 {
 
-    class Theme
+    public interface ThemeAdopter
+    {
+        void AdoptTheme (Theme theme);
+    }
+
+    public class Theme
     {
 
         #region Fonts
 
         public nfloat DefaultFontSize { get; protected set; }
-        public nfloat PrimaryLabelFontSize { get; protected set; }
-        public nfloat DetailLabelFontSize { get; protected set; }
 
         public UIFont DefaultFont { get; protected set; }
-
-        public virtual UIFont PrimaryLabelFont {
-            get {
-                return DefaultFont.WithSize (PrimaryLabelFontSize).WithFace (DefaultFontBoldFace);
-            }
-        }
-
-        public virtual UIFont DetailLabelFont {
-            get {
-                return DefaultFont.WithSize (DetailLabelFontSize);
-            }
-        }
-
-        protected string DefaultFontBoldFace = "bold";
 
         #endregion
 
@@ -64,8 +53,25 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Tables
+
+        public UIColor TableViewGroupedBackgroundColor { get; protected set; }
+
+        #endregion
+
+        #region Account Creation
+
+        public UIColor AccountCreationBackgroundColor { get; protected set; }
+        public UIColor AccountCreationButtonColor { get; protected set; }
+        public UIColor AccountCreationButtonTitleColor { get; protected set; }
+        public UIColor AccountCreationFontColor { get; protected set; }
+
+        #endregion
+
         public Theme ()
         {
+            DefaultFontSize = UIFont.SystemFontSize;
+            DefaultFont = UIFont.SystemFontOfSize (DefaultFontSize);
         }
 
         static Theme _active;
@@ -84,6 +90,7 @@ namespace NachoClient.iOS
         public virtual void DefineAppearance ()
         {
             // navigation
+            UINavigationBar.Appearance.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
             UINavigationBar.Appearance.BarTintColor = NavigationBarBackgroundColor;
             UINavigationBar.Appearance.TintColor = NavigationBarTintColor;
             UINavigationBar.Appearance.ShadowImage = NavigationBarShadowImage;
@@ -161,14 +168,10 @@ namespace NachoClient.iOS
 
         public ApolloTheme ()
         {
-            // Fonts
-            DefaultFontSize = UIFont.SystemFontSize;
-            DefaultFont = UIFont.SystemFontOfSize (DefaultFontSize);
-
             // Navigation
             IsNavigationBarOpaque = true;
             NavigationBarBackgroundColor = MainColor;
-            NavigationBarTintColor = MainShadedColor;
+            NavigationBarTintColor = MainShadedColor.ColorLightenedByAmount (0.8f);
             NavigationBarShadowImage = new UIImage ();
             NavigationBarTitleColor = UIColor.White;
 
@@ -180,8 +183,17 @@ namespace NachoClient.iOS
             // TabBar
             IsTabBarOpaque = true;
             TabBarBackgroundColor = ShadedColor2;
-            TabBarTintColor = ShadedColor;
+            TabBarTintColor = TabBarBackgroundColor.ColorDarkenedByAmount (0.5f);
             TabBarSelectedColor = MainColor;
+
+            // Tables
+            TableViewGroupedBackgroundColor = ShadedColor;
+
+            // Startup
+            AccountCreationBackgroundColor = MainColor;
+            AccountCreationButtonColor = AccentColor;
+            AccountCreationButtonTitleColor = UIColor.White;
+            AccountCreationFontColor = UIColor.White;
         }
 
         public override void DefineAppearance ()
