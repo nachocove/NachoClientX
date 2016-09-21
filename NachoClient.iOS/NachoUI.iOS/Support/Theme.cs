@@ -15,12 +15,12 @@ namespace NachoClient.iOS
     public class Theme
     {
 
-        #region Fonts
+        #region General
 
         public nfloat DefaultFontSize { get; protected set; }
-
         public UIFont DefaultFont { get; protected set; }
         public UIFont BoldDefaultFont { get; protected set; }
+        public UIColor DefaultTextColor { get; protected set; }
 
         #endregion
 
@@ -58,6 +58,12 @@ namespace NachoClient.iOS
         #region Tables
 
         public UIColor TableViewGroupedBackgroundColor { get; protected set; }
+        public UIColor TableViewTintColor { get; protected set; }
+        public UIColor TableViewCellMainLabelTextColor { get; protected set; }
+        public UIColor TableViewCellDetailLabelTextColor { get; protected set; }
+        public UIColor TableViewCellDisclosureAccessoryColor { get; protected set; }
+        public UIColor TableViewCellActionAccessoryColor { get; protected set; }
+        public UIColor TableSectionHeaderTextColor { get; protected set; }
 
         #endregion
 
@@ -158,6 +164,8 @@ namespace NachoClient.iOS
 
         public ApolloTheme ()
         {
+            DefaultTextColor = UIColor.FromRGBA (0x33, 0x33, 0x33, 0xFF);
+            
             // Navigation
             IsNavigationBarOpaque = true;
             NavigationBarBackgroundColor = MainColor;
@@ -179,6 +187,12 @@ namespace NachoClient.iOS
 
             // Tables
             TableViewGroupedBackgroundColor = ShadedColor;
+            TableViewTintColor = MainColor;
+            TableViewCellMainLabelTextColor = MainColor;
+            TableViewCellDetailLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
+            TableViewCellDisclosureAccessoryColor = MainColor;
+            TableViewCellActionAccessoryColor = MainColor;
+            TableSectionHeaderTextColor = TableViewGroupedBackgroundColor.ColorDarkenedByAmount (0.6f);
 
             // Startup
             AccountCreationBackgroundColor = MainColor;
@@ -200,6 +214,7 @@ namespace NachoClient.iOS
                 UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
             }
         }
+
     }
 
     static class ThemeHelpers
@@ -223,6 +238,19 @@ namespace NachoClient.iOS
             var coloredImage = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
             return coloredImage;
+        }
+
+        public static void AdoptTheme (this UITableView tableView, Theme theme)
+        {
+            var cells = tableView.VisibleCells;
+            if (cells != null) {
+                foreach (var cell in cells) {
+                    var themed = cell as ThemeAdopter;
+                    if (themed != null) {
+                        themed.AdoptTheme (theme);
+                    }
+                }
+            }
         }
     }
 

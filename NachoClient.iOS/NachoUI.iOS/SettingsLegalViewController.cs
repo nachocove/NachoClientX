@@ -14,165 +14,59 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public partial class SettingsLegalViewController : NcUIViewControllerNoLeaks
+    public partial class SettingsLegalViewController : UIViewController, IUIWebViewDelegate
     {
-        protected string url;
-        protected string navigationBarTitle;
-        protected string key;
-        protected bool loadFromWeb;
 
-        protected string urlSourceCode;
-        protected nfloat yOffset;
+        public NSUrl DocumentLocation;
 
-        protected const string CACHE_MODULE = "CACHE";
-
-        UIScrollView scrollView = new UIScrollView ();
-        UIView contentView = new UIView ();
-
-        protected const int WEB_VIEW_TAG = 100;
-        protected const int INTERIOR_VIEW_TAG = 101;
-        protected const int TEXT_VIEW_TAG = 102;
+        UIWebView WebView;
+        NcActivityIndicatorView ActivityIndicator;
 
         public SettingsLegalViewController () : base ()
         {
         }
 
-        public SettingsLegalViewController (IntPtr handle) : base (handle)
+        public override void ViewDidLoad ()
         {
+            base.ViewDidLoad ();
+            WebView = new UIWebView (View.Bounds);
+            WebView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            WebView.Delegate = this;
+            WebView.SuppressesIncrementalRendering = true;
+            View.AddSubview (WebView);
+            ActivityIndicator = new NcActivityIndicatorView (new CGRect (0, 0, 40, 40));
+            ActivityIndicator.Center = new CGPoint (View.Bounds.Width / 2.0f, View.Bounds.Height / 2.0f);
+            View.AddSubview (ActivityIndicator);
+            ActivityIndicator.StartAnimating ();
+            var request = new NSUrlRequest (DocumentLocation);
+            WebView.LoadRequest (request);
         }
 
-        public void SetProperties (string url, string navigationBarTitle, string key, bool loadFromWeb)
+        public override void ViewWillDisappear (bool animated)
         {
-            this.url = url;
-            this.navigationBarTitle = navigationBarTitle;
-            this.key = key;
-            this.loadFromWeb = loadFromWeb;
-            NavigationItem.Title = navigationBarTitle;
-        }
-
-        protected override void CreateViewHierarchy ()
-        {
-            scrollView.AddSubview (contentView);
-            View.AddSubview (scrollView);
-
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            yOffset = A.Card_Vertical_Indent;
-
-            UIView interiorView = new UIView (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), View.Frame.Height - 100));
-            interiorView.BackgroundColor = UIColor.White;
-            interiorView.Layer.BorderColor = A.Card_Border_Color;
-            interiorView.Layer.BorderWidth = A.Card_Border_Width;
-            interiorView.Layer.CornerRadius = A.Card_Corner_Radius;
-            interiorView.Tag = INTERIOR_VIEW_TAG;
-            UIImageView nachoLogoImageView;
-            using (var nachoLogo = UIImage.FromBundle ("AboutLogo")) {
-                nachoLogoImageView = new UIImageView (nachoLogo);
-            }
-            nachoLogoImageView.Frame = new CGRect (interiorView.Frame.Width / 2 - 40, 18, 80, 80);
-            interiorView.Add (nachoLogoImageView);
-
-            yOffset = nachoLogoImageView.Frame.Bottom + 15;
-
-            if (loadFromWeb) {
-                UIWebView webView = new UIWebView (new CGRect (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
-                webView.LoadError += HandleLoadError;
-                webView.LoadFinished += CacheUrlHtml;
-                webView.Tag = WEB_VIEW_TAG;
-                interiorView.Add (webView);
-                contentView.AddSubview (interiorView);
-                if (NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                    try {
-                        urlSourceCode = new WebClient ().DownloadString (url);
-                        webView.LoadHtmlString (urlSourceCode, new NSUrl ("about:blank"));
-                    } catch (Exception ex) {
-                        Log.Info (Log.LOG_SYS, "Could not download data from {0}: {1}", url, ex);
-                        HandleLoadError (this, null);
-                    }
-                } else {
-                    HandleLoadError (this, null);
-                }
-            } else {
-                UITextView textView = new UITextView (new CGRect (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
-                textView.Tag = TEXT_VIEW_TAG; 
-                textView.Text = System.IO.File.ReadAllText (url);
-                CGSize newSize = textView.SizeThatFits (new CGSize (textView.Frame.Width, nfloat.MaxValue));
-                textView.Frame = new CGRect (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, newSize.Height);
-                interiorView.Add (textView);
-                contentView.AddSubview (interiorView);
-                LayoutView ();
-            }
-            yOffset += 20;
-        }
-
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                return this.NavigationController.TopViewController == this;
+            base.ViewWillDisappear (animated);
+            if (IsMovingFromParentViewController) {
+                WebView.Delegate = null;
+                WebView.StopLoading ();
             }
         }
 
-        void CacheUrlHtml (object sender, EventArgs e)
+        [Export ("webViewDidFinishLoad:")]
+        public virtual void LoadingFinished (UIWebView webView)
         {
-            if (!string.IsNullOrEmpty (urlSourceCode)) {
-                McMutables.Set (LoginHelpers.GlobalAccountId, CACHE_MODULE, key, urlSourceCode);
-            }
-            LayoutView ();
+            FinishLoad ();
         }
 
-        void HandleLoadError (object sender, UIWebErrorArgs e)
+        [Export ("webView:didFailLoadWithError:")]
+        public virtual void LoadFailed (UIWebView webView, NSError error)
         {
-            UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            string urlHtml = McMutables.GetOrCreate (LoginHelpers.GlobalAccountId, CACHE_MODULE, key, "");
-            if (!string.IsNullOrEmpty (urlHtml)) {
-                webView.LoadHtmlString (urlHtml, new NSUrl ("about:blank"));
-            } else if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", new NSUrl ("about:blank"));
-            } else {
-                webView.LoadHtmlString ("<p>Sorry, unable to load this information.&nbsp;</p>", new NSUrl ("about:blank"));
-            }
+            FinishLoad ();
         }
 
-        protected override void ConfigureAndLayout ()
+        void FinishLoad ()
         {
-
-        }
-
-        protected void LayoutView ()
-        {
-            int textViewPadding = 0;
-            UIWebView theWebView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            UITextView theTextView = (UITextView)View.ViewWithTag (TEXT_VIEW_TAG);
-            CGSize dynamicSize = new CGSize (0, 0);
-
-            if (null != theWebView) {
-                CGRect tempFrame = theWebView.Frame;
-                tempFrame.Size = new CGSize (tempFrame.Width, 1);
-                theWebView.Frame = tempFrame;
-                dynamicSize = theWebView.SizeThatFits (CGSize.Empty);
-                tempFrame.Size = dynamicSize;
-                theWebView.Frame = tempFrame;
-            }
-
-            if (null != theTextView) {
-                dynamicSize = new CGSize (0, theTextView.Frame.Height);
-                textViewPadding = 60;
-            }
-
-            UIView interiorView = (UIView)View.ViewWithTag (INTERIOR_VIEW_TAG);
-            interiorView.Frame = new CGRect (interiorView.Frame.X, interiorView.Frame.Y, interiorView.Frame.Width, yOffset + dynamicSize.Height);
-            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
-            scrollView.ContentSize = new CGSize (View.Frame.Width, yOffset + dynamicSize.Height + 40 + textViewPadding);
-        }
-
-        protected override void Cleanup ()
-        {
-            UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            if (null != webView) {
-                webView.StopLoading ();
-                webView.LoadError -= HandleLoadError;
-                webView.LoadFinished -= CacheUrlHtml;
-                webView = null;
-            }
+            ActivityIndicator.StopAnimating ();
+            ActivityIndicator.Hidden = true;
         }
     }
 }
