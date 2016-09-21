@@ -1371,7 +1371,6 @@ namespace NachoClient.iOS
             dc.SetOwner (this);
             dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
             var navigationController = new UINavigationController (dc);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 

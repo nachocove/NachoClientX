@@ -66,12 +66,6 @@ namespace NachoClient.iOS
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
             settingsItem = settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
 
-            Util.ConfigureNavBar (false, nowNavController);
-            Util.ConfigureNavBar (false, inboxNavController);
-            Util.ConfigureNavBar (false, calendarNavController);
-            Util.ConfigureNavBar (false, foldersNavController);
-            Util.ConfigureNavBar (false, settingsNavController);
-
             ViewControllers = new UIViewController[] {
                 nowNavController,
                 inboxNavController,

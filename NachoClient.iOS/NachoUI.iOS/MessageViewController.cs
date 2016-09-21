@@ -737,7 +737,6 @@ namespace NachoClient.iOS
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (calendarEvent);
             var navigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 

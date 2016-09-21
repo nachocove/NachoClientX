@@ -171,7 +171,6 @@ namespace NachoClient.iOS
         {
             var vc = new SupportMessageViewController ();
             var navController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, navController);
             PresentViewController (navController, true, null);
         }
 

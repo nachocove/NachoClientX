@@ -71,7 +71,7 @@ namespace NachoClient.iOS
                 getStartedButton.SetTitleColor (theme.AccountCreationButtonTitleColor, UIControlState.Normal);
                 getStartedButton.Font = theme.DefaultFont.WithSize (17.0f);
                 introLabel.Font = theme.DefaultFont.WithSize (introLabel.Font.PointSize);
-                introLabel.TextColor = theme.AccountCreationFontColor;
+                introLabel.TextColor = theme.AccountCreationTextColor;
                 adoptedTheme = theme;
             }
         }

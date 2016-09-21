@@ -13,7 +13,7 @@ using CoreAnimation;
 namespace NachoClient.iOS
 {
 
-    public class SwitchAccountControl : UIView
+    public class SwitchAccountControl : UIView, ThemeAdopter
     {
 
         #region Properties
@@ -37,7 +37,6 @@ namespace NachoClient.iOS
 
             BackgroundView = new UIView (Bounds);
             BackgroundView.Layer.CornerRadius = Bounds.Width / 2.0f;
-            BackgroundView.BackgroundColor = Theme.Active.NavigationBarBackgroundColor;
 
             SelectedAccountView = new UIImageView (Bounds.Inset (BorderWidth, BorderWidth));
             SelectedAccountView.Layer.CornerRadius = SelectedAccountView.Frame.Width / 2.0f;
@@ -57,6 +56,26 @@ namespace NachoClient.iOS
 
             NcAccountMonitor.Instance.AccountSetChanged += HandleAccountSetChanged;
             NcAccountMonitor.Instance.AccountSwitched += HandleAccountSwitched;
+
+            AdoptTheme (Theme.Active);
+        }
+
+        #endregion
+
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            adoptedTheme = theme;
+            BackgroundView.BackgroundColor = theme.NavigationBarBackgroundColor;
+            if (ChangedAccountViewRight != null) {
+                ChangedAccountViewRight.AdoptTheme (theme);
+            }
+            if (ChangedAccountViewLeft != null) {
+                ChangedAccountViewLeft.AdoptTheme (theme);
+            }
         }
 
         #endregion
@@ -237,6 +256,9 @@ namespace NachoClient.iOS
                     ChangedAccountViewRight = new ChangedAccountView (SelectedAccountView.Frame.Inset (5.0f, 5.0f));
                     ChangedAccountViewRight.Transform = CGAffineTransform.MakeTranslation (ChangedAccountViewRight.Frame.Width, 0.0f);
                     ChangedAccountViewRight.SwitchControl = new WeakReference<SwitchAccountControl> (this);
+                    if (adoptedTheme != null) {
+                        ChangedAccountViewRight.AdoptTheme (adoptedTheme);
+                    }
                     InsertSubviewBelow (ChangedAccountViewRight, BackgroundView);
                 }
                 ChangedAccountViewRight.SetAccountInfo (accountsWithChanges [0]);
@@ -254,6 +276,9 @@ namespace NachoClient.iOS
                     ChangedAccountViewLeft.UnreadOnLeft = true;
                     ChangedAccountViewLeft.Transform = CGAffineTransform.MakeTranslation (-ChangedAccountViewLeft.Frame.Width, 0.0f);
                     ChangedAccountViewLeft.SwitchControl = new WeakReference<SwitchAccountControl> (this);
+                    if (adoptedTheme != null) {
+                        ChangedAccountViewLeft.AdoptTheme (adoptedTheme);
+                    }
                     InsertSubviewBelow (ChangedAccountViewLeft, BackgroundView);
                 }
                 ChangedAccountViewLeft.SetAccountInfo (accountsWithChanges [1]);
@@ -449,7 +474,7 @@ namespace NachoClient.iOS
 
         #region Private Classes
 
-        private class ChangedAccountView : UIView
+        private class ChangedAccountView : UIView, ThemeAdopter
         {
 
             UIImageView AccountImageView;
@@ -471,13 +496,9 @@ namespace NachoClient.iOS
                 AccountImageView.Alpha = 0.5f;
 
                 UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
-                UnreadIndicator.BackgroundColor = Theme.Active.NavigationBarBackgroundColor;
                 UnreadIndicator.ClipsToBounds = true;
                 UnreadIndicator.Layer.BorderWidth = 1.0f;
-                UnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
-                UnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (9.0f);
                 UnreadIndicator.TextAlignment = UITextAlignment.Center;
-                UnreadIndicator.TextColor = A.Color_NachoBlue;
                 UnreadIndicator.Layer.CornerRadius = IndicatorSize / 2.0f;
 
                 PressRecognizer = new PressGestureRecognizer (Press);
@@ -491,6 +512,14 @@ namespace NachoClient.iOS
             {
                 RemoveGestureRecognizer (PressRecognizer);
                 PressRecognizer = null;
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                UnreadIndicator.BackgroundColor = theme.NavigationBarBackgroundColor;
+                UnreadIndicator.Layer.BorderColor = theme.NavigationBarTintColor.CGColor;
+                UnreadIndicator.Font = theme.DefaultFont.WithSize (9.0f);
+                UnreadIndicator.TextColor = theme.NavigationBarTintColor;
             }
 
             void Press ()

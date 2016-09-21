@@ -296,7 +296,6 @@ namespace NachoClient.iOS
             }
             vc.AccountDelegate = this;
             AddAccountNavigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, AddAccountNavigationController);
             PresentViewController (AddAccountNavigationController, true, null);
         }
 
@@ -315,7 +314,6 @@ namespace NachoClient.iOS
             };
             credentialsViewController.NavigationItem.LeftBarButtonItem = closeButton;
             var navigationController = new UINavigationController (credentialsViewController);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 

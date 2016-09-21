@@ -20,6 +20,7 @@ namespace NachoClient.iOS
         public nfloat DefaultFontSize { get; protected set; }
 
         public UIFont DefaultFont { get; protected set; }
+        public UIFont BoldDefaultFont { get; protected set; }
 
         #endregion
 
@@ -29,6 +30,7 @@ namespace NachoClient.iOS
         public UIColor NavigationBarBackgroundColor { get; protected set; }
         public UIColor NavigationBarTintColor { get; protected set; }
         public UIImage NavigationBarShadowImage { get; protected set; }
+        public UIImage NavigationBarBackgroundImage { get; protected set; }
         public UIColor NavigationBarTitleColor { get; protected set; }
         public UIFont NavigationBarTitleFont { get; protected set; }
         public UIFont NavigationBarButtonFont { get; protected set; }
@@ -64,7 +66,13 @@ namespace NachoClient.iOS
         public UIColor AccountCreationBackgroundColor { get; protected set; }
         public UIColor AccountCreationButtonColor { get; protected set; }
         public UIColor AccountCreationButtonTitleColor { get; protected set; }
-        public UIColor AccountCreationFontColor { get; protected set; }
+        public UIColor AccountCreationTextColor { get; protected set; }
+
+        #endregion
+
+        #region Account Switcher
+
+        public UIColor AccountSwitcherTextColor { get; protected set; }
 
         #endregion
 
@@ -72,6 +80,7 @@ namespace NachoClient.iOS
         {
             DefaultFontSize = UIFont.SystemFontSize;
             DefaultFont = UIFont.SystemFontOfSize (DefaultFontSize);
+            BoldDefaultFont = UIFont.BoldSystemFontOfSize (DefaultFontSize);
         }
 
         static Theme _active;
@@ -90,7 +99,7 @@ namespace NachoClient.iOS
         public virtual void DefineAppearance ()
         {
             // navigation
-            UINavigationBar.Appearance.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
+            UINavigationBar.Appearance.SetBackgroundImage (NavigationBarBackgroundImage, UIBarMetrics.Default);
             UINavigationBar.Appearance.BarTintColor = NavigationBarBackgroundColor;
             UINavigationBar.Appearance.TintColor = NavigationBarTintColor;
             UINavigationBar.Appearance.ShadowImage = NavigationBarShadowImage;
@@ -134,26 +143,6 @@ namespace NachoClient.iOS
             attributes.TextColor = color;
             return attributes;
         }
-
-        public void ConfigureNavigationBar (UINavigationBar navbar)
-        {
-            // TODO: how much of this is necessary?
-            if (IsNavigationBarOpaque) {
-                navbar.BarStyle = UIBarStyle.BlackOpaque;
-                navbar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-                navbar.ShadowImage = new UIImage ();
-                navbar.Translucent = false;
-                navbar.BackgroundColor = NavigationBarBackgroundColor;
-                navbar.TintColor = NavigationBarTintColor;
-            } else {
-                navbar.BarStyle = UIBarStyle.BlackTranslucent;
-                navbar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-                navbar.ShadowImage = new UIImage ();
-                navbar.Translucent = true;
-                navbar.BackgroundColor = UIColor.Clear;
-                navbar.TintColor = UIColor.White;
-            }
-        }
     }
 
     class ApolloTheme : Theme
@@ -171,8 +160,9 @@ namespace NachoClient.iOS
             // Navigation
             IsNavigationBarOpaque = true;
             NavigationBarBackgroundColor = MainColor;
-            NavigationBarTintColor = MainShadedColor.ColorLightenedByAmount (0.8f);
+            NavigationBarTintColor = ShadedColor2;
             NavigationBarShadowImage = new UIImage ();
+            NavigationBarBackgroundImage = new UIImage ();
             NavigationBarTitleColor = UIColor.White;
 
             // Toolbar
@@ -193,7 +183,10 @@ namespace NachoClient.iOS
             AccountCreationBackgroundColor = MainColor;
             AccountCreationButtonColor = AccentColor;
             AccountCreationButtonTitleColor = UIColor.White;
-            AccountCreationFontColor = UIColor.White;
+            AccountCreationTextColor = UIColor.White;
+
+            // Account Switcher
+            AccountSwitcherTextColor = UIColor.White;
         }
 
         public override void DefineAppearance ()

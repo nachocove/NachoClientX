@@ -95,7 +95,6 @@ namespace NachoClient.iOS
         {
             var window = UIApplication.SharedApplication.Delegate.GetWindow ();
             var navigationController = new UINavigationController (this);
-            NachoClient.Util.ConfigureNavBar (false, navigationController);
             var parentViewController = window.RootViewController;
             while (parentViewController.PresentedViewController != null) {
                 parentViewController = parentViewController.PresentedViewController;

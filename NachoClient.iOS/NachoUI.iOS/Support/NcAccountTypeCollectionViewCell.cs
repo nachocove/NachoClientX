@@ -31,7 +31,7 @@ namespace NachoClient.iOS
 
         public void AdoptTheme (Theme theme)
         {
-            label.TextColor = theme.AccountCreationFontColor;
+            label.TextColor = theme.AccountCreationTextColor;
             label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
         }
 

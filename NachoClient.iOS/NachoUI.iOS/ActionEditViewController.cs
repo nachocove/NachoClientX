@@ -109,7 +109,6 @@ namespace NachoClient.iOS
         {
             NavigationItem.LeftBarButtonItem = CloseButton;
             var navController = new UINavigationController (this);
-            Util.ConfigureNavBar (false, navController);
             presentingViewController.PresentViewController (navController, true, null);
         }
 

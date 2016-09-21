@@ -664,11 +664,6 @@ namespace NachoClient
             return lineUIView;
         }
 
-        public static void ConfigureNavBar (bool isTransparent, UINavigationController nc)
-        {
-            // TODO: remove me
-        }
-
         public static void SetViewHeight (UIView view, nfloat height)
         {
             var frame = view.Frame;

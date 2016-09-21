@@ -50,7 +50,7 @@ namespace NachoClient.iOS
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
                 statusLabel.Font = theme.DefaultFont.WithSize (statusLabel.Font.PointSize);
-                statusLabel.TextColor = theme.AccountCreationFontColor;
+                statusLabel.TextColor = theme.AccountCreationTextColor;
                 submitButton.BackgroundColor = theme.AccountCreationButtonColor;
                 submitButton.Font = theme.DefaultFont.WithSize (submitButton.Font.PointSize);
                 submitButton.SetTitleColor (theme.AccountCreationButtonTitleColor, UIControlState.Normal);
