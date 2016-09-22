@@ -11,7 +11,7 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public class ActionListViewController : NachoTableViewController, IAccountSwitching
+    public class ActionListViewController : NachoTableViewController, IAccountSwitching, ThemeAdopter
     {
 
         #region Properties
@@ -73,13 +73,27 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.TintColor = A.Color_NachoGreen;
-            TableView.RowHeight = ActionCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+            TableView.RowHeight = ActionCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize (17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 44.0f, 0.0f, 0.0f);
             TableView.AllowsMultipleSelectionDuringEditing = true;
             TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);
@@ -103,6 +117,7 @@ namespace NachoClient.iOS
             }
             StartListeningForStatusInd ();
             HasAppearedOnce = true;
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidDisappear (bool animated)
@@ -332,8 +347,8 @@ namespace NachoClient.iOS
                 var index = indexPath.Row - Actions.Count ();
                 var state = SubStates [index];
                 cell.TextLabel.Text = String.Format ("{0} Actions", NameForState (state));
-                cell.TextLabel.Font = A.Font_AvenirNextRegular17;
-                cell.TextLabel.TextColor = A.Color_NachoTextGray;
+                cell.TextLabel.Font = adoptedTheme.DefaultFont.WithSize (17.0f);
+                cell.TextLabel.TextColor = adoptedTheme.DisabledTextColor;
                 if (!(cell.AccessoryView is DisclosureAccessoryView)) {
                     cell.AccessoryView = new DisclosureAccessoryView ();
                 }
@@ -355,6 +370,15 @@ namespace NachoClient.iOS
                 var index = indexPath.Row - Actions.Count ();
                 var state = SubStates [index];
                 ShowSubState (state);
+            }
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null) {
+                themed.AdoptTheme (adoptedTheme);
             }
         }
 
