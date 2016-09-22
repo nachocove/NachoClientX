@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public partial class GeneralSettingsViewController : NachoTableViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
+    public partial class GeneralSettingsViewController : NachoTableViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, ThemeAdopter
     {
 
         #region Constants
@@ -53,14 +53,32 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) 
+            {
+                adoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                AccountsHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
+                AccountsHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof (AccountCell), AccountCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (SettingsNameValueCell), NameValueCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof (ButtonCell), ButttonCellIdentifier);
         }
 
@@ -73,6 +91,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             ReloadAccounts ();
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -128,7 +147,7 @@ namespace NachoClient.iOS
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (indexPath.Section == SectionGeneralSettings) {
-                return NameValueCell.PreferredHeight;
+                return SettingsNameValueCell.PreferredHeight;
             }
             if (indexPath.Section == SectionAccounts) {
                 if (indexPath.Row < Accounts.Count) {
@@ -137,7 +156,7 @@ namespace NachoClient.iOS
                 return ButtonCell.PreferredHeight;
             }
             if (indexPath.Section == SectionAbout) {
-                return NameValueCell.PreferredHeight;
+                return SettingsNameValueCell.PreferredHeight;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetHeightForRow unknown table section {0}", indexPath.Section));
         }
@@ -157,8 +176,6 @@ namespace NachoClient.iOS
                     _AccountsHeader = new InsetLabelView ();
                     _AccountsHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _AccountsHeader.Label.Text = "Accounts";
-                    _AccountsHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _AccountsHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _AccountsHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
                 return _AccountsHeader;
@@ -176,7 +193,7 @@ namespace NachoClient.iOS
         {
             if (indexPath.Section == SectionGeneralSettings) {
                 if (indexPath.Row == GeneralSettingsRowUnreadCount) {
-                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as NameValueCell;
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as SettingsNameValueCell;
                     cell.TextLabel.Text = "Unread Count";
                     cell.ValueLabel.Text = ValueForUnreadCount ();
                     if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
@@ -217,7 +234,7 @@ namespace NachoClient.iOS
                     }
                 }
             } else if (indexPath.Section == SectionAbout){
-                var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as NameValueCell;
+                var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as SettingsNameValueCell;
                 cell.TextLabel.Text = "About Apollo Mail";
                 cell.ValueLabel.Text = "";
                 if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
@@ -226,6 +243,15 @@ namespace NachoClient.iOS
                 return cell;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: GeneralSettingsViewController.GetCell unknown table row {0}.{1}", indexPath.Section, indexPath.Row));
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
@@ -296,7 +322,6 @@ namespace NachoClient.iOS
             }
             vc.AccountDelegate = this;
             AddAccountNavigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, AddAccountNavigationController);
             PresentViewController (AddAccountNavigationController, true, null);
         }
 
@@ -315,7 +340,6 @@ namespace NachoClient.iOS
             };
             credentialsViewController.NavigationItem.LeftBarButtonItem = closeButton;
             var navigationController = new UINavigationController (credentialsViewController);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 
@@ -386,7 +410,24 @@ namespace NachoClient.iOS
             }
         }
 
-        private class AccountCell : SwipeTableViewCell
+        private class SettingsNameValueCell : NameValueCell
+        {
+
+            public SettingsNameValueCell (IntPtr handle) : base (handle)
+            {
+            }
+
+            public override void AdoptTheme (Theme theme)
+            {
+                base.AdoptTheme (theme);
+                var accessory = AccessoryView as DisclosureAccessoryView;
+                if (accessory != null) {
+                    accessory.TintColor = theme.TableViewCellDisclosureAccessoryColor;
+                }
+            }
+        }
+
+        private class AccountCell : SwipeTableViewCell, ThemeAdopter
         {
 
             public readonly UIImageView AccountImageView;
@@ -403,13 +444,21 @@ namespace NachoClient.iOS
                 AccountImageView.Layer.CornerRadius = ImageSize / 2.0f;
                 ContentView.AddSubview(AccountImageView);
 
-                TextLabel.Font = A.Font_AvenirNextDemiBold14;
-                TextLabel.TextColor = A.Color_NachoBlack;
-
-                DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-                DetailTextLabel.TextColor = A.Color_NachoTextGray;
-
                 SeparatorInset = new UIEdgeInsets(0.0f, PreferredHeight, 0.0f, 0.0f);
+            }
+
+            public void AdoptTheme(Theme theme)
+            {
+                TextLabel.Font = theme.BoldDefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+                var accessory = AccessoryView as DisclosureAccessoryView;
+                if (accessory != null) {
+                    accessory.TintColor = theme.TableViewCellDisclosureAccessoryColor;
+                }
+
+                SetNeedsLayout ();
             }
 
             public bool IndicateError {
@@ -446,15 +495,24 @@ namespace NachoClient.iOS
             }
         }
 
-        private class ButtonCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell, ThemeAdopter
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
             public ButtonCell (IntPtr handle) : base (handle)
             {
-                TextLabel.Font = A.Font_AvenirNextRegular14;
-                TextLabel.TextColor = A.Color_NachoGreen;
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                var accessory = AccessoryView as AddAccessoryView;
+                if (accessory != null) {
+                    accessory.TintColor = theme.TableViewCellActionAccessoryColor;
+                }
+                SetNeedsLayout ();
             }
         }
 

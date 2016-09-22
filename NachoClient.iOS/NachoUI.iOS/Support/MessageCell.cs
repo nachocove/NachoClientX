@@ -10,7 +10,7 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
 
-    public class MessageCell : SwipeTableViewCell
+    public class MessageCell : SwipeTableViewCell, ThemeAdopter
     {
 
         UIImageView UnreadIndicator;
@@ -29,7 +29,9 @@ namespace NachoClient.iOS
             get {
                 if (_ThreadIndicator == null) {
                     _ThreadIndicator = new ThreadIndicatorView (new CGRect(0.0f, 0.0f, 20.0f, Bounds.Height));
-                    _ThreadIndicator.TintColor = UIColor.FromRGB (0x01, 0xB2, 0xCD);
+                    if (adoptedTheme != null) {
+                        _ThreadIndicator.AdoptTheme (adoptedTheme);
+                    }
                     ContentView.AddSubview (_ThreadIndicator);
                 }
                 return _ThreadIndicator;
@@ -77,7 +79,7 @@ namespace NachoClient.iOS
         static NSAttributedString HotAttachmentString {
             get {
                 if (_HotAttachmentString == null) {
-                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(A.Font_AvenirNextRegular14));
+                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(Theme.Active.DefaultFont.WithSize(14.0f)));
                 }
                 return _HotAttachmentString;
             }
@@ -87,7 +89,7 @@ namespace NachoClient.iOS
         static NSAttributedString AttachAttachmentString {
             get {
                 if (_AttachAttachmentString == null) {
-                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment(A.Font_AvenirNextRegular14));
+                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment(Theme.Active.DefaultFont.WithSize (14.0f)));
                 }
                 return _AttachAttachmentString;
             }
@@ -105,21 +107,13 @@ namespace NachoClient.iOS
             }
         }
 
-        UIFont BaseDateLabelFont = A.Font_AvenirNextRegular14;
-
         public MessageCell (IntPtr handle) : base (handle)
         {
             DetailTextSpacing = 0.0f;
 
-            TextLabel.Font = A.Font_AvenirNextDemiBold17;
-            TextLabel.TextColor = A.Color_NachoGreen;
-            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-            DetailTextLabel.TextColor = A.Color_NachoTextGray;
             DetailTextLabel.Lines = 3;
 
             DateLabel = new UILabel ();
-            DateLabel.Font = BaseDateLabelFont;
-            DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
             PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
@@ -134,25 +128,62 @@ namespace NachoClient.iOS
             SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
         }
 
+        Theme adoptedTheme = null;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TextLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+                DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DateLabel.TextColor = theme.TableViewCellDateLabelTextColor;
+                if (_ThreadIndicator != null) {
+                    _ThreadIndicator.AdoptTheme (theme);
+                }
+                UpdateAttributedText ();
+            }
+        }
+
+        NSMutableAttributedString AttributedDateText;
+        NSMutableAttributedString AttributedPreview;
+        NSRange IntentRange = new NSRange(0, 0);
+        NSRange SubjectRange = new NSRange(0, 0);
+
+        void UpdateAttributedText ()
+        {
+            var theme = adoptedTheme == null ? Theme.Active : adoptedTheme;
+            if (IntentRange.Length > 0) {
+                AttributedDateText.AddAttribute (UIStringAttributeKey.Font, theme.DefaultFont.WithSize (11.0f), IntentRange);
+                AttributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, theme.MessageIntentTextColor, IntentRange);
+            }
+            DateLabel.AttributedText = AttributedDateText;
+            if (SubjectRange.Length > 0) {
+                AttributedPreview.AddAttribute (UIStringAttributeKey.Font, theme.MediumDefaultFont.WithSize (14.0f), SubjectRange);
+                AttributedPreview.AddAttribute (UIStringAttributeKey.ForegroundColor, theme.TableViewCellMainLabelTextColor, SubjectRange);
+            }
+            DetailTextLabel.AttributedText = AttributedPreview;
+        }
+
         public void SetMessage (McEmailMessage message, int threadCount = 0)
         {
-            NSMutableAttributedString attributedDateText;
             if (message.IntentDate != default(DateTime)) {
                 if (message.IntentDate < DateTime.UtcNow) {
-                    attributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                    AttributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
                 } else {
-                    attributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                    AttributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
                 }
             } else {
-                attributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));
+                AttributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));
             }
+            IntentRange.Length = 0;
             if (message.Intent != McEmailMessage.IntentType.None) {
                 var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (message.Intent, uppercase: false);
-                attributedDateText.Insert (new NSAttributedString (intentString + " "), 0);
-                attributedDateText.AddAttribute (UIStringAttributeKey.Font, DateLabel.Font.WithSize (11.0f), new NSRange(0, intentString.Length));
-                attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB(0xD2, 0x47, 0x47), new NSRange(0, intentString.Length));
+                IntentRange.Length = intentString.Length;
+                AttributedDateText.Insert (new NSAttributedString (intentString + " "), 0);
             }
-            DateLabel.AttributedText = attributedDateText;
             if (UseRecipientName) {
                 TextLabel.Text = Pretty.RecipientString (message.To);
                 PortraitView.Hidden = true;
@@ -165,23 +196,20 @@ namespace NachoClient.iOS
             }
             int subjectLength;
             var previewText = Pretty.MessagePreview (message, out subjectLength);
-            using (var attributedPreview = new NSMutableAttributedString (previewText)) {
-                if (subjectLength > 0) {
-                    attributedPreview.AddAttribute (UIStringAttributeKey.Font, A.Font_AvenirNextMedium14.WithSize(DetailTextLabel.Font.PointSize), new NSRange(0, subjectLength));
-                    attributedPreview.AddAttribute (UIStringAttributeKey.ForegroundColor, A.Color_NachoGreen, new NSRange(0, subjectLength));
-                }
-                if (message.isHot ()) {
-                    attributedPreview.Replace (new NSRange (0, 0), " ");
-                    attributedPreview.Insert (HotAttachmentString, 0);
-                    subjectLength += 2;
-                }
-                if (message.cachedHasAttachments) {
-                    attributedPreview.Replace (new NSRange (subjectLength, 0), " ");
-                    attributedPreview.Insert (AttachAttachmentString, subjectLength + 1);
-                    // TODO: add space after if subjectLength was originally 0
-                }
-                DetailTextLabel.AttributedText = attributedPreview;
+            AttributedPreview = new NSMutableAttributedString (previewText);
+            SubjectRange.Location = 0;
+            SubjectRange.Length = subjectLength;
+            if (message.isHot ()) {
+                AttributedPreview.Replace (new NSRange (0, 0), " ");
+                AttributedPreview.Insert (HotAttachmentString, 0);
+                SubjectRange.Location += 2;
             }
+            if (message.cachedHasAttachments) {
+                AttributedPreview.Replace (new NSRange (SubjectRange.Location + SubjectRange.Length, 0), " ");
+                AttributedPreview.Insert (AttachAttachmentString, SubjectRange.Location + SubjectRange.Length + 1);
+                // TODO: add space after if subjectLength was originally 0
+            }
+            UpdateAttributedText ();
             if (threadCount > 1) {
                 ThreadIndicator.SetCount (threadCount);
             } else {
@@ -214,7 +242,8 @@ namespace NachoClient.iOS
 
             frame = DateLabel.Frame;
             frame.X = ContentView.Bounds.Width - dateSize.Width - rightPadding;
-            frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - BaseDateLabelFont.Ascender - (dateSize.Height - BaseDateLabelFont.LineHeight) / 2.0f);
+            var baseDateLabelFont = Theme.Active.DefaultFont.WithSize(14.0f);
+            frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - baseDateLabelFont.Ascender - (dateSize.Height - baseDateLabelFont.LineHeight) / 2.0f);
             frame.Width = dateSize.Width;
             frame.Height = dateSize.Height;
             DateLabel.Frame = frame;
@@ -254,7 +283,7 @@ namespace NachoClient.iOS
             return textHeight + detailHeight + detailSpacing + topPadding * 2.0f;
         }
 
-        private class ThreadIndicatorView : UIView
+        private class ThreadIndicatorView : UIView, ThemeAdopter
         {
 
             UILabel CountLabel;
@@ -263,14 +292,18 @@ namespace NachoClient.iOS
             public ThreadIndicatorView(CGRect frame) : base (frame)
             {
                 CountLabel = new UILabel ();
-                CountLabel.Font = A.Font_AvenirNextRegular12;
-                CountLabel.TextColor = TintColor;
 
                 ArrowView = new UIImageView(UIImage.FromBundle("thread-arrows").ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate));
-                ArrowView.TintColor = TintColor;
 
                 AddSubview (CountLabel);
                 AddSubview (ArrowView);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                CountLabel.Font = theme.DefaultFont.WithSize (12.0f);
+                CountLabel.TextColor = theme.ThreadIndicatorColor;
+                ArrowView.TintColor = theme.ThreadIndicatorColor;
             }
 
             public override void LayoutSubviews ()

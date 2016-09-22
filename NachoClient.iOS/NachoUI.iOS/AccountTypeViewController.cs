@@ -24,7 +24,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class AccountTypeViewController : UICollectionViewController
+    public partial class AccountTypeViewController : UICollectionViewController, ThemeAdopter
     {
 
         #region Properties
@@ -60,6 +60,43 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                View.BackgroundColor = theme.AccountCreationBackgroundColor;
+                if (CollectionView.VisibleCells != null) {
+                    foreach (var cell in CollectionView.VisibleCells) {
+                        var themedCell = (cell as ThemeAdopter);
+                        if (themedCell != null) {
+                            themedCell.AdoptTheme (theme);
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region View Lifecycle
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
+        }
+
+        #endregion
+
         #region Collection View Delegate & Data Source
 
         public override nint NumberOfSections (UICollectionView collectionView)
@@ -82,6 +119,9 @@ namespace NachoClient.iOS
             }
             cell.label.Text = NcServiceHelper.AccountServiceName (accountType);
             cell.AccessibilityLabel = cell.label.Text;
+            if (adoptedTheme != null) {
+                cell.AdoptTheme (adoptedTheme);
+            }
             return cell;
         }
 

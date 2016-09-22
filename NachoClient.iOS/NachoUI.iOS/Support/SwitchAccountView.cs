@@ -12,7 +12,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public class SwitchAccountView : UIView
+    public class SwitchAccountView : UIView, ThemeAdopter
     {
 
         UIView BackgroundView;
@@ -58,22 +58,17 @@ namespace NachoClient.iOS
 
             FakeNavigationBar = new UIView (new CGRect (0.0f, 0.0f, Bounds.Width, 64.0f));
             FakeNavigationBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FakeNavigationBar.BackgroundColor = A.Color_NachoGreen;
 
             NavigationBarExtension = new UIView (new CGRect (0.0f, 64.0f, Bounds.Width, 128.0f));
             NavigationBarExtension.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            NavigationBarExtension.BackgroundColor = A.Color_NachoGreen;
 
             TitleLabel = new UILabel (new CGRect (0.0f, 20.0f, Bounds.Width, 44.0f));
             TitleLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             TitleLabel.TextAlignment = UITextAlignment.Center;
-            TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-            TitleLabel.TextColor = UIColor.White;
             TitleLabel.Text = "Switch Accounts";
 
             AddButton = new AccountActionButton (new CGRect (0.0f, 0.0f, 40.0f, 40.0f));
             AddButton.ImageView.Image = UIImage.FromBundle ("add-account").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
-            AddButton.ImageView.TintColor = A.Color_NachoBlue;
             AddButton.TitleLabel.Text = "Add Account";
             AddButton.Action = HandleAddAccount;
 
@@ -89,6 +84,27 @@ namespace NachoClient.iOS
             AccountViews = new List<AccountView> ();
 
         }
+
+        #region
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TitleLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+                TitleLabel.TextColor = theme.NavigationBarTitleColor;
+                FakeNavigationBar.BackgroundColor = theme.NavigationBarBackgroundColor;
+                NavigationBarExtension.BackgroundColor = theme.NavigationBarBackgroundColor;
+                AddButton.AdoptTheme (theme);
+                foreach (var view in AccountViews) {
+                    view.AdoptTheme (theme);
+                }
+            }
+        }
+
+        #endregion
 
         void SwitchToAccountView (AccountView accountView)
         {
@@ -169,6 +185,9 @@ namespace NachoClient.iOS
                     AddSubview (accountView);
                     AccountViews.Add (accountView);
                 }
+                if (adoptedTheme != null) {
+                    accountView.AdoptTheme (adoptedTheme);
+                }
                 if (accountInfo.Account.Id == SelectedAccountId) {
                     SelectedAccountView = accountView;
                 }
@@ -236,7 +255,7 @@ namespace NachoClient.iOS
             int rows = itemCount / ColumnsPerRow + ((itemCount % ColumnsPerRow) > 0 ? 1 : 0);
             int row = 0;
             int col = 0;
-            nfloat expandedAccountViewHeight = 40.0f + A.Font_AvenirNextRegular14.RoundedLineHeight (1.0f) * 1.5f;
+            nfloat expandedAccountViewHeight = 40.0f + adoptedTheme.DefaultFont.WithSize (14.0f).RoundedLineHeight (1.0f) * 1.5f;
             nfloat rowSpacing = 30.0f;
             nfloat rowHeight = expandedAccountViewHeight + rowSpacing;
             nfloat colWidth = Bounds.Width / (ColumnsPerRow + 1);
@@ -425,7 +444,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private class AccountActionButton : UIView
+        private class AccountActionButton : UIView, ThemeAdopter
         {
 
             public readonly UIImageView ImageView;
@@ -442,8 +461,6 @@ namespace NachoClient.iOS
                 ImageView = new UIImageView (new CGRect(0.0f, 0.0f, ImageSize, ImageSize));
 
                 TitleLabel = new UILabel ();
-                TitleLabel.Font = A.Font_AvenirNextRegular14;
-                TitleLabel.TextColor = UIColor.White;
                 TitleLabel.TextAlignment = UITextAlignment.Center;
                 TitleLabel.LineBreakMode = UILineBreakMode.Clip;
 
@@ -452,6 +469,14 @@ namespace NachoClient.iOS
 
                 AddSubview (ImageView);
                 AddSubview (TitleLabel);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                ImageView.TintColor = theme.NavigationBarTintColor;
+                TitleLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TitleLabel.TextColor = theme.AccountSwitcherTextColor;
+                SetNeedsLayout ();
             }
 
             public void Cleanup ()
@@ -498,7 +523,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private class AccountView : UIView
+        private class AccountView : UIView, ThemeAdopter
         {
 
             public readonly UIImageView AccountImageView;
@@ -524,35 +549,23 @@ namespace NachoClient.iOS
                 AccountImageView.ClipsToBounds = true;
 
                 HighlightView = new UIView (new CGRect(0.0f, 0.0f, ImageSize + 3.0f, ImageSize + 3.0f));
-                HighlightView.BackgroundColor = A.Color_NachoGreen;
                 HighlightView.Layer.BorderWidth = 2.0f;
-                HighlightView.Layer.BorderColor = A.Color_NachoBlue.CGColor;
                 HighlightView.Layer.CornerRadius = AccountImageView.Frame.Width / 2.0f;
                 HighlightView.Hidden = true;
 
                 UnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, IndicatorSize, IndicatorSize));
-                UnreadIndicator.BackgroundColor = A.Color_NachoGreen;
                 UnreadIndicator.ClipsToBounds = true;
                 UnreadIndicator.Layer.BorderWidth = 1.0f;
-                UnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
-                UnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (12.0f);
                 UnreadIndicator.TextAlignment = UITextAlignment.Center;
-                UnreadIndicator.TextColor = A.Color_NachoBlue;
                 UnreadIndicator.Layer.CornerRadius = IndicatorSize / 2.0f;
 
                 RecentUnreadIndicator = new UILabel (new CGRect(0.0f, 0.0f, RecentIndicatorSize, RecentIndicatorSize));
-                RecentUnreadIndicator.BackgroundColor = A.Color_NachoGreen;
                 RecentUnreadIndicator.ClipsToBounds = true;
                 RecentUnreadIndicator.Layer.BorderWidth = 1.0f;
-                RecentUnreadIndicator.Layer.BorderColor = A.Color_NachoBlue.CGColor;
-                RecentUnreadIndicator.Font = A.Font_AvenirNextRegular10.WithSize (9.0f);
                 RecentUnreadIndicator.TextAlignment = UITextAlignment.Center;
-                RecentUnreadIndicator.TextColor = A.Color_NachoBlue;
                 RecentUnreadIndicator.Layer.CornerRadius = RecentIndicatorSize / 2.0f;
 
                 NameLabel = new UILabel ();
-                NameLabel.Font = A.Font_AvenirNextRegular14;
-                NameLabel.TextColor = UIColor.White;
                 NameLabel.TextAlignment = UITextAlignment.Center;
                 NameLabel.LineBreakMode = UILineBreakMode.Clip;
 
@@ -565,6 +578,23 @@ namespace NachoClient.iOS
 
             public void Cleanup ()
             {
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                NameLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                NameLabel.TextColor = theme.AccountSwitcherTextColor;
+                HighlightView.BackgroundColor = theme.NavigationBarBackgroundColor;
+                HighlightView.Layer.BorderColor = theme.NavigationBarTintColor.CGColor;
+                UnreadIndicator.BackgroundColor = theme.NavigationBarBackgroundColor;
+                UnreadIndicator.Layer.BorderColor = theme.NavigationBarTintColor.CGColor;
+                UnreadIndicator.TextColor = theme.NavigationBarTintColor;
+                UnreadIndicator.Font = theme.DefaultFont.WithSize (12.0f);
+                RecentUnreadIndicator.BackgroundColor = theme.NavigationBarBackgroundColor;
+                RecentUnreadIndicator.Layer.BorderColor = theme.NavigationBarTintColor.CGColor;
+                RecentUnreadIndicator.Font = theme.DefaultFont.WithSize (9.0f);
+                RecentUnreadIndicator.TextColor = theme.NavigationBarTintColor;
+                SetNeedsLayout ();
             }
 
             public void SetHighlighted (bool highlighted)

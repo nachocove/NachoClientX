@@ -7,7 +7,7 @@ using CoreGraphics;
 
 namespace NachoClient.iOS
 {
-    public class DatePickerView : UIView
+    public class DatePickerView : UIView, ThemeAdopter
     {
 
         UIDatePicker Picker;
@@ -67,16 +67,12 @@ namespace NachoClient.iOS
             CancelButton.Frame = new CGRect (0.0f, BorderWidth, PanelView.Bounds.Width / 2.0f, ButtonHeight);
             CancelButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin;
             CancelButton.SetTitle ("Cancel", UIControlState.Normal);
-            CancelButton.Font = A.Font_AvenirNextMedium14;
-            CancelButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             CancelButton.TouchUpInside += Cancel;
 
             ClearButton = new UIButton (UIButtonType.Custom);
             ClearButton.Frame = new CGRect (CancelButton.Frame.Width, BorderWidth, PanelView.Bounds.Width / 2.0f, ButtonHeight);
             ClearButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
             ClearButton.SetTitle ("Clear", UIControlState.Normal);
-            ClearButton.Font = A.Font_AvenirNextMedium14;
-            ClearButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             ClearButton.TouchUpInside += Clear;
             ClearButton.Hidden = true;
 
@@ -84,8 +80,6 @@ namespace NachoClient.iOS
             SetButton.Frame = new CGRect (CancelButton.Frame.Width, BorderWidth, PanelView.Bounds.Width / 2.0f, ButtonHeight);
             SetButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
             SetButton.SetTitle ("Set", UIControlState.Normal);
-            SetButton.Font = A.Font_AvenirNextMedium14;
-            SetButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             SetButton.TouchUpInside += Set;
 
             PickerBorder = new UIView (new CGRect (0.0f, CancelButton.Frame.Y + CancelButton.Frame.Height, PanelView.Bounds.Width, BorderWidth));
@@ -106,6 +100,18 @@ namespace NachoClient.iOS
 
             AddSubview (BackgroundView);
             AddSubview (PanelView);
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            var font = theme.MediumDefaultFont.WithSize (14.0f);
+            var color = theme.ButtonTextColor;
+            CancelButton.Font = font;
+            CancelButton.SetTitleColor (color, UIControlState.Normal);
+            ClearButton.Font = font;
+            ClearButton.SetTitleColor (color, UIControlState.Normal);
+            SetButton.Font = font;
+            SetButton.SetTitleColor (color, UIControlState.Normal);
         }
 
         void PickerChanged (object sender, EventArgs e)

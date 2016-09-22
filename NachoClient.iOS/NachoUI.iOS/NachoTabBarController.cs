@@ -14,7 +14,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoTabBarController : UITabBarController, IUINavigationControllerDelegate
+    public partial class NachoTabBarController : UITabBarController, IUINavigationControllerDelegate, ThemeAdopter
     {
         protected static string TabBarOrderKey = "TabBarOrder";
 
@@ -32,6 +32,20 @@ namespace NachoClient.iOS
         protected UITabBarItem foldersItem;
         protected UITabBarItem inboxItem;
         protected UITabBarItem chatsItem;
+
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TabBar.Translucent = !theme.IsTabBarOpaque;
+            }
+        }
+
+        #endregion
 
         public override void ViewDidLoad ()
         {
@@ -52,12 +66,6 @@ namespace NachoClient.iOS
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
             settingsItem = settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
 
-            Util.ConfigureNavBar (false, nowNavController);
-            Util.ConfigureNavBar (false, inboxNavController);
-            Util.ConfigureNavBar (false, calendarNavController);
-            Util.ConfigureNavBar (false, foldersNavController);
-            Util.ConfigureNavBar (false, settingsNavController);
-
             ViewControllers = new UIViewController[] {
                 nowNavController,
                 inboxNavController,
@@ -70,11 +78,6 @@ namespace NachoClient.iOS
 
             ViewControllerSelected += ViewControllerSelectedHandler;
             ShouldSelectViewController += ViewControllerShouldSelectHandler;
-
-            TabBar.BarTintColor = UIColor.White;
-            TabBar.TintColor = A.Color_NachoIconGray;
-            TabBar.SelectedImageTintColor = A.Color_NachoGreen;
-            TabBar.Translucent = false;
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -125,6 +128,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            AdoptTheme (Theme.Active);
             UpdateNotificationBadge ();
             UpdateChatsBadge ();
         }
@@ -286,7 +290,7 @@ namespace NachoClient.iOS
 
         protected UITabBarItem MakeTabBarItem (string title, string imageName)
         {
-            using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+            using (var image = UIImage.FromBundle (imageName).WithColor(Theme.Active.TabBarTintColor).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                 using (var selectedImage = UIImage.FromBundle (imageName + "-active").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
                     return new UITabBarItem (title, image, selectedImage);
                 }

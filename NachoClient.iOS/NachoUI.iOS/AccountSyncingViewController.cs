@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class AccountSyncingViewController : NcUIViewController, ILoginEvents
+    public partial class AccountSyncingViewController : NcUIViewController, ILoginEvents, ThemeAdopter
     {
 
         #region Properties
@@ -77,20 +77,27 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        public void AdoptTheme (Theme theme)
+        {
+            statusLabel.Font = theme.DefaultFont.WithSize (statusLabel.Font.PointSize);
+            statusLabel.TextColor = theme.AccountCreationTextColor;
+        }
+
+        #endregion
+
         #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            var attrs = new UITextAttributes ();
-            attrs.Font = A.Font_AvenirNextMedium17;
-            attrs.TextColor = A.Color_NachoSubmitButton;
-            skipButton.SetTitleTextAttributes (attrs, UIControlState.Normal);
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
             Update ();
         }
 
