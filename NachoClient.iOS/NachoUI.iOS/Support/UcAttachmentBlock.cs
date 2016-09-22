@@ -13,7 +13,7 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
 
-    public class UcAttachmentCell : UIView
+    public class UcAttachmentCell : UIView, ThemeAdopter
     {
         protected const float LINE_HEIGHT = 60;
         protected const float LEFT_INDENT = 15;
@@ -47,6 +47,14 @@ namespace NachoClient.iOS
             CreateView (editable);
         }
 
+        public void AdoptTheme (Theme theme)
+        {
+            textLabel.Font = theme.BoldDefaultFont.WithSize (14.0f);
+            textLabel.TextColor = theme.DefaultTextColor;
+            detailTextlabel.Font = theme.DefaultFont.WithSize (14.0f);
+            detailTextlabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+        }
+
         public void CreateView (bool editable)
         {
             nfloat xOffset = 0;
@@ -72,8 +80,6 @@ namespace NachoClient.iOS
 
             //Text label
             textLabel = new UILabel (); 
-            textLabel.Font = A.Font_AvenirNextDemiBold14;
-            textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             textLabel.Frame = new CGRect (xOffset + 60, 11, Bounds.Width - 60 - 52, 19.5f);
             textLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -82,8 +88,6 @@ namespace NachoClient.iOS
             //Detail text label
             detailTextlabel = new UILabel (); 
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            detailTextlabel.Font = A.Font_AvenirNextRegular14;
-            detailTextlabel.TextColor = A.Color_NachoTextGray;
             detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, Bounds.Width - 60 - 52, 19.5f);
             detailTextlabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (detailTextlabel);
@@ -134,7 +138,7 @@ namespace NachoClient.iOS
         }
     }
 
-    public class UcAttachmentBlock : UIView
+    public class UcAttachmentBlock : UIView, ThemeAdopter
     {
         protected IUcAttachmentBlockDelegate owner;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
@@ -165,6 +169,18 @@ namespace NachoClient.iOS
             this.AutosizesSubviews = false;
 
             CreateView ();
+        }
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            adoptedTheme = theme;
+            mainLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            mainLabel.TextColor = theme.DefaultTextColor;
+            foreach (var cell in list) {
+                cell.AdoptTheme (theme);
+            }
         }
 
         public void SetCompact (bool isCompact)
@@ -223,8 +239,6 @@ namespace NachoClient.iOS
             mainLabel = new UILabel ();
             AdjustXY (mainLabel, LEFT_INDENT, 0);
             mainLabel.Text = "Attachments";
-            mainLabel.Font = A.Font_AvenirNextMedium14;
-            mainLabel.TextColor = A.Color_NachoDarkText;
             contentView.AddSubview (mainLabel);
 
             if (editable) {
@@ -253,6 +267,7 @@ namespace NachoClient.iOS
             }, (UcAttachmentCell cell) => {
                 Remove (cell);
             });
+            c.AdoptTheme (adoptedTheme);
             contentView.AddSubview (c);
             list.Add (c);
 

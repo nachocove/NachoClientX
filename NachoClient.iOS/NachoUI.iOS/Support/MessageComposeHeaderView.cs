@@ -70,7 +70,7 @@ namespace NachoClient.iOS
         }
     }
 
-    public class ComposeActionSelectionView : UIView 
+    public class ComposeActionSelectionView : UIView, ThemeAdopter
     {
 
         ActionCheckboxView CheckboxView;
@@ -78,7 +78,6 @@ namespace NachoClient.iOS
         public nfloat RightPadding = 0.0f;
         public readonly UILabel TextLabel;
         public readonly UILabel DateLabel;
-        public UIColor LabelColor;
         public Action Action;
 
         UITapGestureRecognizer TapRecognizer;
@@ -90,7 +89,6 @@ namespace NachoClient.iOS
 
             TextLabel = new UILabel ();
             DateLabel = new UILabel ();
-            DateLabel.TextColor = A.Color_NachoTextGray;
 
             AddSubview (CheckboxView);
             AddSubview (TextLabel);
@@ -98,6 +96,16 @@ namespace NachoClient.iOS
 
             TapRecognizer = new UITapGestureRecognizer (Tap);
             AddGestureRecognizer (TapRecognizer);
+        }
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            adoptedTheme = theme;
+            DateLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+            DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
         }
 
         void Tap ()
@@ -138,12 +146,12 @@ namespace NachoClient.iOS
         {
             if (intent == McEmailMessage.IntentType.None) {
                 TextLabel.Text = "Request an action for the recipient";
-                TextLabel.TextColor = A.Color_NachoTextGray;
+                TextLabel.TextColor = adoptedTheme.DisabledTextColor;
                 DateLabel.Text = "";
                 CheckboxView.IsChecked = false;
             } else {
                 TextLabel.Text = NachoCore.Brain.NcMessageIntent.IntentEnumToString (intent, uppercase: false);
-                TextLabel.TextColor = LabelColor;
+                TextLabel.TextColor = adoptedTheme.DefaultTextColor;
                 if (intentDateType == MessageDeferralType.None) {
                     DateLabel.Text = "";
                 } else {
@@ -156,7 +164,7 @@ namespace NachoClient.iOS
 
     }
 
-    public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate
+    public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, ThemeAdopter
     {
 
         #region Properties
@@ -193,8 +201,6 @@ namespace NachoClient.iOS
         private nfloat LineHeight = 42.0f;
         private nfloat RightPadding = 15.0f;
         private nfloat LeftPadding = 15.0f;
-        private UIFont LabelFont = A.Font_AvenirNextMedium14;
-        private UIColor LabelColor = A.Color_NachoDarkText;
 
         bool ShouldHideIntent {
             get {
@@ -230,10 +236,6 @@ namespace NachoClient.iOS
 
             FromView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
             FromView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FromView.NameLabel.Font = LabelFont;
-            FromView.ValueLabel.Font = LabelFont;
-            FromView.NameLabel.TextColor = LabelColor;
-            FromView.ValueLabel.TextColor = LabelColor;
             FromView.NameLabel.Text = "Cc/Bcc/From: ";
             FromView.Action = SelectFrom;
             FromView.LeftPadding = LeftPadding;
@@ -243,8 +245,6 @@ namespace NachoClient.iOS
             var label = FieldLabel ("Subject:");
             SubjectField = new NcAdjustableLayoutTextField (new CGRect (0, 0, Bounds.Width, LineHeight));
             SubjectField.BackgroundColor = UIColor.White;
-            SubjectField.Font = LabelFont;
-            SubjectField.TextColor = LabelColor;
             SubjectField.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             SubjectField.AccessibilityLabel = "Subject";
             SubjectField.LeftViewMode = UITextFieldViewMode.Always;
@@ -255,10 +255,8 @@ namespace NachoClient.iOS
             SubjectField.EditingDidEnd += SubjectEditingDidEnd;
 
             IntentView = new ComposeActionSelectionView (new CGRect (0, 0, Bounds.Width, LineHeight));
+            IntentView.AdoptTheme (Theme.Active);
             IntentView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            IntentView.TextLabel.Font = A.Font_AvenirNextRegular17;
-            IntentView.DateLabel.Font = A.Font_AvenirNextRegular14;
-            IntentView.LabelColor = LabelColor;
             IntentView.Action = SelectIntent;
             IntentView.LeftPadding = LeftPadding;
             IntentView.RightPadding = RightPadding;
@@ -272,6 +270,7 @@ namespace NachoClient.iOS
 //            intentDisplayLabel.Text = "NONE";
 
             AttachmentsView = new UcAttachmentBlock (this, 40, true);
+            AttachmentsView.AdoptTheme (Theme.Active);
             AttachmentsView.Frame = new CGRect (0, 0, Bounds.Width, 40);
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
@@ -301,6 +300,40 @@ namespace NachoClient.iOS
             AddSubview (IntentSeparator);
 
             SetNeedsLayout ();
+        }
+
+        #endregion
+
+        #region Theme
+
+        public void AdoptTheme (Theme theme)
+        {
+            ToView.AdoptTheme (theme);
+            CcView.AdoptTheme (theme);
+            BccView.AdoptTheme (theme);
+            var labelFont = theme.DefaultFont.WithSize (14.0f);
+            var labelColor = theme.DefaultTextColor;
+            FromView.NameLabel.Font = labelFont;
+            FromView.ValueLabel.Font = labelFont;
+            FromView.NameLabel.TextColor = labelColor;
+            FromView.ValueLabel.TextColor = labelColor;
+            SubjectField.Font = labelFont;
+            SubjectField.TextColor = labelColor;
+            IntentView.AdoptTheme (theme);
+            AttachmentsView.AdoptTheme (theme);
+
+            var label = (SubjectField.LeftView as UILabel);
+            label.Font = labelFont;
+            label.TextColor = labelColor;
+
+            var separatorColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+            ToSeparator.BackgroundColor = separatorColor;
+            CcSeparator.BackgroundColor = separatorColor;
+            BccSeparator.BackgroundColor = separatorColor;
+            FromSeparator.BackgroundColor = separatorColor;
+            SubjectSeparator.BackgroundColor = separatorColor;
+            IntentSeparator.BackgroundColor = separatorColor;
+            AttachmentsSeparator.BackgroundColor = separatorColor;
         }
 
         #endregion
@@ -537,7 +570,6 @@ namespace NachoClient.iOS
         {
             var separator = new UIView (new CGRect (0, 0, Bounds.Width, 1));
             separator.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            separator.BackgroundColor = A.Color_NachoNowBackground;
             return separator;
         }
 
@@ -545,8 +577,6 @@ namespace NachoClient.iOS
         {
             var label = new UILabel(new CGRect(0, 0, Bounds.Width, LineHeight));
             label.BackgroundColor = UIColor.White;
-            label.TextColor = LabelColor;
-            label.Font = LabelFont;
             label.Text = text;
             label.SizeToFit ();
             return label;

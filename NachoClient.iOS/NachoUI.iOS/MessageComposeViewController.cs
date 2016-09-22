@@ -47,7 +47,8 @@ namespace NachoClient.iOS
         INachoContactChooserDelegate,
         MessageComposerDelegate,
         NcWebViewMessageHandler,
-        AccountPickerViewControllerDelegate
+        AccountPickerViewControllerDelegate,
+        ThemeAdopter
     {
 
         #region Properties
@@ -100,6 +101,20 @@ namespace NachoClient.iOS
                 parentViewController = parentViewController.PresentedViewController;
             }
             parentViewController.PresentViewController (navigationController, animated, completionHandler);
+        }
+
+        #endregion
+
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                HeaderView.AdoptTheme (theme);
+            }
         }
 
         #endregion
@@ -200,6 +215,7 @@ namespace NachoClient.iOS
                 }
                 HasShownOnce = true;
             }
+            AdoptTheme (Theme.Active);
 
         }
 
