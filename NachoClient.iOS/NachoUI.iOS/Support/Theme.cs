@@ -24,6 +24,7 @@ namespace NachoClient.iOS
         public UIColor DefaultTextColor { get; protected set; }
         public UIColor DisabledTextColor { get; protected set; }
         public UIColor DestructiveTextColor { get; protected set; }
+        public UIColor ButtonTextColor { get; protected set; }
 
         #endregion
 
@@ -100,6 +101,12 @@ namespace NachoClient.iOS
 
         public UIColor MessageIntentTextColor { get; protected set; }
         public UIColor ThreadIndicatorColor { get; protected set; }
+
+        #endregion
+
+        #region Action
+
+        public UIColor ActionCheckboxColorHot { get; protected set; }
 
         #endregion
 
@@ -189,6 +196,7 @@ namespace NachoClient.iOS
             DefaultTextColor = UIColor.FromRGBA (0x33, 0x33, 0x33, 0xFF);
             DisabledTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
             DestructiveTextColor = UIColor.FromRGBA (0xEB, 0x4C, 0x2F, 0xFF);
+            ButtonTextColor = MainColor;
             
             // Navigation
             IsNavigationBarOpaque = true;
@@ -238,6 +246,9 @@ namespace NachoClient.iOS
             // Message
             MessageIntentTextColor = UIColor.FromRGB (0xD2, 0x47, 0x47);
             ThreadIndicatorColor = MainShadedColor2;
+
+            // Action
+            ActionCheckboxColorHot = UIColor.FromRGB (0xEE, 0x70, 0x5B);
         }
 
         public override void DefineAppearance ()
