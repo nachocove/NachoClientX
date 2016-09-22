@@ -18,7 +18,7 @@ namespace NachoClient.iOS
         void AttachmentsViewDidSelectAttachment (AttachmentsView view, McAttachment attachment);
     }
 
-    public class AttachmentsView : UIView, IUITableViewDataSource, IUITableViewDelegate, AttachmentDownloaderDelegate, SwipeTableViewDelegate
+    public class AttachmentsView : UIView, IUITableViewDataSource, IUITableViewDelegate, AttachmentDownloaderDelegate, SwipeTableViewDelegate, ThemeAdopter
     {
 
         const string AttachmentCellIdentifier = "AttachmentCellIdentifier";
@@ -98,6 +98,13 @@ namespace NachoClient.iOS
             DownloadersByAttachmentId.Clear ();
         }
 
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            adoptedTheme = theme;
+        }
+
         void HeaderPressed ()
         {
             if (HeaderPressRecognizer.State == UIGestureRecognizerState.Began) {
@@ -162,9 +169,9 @@ namespace NachoClient.iOS
             cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
             if (String.IsNullOrWhiteSpace (cell.TextLabel.Text)) {
                 cell.TextLabel.Text = "(no name)";
-                cell.TextLabel.TextColor = A.Color_NachoTextGray;
+                cell.TextLabel.TextColor = adoptedTheme.DisabledTextColor;
             } else {
-                cell.TextLabel.TextColor = A.Color_NachoDarkText;
+                cell.TextLabel.TextColor = adoptedTheme.DefaultTextColor;
             }
             cell.DetailTextLabel.Text = Pretty.GetAttachmentDetail (attachment);
             cell.IconView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
@@ -189,6 +196,7 @@ namespace NachoClient.iOS
             } else {
                 cell.AccessoryView = null;
             }
+            cell.AdoptTheme (adoptedTheme);
             return cell;
         }
 
@@ -329,7 +337,7 @@ namespace NachoClient.iOS
 
         #region Private Classes
 
-        private class AttachmentCell : SwipeTableViewCell
+        private class AttachmentCell : SwipeTableViewCell, ThemeAdopter
         {
 
             public readonly UIImageView IconView;
@@ -345,11 +353,14 @@ namespace NachoClient.iOS
                 SeparatorInset = new UIEdgeInsets(0.0f, Inset + IconSize + TextSpacing, 0.0f, 0.0f);
 
                 ContentView.AddSubview (IconView);
+            }
 
-                TextLabel.Font = A.Font_AvenirNextRegular17;
-                TextLabel.TextColor = A.Color_NachoDarkText;
-                DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                DetailTextLabel.TextColor = A.Color_NachoTextGray;
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (17.0f);
+                TextLabel.TextColor = theme.DefaultTextColor;
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (12.0f);
+                DetailTextLabel.TextColor = theme.DisabledTextColor;
             }
 
             public override void LayoutSubviews ()

@@ -11,7 +11,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class MessageHeaderView : UIView
+    public class MessageHeaderView : UIView, ThemeAdopter
     {
 
         McEmailMessage _Message;
@@ -65,11 +65,11 @@ namespace NachoClient.iOS
 
         nfloat BorderWidth = 0.5f;
 
-        static NSAttributedString _HotAttachmentString;
-        static NSAttributedString HotAttachmentString {
+        NSAttributedString _HotAttachmentString;
+        NSAttributedString HotAttachmentString {
             get {
                 if (_HotAttachmentString == null) {
-                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(A.Font_AvenirNextDemiBold17));
+                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(adoptedTheme.DefaultFont.WithSize(17.0f)));
                 }
                 return _HotAttachmentString;
             }
@@ -85,20 +85,14 @@ namespace NachoClient.iOS
             PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
 
             FromLabel = new UILabel ();
-            FromLabel.Font = A.Font_AvenirNextDemiBold17;
-            FromLabel.TextColor = A.Color_NachoGreen;
             FromLabel.Lines = 1;
             FromLabel.LineBreakMode = UILineBreakMode.TailTruncation;
 
             SubjectLabel = new UILabel ();
-            SubjectLabel.Font = A.Font_AvenirNextRegular17;
-            SubjectLabel.TextColor = A.Color_NachoGreen;
             SubjectLabel.Lines = 0;
             SubjectLabel.LineBreakMode = UILineBreakMode.WordWrap;
 
             DateLabel = new UILabel ();
-            DateLabel.Font = A.Font_AvenirNextRegular14;
-            DateLabel.TextColor = A.Color_NachoTextGray;
             DateLabel.Lines = 1;
             DateLabel.LineBreakMode = UILineBreakMode.TailTruncation;
 
@@ -112,6 +106,21 @@ namespace NachoClient.iOS
             AddSubview (DateLabel);
         }
 
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                FromLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+                FromLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SubjectLabel.Font = theme.DefaultFont.WithSize (17.0f);
+                SubjectLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DateLabel.TextColor = theme.TableViewCellDateLabelTextColor;
+            }
+        }
+
         public void Update ()
         {
             PortraitView.SetPortrait (Message.cachedPortraitId, Message.cachedFromColor, Message.cachedFromLetters);
@@ -121,12 +130,12 @@ namespace NachoClient.iOS
                     var intentString = NachoCore.Brain.NcMessageIntent.IntentEnumToString (Message.Intent, uppercase: false);
                     var location = attributedDateText.Length + 1;
                     attributedDateText.Append (new NSAttributedString (" " + intentString));
-                    attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, UIColor.FromRGB (0xD2, 0x47, 0x47), new NSRange (location, intentString.Length));
+                    attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, adoptedTheme.MessageIntentTextColor, new NSRange (location, intentString.Length));
                     if (Message.IntentDateType != MessageDeferralType.None) {
                         var dueDateString = Pretty.FutureDate (Message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (Message.IntentDateType));
                         location = attributedDateText.Length;
                         attributedDateText.Append (new NSAttributedString (" by " + dueDateString));
-                        attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, A.Color_NachoTextGray, new NSRange (location, dueDateString.Length + 3));
+                        attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, adoptedTheme.TableViewCellDateLabelTextColor, new NSRange (location, dueDateString.Length + 3));
                     }
                 }
             }
@@ -135,9 +144,9 @@ namespace NachoClient.iOS
             string prettySubject = "";
             if (String.IsNullOrWhiteSpace (Message.Subject)) {
                 prettySubject = "(no subject)";
-                SubjectLabel.TextColor = A.Color_NachoTextGray;
+                SubjectLabel.TextColor = adoptedTheme.DisabledTextColor;
             } else {
-                SubjectLabel.TextColor = A.Color_NachoGreen;
+                SubjectLabel.TextColor = adoptedTheme.TableViewCellMainLabelTextColor;
                 prettySubject = Pretty.SubjectString (Message.Subject);
             }
             using (var attributedSubject = new NSMutableAttributedString (prettySubject)) {

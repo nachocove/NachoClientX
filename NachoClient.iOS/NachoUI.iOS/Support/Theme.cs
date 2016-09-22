@@ -23,6 +23,7 @@ namespace NachoClient.iOS
         public UIFont BoldDefaultFont { get; protected set; }
         public UIColor DefaultTextColor { get; protected set; }
         public UIColor DisabledTextColor { get; protected set; }
+        public UIColor DestructiveTextColor { get; protected set; }
 
         #endregion
 
@@ -187,6 +188,7 @@ namespace NachoClient.iOS
 
             DefaultTextColor = UIColor.FromRGBA (0x33, 0x33, 0x33, 0xFF);
             DisabledTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
+            DestructiveTextColor = UIColor.FromRGBA (0xEB, 0x4C, 0x2F, 0xFF);
             
             // Navigation
             IsNavigationBarOpaque = true;
