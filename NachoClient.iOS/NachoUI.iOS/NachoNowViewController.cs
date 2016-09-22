@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, INachoFolderChooserParent, IAccountSwitching
+    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, INachoFolderChooserParent, IAccountSwitching, ThemeAdopter
     {
         #region Constants
 
@@ -88,6 +88,27 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                HotEventView.AdoptTheme (theme);
+                HotMessagesHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
+                HotMessagesHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
+                ActionsHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
+                ActionsHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public override void LoadView ()
@@ -155,6 +176,7 @@ namespace NachoClient.iOS
             if (HotEventView.Selected) {
                 HotEventView.SetSelected (false, animated: true);
             }
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -787,8 +809,6 @@ namespace NachoClient.iOS
                     _HotMessagesHeader = new InsetLabelView ();
                     _HotMessagesHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _HotMessagesHeader.Label.Text = "Hot Messages";
-                    _HotMessagesHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _HotMessagesHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _HotMessagesHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
                 return _HotMessagesHeader;
@@ -802,8 +822,6 @@ namespace NachoClient.iOS
                     _ActionsHeader = new InsetLabelView ();
                     _ActionsHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _ActionsHeader.Label.Text = "Hot Actions";
-                    _ActionsHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _ActionsHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _ActionsHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
                 return _ActionsHeader;
@@ -947,6 +965,15 @@ namespace NachoClient.iOS
                 }
             }
             return null;
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
@@ -1309,15 +1336,23 @@ namespace NachoClient.iOS
             }
         }
 
-        private class ButtonCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell, ThemeAdopter
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
             public ButtonCell (IntPtr handle) : base (handle)
             {
-                TextLabel.Font = A.Font_AvenirNextRegular14;
-                TextLabel.TextColor = A.Color_NachoGreen;
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                var accessory = AccessoryView as DisclosureAccessoryView;
+                if (accessory != null) {
+                    accessory.TintColor = theme.TableViewCellDisclosureAccessoryColor;
+                }
             }
         }
 

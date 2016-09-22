@@ -19,8 +19,10 @@ namespace NachoClient.iOS
 
         public nfloat DefaultFontSize { get; protected set; }
         public UIFont DefaultFont { get; protected set; }
+        public UIFont MediumDefaultFont { get; protected set; }
         public UIFont BoldDefaultFont { get; protected set; }
         public UIColor DefaultTextColor { get; protected set; }
+        public UIColor DisabledTextColor { get; protected set; }
 
         #endregion
 
@@ -61,6 +63,7 @@ namespace NachoClient.iOS
         public UIColor TableViewTintColor { get; protected set; }
         public UIColor TableViewCellMainLabelTextColor { get; protected set; }
         public UIColor TableViewCellDetailLabelTextColor { get; protected set; }
+        public UIColor TableViewCellDateLabelTextColor { get; protected set; }
         public UIColor TableViewCellDisclosureAccessoryColor { get; protected set; }
         public UIColor TableViewCellActionAccessoryColor { get; protected set; }
         public UIColor TableSectionHeaderTextColor { get; protected set; }
@@ -83,11 +86,19 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Message
+
+        public UIColor MessageIntentTextColor { get; protected set; }
+        public UIColor ThreadIndicatorColor { get; protected set; }
+
+        #endregion
+
         public Theme ()
         {
             DefaultFontSize = UIFont.SystemFontSize;
             DefaultFont = UIFont.SystemFontOfSize (DefaultFontSize);
             BoldDefaultFont = UIFont.BoldSystemFontOfSize (DefaultFontSize);
+            MediumDefaultFont = UIFont.SystemFontOfSize(DefaultFontSize, UIFontWeight.Medium);
         }
 
         static Theme _active;
@@ -164,7 +175,9 @@ namespace NachoClient.iOS
 
         public ApolloTheme ()
         {
+
             DefaultTextColor = UIColor.FromRGBA (0x33, 0x33, 0x33, 0xFF);
+            DisabledTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
             
             // Navigation
             IsNavigationBarOpaque = true;
@@ -190,6 +203,7 @@ namespace NachoClient.iOS
             TableViewTintColor = MainColor;
             TableViewCellMainLabelTextColor = MainColor;
             TableViewCellDetailLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
+            TableViewCellDateLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
             TableViewCellDisclosureAccessoryColor = MainColor;
             TableViewCellActionAccessoryColor = MainColor;
             TableSectionHeaderTextColor = TableViewGroupedBackgroundColor.ColorDarkenedByAmount (0.6f);
@@ -203,6 +217,10 @@ namespace NachoClient.iOS
 
             // Account Switcher
             AccountSwitcherTextColor = UIColor.White;
+
+            // Message
+            MessageIntentTextColor = UIColor.FromRGB (0xD2, 0x47, 0x47);
+            ThreadIndicatorColor = MainShadedColor2;
         }
 
         public override void DefineAppearance ()

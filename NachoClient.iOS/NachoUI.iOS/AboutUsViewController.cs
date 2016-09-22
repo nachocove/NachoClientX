@@ -12,16 +12,6 @@ namespace NachoClient.iOS
 {
     public partial class AboutUsViewController : NachoTableViewController, ThemeAdopter
     {
-        public static string PRIVACY_POLICY_KEY = "PRIVACY_POLICY";
-        public static string LICENSE_AGREEMENT_KEY = "LICENSE_AGREEMENT";
-
-        protected string url;
-        protected string title;
-        protected string key;
-        protected bool loadFromWeb;
-
-        UILabel versionLabel;
-
         const string AboutCellIdentifier = "AboutCellIdentifier";
         const string DetailCellIdentifier = "DetailCellIdentifier";
 
@@ -281,17 +271,17 @@ namespace NachoClient.iOS
 
             public nfloat PreferredHeight {
                 get {
-                    return DescriptionLabel.Frame.Top + DescriptionLabel.Frame.Height + 15.0f;
+                    return DescriptionLabel.Frame.Top + DescriptionLabel.Frame.Height + 40.0f;
                 }
             }
 
             public override void LayoutSubviews ()
             {
                 base.LayoutSubviews ();
-                LogoView.Center = new CGPoint (Bounds.Width / 2.0f, LogoView.Frame.Height / 2.0f + 10.0f);
+                LogoView.Center = new CGPoint (Bounds.Width / 2.0f, LogoView.Frame.Height / 2.0f + 40.0f);
 
-                var y = LogoView.Frame.Top + LogoView.Frame.Height + 15.0f;
-                var inset = 30.0f;
+                var y = LogoView.Frame.Top + LogoView.Frame.Height + 30.0f;
+                var inset = 40.0f;
                 var width = ContentView.Bounds.Width - 2.0f * inset;
                 var size = HeaderLabel.SizeThatFits (new CGSize (width, 0.0f));
                 HeaderLabel.Frame = new CGRect (inset, y, width, size.Height);

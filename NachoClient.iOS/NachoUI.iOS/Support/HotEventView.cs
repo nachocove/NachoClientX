@@ -14,7 +14,7 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public class HotEventView : UIView, IUIGestureRecognizerDelegate
+    public class HotEventView : UIView, IUIGestureRecognizerDelegate, ThemeAdopter
     {
 
         static public readonly nfloat PreferredHeight = 69.0f;
@@ -69,7 +69,6 @@ namespace NachoClient.iOS
             TextInsets = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 10.0f);
 
             SwipeView = new SwipeActionsView (Bounds);
-            SwipeView.BackgroundColor = UIColor.White;
             SwipeView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
 
             AddSubview (SwipeView);
@@ -82,8 +81,6 @@ namespace NachoClient.iOS
             EmptyLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             EmptyLabel.Lines = 1;
             EmptyLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            EmptyLabel.Font = A.Font_AvenirNextDemiBold17;
-            EmptyLabel.TextColor = A.Color_NachoTextGray;
             EmptyLabel.TextAlignment = UITextAlignment.Center;
             EmptyLabel.Hidden = true;
             EmptyLabel.Text = "No upcoming events";
@@ -92,26 +89,19 @@ namespace NachoClient.iOS
             TitleLabel = new UILabel ();
             TitleLabel.Lines = 1;
             TitleLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-            TitleLabel.TextColor = A.Color_NachoGreen;
             ContentView.AddSubview (TitleLabel);
 
             DetailLabel = new UILabel ();
             DetailLabel.Lines = 1;
             DetailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            DetailLabel.Font = A.Font_AvenirNextRegular14;
-            DetailLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DetailLabel);
 
             DateLabel = new UILabel ();
             DateLabel.Lines = 1;
             DateLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            DateLabel.Font = A.Font_AvenirNextRegular14;
-            DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
             BottomBorder = new UIView (new CGRect (0.0f, 0.0f, Bounds.Width, BorderWidth));
-            BottomBorder.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.15f);
             ContentView.AddSubview (BottomBorder);
 
             EventPressGestureRecognizer = new PressGestureRecognizer (EventPressed);
@@ -120,6 +110,22 @@ namespace NachoClient.iOS
             EventPressGestureRecognizer.Delegate = this;
             ContentView.AddGestureRecognizer (EventPressGestureRecognizer);
 
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            SwipeView.BackgroundColor = UIColor.White;
+            BottomBorder.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+
+            EmptyLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+            EmptyLabel.TextColor = theme.DisabledTextColor;
+            TitleLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+            TitleLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+            DetailLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DetailLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+            DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DateLabel.TextColor = theme.TableViewCellDateLabelTextColor;
+            SetNeedsLayout ();
         }
 
         public void CancelAutomaticDateUpdate ()
