@@ -9,7 +9,7 @@ using Foundation;
 
 namespace NachoClient.iOS
 {
-    public class MessageListFilterBar : UIView
+    public class MessageListFilterBar : UIView, ThemeAdopter
     {
 
         public static readonly nfloat PreferredHeight = 32.0f;
@@ -20,28 +20,73 @@ namespace NachoClient.iOS
         nfloat CornerRadius = 6.0f;
         public MessageFilterBarItem[] Items { get; private set; }
         List<FilterBarItemView> ItemViews;
-        UIColor UnselectedItemColor;
-        UIColor SelectedItemColor;
+        UIColor _UnselectedItemColor;
+        UIColor _SelectedItemColor;
+        UIColor _BorderColor;
+        UIColor _BarColor;
+        UIFont _ItemFont;
+        public UIColor UnselectedItemColor {
+            get {
+                return _UnselectedItemColor;
+            }
+            set {
+                _UnselectedItemColor = value;
+                UpdateItemViews ();
+            }
+        }
+        public UIColor SelectedItemColor {
+            get {
+                return _SelectedItemColor;
+            }
+            set {
+                _SelectedItemColor = value;
+                UpdateItemViews ();
+            }
+        }
+
+        public UIColor BorderColor {
+            get {
+                return _BorderColor;
+            }
+            set {
+                _BorderColor = value;
+                BorderLayer.BackgroundColor = _BorderColor.CGColor;
+                CornerLayerTemplate.CornerBorderColor = _BorderColor.CGColor;
+            }
+        }
+
+        public UIFont ItemFont {
+            get {
+                return _ItemFont;
+            }
+            set {
+                _ItemFont = value;
+                UpdateItemViews ();
+            }
+        }
+
+        public UIColor BarColor {
+            get {
+                return BackgroundColor;
+            }
+            set {
+                BackgroundColor = value;
+                CornerLayerTemplate.CornerBackgroundColor = BackgroundColor.CGColor;
+            }
+        }
+
         FilterBarItemView SelectedItemView;
 
         public MessageListFilterBar (CGRect frame) : base (frame)
         {
-            BackgroundColor = A.Color_NachoBackgroundGray;
-
-            var borderColor = BackgroundColor.ColorDarkenedByAmount (0.15f);
-
-            UnselectedItemColor = borderColor;
-            SelectedItemColor = A.Color_NachoGreen;
 
             BorderLayer = new CALayer ();
-            BorderLayer.BackgroundColor = borderColor.CGColor;
 
             CornerLayerTemplate = new CornerLayer ();
             CornerLayerTemplate.ContentsScale = UIScreen.MainScreen.Scale;
             CornerLayerTemplate.Frame = new CGRect (0.0f, 0.0f, CornerRadius, CornerRadius);
-            CornerLayerTemplate.CornerBackgroundColor = BackgroundColor.CGColor;
             CornerLayerTemplate.CornerBorderWidth = 0.5f;
-            CornerLayerTemplate.CornerBorderColor = borderColor.CGColor;
+            CornerLayerTemplate.BackgroundColor = UIColor.Clear.CGColor;
 
             CornersLayer = new CAReplicatorLayer ();
             CornersLayer.Frame = new CGRect (-BorderWidth, Layer.Bounds.Height - BorderWidth, CornerRadius, CornerRadius);
@@ -60,6 +105,27 @@ namespace NachoClient.iOS
             foreach (var itemView in ItemViews) {
                 itemView.FilterBar = null;
                 itemView.Cleanup ();
+            }
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            BarColor = theme.FilterbarBackgroundColor;
+            BorderColor = theme.FilterbarBorderColor;
+            ItemFont = theme.DefaultFont;
+            UnselectedItemColor = theme.FilterbarItemColor;
+            SelectedItemColor = theme.FilterbarSelectedItemColor;
+        }
+
+        void UpdateItemViews ()
+        {
+            foreach (var view in ItemViews) {
+                if (view == SelectedItemView) {
+                    view.TintColor = _SelectedItemColor;
+                } else {
+                    view.TintColor = _UnselectedItemColor;
+                }
+                view.TitleLabel.Font = _ItemFont.WithSize (12.0f);
             }
         }
 
@@ -148,7 +214,7 @@ namespace NachoClient.iOS
             }
             public MessageListFilterBar FilterBar;
             UIImageView ImageView;
-            UILabel TitleLabel;
+            public UILabel TitleLabel;
             nfloat ImageSize;
             UITapGestureRecognizer TapGestureRecognizer;
 
@@ -158,9 +224,7 @@ namespace NachoClient.iOS
 
                 ImageSize = frame.Size.Height / 2.0f;
                 ImageView = new UIImageView (new CGRect (0.0f, 0.0f, ImageSize, ImageSize));
-                var titleFont = A.Font_AvenirNextRegular12;
-                TitleLabel = new UILabel (new CGRect(0.0f, 0.0f, Bounds.Width, titleFont.RoundedLineHeight(1.0f)));
-                TitleLabel.Font = titleFont;
+                TitleLabel = new UILabel (new CGRect(0.0f, 0.0f, Bounds.Width, 16.0f));
                 TitleLabel.TextAlignment = UITextAlignment.Center;
 
                 AddSubview (ImageView);

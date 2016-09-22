@@ -18,7 +18,7 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     
-    public class MessageListViewController : NachoWrappedTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate, MessagesSyncManagerDelegate
+    public class MessageListViewController : NachoWrappedTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate, MessagesSyncManagerDelegate, ThemeAdopter
     {
         #region Constants
 
@@ -98,23 +98,37 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+                FilterBar.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
             
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
             TableView.AllowsMultipleSelectionDuringEditing = true;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
             TableView.AccessibilityLabel = "Message list";
-            TableView.TintColor = A.Color_NachoGreen;
             TableView.BackgroundColor = UIColor.White;
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
 
             FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, View.Bounds.Width, MessageListFilterBar.PreferredHeight));
             FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FilterBar.BackgroundColor = A.Color_NachoBackgroundGray;
 
             TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, View.Bounds.Width, View.Bounds.Height - FilterBar.Frame.Height);
             TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
@@ -144,6 +158,7 @@ namespace NachoClient.iOS
             }
             StartListeningForStatusInd ();
             HasAppearedOnce = true;
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -704,6 +719,15 @@ namespace NachoClient.iOS
             return cell;
         }
 
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
+        }
+
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
@@ -1162,7 +1186,7 @@ namespace NachoClient.iOS
     }
 
 
-    public class MessageSearchResultsViewController : NachoTableViewController
+    public class MessageSearchResultsViewController : NachoTableViewController, ThemeAdopter
     {
 
         NSObject KeyboardWillShowNotificationToken;
@@ -1184,11 +1208,22 @@ namespace NachoClient.iOS
             base.Cleanup ();
         }
 
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
         public override void LoadView ()
         {
             base.LoadView ();
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
-            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
         }
 
         public override void ViewWillAppear (bool animated)
@@ -1199,6 +1234,7 @@ namespace NachoClient.iOS
             }
             KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, KeyboardWillShow);
             KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, KeyboardWillHide);
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -1294,6 +1330,15 @@ namespace NachoClient.iOS
             messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
             NavigationController.SetNavigationBarHidden (false, true);
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
     }

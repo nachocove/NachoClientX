@@ -96,6 +96,7 @@ namespace NachoClient.iOS
         {
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
+                EmptyView.AdoptTheme (theme);
                 HotEventView.AdoptTheme (theme);
                 HotMessagesHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
                 HotMessagesHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
@@ -868,16 +869,17 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
+            var theme = adoptedTheme == null ? Theme.Active : adoptedTheme;
             if (indexPath.Section == HotMessagesSection) {
                 if (indexPath.Row < HotMessages.Count ()) {
-                    return MessageCell.PreferredHeight (NumberOfMessagePreviewLines, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+                    return MessageCell.PreferredHeight (NumberOfMessagePreviewLines, theme.DefaultFont.WithSize(17.0f), theme.DefaultFont.WithSize(14.0f));
                 } else {
                     return ButtonCell.PreferredHeight;
                 }
             }
             if (indexPath.Section == ActionsSection) {
                 if (indexPath.Row < HotActions.Count ()) {
-                    return ActionCell.PreferredHeight (NumberOfActionPreviewLines, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+                    return ActionCell.PreferredHeight (NumberOfActionPreviewLines, theme.DefaultFont.WithSize (17.0f), theme.DefaultFont.WithSize (14.0f));
                 } else {
                     return ButtonCell.PreferredHeight;
                 }
@@ -1356,7 +1358,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private class EmptyHotView : UIView 
+        private class EmptyHotView : UIView, ThemeAdopter 
         {
 
             public readonly UILabel TextLabel;
@@ -1370,7 +1372,6 @@ namespace NachoClient.iOS
                 TextLabel = new UILabel ();
                 TextLabel.UserInteractionEnabled = false;
                 TextLabel.Lines = 0;
-                TextLabel.Font = A.Font_AvenirNextRegular14;
                 TextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 TextLabel.TextAlignment = UITextAlignment.Center;
                 TextLabel.Text = "Your most important items will show up here automatically as Apollo Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
@@ -1379,6 +1380,11 @@ namespace NachoClient.iOS
 
                 AddSubview(ImageView);
                 AddSubview(TextLabel);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
             }
 
             public override void TintColorDidChange ()

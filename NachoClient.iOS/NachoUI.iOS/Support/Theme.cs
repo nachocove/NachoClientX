@@ -70,6 +70,15 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Filterbar
+
+        public UIColor FilterbarBackgroundColor { get; protected set; }
+        public UIColor FilterbarBorderColor { get; protected set; }
+        public UIColor FilterbarItemColor { get; protected set; }
+        public UIColor FilterbarSelectedItemColor { get; protected set; }
+
+        #endregion
+
         #region Account Creation
 
         public UIColor AccountCreationBackgroundColor { get; protected set; }
@@ -207,6 +216,12 @@ namespace NachoClient.iOS
             TableViewCellDisclosureAccessoryColor = MainColor;
             TableViewCellActionAccessoryColor = MainColor;
             TableSectionHeaderTextColor = TableViewGroupedBackgroundColor.ColorDarkenedByAmount (0.6f);
+
+            // Filterbar
+            FilterbarBackgroundColor = ShadedColor;
+            FilterbarBorderColor = ShadedColor.ColorDarkenedByAmount (0.15f);
+            FilterbarItemColor = FilterbarBorderColor;
+            FilterbarSelectedItemColor = MainColor;
 
             // Startup
             AccountCreationBackgroundColor = MainColor;
