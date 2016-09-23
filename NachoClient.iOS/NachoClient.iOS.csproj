@@ -384,6 +384,13 @@
     <Folder Include="Resources\Images.xcassets\AboutLogo.imageset\" />
     <Folder Include="Resources\Images.xcassets\avatar-unknown.imageset\" />
     <Folder Include="Resources\Images.xcassets\checkmark-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-default.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-inbox.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-sent.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-drafts.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-outbox.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-trash.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-archive.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -480,9 +487,6 @@
     <Compile Include="NachoUI.iOS\DatePickerViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\DateTime+ToString.cs">
       <Link>NachoCore\Extensions\DateTime+ToString.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
-      <Link>NachoCore\Adapters\NachoFolders.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoFolders.cs">
       <Link>NachoCore\Adapters\INachoFolders.cs</Link>
@@ -855,7 +859,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPendDep.cs">
       <Link>NachoCore\Model\McPendDep.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Interfaces\INachoFolderChooser.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\GatedMemoryStream.cs">
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
     </Compile>
@@ -1735,7 +1738,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs">
       <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\FolderTableViewSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\FolderLists.cs">
       <Link>NachoCore\Utils\FolderLists.cs</Link>
     </Compile>
@@ -1853,6 +1855,12 @@
       <Link>NachoCore\Utils\Telemetry\TelemetryJsonFileTable.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\Theme.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NachoMailFolders.cs">
+      <Link>NachoCore\Utils\NachoMailFolders.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
+      <Link>NachoCore\Adapters\NachoFolders.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -3077,5 +3085,26 @@
     <ImageAsset Include="Resources\Images.xcassets\checkmark-accessory.imageset\Contents.json" />
     <ImageAsset Include="Resources\Images.xcassets\checkmark-accessory.imageset\check-accessory%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\checkmark-accessory.imageset\check-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-default.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-inbox.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-sent.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-drafts.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-outbox.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-trash.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-archive.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-default.imageset\folder-icon-default%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-default.imageset\folder-icon-default%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-inbox.imageset\folder-icon-inbox%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-inbox.imageset\folder-icon-inbox%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-sent.imageset\folder-icon-sent%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-sent.imageset\folder-icon-sent%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-drafts.imageset\folder-icon-drafts%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-drafts.imageset\folder-icon-drafts%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-trash.imageset\folder-icon-trash%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-trash.imageset\folder-icon-trash%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-archive.imageset\folder-icon-archive%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-archive.imageset\folder-icon-archive%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-outbox.imageset\folder-icon-outbox%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-outbox.imageset\folder-icon-outbox%403x.png" />
   </ItemGroup>
 </Project>

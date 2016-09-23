@@ -16,159 +16,388 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class FoldersViewController : NcUIViewController, INachoFolderChooser, IAccountSwitching
+
+    public interface FoldersViewControllerDelegate
     {
-        UITableView TableView;
-        FolderTableViewSource folderTableViewSource;
+        void FoldersViewDidChooseFolder (FoldersViewController vc, McFolder folder);
+    }
 
-        bool EventHandlersAreSet;
+    public partial class FoldersViewController : NachoTableViewController, IAccountSwitching, ThemeAdopter
+    {
 
-        public FoldersViewController () : base ()
+        const string FolderCellIdentifier = "FolderCellIdentifier";
+
+        public McAccount Account {
+            get {
+                return Folders.Account;
+            }
+            set {
+                Folders.Account = value;
+            }
+        }
+        public FoldersViewControllerDelegate FoldersViewDelegate;
+        NachoMailFolders Folders;
+
+        UIBarButtonItem DismissButton;
+        UIBarButtonItem ComposeButton;
+
+        int SectionCount = 0;
+        int SectionRecent = 0;
+        int SectionAccount0 = 0;
+
+        #region Constructors
+
+        public FoldersViewController () : base (UITableViewStyle.Grouped)
         {
+            Folders = new NachoMailFolders (NcApplication.Instance.Account);
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+            using (var image = UIImage.FromBundle ("contact-newemail")) {
+                ComposeButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, ComposeMessageClicked);
+            }
+            ComposeButton.AccessibilityLabel = "New message";
+            NavigationItem.RightBarButtonItem = ComposeButton;
+            AccountHeaders = new List<InsetLabelView> ();
         }
 
-        public FoldersViewController (IntPtr handle) : base (handle)
+        public void PresentAsChooserOverViewController (UIViewController vc, Action completion)
         {
+            var navController = new UINavigationController (this);
+            NavigationItem.Title = "Move to Folder";
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (object sender, EventArgs e) => {
+                    vc.DismissViewController (true, null);
+                    NavigationItem.LeftBarButtonItem = null;
+                    DismissButton = null;
+                });
+            }
+            DismissButton.AccessibilityLabel = "Dismiss";
+            NavigationItem.LeftBarButtonItem = DismissButton;
+            NavigationItem.RightBarButtonItem = null;
+            vc.PresentViewController (navController, true, completion);
         }
 
-        int accountId;
-        protected object cookie;
-        protected bool modal;
-        protected INachoFolderChooserParent owner;
+        #endregion
 
-        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
         {
-            return UIStatusBarStyle.LightContent;
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                ApplyThemeToHeader (_RecentHeader);
+                foreach (var header in AccountHeaders) {
+                    ApplyThemeToHeader (header);
+                }
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.AdoptTheme (theme);
+            }
         }
 
-        public void SetOwner (INachoFolderChooserParent owner, bool modal, int accountId, object cookie)
+        void ApplyThemeToHeader (InsetLabelView header)
         {
-            this.owner = owner;
-            this.modal = modal;
-            this.cookie = cookie;
-            this.accountId = accountId;
+            if (header != null && adoptedTheme != null) {
+                header.Label.Font = adoptedTheme.DefaultFont.WithSize (14.0f);
+                header.Label.TextColor = adoptedTheme.TableSectionHeaderTextColor;
+            }
         }
 
-        public void DismissFolderChooser (bool animated, Action action)
+        #endregion
+
+        #region View Lifecycle
+
+        public override void LoadView ()
         {
-            owner = null;
-            cookie = null;
-            DismissViewController (animated, action);
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof (FolderCell), FolderCellIdentifier);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            TableView = new UITableView (new CGRect (0, modal ? 64 : 0, View.Frame.Width, View.Frame.Height), UITableViewStyle.Grouped);
-            TableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            TableView.TableFooterView = new UIView (new CGRect (0, 0, TableView.Frame.Width, 100));
-            TableView.AccessibilityLabel = "Folder list";
-            TableView.SectionHeaderHeight = 4;
-            TableView.SectionFooterHeight = 4;
-            View.AddSubview (TableView);
-
-            var v = new UIView (new CGRect (0, 0, 1, 8));
-            v.BackgroundColor = UIColor.Clear;
-            TableView.TableHeaderView = v;
-                
-            if (modal) {
-                NcAssert.False (0 == accountId);
-                var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
-                navBar.BarStyle = UIBarStyle.Default;
-                navBar.Translucent = false;
-                navBar.Opaque = true;
-
-                var navItem = new UINavigationItem ();
-                navItem.Title = "Move to Folder";
-                using (var image = UIImage.FromBundle ("modal-close")) {
-                    var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
-                    dismissButton.AccessibilityLabel = "Dismiss";
-                    dismissButton.Clicked += (object sender, EventArgs e) => {
-                        DismissViewController (true, null);
-                    };
-                    navItem.LeftBarButtonItem = dismissButton;
-                }
-                navBar.Items = new UINavigationItem[] { navItem };
-
-                var titleView = new UIView (new CGRect (0, 0, View.Frame.Width, 64));
-                titleView.BackgroundColor = A.Color_NachoGreen;
-                titleView.AddSubview (navBar);
-                View.AddSubview (titleView);
-            } else {
-                NavigationController.NavigationBar.Translucent = false;
-                var composeButton = new NcUIBarButtonItem ();
-                Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
-                composeButton.AccessibilityLabel = "New message";
-                composeButton.Clicked += (object sender, EventArgs e) => {
-                    ComposeMessage ();
-                };
-                NavigationItem.RightBarButtonItem = composeButton;
-                accountId = NcApplication.Instance.Account.Id;
-            }
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            ReloadFolders ();
+            AdoptTheme (Theme.Active);
+        }
 
-            if (null == folderTableViewSource) {
-                folderTableViewSource = new FolderTableViewSource (accountId, hideFakeFolders: modal);
-                TableView.Source = folderTableViewSource;
-                TableView.ReloadData ();
+        #endregion
+
+        #region Data Loading
+
+        void ReloadFolders ()
+        {
+            AccountHeaders.Clear ();
+            Folders.Reload ();
+            var accountCount = Folders.AccountCount;
+            var recentCount = Folders.RecentCount;
+            var section = 0;
+            if (recentCount > 0) {
+                SectionRecent = section++;
             } else {
-                folderTableViewSource.Refresh (accountId);
-                TableView.ReloadData ();
+                SectionRecent = -1;
             }
-
-            if (!EventHandlersAreSet) {
-                folderTableViewSource.OnFolderSelected += FolderTableViewSource_OnFolderSelected;
-                folderTableViewSource.OnAccountSelected += FolderTableViewSource_OnAccountSelected;
-                folderTableViewSource.OnToggleClick += FolderTableViewSource_OnToggleClick;
-                EventHandlersAreSet = true;
+            SectionAccount0 = section;
+            SectionCount = SectionAccount0 + accountCount;
+            for (var i = 0; i < accountCount; ++i) {
+                AccountHeaders.Add (null);
             }
-        }
-
-        void FolderTableViewSource_OnToggleClick (object sender, int uniqueId)
-        {
-            folderTableViewSource.Toggle (uniqueId);
             TableView.ReloadData ();
         }
 
-        void FolderTableViewSource_OnAccountSelected (object sender, McAccount account)
+        #endregion
+
+        #region Table Delegate & Data Source
+
+        public override nint NumberOfSections (UITableView tableView)
         {
-            NcAssert.False (modal);
-            FolderLists.SetDefaultAccount (account.Id);
-            folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
-            TableView.ReloadData ();
+            return SectionCount;
         }
 
-        void FolderTableViewSource_OnFolderSelected (object sender, McFolder folder)
+        public override nint RowsInSection (UITableView tableView, nint section)
         {
-            switch (folder.Id) {
-            case McFolder.INBOX_FAKE_FOLDER_ID:
-                ShowInbox ();
-                return;
-            case McFolder.HOT_FAKE_FOLDER_ID:
-                ShowHotList ();
-                return;
-            case McFolder.LTR_FAKE_FOLDER_ID:
-                ShowLikelyToRead ();
-                return;
+            if (section == SectionRecent) {
+                return Folders.RecentCount;
             }
+            if (section >= SectionAccount0) {
+                var accountIndex = (int)section - SectionAccount0;
+                if (accountIndex < Folders.AccountCount) {
+                    return Folders.EntryCountAtAccountIndex (accountIndex);
+                }
+            }
+            return 0;
+        }
 
+        InsetLabelView _RecentHeader;
+        InsetLabelView RecentHeader {
+            get {
+                if (_RecentHeader == null) {
+                    _RecentHeader = new InsetLabelView ();
+                    _RecentHeader.Label.Text = "Recent Folders";
+                    _RecentHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
+                    _RecentHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+                    ApplyThemeToHeader (_RecentHeader);
+                }
+                return _RecentHeader;
+            }
+        }
+
+        List<InsetLabelView> AccountHeaders;
+
+        InsetLabelView AccountHeaderAtIndex (int accountIndex)
+        {
+            var header = AccountHeaders [accountIndex];
+            if (header == null) {
+                var account = Folders.AccountAtIndex (accountIndex);
+                header = new InsetLabelView ();
+                header.Label.Text = account.DisplayName;
+                header.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
+                header.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+                ApplyThemeToHeader (header);
+                AccountHeaders [accountIndex] = header;
+            }
+            return header;
+        }
+
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        {
+            if (section == SectionRecent) {
+                return RecentHeader.PreferredHeight;
+            }
+            if (section >= SectionAccount0) {
+                var accountIndex = (int)section - SectionAccount0;
+                if (accountIndex < Folders.AccountCount) {
+                    return AccountHeaderAtIndex (accountIndex).PreferredHeight;
+                }
+            }
+            return 0.0f;
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
+        {
+            if (section == SectionRecent) {
+                return RecentHeader;
+            }
+            if (section >= SectionAccount0) {
+                var accountIndex = (int)section - SectionAccount0;
+                if (accountIndex < Folders.AccountCount) {
+                    return AccountHeaderAtIndex (accountIndex);
+                }
+            }
+            return null;
+        }
+
+        nfloat Level0LeftInset = 40.0f;
+        nfloat IndentInset = 30.0f;
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == SectionRecent) {
+                var folder = Folders.RecentAtIndex (indexPath.Row);
+                var cell = tableView.DequeueReusableCell (FolderCellIdentifier, indexPath) as FolderCell;
+                cell.TextLabel.Text = PrettyMailboxName (folder.DisplayName);
+                cell.SeparatorInset = new UIEdgeInsets (0, Level0LeftInset, 0, 0);
+                cell.IconView.Image = IconForFolder (folder);
+                cell.CanSelect = true;
+                if (Folders.AccountCount > 1) {
+                    var account = Folders.AccountForId (folder.AccountId);
+                    cell.DetailTextLabel.Text = account.DisplayName;
+                } else {
+                    cell.DetailTextLabel.Text = "";
+                }
+                DecorateCell (cell);
+                return cell;
+            }
+            if (indexPath.Section >= SectionAccount0) {
+                var accountIndex = (int)indexPath.Section - SectionAccount0;
+                if (accountIndex < Folders.AccountCount) {
+                    var entry = Folders.EntryAtIndex (accountIndex, indexPath.Row);
+                    var cell = tableView.DequeueReusableCell (FolderCellIdentifier, indexPath) as FolderCell;
+                    cell.TextLabel.Text = PrettyMailboxName (entry.Folder.DisplayName);
+                    cell.SeparatorInset = new UIEdgeInsets (0, Level0LeftInset + IndentInset * entry.IndentLevel, 0, 0);
+                    cell.CanSelect = !entry.Folder.ImapNoSelect;
+                    cell.IconView.Image = IconForFolder (entry.Folder);
+                    cell.DetailTextLabel.Text = "";
+                    DecorateCell (cell);
+                    return cell;
+                }
+            }
+            return null;
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
+        }
+
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (!CanSelectRow (indexPath)) {
+                return null;
+            }
+            return base.WillSelectRow (tableView, indexPath);
+        }
+
+        public override bool ShouldHighlightRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (!CanSelectRow (indexPath)) {
+                return false;
+            }
+            return base.ShouldHighlightRow (tableView, indexPath);
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == SectionRecent) {
+                var folder = Folders.RecentAtIndex (indexPath.Row);
+                SelectFolder (folder);
+            } else if (indexPath.Section >= SectionAccount0) {
+                var accountIndex = (int)indexPath.Section - SectionAccount0;
+                if (accountIndex < Folders.AccountCount) {
+                    var entry = Folders.EntryAtIndex (accountIndex, indexPath.Row);
+                    SelectFolder (entry.Folder);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        bool CanSelectRow (NSIndexPath indexPath)
+        {
+            if (indexPath.Section >= SectionAccount0) {
+                var accountIndex = (int)indexPath.Section - SectionAccount0;
+                if (accountIndex < Folders.AccountCount) {
+                    var entry = Folders.EntryAtIndex (accountIndex, indexPath.Row);
+                    if (entry.Folder.ImapNoSelect) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        void DecorateCell (FolderCell cell)
+        {
+            if (FoldersViewDelegate == null) {
+                if (cell.CanSelect) {
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                } else {
+                    cell.AccessoryView = null;
+                }
+            } else {
+                cell.AccessoryView = null;
+            }
+        }
+
+        string PrettyMailboxName (string name)
+        {
+            if (name == "INBOX") {
+                return "Inbox";
+            }
+            return name;
+        }
+
+        UIImage IconForFolder (McFolder folder)
+        {
+            var name = "folder-icon-default";
+            if (folder.IsClientOwnedOutboxFolder ()) {
+                name = "folder-icon-outbox";
+            } else if (folder.IsClientOwnedDraftsFolder ()) {
+                name = "folder-icon-drafts";
+            } else if ((folder.ServerId == "[Gmail]/All Mail") || (folder.DisplayName == "Archive")) {
+                name = "folder-icon-archive";
+            } else {
+                switch (folder.Type) {
+                    case Xml.FolderHierarchy.TypeCode.DefaultInbox_2:
+                    name = "folder-icon-inbox";
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
+                    name = "folder-icon-drafts";
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultDeleted_4:
+                    name = "folder-icon-trash";
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultSent_5:
+                    name = "folder-icon-sent";
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultOutbox_6:
+                    name = "folder-icon-outbox";
+                    break;
+                default:
+                    name = "folder-icon-default";
+                    break;
+                }
+            }
+            return UIImage.FromBundle (name).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate);
+        }
+
+        #endregion
+
+        void SelectFolder (McFolder folder)
+        {
             folder.UpdateSet_LastAccessed (DateTime.UtcNow);
-            if (null == owner) {
+            if (FoldersViewDelegate != null) {
+                FoldersViewDelegate.FoldersViewDidChooseFolder (this, folder);
+            } else {
                 if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
                     ShowDrafts (folder);
                 } else {
                     ShowMessages (folder);
                 }
-            } else {
-                owner.FolderSelected (this, folder, cookie);
             }
         }
 
@@ -212,19 +441,74 @@ namespace NachoClient.iOS
 
         public void SwitchToAccount (McAccount account)
         {
-            NcAssert.False (modal);
-            accountId = account.Id;
-            folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
-            TableView.ReloadData ();
+            Account = account;
+            ReloadFolders ();
+        }
+
+        private void ComposeMessageClicked(object sender, EventArgs e)
+        {
+            ComposeMessage ();
         }
 
         private void ComposeMessage ()
         {
-            NcAssert.False (modal);
             var account = McAccount.EmailAccountForAccount (NcApplication.Instance.Account);
             var composeViewController = new MessageComposeViewController (account);
             composeViewController.Present ();
         }
+
+        #region View Controller Overrides
+
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
+        {
+            return UIStatusBarStyle.LightContent;
+        }
+
+        #endregion
+
+        #region Private Classes
+
+        private class DisclosureAccessoryView : ImageAccessoryView
+        {
+            public DisclosureAccessoryView () : base ("gen-more-arrow")
+            {
+            }
+        }
+
+        private class FolderCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public bool CanSelect = true;
+            public UIImageView IconView;
+
+            public FolderCell (IntPtr ptr) : base (ptr)
+            {
+                IconView = new UIImageView (new CGRect (0, 0, 20, 20));
+                ContentView.AddSubview (IconView);
+                HideDetailWhenEmpty = true;
+                DetailTextSpacing = 1.0f;
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (12.0f);
+                DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+                if (CanSelect) {
+                    TextLabel.TextColor = theme.DefaultTextColor;
+                }else{
+                    TextLabel.TextColor = theme.DisabledTextColor;
+                }
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                IconView.Center = new CGPoint (SeparatorInset.Left - IconView.Frame.Width / 2.0f - 10.0f, ContentView.Bounds.Height / 2.0f);
+            }
+        }
+
+        #endregion
 
     }
 }
