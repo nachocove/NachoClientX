@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, INachoFolderChooserParent, IAccountSwitching, ThemeAdopter
+    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, FoldersViewControllerDelegate, IAccountSwitching, ThemeAdopter
     {
         #region Constants
 
@@ -338,24 +338,26 @@ namespace NachoClient.iOS
             }
         }
 
+        McEmailMessageThread SelectedThread;
+
         void ShowFoldersForMove (McEmailMessageThread thread, McEmailMessage selectedMessage)
         {
+            SelectedThread = thread;
             var vc = new FoldersViewController ();
-            var accountId = selectedMessage.AccountId;
-            NcAssert.False (0 == accountId);
-            vc.SetOwner (this, true, accountId, thread);
-            PresentViewController (vc, true, null);
+            vc.Account = McAccount.QueryById<McAccount> (selectedMessage.AccountId);
+            vc.PresentAsChooserOverViewController (this, null);
         }
 
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        public void FoldersViewDidChooseFolder (FoldersViewController vc, McFolder folder)
         {
-            var messageThread = cookie as McEmailMessageThread;
+            var messageThread = SelectedThread;
+            SelectedThread = null;
             if (messageThread != null) {
                 NcTask.Run (() => {
                     NcEmailArchiver.Move (messageThread, folder);
                 }, "MessageListViewController.MoveMessage");
                 HotMessages.IgnoreMessage (messageThread.FirstMessageId);
-                vc.DismissFolderChooser (true, () => {
+                vc.DismissViewController (true, () => {
                     SetNeedsReload ();
                 });
             }
@@ -1315,16 +1317,6 @@ namespace NachoClient.iOS
                     RefreshLabel.Text = "";
                 }
             }
-        }
-
-        #endregion
-
-        #region Folder Chooser Parent (for Move)
-
-        // The folder chooser should really just close itself, but it's easier to just add this than change its interface
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            DismissViewController (true, null);
         }
 
         #endregion

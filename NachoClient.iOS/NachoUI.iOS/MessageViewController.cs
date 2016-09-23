@@ -21,7 +21,7 @@ using SafariServices;
 namespace NachoClient.iOS
 {
 
-    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate, ThemeAdopter
+    public partial class MessageViewController : NcUIViewController, FoldersViewControllerDelegate, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate, ThemeAdopter
     {
         
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
@@ -467,8 +467,8 @@ namespace NachoClient.iOS
         void ShowMove ()
         {
             var vc = new FoldersViewController ();
-            vc.SetOwner (this, true, Message.AccountId, null);
-            PresentViewController (vc, true, null);
+            vc.Account = McAccount.QueryById<McAccount> (Message.AccountId);
+            vc.PresentAsChooserOverViewController (this, null);
         }
 
         private void onDeleteButtonClicked ()
@@ -488,13 +488,10 @@ namespace NachoClient.iOS
             ComposeResponse (action);
         }
 
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        public void FoldersViewDidChooseFolder (FoldersViewController vc, McFolder folder)
         {
             MoveThisMessage (folder);
-            vc.SetOwner (null, false, 0, null);
-            vc.DismissFolderChooser (false, new Action (delegate {
-                NavigationController.PopViewController (true);
-            }));
+            vc.DismissViewController (true, null);
         }
 
         void ToggleHot (object sender, EventArgs e)
@@ -887,15 +884,6 @@ namespace NachoClient.iOS
             get {
                 return true;
             }
-        }
-
-        #endregion
-
-        #region Folder Selector Delegate
-
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            vc.DismissFolderChooser (true, null);
         }
 
         #endregion
