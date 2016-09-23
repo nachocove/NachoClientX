@@ -138,7 +138,7 @@ namespace NachoClient.AndroidClient
             var issue = IssueWithCredentials (email, password);
             if (null != issue) {
                 Log.Info (Log.LOG_UI, "ValidationFragment issue found: {0}", issue);
-                NcAlertView.ShowMessage (Activity, "Nacho Mail", issue);
+                NcAlertView.ShowMessage (Activity, "Apollo Mail", issue);
                 return;
             }
 

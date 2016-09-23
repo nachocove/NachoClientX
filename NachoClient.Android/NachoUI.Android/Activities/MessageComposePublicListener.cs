@@ -28,7 +28,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
             SetContentView (Resource.Layout.WaitingFragment);
-            FindViewById<TextView> (Resource.Id.textview).Text = "Loading Nacho Mail";
+            FindViewById<TextView> (Resource.Id.textview).Text = "Loading Apollo Mail";
 
             // Use a C# task instead of an NcTask, because the app might not be initialized yet.
             System.Threading.Tasks.Task.Run (() => {

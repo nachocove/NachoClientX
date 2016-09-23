@@ -13,7 +13,7 @@ using Foundation;
 
 namespace NachoClient.iOS
 {
-    public class MessageHeaderDetailViewController : NachoTableViewController
+    public class MessageHeaderDetailViewController : NachoTableViewController, ThemeAdopter
     {
 
         #region Properties
@@ -85,12 +85,40 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+                ApplyThemeToHeader (_ToHeader);
+                ApplyThemeToHeader (_CcHeader);
+                ApplyThemeToHeader (_BccHeader);
+                ApplyThemeToHeader (_FromHeader);
+                ApplyThemeToHeader (_DebugHeader);
+            }
+        }
+
+        public void ApplyThemeToHeader (InsetLabelView header)
+        {
+            if (header != null) {
+                header.Label.Font = adoptedTheme.DefaultFont.WithSize (14.0f);
+                header.Label.TextColor = adoptedTheme.TableSectionHeaderTextColor;
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.RegisterClassForCellReuse (typeof(MessageAddressCell), MessageAddressCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(NameValueCell), NameValueCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ButtonCell), ButtonCellIdentifier);
@@ -99,6 +127,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -231,8 +265,8 @@ namespace NachoClient.iOS
                     var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as NameValueCell;
                     cell.TextLabel.Text = "Mime Tree";
                     cell.DetailTextLabel.Text = Mime.Body.ContentType.ToString ();
-                    cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                    cell.DetailTextLabel.TextColor = A.Color_NachoTextGray;
+                    cell.DetailTextLabel.Font = adoptedTheme.DefaultFont.WithSize (12.0f);
+                    cell.DetailTextLabel.TextColor = adoptedTheme.TableViewCellDetailLabelTextColor;
                     if (!(cell.AccessoryView is DisclosureAccessoryView)) {
                         cell.AccessoryView = new DisclosureAccessoryView ();
                     }
@@ -240,12 +274,12 @@ namespace NachoClient.iOS
                 } else if (indexPath.Row == DebugDeleteBodyRow) {
                     var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
                     cell.TextLabel.Text = "Delete Body File";
-                    cell.TextLabel.TextColor = A.Color_NachoRed;
+                    cell.TextLabel.TextColor = adoptedTheme.DestructiveTextColor;
                     return cell;
                 } else if (indexPath.Row == DebugDeleteMessageRow) {
                     var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
                     cell.TextLabel.Text = "Delete Message From DB";
-                    cell.TextLabel.TextColor = A.Color_NachoRed;
+                    cell.TextLabel.TextColor = adoptedTheme.DestructiveTextColor;
                     return cell;
                 }
             } else {
@@ -260,9 +294,10 @@ namespace NachoClient.iOS
                         colorIndex = portraitEntry.ColorIndex;
                     }
                     cell.SetAddress (mailbox, portraitId, colorIndex);
-                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
-                        cell.AccessoryView = new DisclosureAccessoryView ();
-                    }
+                    // Disabling contact details for now, because contact app is hidden
+                    //if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                    //    cell.AccessoryView = new DisclosureAccessoryView ();
+                    //}
                     return cell;
                 }
             }
@@ -275,6 +310,9 @@ namespace NachoClient.iOS
                 if (indexPath.Row == DebugAccountIdRow || indexPath.Row == DebugMessageIdRow || indexPath.Row == DebugBodyIdRow || indexPath.Row == DebugBodyTypeRow) {
                     return false;
                 }
+            } else {
+                // Disabling contact selection for now (until contact app returns?)
+                return false;
             }
             return base.ShouldHighlightRow (tableView, indexPath);
         }
@@ -285,6 +323,9 @@ namespace NachoClient.iOS
                 if (indexPath.Row == DebugAccountIdRow || indexPath.Row == DebugMessageIdRow || indexPath.Row == DebugBodyIdRow || indexPath.Row == DebugBodyTypeRow) {
                     return null;
                 }
+            } else {
+                // Disabling contact selection for now (until contact app returns?)
+                return null;
             }
             return base.WillSelectRow (tableView, indexPath);
         }
@@ -309,6 +350,15 @@ namespace NachoClient.iOS
                         ShowContact (contact);
                     }
                 }
+            }
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
             }
         }
 
@@ -510,19 +560,23 @@ namespace NachoClient.iOS
 
         #region Cells
 
-        private class ButtonCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell, ThemeAdopter
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
             public ButtonCell (IntPtr handle) : base (handle)
             {
-                TextLabel.Font = A.Font_AvenirNextRegular14;
-                TextLabel.TextColor = A.Color_NachoGreen;
+            }
+
+            public void AdoptTheme(Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
             }
         }
 
-        private class MessageAddressCell : SwipeTableViewCell
+        private class MessageAddressCell : SwipeTableViewCell, ThemeAdopter
         {
 
             PortraitView PortraitView;
@@ -533,16 +587,19 @@ namespace NachoClient.iOS
             {
                 HideDetailWhenEmpty = true;
 
-                PortraitView = new PortraitView (new CGRect(0.0f, 0.0f, PortraitSize, PortraitSize));
-                ContentView.AddSubview(PortraitView);
+                PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
+                ContentView.AddSubview (PortraitView);
 
                 SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
+            }
 
-                TextLabel.Font = A.Font_AvenirNextDemiBold17;
-                TextLabel.TextColor = A.Color_NachoGreen;
+            public void AdoptTheme(Theme theme)
+            {
+                TextLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
 
-                DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-                DetailTextLabel.TextColor = A.Color_NachoTextGray;
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
             }
 
             public void SetAddress (MailboxAddress mailbox, int portraitId, int colorIndex)
@@ -581,9 +638,10 @@ namespace NachoClient.iOS
         {
             var view = new InsetLabelView ();
             view.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-            view.Label.Font = A.Font_AvenirNextRegular14;
-            view.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
             view.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+            if (adoptedTheme != null) {
+                ApplyThemeToHeader (view);
+            }
             return view;
         }
 

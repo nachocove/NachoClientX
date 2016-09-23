@@ -17,7 +17,7 @@ namespace NachoClient.iOS
         void ActionEditViewDidDismiss (ActionEditViewController viewController);
     }
 
-    public class ActionEditViewController : NachoTableViewController, EditableTextCellDelegate
+    public class ActionEditViewController : NachoTableViewController, EditableTextCellDelegate, ThemeAdopter
     {
 
         #region Properties
@@ -47,23 +47,25 @@ namespace NachoClient.iOS
 
         DatePickerView DatePicker;
 
-        class StateModel {
+        class StateModel
+        {
             public McAction.ActionState State;
             public string Name;
         }
 
-        class DeferModel {
+        class DeferModel
+        {
             public MessageDeferralType Type;
             public string Name;
         }
 
-        static StateModel[] States = new StateModel[] {
+        static StateModel [] States = new StateModel [] {
             new StateModel(){ State = McAction.ActionState.Hot, Name = "Hot" },
             new StateModel(){ State = McAction.ActionState.Open, Name = "Normal" },
             new StateModel(){ State = McAction.ActionState.Deferred, Name = "Deferred" },
         };
 
-        static DeferModel[] DeferralsIfNoDueDate = new DeferModel[] {
+        static DeferModel [] DeferralsIfNoDueDate = new DeferModel [] {
             new DeferModel(){ Type = MessageDeferralType.OneHour, Name = "An Hour From Now"},
             new DeferModel(){ Type = MessageDeferralType.Tonight, Name = "Tonight" },
             new DeferModel(){ Type = MessageDeferralType.Tomorrow, Name = "Tomorrow Morning" },
@@ -72,7 +74,7 @@ namespace NachoClient.iOS
             new DeferModel(){ Type = MessageDeferralType.Custom, Name = "Pick a Date" }
         };
 
-        static DeferModel[] DeferralsIfDueDate = new DeferModel[] {
+        static DeferModel [] DeferralsIfDueDate = new DeferModel [] {
             DeferralsIfNoDueDate[0],
             DeferralsIfNoDueDate[1],
             DeferralsIfNoDueDate[2],
@@ -82,7 +84,7 @@ namespace NachoClient.iOS
             DeferralsIfNoDueDate[5]
         };
 
-        DeferModel[] Deferrals;
+        DeferModel [] Deferrals;
 
         #endregion
 
@@ -103,28 +105,45 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TitleCell.AdoptTheme (theme);
+                DescriptionCell.TextView.Font = theme.DefaultFont.WithSize (14.0f);
+                DescriptionCell.TextView.TextColor = theme.TableViewCellDetailLabelTextColor;
+                DueDateCell.TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                ApplyThemeToHeader (_StateHeader);
+                ApplyThemeToHeader (_DeferHeader);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public void PresentOverViewController (UIViewController presentingViewController)
         {
             NavigationItem.LeftBarButtonItem = CloseButton;
             var navController = new UINavigationController (this);
-            Util.ConfigureNavBar (false, navController);
             presentingViewController.PresentViewController (navController, true, null);
         }
 
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TitleCell = new ActionTitleCell ();
             TitleCell.Placeholder = "Summary";
             TitleCell.Delegate = this;
             TitleCell.SeparatorInset = new UIEdgeInsets (0.0f, 44.0f, 0.0f, 0.0f);
             TitleCell.CheckboxView.Changed = CheckboxChanged;
             DescriptionCell = new EditableTextCell ();
-            DescriptionCell.TextView.Font = A.Font_AvenirNextRegular14;
-            DescriptionCell.TextView.TextColor = A.Color_NachoTextGray;
             DescriptionCell.Placeholder = "Notes";
             DescriptionCell.Delegate = this;
             DescriptionCell.SeparatorInset = TitleCell.SeparatorInset;
@@ -133,25 +152,25 @@ namespace NachoClient.iOS
             TitleCell.FollowingResponder = DescriptionCell.TextView;
 
             DueDateCell = new SwipeTableViewCell ();
-            DueDateCell.TextLabel.Font = A.Font_AvenirNextRegular14;
             DueDateCell.SeparatorInset = TitleCell.SeparatorInset;
 
-            TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), StateCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof(NameValueCell), DeferCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (StateCell), StateCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (NameValueCell), DeferCellIdentifier);
         }
 
         public override void ViewDidLoad ()
         {
             UpdateDeferals ();
             base.ViewDidLoad ();
+            AdoptTheme (Theme.Active);
             TitleCell.TextView.Text = Action.Title;
             TitleCell.UpdatePlaceholderVisible ();
             TitleCell.CheckboxView.IsChecked = Action.IsCompleted;
             DescriptionCell.TextView.Text = Action.Description;
             DescriptionCell.UpdatePlaceholderVisible ();
-            if (Action.Id == 0){
+            if (Action.Id == 0) {
                 NavigationItem.Title = "Create Action";
-            }else{
+            } else {
                 NavigationItem.Title = "Edit Action";
             }
             UpdateSaveEnabled ();
@@ -165,6 +184,7 @@ namespace NachoClient.iOS
                 TitleCell.TextView.SelectAll (null);
             }
             HasAppearedOnce = true;
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -274,7 +294,7 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            if (indexPath.Section == NameSection){
+            if (indexPath.Section == NameSection) {
                 if (indexPath.Row == NameRowTitle) {
                     TitleCell.PrepareForWidth (TableView.Bounds.Width);
                     return TitleCell.Height;
@@ -299,10 +319,8 @@ namespace NachoClient.iOS
                     return DueDateCell;
                 }
             } else if (indexPath.Section == StateSection) {
-                var cell = tableView.DequeueReusableCell (StateCellIdentifier) as SwipeTableViewCell;
+                var cell = tableView.DequeueReusableCell (StateCellIdentifier) as StateCell;
                 var stateModel = States [indexPath.Row];
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.TextLabel.TextColor = A.Color_NachoGreen;
                 cell.TextLabel.Text = stateModel.Name;
                 if (Action.State == stateModel.State) {
                     if (!(cell.AccessoryView is CheckmarkAccessoryView)) {
@@ -317,8 +335,6 @@ namespace NachoClient.iOS
             } else if (indexPath.Section == DeferSection) {
                 var cell = tableView.DequeueReusableCell (DeferCellIdentifier) as NameValueCell;
                 var deferModel = Deferrals [indexPath.Row];
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.TextLabel.TextColor = A.Color_NachoGreen;
                 cell.TextLabel.Text = deferModel.Name;
                 if (deferModel.Type == MessageDeferralType.Custom) {
                     if (Action.DeferralType == MessageDeferralType.Custom && Action.DeferUntilDate != default (DateTime)) {
@@ -326,7 +342,7 @@ namespace NachoClient.iOS
                     } else {
                         cell.ValueLabel.Text = "";
                     }
-                } else if (deferModel.Type == MessageDeferralType.DueDate){
+                } else if (deferModel.Type == MessageDeferralType.DueDate) {
                     cell.ValueLabel.Text = Pretty.MediumFullDate (Action.DueDate);
                 } else {
                     cell.ValueLabel.Text = "";
@@ -343,6 +359,15 @@ namespace NachoClient.iOS
                 return cell;
             }
             return null;
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
         public override bool ShouldHighlightRow (UITableView tableView, NSIndexPath indexPath)
@@ -370,15 +395,15 @@ namespace NachoClient.iOS
             if (indexPath.Section == NameSection) {
                 if (indexPath.Row == NameRowDue) {
                     ShowDatePicker (Action.DueDate, (DateTime date) => {
-                        if (date == default(DateTime) && Action.DeferralType == MessageDeferralType.DueDate){
+                        if (date == default (DateTime) && Action.DeferralType == MessageDeferralType.DueDate) {
                             Action.DeferralType = MessageDeferralType.Custom;
                         }
                         Action.DueDate = date;
                         Action.DueDateIncludesTime = false;
                         UpdateDueDateCell ();
                         UpdateDeferals ();
-                        if (Action.IsDeferred){
-                            TableView.ReloadSections (NSIndexSet.FromIndex(DeferSection), UITableViewRowAnimation.None);
+                        if (Action.IsDeferred) {
+                            TableView.ReloadSections (NSIndexSet.FromIndex (DeferSection), UITableViewRowAnimation.None);
                         }
                     });
                     TableView.DeselectRow (indexPath, true);
@@ -393,7 +418,7 @@ namespace NachoClient.iOS
                 } else if (previousState == McAction.ActionState.Deferred && Action.State != McAction.ActionState.Deferred) {
                     tableView.DeleteSections (NSIndexSet.FromIndex (DeferSection), UITableViewRowAnimation.Fade);
                     Action.DeferralType = MessageDeferralType.None;
-                    Action.DeferUntilDate = default(DateTime);
+                    Action.DeferUntilDate = default (DateTime);
                 }
                 UpdateSectionCheckmark (indexPath);
                 tableView.DeselectRow (indexPath, true);
@@ -403,18 +428,18 @@ namespace NachoClient.iOS
                 var deferModel = Deferrals [indexPath.Row];
                 if (deferModel.Type == MessageDeferralType.Custom) {
                     ShowDatePicker (Action.DeferUntilDate, (DateTime date) => {
-                        if (date == default(DateTime)){
+                        if (date == default (DateTime)) {
                             Action.DeferralType = MessageDeferralType.None;
-                        }else{
+                        } else {
                             Action.DeferralType = MessageDeferralType.Custom;
                         }
                         Action.DeferUntilDate = date;
                         UpdateSectionCheckmark (NSIndexPath.FromRowSection (Deferrals.Length, indexPath.Section));
-                        TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
+                        TableView.ReloadRows (new NSIndexPath [] { indexPath }, UITableViewRowAnimation.None);
                     });
-                }else if (Action.DeferralType == deferModel.Type) {
+                } else if (Action.DeferralType == deferModel.Type) {
                     Action.DeferralType = MessageDeferralType.None;
-                    Action.DeferUntilDate = default(DateTime);
+                    Action.DeferUntilDate = default (DateTime);
                     UpdateSectionCheckmark (NSIndexPath.FromRowSection (Deferrals.Length, indexPath.Section));
                 } else {
                     bool wasCustom = Action.DeferralType == MessageDeferralType.Custom;
@@ -465,9 +490,9 @@ namespace NachoClient.iOS
                     }
                     Action.UpdateMessageFlag ();
                 });
-                if (isNew){
+                if (isNew) {
                     var account = McAccount.QueryById<McAccount> (Action.AccountId);
-                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                         Account = account,
                         Status = NcResult.Info (NcResult.SubKindEnum.Info_ActionSetChanged)
                     });
@@ -520,7 +545,7 @@ namespace NachoClient.iOS
 
         void UpdateDeferals ()
         {
-            if (Action.DueDate == default(DateTime)) {
+            if (Action.DueDate == default (DateTime)) {
                 Deferrals = DeferralsIfNoDueDate;
             } else {
                 Deferrals = DeferralsIfDueDate;
@@ -530,9 +555,9 @@ namespace NachoClient.iOS
         void UpdateCheckboxTint ()
         {
             if (Action.State == McAction.ActionState.Hot) {
-                TitleCell.CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+                TitleCell.CheckboxView.TintColor = adoptedTheme.ActionCheckboxColorHot;
             } else {
-                TitleCell.CheckboxView.TintColor = A.Color_NachoGreen;
+                TitleCell.CheckboxView.TintColor = adoptedTheme.TableViewCellMainLabelTextColor;
             }
         }
 
@@ -541,13 +566,14 @@ namespace NachoClient.iOS
             NavigationItem.RightBarButtonItem = null;
             View.EndEditing (true);
             DatePicker = new DatePickerView (NavigationController.View.Bounds);
-            if (preselectedDate != default(DateTime)) {
+            DatePicker.AdoptTheme (adoptedTheme);
+            if (preselectedDate != default (DateTime)) {
                 DatePicker.Date = preselectedDate;
             }
             NavigationController.View.AddSubview (DatePicker);
             DatePicker.LayoutIfNeeded ();
             DatePicker.Picked = (DateTime date) => {
-                if (date != default(DateTime)){
+                if (date != default (DateTime)) {
                     date = new DateTime (date.Year, date.Month, date.Day, 8, 0, 0, DateTimeKind.Local).ToUniversalTime ();
                 }
                 picked (date);
@@ -572,22 +598,22 @@ namespace NachoClient.iOS
 
         void UpdateDueDateCell ()
         {
-            if (Action.DueDate == default(DateTime)) {
+            if (Action.DueDate == default (DateTime)) {
                 DueDateCell.TextLabel.Text = "Set a Due Date";
                 DueDateCell.TextLabel.TextColor = DueDateCell.ContentView.BackgroundColor.ColorDarkenedByAmount (0.15f);
             } else {
                 DueDateCell.TextLabel.Text = String.Format ("Due on {0}", Pretty.MediumFullDate (Action.DueDate));
-                DueDateCell.TextLabel.TextColor = A.Color_NachoTextGray;
+                DueDateCell.TextLabel.TextColor = adoptedTheme.TableViewCellDetailLabelTextColor;
             }
         }
 
         void UpdateCustomDeferCell ()
         {
-            foreach (var indexPath in TableView.IndexPathsForVisibleRows){
+            foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
                 if (indexPath.Section == DeferSection) {
-                    var deferModel = Deferrals[indexPath.Row];
-                    if (deferModel.Type == MessageDeferralType.Custom){
-                        TableView.ReloadRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.None);
+                    var deferModel = Deferrals [indexPath.Row];
+                    if (deferModel.Type == MessageDeferralType.Custom) {
+                        TableView.ReloadRows (new NSIndexPath [] { indexPath }, UITableViewRowAnimation.None);
                         break;
                     }
                 }
@@ -598,6 +624,14 @@ namespace NachoClient.iOS
 
         #region Headers
 
+        void ApplyThemeToHeader (InsetLabelView header)
+        {
+            if (header != null) {
+                header.Label.Font = adoptedTheme.DefaultFont.WithSize (14.0f);
+                header.Label.TextColor = adoptedTheme.TableSectionHeaderTextColor;
+            }
+        }
+
         private InsetLabelView _StateHeader;
         private InsetLabelView StateHeader {
             get {
@@ -605,9 +639,10 @@ namespace NachoClient.iOS
                     _StateHeader = new InsetLabelView ();
                     _StateHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _StateHeader.Label.Text = "Priority";
-                    _StateHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _StateHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _StateHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+                    if (adoptedTheme != null) {
+                        ApplyThemeToHeader (_StateHeader);
+                    }
                 }
                 return _StateHeader;
             }
@@ -620,9 +655,10 @@ namespace NachoClient.iOS
                     _DeferHeader = new InsetLabelView ();
                     _DeferHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _DeferHeader.Label.Text = "Defer Until";
-                    _DeferHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _DeferHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _DeferHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
+                    if (adoptedTheme != null) {
+                        ApplyThemeToHeader (_DeferHeader);
+                    }
                 }
                 return _DeferHeader;
             }
@@ -634,12 +670,12 @@ namespace NachoClient.iOS
 
         private class CheckmarkAccessoryView : ImageAccessoryView
         {
-            public CheckmarkAccessoryView () : base ("gen-checkbox-checked")
+            public CheckmarkAccessoryView () : base ("checkmark-accessory")
             {
             }
         }
 
-        class ActionTitleCell : EditableTextCell
+        class ActionTitleCell : EditableTextCell, ThemeAdopter
         {
 
             public readonly ActionCheckboxView CheckboxView;
@@ -650,8 +686,6 @@ namespace NachoClient.iOS
                 ContentView.AddSubview (CheckboxView);
 
                 AllowsNewlines = false;
-                TextView.Font = A.Font_AvenirNextDemiBold17;
-                TextView.TextColor = A.Color_NachoDarkText;
             }
 
             public override void LayoutSubviews ()
@@ -660,6 +694,26 @@ namespace NachoClient.iOS
                 CheckboxView.Center = new CGPoint (SeparatorInset.Left / 2.0f, 22.0f);
             }
 
+            public void AdoptTheme (Theme theme)
+            {
+                TextView.Font = theme.BoldDefaultFont.WithSize (17.0f);
+                TextView.TextColor = theme.DefaultTextColor;
+            }
+
+        }
+
+        class StateCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public StateCell (IntPtr ptr) : base (ptr)
+            {
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+            }
         }
 
         #endregion

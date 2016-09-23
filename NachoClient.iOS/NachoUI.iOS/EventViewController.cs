@@ -1332,7 +1332,7 @@ namespace NachoClient.iOS
         {
             if (McAccount.AccountTypeEnum.Device == detail.Account.AccountType) {
                 NcAlertView.ShowMessage (this, "Can't Change Response",
-                    "Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. " +
+                    "Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Apollo Mail. " +
                     "Use the Calendar app or some other client to change your response.");
             } else if (!detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 NcAlertView.ShowMessage (this, "Can't Change Response",
@@ -1371,7 +1371,6 @@ namespace NachoClient.iOS
             dc.SetOwner (this);
             dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
             var navigationController = new UINavigationController (dc);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 

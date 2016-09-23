@@ -44,7 +44,7 @@ namespace NachoClient.iOS
             nfloat yOffset = INDENT;
 
             UIImageView nachoLogoImageView;
-            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var nachoLogo = UIImage.FromBundle ("AboutLogo")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
             nachoLogoImageView.Frame = new CGRect (supportView.Frame.Width / 2 - 40, yOffset, 80, 80);
@@ -140,7 +140,7 @@ namespace NachoClient.iOS
             versionLabel.Font = A.Font_AvenirNextRegular10;
             versionLabel.TextColor = A.Color_NachoBlack;
             versionLabel.TextAlignment = UITextAlignment.Center;
-            versionLabel.Text = "Nacho Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
+            versionLabel.Text = "Apollo Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
             supportView.AddSubview (versionLabel);
 
             if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev) {
@@ -171,7 +171,6 @@ namespace NachoClient.iOS
         {
             var vc = new SupportMessageViewController ();
             var navController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, navController);
             PresentViewController (navController, true, null);
         }
 

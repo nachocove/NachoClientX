@@ -333,23 +333,9 @@ namespace NachoClient.iOS
 
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
-            UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
-            UINavigationBar.Appearance.ShadowImage = new UIImage ();
-            UINavigationBar.Appearance.TintColor = A.Color_NachoBlue;
-            UIToolbar.Appearance.BackgroundColor = UIColor.White;
-            UIToolbar.Appearance.TintColor = A.Color_NachoGreen;
+            Theme.Active = new ApolloTheme();
+            Theme.Active.DefineAppearance ();
 
-            var navigationTitleTextAttributes = new UITextAttributes ();
-            navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
-            navigationTitleTextAttributes.TextColor = UIColor.White;
-            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
-            using (var arrow = UIImage.FromFile ("nav-backarrow")) {
-                UINavigationBar.Appearance.BackIndicatorImage = arrow;
-                UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
-            }
-            var navigationButtonTextAttibutes = new UITextAttributes ();
-            navigationButtonTextAttibutes.Font = A.Font_AvenirNextRegular17;
-            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationButtonTextAttibutes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
                 var replyAction = new UIMutableUserNotificationAction ();
@@ -1577,7 +1563,7 @@ namespace NachoClient.iOS
 
                 UIAlertView av = new UIAlertView ();
                 av.Title = "Authentication Required";
-                av.Message = "In order to run this Nacho Mail beta client, you must authenticate with HockeyApp. " +
+                av.Message = "In order to run this Apollo Mail beta client, you must authenticate with HockeyApp. " +
                 "Please enter your HockeyApp credential in the next screen.";
                 av.AddButton ("Continue");
                 av.Clicked += (sender, buttonArgs) => {

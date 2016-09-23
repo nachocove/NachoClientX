@@ -15,7 +15,7 @@ namespace NachoClient.iOS
         void AccountPickerDidPickAccount (AccountPickerViewController vc, McAccount account);
     }
 
-    public partial class AccountPickerViewController : NachoTableViewController
+    public partial class AccountPickerViewController : NachoTableViewController, ThemeAdopter
     {
 
         const string AccountCellIdentifier = "AccountCellIdentifier";
@@ -54,6 +54,18 @@ namespace NachoClient.iOS
 
         }
 
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
         public override void LoadView ()
         {
             base.LoadView ();
@@ -65,6 +77,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
         }
 
         public override nint NumberOfSections (UITableView tableView)
@@ -116,16 +134,25 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, Foundation.NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
+        }
+
         private class CheckmarkAccessoryView : ImageAccessoryView
         {
-            public CheckmarkAccessoryView () : base ("gen-checkbox-checked")
+            public CheckmarkAccessoryView () : base ("checkmark-accessory")
             {
             }
         }
 
     }
 
-    public class AccountPickerTableViewCell : SwipeTableViewCell
+    public class AccountPickerTableViewCell : SwipeTableViewCell, ThemeAdopter
     {
 
         McAccount _Account;
@@ -148,12 +175,16 @@ namespace NachoClient.iOS
             IconView = new UIImageView (new CGRect(0.0f, 0.0f, 40.0f, 40.0f));
             DetailTextSpacing = 0.0f;
             IconView.ClipsToBounds = true;
-            TextLabel.Font = A.Font_AvenirNextDemiBold17;
-            TextLabel.TextColor = A.Color_NachoGreen;
-            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-            DetailTextLabel.TextColor = A.Color_NachoTextGray;
             SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
             ContentView.AddSubview (IconView);
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            TextLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+            TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+            DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
         }
 
         void Update ()

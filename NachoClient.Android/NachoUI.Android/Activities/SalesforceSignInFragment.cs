@@ -133,7 +133,7 @@ namespace NachoClient.AndroidClient
                     userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info from {0}: {1}", id_url, ex);
-                    NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                    NcAlertView.ShowMessage (Activity, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
                     return;
                 }
 
@@ -175,7 +175,7 @@ namespace NachoClient.AndroidClient
                 }
             } else {
                 Log.Info (Log.LOG_UI, "SalesforceSignInFragment completed unauthenticated");
-                NcAlertView.ShowMessage (this.Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                NcAlertView.ShowMessage (this.Activity, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
             }
         }
 

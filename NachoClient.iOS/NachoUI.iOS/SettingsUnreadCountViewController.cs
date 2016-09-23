@@ -8,7 +8,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class SettingsUnreadCountViewController : NachoTableViewController
+    public class SettingsUnreadCountViewController : NachoTableViewController, ThemeAdopter
     {
 
         const string OptionCellIdentifier = "OptionCellIdentifier";
@@ -41,8 +41,25 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RegisterClassForCellReuse (typeof (SwipeTableViewCell), OptionCellIdentifier);
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.RegisterClassForCellReuse (typeof (OptionCell), OptionCellIdentifier);
+        }
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
         }
 
         public override nint NumberOfSections (UITableView tableView)
@@ -57,9 +74,7 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
-            var cell = tableView.DequeueReusableCell (OptionCellIdentifier) as SwipeTableViewCell;
-            cell.TextLabel.Font = A.Font_AvenirNextMedium14;
-            cell.TextLabel.TextColor = A.Color_NachoGreen;
+            var cell = tableView.DequeueReusableCell (OptionCellIdentifier) as OptionCell;
             var option = Options [indexPath.Row];
             cell.TextLabel.Text = option.Name;
             if (EmailHelper.HowToDisplayUnreadCount () == option.Option) {
@@ -68,6 +83,15 @@ namespace NachoClient.iOS
                 cell.AccessoryView = null;
             }
             return cell;
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, Foundation.NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
         public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
@@ -98,8 +122,23 @@ namespace NachoClient.iOS
 
         private class CheckmarkAccessoryView : ImageAccessoryView
         {
-            public CheckmarkAccessoryView () : base ("gen-checkbox-checked")
+            public CheckmarkAccessoryView () : base ("checkmark-accessory")
             {
+            }
+        }
+
+        private class OptionCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public OptionCell (IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SetNeedsLayout ();
             }
         }
     }

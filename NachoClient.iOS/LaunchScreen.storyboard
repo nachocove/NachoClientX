@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7706" systemVersion="14F27" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="QiC-9d-a7c">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11201" systemVersion="15G1004" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="QiC-9d-a7c">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7703"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11161"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
         <!--View Controller-->
@@ -13,33 +14,29 @@
                         <viewControllerLayoutGuide type="bottom" id="j7r-g2-XxH"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="SOY-9t-Hkv">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="XWa-k9-Ft2">
-                                <rect key="frame" x="223" y="193" width="155" height="214"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome to" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ydz-vk-lua">
-                                        <rect key="frame" x="0.0" y="149" width="155" height="25"/>
-                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="18"/>
-                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <imageView userInteractionEnabled="NO" tag="1" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="NachoMailCircle" translatesAutoresizingMaskIntoConstraints="NO" id="M9U-sI-LtG">
-                                        <rect key="frame" x="18" y="10" width="119" height="119"/>
+                                    <imageView userInteractionEnabled="NO" tag="1" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchPlane" translatesAutoresizingMaskIntoConstraints="NO" id="M9U-sI-LtG">
                                         <constraints>
                                             <constraint firstAttribute="width" constant="119" id="1Lg-2O-9FR"/>
                                             <constraint firstAttribute="height" constant="119" id="9DC-66-dwP"/>
                                         </constraints>
                                     </imageView>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Nacho Mail" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cKX-ia-IYK">
-                                        <rect key="frame" x="0.0" y="174" width="155" height="40"/>
-                                        <fontDescription key="fontDescription" name="Avenir-Black" family="Avenir" pointSize="29"/>
-                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Apollo Mail" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cKX-ia-IYK">
+                                        <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="29"/>
+                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                 </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="centerX" secondItem="M9U-sI-LtG" secondAttribute="centerX" id="6Zh-27-Yjz"/>
                                     <constraint firstItem="cKX-ia-IYK" firstAttribute="leading" secondItem="XWa-k9-Ft2" secondAttribute="leading" id="7Wb-QM-Nqq"/>
@@ -52,28 +49,10 @@
                                     <constraint firstAttribute="bottom" secondItem="cKX-ia-IYK" secondAttribute="bottom" id="xR5-rp-PhN"/>
                                 </constraints>
                             </view>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LeftBottomDarkTriangles" translatesAutoresizingMaskIntoConstraints="NO" id="RG3-xx-u0I">
-                                <rect key="frame" x="0.0" y="561" width="88" height="39"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="88" id="2c6-Qq-mKs"/>
-                                    <constraint firstAttribute="height" constant="39" id="cYL-gN-23c"/>
-                                </constraints>
-                            </imageView>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="RightBottomDarkTriangles" translatesAutoresizingMaskIntoConstraints="NO" id="rLP-qT-XJs">
-                                <rect key="frame" x="512" y="561" width="88" height="39"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="88" id="xHI-tz-p7J"/>
-                                    <constraint firstAttribute="height" constant="39" id="yTg-7O-jfs"/>
-                                </constraints>
-                            </imageView>
                         </subviews>
-                        <color key="backgroundColor" red="0.047058823529411764" green="0.25882352941176467" blue="0.29411764705882354" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="backgroundColor" red="0.047058823529411764" green="0.31372549019607843" blue="0.40000000000000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="j7r-g2-XxH" firstAttribute="top" secondItem="RG3-xx-u0I" secondAttribute="bottom" id="Xhe-3v-0fm"/>
                             <constraint firstAttribute="centerY" secondItem="XWa-k9-Ft2" secondAttribute="centerY" id="ZCn-uL-1Wn"/>
-                            <constraint firstAttribute="trailing" secondItem="rLP-qT-XJs" secondAttribute="trailing" id="aI6-j8-ngb"/>
-                            <constraint firstItem="RG3-xx-u0I" firstAttribute="leading" secondItem="SOY-9t-Hkv" secondAttribute="leading" id="aLs-la-fsI"/>
-                            <constraint firstItem="j7r-g2-XxH" firstAttribute="top" secondItem="rLP-qT-XJs" secondAttribute="bottom" id="jjz-EF-0Eu"/>
                             <constraint firstAttribute="centerX" secondItem="XWa-k9-Ft2" secondAttribute="centerX" id="kOX-87-uL0"/>
                         </constraints>
                     </view>
@@ -85,8 +64,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LeftBottomDarkTriangles" width="88" height="39"/>
-        <image name="NachoMailCircle" width="119" height="119"/>
-        <image name="RightBottomDarkTriangles" width="88" height="39"/>
+        <image name="LaunchPlane" width="119" height="119"/>
     </resources>
 </document>

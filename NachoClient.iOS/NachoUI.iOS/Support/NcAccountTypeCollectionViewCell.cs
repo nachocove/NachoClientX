@@ -8,7 +8,7 @@ namespace NachoClient.iOS
 {
     
     [Register ("NcAccountTypeCollectionViewCell")]
-    public partial class NcAccountTypeCollectionViewCell : UICollectionViewCell
+    public partial class NcAccountTypeCollectionViewCell : UICollectionViewCell, ThemeAdopter
     {
         [Outlet]
         public UIImageView iconView { get; set; }
@@ -23,7 +23,16 @@ namespace NachoClient.iOS
         public override void LayoutSubviews ()
         {
             base.LayoutSubviews ();
-            iconView.Layer.CornerRadius = iconView.Frame.Width / 2.0f;
+            // Something changed in the storyboard and when this code runs, the image frame is 1000x1000,
+            // so the radius calculation is wrong.  Unclear what the fix is other than hard-coding.
+            //iconView.Layer.CornerRadius = iconView.Frame.Width / 2.0f;
+            iconView.Layer.CornerRadius = 32.0f;
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            label.TextColor = theme.AccountCreationTextColor;
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
         }
 
     }
