@@ -672,6 +672,28 @@ namespace NachoCore.Model
                 query, threadId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
+        public static List<McEmailMessageThread> QueryActiveMessageItemsInAllFoldersByThreadId (int accountId, string threadId)
+        {
+            var queryFormat =
+                "SELECT MAX(e.Id) as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " likelihood( e.ConversationId = ?, 0.01 ) AND " +
+                "{0}" +
+                " e.IsAwaitingDelete = 0 AND " +
+                "{1}" +
+                " m.ClassCode = ? " +
+                " GROUP BY e.MessageId " +
+                " ORDER BY e.DateReceived DESC";
+
+            var account0 = SingleAccountString (" e.AccountId = {0} AND ", accountId);
+            var account1 = SingleAccountString (" m.AccountId = {0} AND ", accountId);
+
+            var query = String.Format (queryFormat, account0, account1);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (query, threadId, McAbstrFolderEntry.ClassCodeEnum.Email);
+        }
+
         public static int CountOfUnreadMessageItems (int accountId, int folderId, DateTime newSince)
         {
             var queryFormat =
