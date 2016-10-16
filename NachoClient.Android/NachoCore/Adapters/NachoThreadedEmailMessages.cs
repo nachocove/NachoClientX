@@ -30,7 +30,7 @@ namespace NachoCore
 
         public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, threadId);
+            var list = McEmailMessage.QueryActiveMessageItemsInAllFoldersByThreadId (folder.AccountId, threadId);
             updatedThreadList = NcMessageThreads.ThreadByMessage (list);
             RemoveIgnoredMessages (updatedThreadList);
             return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
