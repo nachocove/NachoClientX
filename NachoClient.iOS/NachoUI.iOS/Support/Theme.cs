@@ -104,6 +104,20 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Chat
+
+        public UIColor ChatBackgroundColor { get; protected set; }
+        public UIColor ChatBubbleColorForMe { get; protected set; }
+        public UIColor ChatBubbleColorForOther { get; protected set; }
+        public UIColor ChatBubbleBorderColorForMe { get; protected set; }
+        public UIColor ChatBubbleBorderColorForOther { get; protected set; }
+        public UIColor ChatBubbleTextColorForMe { get; protected set; }
+        public UIColor ChatBubbleTextColorForOther { get; protected set; }
+        public UIColor ChatBubbleTextColorForOtherLoading { get; protected set; }
+        public UIColor ChatTimestampTextColor { get; protected set; }
+
+        #endregion
+
         #region Action
 
         public UIColor ActionCheckboxColorHot { get; protected set; }
@@ -249,6 +263,17 @@ namespace NachoClient.iOS
 
             // Action
             ActionCheckboxColorHot = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+
+            // Chat
+            ChatBackgroundColor = TableViewGroupedBackgroundColor;
+            ChatBubbleColorForMe = MainColor;
+            ChatBubbleColorForOther = UIColor.White;
+            ChatBubbleBorderColorForMe = MainColor;
+            ChatBubbleBorderColorForOther = ChatBackgroundColor.ColorDarkenedByAmount (0.15f);
+            ChatBubbleTextColorForMe = UIColor.White;
+            ChatBubbleTextColorForOther = MainColor;
+            ChatBubbleTextColorForOtherLoading = DisabledTextColor;
+            ChatTimestampTextColor = TableSectionHeaderTextColor;
         }
 
         public override void DefineAppearance ()

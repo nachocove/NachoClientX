@@ -120,7 +120,9 @@ namespace NachoCore.Model
             if (String.IsNullOrEmpty (CachedInformalName)) {
                 CachedInformalName = email.CanonicalEmailAddress.Split ('@') [0];
             }
-            Update ();
+            if (Id != 0) {
+                Update ();
+            }
         }
 
         public static List<NcEmailAddress> ConvertToAddressList(List<McChatParticipant> participants)

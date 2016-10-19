@@ -552,7 +552,10 @@ namespace NachoClient.iOS
                 emailNotification.Delete ();
                 if (null != m) {
                     if (MaybeSwitchToNotificationAccount (m)) {
-                        ShowMessage (m);
+                        var thread = new McEmailMessageThread ();
+                        thread.FirstMessageId = m.Id;
+                        thread.MessageCount = 1;
+                        ShowThread (thread);
                     }
                 }
                 return;
@@ -989,7 +992,7 @@ namespace NachoClient.iOS
                     if (thread.HasMultipleMessages ()) {
                         ShowThread (thread);
                     } else {
-                        ShowMessage (message);
+                        ShowThread (thread);
                     }
                 } else {
                     var index = indexPath.Row - HotMessages.Count ();
@@ -1231,8 +1234,8 @@ namespace NachoClient.iOS
 
         void ShowThread (McEmailMessageThread thread)
         {
-            var vc = new MessageThreadViewController ();
-            vc.SetEmailMessages (HotMessages.GetAdapterForThread (thread));
+            var vc = new ConversationViewController ();
+            vc.Messages = HotMessages.GetAdapterForThread (thread);
             NavigationController.PushViewController (vc, true);
         }
 

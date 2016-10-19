@@ -1861,6 +1861,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
       <Link>NachoCore\Adapters\NachoFolders.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\ConversationViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\ChatMessageComposeView.cs" />
+    <Compile Include="NachoUI.iOS\Support\ChatView.cs" />
+    <Compile Include="NachoUI.iOS\Support\ChatMessageView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

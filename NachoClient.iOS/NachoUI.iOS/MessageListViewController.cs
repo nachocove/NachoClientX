@@ -767,7 +767,7 @@ namespace NachoClient.iOS
                     } else if (thread.HasMultipleMessages ()) {
                         ShowThread (thread);
                     } else {
-                        ShowMessage (message);
+                        ShowThread (thread);
                     }
                 }
             }
@@ -1008,8 +1008,8 @@ namespace NachoClient.iOS
 
         void ShowThread (McEmailMessageThread thread)
         {
-            var vc = new MessageThreadViewController ();
-            vc.SetEmailMessages (Messages.GetAdapterForThread (thread));
+            var vc = new ConversationViewController ();
+            vc.Messages = Messages.GetAdapterForThread (thread);
             NavigationController.PushViewController (vc, true);
         }
 
