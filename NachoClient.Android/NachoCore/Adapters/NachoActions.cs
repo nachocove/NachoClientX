@@ -107,7 +107,6 @@ namespace NachoCore
             } else {
                 var oldIndexesByActionId = new Dictionary<int, int> (oldItems.Count);
                 int oldIndex = 0;
-                int messageId;
                 foreach (var action in oldItems) {
                     oldIndexesByActionId [action.Id] = oldIndex;
                     ++oldIndex;

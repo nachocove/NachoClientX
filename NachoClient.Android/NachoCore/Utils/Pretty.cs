@@ -339,7 +339,6 @@ namespace NachoCore.Utils
             var local = dateTime.ToLocalTime ();
             var now = DateTime.Now;
             var diff = now - local;
-            var dayString = "";
             var timeString = Time (dateTime);
             if (diff < now.TimeOfDay) {
                 return String.Format ("Today - {0}", timeString);

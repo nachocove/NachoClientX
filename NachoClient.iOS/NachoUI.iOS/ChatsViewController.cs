@@ -32,7 +32,6 @@ namespace NachoClient.iOS
         bool HasAppearedOnce;
 
         bool IsReloading;
-        bool NeedsReload;
 
         #endregion
 
@@ -195,7 +194,6 @@ namespace NachoClient.iOS
 
         protected void SetNeedsReload ()
         {
-            NeedsReload = true;
             if (!IsReloading) {
                 Reload ();
             }
