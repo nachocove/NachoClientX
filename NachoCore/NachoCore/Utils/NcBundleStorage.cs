@@ -244,7 +244,9 @@ namespace NachoCore.Utils
 
         public override void Delete ()
         {
-            Directory.Delete (RootPath, true);
+            try {
+                Directory.Delete (RootPath, true);
+            } catch (DirectoryNotFoundException) {}
             Directory.CreateDirectory (RootPath);
         }
 

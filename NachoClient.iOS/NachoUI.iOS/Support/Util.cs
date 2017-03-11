@@ -664,25 +664,6 @@ namespace NachoClient
             return lineUIView;
         }
 
-        public static void ConfigureNavBar (bool isTransparent, UINavigationController nc)
-        {
-            if (isTransparent) {
-                nc.NavigationBar.BarStyle = UIBarStyle.BlackTranslucent;
-                nc.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-                nc.NavigationBar.ShadowImage = new UIImage ();
-                nc.NavigationBar.Translucent = true;
-                nc.NavigationBar.BackgroundColor = UIColor.Clear;
-                nc.NavigationBar.TintColor = UIColor.White;
-            } else {
-                nc.NavigationBar.BarStyle = UIBarStyle.BlackOpaque;
-                nc.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-                nc.NavigationBar.ShadowImage = new UIImage ();
-                nc.NavigationBar.Translucent = false;
-                nc.NavigationBar.BackgroundColor = A.Color_NachoGreen;
-                nc.NavigationBar.TintColor = A.Color_NachoBlue;
-            }
-        }
-
         public static void SetViewHeight (UIView view, nfloat height)
         {
             var frame = view.Frame;
@@ -1168,7 +1149,7 @@ namespace NachoClient
                 imageName = "avatar-salesforce";
                 break;
             default:
-                imageName = "Icon";
+                imageName = "avatar-unknown";
                 break;
             }
             return imageName;

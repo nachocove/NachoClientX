@@ -50,7 +50,7 @@ namespace NachoClient.Mac
 
             // TODO: Do we need this?
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.Instance.Throttling = false;
+                NcApplication.Instance.TelemetryService.Throttling = false;
             };
                 
             if (NcApplication.ReadyToStartUI ()) {

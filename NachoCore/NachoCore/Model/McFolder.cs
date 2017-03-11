@@ -504,11 +504,19 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryByMostRecentlyAccessedVisibleFolders (int accountId)
+        public static List<McFolder> QueryByMostRecentlyAccessedVisibleFolders (int accountId, int limit = 3)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                          "WHERE f.AccountId = ? AND f.LastAccessed > ? AND f.IsHidden = 0 " +
-                          "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears (-1));
+                          "WHERE f.AccountId = ? AND f.LastAccessed > ? AND f.IsHidden = 0 AND f.ImapNoSelect = 0 " +
+                          "ORDER BY f.LastAccessed DESC LIMIT ?", accountId, DateTime.UtcNow.AddYears (-1), limit);
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryByMostRecentlyAccessedVisibleFoldersUnified (int limit = 3)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                          "WHERE f.LastAccessed > ? AND f.IsHidden = 0 AND f.ImapNoSelect = 0 " +
+                          "ORDER BY f.LastAccessed DESC LIMIT ?", DateTime.UtcNow.AddYears (-1), limit);
             return folders.ToList ();
         }
 
@@ -521,6 +529,16 @@ namespace NachoCore.Model
                           " f.IsHidden = 0 " +
                           " ORDER BY f.DisplayName ", 
                               accountId);
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryNonHiddenFoldersOfTypeUnified (Xml.FolderHierarchy.TypeCode [] types)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                          " WHERE f.IsAwaitingDelete = 0 AND " +
+                          " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
+                          " f.IsHidden = 0 " +
+                          " ORDER BY f.DisplayName ");
             return folders.ToList ();
         }
 

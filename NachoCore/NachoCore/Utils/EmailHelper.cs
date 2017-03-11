@@ -740,6 +740,16 @@ namespace NachoCore.Utils
             return addressList;
         }
 
+        public static bool AddressIsInList (int accountId, string targetAddress, List<NcEmailAddress> addresses)
+        {
+            foreach (var address in addresses) {
+                if (String.Equals (address.address, targetAddress, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // Build up the text for the header part of the message being forwarded or replied to.
         public static string FormatBasicHeaders (McEmailMessage message)
         {
@@ -884,6 +894,7 @@ namespace NachoCore.Utils
                     possibleDate = parts [0].Trim ();
                     subject = parts [1].Trim ();
                 } else {
+                    possibleDate = remainingSubject.Trim ();
                     subject = "";
                 }
                 foreach (var deferralOption in SubjectDeferralTypes) {
@@ -905,6 +916,12 @@ namespace NachoCore.Utils
                             intentDate = default (DateTime);
                         }
                     }
+                }
+                if (!String.IsNullOrEmpty (possibleDate) && deferralType == MessageDeferralType.None) {
+                    // we didn't match any deferral dates of types. This must not be one of our intent strings.
+                    intent = McEmailMessage.IntentType.None;
+                    intentDate = default (DateTime);
+                    subject = rawSubject;
                 }
             } else {
                 subject = rawSubject;

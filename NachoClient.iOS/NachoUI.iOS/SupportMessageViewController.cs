@@ -241,7 +241,7 @@ namespace NachoClient.iOS
                     "Please provide contact information, such as an email address.");
             } else if (!problemWasChanged || string.IsNullOrEmpty(messageInfoTextView.Text)) {
                 NcAlertView.ShowMessage (this, "No Description",
-                    "Please describe your reason for contacting Nacho Cove support, such as the problem that you encountered.");
+                    "Please describe your reason for contacting Apollo Mail support, such as the problem that you encountered.");
             } else {
                 sendMessageTimer = NSTimer.CreateScheduledTimer (WAIT_TIMER_LENGTH, delegate {
                     MessageReceived (false);
@@ -253,10 +253,10 @@ namespace NachoClient.iOS
                 supportInfo.Add ("BuildVersion", Build.BuildInfo.Version);
                 supportInfo.Add ("BuildNumber", Build.BuildInfo.BuildNumber);
 
-                Telemetry.StartService ();
+                NcApplication.Instance.TelemetryService.StartService ();
                 // Close all JSON files so they can be immediately uploaded while the user enters the
-                Telemetry.Instance.FinalizeAll ();
-                Telemetry.RecordSupport (supportInfo, () => {
+                NcApplication.Instance.TelemetryService.FinalizeAll ();
+                NcApplication.Instance.TelemetryService.RecordSupport (supportInfo, () => {
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
                         Account = ConstMcAccount.NotAccountSpecific,

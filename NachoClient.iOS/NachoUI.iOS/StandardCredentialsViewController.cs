@@ -15,7 +15,7 @@ using NachoPlatform;
 namespace NachoClient.iOS
 {
 
-    public partial class StandardCredentialsViewController : AccountCredentialsViewController, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate, IUITextFieldDelegate, ILoginEvents
+    public partial class StandardCredentialsViewController : AccountCredentialsViewController, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate, IUITextFieldDelegate, ILoginEvents, ThemeAdopter
     {
 
         #region Properties
@@ -41,6 +41,31 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        private Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                statusLabel.Font = theme.DefaultFont.WithSize (statusLabel.Font.PointSize);
+                statusLabel.TextColor = theme.AccountCreationTextColor;
+                submitButton.BackgroundColor = theme.AccountCreationButtonColor;
+                submitButton.Font = theme.DefaultFont.WithSize (submitButton.Font.PointSize);
+                submitButton.SetTitleColor (theme.AccountCreationButtonTitleColor, UIControlState.Normal);
+                advancedButton.SetTitleColor (theme.AccountCreationButtonColor, UIControlState.Normal);
+                advancedButton.Font = theme.DefaultFont.WithSize (advancedButton.Font.PointSize);
+                emailField.Font = theme.DefaultFont.WithSize (emailField.Font.PointSize);
+                passwordField.Font = theme.DefaultFont.WithSize (emailField.Font.PointSize);
+                if (IsShowingAdvanced) {
+                    advancedFieldsViewController.AdoptTheme (theme);
+                }
+            }
+        }
+
+        #endregion
+
         #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
@@ -52,7 +77,10 @@ namespace NachoClient.iOS
                 emailField.Text = Account.EmailAddr;
             }
             passwordField.WeakDelegate = this;
-            accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
+            // Something changed in the storyboard and when this code runs, the image frame is 1000x1000,
+            // so the radius calculation is wrong.  Unclear what the fix is other than hard-coding.
+            //accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
+            accountIconView.Layer.CornerRadius = 40.0f;
             if (Account != null) {
                 using (var image = Util.ImageForAccount (Account)) {
                     accountIconView.Image = image;
@@ -128,7 +156,14 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
             UpdateForSubmitting ();
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            Console.Write (View.RecursiveDescription ());
         }
 
 
@@ -184,7 +219,7 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Start (Account.Id);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
-                NcAlertView.ShowMessage (this, "Nacho Mail", issue);
+                NcAlertView.ShowMessage (this, "Apollo Mail", issue);
             }
         }
 
@@ -239,6 +274,9 @@ namespace NachoClient.iOS
                         }
                     }
                     if (advancedSubview != null) {
+                        if (adoptedTheme != null) {
+                            advancedFieldsViewController.AdoptTheme (adoptedTheme);
+                        }
                         IsShowingAdvanced = true;
                         advancedButton.SetTitle ("Hide Advanced", UIControlState.Normal);
                         advancedFieldsViewController.PopulateFieldsWithAccount (Account);
@@ -280,7 +318,7 @@ namespace NachoClient.iOS
                 passwordField.Enabled = false;
                 submitButton.Enabled = false;
                 submitButton.Alpha = 0.5f;
-                supportButton.Hidden = true;
+//                supportButton.Hidden = true;
                 advancedButton.Hidden = true;
                 if (IsShowingAdvanced) {
                     advancedFieldsViewController.SetFieldsEnabled (false);
@@ -293,7 +331,7 @@ namespace NachoClient.iOS
                     emailField.Enabled = true;
                 }
                 passwordField.Enabled = true;
-                supportButton.Hidden = false;
+//                supportButton.Hidden = false;
                 advancedButton.Hidden = HideAdvancedButton;
                 UpdateSubmitEnabled ();
                 if (IsShowingAdvanced) {

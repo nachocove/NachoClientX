@@ -267,6 +267,11 @@ namespace NachoCore.Utils
     {
         List<McContactEmailAddressAttribute> previousResults = null;
 
+        // [McEmailAddress.Id -> McEmailAddress.Score]  This is a cache of the brain
+        // scores for email addresses.  Keeping this cache greatly reduces the number
+        // of McEmailAddress.QueryById() calls.
+        Dictionary<int, double> addressScores = new Dictionary<int, double> ();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NachoCore.Utils.ContactsEmailSearch"/> class.
         /// </summary>
@@ -326,7 +331,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            // Score each match to see how well it matches the search string
+            // Score each match based on how well it matches the search string and on the brain score of the email address.
             foreach (var match in allMatches) {
                 int score = 0;
                 foreach (var word in searchWords) {
@@ -354,6 +359,18 @@ namespace NachoCore.Utils
                 if (0 != match.contact.PortraitId) {
                     score += 1;
                 }
+                double addressScore;
+                if (!addressScores.TryGetValue (match.attribute.EmailAddress, out addressScore)) {
+                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (match.attribute.EmailAddress);
+                    if (null != emailAddress) {
+                        addressScore = emailAddress.Score;
+                    } else {
+                        addressScore = 0;
+                    }
+                    addressScores [match.attribute.EmailAddress] = addressScore;
+                }
+                score += (int)(addressScore * 10);
+
                 match.matchScore = score;
             }
 

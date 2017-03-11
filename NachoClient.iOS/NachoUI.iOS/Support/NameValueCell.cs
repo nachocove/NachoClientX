@@ -7,7 +7,7 @@ using CoreGraphics;
 namespace NachoClient.iOS
 {
 
-    public class NameValueCell : SwipeTableViewCell
+    public class NameValueCell : SwipeTableViewCell, ThemeAdopter
     {
 
         public static nfloat PreferredHeight = 44.0f;
@@ -26,15 +26,20 @@ namespace NachoClient.iOS
 
         void Initialize ()
         {
-            TextLabel.Font = A.Font_AvenirNextRegular14;
-            TextLabel.TextColor = A.Color_NachoDarkText;
 
             ValueLabel = new UILabel ();
-            ValueLabel.Font = A.Font_AvenirNextMedium14;
-            ValueLabel.TextColor = A.Color_NachoGreen;
             ValueLabel.Lines = 1;
             ValueLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             ContentView.AddSubview(ValueLabel);
+        }
+
+        public virtual void AdoptTheme (Theme theme)
+        {
+            TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+            ValueLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            ValueLabel.TextColor = theme.DefaultTextColor;
+            SetNeedsLayout ();
         }
 
         public override void LayoutSubviews ()

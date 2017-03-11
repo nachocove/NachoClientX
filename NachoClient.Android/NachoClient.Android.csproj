@@ -35,10 +35,26 @@
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -53,10 +69,26 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>

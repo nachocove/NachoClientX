@@ -74,7 +74,7 @@ namespace Test.Common
             NcTask.StartService ();
             NcBrain.StartupDelayMsec = 0;
             NcBrain.StartService ();
-            Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
+            Assert.IsTrue (NcApplication.Instance.TelemetryService is Telemetry_NOOP, "Telemetry needs to be disabled");
 
             var bobCanonicalAddress = "bob@company.net";
             var bobEmailAddress = "Bob <bob@company.net>";

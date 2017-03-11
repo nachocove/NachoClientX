@@ -269,7 +269,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McSQLiteMaster.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McTask.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McTelemetryEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\NcModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McContact\McContact.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McEmailAddress\EmailAddressScore.cs" />
@@ -409,12 +408,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\ServerCertificatePeek.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\SetHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\SimpleTaskScheduler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\TelemetryAWS.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\TelemetryEvent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\TelemetryJsonEvent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\TelemetryJsonFile.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\TelemetryJsonFileTable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\TestMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\WBXML.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
@@ -423,6 +416,15 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\IPlatform.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\sqlite-net\SQLite.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\sqlite-net\SQLiteAsync.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\ITelemetry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\Telemetry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryAWS.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryBE_NOOP.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryJsonEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryJsonFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryJsonFileTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\NachoMailFolders.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

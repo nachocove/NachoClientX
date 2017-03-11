@@ -109,7 +109,7 @@ namespace NachoClient.iOS
                     userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_HTTP, "OAUTH2: Could not download user info from {0}: {1}", source, ex);
-                    NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                    NcAlertView.ShowMessage (this, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
                     return;
                 }
 
@@ -140,14 +140,14 @@ namespace NachoClient.iOS
                 }
             } else {
                 Log.Info (Log.LOG_UI, "GoogleCredentialsViewController completed unauthenticated");
-                NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                NcAlertView.ShowMessage (this, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
             }
         }
 
         public void AuthError (object sender, AuthenticatorErrorEventArgs e)
         {
             Log.Info (Log.LOG_UI, "GoogleCredentialsViewController auth error");
-            NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+            NcAlertView.ShowMessage (this, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
         }
 
         #endregion

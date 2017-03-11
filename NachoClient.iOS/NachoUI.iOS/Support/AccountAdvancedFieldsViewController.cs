@@ -12,7 +12,7 @@ namespace NachoClient.iOS
         void AdvancedFieldsControllerDidChange (AccountAdvancedFieldsViewController vc);
     }
 
-    public abstract class AccountAdvancedFieldsViewController : NcUIViewController
+    public abstract class AccountAdvancedFieldsViewController : NcUIViewController, ThemeAdopter
     {
 
         public AccountAdvancedFieldsViewControllerDelegate AccountDelegate;
@@ -29,6 +29,10 @@ namespace NachoClient.iOS
         public abstract void SetFieldsEnabled (bool enabled);
 
         public virtual void LockFieldsForMDMConfig (NcMdmConfig config)
+        {
+        }
+
+        public virtual void AdoptTheme (Theme theme)
         {
         }
     }

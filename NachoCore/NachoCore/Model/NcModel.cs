@@ -177,8 +177,6 @@ namespace NachoCore.Model
 
         public string DbFileName { set; get; }
 
-        public string TeleDbFileName { set; get; }
-
         public object WriteNTransLockObj { private set; get; }
 
         public enum AutoVacuumEnum
@@ -192,6 +190,11 @@ namespace NachoCore.Model
 
         private ConcurrentQueue<NcSQLiteConnection> ConnectionPool;
 
+        string ConnectionCounts ()
+        {
+            return string.Format ("Connections: Pool {0}, DbCons {1}", ConnectionPool.Count, DbConns.Count);
+        }
+
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -199,14 +202,14 @@ namespace NachoCore.Model
                 while (true) {
                     if (!DbConns.TryGetValue (threadId, out db)) {
                         if (!ConnectionPool.TryDequeue (out db)) {
-                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} + connection", threadId);
+                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} + connection ({1})", threadId, ConnectionCounts ());
                             db = new NcSQLiteConnection (DbFileName, 
                                 SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                                 storeDateTimeAsTicks: true);
                             db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                             db.TraceThreshold = 500;
                         } else {
-                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} > connection", threadId);
+                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} > connection ({1})", threadId, ConnectionCounts ());
                         }
                         NcAssert.True (DbConns.TryAdd (threadId, db));
                     }
@@ -222,25 +225,8 @@ namespace NachoCore.Model
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 NcSQLiteConnection db = null;
                 if (DbConns.TryRemove (threadId, out db)) {
-                    Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < connection", threadId);
                     ConnectionPool.Enqueue (db);
-                }
-            }
-        }
-
-        private object _TeleDbLock;
-        private SQLiteConnection _TeleDb = null;
-
-        public SQLiteConnection TeleDb {
-            get {
-                lock (_TeleDbLock) {
-                    if (null == _TeleDb) {
-                        _TeleDb = new SQLiteConnection (TeleDbFileName,
-                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
-                            storeDateTimeAsTicks: true);
-                        _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                    }
-                    return _TeleDb;
+                    Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < connection ({1})", threadId, ConnectionCounts ());
                 }
             }
         }
@@ -258,18 +244,18 @@ namespace NachoCore.Model
 
         public void CleanupOldDbConnections (TimeSpan staleInterval, int maxCached)
         {
-            Log.Info (Log.LOG_DB, "Cleaning DB connections older than {0:n0} sec, caching at most {1} connections.", staleInterval.TotalSeconds, maxCached);
+            Log.Info (Log.LOG_DB, "NcSQLiteConnection: Cleaning DB connections older than {0:n0} sec, caching at most {1} connections ({2}).", staleInterval.TotalSeconds, maxCached, ConnectionCounts ());
             DateTime staleCuttoff = DateTime.UtcNow - staleInterval;
             int uiThreadId = NcApplication.Instance.UiThreadId;
             foreach (var kvp in DbConns) {
                 if (uiThreadId != kvp.Key && kvp.Value.GetLastAccess() < staleCuttoff) {
                     NcSQLiteConnection staleConnection;
                     if (DbConns.TryRemove (kvp.Key, out staleConnection)) {
-                        Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < recycling stale connection ({1:N0} sec)",
-                            kvp.Key, (DateTime.UtcNow - staleConnection.GetLastAccess ()).TotalSeconds);
                         ConnectionPool.Enqueue (staleConnection);
+                        Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < recycling stale connection ({1:N0} sec) ({2})",
+                            kvp.Key, (DateTime.UtcNow - staleConnection.GetLastAccess ()).TotalSeconds, ConnectionCounts ());
                     } else {
-                        Log.Error (Log.LOG_DB, "Internal error: Can't remove connection {0} from DbConns.", kvp.Key);
+                        Log.Error (Log.LOG_DB, "NcSQLiteConnection: Internal error: Can't remove connection {0} from DbConns.", kvp.Key);
                     }
                 }
             }
@@ -277,16 +263,18 @@ namespace NachoCore.Model
             while (ConnectionPool.Count > maxCached) {
                 NcSQLiteConnection db;
                 if (ConnectionPool.TryDequeue (out db)) {
+                    Log.Info (Log.LOG_DB, "NcSQLiteConnection - eliminating connection");
                     db.Eliminate ();
                 } else {
-                    Log.Error (Log.LOG_DB, "Internal error: Can't remove a connection from the cached connection pool with size {0}", ConnectionPool.Count);
+                    Log.Error (Log.LOG_DB, "NcSQLiteConnection: Internal error: Can't remove a connection from the cached connection pool with size {0}", ConnectionPool.Count);
                     break;
                 }
             }
             int finalCacheCount = ConnectionPool.Count;
             if (originalCacheCount != finalCacheCount) {
-                Log.Info (Log.LOG_DB, "Removed {0} DB connections from the cache, leaving {1} connections.", originalCacheCount - finalCacheCount, finalCacheCount);
+                Log.Info (Log.LOG_DB, "NcSQLiteConnection: Removed {0} DB connections from the cache, leaving {1} connections.", originalCacheCount - finalCacheCount, finalCacheCount);
             }
+            Log.Info (Log.LOG_DB, "NcSQLiteConnection: Cleanup done. {0}", ConnectionCounts ());
         }
 
         public Dictionary<string, long> AllTableRowCounts (bool includeZeroCounts = false)
@@ -440,6 +428,7 @@ namespace NachoCore.Model
             RateLimiter = new NcRateLimter (16, 0.250);
             DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
             ConnectionPool = new ConcurrentQueue<NcSQLiteConnection> ();
+            Log.Info (Log.LOG_DB, "NcSQLiteConnection: Initialized connection pool.");
             TransDepth = new ConcurrentDictionary<int, int> ();
             AutoVacuum = AutoVacuumEnum.NONE;
             var watch = Stopwatch.StartNew ();
@@ -464,18 +453,6 @@ namespace NachoCore.Model
             watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
             ConfigureDb (Db);
-        }
-
-        private void InitializeTeleDb ()
-        {
-            if (null == _TeleDbLock) {
-                _TeleDbLock = new object ();
-            }
-            AutoVacuum = AutoVacuumEnum.INCREMENTAL;
-            ConfigureDb (TeleDb);
-            // Auto-vacuum setting requires the table to be created after.
-            TeleDb.CreateTable<McTelemetryEvent> ();
-            TeleDb.CreateTable<McTelemetrySupportEvent> ();
         }
 
         private void QueueLogInfo (string message)
@@ -515,8 +492,6 @@ namespace NachoCore.Model
             DbFileName = Path.Combine (GetDataDirPath (), "db");
             FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
-            InitializeTeleDb ();
             NcApplicationMonitor.Instance.MonitorEvent += (sender, e) => Scrub ();
             //mark all the files for skip backup
             MarkDataDirForSkipBackup ();
@@ -832,27 +807,6 @@ namespace NachoCore.Model
         private static void Scrub ()
         {
             // The contents of this method change, depending on what we are scrubbing for.
-        }
-
-        public void ResetTeleDb ()
-        {
-            lock (_TeleDbLock) {
-                // Close the connection
-                _TeleDb.Close ();
-                _TeleDb.Dispose ();
-                _TeleDb = null; // next reference will re-initialize the connection
-
-                // Rename the db file
-                var timestamp = DateTime.Now.ToString ().Replace (' ', '_').Replace ('/', '-');
-                File.Replace (TeleDbFileName, TeleDbFileName + "." + timestamp, null);
-                File.Replace (TeleDbFileName + "-wal", TeleDbFileName + "-wal." + timestamp, null);
-                File.Replace (TeleDbFileName + "-shm", TeleDbFileName + "-shm." + timestamp, null);
-
-                // Recreate the db
-                InitializeTeleDb ();
-
-                Log.Error (Log.LOG_DB, "TeleDB corrupted. Reset.");
-            }
         }
 
         public static void MayIncrementallyVacuum (SQLiteConnection db, int numberOfPages)

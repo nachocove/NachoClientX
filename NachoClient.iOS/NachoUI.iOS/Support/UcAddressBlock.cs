@@ -41,7 +41,7 @@ namespace NachoClient.iOS
     /// Because GAP1 takes up space, the left margin of the first row is
     /// more to the left than the rest of the rows.
     /// </summary>
-    public class UcAddressBlock : UIView
+    public class UcAddressBlock : UIView, ThemeAdopter
     {
         protected int isActive;
         protected bool isCompact;
@@ -94,6 +94,25 @@ namespace NachoClient.iOS
             this.currentAddressField = null;
 
             CreateView ();
+        }
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            adoptedTheme = theme;
+            var font = theme.DefaultFont.WithSize (14.0f);
+            var color = theme.DefaultTextColor;
+            foreach (var addressField in list) {
+                addressField.Font = font;
+                addressField.TextColor = color;
+            }
+            moreLabel.Font = font.WithSize (12.0f);
+            moreLabel.TextColor = color;
+            topLeftLabel.Font = font;
+            topLeftLabel.TextColor = color;
+            entryTextField.Font = font;
+            entryTextField.TextColor = color;
         }
 
         public void SetCompact (bool isCompact, int moreCount, bool showAlternateTopLeftLabel = false)
@@ -154,10 +173,10 @@ namespace NachoClient.iOS
         protected void InsertInternal (int index, string text, NcEmailAddress address, int type)
         {
             var a = new UcAddressField (type);
+            a.Font = adoptedTheme.DefaultFont.WithSize(14.0f);
+            a.TextColor = adoptedTheme.DefaultTextColor;
             a.UserInteractionEnabled = isEditable;
             a.ContentMode = UIViewContentMode.Left;
-            a.Font = A.Font_AvenirNextRegular14;
-            a.TextColor = A.Color_154750;
             a.Text = text;
             a.address = address;
             var aSize = a.Text.StringSize (a.Font);
@@ -222,8 +241,6 @@ namespace NachoClient.iOS
 
             moreLabel = new UILabel ();
             moreLabel.Tag = (int)TagType.MORE_LABEL_TAG;
-            moreLabel.Font = A.Font_AvenirNextRegular12;
-            moreLabel.TextColor = A.Color_808080;
 
             var moreTapGestureRecognizer = new UITapGestureRecognizer ();
             moreTapGestureRecognizer.NumberOfTapsRequired = 1;
@@ -233,8 +250,6 @@ namespace NachoClient.iOS
 
             topLeftLabel = new UILabel ();
             topLeftLabel.Tag = (int)TagType.TOPLEFT_LABEL_TAG;
-            topLeftLabel.Font = A.Font_AvenirNextMedium14;
-            topLeftLabel.TextColor = A.Color_NachoDarkText;
 
 
             chooserButton = UIButton.FromType (UIButtonType.System);
@@ -255,8 +270,6 @@ namespace NachoClient.iOS
 
             if (isEditable) {
                 entryTextField = new UcAddressField (UcAddressField.ENTRY_FIELD);
-                entryTextField.Font = A.Font_AvenirNextRegular14;
-                entryTextField.TextColor = A.Color_808080;
                 entryTextField.Text = " ";
                 entryTextField.SizeToFit ();
                 entryTextField.Delegate = new UcAddressFieldDelegate (this);

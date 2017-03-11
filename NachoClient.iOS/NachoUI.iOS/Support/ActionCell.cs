@@ -11,7 +11,7 @@ using NachoCore;
 namespace NachoClient.iOS
 {
 
-    public class ActionCell : SwipeTableViewCell
+    public class ActionCell : SwipeTableViewCell, ThemeAdopter
     {
 
         McAction Action;
@@ -94,15 +94,9 @@ namespace NachoClient.iOS
             DetailTextSpacing = 0.0f;
             HideDetailWhenEmpty = true;
 
-            TextLabel.Font = A.Font_AvenirNextDemiBold17;
-            TextLabel.TextColor = A.Color_NachoGreen;
-            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-            DetailTextLabel.TextColor = A.Color_NachoTextGray;
             DetailTextLabel.Lines = 3;
 
             DateLabel = new UILabel ();
-            DateLabel.Font = A.Font_AvenirNextRegular14;
-            DateLabel.TextColor = A.Color_NachoTextGray;
             ContentView.AddSubview (DateLabel);
 
             CheckboxView = new ActionCheckboxView (viewSize: 44.0f, checkboxSize: 20.0f);
@@ -111,6 +105,16 @@ namespace NachoClient.iOS
             ContentView.AddSubview (CheckboxView);
 
             SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            TextLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+            TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+            DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+            DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DateLabel.TextColor = theme.TableViewCellDateLabelTextColor;
         }
 
         public void SetAction (McAction action)

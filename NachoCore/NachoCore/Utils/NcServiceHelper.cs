@@ -58,7 +58,7 @@ namespace NachoCore.Utils
             case McAccount.AccountServiceEnum.GoogleExchange:
                 return "Google Apps";
             case McAccount.AccountServiceEnum.GoogleDefault:
-                return "GMail";
+                return "Gmail";
             case McAccount.AccountServiceEnum.HotmailDefault:
                 return "Hotmail";
             case McAccount.AccountServiceEnum.Aol:

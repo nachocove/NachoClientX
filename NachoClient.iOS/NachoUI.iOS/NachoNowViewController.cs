@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, INachoFolderChooserParent, IAccountSwitching
+    public partial class NachoNowViewController : NachoWrappedTableViewController, SwipeActionsViewDelegate, MessagesSyncManagerDelegate, FoldersViewControllerDelegate, IAccountSwitching, ThemeAdopter
     {
         #region Constants
 
@@ -88,13 +88,35 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                EmptyView.AdoptTheme (theme);
+                HotEventView.AdoptTheme (theme);
+                HotMessagesHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
+                HotMessagesHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
+                ActionsHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
+                ActionsHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.BackgroundColor = Theme.Active.TableViewGroupedBackgroundColor;
+            View.BackgroundColor = TableView.BackgroundColor;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ButtonCell), ButtonCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellIdentifier);
@@ -155,6 +177,7 @@ namespace NachoClient.iOS
             if (HotEventView.Selected) {
                 HotEventView.SetSelected (false, animated: true);
             }
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -315,24 +338,26 @@ namespace NachoClient.iOS
             }
         }
 
+        McEmailMessageThread SelectedThread;
+
         void ShowFoldersForMove (McEmailMessageThread thread, McEmailMessage selectedMessage)
         {
+            SelectedThread = thread;
             var vc = new FoldersViewController ();
-            var accountId = selectedMessage.AccountId;
-            NcAssert.False (0 == accountId);
-            vc.SetOwner (this, true, accountId, thread);
-            PresentViewController (vc, true, null);
+            vc.Account = McAccount.QueryById<McAccount> (selectedMessage.AccountId);
+            vc.PresentAsChooserOverViewController (this, null);
         }
 
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        public void FoldersViewDidChooseFolder (FoldersViewController vc, McFolder folder)
         {
-            var messageThread = cookie as McEmailMessageThread;
+            var messageThread = SelectedThread;
+            SelectedThread = null;
             if (messageThread != null) {
                 NcTask.Run (() => {
                     NcEmailArchiver.Move (messageThread, folder);
                 }, "MessageListViewController.MoveMessage");
                 HotMessages.IgnoreMessage (messageThread.FirstMessageId);
-                vc.DismissFolderChooser (true, () => {
+                vc.DismissViewController (true, () => {
                     SetNeedsReload ();
                 });
             }
@@ -787,8 +812,6 @@ namespace NachoClient.iOS
                     _HotMessagesHeader = new InsetLabelView ();
                     _HotMessagesHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _HotMessagesHeader.Label.Text = "Hot Messages";
-                    _HotMessagesHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _HotMessagesHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _HotMessagesHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
                 return _HotMessagesHeader;
@@ -802,8 +825,6 @@ namespace NachoClient.iOS
                     _ActionsHeader = new InsetLabelView ();
                     _ActionsHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _ActionsHeader.Label.Text = "Hot Actions";
-                    _ActionsHeader.Label.Font = A.Font_AvenirNextRegular14;
-                    _ActionsHeader.Label.TextColor = TableView.BackgroundColor.ColorDarkenedByAmount (0.6f);
                     _ActionsHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
                 return _ActionsHeader;
@@ -850,16 +871,17 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
+            var theme = adoptedTheme == null ? Theme.Active : adoptedTheme;
             if (indexPath.Section == HotMessagesSection) {
                 if (indexPath.Row < HotMessages.Count ()) {
-                    return MessageCell.PreferredHeight (NumberOfMessagePreviewLines, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+                    return MessageCell.PreferredHeight (NumberOfMessagePreviewLines, theme.DefaultFont.WithSize(17.0f), theme.DefaultFont.WithSize(14.0f));
                 } else {
                     return ButtonCell.PreferredHeight;
                 }
             }
             if (indexPath.Section == ActionsSection) {
                 if (indexPath.Row < HotActions.Count ()) {
-                    return ActionCell.PreferredHeight (NumberOfActionPreviewLines, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
+                    return ActionCell.PreferredHeight (NumberOfActionPreviewLines, theme.DefaultFont.WithSize (17.0f), theme.DefaultFont.WithSize (14.0f));
                 } else {
                     return ButtonCell.PreferredHeight;
                 }
@@ -947,6 +969,15 @@ namespace NachoClient.iOS
                 }
             }
             return null;
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
@@ -1195,7 +1226,6 @@ namespace NachoClient.iOS
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (calendarEvent);
             var navigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 
@@ -1291,16 +1321,6 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region Folder Chooser Parent (for Move)
-
-        // The folder chooser should really just close itself, but it's easier to just add this than change its interface
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            DismissViewController (true, null);
-        }
-
-        #endregion
-
         #region Private Classes
 
         private class DisclosureAccessoryView : ImageAccessoryView
@@ -1310,19 +1330,27 @@ namespace NachoClient.iOS
             }
         }
 
-        private class ButtonCell : SwipeTableViewCell
+        private class ButtonCell : SwipeTableViewCell, ThemeAdopter
         {
 
             public static nfloat PreferredHeight = 44.0f;
 
             public ButtonCell (IntPtr handle) : base (handle)
             {
-                TextLabel.Font = A.Font_AvenirNextRegular14;
-                TextLabel.TextColor = A.Color_NachoGreen;
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                var accessory = AccessoryView as DisclosureAccessoryView;
+                if (accessory != null) {
+                    accessory.TintColor = theme.TableViewCellDisclosureAccessoryColor;
+                }
             }
         }
 
-        private class EmptyHotView : UIView 
+        private class EmptyHotView : UIView, ThemeAdopter 
         {
 
             public readonly UILabel TextLabel;
@@ -1336,15 +1364,19 @@ namespace NachoClient.iOS
                 TextLabel = new UILabel ();
                 TextLabel.UserInteractionEnabled = false;
                 TextLabel.Lines = 0;
-                TextLabel.Font = A.Font_AvenirNextRegular14;
                 TextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 TextLabel.TextAlignment = UITextAlignment.Center;
-                TextLabel.Text = "Your most important items will show up here automatically as Nacho Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
+                TextLabel.Text = "Your most important items will show up here automatically as Apollo Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
 
                 ImageView = new UIImageView (UIImage.FromBundle("empty-hot").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
 
                 AddSubview(ImageView);
                 AddSubview(TextLabel);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
             }
 
             public override void TintColorDidChange ()

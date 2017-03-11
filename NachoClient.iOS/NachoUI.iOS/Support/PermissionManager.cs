@@ -52,8 +52,8 @@ namespace NachoClient.iOS
             }
             McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
 
-            var title = "Nacho Mail would like to send you push notifications.";
-            var body = "This allows Nacho Mail to tell you when you have new mail or an upcoming meeting.";
+            var title = "Apollo Mail would like to send you push notifications.";
+            var body = "This allows Apollo Mail to tell you when you have new mail or an upcoming meeting.";
 
             var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
             alert.Clicked += (s, b) => {
@@ -91,28 +91,17 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var title = "Nacho Mail would like to access your Calendar";
-            var body = "This allows Nacho Mail to show events from your calendar in the Nacho Mail calendar.";
+            McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
 
-            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
-            alert.Clicked += (s, b) => {
-                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
-                    NachoPlatform.Calendars.Instance.AskForPermission ((bool granted) => {
-                        McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-                        McMutables.SetBool (accountId, module, PM.Key_UserGrantedUsPermission, granted);
-                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
-                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
-                        if (granted) {
-                            // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
-                            BackEnd.Instance.Start (accountId);
-                        }
-                    });
-                } else {
-                    McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-                    Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "no");
+            NachoPlatform.Calendars.Instance.AskForPermission ((bool granted) => {
+                McMutables.SetBool (accountId, module, PM.Key_UserGrantedUsPermission, granted);
+                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
+                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
+                if (granted) {
+                    // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
+                    BackEnd.Instance.Start (accountId);
                 }
-            };
-            alert.Show ();
+            });
         }
 
         // Contacts
@@ -133,29 +122,18 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var title = "Nacho Mail would like to access your Address Book";
-            var body = "This allows you to choose contacts from your address book in addition to your connected email accounts.";
+            McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
 
-            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
-            alert.Clicked += (s, b) => {
-                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
-                    NachoPlatform.Contacts.Instance.AskForPermission ((bool granted) => {
-                        McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-                        McMutables.SetBool (accountId, module, PM.Key_UserGrantedUsPermission, granted);
-                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
-                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
-                        if (granted) {
-                            // Trigger a Sync.
-                            // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
-                            BackEnd.Instance.Start (accountId);
-                        }
-                    });
-                } else {
-                    McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-                    Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "no");
+            NachoPlatform.Contacts.Instance.AskForPermission ((bool granted) => {
+                McMutables.SetBool (accountId, module, PM.Key_UserGrantedUsPermission, granted);
+                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
+                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
+                if (granted) {
+                    // Trigger a Sync.
+                    // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
+                    BackEnd.Instance.Start (accountId);
                 }
-            };
-            alert.Show ();
+            });
         }
 
     }

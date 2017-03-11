@@ -18,7 +18,7 @@ using NachoCore.Index;
 namespace NachoClient.iOS
 {
     
-    public class MessageListViewController : NachoWrappedTableViewController, INachoFolderChooserParent, NachoSearchControllerDelegate, MessagesSyncManagerDelegate
+    public class MessageListViewController : NachoWrappedTableViewController, FoldersViewControllerDelegate, NachoSearchControllerDelegate, MessagesSyncManagerDelegate, ThemeAdopter
     {
         #region Constants
 
@@ -98,23 +98,37 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+                FilterBar.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
             
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
             TableView.AllowsMultipleSelectionDuringEditing = true;
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
             TableView.AccessibilityLabel = "Message list";
-            TableView.TintColor = A.Color_NachoGreen;
             TableView.BackgroundColor = UIColor.White;
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
 
             FilterBar = new MessageListFilterBar (new CGRect (0.0f, 0.0f, View.Bounds.Width, MessageListFilterBar.PreferredHeight));
             FilterBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FilterBar.BackgroundColor = A.Color_NachoBackgroundGray;
 
             TableView.Frame = new CGRect (0.0f, FilterBar.Frame.Height, View.Bounds.Width, View.Bounds.Height - FilterBar.Frame.Height);
             TableView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
@@ -144,6 +158,7 @@ namespace NachoClient.iOS
             }
             StartListeningForStatusInd ();
             HasAppearedOnce = true;
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -377,24 +392,26 @@ namespace NachoClient.iOS
             }
         }
 
+        McEmailMessageThread SelectedThread;
+
         void ShowFoldersForMove (McEmailMessageThread thread, McEmailMessage selectedMessage)
         {
+            SelectedThread = thread;
             var vc = new FoldersViewController ();
-            var accountId = selectedMessage.AccountId;
-            NcAssert.False (0 == accountId);
-            vc.SetOwner (this, true, accountId, thread);
-            PresentViewController (vc, true, null);
+            vc.Account = McAccount.QueryById<McAccount> (selectedMessage.AccountId);
+            vc.PresentAsChooserOverViewController (this, null);
         }
 
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        public void FoldersViewDidChooseFolder (FoldersViewController vc, McFolder folder)
         {
-            var messageThread = cookie as McEmailMessageThread;
+            var messageThread = SelectedThread;
+            SelectedThread = null;
             if (messageThread != null) {
                 NcTask.Run (() => {
                     NcEmailArchiver.Move (messageThread, folder);
                 }, "MessageListViewController.MoveMessage");
                 Messages.IgnoreMessage (messageThread.FirstMessageId);
-                vc.DismissFolderChooser (true, () => {
+                vc.DismissViewController (true, () => {
                     SetNeedsReload ();
                 });
             } else {
@@ -405,7 +422,7 @@ namespace NachoClient.iOS
                 foreach (var message in selected) {
                     Messages.IgnoreMessage (message.Id);
                 }
-                vc.DismissFolderChooser (true, () => {
+                vc.DismissViewController (true, () => {
                     CancelEditingTable ();
                     SetNeedsReload ();
                 });
@@ -443,8 +460,8 @@ namespace NachoClient.iOS
             var vc = new FoldersViewController ();
             var accountId = SelectedAccounts.Keys.First ();
             NcAssert.False (0 == accountId);
-            vc.SetOwner (this, true, accountId, null);
-            PresentViewController (vc, true, null);
+            vc.Account = McAccount.QueryById<McAccount> (accountId);
+            vc.PresentAsChooserOverViewController (this, null);
         }
 
         void ArchiveSelectedMessages (object sender, EventArgs e)
@@ -704,6 +721,15 @@ namespace NachoClient.iOS
             return cell;
         }
 
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
+        }
+
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
         {
             var message = Messages.GetCachedMessage (indexPath.Row);
@@ -834,12 +860,9 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
-
-                bool isVisible = IsViewLoaded && View.Window != null;
-
+                Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}", s.Status.SubKind.ToString ());
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
@@ -847,12 +870,10 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     UpdateVisibleRows ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
-                    Log.Info (Log.LOG_UI, "MessageListViewController status indicator callback: {0}, isVisible = {1}", s.Status.SubKind.ToString (), isVisible);
                     Messages.RefetchSyncTime ();
                     break;
                 }
@@ -982,7 +1003,6 @@ namespace NachoClient.iOS
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (calendarEvent);
             var navigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 
@@ -1155,20 +1175,10 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region Folder Chooser Parent (for Move)
-
-        // The folder chooser should really just close itself, but it's easier to just add this than change its interface
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            DismissViewController (true, null);
-        }
-
-        #endregion
-
     }
 
 
-    public class MessageSearchResultsViewController : NachoTableViewController
+    public class MessageSearchResultsViewController : NachoTableViewController, ThemeAdopter
     {
 
         NSObject KeyboardWillShowNotificationToken;
@@ -1190,11 +1200,22 @@ namespace NachoClient.iOS
             base.Cleanup ();
         }
 
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
         public override void LoadView ()
         {
             base.LoadView ();
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
-            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, A.Font_AvenirNextDemiBold17, A.Font_AvenirNextRegular14);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
         }
 
         public override void ViewWillAppear (bool animated)
@@ -1205,6 +1226,7 @@ namespace NachoClient.iOS
             }
             KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, KeyboardWillShow);
             KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, KeyboardWillHide);
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -1246,6 +1268,7 @@ namespace NachoClient.iOS
         public void PrepareForSearching ()
         {
             SearchResults.EnterSearchMode (NcApplication.Instance.Account);
+            TableView.ReloadData ();
         }
 
         public void StartServerSearch ()
@@ -1299,6 +1322,15 @@ namespace NachoClient.iOS
             messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
             NavigationController.SetNavigationBarHidden (false, true);
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
         }
 
     }

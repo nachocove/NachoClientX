@@ -326,19 +326,14 @@ namespace NachoCore.Model
             if (!descriptionWasChanged || null == cachedDescription) {
                 return;
             }
-            if (0 == BodyId) {
-                // No existing body.  Create one.
-                var body = McBody.InsertFile (AccountId, cachedDescriptionType, cachedDescription);
-                BodyId = body.Id;
-            } else {
-                // Existing body.  We can't replace just the description, leaving
-                // the attachments untouched.  So replace the entire body, which will
-                // unfortunately destroy the attachments.
-                var body = McBody.QueryById<McBody> (BodyId);
-                body.UpdateData (cachedDescription);
-                body.BodyType = cachedDescriptionType;
-                body.Update ();
+            if (0 != BodyId) {
+                var oldBody = McBody.QueryById<McBody> (BodyId);
+                if (null != oldBody) {
+                    oldBody.Delete ();
+                }
             }
+            var body = McBody.InsertFile (AccountId, cachedDescriptionType, cachedDescription);
+            BodyId = body.Id;
             descriptionWasChanged = false;
             cachedDescription = null;
         }

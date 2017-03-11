@@ -8,6 +8,7 @@ using CoreGraphics;
 using Foundation;
 
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -52,25 +53,25 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             base.ViewWillAppear (animated);
         }
 
         public override void ViewDidAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR);
             base.ViewDidAppear (animated);
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
             base.ViewWillDisappear (animated);
         }
 
         public override void ViewDidDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
             if (ShouldCleanupDuringDidDisappear) {
                 Cleanup ();
             }
@@ -244,8 +245,10 @@ namespace NachoClient.iOS
         protected void ReconfigureGroupedRows ()
         {
             if (TableView.Style == UITableViewStyle.Grouped) {
-                foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
-                    WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
+                if (TableView.IndexPathsForVisibleRows != null) {
+                    foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                        WillDisplay (TableView, TableView.CellAt (indexPath), indexPath);
+                    }
                 }
             }
         }

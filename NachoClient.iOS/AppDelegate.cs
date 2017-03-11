@@ -9,26 +9,23 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using CoreGraphics;
 using System.Security.Cryptography.X509Certificates;
-using System.Xml.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Drawing;
 using Foundation;
 using UIKit;
 using NachoCore;
-using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
 using NachoPlatform;
 using NachoClient.iOS;
-using SQLite;
 using Newtonsoft.Json;
-using NachoCore.Wbxml;
 using ObjCRuntime;
 using NachoClient.Build;
+#if HOCKEY_APP
 using HockeyApp;
+#endif
 using NachoUIMonitorBinding;
 
 namespace NachoClient.iOS
@@ -121,6 +118,8 @@ namespace NachoClient.iOS
                 return;
             }
 
+            #if HOCKEY_APP
+
             //We MUST wrap our setup in this block to wire up
             // Mono's SIGSEGV and SIGBUS signals
             HockeyApp.Setup.EnableCustomCrashReporting (() => {
@@ -172,6 +171,7 @@ namespace NachoClient.iOS
                 NcApplication.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.Exception);
             });
+            #endif
         }
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
@@ -234,33 +234,33 @@ namespace NachoClient.iOS
         private void StartUIMonitor ()
         {
             NachoUIMonitor.SetupUIButton (delegate(string description) {
-                Telemetry.RecordUiButton (description);
+                NcApplication.Instance.TelemetryService.RecordUiButton (description);
             });
 
             NachoUIMonitor.SetupUISegmentedControl (delegate(string description, int index) {
-                Telemetry.RecordUiSegmentedControl (description, index);
+                NcApplication.Instance.TelemetryService.RecordUiSegmentedControl (description, index);
             });
 
             NachoUIMonitor.SetupUISwitch (delegate(string description, string onOff) {
-                Telemetry.RecordUiSwitch (description, onOff);
+                NcApplication.Instance.TelemetryService.RecordUiSwitch (description, onOff);
             });
 
             NachoUIMonitor.SetupUIDatePicker (delegate(string description, string date) {
-                Telemetry.RecordUiDatePicker (description, date);
+                NcApplication.Instance.TelemetryService.RecordUiDatePicker (description, date);
             });
 
             NachoUIMonitor.SetupUITextField (delegate(string description) {
-                Telemetry.RecordUiTextField (description);
+                NcApplication.Instance.TelemetryService.RecordUiTextField (description);
             });
 
             NachoUIMonitor.SetupUIPageControl (delegate(string description, int page) {
-                Telemetry.RecordUiPageControl (description, page);
+                NcApplication.Instance.TelemetryService.RecordUiPageControl (description, page);
             });
 
             // Alert views are monitored inside NcAlertView
 
             NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
-                Telemetry.RecordUiActionSheet (description, index);
+                NcApplication.Instance.TelemetryService.RecordUiActionSheet (description, index);
             });
 
             NachoUIMonitor.SetupUITapGestureRecognizer (delegate(string description, int numTouches,
@@ -275,11 +275,11 @@ namespace NachoClient.iOS
                         }
                     }
                 }
-                Telemetry.RecordUiTapGestureRecognizer (description, touches);
+                NcApplication.Instance.TelemetryService.RecordUiTapGestureRecognizer (description, touches);
             });
 
             NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
-                Telemetry.RecordUiTableView (description, operation);
+                NcApplication.Instance.TelemetryService.RecordUiTableView (description, operation);
             });
         }
 
@@ -314,11 +314,13 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
             }
 
+            #if HOCKEY_APP
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
             }
+            #endif
 
             NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
@@ -331,23 +333,9 @@ namespace NachoClient.iOS
 
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
-            UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
-            UINavigationBar.Appearance.ShadowImage = new UIImage ();
-            UINavigationBar.Appearance.TintColor = A.Color_NachoBlue;
-            UIToolbar.Appearance.BackgroundColor = UIColor.White;
-            UIToolbar.Appearance.TintColor = A.Color_NachoGreen;
+            Theme.Active = new ApolloTheme();
+            Theme.Active.DefineAppearance ();
 
-            var navigationTitleTextAttributes = new UITextAttributes ();
-            navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
-            navigationTitleTextAttributes.TextColor = UIColor.White;
-            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
-            using (var arrow = UIImage.FromFile ("nav-backarrow")) {
-                UINavigationBar.Appearance.BackIndicatorImage = arrow;
-                UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
-            }
-            var navigationButtonTextAttibutes = new UITextAttributes ();
-            navigationButtonTextAttibutes.Font = A.Font_AvenirNextRegular17;
-            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationButtonTextAttibutes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
                 var replyAction = new UIMutableUserNotificationAction ();
@@ -387,7 +375,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.Instance.Throttling = false;
+                NcApplication.Instance.TelemetryService.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
@@ -587,7 +575,7 @@ namespace NachoClient.iOS
             if (DateTime.MinValue != foregroundTime) {
                 // Log the duration of foreground for usage analytics
                 var duration = (int)(DateTime.UtcNow - foregroundTime).TotalMilliseconds;
-                Telemetry.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
+                NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
                 foregroundTime = DateTime.MinValue;
             }
 
@@ -623,6 +611,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartBasalServices complete");
             FinalShutdownHasHappened = false;
+            NcTask.Run (() => NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20), "ReverseFinalShutdownCleanupOldDbConnections");
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
         }
 
@@ -733,6 +722,12 @@ namespace NachoClient.iOS
         private bool fetchStatusHandlerRegistered = false;
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
+        /// <summary>
+        /// The PerformFetch timer. This needs to be a Timer, not an NcTimer,
+        /// because performFetchTimer needs to keep running after FinalShutdown()
+        /// has been called to make sure the badge count update code completes in
+        /// time. If it is an NcTimer, then it will get killed during FinalShutdown().
+        /// </summary>
         private Timer performFetchTimer = null;
         private string fetchCause;
         // A list of all account ids that are waiting to be synced.
@@ -1523,6 +1518,8 @@ namespace NachoClient.iOS
 
     }
 
+    #if HOCKEY_APP
+
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
     {
         public HockeyAppCrashDelegate () : base ()
@@ -1566,7 +1563,7 @@ namespace NachoClient.iOS
 
                 UIAlertView av = new UIAlertView ();
                 av.Title = "Authentication Required";
-                av.Message = "In order to run this Nacho Mail beta client, you must authenticate with HockeyApp. " +
+                av.Message = "In order to run this Apollo Mail beta client, you must authenticate with HockeyApp. " +
                 "Please enter your HockeyApp credential in the next screen.";
                 av.AddButton ("Continue");
                 av.Clicked += (sender, buttonArgs) => {
@@ -1579,4 +1576,5 @@ namespace NachoClient.iOS
             });
         }
     }
+    #endif
 }

@@ -12,7 +12,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class ImapAdvancedFieldsViewController : AccountAdvancedFieldsViewController
+    public partial class ImapAdvancedFieldsViewController : AccountAdvancedFieldsViewController, ThemeAdopter
 	{
 		public ImapAdvancedFieldsViewController (IntPtr handle) : base (handle)
 		{
@@ -46,6 +46,27 @@ namespace NachoClient.iOS
             outgoingPortField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
             outgoingPortField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
             outgoingPortField.LeftView = label;
+        }
+
+        public override void AdoptTheme (Theme theme)
+        {
+            usernameField.Font = theme.DefaultFont.WithSize (usernameField.Font.PointSize);
+            incomingServerField.Font = theme.DefaultFont.WithSize (incomingServerField.Font.PointSize);
+            incomingPortField.Font = theme.DefaultFont.WithSize (incomingPortField.Font.PointSize);
+            outgoingServerField.Font = theme.DefaultFont.WithSize (outgoingServerField.Font.PointSize);
+            outgoingPortField.Font = theme.DefaultFont.WithSize (outgoingPortField.Font.PointSize);
+            var label = (incomingServerField.LeftView as UILabel);
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
+            label = (incomingPortField.LeftView as UILabel);
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
+            label = (outgoingServerField.LeftView as UILabel);
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
+            label = (outgoingPortField.LeftView as UILabel);
+            label.Font = theme.DefaultFont.WithSize (label.Font.PointSize);
+            label.TextColor = theme.AccountCreationFieldLabelTextColor;
         }
 
         private UILabel FieldLabel (String text)

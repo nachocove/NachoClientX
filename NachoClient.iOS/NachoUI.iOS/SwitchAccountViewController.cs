@@ -13,7 +13,7 @@ using NachoClient;
 
 namespace NachoClient.iOS
 {
-    public partial class SwitchAccountViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
+    public partial class SwitchAccountViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, ThemeAdopter
     {
 
         public SwitchAccountView SwitchAccountView { get; private set; }
@@ -38,6 +38,7 @@ namespace NachoClient.iOS
         {
             View = SwitchAccountView = new SwitchAccountView (new CGRect(0.0f, 0.0f, 300.0f, 300.0f));
             SwitchAccountView.AddAccount = AddAccount;
+            AdoptTheme (Theme.Active);
         }
 
         public void Cleanup ()
@@ -45,6 +46,20 @@ namespace NachoClient.iOS
             SwitchAccountView.AddAccount = null;
             SwitchAccountView.Cleanup ();
         }
+
+        #region Theme
+
+        private Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                SwitchAccountView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
 
         public void AddAccount ()
         {
@@ -58,7 +73,6 @@ namespace NachoClient.iOS
             }
             vc.AccountDelegate = this;
             AddAccountNavigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, AddAccountNavigationController);
             PresentViewController (AddAccountNavigationController, true, null);
         }
 

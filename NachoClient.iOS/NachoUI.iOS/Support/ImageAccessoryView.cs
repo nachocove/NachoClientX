@@ -13,7 +13,7 @@ namespace NachoClient.iOS
         public ImageAccessoryView (string imageName, float width = 30.0f) : base (new CGRect(0.0f, 0.0f, (nfloat)width, 0.0f))
         {
             BackgroundColor = UIColor.White;
-            using (var image = UIImage.FromBundle (imageName)){
+            using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)){
                 ImageView = new UIImageView (image);
             }
             AddSubview (ImageView);

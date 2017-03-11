@@ -10,8 +10,10 @@ using NachoPlatform;
 using Android.Content;
 using System.IO;
 using System.Threading;
+#if HOCKEY_APP
 using NachoClient.Build;
 using System.Threading.Tasks;
+#endif
 
 namespace NachoClient.AndroidClient
 {
@@ -80,7 +82,7 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.AppStartupTasks ();
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.Instance.Throttling = false;
+                NcApplication.Instance.TelemetryService.Throttling = false;
                 Calendars.Instance.DeviceCalendarChanged ();
             };
 
@@ -96,7 +98,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
         }
 
-        public static bool CheckOnceForUpdates ()
+        static bool CheckOnceForUpdates ()
         {
             if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsBeta) {
                 var check = checkForUpdates;
@@ -124,6 +126,77 @@ namespace NachoClient.AndroidClient
 
         #region HockeyApp
 
+        public static void RegisterHockeyAppUpdateManager (Activity activity)
+        {
+            #if HOCKEY_APP
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
+            NcAssert.False(string.IsNullOrEmpty (BuildInfo.HockeyAppAppId));
+            if (CheckOnceForUpdates ()) {
+                updateRegistered = true;
+                //Register to with the Update Manager
+                HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
+            }
+            #endif
+        }
+
+        public static void UnregisterHockeyAppUpdateManager ()
+        {
+            #if HOCKEY_APP
+            if (updateRegistered) {
+                HockeyApp.UpdateManager.Unregister ();
+                updateRegistered = false;
+            }
+            #endif
+        }
+
+        public static void SetupHockeyAppCrashManager (Activity activity)
+        {
+            #if HOCKEY_APP
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
+            if (IsHockeyInitialized) {
+                return;
+            }
+            IsHockeyInitialized = true;
+
+            var myListener = new MyCustomCrashManagerListener ();
+            // Register the crash manager before Initializing the trace writer
+            HockeyApp.CrashManager.Register (activity, BuildInfo.HockeyAppAppId, myListener); 
+
+            // Initialize the Trace Writer
+            HockeyApp.TraceWriter.Initialize (myListener);
+
+            // Wire up Unhandled Expcetion handler from Android
+            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => {
+                // Use the trace writer to log exceptions so HockeyApp finds them
+                myListener.LastTrace = args.Exception.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.Exception);
+                args.Handled = true;
+            };
+
+            // Wire up the .NET Unhandled Exception handler
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => {
+                myListener.LastTrace = args.ExceptionObject.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.ExceptionObject);
+            };
+
+            // Wire up the unobserved task exception handler
+            TaskScheduler.UnobservedTaskException += (sender, args) => {
+                myListener.LastTrace = args.Exception.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.Exception);
+            };
+
+            Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
+            #endif
+        }
+
+        #if HOCKEY_APP
+
+        static bool updateRegistered = false;
+
         public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
         {
             public override void OnUpdateAvailable ()
@@ -139,20 +212,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void RegisterHockeyAppUpdateManager (Activity activity)
-        {
-            if (BuildInfoHelper.IsDev) {
-                return;
-            }
-            //Register to with the Update Manager
-            HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
-        }
 
-        public static void UnregisterHockeyAppUpdateManager ()
-        {
-            HockeyApp.UpdateManager.Unregister ();
-        }
-            
         public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
         {
             public string LastTrace { get; set; }
@@ -206,47 +266,14 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        [Activity]
+        public class NcHAUpdateActivity : HockeyApp.UpdateActivity
+        {
+        }
+
         static bool IsHockeyInitialized;
 
-        public static void SetupHockeyAppCrashManager (Activity activity)
-        {
-            if (BuildInfoHelper.IsDev) {
-                return;
-            }
-            if (IsHockeyInitialized) {
-                return;
-            }
-            IsHockeyInitialized = true;
-
-            var myListener = new MyCustomCrashManagerListener ();
-            // Register the crash manager before Initializing the trace writer
-            HockeyApp.CrashManager.Register (activity, BuildInfo.HockeyAppAppId, myListener); 
-
-            // Initialize the Trace Writer
-            HockeyApp.TraceWriter.Initialize (myListener);
-
-            // Wire up Unhandled Expcetion handler from Android
-            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => {
-                // Use the trace writer to log exceptions so HockeyApp finds them
-                myListener.LastTrace = args.Exception.ToString ();
-                HockeyApp.TraceWriter.WriteTrace (args.Exception);
-                args.Handled = true;
-            };
-
-            // Wire up the .NET Unhandled Exception handler
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) => {
-                myListener.LastTrace = args.ExceptionObject.ToString ();
-                HockeyApp.TraceWriter.WriteTrace (args.ExceptionObject);
-            };
-
-            // Wire up the unobserved task exception handler
-            TaskScheduler.UnobservedTaskException += (sender, args) => {
-                myListener.LastTrace = args.Exception.ToString ();
-                HockeyApp.TraceWriter.WriteTrace (args.Exception);
-            };
-
-            Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
-        }
+        #endif
 
         #endregion
     }

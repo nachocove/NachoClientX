@@ -159,7 +159,7 @@ namespace Test.Common
         [SetUp]
         public void Setup ()
         {
-            Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
+            Assert.IsTrue (NcApplication.Instance.TelemetryService is Telemetry_NOOP, "Telemetry needs to be disabled");
             NcTask.StartService ();
 
             // Set up credential
@@ -182,10 +182,10 @@ namespace Test.Common
             Wpa = new WrapPushAssist (Owner);
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
 
-            OriginalMinDelayMsec = PushAssist.MinDelayMsec;
-            OriginalIncrementalDelayMsec = PushAssist.IncrementalDelayMsec;
-            PushAssist.MinDelayMsec = 100;
-            PushAssist.IncrementalDelayMsec = 100;
+            OriginalMinDelayMsec = WrapPushAssist.MinDelayMsec;
+            OriginalIncrementalDelayMsec = WrapPushAssist.IncrementalDelayMsec;
+            WrapPushAssist.MinDelayMsec = 100;
+            WrapPushAssist.IncrementalDelayMsec = 100;
         }
 
         [TearDown]
@@ -194,8 +194,8 @@ namespace Test.Common
             Wpa.Dispose ();
             Wpa = null;
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
-            PushAssist.MinDelayMsec = OriginalMinDelayMsec;
-            PushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
+            WrapPushAssist.MinDelayMsec = OriginalMinDelayMsec;
+            WrapPushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
             WrapPushAssist.SetDeviceToken (null); // do not use PushAssist.SetDeviceToken() as it creates a new task.
         }
 
@@ -341,19 +341,19 @@ namespace Test.Common
 
             // -> DevTokW
             Wpa.Execute ();
-            WaitForState ((uint)PushAssist.Lst.DevTokW);
+            WaitForState ((uint)WrapPushAssist.Lst.DevTokW);
 
             // [got device token] -> CliTokW -> SessTokW -> Active
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
             PushAssist.SetDeviceToken (DeviceToken);
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
 
             // [defer] -> Active
             MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = DeferSessionOkResponse;
             Wpa.Defer ();
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
 
             // [stop] -> Start
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
@@ -375,13 +375,13 @@ namespace Test.Common
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
             Wpa.Execute ();
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
 
             // -> Active
             MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = DeferSessionOkResponse;
             Wpa.Defer ();
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
 
             // -> Start
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
@@ -400,7 +400,7 @@ namespace Test.Common
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
 
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
         }
 
         private void StartSessionWithErrors (
@@ -408,8 +408,8 @@ namespace Test.Common
             MockHttpClient.ProvideHttpResponseMessageDelegate respondDelegate)
         {
             MockHttpClient.ExamineHttpRequestMessage = checkDelegate;
-            PushAssist.MinDelayMsec = 100;
-            PushAssist.MaxDelayMsec = 100;
+            WrapPushAssist.MinDelayMsec = 100;
+            WrapPushAssist.MaxDelayMsec = 100;
             int numErrors = 0;
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 numErrors++;
@@ -422,7 +422,7 @@ namespace Test.Common
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
             Assert.AreEqual (3, numErrors);
 
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
@@ -462,13 +462,13 @@ namespace Test.Common
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
 
             // In Active, start a defer
             int numRequests = 0;
             MockHttpClient.ExamineHttpRequestMessage = checkDelegate [0];
-            PushAssist.MinDelayMsec = 100;
-            PushAssist.MaxDelayMsec = 100;
+            WrapPushAssist.MinDelayMsec = 100;
+            WrapPushAssist.MaxDelayMsec = 100;
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 numRequests++;
                 if (checkDelegate.Length > numRequests) {
@@ -485,7 +485,7 @@ namespace Test.Common
                 }
             }
             Assert.AreEqual (respondDelegate.Length, numRequests);
-            WaitForState ((uint)PushAssist.Lst.Active);
+            WaitForState ((uint)WrapPushAssist.Lst.Active);
 
             // Go to Stop
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;

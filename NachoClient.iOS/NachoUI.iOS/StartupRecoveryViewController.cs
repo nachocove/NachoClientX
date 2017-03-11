@@ -24,6 +24,12 @@ namespace NachoClient.iOS
             return UIStatusBarStyle.LightContent;
         }
 
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            View.BackgroundColor = Theme.Active.AccountCreationBackgroundColor;
+        }
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);

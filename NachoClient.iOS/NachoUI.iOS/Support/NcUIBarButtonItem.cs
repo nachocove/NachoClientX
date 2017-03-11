@@ -4,6 +4,7 @@ using System;
 using UIKit;
 using Foundation;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -11,7 +12,7 @@ namespace NachoClient.iOS
     {
         protected void Record (object sender, EventArgs e)
         {
-            Telemetry.RecordUiBarButtonItem (AccessibilityLabel);
+            NcApplication.Instance.TelemetryService.RecordUiBarButtonItem (AccessibilityLabel);
         }
 
         public NcUIBarButtonItem ()

@@ -117,7 +117,7 @@ namespace NachoCore.Model
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
                 account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.InProgress;
-                account.Signature = "Sent from Nacho Mail";
+                account.Signature = "Sent from Apollo Mail";
                 account.SetAccountService (service);
                 account.DisplayName = NcServiceHelper.AccountServiceName (service);
                 account.AssignOpenColorIndex ();
@@ -128,7 +128,7 @@ namespace NachoCore.Model
                 }
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
-                Telemetry.RecordAccountEmailAddress (account);
+                NcApplication.Instance.TelemetryService.RecordAccountEmailAddress (account);
             });
             return account;
         }

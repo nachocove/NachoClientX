@@ -21,7 +21,7 @@ using SafariServices;
 namespace NachoClient.iOS
 {
 
-    public partial class MessageViewController : NcUIViewController, INachoFolderChooserParent, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate
+    public partial class MessageViewController : NcUIViewController, FoldersViewControllerDelegate, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate, ThemeAdopter
     {
         
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
@@ -145,6 +145,21 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Theme
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                HeaderView.AdoptTheme (theme);
+                AttachmentsView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
         #region View Lifecycle
 
         public override void LoadView ()
@@ -201,6 +216,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            AdoptTheme (Theme.Active);
             HeaderView.Message = Message;
             HeaderView.SizeToFit ();
 
@@ -251,6 +267,7 @@ namespace NachoClient.iOS
             if (_ActionView != null && ActionView.Selected) {
                 _ActionView.SetSelected (false, animated: true);
             }
+            AdoptTheme (Theme.Active);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -264,12 +281,12 @@ namespace NachoClient.iOS
             // Record information about the read email and then reset them.
             if (null != Message) {
                 var now = DateTime.UtcNow;
-                Telemetry.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
-                Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, Message.Id);
-                Telemetry.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, Message.Score);
+                NcApplication.Instance.TelemetryService.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
+                NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, Message.Id);
+                NcApplication.Instance.TelemetryService.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, Message.Score);
                 var body = McBody.QueryById<McBody> (Message.BodyId);
                 if (McBody.IsComplete (body)) {
-                    Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                    NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
                 }
             }
             base.ViewWillDisappear (animated);
@@ -450,8 +467,8 @@ namespace NachoClient.iOS
         void ShowMove ()
         {
             var vc = new FoldersViewController ();
-            vc.SetOwner (this, true, Message.AccountId, null);
-            PresentViewController (vc, true, null);
+            vc.Account = McAccount.QueryById<McAccount> (Message.AccountId);
+            vc.PresentAsChooserOverViewController (this, null);
         }
 
         private void onDeleteButtonClicked ()
@@ -471,13 +488,10 @@ namespace NachoClient.iOS
             ComposeResponse (action);
         }
 
-        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        public void FoldersViewDidChooseFolder (FoldersViewController vc, McFolder folder)
         {
             MoveThisMessage (folder);
-            vc.SetOwner (null, false, 0, null);
-            vc.DismissFolderChooser (false, new Action (delegate {
-                NavigationController.PopViewController (true);
-            }));
+            vc.DismissViewController (true, null);
         }
 
         void ToggleHot (object sender, EventArgs e)
@@ -723,6 +737,12 @@ namespace NachoClient.iOS
         protected void CreateEvent ()
         {
             var c = CalendarHelper.CreateMeeting (Message);
+            if (null != Bundle) {
+                string plainText = Bundle.FullText;
+                if (!string.IsNullOrEmpty (plainText)) {
+                    c.SetDescription (plainText, McBody.BodyTypeEnum.PlainText_1);
+                }
+            }
             EditEvent (c);
         }
 
@@ -731,7 +751,6 @@ namespace NachoClient.iOS
             var vc = new EditEventViewController ();
             vc.SetCalendarItem (calendarEvent);
             var navigationController = new UINavigationController (vc);
-            Util.ConfigureNavBar (false, navigationController);
             PresentViewController (navigationController, true, null);
         }
 
@@ -865,15 +884,6 @@ namespace NachoClient.iOS
             get {
                 return true;
             }
-        }
-
-        #endregion
-
-        #region Folder Selector Delegate
-
-        public void DismissChildFolderChooser (INachoFolderChooser vc)
-        {
-            vc.DismissFolderChooser (true, null);
         }
 
         #endregion

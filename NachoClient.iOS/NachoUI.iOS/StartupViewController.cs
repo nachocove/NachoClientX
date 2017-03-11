@@ -46,6 +46,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            View.BackgroundColor = Theme.Active.AccountCreationBackgroundColor;
+
             Log.Info (Log.LOG_UI, "StartupViewController: viewdidload");
 
             if (!NcMigration.IsCompatible ()) {
@@ -191,7 +193,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "StartupViewController ShowSetupScreen");
             var storyboard = UIStoryboard.FromName ("Welcome", null);
             UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
-            Util.ConfigureNavBar (false, vc);
             var gettingStartedViewController = (GettingStartedViewController)vc.ViewControllers [0];
             gettingStartedViewController.StartWithTutorial = startWithTutorial;
             gettingStartedViewController.AccountDelegate = this;

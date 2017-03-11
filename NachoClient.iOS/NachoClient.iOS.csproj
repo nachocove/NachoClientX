@@ -30,11 +30,31 @@
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchArch>i386, x86_64</MtouchArch>
@@ -55,12 +75,36 @@
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
@@ -87,11 +131,31 @@
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
@@ -113,12 +177,36 @@
     </IpaPackageName>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
@@ -141,12 +229,36 @@
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
@@ -170,13 +282,40 @@
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/remove_itunesmetadata.sh</command>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <IpaPackageName>
@@ -216,6 +355,19 @@
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="Content\" />
     <Folder Include="NachoUI.iOS\ViewControllers\" />
+    <Folder Include="Resources\Images.xcassets\nav-inbox.imageset\" />
+    <Folder Include="Resources\Images.xcassets\nav-inbox-active.imageset\" />
+    <Folder Include="Resources\Images.xcassets\LaunchPlane.imageset\" />
+    <Folder Include="Resources\Images.xcassets\AboutLogo.imageset\" />
+    <Folder Include="Resources\Images.xcassets\avatar-unknown.imageset\" />
+    <Folder Include="Resources\Images.xcassets\checkmark-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-default.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-inbox.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-sent.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-drafts.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-outbox.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-trash.imageset\" />
+    <Folder Include="Resources\Images.xcassets\folder-icon-archive.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -261,7 +413,6 @@
     <Compile Include="LogSettings.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUIViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUITableViewController.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoFolderChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\A.cs" />
     <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
@@ -427,7 +578,6 @@
     <Compile Include="NachoPlatform.iOS\PushAssistiOS.cs" />
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
     <Compile Include="NachoUI.iOS\ChatsViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\FolderTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\ChatMessagesViewController.cs" />
     <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
@@ -472,6 +622,7 @@
     <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
     <Compile Include="NachoUI.iOS\Support\PercentagePressGestureRecognizer.cs" />
     <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
+    <Compile Include="NachoUI.iOS\Support\Theme.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -483,8 +634,6 @@
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
-    <BundleResource Include="Resources\Icon.png" />
-    <BundleResource Include="Resources\Icon%402x.png" />
     <BundleResource Include="Resources\ic_action_add_alarm.png" />
     <BundleResource Include="Resources\ic_action_alarms.png" />
     <BundleResource Include="Resources\ic_action_event.png" />
@@ -523,13 +672,6 @@
     <BundleResource Include="Resources\btn-mtng-tenative-pressed.png" />
     <BundleResource Include="Resources\btn-mtng-tenative-pressed%402x.png" />
     <BundleResource Include="Resources\btn-mtng-tenative%402x.png" />
-    <BundleResource Include="Resources\Icon-60%402x.png" />
-    <BundleResource Include="Resources\Icon-76%402x.png" />
-    <BundleResource Include="Resources\Icon-76.png" />
-    <BundleResource Include="Resources\Icon-Small.png" />
-    <BundleResource Include="Resources\Icon-Small%402x.png" />
-    <BundleResource Include="Resources\Icon-Small-40.png" />
-    <BundleResource Include="Resources\Icon-Small-40%402x.png" />
     <BundleResource Include="Resources\icn-file-complete%402x.png" />
     <BundleResource Include="Resources\icn-file-complete.png" />
     <BundleResource Include="Resources\iPhoneIcon.png" />
@@ -607,7 +749,6 @@
     <BundleResource Include="Resources\Slide4-3%402x.png" />
     <BundleResource Include="Resources\nav-backarrow%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-reply-all%402x.png" />
-    <BundleResource Include="Resources\LegalInfo.txt" />
     <BundleResource Include="Resources\gen-readmore-active%402x.png" />
     <BundleResource Include="Resources\gen-readmore%402x.png" />
     <BundleResource Include="Resources\nav-calendar-active%402x.png" />
@@ -1172,7 +1313,6 @@
     <BundleResource Include="Resources\Slide05SwipeRight%406x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%406x.png" />
     <BundleResource Include="Resources\Spinner-1%406x.png" />
-    <BundleResource Include="Resources\ReleaseNotes.txt" />
     <BundleResource Include="Resources\SlideNav-Btn%402x.png" />
     <BundleResource Include="Resources\SlideNav-Btn%403x.png" />
     <BundleResource Include="Resources\SlideNav-Btn%404x.png" />
@@ -1560,6 +1700,8 @@
     <BundleResource Include="Resources\add-account.png" />
     <BundleResource Include="Resources\add-account%402x.png" />
     <BundleResource Include="Resources\add-account%403x.png" />
+    <BundleResource Include="Resources\LegalInfo.html" />
+    <BundleResource Include="Resources\ReleaseNotes.html" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -1671,5 +1813,61 @@
     <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose.png" />
     <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox.imageset\nav-inbox%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox.imageset\nav-inbox%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\nav-inbox-active%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\nav-inbox-active.imageset\nav-inbox-active%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-settings%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-spotlight%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-phone-app%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-pad-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-pad-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-pad-spotlight.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-pad-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-pad-app.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-pad-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\Apollo-iOS-padpro-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\LaunchPlane.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\LaunchPlane%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchPlane.imageset\LaunchPlane%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\AboutLogo%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\avatar-unknown%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\avatar-unknown%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\checkmark-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\checkmark-accessory.imageset\check-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\checkmark-accessory.imageset\check-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-default.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-inbox.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-sent.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-drafts.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-outbox.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-trash.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-archive.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-default.imageset\folder-icon-default%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-default.imageset\folder-icon-default%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-inbox.imageset\folder-icon-inbox%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-inbox.imageset\folder-icon-inbox%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-sent.imageset\folder-icon-sent%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-sent.imageset\folder-icon-sent%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-drafts.imageset\folder-icon-drafts%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-drafts.imageset\folder-icon-drafts%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-trash.imageset\folder-icon-trash%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-trash.imageset\folder-icon-trash%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-archive.imageset\folder-icon-archive%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-archive.imageset\folder-icon-archive%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-outbox.imageset\folder-icon-outbox%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\folder-icon-outbox.imageset\folder-icon-outbox%403x.png" />
   </ItemGroup>
 </Project>

@@ -3,8 +3,8 @@
 using System;
 using Android.OS;
 using Android.Support.V7.App;
-using NachoClient.Build;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -24,80 +24,58 @@ namespace NachoClient.AndroidClient
         private const string TELEMETRY_ON_RESTART = "ON_RESTART";
         private const string TELEMETRY_ON_NEWINTENT = "ON_NEWINTENT";
 
-        bool updateRegistered;
-
         protected override void OnCreate (Bundle savedInstanceState)
         {
             ClassName = this.GetType ().Name;
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_CREATE);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_CREATE);
             base.OnCreate (savedInstanceState);
         }
 
         protected override void OnStart ()
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_START);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_START);
             base.OnStart ();
         }
 
         protected override void OnNewIntent (Android.Content.Intent intent)
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_NEWINTENT);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_NEWINTENT);
             base.OnNewIntent (intent);
         }
 
         protected override void OnResume ()
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_RESUME);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_RESUME);
             base.OnResume ();
 
-            if (MainApplication.CheckOnceForUpdates ()) {
-                updateRegistered = true;
-                HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
-            }
-
+            MainApplication.RegisterHockeyAppUpdateManager (this);
         }
 
         protected override void OnPause ()
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_PAUSE);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_PAUSE);
             base.OnPause ();
 
-            if (updateRegistered) {
-                HockeyApp.UpdateManager.Unregister ();
-            }
+            MainApplication.UnregisterHockeyAppUpdateManager ();
+
         }
 
         protected override void OnStop ()
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_STOP);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_STOP);
             base.OnStop ();
         }
 
         protected override void OnDestroy ()
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_DESTROY);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_DESTROY);
             base.OnDestroy ();
         }
 
         protected override void OnRestart ()
         {
-            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_RESTART);
+            NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_RESTART);
             base.OnRestart ();
-        }
-
-        public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
-        {
-            public override void OnUpdateAvailable ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnUpdateAvailable");
-                base.OnUpdateAvailable ();
-            }
-
-            public override void OnNoUpdateAvailable ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnNoUpdateAvailable");
-                base.OnNoUpdateAvailable ();
-            }
         }
     }
 
