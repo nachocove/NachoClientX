@@ -51,6 +51,7 @@ namespace NachoClient.AndroidClient
     public interface CredentialsFragmentDelegate
     {
         void CredentialsValidated (McAccount account);
+        void CredentialsValidationFailed ();
     }
 
     public class CredentialsFragment : NcFragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate, CertAskDelegate

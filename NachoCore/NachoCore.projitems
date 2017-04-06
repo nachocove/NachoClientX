@@ -425,6 +425,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryJsonFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Telemetry\TelemetryJsonFileTable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\NachoMailFolders.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\OauthHttpServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

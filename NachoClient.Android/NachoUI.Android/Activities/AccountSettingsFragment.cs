@@ -15,6 +15,7 @@ using NachoCore.Utils;
 using NachoCore;
 using NachoPlatform;
 using Xamarin.Auth;
+using Android.Support.CustomTabs;
 
 namespace NachoClient.AndroidClient
 {
@@ -463,8 +464,11 @@ namespace NachoClient.AndroidClient
 
         public void StartGoogleLogin ()
         {
-            var auth = new GoogleOAuth2Authenticator (account.EmailAddr);
+            GoogleOAuth2Authenticator.Create (account.EmailAddr, ContinueGoogleLogin);
+        }
 
+        public void ContinueGoogleLogin (GoogleOAuth2Authenticator auth)
+        {
             auth.AllowCancel = true;
 
             // If authorization succeeds or is canceled, .Completed will be fired.
@@ -514,8 +518,10 @@ namespace NachoClient.AndroidClient
             auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
 
             };
-            var vc = auth.GetUI (Activity);
-            StartActivity (vc);
+            var intent = auth.GetUI (Activity) as CustomTabsIntent;
+            // var intent = builder.Build ();
+            var authUrl = auth.GetInitialUrlAsync ().Result;
+            intent.LaunchUrl (Activity, Android.Net.Uri.Parse (authUrl.AbsoluteUri));
         }
     }
 }

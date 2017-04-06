@@ -61,6 +61,11 @@ namespace NachoClient.AndroidClient
             Finish ();
         }
 
+        public void CredentialsValidationFailed ()
+        {
+            Finish ();
+        }
+
     }
 }
 

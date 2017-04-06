@@ -32,11 +32,31 @@
     <EnablePackageSigning>false</EnablePackageSigning>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture mac" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command>
+          <type>BeforeBuild</type>
+          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture mac</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>${SolutionDir}/scripts/update_build_number.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MonoBundlingExtraArgs>--link_flags="-v -L../native.Mac -lNachoPlatformSDK -lresolv -lcrypto -force_load ../native.Mac/libNachoPlatformSDK.a -L../../NachoPlatformBinding/NachoPlatformLib.Mac -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib.Mac/libNachoPlatformLibSDK.a"</MonoBundlingExtraArgs>
@@ -207,10 +227,6 @@
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns\DnDns.csproj">
       <Project>{53089CAB-AE06-4BE6-9E23-CCCC03730EEA}</Project>
       <Name>DnDns</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Xamarin.Auth\src\Xamarin.Auth\Xamarin.Auth.csproj">
-      <Project>{C9FF1919-78DD-4084-976D-BDABC0A7E80B}</Project>
-      <Name>Xamarin.Auth</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\JetBlack.Caching\JetBlack.Caching\JetBlack.Caching.csproj">
       <Project>{EE216426-A161-43CB-AD3C-4A209FB2DB6F}</Project>

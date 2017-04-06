@@ -20,7 +20,6 @@ repos = (
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
     'Google.iOS',
-    'Xamarin.Auth',
     'Portable.Text.Encoding',
     'JetBlack.Caching',
     'TokenAutoComplete',

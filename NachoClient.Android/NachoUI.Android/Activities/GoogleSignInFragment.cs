@@ -15,6 +15,7 @@ using Xamarin.Auth;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
+using Android.Support.CustomTabs;
 
 namespace NachoClient.AndroidClient
 {
@@ -71,6 +72,11 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public override void OnDestroy ()
+        {
+            base.OnDestroy ();
+        }
+
         public override void OnSaveInstanceState (Bundle outState)
         {
             base.OnSaveInstanceState (outState);
@@ -83,32 +89,21 @@ namespace NachoClient.AndroidClient
         void RestartAuthenticator ()
         {
             if (Authenticator != null) {
+                Authenticator.Stop ();
                 Authenticator.Completed -= AuthCompleted;
                 Authenticator.Error -= AuthError;
             }
             WebAuthenticator.ClearCookies ();
-            Authenticator = new GoogleOAuth2Authenticator (Account != null ? Account.EmailAddr : null);
-            Authenticator.AllowCancel = true;
-            Authenticator.Completed += AuthCompleted;
-            Authenticator.Error += AuthError;
-            var vc = Authenticator.GetUI (Activity);
-            StartActivityForResult (vc, SIGNIN_REQUEST_CODE);
-        }
-
-        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
-        {
-            base.OnActivityResult (requestCode, resultCode, data);
-
-            switch (requestCode) {
-            case SIGNIN_REQUEST_CODE:
-                if (Result.Ok == resultCode) {
-                    ValidationIsFinished ();
-                } else {
-                    // Canceled in Google land
-                    Activity.Finish();
-                }
-                break;
-            }
+            GoogleOAuth2Authenticator.Create (Account != null ? Account.EmailAddr : null, (GoogleOAuth2Authenticator auth) => {
+                Authenticator = auth;
+                Authenticator.AllowCancel = true;
+                Authenticator.Completed += AuthCompleted;
+                Authenticator.Error += AuthError;
+                var tabsIntent = Authenticator.GetUI (Activity) as CustomTabsIntent;
+                //var tabsIntent = builder.Build ();
+                var url = Authenticator.GetInitialUrlAsync ().Result;
+                tabsIntent.LaunchUrl (Activity, Android.Net.Uri.Parse (url.AbsoluteUri));
+            });
         }
 
         bool ValidationIsFinished()
@@ -122,6 +117,12 @@ namespace NachoClient.AndroidClient
                 }
             }
             return finished;
+        }
+
+        void ValidationFailed ()
+        {
+            var parent = (CredentialsFragmentDelegate)Activity;
+            parent.CredentialsValidationFailed ();
         }
 
         public void AuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
@@ -183,16 +184,17 @@ namespace NachoClient.AndroidClient
                     Account.Update ();
                     BackEnd.Instance.Start (Account.Id);
                 }
+                ValidationIsFinished ();
             } else {
                 Log.Info (Log.LOG_UI, "GoogleCredentialsViewController completed unauthenticated");
-                // Auth error has already been called.
+                ValidationFailed ();
             }
         }
 
         public void AuthError (object sender, AuthenticatorErrorEventArgs e)
         {
             Log.Info (Log.LOG_UI, "GoogleCredentialsViewController auth error");
-            // Google has already complained
+            ValidationFailed ();
         }
     }
 }

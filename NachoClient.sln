@@ -63,10 +63,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDay.Collections.Android", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDay.iCal.Android", "..\DDay-iCal-Xamarin\DDay.iCal.Android\DDay.iCal.Android.csproj", "{7CDD1BB5-9CD8-421B-8BC9-89F335170BBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Auth.iOS", "..\Xamarin.Auth\src\Xamarin.Auth.iOS\Xamarin.Auth.iOS.csproj", "{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Auth.Android", "..\Xamarin.Auth\src\Xamarin.Auth.Android\Xamarin.Auth.Android.csproj", "{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JetBlack.Caching.iOS", "..\JetBlack.Caching\JetBlack.Caching.iOS\JetBlack.Caching.iOS.csproj", "{63F04FFB-A98F-4DAA-9870-80527037DD61}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JetBlack.Caching.Android", "..\JetBlack.Caching\JetBlack.Caching.Android\JetBlack.Caching.Android.csproj", "{628CA4C5-0D38-416C-8E46-D8E4BD3CE0FB}"
@@ -98,8 +94,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnDns", "..\DnDns\SourceCode\DnDns\DnDns\DnDns.csproj", "{53089CAB-AE06-4BE6-9E23-CCCC03730EEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JetBlack.Caching", "..\JetBlack.Caching\JetBlack.Caching\JetBlack.Caching.csproj", "{EE216426-A161-43CB-AD3C-4A209FB2DB6F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Auth", "..\Xamarin.Auth\src\Xamarin.Auth\Xamarin.Auth.csproj", "{C9FF1919-78DD-4084-976D-BDABC0A7E80B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AWSSDK_Core", "..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_Core\AWSSDK_Core.csproj", "{4E8016CD-33E3-4961-A954-119A623527D4}"
 EndProject
@@ -209,22 +203,6 @@ Global
 		{1923FB99-0E59-4774-8AA9-C14B9BC3F655}.Release|iPhone.Build.0 = Release|Any CPU
 		{1923FB99-0E59-4774-8AA9-C14B9BC3F655}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{1923FB99-0E59-4774-8AA9-C14B9BC3F655}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.AppStore|iPhone.ActiveCfg = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.AppStore|iPhone.Build.0 = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Release|iPhone.Build.0 = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{1B095A78-F50A-449F-A3C4-D5662AD32717}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
 		{1B095A78-F50A-449F-A3C4-D5662AD32717}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
 		{1B095A78-F50A-449F-A3C4-D5662AD32717}.AppStore|iPhone.ActiveCfg = Release|Any CPU
@@ -721,22 +699,6 @@ Global
 		{BCCFA67D-78B7-4D93-85F2-A03704165A93}.Release|iPhone.Build.0 = Release|Any CPU
 		{BCCFA67D-78B7-4D93-85F2-A03704165A93}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{BCCFA67D-78B7-4D93-85F2-A03704165A93}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Ad-Hoc|iPhone.ActiveCfg = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Ad-Hoc|iPhone.Build.0 = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.AppStore|iPhone.ActiveCfg = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.AppStore|iPhone.Build.0 = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Release|iPhone.Build.0 = Release|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{C9FF1919-78DD-4084-976D-BDABC0A7E80B}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{CB7CC882-ED47-46C0-AAAE-7A437F22F1C6}.Ad-Hoc|iPhone.ActiveCfg = Debug|Any CPU
 		{CB7CC882-ED47-46C0-AAAE-7A437F22F1C6}.Ad-Hoc|iPhone.Build.0 = Debug|Any CPU
 		{CB7CC882-ED47-46C0-AAAE-7A437F22F1C6}.AppStore|iPhone.ActiveCfg = Debug|Any CPU
@@ -895,22 +857,6 @@ Global
 		{F930802F-193C-4388-820B-05AE90A1FB6A}.Release|iPhone.Build.0 = Release|Any CPU
 		{F930802F-193C-4388-820B-05AE90A1FB6A}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{F930802F-193C-4388-820B-05AE90A1FB6A}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.AppStore|iPhone.ActiveCfg = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.AppStore|iPhone.Build.0 = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Release|iPhone.Build.0 = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.AppStore|iPhone.ActiveCfg = Release|Any CPU
@@ -945,7 +891,10 @@ Global
 		$5.ResourceNamePolicy = FileFormatDefault
 		$0.TextStylePolicy = $6
 		$6.inheritsSet = null
-		$6.scope = text/x-csharp
+		$6.scope = application/xml
+		$6.FileWidth = 160
+		$6.NoTabsAfterNonTabs = True
+		$6.inheritsScope = text/plain
 		$0.CSharpFormattingPolicy = $7
 		$7.AfterDelegateDeclarationParameterComma = True
 		$7.inheritsSet = Mono
@@ -961,8 +910,12 @@ Global
 		$9.inheritsSet = null
 		$9.scope = application/vnd.apple-xcode-storyboard
 		$0.XmlFormattingPolicy = $10
-		$10.inheritsSet = null
-		$10.scope = application/vnd.apple-xcode-storyboard
+		$10.inheritsSet = Mono
+		$10.scope = application/xml
+		$10.DefaultFormat = $42
+		$42.AttributesInNewLine = True
+		$42.AlignAttributes = True
+		$10.inheritsScope = application/xml
 		$0.TextStylePolicy = $11
 		$11.inheritsSet = null
 		$11.scope = application/vnd.apple-interface-builder
@@ -972,12 +925,16 @@ Global
 		$0.NameConventionPolicy = $13
 		$13.Rules = $14
 		$14.NamingRule = $15
-		$15.Name = Namespaces
-		$15.AffectedEntity = Namespace
+		$15.Name = Type Parameters
+		$15.AffectedEntity = TypeParameter
 		$15.VisibilityMask = VisibilityMask
 		$15.NamingStyle = PascalCase
 		$15.IncludeInstanceMembers = True
 		$15.IncludeStaticEntities = True
+		$15.RequiredPrefixes = $43
+		$43.String = T
+		$15.RequiredSuffixes = $44
+		$44.String = Exception
 		$14.NamingRule = $16
 		$16.Name = Types
 		$16.AffectedEntity = Class, Struct, Enum, Delegate
