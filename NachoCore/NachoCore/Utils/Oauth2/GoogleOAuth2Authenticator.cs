@@ -92,15 +92,24 @@ namespace NachoCore.Utils
             } else {
                 client.Send (404, "Not Found", "<html><body></body></html>");
             }
+            if (UrlMatchesRedirect_LocalCopy (client.RequestUri)) {
+                HttpServer.GracefulStop (null);
+            }
             InvokeOnUIThread.Instance.Invoke (() => {
                 OnPageLoaded (client.RequestUri);
             });
         }
 
+        // Xamarin.Auth WebRedirectAuthenticator has a private UrlMatchesRedirect method.
+        // This is simply a copy of that method that we can call
+        private bool UrlMatchesRedirect_LocalCopy (Uri url)
+        {
+            return url.Host == RedirectUri.Host && url.LocalPath == RedirectUri.LocalPath;
+        }
+
         protected override void OnRedirectPageLoaded (Uri url, IDictionary<string, string> query, IDictionary<string, string> fragment)
         {
             base.OnRedirectPageLoaded (url, query, fragment);
-            HttpServer.GracefulStop (null);
         }
 
         public void Stop ()

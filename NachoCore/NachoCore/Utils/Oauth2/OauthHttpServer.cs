@@ -51,7 +51,7 @@ namespace NachoCore
             }
             IsRunning = true;
             NcTask.Run (() => {
-                Log.Info (Log.LOG_UI, "OauthHttpServer starting");
+                Log.Info (Log.LOG_OAUTH, "OauthHttpServer starting...");
                 try {
                     var address = IPAddress.Parse ("127.0.0.1");
                     TcpServer = new TcpListener (address, Port);
@@ -61,43 +61,47 @@ namespace NachoCore
                         startedCallback ();
                     });
                     IsRunning = true;
-                    Log.Info (Log.LOG_UI, "OauthHttpServer accepting clients");
+                    Log.Info (Log.LOG_OAUTH, "OauthHttpServer accepting clients");
                     while (IsRunning) {
                         var tcpClient = TcpServer.AcceptTcpClient ();
                         if (ClientsById.Count > MaxClientCount) {
-                            Log.Info (Log.LOG_UI, "OauthHttpServer rejecting client (more than {0} connected)", MaxClientCount);
+                            Log.Info (Log.LOG_OAUTH, "OauthHttpServer rejecting client (more than {0} connected)", MaxClientCount);
                             tcpClient.Close ();
                         } else {
                             var client = new Client (this, ClientId++, tcpClient);
-                            Log.Info (Log.LOG_UI, "OauthHttpServer got client #{0}", client.Id);
+                            Log.Info (Log.LOG_OAUTH, "OauthHttpServer got client #{0}", client.Id);
                             ClientsById.TryAdd (client.Id, client);
                             client.Open ();
                         }
                     }
                 } catch (Exception e) {
-                    Log.Error (Log.LOG_UI, "OauthHttpServer socket exception: {0}", e);
+                    if (IsRunning) {
+                        Log.Error (Log.LOG_OAUTH, "OauthHttpServer socket exception: {0}", e);
+                    }
                 } finally {
                     Stop ();
                 }
-                if (TcpServer != null) {
-                    TcpServer.Stop ();
-                }
-                Log.Info (Log.LOG_UI, "OauthHttpServer stopped");
+                Log.Info (Log.LOG_OAUTH, "OauthHttpServer stopped");
             }, "OAuthHTTPServer");
         }
 
         public void Stop ()
         {
-            Log.Info (Log.LOG_UI, "OauthHttpServer stopping...");
-            foreach (var client in ClientsById.Values) {
-                client.Close ();
+            if (IsRunning) {
+                Log.Info (Log.LOG_OAUTH, "OauthHttpServer stopping...");
+                foreach (var client in ClientsById.Values) {
+                    client.Close ();
+                }
+                if (TcpServer != null) {
+                    TcpServer.Stop ();
+                }
+                IsRunning = false;
             }
-            IsRunning = false;
         }
 
         public void GracefulStop (Action completion)
         {
-            Log.Info (Log.LOG_UI, "OauthHttpServer graceful stop requested");
+            Log.Info (Log.LOG_OAUTH, "OauthHttpServer graceful stop requested");
             if (ClientsById.Count == 0) {
                 Stop ();
                 if (completion != null) {
@@ -111,7 +115,7 @@ namespace NachoCore
 
         private void ClientDidClose (Client client)
         {
-            Log.Info (Log.LOG_UI, "OauthHttpServer did close client #{0}", client.Id);
+            Log.Info (Log.LOG_OAUTH, "OauthHttpServer did close client #{0}", client.Id);
             Client ignore;
             ClientsById.TryRemove (client.Id, out ignore);
             if (StopAfterAllClientsClose && ClientsById.Count == 0) {
@@ -129,11 +133,11 @@ namespace NachoCore
         {
             if (client.RequestUriString.StartsWith ("/")) {
                 if (!Uri.TryCreate (String.Format ("http://127.0.0.1:{0}{1}", Port, client.RequestUriString), UriKind.Absolute, out client.RequestUri)) {
-                    Log.Error (Log.LOG_UI, "OauthHttpServer got bad client url: {0}", client.RequestUriString);
+                    Log.Error (Log.LOG_OAUTH, "OauthHttpServer got bad client url: {0}", client.RequestUriString);
                 }
             } else {
                 if (!Uri.TryCreate (client.RequestUriString, UriKind.Absolute, out client.RequestUri)) {
-                    Log.Error (Log.LOG_UI, "OauthHttpServer got bad client url: {0}", client.RequestUriString);
+                    Log.Error (Log.LOG_OAUTH, "OauthHttpServer got bad client url: {0}", client.RequestUriString);
                 }
             }
             if (client.RequestUri != null) {
@@ -195,23 +199,26 @@ namespace NachoCore
                 }
                 IsOpen = true;
                 NcTask.Run (() => {
+                    Log.Info (Log.LOG_OAUTH, "OauthHttpClient task #{0} started", Id);
                     while (IsOpen) {
                         Read ();
                     }
-                    try {
-                        TcpClient.Close ();
-                    } catch (Exception e) {
-                        Log.Error (Log.LOG_UI, "OauthHttpClient tcp close failed: {0}", e);
-                    }
+                    Log.Info (Log.LOG_OAUTH, "OauthHttpClient task #{0} stopping...", Id);
                     OauthHttpServer server;
                     if (WeakServer.TryGetTarget (out server)) {
                         server.ClientDidClose (this);
                     }
+                    Log.Info (Log.LOG_OAUTH, "OauthHttpClient task #{0} stopped", Id);
                 }, "OAuthHTTPClient");
             }
 
             public void Close ()
             {
+                try {
+                    TcpClient.Close ();
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_OAUTH, "OauthHttpClient #{0} tcp close failed: {1}", Id, e);
+                }
                 IsOpen = false;
             }
 
@@ -225,7 +232,7 @@ namespace NachoCore
                         Parse (lengthRead);
                     }
                 } catch (Exception e) {
-                    Log.Error (Log.LOG_UI, "OauthHttpClient read exception: {0}", e);
+                    Log.Error (Log.LOG_OAUTH, "OauthHttpClient read exception: {0}", e);
                 } finally {
                     Close ();
                 }
@@ -233,7 +240,7 @@ namespace NachoCore
 
             void Parse (int length)
             {
-                Log.Info (Log.LOG_UI, "OauthHttpClient #{0} received {1} bytes", Id, length);
+                Log.Info (Log.LOG_OAUTH, "OauthHttpClient #{0} received {1} bytes", Id, length);
                 if (ParseState != RequestParseState.Body) {
                     int i = 0;
                     while (i < length) {
@@ -252,14 +259,14 @@ namespace NachoCore
                             i += 1;
                         } else {
                             // Just kill the connection if there's a long status or header line, we don't expect one
-                            Log.Warn (Log.LOG_UI, "OauthHttpClient #{0} got too long of a line", Id);
+                            Log.Warn (Log.LOG_OAUTH, "OauthHttpClient #{0} got too long of a line", Id);
                             Close ();
                             i = length;
                         }
                     }
                 } else {
                     // Just kill the connection if there's a body in the request, we don't expect one
-                    Log.Warn (Log.LOG_UI, "OauthHttpClient #{0} got body data", Id);
+                    Log.Warn (Log.LOG_OAUTH, "OauthHttpClient #{0} got body data", Id);
                     Close ();
                 }
             }
@@ -270,18 +277,19 @@ namespace NachoCore
                 case RequestParseState.Request:
                     var requestLine = System.Text.Encoding.UTF8.GetString (LineBuffer, 0, LineBufferOffset).Trim ();
                     var parts = requestLine.Split (new char [] { ' ', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length != 3 || parts [0] != "GET" || parts[2] != "HTTP/1.1") {
+                    if (parts.Length != 3 || parts [0] != "GET" || parts [2] != "HTTP/1.1") {
                         // Just kill the connection if there's an unexpected request
-                        Log.Warn (Log.LOG_UI, "OauthHttpClient #{0} got unexpected request line: {1}", Id, requestLine);
+                        Log.Warn (Log.LOG_OAUTH, "OauthHttpClient #{0} got unexpected request line: {1}", Id, requestLine);
                         Close ();
+                    } else {
+                        RequestUriString = parts [1];
+                        ParseState = RequestParseState.Headers;
+                        Log.Info (Log.LOG_OAUTH, "OauthHttpClient #{0} parsed request line {1}", Id, requestLine);
                     }
-                    RequestUriString = parts [1];
-                    ParseState = RequestParseState.Headers;
-                    Log.Info (Log.LOG_UI, "OauthHttpClient #{0} parsed request line {1}", Id, requestLine);
                     break;
                 case RequestParseState.Headers:
                     if (LineBufferOffset == 0) {
-                        Log.Info (Log.LOG_UI, "OauthHttpClient #{0} parsed headers", Id);
+                        Log.Info (Log.LOG_OAUTH, "OauthHttpClient #{0} parsed headers", Id);
                         ParseState = RequestParseState.Body;
                         OauthHttpServer server;
                         if (WeakServer.TryGetTarget (out server)) {
@@ -319,7 +327,7 @@ namespace NachoCore
                 }
                 Write ("\r\n");
                 Write (bodyData);
-                Log.Info (Log.LOG_UI, "OauthHttpClient #{0} sent response {1}", Id, statusCode);
+                Log.Info (Log.LOG_OAUTH, "OauthHttpClient #{0} sent response {1}", Id, statusCode);
             }
         }
     }

@@ -75,6 +75,9 @@ namespace NachoClient.AndroidClient
         public override void OnDestroy ()
         {
             base.OnDestroy ();
+            if (Authenticator != null) {
+                Authenticator.Stop ();
+            }
         }
 
         public override void OnSaveInstanceState (Bundle outState)
