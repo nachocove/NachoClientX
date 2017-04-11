@@ -161,7 +161,7 @@ namespace NachoClient.iOS
             var t1 = new UILabel ();
             t1.Lines = 0;
             t1.TextAlignment = UITextAlignment.Center;
-            t1.Text = "Enjoy your first year of\nApollo Mail Service on us,";
+            t1.Text = "Enjoy your first year of\nNacho Mail Service on us,";
             t1.Font = A.Font_AvenirNextDemiBold17;
             t1.TextColor = A.Color_11464F;
             t1.SizeToFit ();

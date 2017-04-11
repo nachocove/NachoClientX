@@ -543,7 +543,7 @@ namespace NachoClient.iOS
                 Preview = UIDocumentInteractionController.FromUrl (url);
                 Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
                 if (!Preview.PresentOpenInMenu (View.Frame, View, true)) {
-                    NcAlertView.ShowMessage (this, "Apollo Mail", "No viewer is available for this attachment.");
+                    NcAlertView.ShowMessage (this, "Nacho Mail", "No viewer is available for this attachment.");
                 }
             }
         }

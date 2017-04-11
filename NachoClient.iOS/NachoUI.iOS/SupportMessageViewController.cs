@@ -241,7 +241,7 @@ namespace NachoClient.iOS
                     "Please provide contact information, such as an email address.");
             } else if (!problemWasChanged || string.IsNullOrEmpty(messageInfoTextView.Text)) {
                 NcAlertView.ShowMessage (this, "No Description",
-                    "Please describe your reason for contacting Apollo Mail support, such as the problem that you encountered.");
+                    "Please describe your reason for contacting Nacho Mail support, such as the problem that you encountered.");
             } else {
                 sendMessageTimer = NSTimer.CreateScheduledTimer (WAIT_TIMER_LENGTH, delegate {
                     MessageReceived (false);

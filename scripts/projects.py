@@ -12,7 +12,7 @@ projects = {
     'dev': {
         'ios': {
             'bundle_id': 'com.nachocove.nachomail',
-            'display_name': '[dev] Apollo Mail',
+            'display_name': '[dev] Nacho Mail',
             'file_sharing': True,
             'app_group': 'group.com.nachocove.nachomail',
             'hockeyapp': {'app_id': '', 'api_token': ''},
@@ -21,7 +21,7 @@ projects = {
         'ios_share': {
             'bundle_id': 'com.nachocove.nachomail.share',
             'app_group': 'group.com.nachocove.nachomail',
-            'display_name': '[dev] Apollo Mail'
+            'display_name': '[dev] Nacho Mail'
         },
         'mac': {
             'bundle_id': 'com.nachocove.nachomail',
@@ -29,7 +29,7 @@ projects = {
         },
         'android': {
             'package_name': 'com.nachocove.nachomail.dev',
-            'label': '[dev] Apollo Mail',
+            'label': '[dev] Nacho Mail',
             'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': '',
                          'alias': '',
@@ -59,7 +59,7 @@ projects = {
     'alpha': {
         'ios': {
             'bundle_id': 'com.nachocove.nachomail.alpha',
-            'display_name': 'Apollo Mail',
+            'display_name': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
             'file_sharing': True,
             'app_group': 'group.com.nachocove.nachomail.alpha',
@@ -69,11 +69,11 @@ projects = {
         'ios_share': {
             'bundle_id': 'com.nachocove.nachomail.alpha.share',
             'app_group': 'group.com.nachocove.nachomail.alpha',
-            'display_name': 'Apollo Mail'
+            'display_name': 'Nacho Mail'
         },
         'android': {
             'package_name': 'com.nachocove.nachomail.alpha',
-            'label': 'Apollo Mail',
+            'label': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
             'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': 'com.nachocove.mail.alpha.keystore',
@@ -104,7 +104,7 @@ projects = {
     'beta': {
         'ios': {
             'bundle_id': 'com.nachocove.nachomail.beta',
-            'display_name': 'Apollo Mail',
+            'display_name': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
             'file_sharing': False,
             'app_group': 'group.com.nachocove.nachomail.beta',
@@ -114,11 +114,11 @@ projects = {
         'ios_share': {
             'bundle_id': 'com.nachocove.nachomail.beta.share',
             'app_group': 'group.com.nachocove.nachomail.beta',
-            'display_name': 'Apollo Mail'
+            'display_name': 'Nacho Mail'
         },
         'android': {
             'package_name': 'com.nachocove.nachomail',
-            'label': 'Apollo Mail',
+            'label': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
             'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': 'com.nachocove.mail.keystore',
@@ -149,7 +149,7 @@ projects = {
     'appstore': {
         'ios': {
             'bundle_id': 'com.nachocove.mail',
-            'display_name': 'Apollo Mail',
+            'display_name': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
             'file_sharing': False,
             'app_group': 'group.com.nachocove.mail',
@@ -159,11 +159,11 @@ projects = {
         'ios_share': {
             'bundle_id': 'com.nachocove.mail.share',
             'app_group': 'group.com.nachocove.mail',
-            'display_name': 'Apollo Mail'
+            'display_name': 'Nacho Mail'
         },
         'android': {
             'package_name': 'com.nachocove.nachomail',
-            'label': 'Apollo Mail',
+            'label': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
             'hockeyapp': {'app_id': '', 'api_token': ''},
             'keystore': {'filename': 'com.nachocove.mail.keystore',

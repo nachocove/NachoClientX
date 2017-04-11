@@ -49,6 +49,7 @@ namespace NachoClient.iOS
         {
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
+                View.BackgroundColor = theme.AccountCreationBackgroundColor;
                 statusLabel.Font = theme.DefaultFont.WithSize (statusLabel.Font.PointSize);
                 statusLabel.TextColor = theme.AccountCreationTextColor;
                 submitButton.BackgroundColor = theme.AccountCreationButtonColor;
@@ -219,7 +220,7 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Start (Account.Id);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
-                NcAlertView.ShowMessage (this, "Apollo Mail", issue);
+                NcAlertView.ShowMessage (this, "Nacho Mail", issue);
             }
         }
 

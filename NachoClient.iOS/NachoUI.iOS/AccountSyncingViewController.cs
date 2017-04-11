@@ -81,6 +81,7 @@ namespace NachoClient.iOS
 
         public void AdoptTheme (Theme theme)
         {
+            View.BackgroundColor = theme.AccountCreationBackgroundColor;
             statusLabel.Font = theme.DefaultFont.WithSize (statusLabel.Font.PointSize);
             statusLabel.TextColor = theme.AccountCreationTextColor;
         }

@@ -56,7 +56,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            NavigationItem.Title = "About Apollo Mail";
+            NavigationItem.Title = "About Nacho Mail";
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
         }
@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                 if (_AboutFooter == null) {
                     _AboutFooter = new InsetLabelView ();
                     _AboutFooter.LabelInsets = new UIEdgeInsets (10.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-                    _AboutFooter.Label.Text = "Apollo Mail version " + Util.GetVersionNumber ();
+                    _AboutFooter.Label.Text = "Nacho Mail version " + Util.GetVersionNumber ();
                     _AboutFooter.Label.TextAlignment = UITextAlignment.Center;
                     _AboutFooter.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
@@ -234,7 +234,7 @@ namespace NachoClient.iOS
                 HeaderLabel.TextAlignment = UITextAlignment.Center;
                 HeaderLabel.Lines = 0;
                 HeaderLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                HeaderLabel.Text = "Apollo Mail believes that productivity software is more than just a great email app with contacts and calendar capability.";
+                HeaderLabel.Text = "Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability.";
                 ContentView.AddSubview (HeaderLabel);
 
                 DescriptionLabel = new UILabel ();

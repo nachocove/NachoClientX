@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>[dev] Apollo Mail</string>
+	<string>[dev] Nacho Mail</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -90,11 +90,11 @@
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleLightContent</string>
 	<key>CFBundleName</key>
-	<string>[dev] Apollo Mail</string>
+	<string>[dev] Nacho Mail</string>
 	<key>XSAppIconAssets</key>
 	<string>Resources/Images.xcassets/AppIcon.appiconset</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>This allows Apollo Mail to show events from your calendar in the Apollo Mail calendar.</string>
+	<string>This allows Nacho Mail to show events from your calendar in the Nacho Mail calendar.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>This allows you to choose contacts from your address book in addition to your connected email accounts.</string>
 </dict>
