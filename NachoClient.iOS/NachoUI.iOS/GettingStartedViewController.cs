@@ -193,7 +193,7 @@ namespace NachoClient.iOS
             var credentialsViewController = vc.SuggestedCredentialsViewController (accountBeingConfigured.AccountService);
             credentialsViewController.AccountDelegate = this;
             credentialsViewController.Account = accountBeingConfigured;
-            NavigationController.PushViewController (credentialsViewController, true);
+            credentialsViewController.PresentInNavigationController (NavigationController);
         }
 
         private void ShowAccountTypeChooser (object sender, EventArgs e)
@@ -255,7 +255,7 @@ namespace NachoClient.iOS
             var credentialsViewController = vc.SuggestedCredentialsViewController (service);
             credentialsViewController.Service = service;
             credentialsViewController.AccountDelegate = this;
-            NavigationController.PushViewController (credentialsViewController, true);
+            credentialsViewController.PresentInNavigationController (NavigationController);
         }
 
         #endregion

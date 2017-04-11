@@ -81,7 +81,7 @@ namespace NachoClient.iOS
             var credentialsViewController = vc.SuggestedCredentialsViewController (service);
             credentialsViewController.Service = service;
             credentialsViewController.AccountDelegate = this;
-            AddAccountNavigationController.PushViewController (credentialsViewController, true);
+            credentialsViewController.PresentInNavigationController (AddAccountNavigationController);
         }
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)

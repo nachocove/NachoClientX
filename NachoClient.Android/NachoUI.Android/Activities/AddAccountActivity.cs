@@ -16,14 +16,35 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
+
     [Activity (Label = "AddAccountActivity")]
     public class AddAccountActivity : NcActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
         private const string CHOOSE_PROVIDER_FRAGMENT_TAG = "ChooseProvider";
         private const string CREDENTIALS_FRAGMENT_TAG = "Credentials";
         private const string WAITING_FRAGMENT_TAG = "Waiting";
+        private const string ACTION_CREDENTIALS_VALIDATED = "CredentialsValidated";
+        private const string ACTION_CREDENTIALS_VALIDATE_FAILED = "CredentialsValidationFailed";
 
         McAccount account;
+
+        public static void ResumeWithAction (Context context, string action)
+        {
+            var intent = new Intent(context, typeof(AddAccountActivity));
+            intent.SetAction (action);
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop);
+            context.StartActivity (intent);
+        }
+
+        protected override void OnNewIntent (Intent intent)
+        {
+            base.OnNewIntent (intent);
+            if (intent.Action == ACTION_CREDENTIALS_VALIDATED) {
+                _CredentialsValidated ();
+            } else if (intent.Action == ACTION_CREDENTIALS_VALIDATE_FAILED) {
+                Finish ();
+            }
+        }
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -71,8 +92,23 @@ namespace NachoClient.AndroidClient
             ft.Add (Resource.Id.content, fragment, CREDENTIALS_FRAGMENT_TAG).AddToBackStack (CREDENTIALS_FRAGMENT_TAG).Commit ();
         }
 
+        McAccount _CredentialsValidatedAccount;
+
         public void CredentialsValidated (McAccount account)
         {
+            _CredentialsValidatedAccount = account;
+            ResumeWithAction (this, ACTION_CREDENTIALS_VALIDATED);
+        }
+
+        public void CredentialsValidationFailed ()
+        {
+            ResumeWithAction (this, ACTION_CREDENTIALS_VALIDATE_FAILED);
+        }
+
+        public void _CredentialsValidated()
+        {
+            var account = _CredentialsValidatedAccount;
+            _CredentialsValidatedAccount = null;
             var waitingFragment = WaitingFragment.newInstance (account);
             var ft = FragmentManager.BeginTransaction ();
             ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);

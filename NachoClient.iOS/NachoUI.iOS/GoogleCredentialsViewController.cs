@@ -9,16 +9,17 @@ using NachoCore.Utils;
 using System.Linq;
 using System.Collections.Generic;
 using Xamarin.Auth;
+using SafariServices;
 
 namespace NachoClient.iOS
 {
-    public partial class GoogleCredentialsViewController : AccountCredentialsViewController
+    public partial class GoogleCredentialsViewController : AccountCredentialsViewController, ISFSafariViewControllerDelegate
     {
 
         #region Properties
 
         GoogleOAuth2Authenticator Authenticator;
-        UIView AuthView;
+        SFSafariViewController AuthViewController;
 
         #endregion
 
@@ -37,29 +38,35 @@ namespace NachoClient.iOS
         void RestartAuthenticator ()
         {
             if (Authenticator != null) {
+                Authenticator.Stop ();
                 Authenticator.Completed -= AuthCompleted;
                 Authenticator.Error -= AuthError;
+                Authenticator = null;
             }
-            if (AuthView != null) {
-                AuthView.RemoveFromSuperview ();
+            if (AuthViewController != null) {
+                AuthViewController.WillMoveToParentViewController (null);
+                AuthViewController.View.RemoveFromSuperview ();
+                AuthViewController.RemoveFromParentViewController ();
             }
-            WebAuthenticator.ClearCookies ();
             string loginHint = null;
             if (Account != null) {
                 loginHint = Account.EmailAddr;
             }
-            Authenticator = new GoogleOAuth2Authenticator (loginHint);
-            Authenticator.AllowCancel = true;
-            Authenticator.Completed += AuthCompleted;
-            Authenticator.Error += AuthError;
-            var vc = Authenticator.GetUI ();
-            if (vc is UINavigationController) {
-                vc = ((UINavigationController)vc).TopViewController;
-                AddChildViewController (vc);
-            }
-            AuthView = vc.View;
-            AuthView.Frame = View.Bounds;
-            View.AddSubview (AuthView);
+            GoogleOAuth2Authenticator.Create (loginHint, (GoogleOAuth2Authenticator auth) => {
+                Authenticator = auth;
+                Authenticator.AllowCancel = true;
+                Authenticator.Completed += AuthCompleted;
+                Authenticator.Error += AuthError;
+
+                AuthViewController = Authenticator.GetUI () as SFSafariViewController;
+                AuthViewController.Delegate = this;
+                AddChildViewController (AuthViewController);
+                AuthViewController.View.Frame = View.Bounds;
+                AuthViewController.View.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
+                View.AddSubview (AuthViewController.View);
+                AuthViewController.DidMoveToParentViewController (this);
+
+            });
         }
 
         #endregion
@@ -69,13 +76,31 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            RestartAuthenticator ();
+            //RestartAuthenticator ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            AuthView.Frame = View.Bounds;
+            if (IsBeingPresented) {
+                //NavigationController.SetNavigationBarHidden (true, animated);
+                RestartAuthenticator ();
+            }
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            if (IsBeingPresented) {
+            }
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (IsBeingDismissed) {
+                //NavigationController.SetNavigationBarHidden (false, animated);
+            }
         }
 
         #endregion
@@ -137,6 +162,7 @@ namespace NachoClient.iOS
                         Account.PopulateProfilePhotoFromURL (new Uri (imageUrlString));
                     }
                     AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
+                    DismissViewController (true, null);
                 }
             } else {
                 Log.Info (Log.LOG_UI, "GoogleCredentialsViewController completed unauthenticated");
@@ -151,5 +177,17 @@ namespace NachoClient.iOS
         }
 
         #endregion
+
+
+        [Foundation.Export ("safariViewControllerDidFinish:")]
+        public virtual void DidFinish (SFSafariViewController controller)
+        {
+        	Authenticator.Stop ();
+        }
+
+        public override void PresentInNavigationController (UINavigationController navController)
+        {
+            navController.PresentViewController (this, true, null);
+        }
     }
 }

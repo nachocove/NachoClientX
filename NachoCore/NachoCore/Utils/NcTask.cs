@@ -99,7 +99,9 @@ namespace NachoCore.Utils
             "SyncCmd",
             "Telemetry",
             "UpdateUnreadMessageCount",
-            "UpdateUnreadMessageView"
+            "UpdateUnreadMessageView",
+            "OAuthHTTPServer",
+            "OAuthHTTPClient"
         };
 
         struct tracer

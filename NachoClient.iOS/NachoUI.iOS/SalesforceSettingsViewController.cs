@@ -417,7 +417,7 @@ namespace NachoClient.iOS
             auth.Completed += AuthCompleted;
             auth.Error += AuthError;
 
-            UIViewController vc = auth.GetUI ();
+            UIViewController vc = auth.GetUI () as UIViewController;
             this.PresentViewController (vc, true, null);
         }
 

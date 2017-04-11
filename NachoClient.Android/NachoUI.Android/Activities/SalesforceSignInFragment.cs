@@ -93,8 +93,8 @@ namespace NachoClient.AndroidClient
             Authenticator.AllowCancel = true;
             Authenticator.Completed += AuthCompleted;
             Authenticator.Error += AuthError;
-            var vc = Authenticator.GetUI (Activity);
-            StartActivityForResult (vc, SIGNIN_REQUEST_CODE);
+            var intent = Authenticator.GetUI (Activity) as Intent;
+            StartActivityForResult (intent, SIGNIN_REQUEST_CODE);
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)

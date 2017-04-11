@@ -60,7 +60,7 @@ namespace NachoClient.iOS
             Authenticator.AllowCancel = true;
             Authenticator.Completed += AuthCompleted;
             Authenticator.Error += AuthError;
-            var vc = Authenticator.GetUI ();
+            var vc = Authenticator.GetUI () as UIViewController;
             if (vc is UINavigationController) {
                 vc = ((UINavigationController)vc).TopViewController;
                 AddChildViewController (vc);

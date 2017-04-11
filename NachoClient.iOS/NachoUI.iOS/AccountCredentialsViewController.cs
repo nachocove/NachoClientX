@@ -36,6 +36,11 @@ namespace NachoClient.iOS
         protected override void Cleanup ()
         {
         }
+
+        public virtual void PresentInNavigationController (UINavigationController navController)
+        {
+            navController.PushViewController (this, true);
+        }
     }
 }
 
