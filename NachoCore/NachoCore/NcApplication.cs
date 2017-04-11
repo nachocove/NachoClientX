@@ -1097,9 +1097,6 @@ namespace NachoCore
             if (!NcApplication.Instance.IsUp ()) {
                 return false;
             }
-            if (!LoginHelpers.HasViewedTutorial ()) {
-                return false;
-            }
             var account = NcApplication.Instance.Account;
             if (null == account) {
                 return false;
