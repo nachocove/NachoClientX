@@ -32,11 +32,6 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
@@ -73,11 +68,6 @@
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
         <Command>
           <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
@@ -129,11 +119,6 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
@@ -171,11 +156,6 @@
     </IpaPackageName>
     <CustomCommands>
       <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
         <Command>
           <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
@@ -223,11 +203,6 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
@@ -272,11 +247,6 @@
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <CustomCommands>
       <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>git update-index --assume-unchanged NachoClient.userprefs</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
         <Command>
           <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
