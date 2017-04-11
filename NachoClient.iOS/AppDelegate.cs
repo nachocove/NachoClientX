@@ -1299,16 +1299,40 @@ namespace NachoClient.iOS
             return true;
         }
 
+        bool IsRunningBadgeUpdate;
+        bool NeedsBadgeUpdate;
+        object BadgeUpdateLock = new object();
+
         public void UpdateBadgeCount ()
         {
-            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
-                // Calculating the badge count requires database queries that are sometimes very slow.
-                // Slow enough that they should not be run on the UI thread.
+            // The goal here is to allows UpdateBadgeCount to be called repeatedly,
+            // but only allow run one update task at a time.  Mutliple calls made while the update
+            // task is already running will cause the task to run just once more.
+            bool isTaskRunning = false;
+            lock (BadgeUpdateLock) {
+                if (IsRunningBadgeUpdate) {
+                    NeedsBadgeUpdate = true;
+                    isTaskRunning = true;
+                } else {
+                    IsRunningBadgeUpdate = true;
+                }
+            }
+            if (!isTaskRunning) {
                 NcTask.Run (() => {
-                    UpdateBadgeCountTask ();
+                    bool needsRun = true;
+                    while (needsRun){
+                        UpdateBadgeCountTask();
+                        lock (BadgeUpdateLock){
+                            if (NeedsBadgeUpdate){
+                                NeedsBadgeUpdate = false;
+                                needsRun = true;
+                            }else{
+                                IsRunningBadgeUpdate = false;
+                                needsRun = false;
+                            }
+                        }
+                    }
                 }, "UpdateBadgeCount");
-            } else {
-                UpdateBadgeCountTask ();
             }
         }
 
@@ -1329,137 +1353,159 @@ namespace NachoClient.iOS
             });
         }
 
+        bool NeedsBadgeAndNotifications;
+        bool IsRunningBadgeAndNotifications;
+        object BadgeAndNotificationsLockObject = new object();
+
         private void BadgeCountAndMessageNotifications (Action updateDone = null)
         {
-            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
-                // NotificationCanBadge must be called on the UI thread, so it must be called before starting
-                // the task.
-                bool canBadge = NotificationCanBadge;
+            bool isTaskRunning = false;
+            lock (BadgeAndNotificationsLockObject) {
+                if (IsRunningBadgeAndNotifications) {
+                    NeedsBadgeAndNotifications = true;
+                    isTaskRunning = true;
+                } else {
+                    IsRunningBadgeAndNotifications = true;
+                }
+            }
+            if (!isTaskRunning) {
                 NcTask.Run (() => {
-                    BadgeNotificationsTask (canBadge, updateDone);
+                    bool needsRun = true;
+                    while (needsRun) {
+                        BadgeNotificationsTask ();
+                        lock (BadgeAndNotificationsLockObject) {
+                            if (NeedsBadgeAndNotifications) {
+                                needsRun = true;
+                                NeedsBadgeAndNotifications = false;
+                            } else {
+                                IsRunningBadgeAndNotifications = false;
+                                needsRun = false;
+                            }
+                        }
+                    }
+                    if (null != updateDone) {
+                        InvokeOnUIThread.Instance.Invoke (updateDone);
+                    }
                 }, "BadgeCountAndMessageNotifications");
             } else {
-                BadgeNotificationsTask (true, updateDone);
+                if (null != updateDone) {
+                    InvokeOnUIThread.Instance.Invoke (updateDone);
+                }
             }
         }
 
-        private void BadgeNotificationsTask (bool canBadge, Action updateDone)
+        private void BadgeNotificationsTask ()
         {
-            if (canBadge) {
+            if (NotificationCanBadge) {
                 UpdateBadgeCountTask ();
             } else {
                 Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
             }
 
             Log.Info (Log.LOG_UI, "Message notifications: called");
-            if (!NotifyAllowed) {
-                Log.Info (Log.LOG_UI, "Message notifications: early exit");
-                if (null != updateDone) {
-                    InvokeOnUIThread.Instance.Invoke (updateDone);
-                }
-                return;
-            }
 
-            var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            var since = DateTime.Parse (datestring);
-            var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
-            var unreadChatMessages = McChat.UnreadMessagesSince (since);
-            var soundExpressed = false;
-            int remainingVisibleSlots = 10;
-            var accountTable = new Dictionary<int, McAccount> ();
-            var chatTable = new Dictionary<int, McChat> ();
-            McAccount account = null;
-            McChat chat = null;
+            if (NotifyAllowed) {
 
-            var notifiedMessageIDs = new HashSet<string> ();
+                var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
+                var since = DateTime.Parse (datestring);
+                var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
+                var unreadChatMessages = McChat.UnreadMessagesSince (since);
+                var soundExpressed = false;
+                int remainingVisibleSlots = 10;
+                var accountTable = new Dictionary<int, McAccount> ();
+                var chatTable = new Dictionary<int, McChat> ();
+                McAccount account = null;
+                McChat chat = null;
 
-            foreach (var message in unreadAndHot) {
-                if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
-                    Log.Info (Log.LOG_UI, "Message notifications: Skipping message {0} because a message with that message ID has already been processed", message.Id);
-                    message.MarkHasBeenNotified (true);
-                    continue;
-                }
-                if (message.HasBeenNotified) {
-                    if (message.ShouldNotify && !string.IsNullOrEmpty (message.MessageID)) {
-                        notifiedMessageIDs.Add (message.MessageID);
-                    }
-                    continue;
-                }
-                if (!accountTable.TryGetValue (message.AccountId, out account)) {
-                    var newAccount = McAccount.QueryById<McAccount> (message.AccountId);
-                    if (null == newAccount) {
-                        Log.Warn (Log.LOG_PUSH,
-                            "Will not notify email message from an unknown account (accoundId={0}, emailMessageId={1})",
-                            message.AccountId, message.Id);
-                    }
-                    accountTable.Add (message.AccountId, newAccount);
-                    account = newAccount;
-                }
-                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message)) {
-                    message.MarkHasBeenNotified (false);
-                    continue;
-                }
-                if (!NotifyEmailMessage (message, account, !soundExpressed)) {
-                    Log.Info (Log.LOG_UI, "Message notifications: Notification attempt for message {0} failed.", message.Id);
-                    continue;
-                } else {
-                    soundExpressed = true;
-                }
+                var notifiedMessageIDs = new HashSet<string> ();
 
-                var updatedMessage = message.MarkHasBeenNotified (true);
-                if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
-                    notifiedMessageIDs.Add (updatedMessage.MessageID);
-                }
-                Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", updatedMessage.Id);
-                --remainingVisibleSlots;
-                if (0 >= remainingVisibleSlots) {
-                    break;
-                }
-            }
-
-            if (remainingVisibleSlots > 0){
-                foreach (var message in unreadChatMessages) {
-                    if (!accountTable.TryGetValue (message.AccountId, out account)) {
-                        account = McAccount.QueryById<McAccount> (message.AccountId);
-                        if (null == account) {
-                            Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown account (accoundId={0}, emailMessageId={1})", message.AccountId, message.Id);
-                        }
-                        accountTable.Add (message.AccountId, account);
-                    }
-                    if (!chatTable.TryGetValue (message.ChatId, out chat)) {
-                        chat = McChat.QueryById<McChat> (message.ChatId);
-                        if (null == chat) {
-                            Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown chat (chatId={0}, emailMessageId={1})", message.ChatId, message.Id);
-                        }
-                        chatTable.Add (message.ChatId, chat);
+                foreach (var message in unreadAndHot) {
+                    if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
+                        Log.Info (Log.LOG_UI, "Message notifications: Skipping message {0} because a message with that message ID has already been processed", message.Id);
+                        message.MarkHasBeenNotified (true);
+                        continue;
                     }
                     if (message.HasBeenNotified) {
+                        if (message.ShouldNotify && !string.IsNullOrEmpty (message.MessageID)) {
+                            notifiedMessageIDs.Add (message.MessageID);
+                        }
                         continue;
                     }
-                    if ((null == account) || (null == chat) || !NotificationHelper.ShouldNotifyChatMessage (message)) {
-                        // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
-                        McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (false);
+                    if (!accountTable.TryGetValue (message.AccountId, out account)) {
+                        var newAccount = McAccount.QueryById<McAccount> (message.AccountId);
+                        if (null == newAccount) {
+                            Log.Warn (Log.LOG_PUSH,
+                                "Will not notify email message from an unknown account (accoundId={0}, emailMessageId={1})",
+                                message.AccountId, message.Id);
+                        }
+                        accountTable.Add (message.AccountId, newAccount);
+                        account = newAccount;
+                    }
+                    if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message)) {
+                        message.MarkHasBeenNotified (false);
                         continue;
                     }
-                    if (!NotifyChatMessage (message, chat, account, !soundExpressed)) {
+                    if (!NotifyEmailMessage (message, account, !soundExpressed)) {
                         Log.Info (Log.LOG_UI, "Message notifications: Notification attempt for message {0} failed.", message.Id);
                         continue;
                     } else {
                         soundExpressed = true;
                     }
-                    // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
-                    McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (true);
-                    Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", message.Id);
+
+                    var updatedMessage = message.MarkHasBeenNotified (true);
+                    if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
+                        notifiedMessageIDs.Add (updatedMessage.MessageID);
+                    }
+                    Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", updatedMessage.Id);
                     --remainingVisibleSlots;
                     if (0 >= remainingVisibleSlots) {
                         break;
                     }
                 }
-            }
 
-            accountTable.Clear ();
-            if (null != updateDone) {
-                InvokeOnUIThread.Instance.Invoke (updateDone);
+                if (remainingVisibleSlots > 0) {
+                    foreach (var message in unreadChatMessages) {
+                        if (!accountTable.TryGetValue (message.AccountId, out account)) {
+                            account = McAccount.QueryById<McAccount> (message.AccountId);
+                            if (null == account) {
+                                Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown account (accoundId={0}, emailMessageId={1})", message.AccountId, message.Id);
+                            }
+                            accountTable.Add (message.AccountId, account);
+                        }
+                        if (!chatTable.TryGetValue (message.ChatId, out chat)) {
+                            chat = McChat.QueryById<McChat> (message.ChatId);
+                            if (null == chat) {
+                                Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown chat (chatId={0}, emailMessageId={1})", message.ChatId, message.Id);
+                            }
+                            chatTable.Add (message.ChatId, chat);
+                        }
+                        if (message.HasBeenNotified) {
+                            continue;
+                        }
+                        if ((null == account) || (null == chat) || !NotificationHelper.ShouldNotifyChatMessage (message)) {
+                            // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
+                            McEmailMessage.QueryById<McEmailMessage> (message.Id).MarkHasBeenNotified (false);
+                            continue;
+                        }
+                        if (!NotifyChatMessage (message, chat, account, !soundExpressed)) {
+                            Log.Info (Log.LOG_UI, "Message notifications: Notification attempt for message {0} failed.", message.Id);
+                            continue;
+                        } else {
+                            soundExpressed = true;
+                        }
+                        // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
+                        McEmailMessage.QueryById<McEmailMessage> (message.Id).MarkHasBeenNotified (true);
+                        Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", message.Id);
+                        --remainingVisibleSlots;
+                        if (0 >= remainingVisibleSlots) {
+                            break;
+                        }
+                    }
+                }
+
+                accountTable.Clear ();
+            } else {
+                Log.Info (Log.LOG_UI, "Message notifications: early exit");
             }
         }
 
