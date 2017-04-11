@@ -18,6 +18,7 @@ namespace NachoCore.Brain
     public partial class NcBrain
     {
         public const bool ENABLED = true;
+        public const bool SCORING_ENABLED = false;
 
         public static bool RegisterStatusIndHandler = false;
 
@@ -234,7 +235,7 @@ namespace NachoCore.Brain
                     didSomething = false;
 
                     // Priority 2: Quick scoring of new messages
-                    if (KeepGoing () && RunSeveralTimes ("Quick score messages", QuickScore, 50)) {
+                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Quick score messages", QuickScore, 50)) {
                         didSomething = true;
                     }
 
@@ -245,10 +246,10 @@ namespace NachoCore.Brain
 
                     // Priority 3: Glean and score unscored messages. Update the score of messages with
                     // a high NeedsUpdate count. Index newly arrived messages.
-                    if (KeepGoing () && RunSeveralTimes ("Glean/analyze messages", AnalyzeEmail, 30)) {
+                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Glean/analyze messages", AnalyzeEmail, 30)) {
                         didSomething = true;
                     }
-                    if (KeepGoing () && RunSeveralTimes ("Update message scores (high)", UpdateScoreHigh, 20)) {
+                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Update message scores (high)", UpdateScoreHigh, 20)) {
                         didSomething = true;
                     }
                     if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.INDEX_MESSAGE, 10)) {
@@ -260,7 +261,7 @@ namespace NachoCore.Brain
 
                     // Priority 4: Update the score of messages with a low NeedsUpdate count. Unindex deleted
                     // messages. Reindex messages that have been downloaded.
-                    if (KeepGoing () && RunSeveralTimes ("Update message scores (low)", UpdateScoreLow, 20)) {
+                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Update message scores (low)", UpdateScoreLow, 20)) {
                         didSomething = true;
                     }
                     if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.UNINDEX_MESSAGE, 10)) {
@@ -317,12 +318,16 @@ namespace NachoCore.Brain
             switch (eventArgs.Status.SubKind) {
 
             case NcResult.SubKindEnum.Info_RicInitialSyncCompleted:
-                NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
+                if (SCORING_ENABLED) {
+                    NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
+                }
                 break;
 
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded:
-                NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
+                if (SCORING_ENABLED) {
+                    NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
+                }
                 break;
             }
         }
