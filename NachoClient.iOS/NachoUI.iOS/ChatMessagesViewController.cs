@@ -1266,7 +1266,7 @@ namespace NachoClient.iOS
         UIImageView ErrorIndicator {
             get {
                 if (_ErrorIndicator == null) {
-                    using (var image = UIImage.FromBundle ("Slide1-5")) {
+                    using (var image = UIImage.FromBundle ("ChatErrorIndicator")) {
                         _ErrorIndicator = new UIImageView (image);
                         _ErrorIndicator.AddGestureRecognizer (new UITapGestureRecognizer (ErrorTap));
                         _ErrorIndicator.UserInteractionEnabled = true;
