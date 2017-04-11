@@ -14,10 +14,11 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net;
 using Xamarin.Auth;
+using SafariServices;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks
+    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks, ISFSafariViewControllerDelegate
     {
         protected UIView contentView;
         protected UIScrollView scrollView;
@@ -660,72 +661,87 @@ namespace NachoClient.iOS
             return true;
         }
 
+        GoogleOAuth2Authenticator GoogleAuthenticator;
 
         public void StartGoogleLogin ()
         {
-            var auth = new GoogleOAuth2Authenticator (account.EmailAddr);
 
-            auth.AllowCancel = true;
+            GoogleOAuth2Authenticator.Create (account.EmailAddr, (GoogleOAuth2Authenticator auth) => {
 
-            // If authorization succeeds or is canceled, .Completed will be fired.
-            auth.Completed += (s, e) => {
-                DismissViewController (true, () => {
-                    if (!e.IsAuthenticated) {
-                        return;
-                    }
+                GoogleAuthenticator = auth;
 
-                    string access_token;
-                    e.Account.Properties.TryGetValue ("access_token", out access_token);
+                auth.AllowCancel = true;
 
-                    string refresh_token;
-                    e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
-
-                    string expiresString = "0";
-                    uint expirationSecs = 0;
-                    if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
-                        if (!uint.TryParse (expiresString, out expirationSecs)) {
-                            Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
+                // If authorization succeeds or is canceled, .Completed will be fired.
+                auth.Completed += (s, e) => {
+                    DismissViewController (true, () => {
+                        if (!e.IsAuthenticated) {
+                            return;
                         }
-                    }
 
-                    var source = "https://www.googleapis.com/oauth2/v1/userinfo";
-                    var url = String.Format ("{0}?access_token={1}", source, access_token);
-                    Newtonsoft.Json.Linq.JObject userInfo;
-                    try {
-                        var userInfoString = new WebClient ().DownloadString (url);
-                        userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
-                    } catch (Exception ex) {
-                        Log.Info (Log.LOG_HTTP, "Could not download or parse userInfoString from {0}: {1}", source, ex);
-                        NcAlertView.ShowMessage (this, "Settings", string.Format ("Could not download user details. Please try again. ({0})", ex.Message));
-                        return;
-                    }
+                        string access_token;
+                        e.Account.Properties.TryGetValue ("access_token", out access_token);
 
-                    if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
-                        // Can't change your email address
-                        NcAlertView.ShowMessage (this, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
-                        return;
-                    }
+                        string refresh_token;
+                        e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-                    var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-                    cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
+                        string expiresString = "0";
+                        uint expirationSecs = 0;
+                        if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
+                            if (!uint.TryParse (expiresString, out expirationSecs)) {
+                                Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
+                            }
+                        }
 
-                    BackEnd.Instance.CredResp (account.Id);
+                        var source = "https://www.googleapis.com/oauth2/v1/userinfo";
+                        var url = String.Format ("{0}?access_token={1}", source, access_token);
+                        Newtonsoft.Json.Linq.JObject userInfo;
+                        try {
+                            var userInfoString = new WebClient ().DownloadString (url);
+                            userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                        } catch (Exception ex) {
+                            Log.Info (Log.LOG_HTTP, "Could not download or parse userInfoString from {0}: {1}", source, ex);
+                            NcAlertView.ShowMessage (this, "Settings", string.Format ("Could not download user details. Please try again. ({0})", ex.Message));
+                            return;
+                        }
 
-                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_McCredPasswordChanged);
-                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                        Status = result,
-                        Account = account,
+                        if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
+                            // Can't change your email address
+                            NcAlertView.ShowMessage (this, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
+                            return;
+                        }
+
+                        var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+                        cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
+
+                        BackEnd.Instance.CredResp (account.Id);
+
+                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_McCredPasswordChanged);
+                        NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                            Status = result,
+                            Account = account,
+                        });
                     });
-                });
-            };
+                };
 
-            auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
-                DismissViewController (true, () => {
-                });
-            };
+                auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
+                    DismissViewController (true, () => {
+                    });
+                };
 
-            UIViewController vc = auth.GetUI ();
-            this.PresentViewController (vc, true, null);
+                SFSafariViewController vc = auth.GetUI () as SFSafariViewController;
+                vc.Delegate = this;
+                this.PresentViewController (vc, true, null);
+            });
+
+        }
+
+        [Foundation.Export ("safariViewControllerDidFinish:")]
+        public virtual void DidFinish (SFSafariViewController controller)
+        {
+            GoogleAuthenticator.Stop ();
+            controller.Delegate = null;
+            GoogleAuthenticator = null;
         }
 
     }
