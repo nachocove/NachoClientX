@@ -56,10 +56,6 @@ namespace NachoClient.Mac
             if (NcApplication.ReadyToStartUI ()) {
                 // todo: start main ui
             } else {
-                // Skip tutorial because we don't have one on mac, and ReadyToStartUI requires that we mark it as viewed
-                if (!LoginHelpers.HasViewedTutorial ()) {
-                    LoginHelpers.SetHasViewedTutorial (true);
-                }
                 ShowWelcome ();
             }
 

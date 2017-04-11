@@ -358,14 +358,6 @@
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
     <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
-    <Compile Include="NachoUI.iOS\HomeViewController.cs" />
-    <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
-      <DependentUpon>HomeViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\HomePageViewController.cs" />
-    <Compile Include="NachoUI.iOS\HomePageViewController.designer.cs">
-      <DependentUpon>HomePageViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\LabelSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactSearchViewController.cs" />

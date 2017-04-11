@@ -200,7 +200,6 @@
     <Compile Include="NachoUI.Android\Activities\PriorityFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\RecoveryFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\StartupFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\TutorialActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\WaitingFragment.cs" />
     <Compile Include="NachoUI.Android\Support\RoundedImageView.cs" />
@@ -1199,12 +1198,6 @@
     <AndroidResource Include="Resources\drawable-hdpi\Slide05Email.png" />
     <AndroidResource Include="Resources\drawable-hdpi\Slide05SwipeLeft.png" />
     <AndroidResource Include="Resources\drawable-hdpi\Slide05SwipeRight.png" />
-    <AndroidResource Include="Resources\layout\TutorialActivity.axml" />
-    <AndroidResource Include="Resources\layout\TutorialFragment01.axml" />
-    <AndroidResource Include="Resources\layout\TutorialFragment02.axml" />
-    <AndroidResource Include="Resources\layout\TutorialFragment03.axml" />
-    <AndroidResource Include="Resources\layout\TutorialFragment04.axml" />
-    <AndroidResource Include="Resources\layout\TutorialFragment05.axml" />
     <AndroidResource Include="Resources\drawable\TutorialProgressDark.xml" />
     <AndroidResource Include="Resources\drawable\TutorialProgressLight.xml" />
     <AndroidResource Include="Resources\drawable-xxhdpi\BG_S01.png" />

@@ -75,9 +75,6 @@ namespace NachoClient.AndroidClient
 //                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
 //                crashButton.Visibility = ViewStates.Visible;
 //                crashButton.Click += CrashButton_Click;
-//                var tutorialButton = view.FindViewById<Button> (Resource.Id.tutorial_button);
-//                tutorialButton.Visibility = ViewStates.Visible;
-//                tutorialButton.Click += TutorialButton_Click;
 //            }
 
             return view;
@@ -96,11 +93,6 @@ namespace NachoClient.AndroidClient
                 EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.TodaysMessages);
                 break;
             }
-        }
-
-        void TutorialButton_Click (object sender, EventArgs e)
-        {
-            StartActivity (new Intent (this.Activity, typeof(TutorialActivity)));
         }
 
         void HotSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)

@@ -22,7 +22,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class GettingStartedViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate, ThemeAdopter
+    public partial class GettingStartedViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, ThemeAdopter
     {
 
         #region Properties
@@ -174,11 +174,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "tutorial") {
-                var vc = (HomeViewController)segue.DestinationViewController;
-                vc.AccountDelegate = this;
-                vc.Service = (McAccount.AccountServiceEnum)((SegueHolder)sender).value;
-            }
         }
 
         #endregion
@@ -269,30 +264,8 @@ namespace NachoClient.iOS
             syncingViewController.AccountDelegate = this;
             syncingViewController.Account = account;
             BackEnd.Instance.Start (syncingViewController.Account.Id);
-            if (LoginHelpers.HasViewedTutorial ()) {
-                Log.Info (Log.LOG_UI, "GettingStartedViewController tutorial has been viewed, just showing sync");
-                NavigationController.PushViewController (syncingViewController, true);
-            } else {
-                Log.Info (Log.LOG_UI, "GettingStartedViewController showing tutorial over sync");
-                PerformSegue ("tutorial", new SegueHolder (account.AccountService)); 
-            }
-        }
-
-        #endregion
-
-        #region Home View Delegate
-
-        public void HomeViewControllerDidAppear (HomeViewController vc)
-        {
-            Log.Info (Log.LOG_UI, "GettingStartedViewController inserting sync view under tutorial");
-            UIViewController[] viewControllers = new UIViewController[NavigationController.ViewControllers.Length + 1];
-            var i = 0;
-            for (; i < NavigationController.ViewControllers.Length - 1; ++i) {
-                viewControllers [i] = NavigationController.ViewControllers [i];
-            }
-            viewControllers [i] = syncingViewController;
-            viewControllers [i + 1] = NavigationController.ViewControllers [i];
-            NavigationController.SetViewControllers (viewControllers, false);
+            Log.Info (Log.LOG_UI, "GettingStartedViewController tutorial has been viewed, just showing sync");
+            NavigationController.PushViewController (syncingViewController, true);
         }
 
         #endregion

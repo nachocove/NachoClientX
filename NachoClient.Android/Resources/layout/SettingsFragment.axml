@@ -69,13 +69,6 @@
                     android:background="@color/NachoYellow"
                     android:text="CRASH SIMULATOR"
                     android:visibility="gone" />
-                <Button
-                    android:id="@+id/tutorial_button"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/NachoYellow"
-                    android:text="Tutorial"
-                    android:visibility="gone" />
             </LinearLayout>
         </android.support.v7.widget.CardView>
     </LinearLayout>
