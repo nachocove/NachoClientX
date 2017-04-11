@@ -81,7 +81,7 @@ namespace NachoClient.AndroidClient
                     "Please provide contact information, such as an email address.");
             } else if (string.IsNullOrEmpty (messageInfoTextView.Text)) {
                 NcAlertView.ShowMessage (Activity, "No Description",
-                    "Please describe the reason for contacting Apollo Mail support, such as the problem that you encountered.");
+                    "Please describe the reason for contacting Nacho Mail support, such as the problem that you encountered.");
             } else {
                 sendMessageTimer = new NcTimer ("support", MessageSendTimeout, null, 12 * 1000, 0); 
 

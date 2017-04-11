@@ -52,8 +52,8 @@ namespace NachoClient.iOS
             }
             McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
 
-            var title = "Apollo Mail would like to send you push notifications.";
-            var body = "This allows Apollo Mail to tell you when you have new mail or an upcoming meeting.";
+            var title = "Nacho Mail would like to send you push notifications.";
+            var body = "This allows Nacho Mail to tell you when you have new mail or an upcoming meeting.";
 
             var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
             alert.Clicked += (s, b) => {

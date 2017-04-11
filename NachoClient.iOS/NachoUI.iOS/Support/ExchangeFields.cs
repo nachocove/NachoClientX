@@ -416,7 +416,7 @@ namespace NachoClient.iOS
             string serviceName;
             var emailAddress = emailView.textField.Text;
             if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                var nuance = String.Format ("Apollo Mail does not support {0} yet.", serviceName);
+                var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
                 Complain (emailView, nuance);
                 return false;
             }

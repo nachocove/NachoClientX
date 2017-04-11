@@ -116,7 +116,7 @@ namespace NachoClient.iOS
                     userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_HTTP, "SFDC OAUTH2: Could not download user info from {0}: {1}", id_url, ex);
-                    NcAlertView.ShowMessage (this, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
+                    NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
                     return;
                 }
 
@@ -154,7 +154,7 @@ namespace NachoClient.iOS
                 }
             } else {
                 Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController completed unauthenticated");
-                NcAlertView.ShowMessage (this, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
+                NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
             }
         }
 
@@ -164,7 +164,7 @@ namespace NachoClient.iOS
                 return;
             }
             Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController auth error");
-            NcAlertView.ShowMessage (this, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
+            NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
         }
 
         #endregion

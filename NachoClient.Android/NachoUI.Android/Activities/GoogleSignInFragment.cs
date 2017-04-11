@@ -156,7 +156,7 @@ namespace NachoClient.AndroidClient
                     userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info from {0}: {1}", source, ex);
-                    NcAlertView.ShowMessage (Activity, "Apollo Mail", "We could not complete your account authentication.  Please try again.");
+                    NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
                     return;
                 }
 

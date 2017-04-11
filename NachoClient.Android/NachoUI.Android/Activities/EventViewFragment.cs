@@ -564,7 +564,7 @@ namespace NachoClient.AndroidClient
         {
             if (McAccount.AccountTypeEnum.Device == detail.Account.AccountType) {
                 NcAlertView.ShowMessage (this.Activity, "Can't Change Response",
-                    "Your response to this meeting can't be changed because the meeting is managed by the device's calendar, not by Apollo Mail." +
+                    "Your response to this meeting can't be changed because the meeting is managed by the device's calendar, not by Nacho Mail." +
                     "Use a different calendar app to change your response.");
             } else if (!detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 NcAlertView.ShowMessage (this.Activity, "Can't Change Response",

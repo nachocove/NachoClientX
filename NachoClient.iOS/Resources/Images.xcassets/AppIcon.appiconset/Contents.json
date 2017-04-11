@@ -1,226 +1,246 @@
 {
-  "images": [
+  "images" : [
     {
-      "filename": "Apollo-iOS-phone-settings.png",
-      "size": "29x29",
-      "scale": "1x",
-      "idiom": "iphone"
+      "idiom" : "iphone",
+      "size" : "20x20",
+      "scale" : "2x"
     },
     {
-      "filename": "Apollo-iOS-phone-settings@2x.png",
-      "size": "29x29",
-      "scale": "2x",
-      "idiom": "iphone"
+      "idiom" : "iphone",
+      "size" : "20x20",
+      "scale" : "3x"
     },
     {
-      "filename": "Apollo-iOS-phone-settings@3x.png",
-      "size": "29x29",
-      "scale": "3x",
-      "idiom": "iphone"
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-settings.png",
+      "scale" : "1x"
     },
     {
-      "filename": "Apollo-iOS-phone-spotlight@2x.png",
-      "size": "40x40",
-      "scale": "2x",
-      "idiom": "iphone"
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-settings@2x.png",
+      "scale" : "2x"
     },
     {
-      "filename": "Apollo-iOS-phone-spotlight@3x.png",
-      "size": "40x40",
-      "scale": "3x",
-      "idiom": "iphone"
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-settings@3x.png",
+      "scale" : "3x"
     },
     {
-      "size": "57x57",
-      "scale": "1x",
-      "idiom": "iphone"
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-spotlight@2x.png",
+      "scale" : "2x"
     },
     {
-      "size": "57x57",
-      "scale": "2x",
-      "idiom": "iphone"
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-spotlight@3x.png",
+      "scale" : "3x"
     },
     {
-      "filename": "Apollo-iOS-phone-app@2x.png",
-      "size": "60x60",
-      "scale": "2x",
-      "idiom": "iphone"
+      "idiom" : "iphone",
+      "size" : "57x57",
+      "scale" : "1x"
     },
     {
-      "filename": "Apollo-iOS-phone-app@3x.png",
-      "size": "60x60",
-      "scale": "3x",
-      "idiom": "iphone"
+      "idiom" : "iphone",
+      "size" : "57x57",
+      "scale" : "2x"
     },
     {
-      "filename": "Apollo-iOS-pad-settings.png",
-      "size": "29x29",
-      "scale": "1x",
-      "idiom": "ipad"
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-app@2x.png",
+      "scale" : "2x"
     },
     {
-      "filename": "Apollo-iOS-pad-settings@2x.png",
-      "size": "29x29",
-      "scale": "2x",
-      "idiom": "ipad"
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "NachoMail-phone-app@3x.png",
+      "scale" : "3x"
     },
     {
-      "filename": "Apollo-iOS-pad-spotlight.png",
-      "size": "40x40",
-      "scale": "1x",
-      "idiom": "ipad"
+      "idiom" : "ipad",
+      "size" : "20x20",
+      "scale" : "1x"
     },
     {
-      "filename": "Apollo-iOS-pad-spotlight@2x.png",
-      "size": "40x40",
-      "scale": "2x",
-      "idiom": "ipad"
+      "idiom" : "ipad",
+      "size" : "20x20",
+      "scale" : "2x"
     },
     {
-      "size": "50x50",
-      "scale": "1x",
-      "idiom": "ipad"
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-pad-settings.png",
+      "scale" : "1x"
     },
     {
-      "size": "50x50",
-      "scale": "2x",
-      "idiom": "ipad"
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-pad-settings@2x.png",
+      "scale" : "2x"
     },
     {
-      "filename": "Apollo-iOS-padpro-app@2x.png",
-      "size": "83.5x83.5",
-      "scale": "2x",
-      "idiom": "ipad"
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-pad-spotlight.png",
+      "scale" : "1x"
     },
     {
-      "size": "72x72",
-      "scale": "1x",
-      "idiom": "ipad"
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-pad-spotlight@2x.png",
+      "scale" : "2x"
     },
     {
-      "size": "72x72",
-      "scale": "2x",
-      "idiom": "ipad"
+      "idiom" : "ipad",
+      "size" : "50x50",
+      "scale" : "1x"
     },
     {
-      "filename": "Apollo-iOS-pad-app.png",
-      "size": "76x76",
-      "scale": "1x",
-      "idiom": "ipad"
+      "idiom" : "ipad",
+      "size" : "50x50",
+      "scale" : "2x"
     },
     {
-      "filename": "Apollo-iOS-pad-app@2x.png",
-      "size": "76x76",
-      "scale": "2x",
-      "idiom": "ipad"
+      "idiom" : "ipad",
+      "size" : "72x72",
+      "scale" : "1x"
     },
     {
-      "role": "notificationCenter",
-      "size": "24x24",
-      "subtype": "38mm",
-      "scale": "2x",
-      "idiom": "watch"
+      "idiom" : "ipad",
+      "size" : "72x72",
+      "scale" : "2x"
     },
     {
-      "role": "notificationCenter",
-      "size": "27.5x27.5",
-      "subtype": "42mm",
-      "scale": "2x",
-      "idiom": "watch"
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-pad-app.png",
+      "scale" : "1x"
     },
     {
-      "role": "companionSettings",
-      "size": "29x29",
-      "scale": "2x",
-      "idiom": "watch"
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-pad-app@2x.png",
+      "scale" : "2x"
     },
     {
-      "role": "companionSettings",
-      "size": "29x29",
-      "scale": "3x",
-      "idiom": "watch"
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "NachoMail-padpro-app@2x.png",
+      "scale" : "2x"
     },
     {
-      "role": "appLauncher",
-      "size": "40x40",
-      "subtype": "38mm",
-      "scale": "2x",
-      "idiom": "watch"
+      "size" : "24x24",
+      "idiom" : "watch",
+      "scale" : "2x",
+      "role" : "notificationCenter",
+      "subtype" : "38mm"
     },
     {
-      "role": "longLook",
-      "size": "44x44",
-      "subtype": "42mm",
-      "scale": "2x",
-      "idiom": "watch"
+      "size" : "27.5x27.5",
+      "idiom" : "watch",
+      "scale" : "2x",
+      "role" : "notificationCenter",
+      "subtype" : "42mm"
     },
     {
-      "role": "quickLook",
-      "size": "86x86",
-      "subtype": "38mm",
-      "scale": "2x",
-      "idiom": "watch"
+      "size" : "29x29",
+      "idiom" : "watch",
+      "role" : "companionSettings",
+      "scale" : "2x"
     },
     {
-      "role": "quickLook",
-      "size": "98x98",
-      "subtype": "42mm",
-      "scale": "2x",
-      "idiom": "watch"
+      "size" : "29x29",
+      "idiom" : "watch",
+      "role" : "companionSettings",
+      "scale" : "3x"
     },
     {
-      "size": "16x16",
-      "scale": "1x",
-      "idiom": "mac"
+      "size" : "40x40",
+      "idiom" : "watch",
+      "scale" : "2x",
+      "role" : "appLauncher",
+      "subtype" : "38mm"
     },
     {
-      "size": "16x16",
-      "scale": "2x",
-      "idiom": "mac"
+      "size" : "44x44",
+      "idiom" : "watch",
+      "scale" : "2x",
+      "role" : "longLook",
+      "subtype" : "42mm"
     },
     {
-      "size": "32x32",
-      "scale": "1x",
-      "idiom": "mac"
+      "size" : "86x86",
+      "idiom" : "watch",
+      "scale" : "2x",
+      "role" : "quickLook",
+      "subtype" : "38mm"
     },
     {
-      "size": "32x32",
-      "scale": "2x",
-      "idiom": "mac"
+      "size" : "98x98",
+      "idiom" : "watch",
+      "scale" : "2x",
+      "role" : "quickLook",
+      "subtype" : "42mm"
     },
     {
-      "size": "128x128",
-      "scale": "1x",
-      "idiom": "mac"
+      "idiom" : "mac",
+      "size" : "16x16",
+      "scale" : "1x"
     },
     {
-      "size": "128x128",
-      "scale": "2x",
-      "idiom": "mac"
+      "idiom" : "mac",
+      "size" : "16x16",
+      "scale" : "2x"
     },
     {
-      "size": "256x256",
-      "scale": "1x",
-      "idiom": "mac"
+      "idiom" : "mac",
+      "size" : "32x32",
+      "scale" : "1x"
     },
     {
-      "size": "256x256",
-      "scale": "2x",
-      "idiom": "mac"
+      "idiom" : "mac",
+      "size" : "32x32",
+      "scale" : "2x"
     },
     {
-      "size": "512x512",
-      "scale": "1x",
-      "idiom": "mac"
+      "idiom" : "mac",
+      "size" : "128x128",
+      "scale" : "1x"
     },
     {
-      "size": "512x512",
-      "scale": "2x",
-      "idiom": "mac"
+      "idiom" : "mac",
+      "size" : "128x128",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "mac",
+      "size" : "256x256",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "mac",
+      "size" : "256x256",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "mac",
+      "size" : "512x512",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "mac",
+      "size" : "512x512",
+      "scale" : "2x"
     }
   ],
-  "info": {
-    "version": 1,
-    "author": "xcode"
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
   }
 }

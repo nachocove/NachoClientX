@@ -110,13 +110,13 @@ namespace NachoClient.iOS
         }
 
         // Helper Text Strings
-        const string TitleZero = "Welcome to Apollo Mail";
+        const string TitleZero = "Welcome to Nacho Mail";
         const string TitleOne = "Your Email";
         const string TitleTwo = "Navigating Your Hot List";
         const string TitleThree = "Your Meetings and Events";
         const string TitleFour = "Just One Last Thing ...";
 
-        const string BodyZero = "This tutorial will help you use <br> Apollo Mail";
+        const string BodyZero = "This tutorial will help you use <br> Nacho Mail";
         const string BodyOne = "Important messages go to your <font color=\"FF3F20\">Hot List</font>. <br> All messages can be found in <font color=\"1CCEC2\">Mail</font>.";
         const string BodyTwo = "Quickly browse through your Hot <br> List by swiping up and down.";
         const string BodyThree = "Your next meeting is <font color=\"FF3F20\">here</font>. Manage <br> your schedule using <font color=\"1CCEC2\">Calendar</font>.";
@@ -248,7 +248,7 @@ namespace NachoClient.iOS
                 owner.closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
                 break;
             case 4:
-                owner.closeTutorial.SetTitle ("Go to Apollo Mail", UIControlState.Normal);
+                owner.closeTutorial.SetTitle ("Go to Nacho Mail", UIControlState.Normal);
                 break;
             }
         }
@@ -278,7 +278,7 @@ namespace NachoClient.iOS
                 AnimateViewThree ();
                 break;
             case 4:
-                owner.closeTutorial.SetTitle ("Go to Apollo Mail", UIControlState.Normal);
+                owner.closeTutorial.SetTitle ("Go to Nacho Mail", UIControlState.Normal);
                 ResetViewFour ();
                 AnimateViewFour ();
                 break;

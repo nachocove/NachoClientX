@@ -68,7 +68,7 @@ namespace NachoClient.iOS
         {
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
-                View.BackgroundColor = theme.AccountCreationBackgroundColor;
+                CollectionView.BackgroundColor = View.BackgroundColor = theme.AccountCreationBackgroundColor;
                 if (CollectionView.VisibleCells != null) {
                     foreach (var cell in CollectionView.VisibleCells) {
                         var themedCell = (cell as ThemeAdopter);

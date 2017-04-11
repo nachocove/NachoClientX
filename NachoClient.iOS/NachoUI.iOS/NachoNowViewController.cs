@@ -1366,7 +1366,7 @@ namespace NachoClient.iOS
                 TextLabel.Lines = 0;
                 TextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 TextLabel.TextAlignment = UITextAlignment.Center;
-                TextLabel.Text = "Your most important items will show up here automatically as Apollo Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
+                TextLabel.Text = "Your most important items will show up here automatically as Nacho Mail identifies them.\n\nAdditionally, you can always add any item of your choice by marking it as hot.";
 
                 ImageView = new UIImageView (UIImage.FromBundle("empty-hot").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
 
