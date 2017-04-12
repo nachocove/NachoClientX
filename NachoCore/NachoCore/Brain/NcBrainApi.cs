@@ -32,6 +32,9 @@ namespace NachoCore.Brain
 
         public static void UpdateAddressScore (int accountId, int emailAddressId, bool forcedUpdateDependentMessages = false)
         {
+            if (!SCORING_ENABLED) {
+                return;
+            }
             if ((0 == accountId) || (0 == emailAddressId)) {
                 return;
             }
@@ -40,6 +43,9 @@ namespace NachoCore.Brain
 
         public static void UpdateMessageScore (int accountId, int emailMessageId)
         {
+            if (!SCORING_ENABLED) {
+                return;
+            }
             if ((0 == accountId) || (0 == emailMessageId)) {
                 return;
             }
@@ -48,6 +54,9 @@ namespace NachoCore.Brain
 
         public static void UpdateUserAction (int accountId, int emailMessageId, int action)
         {
+            if (!SCORING_ENABLED) {
+                return;
+            }
             if ((0 == accountId) || (0 == emailMessageId)) {
                 return;
             }
@@ -106,6 +115,9 @@ namespace NachoCore.Brain
 
         public static void MessageNotificationStatusUpdated (McEmailMessage emailMessage, DateTime notificationTime, double variance)
         {
+            if (!SCORING_ENABLED) {
+                return;
+            }
             if (!ValidEmailMessage (emailMessage) || (0 == variance)) {
                 return;
             }
@@ -121,6 +133,9 @@ namespace NachoCore.Brain
 
         public static void MessageReadStatusUpdated (McEmailMessage emailMessage, DateTime readTime, double variance)
         {
+            if (!SCORING_ENABLED) {
+                return;
+            }
             if (!ValidEmailMessage (emailMessage) || (0 == variance)) {
                 return;
             }
@@ -136,6 +151,9 @@ namespace NachoCore.Brain
 
         public static void MessageReplyStatusUpdated (McEmailMessage emailMessage, DateTime replyTime, double variance)
         {
+            if (!SCORING_ENABLED) {
+                return;
+            }
             if (!ValidEmailMessage (emailMessage) || (0 == variance)) {
                 return;
             }
