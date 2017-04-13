@@ -20,6 +20,12 @@ namespace NachoClient.AndroidClient
     public class HomeFragment : MainTabsActivity.TabFragment
     {
 
+        public override int MenuResource {
+            get {
+                return Resource.Menu.home;
+            }
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

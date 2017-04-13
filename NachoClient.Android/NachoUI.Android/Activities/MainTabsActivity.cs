@@ -14,6 +14,7 @@ using Android.Support.Design.Widget;
 using Android.Support.V4.View;
 using Android.Support.V4.App;
 using Android.Support.V7.Widget;
+using Android.Graphics.Drawables;
 
 using NachoCore;
 using NachoCore.Utils;
@@ -22,14 +23,16 @@ namespace NachoClient.AndroidClient
 {
 
     [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon")]
-    public class MainTabsActivity : Android.Support.V7.App.AppCompatActivity
+    public class MainTabsActivity : NcActivity
     {
+
+        private MainTabsPagerAdapter TabsAdapter;
 
         #region Navigation
 
         public static void Show (Context context)
         {
-            var intent = new Intent (context, typeof(MainTabsActivity));
+            var intent = new Intent (context, typeof (MainTabsActivity));
             intent.SetFlags (ActivityFlags.SingleTop | ActivityFlags.ClearTop);
             context.StartActivity (intent);
         }
@@ -71,7 +74,7 @@ namespace NachoClient.AndroidClient
 
             // Kind of a kludge, but bail out and show the setup activity if we aren't ready to start yet
             if (!NcApplication.ReadyToStartUI ()) {
-                GoToSetup ();
+                ShowSetup ();
                 return;
             }
 
@@ -80,8 +83,10 @@ namespace NachoClient.AndroidClient
 
             SetSupportActionBar (Toolbar);
 
-            ViewPager.Adapter = new MainTabsPagerAdapter (SupportFragmentManager);
+            ViewPager.Adapter = TabsAdapter = new MainTabsPagerAdapter (this, SupportFragmentManager);
             TabLayout.SetupWithViewPager (ViewPager);
+
+            UpdateToolbarAccountInfo ();
         }
 
         protected override void OnDestroy ()
@@ -99,15 +104,49 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Options Menu
+
+        public override bool OnCreateOptionsMenu (IMenu menu)
+        {
+            var tab = TabsAdapter.SelectedTab;
+            if (tab == null) {
+                return false;
+            }
+            MenuInflater.Inflate (tab.MenuResource, menu);
+            return true;
+        }
+
+        public override bool OnOptionsItemSelected (IMenuItem item)
+        {
+            if (item.ItemId == Resource.Id.action_settings) {
+                ShowSettings ();
+            }
+            return base.OnOptionsItemSelected (item);
+        }
+
+        #endregion
+
         #region Tabs
 
         class MainTabsPagerAdapter : FragmentPagerAdapter
         {
 
-            TabFragment[] Tabs = { null };
+            TabFragment [] Tabs = { null };
+            int SelectedPosition = 0;
+            MainTabsActivity MainTabsActivity;
 
-            public MainTabsPagerAdapter (FragmentManager fragmentManager) : base (fragmentManager)
+            public TabFragment SelectedTab {
+                get {
+                    if (SelectedPosition >= 0) {
+                        return Tabs [SelectedPosition];
+                    }
+                    return null;
+                }
+            }
+
+            public MainTabsPagerAdapter (MainTabsActivity activity, FragmentManager fragmentManager) : base (fragmentManager)
             {
+                MainTabsActivity = activity;
             }
 
             public override int Count {
@@ -146,6 +185,17 @@ namespace NachoClient.AndroidClient
             public override void FinishUpdate (View container)
             {
                 base.FinishUpdate (container);
+                var position = MainTabsActivity.ViewPager.CurrentItem;
+                if (position != SelectedPosition) {
+                    if (SelectedTab != null) {
+                        SelectedTab.OnUnselected ();
+                    }
+                    SelectedPosition = position;
+                    if (SelectedTab != null) {
+                        SelectedTab.OnSelected ();
+                    }
+                    MainTabsActivity.InvalidateOptionsMenu ();
+                }
             }
 
         }
@@ -165,12 +215,18 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            public void OnSelected ()
+            public virtual void OnSelected ()
             {
             }
 
-            public void OnUnselected ()
+            public virtual void OnUnselected ()
             {
+            }
+
+            public virtual int MenuResource {
+                get {
+                    return -1;
+                }
             }
 
         }
@@ -179,14 +235,36 @@ namespace NachoClient.AndroidClient
 
         #region Private Helpers
 
-        void GoToSetup ()
+        void ShowSetup ()
         {
-        	var intent = new Intent (this, typeof (SetupActivity));
-        	StartActivity (intent);
-        	Finish ();
+            var intent = SetupActivity.BuildIntent (this);
+            StartActivity (intent);
+            // If we're showing setup, it's because there aren't any accounts setup and we should
+            // finish immediately before trying to do anything else ourself
+            Finish ();
+        }
+
+        void ShowSettings ()
+        {
+            var intent = SettingsActivity.BuildIntent (this);
+            StartActivity (intent);
         }
 
         #endregion
+
+        void UpdateToolbarAccountInfo ()
+        {
+            var account = NcApplication.Instance.Account;
+            if (String.IsNullOrEmpty (account.DisplayName)) {
+                Toolbar.Title = account.EmailAddr;
+            } else {
+                Toolbar.Title = account.DisplayName;
+            }
+            // FIXME: figure out how to size properly
+            // var image = Util.GetAccountImage (this, account);
+            // Also, the white background on our account images looks dumb
+            // Toolbar.Logo = ScaledToolbarIcon (image);
+        }
 
     }
 }

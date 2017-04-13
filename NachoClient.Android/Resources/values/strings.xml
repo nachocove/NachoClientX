@@ -219,4 +219,5 @@
         <item>Recent Unread Messages</item>
         <item>Today\'s Unread Messages</item>
     </string-array>
+	<string name="action_settings">Settings</string>
 </resources>

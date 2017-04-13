@@ -11,11 +11,22 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.App;
+using Android.Graphics.Drawables;
 
 namespace NachoClient.AndroidClient
 {
     public static class Util
     {
+
+        public static Drawable GetAccountImage (Context context, McAccount account)
+        {
+            if (account.DisplayPortraitId == 0) {
+                var resource = GetAccountServiceImageId (account.AccountService);
+                return context.GetDrawable (resource);
+            }
+            var portrait = McPortrait.QueryById<McPortrait> (account.DisplayPortraitId);
+            return Drawable.CreateFromPath (portrait.GetFilePath ());
+        }
 
         public static int GetAccountServiceImageId (McAccount.AccountServiceEnum service)
         {

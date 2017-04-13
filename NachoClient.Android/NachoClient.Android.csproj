@@ -264,6 +264,7 @@
     <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
     <Compile Include="NachoUI.Android\Activities\HomeFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SettingsActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -292,7 +293,6 @@
     <None Include="NachoUI.Android\Activities\MessageListFragment.cs" />
     <None Include="NachoUI.Android\Activities\MoreActivity.cs" />
     <None Include="NachoUI.Android\Activities\MoreFragment.cs" />
-    <None Include="NachoUI.Android\Activities\SettingsActivity.cs" />
     <None Include="NachoUI.Android\Activities\SupportActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
@@ -310,9 +310,7 @@
     <None Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <None Include="NachoUI.Android\Activities\NoteActivity.cs" />
     <None Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
-    <None Include="NachoUI.Android\Activities\SettingsFragment.cs" />
     <None Include="NachoUI.Android\Activities\EventViewActivity.cs" />
-    <None Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
     <None Include="NachoUI.Android\Activities\NotificationChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\DaysToSyncChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeBaseActivity.cs" />
@@ -337,7 +335,6 @@
     <None Include="NachoUI.Android\Activities\AboutViewerActivity.cs" />
     <None Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
     <None Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
-    <None Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <None Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
     <None Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
     <None Include="NachoUI.Android\Activities\FileListActivity.cs" />
@@ -354,6 +351,9 @@
     <None Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SettingsFragment.cs" />
+    <None Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\raw\" />
@@ -1483,6 +1483,7 @@
     <AndroidResource Include="Resources\layout\MainTabsActivity.axml" />
     <AndroidResource Include="Resources\values\dimens.xml" />
     <AndroidResource Include="Resources\values\attrs.xml" />
+    <AndroidResource Include="Resources\menu\home.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

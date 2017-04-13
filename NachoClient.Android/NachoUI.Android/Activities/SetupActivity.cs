@@ -37,6 +37,18 @@ namespace NachoClient.AndroidClient
 
         StartupViewState currentState = StartupViewState.Startup;
 
+        #region Intents
+
+        public static Intent BuildIntent (Context context)
+        {
+            var intent = new Intent (context, typeof (SetupActivity));
+            return intent;
+        }
+
+        #endregion
+
+        #region Activity Lifecycle
+
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
@@ -76,6 +88,10 @@ namespace NachoClient.AndroidClient
             base.OnPause ();
             MainApplication.UnregisterHockeyAppUpdateManager ();
         }
+
+        #endregion
+
+        #region View Management
 
         void ShowScreenForApplicationState ()
         {
@@ -167,6 +183,10 @@ namespace NachoClient.AndroidClient
             currentState = StartupViewState.Migration;
         }
 
+        #endregion
+
+        #region Event Listener
+
         void StartListeningForApplicationStatus ()
         {
             if (!StatusIndCallbackIsSet) {
@@ -192,21 +212,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)
-        {
-            base.OnConfigurationChanged (newConfig);
-        }
-
-        public override void OnBackPressed ()
-        {
-            base.OnBackPressed ();
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            base.OnSaveInstanceState (outState);
-        }
-
+        #endregion
 
     }
 }
