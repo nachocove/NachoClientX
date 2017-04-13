@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Xamarin.Build.Download.0.4.2\build\Xamarin.Build.Download.props" Condition="Exists('..\packages\Xamarin.Build.Download.0.4.2\build\Xamarin.Build.Download.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -15,7 +16,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>Nacho Mail</AssemblyName>
-    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v7.1</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
     <ReleaseVersion>2.1.0</ReleaseVersion>
@@ -59,6 +60,7 @@
       </CustomCommands>
     </CustomCommands>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <JavaOptions></JavaOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -116,27 +118,6 @@
       <HintPath>HockeyApp\hockeyappandroid-3.6.2.0\lib\android\HockeyApp.Android.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Android.Export" />
-    <Reference Include="Xamarin.Android.Support.v4">
-      <HintPath>..\packages\Xamarin.Android.Support.v4.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.RecyclerView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.MediaRouter">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.MediaRouter.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.MediaRouter.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.CardView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v13">
-      <HintPath>..\packages\Xamarin.Android.Support.v13.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.Design">
-      <HintPath>..\packages\Xamarin.Android.Support.Design.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.Design.dll</HintPath>
-    </Reference>
     <Reference Include="PInvoke.Windows.Core">
       <HintPath>..\packages\PInvoke.Windows.Core.0.3.2\lib\portable-net45+win+wpa81+MonoAndroid10+xamarinios10+MonoTouch10\PInvoke.Windows.Core.dll</HintPath>
     </Reference>
@@ -155,11 +136,53 @@
     <Reference Include="PCLCrypto">
       <HintPath>..\packages\PCLCrypto.2.0.147\lib\MonoAndroid23\PCLCrypto.dll</HintPath>
     </Reference>
-    <Reference Include="Xamarin.Android.Support.CustomTabs">
-      <HintPath>..\packages\Xamarin.Android.Support.CustomTabs.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.CustomTabs.dll</HintPath>
-    </Reference>
     <Reference Include="Xamarin.Auth">
       <HintPath>..\packages\Xamarin.Auth.1.4.0.1\lib\MonoAndroid10\Xamarin.Auth.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Compat">
+      <HintPath>..\packages\Xamarin.Android.Support.Compat.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Compat.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.CustomTabs">
+      <HintPath>..\packages\Xamarin.Android.Support.CustomTabs.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.CustomTabs.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Core.UI">
+      <HintPath>..\packages\Xamarin.Android.Support.Core.UI.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Core.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Core.Utils">
+      <HintPath>..\packages\Xamarin.Android.Support.Core.Utils.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Core.Utils.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Media.Compat">
+      <HintPath>..\packages\Xamarin.Android.Support.Media.Compat.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Media.Compat.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Fragment">
+      <HintPath>..\packages\Xamarin.Android.Support.Fragment.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Fragment.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Transition">
+      <HintPath>..\packages\Xamarin.Android.Support.Transition.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Transition.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.Palette">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.Palette.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.v7.Palette.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.RecyclerView">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Vector.Drawable">
+      <HintPath>..\packages\Xamarin.Android.Support.Vector.Drawable.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Vector.Drawable.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Animated.Vector.Drawable">
+      <HintPath>..\packages\Xamarin.Android.Support.Animated.Vector.Drawable.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Animated.Vector.Drawable.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Design">
+      <HintPath>..\packages\Xamarin.Android.Support.Design.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.Design.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v4">
+      <HintPath>..\packages\Xamarin.Android.Support.v4.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.v4.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.CardView">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.25.1.1\lib\MonoAndroid70\Xamarin.Android.Support.v7.CardView.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -182,26 +205,6 @@
     <Compile Include="NachoPlatform.Android\CloudHandlerAndroid.cs" />
     <Compile Include="NachoPlatform.Android\NcFileHandlerAndroid.cs" />
     <Compile Include="NachoPlatform.Android\MdmConfigAndroid.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChooseProviderFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ComposeFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\CredentialsFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\EventViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\GoogleSignInFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\InboxActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\IntentFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\LaunchActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\MainActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageComposeActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageListFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MigrationFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\PriorityFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\RecoveryFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\StartupFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\WaitingFragment.cs" />
     <Compile Include="NachoUI.Android\Support\RoundedImageView.cs" />
     <Compile Include="NachoUI.Android\Support\VerticalViewPager.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
@@ -210,110 +213,57 @@
     <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />
     <Compile Include="NachoUI.Android\Support\SwipeMenuListView.cs" />
     <Compile Include="NachoUI.Android\Support\A.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactsActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\EventListFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\CalendarActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\Support\Util.cs" />
-    <Compile Include="NachoUI.Android\Activities\GettingStartedFragment.cs" />
     <Compile Include="NachoUI.Android\Support\NcAlertView.cs" />
-    <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
-    <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
-    <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AboutActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\SupportActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\SupportFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
     <Compile Include="NachoUI.Android\Support\MessageComposeHeaderView.cs" />
-    <Compile Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
     <Compile Include="NachoUI.Android\Support\IntentHelper.cs" />
-    <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <Compile Include="NachoUI.Android\Support\NcAttachmentView.cs" />
-    <Compile Include="NachoUI.Android\Activities\NoteActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\SettingsActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\EventViewActivity.cs" />
     <Compile Include="NachoUI.Android\Support\EmailAddressField.cs" />
-    <Compile Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\NotificationChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\DaysToSyncChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttendeeBaseActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttendeeViewActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttendeeEditActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttendeeListBaseFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttendeeListViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AttendeeListEditFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ValidationFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ValidationActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\RemoveAccountActivity.cs" />
     <Compile Include="NachoPlatform.Android\DnsAndroid.cs" />
     <Compile Include="NachoUI.Android\Support\ButtonBar.cs" />
-    <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
     <Compile Include="NachoUI.Android\Support\MessageComposeAttachmentsView.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactViewActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactEmailChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\FilePickerFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\CertAskFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Support\LifecycleSpy.cs" />
     <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
-    <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
     <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
-    <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MoreFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\AboutViewerActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
     <Compile Include="NachoPlatform.Android\NcHttpClientAndroid.cs" />
     <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
-    <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
     <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
-    <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
     <Compile Include="NachoUI.Android\Support\HotEventAdapter.cs" />
     <Compile Include="NachoUI.Android\Support\SwipeMenuRecyclerView.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
     <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
-    <Compile Include="NachoUI.Android\Activities\FileListActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\FileListFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactEditActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactEditFragment.cs" />
     <Compile Include="NachoPlatform.Android\PushAssistAndroid.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactLabelChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
     <Compile Include="NachoUI.Android\Support\AttachmentHelper.cs" />
     <Compile Include="NachoUI.Android\Support\DatePicker.cs" />
     <Compile Include="NachoUI.Android\Support\TimePicker.cs" />
-    <Compile Include="NachoUI.Android\Activities\InboxFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SetupActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MainTabsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageComposeActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ComposeFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\IntentFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\FilePickerFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\StartupFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\LaunchActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MigrationFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\RecoveryFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\GettingStartedFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\SalesforceSignInFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\SalesforceSignInActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\SalesforceSettingsActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\SalesforceSettingsFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChatListActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChatListFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChatViewActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ChooseProviderFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\CredentialsFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\WaitingFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\CertAskFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\GoogleSignInFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
+    <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
+    <Compile Include="NachoUI.Android\Activities\HomeFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -329,6 +279,81 @@
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
+    <None Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AboutActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AboutFragment.cs" />
+    <None Include="NachoUI.Android\Activities\CalendarActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ChatListActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ChatListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ContactsActivity.cs" />
+    <None Include="NachoUI.Android\Activities\EventListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\FileListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\FoldersActivity.cs" />
+    <None Include="NachoUI.Android\Activities\MessageListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\MoreActivity.cs" />
+    <None Include="NachoUI.Android\Activities\MoreFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SettingsActivity.cs" />
+    <None Include="NachoUI.Android\Activities\SupportActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\EventViewFragment.cs" />
+    <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
+    <None Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
+    <None Include="NachoUI.Android\Activities\PriorityFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
+    <None Include="NachoUI.Android\Activities\FolderListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SupportFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
+    <None Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
+    <None Include="NachoUI.Android\Activities\EventEditActivity.cs" />
+    <None Include="NachoUI.Android\Activities\NowListActivity.cs" />
+    <None Include="NachoUI.Android\Activities\NoteActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SettingsFragment.cs" />
+    <None Include="NachoUI.Android\Activities\EventViewActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
+    <None Include="NachoUI.Android\Activities\NotificationChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\DaysToSyncChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\AttendeeBaseActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AttendeeViewActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AttendeeEditActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AttendeeListBaseFragment.cs" />
+    <None Include="NachoUI.Android\Activities\AttendeeListViewFragment.cs" />
+    <None Include="NachoUI.Android\Activities\AttendeeListEditFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ValidationFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ValidationActivity.cs" />
+    <None Include="NachoUI.Android\Activities\RemoveAccountActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ContactViewActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ContactEmailChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
+    <None Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
+    <None Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
+    <None Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
+    <None Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AboutViewerActivity.cs" />
+    <None Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
+    <None Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
+    <None Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
+    <None Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
+    <None Include="NachoUI.Android\Activities\FileListActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ContactEditActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ContactEditFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ContactLabelChooserFragment.cs" />
+    <None Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
+    <None Include="NachoUI.Android\Activities\InboxFolderActivity.cs" />
+    <None Include="NachoUI.Android\Activities\SalesforceSignInFragment.cs" />
+    <None Include="NachoUI.Android\Activities\SalesforceSignInActivity.cs" />
+    <None Include="NachoUI.Android\Activities\SalesforceSettingsActivity.cs" />
+    <None Include="NachoUI.Android\Activities\SalesforceSettingsFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ChatViewActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
+    <None Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
+    <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\raw\" />
@@ -1455,10 +1480,29 @@
     <AndroidResource Include="Resources\drawable-mdpi\more_contacts.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\more_contacts.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\more_contacts.png" />
+    <AndroidResource Include="Resources\layout\MainTabsActivity.axml" />
+    <AndroidResource Include="Resources\values\dimens.xml" />
+    <AndroidResource Include="Resources\values\attrs.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
   </ItemGroup>
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
+  <Import Project="..\packages\Xamarin.Build.Download.0.4.2\build\Xamarin.Build.Download.targets" Condition="Exists('..\packages\Xamarin.Build.Download.0.4.2\build\Xamarin.Build.Download.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Compat.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Compat.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Compat.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Compat.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.CustomTabs.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.CustomTabs.targets" Condition="Exists('..\packages\Xamarin.Android.Support.CustomTabs.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.CustomTabs.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Core.UI.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Core.UI.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Core.UI.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Core.UI.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Core.Utils.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Core.Utils.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Core.Utils.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Core.Utils.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Media.Compat.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Media.Compat.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Media.Compat.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Media.Compat.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Fragment.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Fragment.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Fragment.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Fragment.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Transition.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Transition.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Transition.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Transition.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.v7.Palette.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.Palette.targets" Condition="Exists('..\packages\Xamarin.Android.Support.v7.Palette.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.Palette.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.v7.RecyclerView.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.RecyclerView.targets" Condition="Exists('..\packages\Xamarin.Android.Support.v7.RecyclerView.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.RecyclerView.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Vector.Drawable.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Vector.Drawable.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Vector.Drawable.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Vector.Drawable.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Animated.Vector.Drawable.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Animated.Vector.Drawable.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Animated.Vector.Drawable.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Animated.Vector.Drawable.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.v7.AppCompat.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.AppCompat.targets" Condition="Exists('..\packages\Xamarin.Android.Support.v7.AppCompat.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.AppCompat.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.Design.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Design.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Design.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.Design.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.v4.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v4.targets" Condition="Exists('..\packages\Xamarin.Android.Support.v4.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v4.targets')" />
+  <Import Project="..\packages\Xamarin.Android.Support.v7.CardView.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.CardView.targets" Condition="Exists('..\packages\Xamarin.Android.Support.v7.CardView.25.1.1\build\MonoAndroid70\Xamarin.Android.Support.v7.CardView.targets')" />
 </Project>

@@ -205,22 +205,22 @@ namespace NachoClient.AndroidClient
 
             int eventId = Intent.GetIntExtra (EXTRA_EVENT_ID, 0);
             var ev = McEvent.QueryById<McEvent> (eventId);
-
-            Intent eventIntent;
-            if (null == ev) {
-                eventIntent = NcTabBarActivity.CalendarIntent (this);
-            } else {
-                eventIntent = EventViewActivity.ShowEventIntent (this, ev);
-            }
-            eventIntent.SetFlags (ActivityFlags.NoAnimation);
-            if (!NcTabBarActivity.TabBarWasCreated && null != ev) {
-                // Since the app was just launched, pressing Back from the event detail view will return to
-                // the home screen, which is not the desired behavior.  To keep the user in the app, insert
-                // a calendar view activity into the activity back stack.
-                StartActivities (new Intent[] { NcTabBarActivity.CalendarIntent (this), eventIntent });
-            } else {
-                StartActivity (eventIntent);
-            }
+            // FIXME: NEWUI
+            //Intent eventIntent;
+            //if (null == ev) {
+            //    eventIntent = NcTabBarActivity.CalendarIntent (this);
+            //} else {
+            //    eventIntent = EventViewActivity.ShowEventIntent (this, ev);
+            //}
+            //eventIntent.SetFlags (ActivityFlags.NoAnimation);
+            //if (!NcTabBarActivity.TabBarWasCreated && null != ev) {
+            //    // Since the app was just launched, pressing Back from the event detail view will return to
+            //    // the home screen, which is not the desired behavior.  To keep the user in the app, insert
+            //    // a calendar view activity into the activity back stack.
+            //    StartActivities (new Intent[] { NcTabBarActivity.CalendarIntent (this), eventIntent });
+            //} else {
+            //    StartActivity (eventIntent);
+            //}
             Finish ();
         }
     }

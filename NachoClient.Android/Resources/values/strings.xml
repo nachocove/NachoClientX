@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Hello World, Click Me!</string>
-    <string name="app_name">NachoMailPrototype</string>
-    <string name="app_name">NavigationView Demo</string>
+    <string name="app_name">Nacho Mail</string>
     <string name="cd_logo">logo</string>
     <string name="open">open navigation drawer</string>
     <string name="close">close navigation drawer</string>

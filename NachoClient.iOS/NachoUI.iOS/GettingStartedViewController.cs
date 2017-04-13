@@ -42,7 +42,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public bool StartWithTutorial;
         AccountSyncingViewController syncingViewController;
         EventHandler StartEventHandler;
         byte[] prefetchedImageBytes = null;
@@ -94,7 +93,7 @@ namespace NachoClient.iOS
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             var mdmAccount = McAccount.GetMDMAccount ();
             EventHandler startEventHandler = null;
-            if (accountBeingConfigured != null || StartWithTutorial) {
+            if (accountBeingConfigured != null) {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with account being configured (or just tutorial left)");
                 introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
                 getStartedButton.SetTitle ("Continue", UIControlState.Normal);

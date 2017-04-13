@@ -39,30 +39,30 @@ namespace NachoClient.AndroidClient
 
             // In case notification started the app
             MainApplication.OneTimeStartup ("NotificationActivity");
+            // FIXME: NEWUI
+            //if (null == message) {
+            //    var inboxIntent = NcTabBarActivity.InboxIntent (this);
+            //    StartActivity (inboxIntent);
+            //    Finish ();
+            //    return;
+            //}
 
-            if (null == message) {
-                var inboxIntent = NcTabBarActivity.InboxIntent (this);
-                StartActivity (inboxIntent);
-                Finish ();
-                return;
-            }
+            //NcTask.Run (() => {
+            //    BackEnd.Instance.SendEmailBodyFetchHint(message.AccountId, message.Id);
+            //}, "NotificationActivity.SendEmailBodyFetchHint");
 
-            NcTask.Run (() => {
-                BackEnd.Instance.SendEmailBodyFetchHint(message.AccountId, message.Id);
-            }, "NotificationActivity.SendEmailBodyFetchHint");
+            //// Create show message intent
+            //var thread = new McEmailMessageThread ();
+            //thread.FirstMessageId = message.Id;
+            //thread.MessageCount = 1;
+            //var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+            //intent.SetFlags (ActivityFlags.NoAnimation);
 
-            // Create show message intent
-            var thread = new McEmailMessageThread ();
-            thread.FirstMessageId = message.Id;
-            thread.MessageCount = 1;
-            var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-            intent.SetFlags (ActivityFlags.NoAnimation);
-
-            if (NcTabBarActivity.TabBarWasCreated) {
-                StartActivity (intent);
-            } else {
-                StartActivities (new Intent[] { NcTabBarActivity.InboxIntent (this), intent });
-            }
+            //if (NcTabBarActivity.TabBarWasCreated) {
+            //    StartActivity (intent);
+            //} else {
+            //    StartActivities (new Intent[] { NcTabBarActivity.InboxIntent (this), intent });
+            //}
             Finish ();
         }
 

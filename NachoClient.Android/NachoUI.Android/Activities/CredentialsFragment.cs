@@ -293,7 +293,8 @@ namespace NachoClient.AndroidClient
         void SupportButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "SupportButton_Click");
-            StartActivity (SupportActivity.IntentWithoutToolbar(this.Activity));
+            // FIXME: NEWUI
+            //StartActivity (SupportActivity.IntentWithoutToolbar(this.Activity));
         }
 
         void AdvancedButton_Click (object sender, EventArgs e)

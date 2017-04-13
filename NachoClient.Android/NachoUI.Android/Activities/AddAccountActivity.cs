@@ -122,9 +122,7 @@ namespace NachoClient.AndroidClient
                 LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
                 NcApplication.Instance.Account = account;
             }
-            var intent = NcTabBarActivity.HotListIntent (this);
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            MainTabsActivity.Show (this);
             Finish ();
         }
 

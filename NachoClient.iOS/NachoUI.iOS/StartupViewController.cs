@@ -103,27 +103,12 @@ namespace NachoClient.iOS
         {
             if (NcApplication.Instance.IsUp ()) {
                 StopListeningForApplicationStatus ();
-                var configAccount = McAccount.GetAccountBeingConfigured ();
-                var deviceAccount = McAccount.GetDeviceAccount ();
-                var mdmAccount = McAccount.GetMDMAccount ();
-                if (null != configAccount) {
-                    Log.Info (Log.LOG_UI, "StartupViewController: found account being configured");
-                    ShowSetupScreen ();
-                } else if (null == mdmAccount && NcMdmConfig.Instance.IsPopulated) {
-                    ShowSetupScreen ();
-                } else if (null == NcApplication.Instance.Account) {
-                    Log.Info (Log.LOG_UI, "StartupViewController: null NcApplication.Instance.Account");
-                    ShowSetupScreen ();
-                } else if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
-                    Log.Info (Log.LOG_UI, "StartupViewController: NcApplication.Instance.Account is deviceAccount");
-                    ShowSetupScreen ();
-                } else if (!NcApplication.ReadyToStartUI ()) {
-                    Log.Info (Log.LOG_UI, "StartupViewController: not ready to start UI, assuming tutorial still needs display");
-                    // This should only be if the app closed before the tutorial was dismissed;
-                    ShowSetupScreen (true);
-                } else {
+                if (NcApplication.ReadyToStartUI ()) {
                     Log.Info (Log.LOG_UI, "StartupViewController: Ready to go, showing application");
                     ShowApplication ();
+                } else {
+                    Log.Info (Log.LOG_UI, "StartupViewController: not ready to start UI, showing setup");
+                    ShowSetupScreen ();
                 }
             } else {
                 StartListeningForApplicationStatus ();
@@ -185,7 +170,7 @@ namespace NachoClient.iOS
             currentState = StartupViewState.Recovery;
         }
 
-        void ShowSetupScreen (bool startWithTutorial = false)
+        void ShowSetupScreen ()
         {
             if (currentState == StartupViewState.Setup) {
                 return;
@@ -194,7 +179,6 @@ namespace NachoClient.iOS
             var storyboard = UIStoryboard.FromName ("Welcome", null);
             UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
             var gettingStartedViewController = (GettingStartedViewController)vc.ViewControllers [0];
-            gettingStartedViewController.StartWithTutorial = startWithTutorial;
             gettingStartedViewController.AccountDelegate = this;
             if (currentState == StartupViewState.Startup) {
                 gettingStartedViewController.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);

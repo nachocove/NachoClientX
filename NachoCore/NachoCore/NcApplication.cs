@@ -1112,9 +1112,6 @@ namespace NachoCore
             if (null == mdmAccount && NcMdmConfig.Instance.IsPopulated) {
                 return false;
             }
-            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
-                return false;
-            }
             return true;
         }
 
