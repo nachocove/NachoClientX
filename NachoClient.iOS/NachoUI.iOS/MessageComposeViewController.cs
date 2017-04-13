@@ -194,6 +194,7 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
             RegisterForNotifications ();
             if (!HasShownOnce) {
                 Composer.StartPreparingMessage ();
@@ -215,7 +216,6 @@ namespace NachoClient.iOS
                 }
                 HasShownOnce = true;
             }
-            AdoptTheme (Theme.Active);
 
         }
 
