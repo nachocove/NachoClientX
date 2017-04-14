@@ -265,6 +265,10 @@
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
     <Compile Include="NachoUI.Android\Activities\HomeFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\SettingsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\InboxFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AllMailFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\CalendarFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -297,7 +301,6 @@
     <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\EventViewFragment.cs" />
-    <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
     <None Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\PriorityFragment.cs" />
     <None Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
@@ -354,6 +357,7 @@
     <None Include="NachoUI.Android\Activities\SettingsFragment.cs" />
     <None Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <None Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
+    <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\raw\" />
@@ -1484,6 +1488,19 @@
     <AndroidResource Include="Resources\values\dimens.xml" />
     <AndroidResource Include="Resources\values\attrs.xml" />
     <AndroidResource Include="Resources\menu\home.xml" />
+    <AndroidResource Include="Resources\menu\inbox.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_new_mail_filled.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_new_mail_line.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_new_mail_filled.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_new_mail_line.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_new_mail_filled.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_new_mail_line.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_new_mail_filled.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_new_mail_line.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_hamburger.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_hamburger.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_hamburger.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_hamburger.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

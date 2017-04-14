@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "@string/settings", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]
+    [Activity (Label = "@string/settings", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize, ParentActivity=typeof(MainTabsActivity))]
     public class SettingsActivity : NcActivity
     {
         //private const string SETTINGS_FRAGMENT_TAG = "SettingsFragment";
@@ -56,6 +56,7 @@ namespace NachoClient.AndroidClient
             SetContentView (Resource.Layout.SettingsActivity);
             FindSubviews ();
             SetSupportActionBar (Toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
 
             //if (null == bundle || null == FragmentManager.FindFragmentByTag<SettingsFragment> (SETTINGS_FRAGMENT_TAG)) {
             //    var settingsFragment = SettingsFragment.newInstance ();

@@ -27,6 +27,7 @@ namespace NachoClient.AndroidClient
     {
 
         private MainTabsPagerAdapter TabsAdapter;
+        private EventHandler ActionButtonClickHandler;
 
         #region Navigation
 
@@ -41,14 +42,14 @@ namespace NachoClient.AndroidClient
 
         #region Subviews
 
-        private FloatingActionButton Fab;
+        private FloatingActionButton ActionButton;
         private Toolbar Toolbar;
         private ViewPager ViewPager;
         private TabLayout TabLayout;
 
         private void FindSubviews ()
         {
-            Fab = FindViewById (Resource.Id.fab) as FloatingActionButton;
+            ActionButton = FindViewById (Resource.Id.fab) as FloatingActionButton;
             Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
             ViewPager = FindViewById (Resource.Id.container) as ViewPager;
             TabLayout = FindViewById (Resource.Id.tabs) as TabLayout;
@@ -56,7 +57,7 @@ namespace NachoClient.AndroidClient
 
         private void ClearSubviews ()
         {
-            Fab = null;
+            ActionButton = null;
             Toolbar = null;
             ViewPager = null;
             TabLayout = null;
@@ -82,8 +83,11 @@ namespace NachoClient.AndroidClient
             FindSubviews ();
 
             SetSupportActionBar (Toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+            SupportActionBar.SetHomeAsUpIndicator (Resource.Drawable.action_hamburger);
 
-            ViewPager.Adapter = TabsAdapter = new MainTabsPagerAdapter (this, SupportFragmentManager);
+            TabsAdapter = new MainTabsPagerAdapter (this, SupportFragmentManager);
+            ViewPager.Adapter = TabsAdapter;
             TabLayout.SetupWithViewPager (ViewPager);
 
             UpdateToolbarAccountInfo ();
@@ -112,7 +116,10 @@ namespace NachoClient.AndroidClient
             if (tab == null) {
                 return false;
             }
-            MenuInflater.Inflate (tab.MenuResource, menu);
+            if (tab.TabMenuResource < 0) {
+                return false;
+            }
+            MenuInflater.Inflate (tab.TabMenuResource, menu);
             return true;
         }
 
@@ -120,8 +127,46 @@ namespace NachoClient.AndroidClient
         {
             if (item.ItemId == Resource.Id.action_settings) {
                 ShowSettings ();
+            } else if (item.ItemId == Android.Resource.Id.Home) {
+                ShowAccountSwitcher ();
+                return true;
             }
             return base.OnOptionsItemSelected (item);
+        }
+
+        #endregion
+
+        #region Floating Action Button
+
+        public void HideActionButton ()
+        {
+            ActionButton.Hide ();
+        }
+
+        public void ShowActionButton (int imageResource, EventHandler clickHandler, bool isEnabled = true)
+        {
+            ActionButton.SetImageResource (imageResource);
+            ActionButton.Show ();
+            if (ActionButtonClickHandler != null) {
+                ActionButton.Click -= ActionButtonClickHandler;
+            }
+            ActionButtonClickHandler = clickHandler;
+            ActionButton.Click += clickHandler;
+            if (isEnabled) {
+                EnableActionButton ();
+            } else {
+                DisableActionButton ();
+            }
+        }
+
+        public void DisableActionButton ()
+        {
+            ActionButton.Enabled = false;
+        }
+
+        public void EnableActionButton ()
+        {
+            ActionButton.Enabled = true;
         }
 
         #endregion
@@ -131,14 +176,38 @@ namespace NachoClient.AndroidClient
         class MainTabsPagerAdapter : FragmentPagerAdapter
         {
 
-            TabFragment [] Tabs = { null };
-            int SelectedPosition = 0;
+            class TabInfo
+            {
+                public string Name;
+                public Type FragmentType;
+                public WeakReference<Fragment> CachedFragmentInstance = new WeakReference<Fragment>(null);
+
+                public Tab Tab {
+                    get {
+                        Fragment fragment;
+                        if (CachedFragmentInstance.TryGetTarget (out fragment)) {
+                            return fragment as Tab;
+                        }
+                        return null;
+                    }
+                }
+            }
+
+            TabInfo [] Tabs = {
+                //new TabInfo () { Name = "Home",     FragmentType=typeof (HomeFragment) },
+                new TabInfo () { Name = "Inbox",    FragmentType=typeof (InboxFragment) },
+                new TabInfo () { Name = "All",      FragmentType=typeof (AllMailFragment) },
+                new TabInfo () { Name = "Events",   FragmentType=typeof (CalendarFragment) },
+                new TabInfo () { Name = "People",   FragmentType=typeof (ContactsFragment) }
+            };
+
+            int SelectedPosition = -1;
             MainTabsActivity MainTabsActivity;
 
-            public TabFragment SelectedTab {
+            public Tab SelectedTab {
                 get {
                     if (SelectedPosition >= 0) {
-                        return Tabs [SelectedPosition];
+                        return Tabs [SelectedPosition].Tab;
                     }
                     return null;
                 }
@@ -151,48 +220,54 @@ namespace NachoClient.AndroidClient
 
             public override int Count {
                 get {
-                    return 1;
+                    return Tabs.Length;
                 }
             }
 
             public override Fragment GetItem (int position)
             {
-                TabFragment fragment = null;
-                switch (position) {
-                case 0:
-                    fragment = new HomeFragment ();
-                    break;
-                default:
-                    NcAssert.CaseError (String.Format ("Unexpected MainTabsActivity tab position: {0}", position));
-                    break;
+                var info = Tabs [position];
+                Fragment fragment;
+                if (!info.CachedFragmentInstance.TryGetTarget (out fragment)) {
+                    fragment = System.Activator.CreateInstance (info.FragmentType) as Fragment;
+                    info.CachedFragmentInstance.SetTarget (fragment);
                 }
-                Tabs [position] = fragment;
                 return fragment;
             }
 
+            // The idea here was to remove our CachedFragmentInstance when it was no longer needed, and rely on
+            // GetItem to re-populate the item once it's needed again.  However, while Android calls DestroyItem,
+            // it doesn't ever re-call GetItem.  Maybe there's something I'm missing, but for now we'll just hold
+            // on the the CachedFragmentInstance forever
+            //public override void DestroyItem (ViewGroup container, int position, Java.Lang.Object @object)
+            //{
+            //    base.DestroyItem (container, position, @object);
+            //    var info = Tabs [position];
+            //    info.CachedFragmentInstance = null;
+            //}
+
             public override Java.Lang.ICharSequence GetPageTitleFormatted (int position)
             {
-                switch (position) {
-                case 0:
-                    return new Java.Lang.String ("Home");
-                default:
-                    NcAssert.CaseError (String.Format ("Unexpected MainTabsActivity tab position: {0}", position));
-                    break;
-                }
-                return null;
+                var info = Tabs [position];
+                return new Java.Lang.String (info.Name);
             }
 
-            public override void FinishUpdate (View container)
+            public override float GetPageWidth (int position)
+            {
+                return 1;
+            }
+
+            public override void FinishUpdate (ViewGroup container)
             {
                 base.FinishUpdate (container);
                 var position = MainTabsActivity.ViewPager.CurrentItem;
                 if (position != SelectedPosition) {
                     if (SelectedTab != null) {
-                        SelectedTab.OnUnselected ();
+                        SelectedTab.OnTabUnselected (MainTabsActivity);
                     }
                     SelectedPosition = position;
                     if (SelectedTab != null) {
-                        SelectedTab.OnSelected ();
+                        SelectedTab.OnTabSelected (MainTabsActivity);
                     }
                     MainTabsActivity.InvalidateOptionsMenu ();
                 }
@@ -200,34 +275,13 @@ namespace NachoClient.AndroidClient
 
         }
 
-        public class TabFragment : Fragment
+        public interface Tab
         {
 
-            public MainTabsActivity TabsActivity {
-                get {
-                    return Activity as MainTabsActivity;
-                }
-            }
+            void OnTabSelected (MainTabsActivity tabActivity);
+            void OnTabUnselected (MainTabsActivity tabActivity);
 
-            public FloatingActionButton Fab {
-                get {
-                    return TabsActivity.Fab;
-                }
-            }
-
-            public virtual void OnSelected ()
-            {
-            }
-
-            public virtual void OnUnselected ()
-            {
-            }
-
-            public virtual int MenuResource {
-                get {
-                    return -1;
-                }
-            }
+            int TabMenuResource { get; }
 
         }
 
@@ -248,6 +302,11 @@ namespace NachoClient.AndroidClient
         {
             var intent = SettingsActivity.BuildIntent (this);
             StartActivity (intent);
+        }
+
+        void ShowAccountSwitcher ()
+        {
+            ShowSettings ();
         }
 
         #endregion

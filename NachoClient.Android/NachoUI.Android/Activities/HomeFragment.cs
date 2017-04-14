@@ -17,14 +17,29 @@ using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
-    public class HomeFragment : MainTabsActivity.TabFragment
+    public class HomeFragment : Fragment, MainTabsActivity.Tab
     {
 
-        public override int MenuResource {
+        #region Tab Interface
+
+        public int TabMenuResource {
             get {
                 return Resource.Menu.home;
             }
         }
+
+        public void OnTabSelected (MainTabsActivity tabActivity)
+        {
+            tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_mail_filled, ActionButtonClicked);
+        }
+
+        public void OnTabUnselected (MainTabsActivity tabActivity)
+        {
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -40,5 +55,24 @@ namespace NachoClient.AndroidClient
 
             return base.OnCreateView (inflater, container, savedInstanceState);
         }
+
+        #endregion
+
+        #region User Actions
+
+        void ActionButtonClicked (object sender, EventArgs args)
+        {
+            ShowMessageCompose ();
+        }
+
+        #endregion
+
+        #region Private Helpers 
+
+        void ShowMessageCompose ()
+        {
+        }
+
+        #endregion
     }
 }
