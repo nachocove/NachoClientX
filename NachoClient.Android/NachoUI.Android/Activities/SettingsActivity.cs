@@ -74,6 +74,26 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        protected override void OnDestroy ()
+        {
+            ClearSubviews ();
+            base.OnDestroy ();
+        }
+
+        #endregion
+
+        #region Menu
+
+        public override bool OnCreateOptionsMenu (IMenu menu)
+        {
+            return base.OnCreateOptionsMenu (menu);
+        }
+
+        public override bool OnOptionsItemSelected (IMenuItem item)
+        {
+            return base.OnOptionsItemSelected (item);
+        }
+
         #endregion
 
         #region General Settings

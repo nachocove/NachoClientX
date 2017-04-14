@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="?attr/listPreferredItemPaddingLeft"
+        android:paddingRight="?attr/listPreferredItemPaddingRight"
+        android:paddingTop="?attr/listPreferredItemPaddingLeft"
+        android:paddingBottom="?attr/listPreferredItemPaddingLeft">
+        <nachoclient.androidclient.RoundedImageView
+            android:id="@+id/account_icon"
+            android:src="@drawable/avatar_hotmail"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:scaleType="fitXY"
+            android:layout_gravity="center" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1.0"
+            android:layout_height="fill_parent">
+            <TextView
+                android:id="@+id/account_name"
+                android:text="@string/demo_account"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:textAppearance="?attr/textAppearanceListItem" />
+            <TextView
+                android:id="@+id/account_email"
+                android:text="@string/demo_email"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:textAppearance="?attr/textAppearanceListItemDetail" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/account_error_indicator"
+            android:src="@drawable/error_indicator"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:scaleType="fitXY"
+            android:layout_gravity="center" />
+    </LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListSeparator" />
+</LinearLayout>

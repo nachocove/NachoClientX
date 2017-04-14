@@ -19,6 +19,227 @@ namespace NachoClient.AndroidClient
 {
     public class SettingsFragment : Fragment
     {
+
+        #region Subviews
+
+        RecyclerView RecyclerView;
+        SettingsAdapter ItemsAdapter;
+
+        void FindSubviews (View view)
+        {
+            RecyclerView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+        }
+
+        void ClearSubviews ()
+        {
+            RecyclerView = null;
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.SettingsFragment, container, false);
+            FindSubviews (view);
+
+            var context = RecyclerView.Context;
+            RecyclerView.SetLayoutManager(new LinearLayoutManager (Context));
+            ItemsAdapter = new SettingsAdapter ();
+            RecyclerView.SetAdapter (ItemsAdapter);
+
+            return view;
+        }
+
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
+
+        #endregion
+
+        #region User Actions
+
+        void ItemClicked (object sender, AdapterView.ItemClickEventArgs e)
+        {
+        }
+
+        #endregion
+
+        #region Item Adapter
+
+        enum SettingsViewTypes
+        {
+        	Basic,
+        	Account
+        }
+
+        class BasicItemViewHolder : RecyclerView.ViewHolder
+        {
+
+            TextView NameTextView;
+            TextView DetailTextView;
+
+            public static BasicItemViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.SettingsListBasicItem, parent, false);
+                return new BasicItemViewHolder (view);
+            }
+
+            public BasicItemViewHolder (View view) : base (view)
+            {
+                NameTextView = view.FindViewById (Resource.Id.setting_name) as TextView;
+                DetailTextView = view.FindViewById (Resource.Id.setting_detail) as TextView;
+            }
+
+            public void SetLabels (string name, string detail = null)
+            {
+                NameTextView.Text = name;
+                if (String.IsNullOrEmpty (detail)) {
+                    DetailTextView.Visibility = ViewStates.Gone;
+                } else {
+                    DetailTextView.Visibility = ViewStates.Visible;
+                    DetailTextView.Text = detail;
+                }
+            }
+
+        }
+
+        class AccountViewHolder : RecyclerView.ViewHolder
+        {
+            ImageView AvatarImageView;
+            TextView NameTextView;
+            TextView AddressTextView;
+            View ErrorIndicatorView;
+
+            public static AccountViewHolder Create (ViewGroup parent)
+            {
+            	var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.SettingsListAccountItem, parent, false);
+                return new AccountViewHolder (view);
+            }
+
+            public AccountViewHolder (View view) : base (view)
+            {
+                AvatarImageView = view.FindViewById (Resource.Id.account_icon) as ImageView;
+                NameTextView = view.FindViewById (Resource.Id.account_name) as TextView;
+                AddressTextView = view.FindViewById (Resource.Id.account_email) as TextView;
+                ErrorIndicatorView = view.FindViewById (Resource.Id.account_error_indicator);
+            }
+
+            public void SetAccount (McAccount account)
+            {
+                AvatarImageView.SetImageDrawable (Util.GetAccountImage (AvatarImageView.Context, account));
+                if (String.IsNullOrEmpty (account.DisplayName)) {
+                    NameTextView.Text = account.EmailAddr;
+                    AddressTextView.Visibility = ViewStates.Gone;
+                } else {
+                    NameTextView.Text = account.DisplayName;
+                    AddressTextView.Text = account.EmailAddr;
+                    AddressTextView.Visibility = ViewStates.Visible;
+                }
+                if (LoginHelpers.ShouldAlertUser (account.Id)) {
+                    ErrorIndicatorView.Visibility = ViewStates.Visible;
+                } else {
+                    ErrorIndicatorView.Visibility = ViewStates.Gone;
+                }
+            }
+        }
+
+        class SettingsAdapter : RecyclerView.Adapter
+        {
+
+            int GeneralSettingsCount = 1;
+            int UnreadCountPosition = 0;
+
+            int AboutSettingsCount = 1;
+            int AboutPosition = 0;
+
+            List<McAccount> Accounts;
+
+            public SettingsAdapter ()
+            {
+                Refresh ();
+            }
+
+            public void Refresh ()
+            {
+                Accounts = McAccount.GetAllConfiguredNormalAccounts ();
+                NotifyDataSetChanged ();
+            }
+
+            public override int ItemCount {
+                get {
+                    return GeneralSettingsCount + AboutSettingsCount + Accounts.Count;
+                }
+            }
+
+            public override int GetItemViewType (int position)
+            {
+                if (position >= GeneralSettingsCount && position < GeneralSettingsCount + Accounts.Count) {
+                    return (int)SettingsViewTypes.Account;
+                }
+                return (int)SettingsViewTypes.Basic;
+            }
+
+            public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
+            {
+                switch ((SettingsViewTypes)viewType) {
+                case SettingsViewTypes.Account:
+                    return AccountViewHolder.Create (parent);
+                case SettingsViewTypes.Basic:
+                    return BasicItemViewHolder.Create (parent);
+                }
+                NcAssert.CaseError ();
+                return null;
+            }
+
+            public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
+            {
+                if (position < GeneralSettingsCount) {
+                    if (position == UnreadCountPosition) {
+                        (holder as BasicItemViewHolder).SetLabels ("Unread Count", ValueForUnreadCount ());
+                    } else {
+                        NcAssert.CaseError ();
+                    }
+                    return;
+                }
+                position -= GeneralSettingsCount;
+                if (position < Accounts.Count) {
+                    (holder as AccountViewHolder).SetAccount (Accounts [position]);
+                    return;
+                }
+                position -= Accounts.Count;
+                if (position == AboutPosition) {
+                    (holder as BasicItemViewHolder).SetLabels ("About Nacho Mail");
+                } else {
+                    NcAssert.CaseError ();
+                }
+            }
+
+            protected string ValueForUnreadCount ()
+            {
+                switch (EmailHelper.HowToDisplayUnreadCount ()) {
+                case EmailHelper.ShowUnreadEnum.AllMessages:
+                    return "All Messages";
+                case EmailHelper.ShowUnreadEnum.RecentMessages:
+                    return "Recent Messages";
+                case EmailHelper.ShowUnreadEnum.TodaysMessages:
+                    return "Today's Messages";
+                default:
+                    NcAssert.CaseError ();
+                    return "";
+                }
+            }
+        }
+
+        #endregion
+
+        /*
+
         RecyclerView recyclerView;
         RecyclerView.LayoutManager layoutManager;
         AccountAdapter accountAdapter;
@@ -161,6 +382,8 @@ namespace NachoClient.AndroidClient
                 break;
             }
         }
+
+        */
 
     }
 }

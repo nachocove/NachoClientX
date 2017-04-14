@@ -269,6 +269,7 @@
     <Compile Include="NachoUI.Android\Activities\AllMailFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -354,7 +355,6 @@
     <None Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
-    <None Include="NachoUI.Android\Activities\SettingsFragment.cs" />
     <None Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <None Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
     <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
@@ -1501,6 +1501,12 @@
     <AndroidResource Include="Resources\drawable-mdpi\action_hamburger.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\action_hamburger.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_hamburger.png" />
+    <AndroidResource Include="Resources\layout\SettingsListAccountItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\error_indicator.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\error_indicator.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\error_indicator.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\error_indicator.png" />
+    <AndroidResource Include="Resources\layout\SettingsListBasicItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

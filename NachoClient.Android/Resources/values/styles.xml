@@ -1,9 +1,15 @@
 ﻿<resources>
+    <style name="NachoListItemDetailTextAppearance" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">@color/NachoLightText</item>
+    </style>
+	
 	<style name="NachoTheme" parent="Theme.AppCompat.Light.DarkActionBar">
 		<item name="colorPrimary">@color/NachoMainGreen</item>
 		<item name="colorPrimaryDark">@color/NachoDarkGreen</item>
 		<item name="colorAccent">@color/NachoBrightGreen</item>
 		<item name="colorAccentDark">@color/NachoDarkenedBrightGreen</item>
+		<item name="colorListSeparator">@color/NachoLightGray</item>
+		<item name="textAppearanceListItemDetail">@style/NachoListItemDetailTextAppearance</item>
 	</style>
 
     <style name="NachoTheme.NoActionBar">

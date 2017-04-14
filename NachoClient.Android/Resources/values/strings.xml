@@ -1,7 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello World, Click Me!</string>
     <string name="app_name">Nacho Mail</string>
+    <string name="settings">Settings</string>
+    <string name="demo_account">Work</string>
+    <string name="demo_email">demo@nachocove.com</string>
+	<string name="demo_setting_name">Unread Count</string>
+	<string name="demo_setting_detail">All Messages</string>
+	<!-- OLD -->
+	<!-- TODO: replace and remove -->
+    <string name="hello">Hello World, Click Me!</string>
     <string name="cd_logo">logo</string>
     <string name="open">open navigation drawer</string>
     <string name="close">close navigation drawer</string>
@@ -20,7 +27,6 @@
     <string name="mail">Mail</string>
     <string name="calendar">Calendar</string>
     <string name="files">Files</string>
-    <string name="settings">Settings</string>
     <string name="support">Support</string>
     <string name="about">About Nacho Mail</string>
     <string name="contacts">Contacts</string>
@@ -28,8 +34,6 @@
     <string name="more">More</string>
     <string name="add_account">Add Account</string>
     <string name="connect_to_salesforce">Connect to Salesforce</string>
-    <string name="demo_account">Demo Account</string>
-    <string name="demo_email">demo@account.com</string>
     <string name="demo_subject">What is the deal with this long subject line?</string>
     <string name="demo_date">Wed, Jun 17 - 2:58pm</string>
     <string name="demo_preview">Get the most from your inbox today!  Get Nacho Mail pronto for your Chromebook."</string>

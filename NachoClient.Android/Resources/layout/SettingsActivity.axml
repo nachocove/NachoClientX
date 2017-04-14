@@ -21,11 +21,18 @@
             app:layout_scrollFlags="scroll|enterAlways"
             app:popupTheme="@style/NachoTheme.PopupOverlay" />
     </android.support.design.widget.AppBarLayout>
-    <android.support.design.widget.FloatingActionButton
+    <fragment
+        android:id="@+id/fragment"
+        android:name="NachoClient.AndroidClient.SettingsFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:layout="@layout/SettingsFragment" />
+<!--<android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
         android:layout_margin="@dimen/fab_margin"
-        app:backgroundTint="?attr/colorAccentDark" />
+        app:backgroundTint="?attr/colorAccentDark" />-->
 </android.support.design.widget.CoordinatorLayout>

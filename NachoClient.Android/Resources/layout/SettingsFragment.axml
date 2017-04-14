@@ -2,82 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="match_parent"
-    android:background="@color/NachoBackgroundGray">
-    <include
-        layout="@layout/NavigationBar" />
-    <LinearLayout
-        android:background="@color/NachoBackgroundGray"
-        android:orientation="vertical"
-        android:paddingTop="15dp"
-        android:paddingLeft="15dp"
-        android:paddingRight="15dp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
-        <android.support.v7.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/white"
-            card_view:cardCornerRadius="6dp"
-            card_view:cardElevation="0dp">
-            <LinearLayout
-                android:background="@android:color/white"
-                android:orientation="vertical"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
-                <Switch
-                    android:id="@+id/show_hot_cards"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingLeft="5dp"
-                    android:layout_alignParentTop="true"
-                    android:textSize="14dp"
-                    android:textStyle="normal"
-                    android:textColor="@android:color/black"
-                    android:background="@android:color/white"
-                    android:text="@string/show_hot_cards" />
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/NachoBackgroundGray" />
-                <LinearLayout
-                    android:background="@android:color/white"
-                    android:orientation="horizontal"
-                    android:paddingLeft="5dp"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="left|center_vertical"
-                        android:text="@string/unread_count_label"
-                        android:textSize="14dp"
-                        android:textColor="@android:color/black" />
-                    <Spinner
-                        android:id="@+id/unread_spinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="28dp"
-                        android:gravity="right"
-                        android:layout_gravity="right|center_vertical"
-                        android:entries="@array/unread_count"
-                        android:prompt="@string/unread_count_prompt" />
-                </LinearLayout>
-                <Button
-                    android:id="@+id/crash_button"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/NachoYellow"
-                    android:text="CRASH SIMULATOR"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </android.support.v7.widget.CardView>
-    </LinearLayout>
+    android:layout_height="match_parent">
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:scrollbars="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-    <include
-        layout="@layout/NavigationToolbar" />
+        android:id="@+id/list_view"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent" />
 </LinearLayout>

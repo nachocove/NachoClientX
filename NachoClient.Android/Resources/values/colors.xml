@@ -4,6 +4,8 @@
 	<color name="NachoDarkGreen">#082c32</color>
 	<color name="NachoBrightGreen">#73FFF3</color>
 	<color name="NachoDarkenedBrightGreen">#1AC8B6</color>
+	<color name="NachoLightGray">#e1e5e6</color>
+	<color name="NachoLightText">#777777</color>
 	<!-- old -->
 	<!-- TODO: phase out and remove -->
     <color name="secondary">#ff752c5e</color>
@@ -19,7 +21,6 @@
     <color name="drawer_item_text_checked">@color/primary</color>
     <color name="NachoSubmitButton">#00d0c3</color>
     <color name="NachoBackgroundGray">#e1e5e6</color>
-    <color name="NachoLightGray">#e1e5e6</color>
     <color name="NachoBorderGray">#c0c5c6</color>
     <color name="NachoTextGray">#777777</color>
     <color name="NachoIconGray">#777777</color>
