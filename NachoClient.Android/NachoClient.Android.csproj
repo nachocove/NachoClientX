@@ -270,6 +270,9 @@
     <Compile Include="NachoUI.Android\Activities\CalendarFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\GroupedListRecyclerViewAdapter.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -286,8 +289,6 @@
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
     <None Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
-    <None Include="NachoUI.Android\Activities\AboutActivity.cs" />
-    <None Include="NachoUI.Android\Activities\AboutFragment.cs" />
     <None Include="NachoUI.Android\Activities\CalendarActivity.cs" />
     <None Include="NachoUI.Android\Activities\ChatListActivity.cs" />
     <None Include="NachoUI.Android\Activities\ChatListFragment.cs" />
@@ -1509,6 +1510,7 @@
     <AndroidResource Include="Resources\layout\SettingsListBasicItem.axml" />
     <AndroidResource Include="Resources\layout\ListHeaderItem.axml" />
     <AndroidResource Include="Resources\layout\ListFooterItem.axml" />
+    <AndroidResource Include="Resources\layout\AboutListInfoItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

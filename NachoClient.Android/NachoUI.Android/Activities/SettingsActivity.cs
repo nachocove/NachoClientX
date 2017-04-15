@@ -16,10 +16,9 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "@string/settings", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize, ParentActivity=typeof(MainTabsActivity))]
+    [Activity (Label = "@string/settings_label", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize, ParentActivity=typeof(MainTabsActivity))]
     public class SettingsActivity : NcActivity
     {
-        //private const string SETTINGS_FRAGMENT_TAG = "SettingsFragment";
         private const int SALESFORCE_REQUEST_CODE = 1;
 
         #region Intents
@@ -57,11 +56,12 @@ namespace NachoClient.AndroidClient
             FindSubviews ();
             SetSupportActionBar (Toolbar);
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+        }
 
-            //if (null == bundle || null == FragmentManager.FindFragmentByTag<SettingsFragment> (SETTINGS_FRAGMENT_TAG)) {
-            //    var settingsFragment = SettingsFragment.newInstance ();
-            //    FragmentManager.BeginTransaction ().Replace (Resource.Id.content, settingsFragment, SETTINGS_FRAGMENT_TAG).Commit ();
-            //}
+        protected override void OnDestroy ()
+        {
+            ClearSubviews ();
+            base.OnDestroy ();
         }
 
         protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -72,12 +72,6 @@ namespace NachoClient.AndroidClient
                     ShowAccountSettings (McAccount.GetSalesForceAccount ());
                 }
             }
-        }
-
-        protected override void OnDestroy ()
-        {
-            ClearSubviews ();
-            base.OnDestroy ();
         }
 
         #endregion
@@ -92,18 +86,6 @@ namespace NachoClient.AndroidClient
         public override bool OnOptionsItemSelected (IMenuItem item)
         {
             return base.OnOptionsItemSelected (item);
-        }
-
-        #endregion
-
-        #region General Settings
-
-        public void ShowUnreadCountChooser ()
-        {
-        }
-
-        public void ShowAbout ()
-        {
         }
 
         #endregion

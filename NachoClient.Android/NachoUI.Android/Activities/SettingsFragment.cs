@@ -17,7 +17,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class SettingsFragment : Fragment
+    public class SettingsFragment : Fragment, SettingsAdapter.Listener
     {
 
         #region Subviews
@@ -45,8 +45,8 @@ namespace NachoClient.AndroidClient
             FindSubviews (view);
 
             var context = RecyclerView.Context;
-            RecyclerView.SetLayoutManager(new LinearLayoutManager (Context));
-            ItemsAdapter = new SettingsAdapter ();
+            RecyclerView.SetLayoutManager (new LinearLayoutManager (Context));
+            ItemsAdapter = new SettingsAdapter (this);
             RecyclerView.SetAdapter (ItemsAdapter);
 
             return view;
@@ -62,64 +62,198 @@ namespace NachoClient.AndroidClient
 
         #region User Actions
 
-        void ItemClicked (object sender, AdapterView.ItemClickEventArgs e)
+        public void OnUnreadCountSelected ()
         {
+            ShowUnredCountSelector ();
+        }
+
+        public void OnAccountSelected (McAccount account)
+        {
+            ShowAccountSettings (account);
+        }
+
+        public void OnAboutSelected ()
+        {
+            ShowAbout ();
         }
 
         #endregion
 
-        #region Item Adapter
+        #region Private Helpers
 
-        enum SettingsViewTypes
+        void ShowUnredCountSelector ()
         {
-            Header,
-            Footer,
-        	Basic,
-        	Account
         }
 
-        class HeaderItemViewHolder : RecyclerView.ViewHolder
+        void ShowAbout ()
         {
-
-            TextView HeaderTextView;
-
-            public static HeaderItemViewHolder Create (ViewGroup parent)
-            {
-                var inflater = LayoutInflater.From (parent.Context);
-                var view = inflater.Inflate (Resource.Layout.ListHeaderItem, parent, false);
-                return new HeaderItemViewHolder (view);
-            }
-
-            public HeaderItemViewHolder (View view) : base (view)
-            {
-                HeaderTextView = view.FindViewById (Resource.Id.section_name) as TextView;
-            }
-
-            public void SetHeader (string header)
-            {
-                HeaderTextView.Text = header;
-            }
-
+            var intent = AboutActivity.BuildIntent (Activity);
+            StartActivity (intent);
         }
 
-        class FooterItemViewHolder : RecyclerView.ViewHolder
+        void ShowAccountSettings (McAccount account) 
         {
-
-            public static FooterItemViewHolder Create (ViewGroup parent)
-            {
-                var inflater = LayoutInflater.From (parent.Context);
-                var view = inflater.Inflate (Resource.Layout.ListFooterItem, parent, false);
-                return new FooterItemViewHolder (view);
-            }
-
-            public FooterItemViewHolder (View view) : base (view)
-            {
-            }
-
         }
 
-        class BasicItemViewHolder : RecyclerView.ViewHolder
+        #endregion
+    }
+
+    #region Item Adapter
+
+    class SettingsAdapter : GroupedListRecyclerViewAdapter
+    {
+
+        public interface Listener
         {
+            void OnUnreadCountSelected ();
+            void OnAccountSelected (McAccount account);
+            void OnAboutSelected ();
+        }
+
+        int GeneralGroupPosition = 0;
+        int GeneralItemCount = 1;
+        int UnreadCountPosition = 0;
+
+        int AccountGroupPosition = 1;
+
+        int AboutGroupPosition = 2;
+        int AboutItemCount = 1;
+        int AboutPosition = 0;
+
+        List<McAccount> Accounts;
+        WeakReference<Listener> WeakListener;
+
+        public SettingsAdapter (Listener listener)
+        {
+            WeakListener = new WeakReference<Listener> (listener);
+            Refresh ();
+        }
+
+        public void Refresh ()
+        {
+            Accounts = McAccount.GetAllConfiguredNormalAccounts ();
+            NotifyDataSetChanged ();
+        }
+
+        public override int GroupCount {
+            get {
+                return 3;
+            }
+        }
+
+        public override int GroupItemCount (int groupPosition)
+        {
+            if (groupPosition == GeneralGroupPosition) {
+                return GeneralItemCount;
+            } else if (groupPosition == AccountGroupPosition) {
+                return Accounts.Count;
+            } else if (groupPosition == AboutGroupPosition) {
+                return AboutItemCount;
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.GroupItemCount: Unexpecetd group position: {0}", groupPosition));
+        }
+
+        public override string GroupHeaderValue (int groupPosition)
+        {
+            if (groupPosition == GeneralGroupPosition) {
+                return null;
+            } else if (groupPosition == AccountGroupPosition) {
+                return "Accounts";
+            } else if (groupPosition == AboutGroupPosition) {
+                return null;
+            }
+            return null;
+        }
+
+        public override int GetItemViewType (int groupPosition, int position)
+        {
+            if (groupPosition == GeneralGroupPosition) {
+                if (position == UnreadCountPosition) {
+                    return BasicItemViewHolder.VIEW_TYPE;
+                }
+            } else if (groupPosition == AccountGroupPosition) {
+                if (position < Accounts.Count) {
+                    return AccountViewHolder.VIEW_TYPE;
+                }
+            } else if (groupPosition == AboutGroupPosition) {
+                if (position == AboutPosition) {
+                    return BasicItemViewHolder.VIEW_TYPE;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.GetItemViewType: Unexpecetd position: {0}.{1}", groupPosition, position));
+        }
+
+        public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
+        {
+            switch (viewType) {
+            case BasicItemViewHolder.VIEW_TYPE:
+                return BasicItemViewHolder.Create (parent);
+            case AccountViewHolder.VIEW_TYPE:
+                return AccountViewHolder.Create (parent);
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.OnCreateGroupedViewHolder: Unexpecetd viewType: {0}", viewType));
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            var context = holder.ItemView.Context;
+            if (groupPosition == GeneralGroupPosition) {
+                if (position == UnreadCountPosition) {
+                    (holder as BasicItemViewHolder).SetLabels (context.GetString (Resource.String.settings_unread_count), ValueForUnreadCount (holder.ItemView.Context));
+                    return;
+                }
+            } else if (groupPosition == AccountGroupPosition) {
+                if (position < Accounts.Count) {
+                    (holder as AccountViewHolder).SetAccount (Accounts [position]);
+                    return;
+                }
+            } else if (groupPosition == AboutGroupPosition) {
+                if (position == AboutPosition) {
+                    (holder as BasicItemViewHolder).SetLabels (context.GetString (Resource.String.settings_about));
+                    return;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.OnBindViewHolder: Unexpecetd position: {0}.{1}", groupPosition, position));
+        }
+
+        public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                if (groupPosition == GeneralGroupPosition) {
+                    if (position == UnreadCountPosition) {
+                        listener.OnUnreadCountSelected ();
+                    }
+                } else if (groupPosition == AccountGroupPosition) {
+                    if (position < Accounts.Count) {
+                        listener.OnAccountSelected (Accounts [position]);
+                    }
+                } else if (groupPosition == AboutGroupPosition) {
+                    if (position == AboutPosition) {
+                        listener.OnAboutSelected ();
+                    }
+                }
+            }
+        }
+
+        protected string ValueForUnreadCount (Context context)
+        {
+            switch (EmailHelper.HowToDisplayUnreadCount ()) {
+            case EmailHelper.ShowUnreadEnum.AllMessages:
+                return context.GetString (Resource.String.settings_unread_count_all);
+            case EmailHelper.ShowUnreadEnum.RecentMessages:
+                return context.GetString (Resource.String.settings_unread_count_recent);
+            case EmailHelper.ShowUnreadEnum.TodaysMessages:
+                return context.GetString (Resource.String.settings_unread_count_today);
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.ValueForUnreadCount: Unexpecetd unread setting: {0}", EmailHelper.HowToDisplayUnreadCount ()));
+            }
+        }
+
+        class BasicItemViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
+        {
+
+            public const int VIEW_TYPE = 1;
 
             TextView NameTextView;
             TextView DetailTextView;
@@ -150,8 +284,11 @@ namespace NachoClient.AndroidClient
 
         }
 
-        class AccountViewHolder : RecyclerView.ViewHolder
+        class AccountViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
         {
+
+            public const int VIEW_TYPE = 2;
+
             ImageView AvatarImageView;
             TextView NameTextView;
             TextView AddressTextView;
@@ -159,7 +296,7 @@ namespace NachoClient.AndroidClient
 
             public static AccountViewHolder Create (ViewGroup parent)
             {
-            	var inflater = LayoutInflater.From (parent.Context);
+                var inflater = LayoutInflater.From (parent.Context);
                 var view = inflater.Inflate (Resource.Layout.SettingsListAccountItem, parent, false);
                 return new AccountViewHolder (view);
             }
@@ -190,153 +327,9 @@ namespace NachoClient.AndroidClient
                 }
             }
         }
+    }
 
-        class SettingsAdapter : RecyclerView.Adapter
-        {
-
-            int GeneralSettingsCount = 1;
-            int UnreadCountPosition = 0;
-
-            int AboutSettingsCount = 1;
-            int AboutPosition = 0;
-
-            List<McAccount> Accounts;
-
-            public SettingsAdapter ()
-            {
-                Refresh ();
-            }
-
-            public void Refresh ()
-            {
-                Accounts = McAccount.GetAllConfiguredNormalAccounts ();
-                NotifyDataSetChanged ();
-            }
-
-            public override int ItemCount {
-                get {
-                    return GeneralSettingsCount + 2 + AboutSettingsCount + 1  + Accounts.Count + 2;
-                }
-            }
-
-            public override int GetItemViewType (int position)
-            {
-                if (position == 0) {
-                    return (int)SettingsViewTypes.Header;
-                }
-                position -= 1;
-                if (position < GeneralSettingsCount) {
-                    return (int)SettingsViewTypes.Basic;
-                }
-                position -= GeneralSettingsCount;
-                if (position == 0) {
-                    return (int)SettingsViewTypes.Footer;
-                }
-                position -= 1;
-                if (position == 0) {
-                    return (int)SettingsViewTypes.Header;
-                }
-                position -= 1;
-                if (position < Accounts.Count) {
-                    return (int)SettingsViewTypes.Account;
-                }
-                position -= Accounts.Count;
-                if (position == 0) {
-                    return (int)SettingsViewTypes.Footer;
-                }
-                position -= 1;
-                if (position < AboutSettingsCount) {
-                    return (int)SettingsViewTypes.Basic;
-                }
-                position -= AboutSettingsCount;
-                if (position == 0) {
-                    return (int)SettingsViewTypes.Footer;
-                }
-                NcAssert.CaseError ();
-                return (int)SettingsViewTypes.Basic;
-            }
-
-            public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
-            {
-                switch ((SettingsViewTypes)viewType) {
-                case SettingsViewTypes.Header:
-                    return HeaderItemViewHolder.Create (parent);
-                case SettingsViewTypes.Footer:
-                    return FooterItemViewHolder.Create (parent);
-                case SettingsViewTypes.Account:
-                    return AccountViewHolder.Create (parent);
-                case SettingsViewTypes.Basic:
-                    return BasicItemViewHolder.Create (parent);
-                }
-                NcAssert.CaseError ();
-                return null;
-            }
-
-            public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
-            {
-                if (position == 0) {
-                    (holder as HeaderItemViewHolder).SetHeader ("General Settings");
-                    return;
-                }
-                position -= 1;
-                if (position < GeneralSettingsCount) {
-                    if (position == UnreadCountPosition) {
-                        (holder as BasicItemViewHolder).SetLabels ("Unread Count", ValueForUnreadCount ());
-                    } else {
-                        NcAssert.CaseError ();
-                    }
-                    return;
-                }
-                position -= GeneralSettingsCount;
-                if (position == 0) {
-                    // footer
-                    return;
-                }
-                position -= 1;
-                if (position == 0) {
-                    (holder as HeaderItemViewHolder).SetHeader ("Accounts");
-                    return;
-                }
-                position -= 1;
-                if (position < Accounts.Count) {
-                    (holder as AccountViewHolder).SetAccount (Accounts [position]);
-                    return;
-                }
-                position -= Accounts.Count;
-                if (position == 0) {
-                    // footer;
-                    return;
-                }
-                position -= 1;
-                if (position == AboutPosition) {
-                    (holder as BasicItemViewHolder).SetLabels ("About Nacho Mail");
-                    return;
-                }
-                position -= 1;
-                if (position == 0) {
-                    // footer;
-                    return;
-                }
-                NcAssert.CaseError ();
-            }
-
-            protected string ValueForUnreadCount ()
-            {
-                switch (EmailHelper.HowToDisplayUnreadCount ()) {
-                case EmailHelper.ShowUnreadEnum.AllMessages:
-                    return "All Messages";
-                case EmailHelper.ShowUnreadEnum.RecentMessages:
-                    return "Recent Messages";
-                case EmailHelper.ShowUnreadEnum.TodaysMessages:
-                    return "Today's Messages";
-                default:
-                    NcAssert.CaseError ();
-                    return "";
-                }
-            }
-        }
-
-        #endregion
+    #endregion
 
         /*
 
@@ -485,6 +478,5 @@ namespace NachoClient.AndroidClient
 
         */
 
-    }
 }
 

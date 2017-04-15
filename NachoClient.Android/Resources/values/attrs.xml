@@ -1,6 +1,8 @@
 ﻿<resources>
 	<attr name="colorAccentDark" format="color"/>
-	<attr name="colorListSeparator" format="color"/>
+	<attr name="colorListItemSeparator" format="color"/>
+	<attr name="colorListGroupSeparator" format="color"/>
 	<attr name="textAppearanceListItemDetail" format="reference"/>
 	<attr name="textAppearanceListItemHeader" format="reference"/>
+    <attr name="textAppearanceAboutIntro" format="reference"/>
 </resources>

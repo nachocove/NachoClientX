@@ -5,18 +5,25 @@
 
     <style name="NachoListItemHeaderTextAppearance" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">@color/NachoMainGreen</item>
-		<item name="android:textStyle">bold</item>
+        <item name="android:textStyle">bold</item>
     </style>
-	
-	<style name="NachoTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-		<item name="colorPrimary">@color/NachoMainGreen</item>
-		<item name="colorPrimaryDark">@color/NachoDarkGreen</item>
-		<item name="colorAccent">@color/NachoBrightGreen</item>
-		<item name="colorAccentDark">@color/NachoDarkenedBrightGreen</item>
-		<item name="colorListSeparator">#E0E0E0</item>
-		<item name="textAppearanceListItemDetail">@style/NachoListItemDetailTextAppearance</item>
-		<item name="textAppearanceListItemHeader">@style/NachoListItemHeaderTextAppearance</item>
-	</style>
+
+    <style name="NachoAboutIntroTextAppearance" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">@color/NachoMainGreen</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="NachoTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/NachoMainGreen</item>
+        <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
+        <item name="colorAccent">@color/NachoBrightGreen</item>
+        <item name="colorAccentDark">@color/NachoDarkenedBrightGreen</item>
+        <item name="colorListItemSeparator">#E0E0E0</item>
+        <item name="colorListGroupSeparator">#F0F0F0</item>
+        <item name="textAppearanceListItemDetail">@style/NachoListItemDetailTextAppearance</item>
+        <item name="textAppearanceListItemHeader">@style/NachoListItemHeaderTextAppearance</item>
+        <item name="textAppearanceAboutIntro">@style/NachoAboutIntroTextAppearance</item>
+    </style>
 
     <style name="NachoTheme.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -27,8 +34,8 @@
 
     <style name="NachoTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
 
-	<!-- old -->
-	<!-- TODO: phase out and remove -->
+    <!-- old -->
+    <!-- TODO: phase out and remove -->
     <style name="Theme.NachoMail" parent="Base.Theme.NachoMail" />
     <style name="Base.Theme.NachoMail" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:textAllCaps">false</item>

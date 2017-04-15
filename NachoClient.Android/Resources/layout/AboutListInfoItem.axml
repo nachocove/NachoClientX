@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content">
+	<LinearLayout
+	    android:orientation="vertical"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:paddingLeft="30dp"
+	    android:paddingRight="30dp"
+	    android:paddingTop="30dp"
+	    android:paddingBottom="30dp">
+        <ImageView
+            android:src="@drawable/Bootscreen_1"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="30dp" />
+		<TextView
+            android:text="@string/about_intro"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceAboutIntro"
+            android:layout_marginBottom="16dp"/>
+		<TextView
+            android:text="@string/about_detail"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceListItem"
+            android:layout_marginBottom="16dp"/>
+		<TextView
+            android:id="@+id/version"
+            android:text="@string/demo_version"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceListItemDetail" />
+	</LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>
