@@ -338,8 +338,6 @@
     <None Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
     <None Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
     <None Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
-    <None Include="NachoUI.Android\Activities\AboutViewerActivity.cs" />
-    <None Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
     <None Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
     <None Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
@@ -1271,8 +1269,6 @@
     <AndroidResource Include="Resources\drawable-mdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable-hdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable\folder_folder.png" />
-    <AndroidResource Include="Resources\layout\AboutViewerActivity.axml" />
-    <AndroidResource Include="Resources\layout\AboutViewerFragment.axml" />
     <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\notification.png" />
     <AndroidResource Include="Resources\layout\AccountSettingsActivity.axml" />
