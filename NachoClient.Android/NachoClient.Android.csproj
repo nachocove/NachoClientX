@@ -273,6 +273,7 @@
     <Compile Include="NachoUI.Android\Support\GroupedListRecyclerViewAdapter.cs" />
     <Compile Include="NachoUI.Android\Activities\AboutActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\LegalDocumentActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1511,6 +1512,7 @@
     <AndroidResource Include="Resources\layout\ListHeaderItem.axml" />
     <AndroidResource Include="Resources\layout\ListFooterItem.axml" />
     <AndroidResource Include="Resources\layout\AboutListInfoItem.axml" />
+    <AndroidResource Include="Resources\layout\LegalDocumentActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

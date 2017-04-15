@@ -61,17 +61,19 @@ namespace NachoClient.AndroidClient
 
         #region User Actions
 
-        public void OnLegalDocumentSelected ()
+        public void OnLegalDocumentSelected (LegalDocumentActivity.LegalDocument document)
         {
-            ShowLegalDocument ();
+            ShowLegalDocument (document);
         }
 
         #endregion
 
         #region Private Helpers
 
-        void ShowLegalDocument ()
+        void ShowLegalDocument (LegalDocumentActivity.LegalDocument document)
         {
+            var intent = LegalDocumentActivity.BuildIntent (Activity, document);
+            StartActivity (intent);
         }
 
         #endregion
@@ -84,7 +86,7 @@ namespace NachoClient.AndroidClient
 
         public interface Listener
         {
-            void OnLegalDocumentSelected ();
+            void OnLegalDocumentSelected (LegalDocumentActivity.LegalDocument document);
         }
 
         int GeneralGroupPosition = 0;
@@ -96,7 +98,7 @@ namespace NachoClient.AndroidClient
         int ReleaseNotesPosition = 0;
         int PrivacyPolicyPosition = 1;
         int LicenseAgreementPosition = 2;
-        int ConstributionsPosition = 3;
+        int ContributionsPosition = 3;
 
         WeakReference<Listener> WeakListener;
 
@@ -175,7 +177,7 @@ namespace NachoClient.AndroidClient
                 }else if (position == LicenseAgreementPosition){
                     basicHolder.SetLabels (context.GetString (Resource.String.about_license_agreement));
                     return;
-                } else if (position == ConstributionsPosition){
+                } else if (position == ContributionsPosition){
                     basicHolder.SetLabels (context.GetString (Resource.String.about_contributions));
                     return;
                 }
@@ -189,9 +191,13 @@ namespace NachoClient.AndroidClient
             if (WeakListener.TryGetTarget (out listener)) {
                 if (groupPosition == LegalGroupPosition) {
                     if (position == ReleaseNotesPosition) {
+                        listener.OnLegalDocumentSelected (LegalDocumentActivity.LegalDocument.ReleaseNotes);
                     }else if (position == PrivacyPolicyPosition){
+                        listener.OnLegalDocumentSelected (LegalDocumentActivity.LegalDocument.PrivacyPolicy);
                     }else if (position == LicenseAgreementPosition){
-                    } else if (position == ConstributionsPosition){
+                        listener.OnLegalDocumentSelected (LegalDocumentActivity.LegalDocument.LicenseAgreement);
+                    } else if (position == ContributionsPosition){
+                        listener.OnLegalDocumentSelected (LegalDocumentActivity.LegalDocument.Contributions);
                     }
                 }
             }
