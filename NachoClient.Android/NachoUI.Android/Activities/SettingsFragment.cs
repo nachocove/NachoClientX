@@ -72,8 +72,50 @@ namespace NachoClient.AndroidClient
 
         enum SettingsViewTypes
         {
+            Header,
+            Footer,
         	Basic,
         	Account
+        }
+
+        class HeaderItemViewHolder : RecyclerView.ViewHolder
+        {
+
+            TextView HeaderTextView;
+
+            public static HeaderItemViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.ListHeaderItem, parent, false);
+                return new HeaderItemViewHolder (view);
+            }
+
+            public HeaderItemViewHolder (View view) : base (view)
+            {
+                HeaderTextView = view.FindViewById (Resource.Id.section_name) as TextView;
+            }
+
+            public void SetHeader (string header)
+            {
+                HeaderTextView.Text = header;
+            }
+
+        }
+
+        class FooterItemViewHolder : RecyclerView.ViewHolder
+        {
+
+            public static FooterItemViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.ListFooterItem, parent, false);
+                return new FooterItemViewHolder (view);
+            }
+
+            public FooterItemViewHolder (View view) : base (view)
+            {
+            }
+
         }
 
         class BasicItemViewHolder : RecyclerView.ViewHolder
@@ -173,21 +215,54 @@ namespace NachoClient.AndroidClient
 
             public override int ItemCount {
                 get {
-                    return GeneralSettingsCount + AboutSettingsCount + Accounts.Count;
+                    return GeneralSettingsCount + 2 + AboutSettingsCount + 1  + Accounts.Count + 2;
                 }
             }
 
             public override int GetItemViewType (int position)
             {
-                if (position >= GeneralSettingsCount && position < GeneralSettingsCount + Accounts.Count) {
+                if (position == 0) {
+                    return (int)SettingsViewTypes.Header;
+                }
+                position -= 1;
+                if (position < GeneralSettingsCount) {
+                    return (int)SettingsViewTypes.Basic;
+                }
+                position -= GeneralSettingsCount;
+                if (position == 0) {
+                    return (int)SettingsViewTypes.Footer;
+                }
+                position -= 1;
+                if (position == 0) {
+                    return (int)SettingsViewTypes.Header;
+                }
+                position -= 1;
+                if (position < Accounts.Count) {
                     return (int)SettingsViewTypes.Account;
                 }
+                position -= Accounts.Count;
+                if (position == 0) {
+                    return (int)SettingsViewTypes.Footer;
+                }
+                position -= 1;
+                if (position < AboutSettingsCount) {
+                    return (int)SettingsViewTypes.Basic;
+                }
+                position -= AboutSettingsCount;
+                if (position == 0) {
+                    return (int)SettingsViewTypes.Footer;
+                }
+                NcAssert.CaseError ();
                 return (int)SettingsViewTypes.Basic;
             }
 
             public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
             {
                 switch ((SettingsViewTypes)viewType) {
+                case SettingsViewTypes.Header:
+                    return HeaderItemViewHolder.Create (parent);
+                case SettingsViewTypes.Footer:
+                    return FooterItemViewHolder.Create (parent);
                 case SettingsViewTypes.Account:
                     return AccountViewHolder.Create (parent);
                 case SettingsViewTypes.Basic:
@@ -199,6 +274,11 @@ namespace NachoClient.AndroidClient
 
             public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
             {
+                if (position == 0) {
+                    (holder as HeaderItemViewHolder).SetHeader ("General Settings");
+                    return;
+                }
+                position -= 1;
                 if (position < GeneralSettingsCount) {
                     if (position == UnreadCountPosition) {
                         (holder as BasicItemViewHolder).SetLabels ("Unread Count", ValueForUnreadCount ());
@@ -208,16 +288,36 @@ namespace NachoClient.AndroidClient
                     return;
                 }
                 position -= GeneralSettingsCount;
+                if (position == 0) {
+                    // footer
+                    return;
+                }
+                position -= 1;
+                if (position == 0) {
+                    (holder as HeaderItemViewHolder).SetHeader ("Accounts");
+                    return;
+                }
+                position -= 1;
                 if (position < Accounts.Count) {
                     (holder as AccountViewHolder).SetAccount (Accounts [position]);
                     return;
                 }
                 position -= Accounts.Count;
+                if (position == 0) {
+                    // footer;
+                    return;
+                }
+                position -= 1;
                 if (position == AboutPosition) {
                     (holder as BasicItemViewHolder).SetLabels ("About Nacho Mail");
-                } else {
-                    NcAssert.CaseError ();
+                    return;
                 }
+                position -= 1;
+                if (position == 0) {
+                    // footer;
+                    return;
+                }
+                NcAssert.CaseError ();
             }
 
             protected string ValueForUnreadCount ()

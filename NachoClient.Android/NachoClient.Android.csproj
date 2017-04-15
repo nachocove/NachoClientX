@@ -1507,6 +1507,8 @@
     <AndroidResource Include="Resources\drawable-xhdpi\error_indicator.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\error_indicator.png" />
     <AndroidResource Include="Resources\layout\SettingsListBasicItem.axml" />
+    <AndroidResource Include="Resources\layout\ListHeaderItem.axml" />
+    <AndroidResource Include="Resources\layout\ListFooterItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -6,6 +6,7 @@
     <string name="demo_email">demo@nachocove.com</string>
 	<string name="demo_setting_name">Unread Count</string>
 	<string name="demo_setting_detail">All Messages</string>
+	<string name="demo_section_name">All Messages</string>
 	<!-- OLD -->
 	<!-- TODO: replace and remove -->
     <string name="hello">Hello World, Click Me!</string>
