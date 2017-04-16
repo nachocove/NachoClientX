@@ -274,6 +274,8 @@
     <Compile Include="NachoUI.Android\Activities\AboutActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\LegalDocumentActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\UnreadCountPickerDialog.cs" />
+    <Compile Include="NachoUI.Android\Support\NcDialogFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

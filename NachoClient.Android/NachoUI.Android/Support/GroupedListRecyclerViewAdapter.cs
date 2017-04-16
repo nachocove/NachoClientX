@@ -130,6 +130,27 @@ namespace NachoClient.AndroidClient
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("GroupedListRecyclerViewAdapter.GetGroupPosition: Unexpecetd position: {0}", position));
         }
 
+        private int GetPosition (int groupPosition, int itemPosition)
+        {
+            int position = 0;
+            for (int i = 0; i < groupPosition; ++i) {
+                position += GroupItemCount (i) + 2; // header and footer
+            }
+            position += 1; // header
+            position += itemPosition;
+            return position;
+        }
+
+        #endregion
+
+        #region Update Notifications
+
+        public void NotifyItemChanged (int groupPosition, int itemPosition)
+        {
+            var position = GetPosition (groupPosition, itemPosition);
+            NotifyItemChanged (position);
+        }
+
         #endregion
 
         #region View Holders

@@ -20,6 +20,8 @@ namespace NachoClient.AndroidClient
     public class SettingsFragment : Fragment, SettingsAdapter.Listener
     {
 
+        private const string FRAGMENT_UNREAD_COUNT_PICKER = "NachoClient.AndroidClient.SettingsFragment.FRAGMENT_UNREAD_COUNT_PICKER";
+
         #region Subviews
 
         RecyclerView RecyclerView;
@@ -83,6 +85,10 @@ namespace NachoClient.AndroidClient
 
         void ShowUnredCountSelector ()
         {
+            var dialog = new UnreadCountPickerDialog ();
+            dialog.Show (FragmentManager, FRAGMENT_UNREAD_COUNT_PICKER, () => {
+                ItemsAdapter.NotifyUnreadCountChanged ();
+            });
         }
 
         void ShowAbout ()
@@ -138,6 +144,11 @@ namespace NachoClient.AndroidClient
         {
             Accounts = McAccount.GetAllConfiguredNormalAccounts ();
             NotifyDataSetChanged ();
+        }
+
+        public void NotifyUnreadCountChanged ()
+        {
+            NotifyItemChanged (GeneralGroupPosition, UnreadCountPosition);
         }
 
         public override int GroupCount {
