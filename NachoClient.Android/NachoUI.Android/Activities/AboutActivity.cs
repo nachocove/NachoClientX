@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "@string/about_label", ParentActivity=typeof(SettingsActivity))]
+    [Activity (Label = "@string/about_label", ParentActivity=typeof(SettingsActivity), LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
     public class AboutActivity : NcActivity
     {
 

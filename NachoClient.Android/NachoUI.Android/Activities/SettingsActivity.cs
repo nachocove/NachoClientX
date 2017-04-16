@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "@string/settings_label", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize, ParentActivity=typeof(MainTabsActivity))]
+    [Activity (Label = "@string/settings_label", ParentActivity=typeof (MainTabsActivity), LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
     public class SettingsActivity : NcActivity
     {
         private const int SALESFORCE_REQUEST_CODE = 1;

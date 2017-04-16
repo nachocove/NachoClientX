@@ -22,7 +22,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
 
-    [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon")]
+    [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon", LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
     public class MainTabsActivity : NcActivity
     {
 
@@ -91,6 +91,16 @@ namespace NachoClient.AndroidClient
             TabLayout.SetupWithViewPager (ViewPager);
 
             UpdateToolbarAccountInfo ();
+        }
+
+        protected override void OnRestoreInstanceState (Bundle savedInstanceState)
+        {
+            base.OnRestoreInstanceState (savedInstanceState);
+        }
+
+        protected override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
         }
 
         protected override void OnDestroy ()
@@ -178,7 +188,7 @@ namespace NachoClient.AndroidClient
 
             class TabInfo
             {
-                public string Name;
+                public int NameResource;
                 public Type FragmentType;
                 public WeakReference<Fragment> CachedFragmentInstance = new WeakReference<Fragment>(null);
 
@@ -194,11 +204,11 @@ namespace NachoClient.AndroidClient
             }
 
             TabInfo [] Tabs = {
-                //new TabInfo () { Name = "Home",     FragmentType=typeof (HomeFragment) },
-                new TabInfo () { Name = "Inbox",    FragmentType=typeof (InboxFragment) },
-                new TabInfo () { Name = "All",      FragmentType=typeof (AllMailFragment) },
-                new TabInfo () { Name = "Events",   FragmentType=typeof (CalendarFragment) },
-                new TabInfo () { Name = "People",   FragmentType=typeof (ContactsFragment) }
+                //new TabInfo () { NameResource = Resource.String.tab_home,       FragmentType=typeof (HomeFragment) },
+                new TabInfo () { NameResource = Resource.String.tab_inbox,      FragmentType=typeof (InboxFragment) },
+                new TabInfo () { NameResource = Resource.String.tab_all_mail,   FragmentType=typeof (AllMailFragment) },
+                new TabInfo () { NameResource = Resource.String.tab_calendar,   FragmentType=typeof (CalendarFragment) },
+                new TabInfo () { NameResource = Resource.String.tab_contacts,   FragmentType=typeof (ContactsFragment) }
             };
 
             int SelectedPosition = -1;
@@ -256,7 +266,8 @@ namespace NachoClient.AndroidClient
             public override Java.Lang.ICharSequence GetPageTitleFormatted (int position)
             {
                 var info = Tabs [position];
-                return new Java.Lang.String (info.Name);
+                var name = MainTabsActivity.GetString (info.NameResource);
+                return new Java.Lang.String (name);
             }
 
             public override float GetPageWidth (int position)

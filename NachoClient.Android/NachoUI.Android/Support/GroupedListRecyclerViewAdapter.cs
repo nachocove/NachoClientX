@@ -39,7 +39,7 @@ namespace NachoClient.AndroidClient
 
         public abstract void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position);
 
-        public abstract string GroupHeaderValue (int groupPosition);
+        public abstract string GroupHeaderValue (Context context, int groupPosition);
 
         public virtual void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
         {
@@ -94,7 +94,7 @@ namespace NachoClient.AndroidClient
             var groupedHolder = (holder as ViewHolder);
             GetGroupPosition (position, out groupedHolder.groupPosition, out groupedHolder.itemPosition);
             if (groupedHolder.itemPosition == HEADER_ITEM_POSITION){
-                var header = GroupHeaderValue (groupedHolder.groupPosition);
+                var header = GroupHeaderValue (holder.ItemView.Context, groupedHolder.groupPosition);
                 (holder as HeaderItemViewHolder).SetHeader (header);
             }else if (groupedHolder.itemPosition == FOOTER_ITEM_POSITION){
                 // Nothing to do for footers because they have no text/values

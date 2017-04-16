@@ -1,6 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Nacho Mail</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_inbox">Inbox</string>
+    <string name="tab_all_mail">All</string>
+    <string name="tab_calendar">Events</string>
+    <string name="tab_contacts">Contacts</string>
     <string name="settings_label">Settings</string>
     <string name="settings_accounts">Accounts</string>
     <string name="settings_unread_count">Unread Count</string>

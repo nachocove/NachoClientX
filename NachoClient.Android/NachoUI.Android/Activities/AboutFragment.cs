@@ -129,7 +129,7 @@ namespace NachoClient.AndroidClient
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AboutFragment.GroupItemCount: Unexpecetd group position: {0}", groupPosition));
         }
 
-        public override string GroupHeaderValue (int groupPosition)
+        public override string GroupHeaderValue (Context context, int groupPosition)
         {
             return null;
         }

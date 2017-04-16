@@ -153,12 +153,12 @@ namespace NachoClient.AndroidClient
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.GroupItemCount: Unexpecetd group position: {0}", groupPosition));
         }
 
-        public override string GroupHeaderValue (int groupPosition)
+        public override string GroupHeaderValue (Context context, int groupPosition)
         {
             if (groupPosition == GeneralGroupPosition) {
                 return null;
             } else if (groupPosition == AccountGroupPosition) {
-                return "Accounts";
+                return context.GetString (Resource.String.settings_accounts);
             } else if (groupPosition == AboutGroupPosition) {
                 return null;
             }
