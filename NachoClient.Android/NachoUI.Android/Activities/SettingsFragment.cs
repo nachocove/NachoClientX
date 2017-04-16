@@ -123,6 +123,11 @@ namespace NachoClient.AndroidClient
         List<McAccount> Accounts;
         WeakReference<Listener> WeakListener;
 
+        enum ViewType {
+            Basic,
+            Account
+        }
+
         public SettingsAdapter (Listener listener)
         {
             WeakListener = new WeakReference<Listener> (listener);
@@ -169,15 +174,15 @@ namespace NachoClient.AndroidClient
         {
             if (groupPosition == GeneralGroupPosition) {
                 if (position == UnreadCountPosition) {
-                    return BasicItemViewHolder.VIEW_TYPE;
+                    return (int)ViewType.Basic;
                 }
             } else if (groupPosition == AccountGroupPosition) {
                 if (position < Accounts.Count) {
-                    return AccountViewHolder.VIEW_TYPE;
+                    return (int)ViewType.Account;
                 }
             } else if (groupPosition == AboutGroupPosition) {
                 if (position == AboutPosition) {
-                    return BasicItemViewHolder.VIEW_TYPE;
+                    return (int)ViewType.Basic;
                 }
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.GetItemViewType: Unexpecetd position: {0}.{1}", groupPosition, position));
@@ -185,10 +190,10 @@ namespace NachoClient.AndroidClient
 
         public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
         {
-            switch (viewType) {
-            case BasicItemViewHolder.VIEW_TYPE:
-                return BasicItemViewHolder.Create (parent);
-            case AccountViewHolder.VIEW_TYPE:
+            switch ((ViewType)viewType) {
+            case ViewType.Basic:
+                return SettingsBasicItemViewHolder.Create (parent);
+            case ViewType.Account:
                 return AccountViewHolder.Create (parent);
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("SettingsFragment.OnCreateGroupedViewHolder: Unexpecetd viewType: {0}", viewType));
@@ -199,7 +204,7 @@ namespace NachoClient.AndroidClient
             var context = holder.ItemView.Context;
             if (groupPosition == GeneralGroupPosition) {
                 if (position == UnreadCountPosition) {
-                    (holder as BasicItemViewHolder).SetLabels (context.GetString (Resource.String.settings_unread_count), ValueForUnreadCount (holder.ItemView.Context));
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.settings_unread_count), ValueForUnreadCount (holder.ItemView.Context));
                     return;
                 }
             } else if (groupPosition == AccountGroupPosition) {
@@ -209,7 +214,7 @@ namespace NachoClient.AndroidClient
                 }
             } else if (groupPosition == AboutGroupPosition) {
                 if (position == AboutPosition) {
-                    (holder as BasicItemViewHolder).SetLabels (context.GetString (Resource.String.settings_about));
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.settings_about));
                     return;
                 }
             }
@@ -250,44 +255,8 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        class BasicItemViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
-        {
-
-            public const int VIEW_TYPE = 1;
-
-            TextView NameTextView;
-            TextView DetailTextView;
-
-            public static BasicItemViewHolder Create (ViewGroup parent)
-            {
-                var inflater = LayoutInflater.From (parent.Context);
-                var view = inflater.Inflate (Resource.Layout.SettingsListBasicItem, parent, false);
-                return new BasicItemViewHolder (view);
-            }
-
-            public BasicItemViewHolder (View view) : base (view)
-            {
-                NameTextView = view.FindViewById (Resource.Id.setting_name) as TextView;
-                DetailTextView = view.FindViewById (Resource.Id.setting_detail) as TextView;
-            }
-
-            public void SetLabels (string name, string detail = null)
-            {
-                NameTextView.Text = name;
-                if (String.IsNullOrEmpty (detail)) {
-                    DetailTextView.Visibility = ViewStates.Gone;
-                } else {
-                    DetailTextView.Visibility = ViewStates.Visible;
-                    DetailTextView.Text = detail;
-                }
-            }
-
-        }
-
         class AccountViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
         {
-
-            public const int VIEW_TYPE = 2;
 
             ImageView AvatarImageView;
             TextView NameTextView;
@@ -327,6 +296,38 @@ namespace NachoClient.AndroidClient
                 }
             }
         }
+    }
+
+    public class SettingsBasicItemViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
+    {
+
+        TextView NameTextView;
+        TextView DetailTextView;
+
+        public static SettingsBasicItemViewHolder Create (ViewGroup parent)
+        {
+            var inflater = LayoutInflater.From (parent.Context);
+            var view = inflater.Inflate (Resource.Layout.SettingsListBasicItem, parent, false);
+            return new SettingsBasicItemViewHolder (view);
+        }
+
+        public SettingsBasicItemViewHolder (View view) : base (view)
+        {
+            NameTextView = view.FindViewById (Resource.Id.setting_name) as TextView;
+            DetailTextView = view.FindViewById (Resource.Id.setting_detail) as TextView;
+        }
+
+        public void SetLabels (string name, string detail = null)
+        {
+            NameTextView.Text = name;
+            if (String.IsNullOrEmpty (detail)) {
+                DetailTextView.Visibility = ViewStates.Gone;
+            } else {
+                DetailTextView.Visibility = ViewStates.Visible;
+                DetailTextView.Text = detail;
+            }
+        }
+
     }
 
     #endregion
