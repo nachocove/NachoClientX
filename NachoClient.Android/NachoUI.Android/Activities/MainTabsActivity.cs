@@ -224,14 +224,21 @@ namespace NachoClient.AndroidClient
                 }
             }
 
+            public override Java.Lang.Object InstantiateItem (ViewGroup container, int position)
+            {
+                var obj = base.InstantiateItem (container, position);
+                var fragment = obj as Fragment;
+                if (fragment != null) {
+                    var info = Tabs [position];
+                    info.CachedFragmentInstance.SetTarget (fragment);
+                }
+                return obj;
+            }
+
             public override Fragment GetItem (int position)
             {
                 var info = Tabs [position];
-                Fragment fragment;
-                if (!info.CachedFragmentInstance.TryGetTarget (out fragment)) {
-                    fragment = System.Activator.CreateInstance (info.FragmentType) as Fragment;
-                    info.CachedFragmentInstance.SetTarget (fragment);
-                }
+                var fragment = System.Activator.CreateInstance (info.FragmentType) as Fragment;
                 return fragment;
             }
 
