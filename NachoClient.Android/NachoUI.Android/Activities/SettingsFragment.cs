@@ -96,6 +96,15 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Public API
+
+        public void Refresh ()
+        {
+            ItemsAdapter.Refresh ();
+        }
+
+        #endregion
+
         #region Private Helpers
 
         void ShowUnredCountSelector ()
@@ -129,6 +138,7 @@ namespace NachoClient.AndroidClient
         }
 
         #endregion
+
     }
 
     #region Item Adapter

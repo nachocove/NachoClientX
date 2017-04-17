@@ -1,6 +1,8 @@
 ﻿<resources>
 	<attr name="colorListItemSeparator" format="color"/>
 	<attr name="colorListGroupSeparator" format="color"/>
+    <attr name="textAppearanceWelcome" format="reference"/>
+    <attr name="textAppearanceWelcomeButton" format="reference" />
 	<attr name="textAppearanceListItemDetail" format="reference"/>
 	<attr name="textAppearanceListItemHeader" format="reference"/>
     <attr name="textAppearanceAboutIntro" format="reference"/>

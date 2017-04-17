@@ -1,30 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:gravity="center"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_height="fill_parent"
+    android:background="?attr/colorPrimary"
+    tools:context=".SetupFragment">
     <ImageView
         android:src="@drawable/Bootscreen_1"
         android:gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/NachoGreen" />
+        android:layout_width="119dp"
+        android:layout_height="119dp"
+        android:background="?attr/colorPrimary" />
     <TextView
-        android:text="@string/welcometo"
+        android:text="@string/startup_welcome"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:paddingTop="18dp"
         android:gravity="center"
-        android:textSize="36dp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white" />
+        android:textSize="18dp"
+        android:textAppearance="?attr/textAppearanceWelcome" />
     <TextView
-        android:text="@string/nachomail"
+        android:text="@string/app_name"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:textSize="58dp"
+        android:textSize="29dp"
         android:textStyle="bold"
-        android:textColor="@android:color/white" />
+        android:textAppearance="?attr/textAppearanceWelcome" />
 </LinearLayout>

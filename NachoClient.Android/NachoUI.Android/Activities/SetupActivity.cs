@@ -19,7 +19,7 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity ()]
+    [Activity (LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
     public class SetupActivity : NcActivity
     {
         bool StatusIndCallbackIsSet = false;
@@ -36,6 +36,8 @@ namespace NachoClient.AndroidClient
         }
 
         StartupViewState currentState = StartupViewState.Startup;
+
+        private const int REQUEST_WELCOME = 1;
 
         #region Intents
 
@@ -54,14 +56,9 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle);
 
             MainApplication.RegisterHockeyAppUpdateManager (this);
-
             MainApplication.OneTimeStartup ("SetupActivity");
 
-            // Set our view from the "main" layout resource
-            SetContentView (Resource.Layout.Main);
-
-            var startupFragment = new StartupFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, startupFragment).Commit ();
+            SetContentView (Resource.Layout.SetupActivity);
         }
 
         protected override void OnResume ()
@@ -87,6 +84,18 @@ namespace NachoClient.AndroidClient
         {
             base.OnPause ();
             MainApplication.UnregisterHockeyAppUpdateManager ();
+        }
+
+        protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            switch (requestCode) {
+            case REQUEST_WELCOME:
+                ShowScreenForApplicationState ();
+                break;
+            default:
+                base.OnActivityResult (requestCode, resultCode, data);
+                break;
+            }
         }
 
         #endregion
@@ -150,9 +159,8 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_UI, "SetupActivity ShowApplication");
 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(LaunchActivity));
-            StartActivity (intent);
+            var intent = WelcomeActivity.BuildIntent (this);
+            StartActivityForResult (intent, REQUEST_WELCOME);
         }
 
         void ShowRecoveryScreen ()
@@ -164,8 +172,9 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_UI, "SetupActivity ShowRecoveryScreen");
 
-            var recoveryFragment = new RecoveryFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, recoveryFragment).Commit ();
+            var transaction = FragmentManager.BeginTransaction ();
+            transaction.Replace (Resource.Id.container, new RecoveryFragment ());
+            transaction.Commit ();
         }
 
         void ShowMigrationScreen ()
@@ -177,10 +186,9 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_UI, "SetupActivity ShowMigrationScreen");
 
-            var migrationFragment = new MigrationFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, migrationFragment).Commit ();
-
-            currentState = StartupViewState.Migration;
+            var transaction = FragmentManager.BeginTransaction ();
+            transaction.Replace (Resource.Id.container, new MigrationFragment ());
+            transaction.Commit ();
         }
 
         #endregion

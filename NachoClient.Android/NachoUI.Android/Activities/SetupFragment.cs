@@ -16,14 +16,8 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class StartupFragment : Fragment
+    public class SetupFragment : Fragment
     {
-        // Just shows "Let's get started"
-        public static StartupFragment newInstance ()
-        {
-            var fragment = new StartupFragment ();
-            return fragment;
-        }
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -32,7 +26,7 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            var view = inflater.Inflate (Resource.Layout.StartupFragment, container, false);
+            var view = inflater.Inflate (Resource.Layout.SetupFragment, container, false);
             return view;
         }
 

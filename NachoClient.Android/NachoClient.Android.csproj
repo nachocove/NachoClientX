@@ -248,8 +248,8 @@
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\StartupFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\LaunchActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SetupFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\WelcomeActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MigrationFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\RecoveryFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\GettingStartedFragment.cs" />
@@ -755,8 +755,8 @@
     <AndroidResource Include="Resources\layout\GoogleSignInFragment.axml" />
     <AndroidResource Include="Resources\layout\HotMessageFragment.axml" />
     <AndroidResource Include="Resources\layout\IntentFragment.axml" />
-    <AndroidResource Include="Resources\layout\LaunchActivity.axml" />
-    <AndroidResource Include="Resources\layout\Main.axml" />
+    <AndroidResource Include="Resources\layout\WelcomeActivity.axml" />
+    <AndroidResource Include="Resources\layout\SetupActivity.axml" />
     <AndroidResource Include="Resources\layout\MessageCell.axml" />
     <AndroidResource Include="Resources\layout\MessageComposeActivity.axml" />
     <AndroidResource Include="Resources\layout\MessageHeader.axml" />
@@ -771,7 +771,7 @@
     <AndroidResource Include="Resources\layout\NowFragment.axml" />
     <AndroidResource Include="Resources\layout\PriorityFragment.axml" />
     <AndroidResource Include="Resources\layout\RecoveryFragment.axml" />
-    <AndroidResource Include="Resources\layout\StartupFragment.axml" />
+    <AndroidResource Include="Resources\layout\SetupFragment.axml" />
     <AndroidResource Include="Resources\layout\SwitchAccountFragment.axml" />
     <AndroidResource Include="Resources\layout\WaitingFragment.axml" />
     <AndroidResource Include="Resources\menu\drawer.xml" />
@@ -1516,6 +1516,7 @@
     <AndroidResource Include="Resources\layout\AccountSettingsListIssueItem.axml" />
     <AndroidResource Include="Resources\menu\settings.xml" />
     <AndroidResource Include="Resources\menu\account_settings.xml" />
+    <AndroidResource Include="Resources\drawable\RoundedButton.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:gravity="center"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/NachoGreen">
+    android:background="?attr/colorPrimary"
+    tools:context=".GettingStartedFragment">
     <ImageView
         android:src="@drawable/Bootscreen_1"
         android:gravity="center"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:background="@color/NachoGreen" />
+        android:background="?attr/colorPrimary" />
     <TextView
         android:id="@+id/welcome"
-        android:text="@string/gettingstarted"
+        android:text="@string/welcome_get_started"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="18dp"
+        android:layout_marginTop="30dp"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
         android:gravity="center"
-        android:textSize="18dp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white" />
+        android:textAppearance="?attr/textAppearanceWelcome" />
     <Button
+        android:id="@+id/submit"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         android:paddingLeft="40dp"
         android:paddingRight="40dp"
         android:keepScreenOn="true"
-        android:text="@string/get_started"
-        android:textSize="17dp"
-        android:textStyle="bold"
-        android:id="@+id/submit"
-        android:textColor="@android:color/white"
-        android:background="@color/NachoSubmitButton"
+        android:text="@string/welcome_continue_action"
+        android:textAppearance="?attr/textAppearanceWelcomeButton"
+        android:background="@drawable/roundedbutton"
         android:minHeight="40dp"
         android:maxHeight="40dp"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="30dp" />
 </LinearLayout>

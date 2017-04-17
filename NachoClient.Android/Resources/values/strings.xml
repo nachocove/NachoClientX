@@ -1,8 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    
+    <string name="app_name">Nacho Mail</string>
+
+    <!-- Startup -->
+    <string name="startup_welcome">Welcome to</string>
+
+    <!-- Welcome -->
+    <string name="welcome_company">company</string>
+    <string name="welcome_get_started">Start by choosing your email service provider</string>
+    <string name="welcome_mdm_format">Start by setting up your {0} account.</string>
+    <string name="welcome_continue">Welcome Back!  We need to finish setting up your account.</string>
+    <string name="welcome_continue_action">Continue</string>
 
     <!-- Main Activity -->
-    <string name="app_name">Nacho Mail</string>
     <string name="tab_home">Home</string>
     <string name="tab_inbox">Inbox</string>
     <string name="tab_all_mail">All</string>

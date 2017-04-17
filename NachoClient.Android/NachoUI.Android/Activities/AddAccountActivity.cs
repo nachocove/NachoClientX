@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
 
-    [Activity (Label = "AddAccountActivity")]
+    [Activity (LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
     public class AddAccountActivity : NcActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
         private const string CHOOSE_PROVIDER_FRAGMENT_TAG = "ChooseProvider";
@@ -27,6 +27,16 @@ namespace NachoClient.AndroidClient
         private const string ACTION_CREDENTIALS_VALIDATE_FAILED = "CredentialsValidationFailed";
 
         McAccount account;
+
+        #region Intents
+
+        public static Intent BuildIntent (Context context)
+        {
+            var intent = new Intent (context, typeof (AddAccountActivity));
+            return intent;
+        }
+
+        #endregion
 
         public static void ResumeWithAction (Context context, string action)
         {
@@ -117,12 +127,14 @@ namespace NachoClient.AndroidClient
 
         public void WaitingFinished (McAccount account)
         {
-            Log.Info (Log.LOG_UI, "LaunchActivity syncing complete");
+            Log.Info (Log.LOG_UI, "AddAccountActivity syncing complete");
             if (null != account) {
                 LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
                 NcApplication.Instance.Account = account;
+                SetResult (Result.Ok);
+            } else {
+                SetResult (Result.Canceled);
             }
-            MainTabsActivity.Show (this);
             Finish ();
         }
 

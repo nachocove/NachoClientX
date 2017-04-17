@@ -20,6 +20,8 @@ namespace NachoClient.AndroidClient
     public class SettingsActivity : NcActivity
     {
 
+        private const int REQUEST_ADD_ACCOUNT = 1;
+
         #region Intents
 
         public static Intent BuildIntent (Context context)
@@ -89,9 +91,29 @@ namespace NachoClient.AndroidClient
 
         void ShowAddAccount ()
         {
+            var intent = AddAccountActivity.BuildIntent (this);
+            StartActivityForResult (intent, REQUEST_ADD_ACCOUNT);
+        }
+
+        void HandleAddAccountResult (Result resultCode)
+        {
+            var fragment = FragmentManager.FindFragmentById (Resource.Id.fragment) as SettingsFragment;
+            fragment.Refresh ();
         }
 
         #endregion
+
+        protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            switch (requestCode) {
+            case REQUEST_ADD_ACCOUNT:
+                HandleAddAccountResult (resultCode);
+                break;
+            default:
+                base.OnActivityResult (requestCode, resultCode, data);
+                break;
+            }
+        }
 
     }
 }
