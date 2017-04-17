@@ -276,6 +276,8 @@
     <Compile Include="NachoUI.Android\Activities\LegalDocumentActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\UnreadCountPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Support\NcDialogFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -357,8 +359,6 @@
     <None Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
-    <None Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
-    <None Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
     <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -1511,6 +1511,9 @@
     <AndroidResource Include="Resources\layout\ListFooterItem.axml" />
     <AndroidResource Include="Resources\layout\AboutListInfoItem.axml" />
     <AndroidResource Include="Resources\layout\LegalDocumentActivity.axml" />
+    <AndroidResource Include="Resources\layout\SettingsListSwitchItem.axml" />
+    <AndroidResource Include="Resources\layout\AccountSettingsListAccountItem.axml" />
+    <AndroidResource Include="Resources\layout\AccountSettingsListIssueItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -21,6 +21,9 @@ namespace NachoClient.AndroidClient
     {
 
         private const string FRAGMENT_UNREAD_COUNT_PICKER = "NachoClient.AndroidClient.SettingsFragment.FRAGMENT_UNREAD_COUNT_PICKER";
+        private const int REQUEST_ACCOUNT_SETTINGS = 1;
+
+        private int RequestedAccountId;
 
         #region Subviews
 
@@ -79,6 +82,18 @@ namespace NachoClient.AndroidClient
             ShowAbout ();
         }
 
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            switch (requestCode) {
+            case REQUEST_ACCOUNT_SETTINGS:
+                HandleAccountSettingsResult (resultCode, RequestedAccountId);
+                break;
+            default:
+                base.OnActivityResult (requestCode, resultCode, data);
+                break;
+            }
+        }
+
         #endregion
 
         #region Private Helpers
@@ -99,6 +114,18 @@ namespace NachoClient.AndroidClient
 
         void ShowAccountSettings (McAccount account) 
         {
+            RequestedAccountId = account.Id;
+            var intent = AccountSettingsActivity.BuildIntent (Activity, RequestedAccountId);
+            StartActivityForResult (intent, REQUEST_ACCOUNT_SETTINGS);
+        }
+
+        void HandleAccountSettingsResult (Result resultCode, int accountId)
+        {
+            if (resultCode == AccountSettingsActivity.RESULT_DELETED) {
+                ItemsAdapter.NotifyAccountRemoved (accountId);
+            } else {
+                ItemsAdapter.NotifyAccountChanged (accountId);
+            }
         }
 
         #endregion
@@ -149,6 +176,28 @@ namespace NachoClient.AndroidClient
         public void NotifyUnreadCountChanged ()
         {
             NotifyItemChanged (GeneralGroupPosition, UnreadCountPosition);
+        }
+
+        public void NotifyAccountChanged (int accountId)
+        {
+            for (var i = 0; i<Accounts.Count; ++i) {
+                if (Accounts [i].Id == accountId) {
+                    Accounts [i] = McAccount.QueryById<McAccount> (accountId);
+					NotifyItemChanged (AccountGroupPosition, i);
+                    break;
+                }
+            }
+        }
+
+        public void NotifyAccountRemoved (int accountId)
+        {
+            for (var i = 0; i < Accounts.Count; ++i) {
+                if (Accounts [i].Id == accountId) {
+                    Accounts.RemoveAt (i);
+                    NotifyItemRemoved (AccountGroupPosition, i);
+                    break;
+                }
+            }
         }
 
         public override int GroupCount {
@@ -337,6 +386,25 @@ namespace NachoClient.AndroidClient
                 DetailTextView.Visibility = ViewStates.Visible;
                 DetailTextView.Text = detail;
             }
+        }
+
+    }
+
+    public class SettingsSwitchItemViewHolder : SettingsBasicItemViewHolder
+    {
+
+        public Switch Switch { get; private set; }
+
+        public new static SettingsSwitchItemViewHolder Create (ViewGroup parent)
+        {
+            var inflater = LayoutInflater.From (parent.Context);
+            var view = inflater.Inflate (Resource.Layout.SettingsListSwitchItem, parent, false);
+            return new SettingsSwitchItemViewHolder (view);
+        }
+
+        public SettingsSwitchItemViewHolder (View view) : base (view)
+        {
+            Switch = view.FindViewById (Resource.Id.toggle_switch) as Switch;
         }
 
     }

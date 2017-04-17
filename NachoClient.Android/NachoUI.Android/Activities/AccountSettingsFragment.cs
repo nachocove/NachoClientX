@@ -10,6 +10,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using Android.Support.V7.Widget;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
@@ -19,6 +20,501 @@ using Android.Support.CustomTabs;
 
 namespace NachoClient.AndroidClient
 {
+
+    public class AccountSettingsFragment : Fragment, AccountSettingsAdapter.Listener
+    {
+
+        public McAccount Account;
+
+        #region Subviews
+
+        RecyclerView RecyclerView;
+        AccountSettingsAdapter ItemsAdapter;
+
+        void FindSubviews (View view)
+        {
+            RecyclerView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+        }
+
+        void ClearSubviews ()
+        {
+            RecyclerView = null;
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.SettingsFragment, container, false);
+            FindSubviews (view);
+
+            var context = RecyclerView.Context;
+            RecyclerView.SetLayoutManager (new LinearLayoutManager (Context));
+            ItemsAdapter = new AccountSettingsAdapter (this, Account);
+            RecyclerView.SetAdapter (ItemsAdapter);
+
+            return view;
+        }
+
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
+
+        #endregion
+
+        #region Listener
+
+        public void OnNameSelected ()
+        {
+        }
+
+        public void OnCredIssueSelected ()
+        {
+        }
+
+        public void OnCertIssueSelected ()
+        {
+        }
+
+        public void OnServerIssueSelected ()
+        {
+        }
+
+        public void OnPasswordNoticeSelected (string rectifyUrl)
+        {
+        }
+
+        public void OnPasswordUpdateSelected ()
+        {
+        }
+
+        public void OnAdvancedSelected ()
+        {
+        }
+
+        public void OnSignatureSelected ()
+        {
+        }
+
+        public void OnSyncSelected ()
+        {
+        }
+
+        public void OnNotificationsSelected ()
+        {
+        }
+
+        #endregion
+    }
+
+    #region Adapter
+
+    public class AccountSettingsAdapter : GroupedListRecyclerViewAdapter
+    {
+
+        public interface Listener 
+        {
+            void OnNameSelected ();
+            void OnCredIssueSelected ();
+            void OnCertIssueSelected ();
+            void OnServerIssueSelected ();
+            void OnPasswordNoticeSelected (string rectifyUrl);
+            void OnPasswordUpdateSelected ();
+            void OnAdvancedSelected ();
+            void OnSignatureSelected ();
+            void OnSyncSelected ();
+            void OnNotificationsSelected ();
+        }
+
+        McAccount Account;
+        WeakReference<Listener> WeakListener;
+        string PasswordRectifyUrl;
+        DateTime PasswordExpiry;
+        BackEndStateEnum ServerIssue;
+
+        int _GroupCount;
+
+        int NameGroupPosition = 0;
+        int NameGroupItemCount = 2;
+        int AddrItemPosition = 0;
+        int NameItemPosition = 1;
+
+        int IssueGroupPosition = -1;
+        int IssueGroupItemCount = 0;
+        int PasswordIssuePosition = -1;
+        int CertIssuePosition = -1;
+        int ServerIssuePosition = -1;
+
+        int AdvancedGroupPosition = -1;
+        int AdvancedGroupItemCount = 0;
+        int PasswordNoticePosition = -1;
+        int UpdatePasswordPosition = -1;
+        int AdvancedSettingsPosition = -1;
+
+        int MiscGroupPosition = -1;
+        int MiscGroupItemCount = 4;
+        int SignaturePosition = 0;
+        int SyncPosition = 1;
+        int NotificationsPosition = 2;
+        int FastNotifyPosition = 3;
+
+        int DefaultGroupPosition = -1;
+        int DefaultGroupItemCount = 0;
+        int DefaultEmailPosition = -1;
+        int DefaultCalendarPosition = -1;
+
+        enum ViewType {
+            Account,
+            Basic,
+            Issue,
+            Switch
+        }
+
+        public AccountSettingsAdapter (Listener listener, McAccount account)
+        {
+            WeakListener = new WeakReference<Listener> (listener);
+            Account = account;
+            Refresh ();
+        }
+
+        public void Refresh ()
+        {
+            int groupPosition = 0;
+            int position = 0;
+
+            NameGroupPosition = -1;
+            IssueGroupPosition = -1;
+            AdvancedGroupPosition = -1;
+            MiscGroupPosition = -1;
+            DefaultGroupPosition = -1;
+
+            position = 0;
+            NameGroupPosition = groupPosition++;
+            AddrItemPosition = position++;
+            NameItemPosition = position++;
+            NameGroupItemCount = position;
+
+            McServer serverWithIssue;
+            if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out ServerIssue)) {
+                position = 0;
+                ServerIssuePosition = -1;
+                PasswordIssuePosition = -1;
+                CertIssuePosition = -1;
+                IssueGroupPosition = groupPosition++;
+                switch (ServerIssue) {
+                case BackEndStateEnum.CredWait:
+                    PasswordIssuePosition = position++;
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                    CertIssuePosition = position++;
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    ServerIssuePosition = position++;
+                    break;
+                }
+                IssueGroupItemCount = position;
+            }
+
+            PasswordRectifyUrl = null;
+            var creds = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
+            bool showPasswordNotice = LoginHelpers.PasswordWillExpire (Account.Id, out PasswordExpiry, out PasswordRectifyUrl);
+            bool showUpdatePassword = creds != null && (creds.CredType == McCred.CredTypeEnum.Password || creds.CredType == McCred.CredTypeEnum.OAuth2);
+            bool showAdvanced = Account.AccountService == McAccount.AccountServiceEnum.Exchange || Account.AccountService == McAccount.AccountServiceEnum.IMAP_SMTP;
+            if (showPasswordNotice || showUpdatePassword || showAdvanced) {
+                position = 0;
+                PasswordNoticePosition = -1;
+                UpdatePasswordPosition = -1;
+                AdvancedSettingsPosition = -1;
+                AdvancedGroupPosition = groupPosition++;
+                if (showPasswordNotice) {
+                    PasswordNoticePosition = position++;
+                }
+                if (showUpdatePassword) {
+                    UpdatePasswordPosition = position++;
+                }
+                if (showAdvanced) {
+                    AdvancedSettingsPosition = position++;
+                }
+                AdvancedGroupItemCount = position;
+            }
+
+            position = 0;
+            MiscGroupPosition = groupPosition++;
+            SignaturePosition = position++;
+            SyncPosition = position++;
+            NotificationsPosition = position++;
+            FastNotifyPosition = position++;
+            MiscGroupItemCount = position;
+
+            bool isEmailSender = Account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
+            bool isCalWriter = Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter);
+            if (isEmailSender || isCalWriter) {
+                position = 0;
+                DefaultEmailPosition = -1;
+                DefaultCalendarPosition = -1;
+                DefaultGroupPosition = groupPosition++;
+                if (isEmailSender) {
+                    DefaultEmailPosition = position++;
+                }
+                if (isCalWriter) {
+                    DefaultCalendarPosition = position++;
+                }
+                DefaultGroupItemCount = position;
+            }
+
+            _GroupCount = groupPosition;
+
+            NotifyDataSetChanged ();
+        }
+
+        public override int GroupCount {
+            get {
+                return _GroupCount;
+            }
+        }
+
+        public override int GroupItemCount (int groupPosition)
+        {
+            if (groupPosition == NameGroupPosition) {
+                return NameGroupItemCount;
+            } else if (groupPosition == IssueGroupPosition) {
+                return IssueGroupItemCount;
+            } else if (groupPosition == AdvancedGroupPosition) {
+                return AdvancedGroupItemCount;
+            } else if (groupPosition == MiscGroupPosition) {
+                return MiscGroupItemCount;
+            } else if (groupPosition == DefaultGroupPosition) {
+                return DefaultGroupItemCount;
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AccountSettingsFragment.GroupItemCount: Unexpecetd group position: {0}", groupPosition));
+        }
+
+        public override string GroupHeaderValue (Context context, int groupPosition)
+        {
+            return null;
+        }
+
+        public override int GetItemViewType (int groupPosition, int position)
+        {
+            if (groupPosition == NameGroupPosition) {
+                if (position == AddrItemPosition) {
+                    return (int)ViewType.Account;
+                } else if (position == NameItemPosition) {
+                    return (int)ViewType.Basic;
+                }
+            } else if (groupPosition == IssueGroupPosition) {
+                if (position < IssueGroupItemCount) {
+                    return (int)ViewType.Issue;
+                }
+            } else if (groupPosition == AdvancedGroupPosition) {
+                if (position < AdvancedGroupItemCount) {
+                    return (int)ViewType.Basic;
+                }
+            } else if (groupPosition == MiscGroupPosition) {
+                if (position == SignaturePosition) {
+                    return (int)ViewType.Basic;
+                } else if (position == SyncPosition) {
+                    return (int)ViewType.Basic;
+                } else if (position == NotificationsPosition) {
+                    return (int)ViewType.Basic;
+                } else if (position == FastNotifyPosition) {
+                    return (int)ViewType.Switch;
+                }
+            } else if (groupPosition == DefaultGroupPosition) {
+                if (position == DefaultEmailPosition) {
+                    return (int)ViewType.Switch;
+                } else if (position == DefaultCalendarPosition) {
+                    return (int)ViewType.Switch;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AccountSettingsFragment.GetItemViewType: Unexpecetd position: {0}.{1}", groupPosition, position));
+        }
+
+        public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
+        {
+            switch ((ViewType)viewType) {
+            case ViewType.Account:
+                return AccountViewHolder.Create (parent);
+            case ViewType.Basic:
+                return SettingsBasicItemViewHolder.Create (parent);
+            case ViewType.Issue:
+                return IssueViewHolder.Create (parent);
+            case ViewType.Switch:
+                return SettingsSwitchItemViewHolder.Create (parent);
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AccountSettingsFragment.OnCreateGroupedViewHolder: Unexpecetd viewType: {0}", viewType));
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            var context = holder.ItemView.Context;
+            if (groupPosition == NameGroupPosition) {
+                if (position == AddrItemPosition) {
+                    (holder as AccountViewHolder).SetAccount (Account);
+                    return;
+                } else if (position == NameItemPosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_name), Account.DisplayName);
+                    return;
+                }
+            } else if (groupPosition == IssueGroupPosition) {
+                if (position == PasswordIssuePosition) {
+                    (holder as IssueViewHolder).SetLabels (context.GetString (Resource.String.account_issue_cred));
+                    return;
+                }else if (position == CertIssuePosition){
+                    (holder as IssueViewHolder).SetLabels (context.GetString (Resource.String.account_issue_cert));
+                    return;
+                }else if (position == ServerIssuePosition){
+                    (holder as IssueViewHolder).SetLabels (context.GetString (Resource.String.account_issue_server));
+                    return;
+                }
+            } else if (groupPosition == AdvancedGroupPosition) {
+                if (position == PasswordNoticePosition){
+                    (holder as SettingsBasicItemViewHolder).SetLabels (String.Format (context.GetString (Resource.String.account_password_expires), Pretty.ReminderDate (PasswordExpiry)));
+                    return;
+                } else if (position == UpdatePasswordPosition){
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_update_password));
+                    return;
+                }else if (position == AdvancedSettingsPosition){
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_advanced));
+                    return;
+                }
+            } else if (groupPosition == MiscGroupPosition) {
+                if (position == SignaturePosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_signature), SignatureText ());
+                    return;
+                } else if (position == SyncPosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_sync), SyncText ());
+                    return;
+                } else if (position == NotificationsPosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_notifications), NotificationsText ());
+                    return;
+                } else if (position == FastNotifyPosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.fast_notification));
+                    // TODO: switch on/off and change listener
+                    return;
+                }
+            } else if (groupPosition == DefaultGroupPosition) {
+                if (position == DefaultEmailPosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.default_email_account));
+                    // TODO: switch on/off and change listener
+                    return;
+                } else if (position == DefaultCalendarPosition) {
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.default_calendar_account));
+                    // TODO: switch on/off and change listener
+                    return;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AccountSettingsFragment.OnBindViewHolder: Unexpecetd position: {0}.{1}", groupPosition, position));
+        }
+
+        public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                if (groupPosition == NameGroupPosition) {
+                    if (position == NameItemPosition) {
+                        listener.OnNameSelected ();
+                    }
+                } else if (groupPosition == IssueGroupPosition) {
+                    if (position == PasswordIssuePosition) {
+                        listener.OnCredIssueSelected ();
+                    }else if (position == CertIssuePosition){
+                        listener.OnCertIssueSelected ();
+                    }else if (position == ServerIssuePosition){
+                        listener.OnServerIssueSelected ();
+                    }
+                } else if (groupPosition == AdvancedGroupPosition) {
+                    if (position == PasswordNoticePosition){
+                        listener.OnPasswordNoticeSelected (PasswordRectifyUrl);
+                    } else if (position == UpdatePasswordPosition){
+                        listener.OnPasswordUpdateSelected ();
+                    }else if (position == AdvancedSettingsPosition){
+                        listener.OnAdvancedSelected ();
+                    }
+                } else if (groupPosition == MiscGroupPosition) {
+                    if (position == SignaturePosition) {
+                        listener.OnSignatureSelected ();
+                    } else if (position == SyncPosition) {
+                        listener.OnSyncSelected ();
+                    } else if (position == NotificationsPosition) {
+                        listener.OnNotificationsSelected ();
+                    }
+                }
+            }
+        }
+
+        private string SignatureText ()
+        {
+            if (!string.IsNullOrEmpty (Account.HtmlSignature)) {
+                var serializer = new HtmlTextSerializer (Account.HtmlSignature);
+                var text = serializer.Serialize ();
+                return text;
+            }
+            return Account.Signature;
+        }
+
+        private string SyncText ()
+        {
+            return Pretty.MaxAgeFilter (Account.DaysToSyncEmail);
+        }
+
+        private string NotificationsText ()
+        {
+            return Pretty.NotificationConfiguration (Account.NotificationConfiguration);
+        }
+
+        class AccountViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
+        {
+
+            ImageView AvatarImageView;
+            TextView AddressTextView;
+
+            public static AccountViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.AccountSettingsListAccountItem, parent, false);
+                return new AccountViewHolder (view);
+            }
+
+            public AccountViewHolder (View view) : base (view)
+            {
+                AvatarImageView = view.FindViewById (Resource.Id.account_icon) as ImageView;
+                AddressTextView = view.FindViewById (Resource.Id.account_email) as TextView;
+            }
+
+            public void SetAccount (McAccount account)
+            {
+                AvatarImageView.SetImageDrawable (Util.GetAccountImage (AvatarImageView.Context, account));
+                AddressTextView.Text = account.EmailAddr;
+            }
+        }
+
+        class IssueViewHolder : SettingsBasicItemViewHolder
+        {
+
+            public new static IssueViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.AccountSettingsListIssueItem, parent, false);
+                return new IssueViewHolder (view);
+            }
+
+            public IssueViewHolder (View view) : base (view)
+            {
+            }
+
+        }
+
+    };
+
+    #endregion
+
+    /*
+
     public interface IAccountSettingsFragmentOwner
     {
         McAccount AccountToView { get; }
@@ -524,5 +1020,7 @@ namespace NachoClient.AndroidClient
             intent.LaunchUrl (Activity, Android.Net.Uri.Parse (authUrl.AbsoluteUri));
         }
     }
+
+    */
 }
 
