@@ -697,6 +697,35 @@ namespace NachoCore.Model
                 }
             }
         }
+
+        public enum AuthType
+        {
+            UserPass,
+            GoogleOAuth
+        }
+
+        public McCred GetCred ()
+        {
+            return McCred.QueryByAccountId<McCred> (Id).SingleOrDefault ();
+        }
+
+        public AuthType GetAuthType() 
+        {
+            if (AccountService == McAccount.AccountServiceEnum.GoogleDefault) {
+                var cred = GetCred ();
+                if (cred != null) {
+                    if (cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                        return AuthType.GoogleOAuth;
+                    } else {
+                        return AuthType.UserPass;
+                    }
+                } else {
+                    return AuthType.UserPass;
+                }
+            } else {
+                return AuthType.UserPass;
+            }
+        }
     }
 
     public class ConstMcAccount : McAccount

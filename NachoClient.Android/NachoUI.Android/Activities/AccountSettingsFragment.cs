@@ -71,9 +71,73 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Public API
+
+        public void Refresh ()
+        {
+            ItemsAdapter.Account = Account;
+            ItemsAdapter.Refresh ();
+        }
+
+        #endregion
+
         #region Listener
 
         public void OnNameSelected ()
+        {
+            ShowNameEditor ();
+        }
+
+        public void OnCredIssueSelected ()
+        {
+            ShowPasswordUpdate ();
+        }
+
+        public void OnCertIssueSelected ()
+        {
+            ShowCertAccept ();
+        }
+
+        public void OnServerIssueSelected ()
+        {
+            AttemptServerIssueFix ();
+        }
+
+        public void OnPasswordNoticeSelected (string rectifyUrl)
+        {
+            ShowPasswordExpiryNotice ();
+        }
+
+        public void OnPasswordUpdateSelected ()
+        {
+            ShowPasswordUpdate ();
+        }
+
+        public void OnAdvancedSelected ()
+        {
+            ShowAdvancedSettings ();
+        }
+
+        public void OnSignatureSelected ()
+        {
+            ShowSignatureEditor ();
+        }
+
+        public void OnSyncSelected ()
+        {
+            ShowSyncSelector ();
+        }
+
+        public void OnNotificationsSelected ()
+        {
+            ShowNotificationsSelector ();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        private void ShowNameEditor ()
         {
             var dialog = new SimpleTextDialog (Resource.String.account_name, Resource.String.account_name_hint, Account.DisplayName, (text) => {
                 Account.DisplayName = text;
@@ -84,43 +148,19 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        public void OnCredIssueSelected ()
-        {
-        }
-
-        public void OnCertIssueSelected ()
-        {
-        }
-
-        public void OnServerIssueSelected ()
-        {
-        }
-
-        public void OnPasswordNoticeSelected (string rectifyUrl)
-        {
-        }
-
-        public void OnPasswordUpdateSelected ()
-        {
-        }
-
-        public void OnAdvancedSelected ()
-        {
-        }
-
-        public void OnSignatureSelected ()
+        private void ShowSignatureEditor ()
         {
             var dialog = new SimpleTextDialog (Resource.String.account_signature, Resource.String.account_signature_hint, ItemsAdapter.SignatureText (), (text) => {
                 Account.HtmlSignature = null;
                 Account.Signature = text;
-				Account.Update ();
-			});
+                Account.Update ();
+            });
             dialog.Show (FragmentManager, FRAGMENT_SIGNATURE_DIALOG, () => {
                 ItemsAdapter.NotifySignatureChanged ();
             });
         }
 
-        public void OnSyncSelected ()
+        private void ShowSyncSelector ()
         {
             var dialog = new DaysToSyncPickerDialog (Account);
             dialog.Show (FragmentManager, FRAGMENT_SYNC_DIALOG, () => {
@@ -128,12 +168,119 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        public void OnNotificationsSelected ()
+        private void ShowNotificationsSelector ()
         {
             var dialog = new NotificationsPickerDialog (Account);
             dialog.Show (FragmentManager, FRAGMENT_NOTIFICATIONS_DIALOG, () => {
                 ItemsAdapter.NotifyNotificationsChanged ();
             });
+        }
+
+        private void ShowPasswordUpdate ()
+        {
+            var authType = Account.GetAuthType ();
+            switch (authType) {
+            case McAccount.AuthType.UserPass:
+                ShowBasicPasswordUpdate ();
+                break;
+            case McAccount.AuthType.GoogleOAuth:
+                ShowGooglePasswordUpdate ();
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AccountSettingsFragment.ShowPasswordUpdate: unknown auth type: {0}", authType));
+            }
+        }
+
+        private void ShowBasicPasswordUpdate ()
+        {
+        }
+
+        private void ShowGooglePasswordUpdate ()
+        {
+            GoogleOAuth2Authenticator.Create (Account.EmailAddr, (auth) => {
+                auth.AllowCancel = true;
+                auth.Completed += GoogleAuthCompleted;
+                auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
+                    ReturnToOurActivity ();
+                };
+                var intent = auth.GetUI (Activity) as CustomTabsIntent;
+                // var intent = builder.Build ();
+                var authUrl = auth.GetInitialUrlAsync ().Result;
+                intent.LaunchUrl (Activity, Android.Net.Uri.Parse (authUrl.AbsoluteUri));
+            });
+        }
+
+        private void GoogleAuthCompleted (object sender, AuthenticatorCompletedEventArgs e){
+            if (e.IsAuthenticated) {
+                string access_token;
+                e.Account.Properties.TryGetValue ("access_token", out access_token);
+
+                string refresh_token;
+                e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
+
+                string expiresString = "0";
+                uint expirationSecs = 0;
+                if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
+                    if (!uint.TryParse (expiresString, out expirationSecs)) {
+                        Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
+                    }
+                }
+
+                var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
+
+                Newtonsoft.Json.Linq.JObject userInfo;
+                try {
+                    var userInfoString = new System.Net.WebClient ().DownloadString (url);
+                    userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                } catch (Exception ex) {
+                    Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info {0}", ex);
+                    NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                    return;
+                }
+
+                if (!String.Equals (Account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
+                    // Can't change your email address
+                    NcAlertView.ShowMessage (this.Activity, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
+                    return;
+                }
+
+                var cred = Account.GetCred ();
+                cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
+
+                BackEnd.Instance.CredResp (Account.Id);
+            }
+            ReturnToOurActivity ();
+        }
+
+        private void ReturnToOurActivity ()
+        {
+            if (Activity is AccountSettingsActivity) {
+                (Activity as AccountSettingsActivity).Show ();
+            }
+        }
+
+        private void ShowPasswordExpiryNotice ()
+        {
+            // Not previously implemented in old UI
+        }
+
+        private void ShowAdvancedSettings ()
+        {
+        }
+
+        private void ShowCertAccept ()
+        {
+            // Not previously implemented in old UI
+        }
+
+        private void AttemptServerIssueFix ()
+        {
+            if (ItemsAdapter.ServerWithIssue.IsHardWired) {
+                BackEnd.Instance.ServerConfResp (Account.Id, ItemsAdapter.ServerWithIssue.Capabilities, false);
+                Activity.Finish ();
+            } else {
+                ShowAdvancedSettings ();
+            }
         }
 
         #endregion
@@ -158,11 +305,12 @@ namespace NachoClient.AndroidClient
             void OnNotificationsSelected ();
         }
 
-        McAccount Account;
+        public McAccount Account;
         WeakReference<Listener> WeakListener;
         string PasswordRectifyUrl;
         DateTime PasswordExpiry;
-        BackEndStateEnum ServerIssue;
+        public BackEndStateEnum ServerIssue { get; private set; }
+        public McServer ServerWithIssue { get; private set; }
 
         int _GroupCount;
 
@@ -226,9 +374,11 @@ namespace NachoClient.AndroidClient
             NameItemPosition = position++;
             NameGroupItemCount = position;
 
-            ServerIssue = BackEndStateEnum.Running;
             McServer serverWithIssue;
-            if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out ServerIssue)) {
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out serverIssue)) {
+                ServerWithIssue = serverWithIssue;
+                ServerIssue = serverIssue;
                 position = 0;
                 ServerIssuePosition = -1;
                 PasswordIssuePosition = -1;
@@ -246,6 +396,9 @@ namespace NachoClient.AndroidClient
                     break;
                 }
                 IssueGroupItemCount = position;
+            } else {
+                ServerWithIssue = null;
+                ServerIssue = BackEndStateEnum.Running;
             }
 
             PasswordRectifyUrl = null;

@@ -28,6 +28,17 @@ namespace NachoClient.AndroidClient
 
         private McAccount Account;
 
+        #region Navigation
+
+        public void Show ()
+        {
+        	var intent = new Intent (this, typeof (AccountSettingsActivity));
+        	intent.SetFlags (ActivityFlags.SingleTop | ActivityFlags.ClearTop);
+            StartActivity (intent);
+        }
+
+        #endregion
+
         #region Intents
 
         public static Intent BuildIntent (Context context, int accountId)
@@ -88,6 +99,17 @@ namespace NachoClient.AndroidClient
         {
             ClearSubviews ();
             base.OnDestroy ();
+        }
+
+        protected override void OnNewIntent (Intent intent)
+        {
+            base.OnNewIntent (intent);
+            Account = McAccount.QueryById<McAccount> (Account.Id);
+            var fragment = FragmentManager.FindFragmentById (Resource.Id.fragment) as AccountSettingsFragment;
+            if (fragment != null) {
+                fragment.Account = Account;
+                fragment.Refresh ();
+            }
         }
 
         #endregion
