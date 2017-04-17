@@ -428,6 +428,14 @@ namespace NachoCore.Model
             return null;
         }
 
+        public static void SetDefaultAccount (int accountId, AccountCapabilityEnum capability)
+        {
+            var deviceAccount = GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)capability);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, accountId);
+        }
+
         public static McAccount EmailAccountForMessage (McEmailMessage message)
         {
             return EmailAccountForAccountId (message.AccountId);

@@ -1514,6 +1514,8 @@
     <AndroidResource Include="Resources\layout\SettingsListSwitchItem.axml" />
     <AndroidResource Include="Resources\layout\AccountSettingsListAccountItem.axml" />
     <AndroidResource Include="Resources\layout\AccountSettingsListIssueItem.axml" />
+    <AndroidResource Include="Resources\menu\settings.xml" />
+    <AndroidResource Include="Resources\menu\account_settings.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

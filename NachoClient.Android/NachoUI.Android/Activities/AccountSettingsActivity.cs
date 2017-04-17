@@ -94,11 +94,17 @@ namespace NachoClient.AndroidClient
 
         public override bool OnCreateOptionsMenu (IMenu menu)
         {
+            MenuInflater.Inflate (Resource.Menu.account_settings, menu);
             return base.OnCreateOptionsMenu (menu);
         }
 
         public override bool OnOptionsItemSelected (IMenuItem item)
         {
+            switch (item.ItemId) {
+            case Resource.Id.action_delete_account:
+                DeleteAccount ();
+                break;
+            }
             return base.OnOptionsItemSelected (item);
         }
 
@@ -108,7 +114,8 @@ namespace NachoClient.AndroidClient
 
         void DeleteAccount ()
         {
-            SetResult (RESULT_DELETED);
+            // TODO: delete account
+            //SetResult (RESULT_DELETED);
             Finish ();
         }
 
@@ -116,41 +123,4 @@ namespace NachoClient.AndroidClient
 
     }
 
-    /*
-
-    [Activity (Label = "AccountSettingsActivity")]
-    public class AccountSettingsActivity : NcActivityWithData<McAccount>, IAccountSettingsFragmentOwner
-    {
-        private const string EXTRA_ACCOUNT = "com.nachocove.nachomail.EXTRA_ACCOUNT";
-
-        private McAccount account;
-
-        protected override void OnCreate (Bundle bundle)
-        {
-            base.OnCreate (bundle);
-            var retainedAccount = RetainedData;
-            if (null == retainedAccount) {
-                retainedAccount = IntentHelper.RetrieveValue<McAccount> (Intent.GetStringExtra (EXTRA_ACCOUNT));
-                RetainedData = retainedAccount;
-            }
-            account = retainedAccount;
-            SetContentView (Resource.Layout.AccountSettingsActivity);
-        }
-
-        public static Intent ShowAccountSettingsIntent (Context context, McAccount account)
-        {
-            var intent = new Intent (context, typeof(AccountSettingsActivity));
-            intent.SetAction (Intent.ActionView);
-            intent.PutExtra (EXTRA_ACCOUNT, IntentHelper.StoreValue (account));
-            return intent;
-        }
-
-        McAccount IAccountSettingsFragmentOwner.AccountToView {
-            get {
-                return this.account;
-            }
-        }
-    }
-
-    */
 }

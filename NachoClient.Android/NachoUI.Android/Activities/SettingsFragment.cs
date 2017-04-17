@@ -112,7 +112,7 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
-        void ShowAccountSettings (McAccount account) 
+        void ShowAccountSettings (McAccount account)
         {
             RequestedAccountId = account.Id;
             var intent = AccountSettingsActivity.BuildIntent (Activity, RequestedAccountId);
@@ -156,7 +156,8 @@ namespace NachoClient.AndroidClient
         List<McAccount> Accounts;
         WeakReference<Listener> WeakListener;
 
-        enum ViewType {
+        enum ViewType
+        {
             Basic,
             Account
         }
@@ -180,10 +181,10 @@ namespace NachoClient.AndroidClient
 
         public void NotifyAccountChanged (int accountId)
         {
-            for (var i = 0; i<Accounts.Count; ++i) {
+            for (var i = 0; i < Accounts.Count; ++i) {
                 if (Accounts [i].Id == accountId) {
                     Accounts [i] = McAccount.QueryById<McAccount> (accountId);
-					NotifyItemChanged (AccountGroupPosition, i);
+                    NotifyItemChanged (AccountGroupPosition, i);
                     break;
                 }
             }
@@ -394,6 +395,7 @@ namespace NachoClient.AndroidClient
     {
 
         public Switch Switch { get; private set; }
+        EventHandler<Android.Widget.Switch.CheckedChangeEventArgs> ChangeHandler;
 
         public new static SettingsSwitchItemViewHolder Create (ViewGroup parent)
         {
@@ -407,156 +409,20 @@ namespace NachoClient.AndroidClient
             Switch = view.FindViewById (Resource.Id.toggle_switch) as Switch;
         }
 
+        public void SetChangeHandler (EventHandler<Android.Widget.Switch.CheckedChangeEventArgs> changeHandler)
+        {
+            if (ChangeHandler != null) {
+                Switch.CheckedChange -= ChangeHandler;
+            }
+            ChangeHandler = changeHandler;
+            if (changeHandler != null) {
+                Switch.CheckedChange += changeHandler;
+            }
+        }
+
     }
 
     #endregion
-
-        /*
-
-        RecyclerView recyclerView;
-        RecyclerView.LayoutManager layoutManager;
-        AccountAdapter accountAdapter;
-
-        public static SettingsFragment newInstance ()
-        {
-            var fragment = new SettingsFragment ();
-            return fragment;
-        }
-
-        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-        {
-            var view = inflater.Inflate (Resource.Layout.SettingsFragment, container, false);
-
-            var activity = (NcTabBarActivity)this.Activity;
-            activity.HookNavigationToolbar (view);
-
-            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.SettingsListview, false, true);
-            accountAdapter.AddAccount += AccountAdapter_AddAccount;
-            accountAdapter.ConnectToSalesforce += AccountAdapter_ConnectToSalesforce;
-            accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
-
-            recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
-            recyclerView.SetAdapter (accountAdapter);
-
-            layoutManager = new LinearLayoutManager (this.Activity);
-            recyclerView.SetLayoutManager (layoutManager);
-
-            var hotSwitch = view.FindViewById<Switch> (Resource.Id.show_hot_cards);
-            hotSwitch.Checked = LoginHelpers.ShowHotCards ();
-            hotSwitch.CheckedChange += HotSwitch_CheckedChange;
-
-            var unreadSpinner = view.FindViewById<Spinner> (Resource.Id.unread_spinner);
-            var unreadSpinnerAdapter = ArrayAdapter.CreateFromResource (this.Activity, Resource.Array.unread_count, Resource.Layout.spinner_item);
-            unreadSpinnerAdapter.SetDropDownViewResource (Android.Resource.Layout.SimpleSpinnerDropDownItem);
-            unreadSpinner.Adapter = unreadSpinnerAdapter;
-
-            // Map to string array
-            switch (EmailHelper.HowToDisplayUnreadCount ()) {
-            case EmailHelper.ShowUnreadEnum.AllMessages:
-                unreadSpinner.SetSelection (0);
-                break;
-            case EmailHelper.ShowUnreadEnum.RecentMessages:
-                unreadSpinner.SetSelection(1);
-                break;
-            case EmailHelper.ShowUnreadEnum.TodaysMessages:
-                unreadSpinner.SetSelection(2);
-                break;
-            }
-
-            unreadSpinner.ItemSelected += UnreadSpinner_ItemSelected;
-
-//            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
-//                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
-//                crashButton.Visibility = ViewStates.Visible;
-//                crashButton.Click += CrashButton_Click;
-//            }
-
-            return view;
-        }
-
-        void UnreadSpinner_ItemSelected (object sender, AdapterView.ItemSelectedEventArgs e)
-        {
-            switch (e.Position) {
-            case 0:
-                EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.AllMessages);
-                break;
-            case 1:
-                EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.RecentMessages);
-                break;
-            case 2:
-                EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.TodaysMessages);
-                break;
-            }
-        }
-
-        void HotSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
-        {
-            LoginHelpers.SetShowHotCards (e.IsChecked); 
-        }
-
-        void CrashButton_Click (object sender, EventArgs e)
-        {
-            throw new Exception ("CRASH SIMULATION");  
-        }
-
-        public override void OnResume ()
-        {
-            base.OnResume ();
-
-            accountAdapter.Refresh ();
-
-            // Highlight the tab bar icon of this activity
-            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
-
-            if (LoginHelpers.ShouldAlertUser ()) {
-                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
-            } else {
-                moreImage.SetImageResource (Resource.Drawable.nav_more_active);
-            }
-
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-        }
-
-        public override void OnPause ()
-        {
-            base.OnPause ();
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
-        void AccountAdapter_AccountSelected (object sender, McAccount account)
-        {
-            var parent = (SettingsActivity)Activity;
-            parent.AccountSettingsSelected (account);
-        }
-
-        void AccountAdapter_AddAccount (object sender, EventArgs e)
-        {
-            var parent = (AccountListDelegate)Activity;
-            parent.AddAccount ();
-        }
-
-        void AccountAdapter_ConnectToSalesforce (object sender, EventArgs e)
-        {
-            var parent = (SettingsActivity)Activity;
-            parent.ConnectToSalesforce ();
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_AccountSetChanged:
-                accountAdapter.Refresh ();
-                break;
-            case NcResult.SubKindEnum.Info_AccountChanged:
-                var activity = (NcTabBarActivity)this.Activity;
-                activity.SetSwitchAccountButtonImage (View);
-                break;
-            }
-        }
-
-        */
 
 }
 

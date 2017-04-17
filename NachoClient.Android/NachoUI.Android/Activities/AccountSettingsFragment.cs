@@ -393,18 +393,37 @@ namespace NachoClient.AndroidClient
                     (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_notifications), NotificationsText ());
                     return;
                 } else if (position == FastNotifyPosition) {
-                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.fast_notification));
-                    // TODO: switch on/off and change listener
+                    var switchHolder = (holder as SettingsSwitchItemViewHolder);
+                    switchHolder.SetLabels (context.GetString (Resource.String.fast_notification));
+                    switchHolder.Switch.Checked = Account.FastNotificationEnabled;
+                    switchHolder.SetChangeHandler ((sender, e) => {
+                        Account.FastNotificationEnabled = e.IsChecked;
+                        Account.Update ();
+                    });
                     return;
                 }
             } else if (groupPosition == DefaultGroupPosition) {
                 if (position == DefaultEmailPosition) {
-                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.default_email_account));
-                    // TODO: switch on/off and change listener
+                    var defaultAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                    var switchHolder = (holder as SettingsSwitchItemViewHolder);
+                    switchHolder.SetLabels (context.GetString (Resource.String.default_email_account));
+                    switchHolder.Switch.Checked = defaultAccount != null && defaultAccount.Id == Account.Id;
+                    switchHolder.Switch.Enabled = !switchHolder.Switch.Checked;
+                    switchHolder.SetChangeHandler ((sender, e) => {
+                        McAccount.SetDefaultAccount (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                        (sender as Switch).Enabled = false;
+                    });
                     return;
                 } else if (position == DefaultCalendarPosition) {
-                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.default_calendar_account));
-                    // TODO: switch on/off and change listener
+                    var defaultAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                    var switchHolder = (holder as SettingsSwitchItemViewHolder);
+                    switchHolder.SetLabels (context.GetString (Resource.String.account_default_calendar));
+                    switchHolder.Switch.Checked = defaultAccount != null && defaultAccount.Id == Account.Id;
+                    switchHolder.Switch.Enabled = !switchHolder.Switch.Checked;
+                    switchHolder.SetChangeHandler ((sender, e) => {
+                        McAccount.SetDefaultAccount (Account.Id, McAccount.AccountCapabilityEnum.CalWriter);
+                        (sender as Switch).Enabled = false;
+                    });
                     return;
                 }
             }

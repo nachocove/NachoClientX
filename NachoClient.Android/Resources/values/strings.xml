@@ -8,10 +8,11 @@
     <string name="tab_all_mail">All</string>
     <string name="tab_calendar">Events</string>
     <string name="tab_contacts">People</string>
-    <string name="action_settings">Settings</string>
+    <string name="main_action_settings">Settings</string>
 
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
+    <string name="settings_action_add_account">Add Account</string>
     <string name="settings_accounts">Accounts</string>
     <string name="settings_unread_count">Unread Count</string>
     <string name="settings_unread_count_all">All Messages</string>
@@ -20,8 +21,8 @@
     <string name="settings_about">About Nacho Mail</string>
 
     <!-- Account Settings -->
-    <string name="account_action_delete">Delete Account</string>
     <string name="account_settings_label">Account Settings</string>
+    <string name="account_action_delete_account">Delete Account</string>
     <string name="account_name">Nickname</string>
     <string name="account_issue_cred">Update Password</string>
     <string name="account_issue_cert">Approve Certificate</string>
