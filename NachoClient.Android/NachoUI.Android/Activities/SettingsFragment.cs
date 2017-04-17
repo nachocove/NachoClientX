@@ -132,6 +132,9 @@ namespace NachoClient.AndroidClient
         {
             if (resultCode == AccountSettingsActivity.RESULT_DELETED) {
                 ItemsAdapter.NotifyAccountRemoved (accountId);
+                if (ItemsAdapter.Accounts.Count == 0) {
+                    MainTabsActivity.ShowSetup (Activity);
+                }
             } else {
                 ItemsAdapter.NotifyAccountChanged (accountId);
             }
@@ -163,7 +166,7 @@ namespace NachoClient.AndroidClient
         int AboutItemCount = 1;
         int AboutPosition = 0;
 
-        List<McAccount> Accounts;
+        public List<McAccount> Accounts { get; private set; }
         WeakReference<Listener> WeakListener;
 
         enum ViewType

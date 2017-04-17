@@ -24,6 +24,11 @@ namespace NachoClient.AndroidClient
     public class AccountSettingsFragment : Fragment, AccountSettingsAdapter.Listener
     {
 
+        private const string FRAGMENT_NAME_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_NAME_DIALOG";
+        private const string FRAGMENT_SIGNATURE_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_SIGNATURE_DIALOG";
+        private const string FRAGMENT_SYNC_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_SYNC_DIALOG";
+        private const string FRAGMENT_NOTIFICATIONS_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_NOTIFICATIONS_DIALOG";
+
         public McAccount Account;
 
         #region Subviews
@@ -70,6 +75,13 @@ namespace NachoClient.AndroidClient
 
         public void OnNameSelected ()
         {
+            var dialog = new SimpleTextDialog (Resource.String.account_name, Resource.String.account_name_hint, Account.DisplayName, (text) => {
+                Account.DisplayName = text;
+                Account.Update ();
+            });
+            dialog.Show (FragmentManager, FRAGMENT_NAME_DIALOG, () => {
+                ItemsAdapter.NotifyNameChanged ();
+            });
         }
 
         public void OnCredIssueSelected ()
@@ -98,14 +110,30 @@ namespace NachoClient.AndroidClient
 
         public void OnSignatureSelected ()
         {
+            var dialog = new SimpleTextDialog (Resource.String.account_signature, Resource.String.account_signature_hint, ItemsAdapter.SignatureText (), (text) => {
+                Account.HtmlSignature = null;
+                Account.Signature = text;
+				Account.Update ();
+			});
+            dialog.Show (FragmentManager, FRAGMENT_SIGNATURE_DIALOG, () => {
+                ItemsAdapter.NotifySignatureChanged ();
+            });
         }
 
         public void OnSyncSelected ()
         {
+            var dialog = new DaysToSyncPickerDialog (Account);
+            dialog.Show (FragmentManager, FRAGMENT_SYNC_DIALOG, () => {
+                ItemsAdapter.NotifySyncChanged ();
+            });
         }
 
         public void OnNotificationsSelected ()
         {
+            var dialog = new NotificationsPickerDialog (Account);
+            dialog.Show (FragmentManager, FRAGMENT_NOTIFICATIONS_DIALOG, () => {
+                ItemsAdapter.NotifyNotificationsChanged ();
+            });
         }
 
         #endregion
@@ -198,6 +226,7 @@ namespace NachoClient.AndroidClient
             NameItemPosition = position++;
             NameGroupItemCount = position;
 
+            ServerIssue = BackEndStateEnum.Running;
             McServer serverWithIssue;
             if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out ServerIssue)) {
                 position = 0;
@@ -222,7 +251,7 @@ namespace NachoClient.AndroidClient
             PasswordRectifyUrl = null;
             var creds = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
             bool showPasswordNotice = LoginHelpers.PasswordWillExpire (Account.Id, out PasswordExpiry, out PasswordRectifyUrl);
-            bool showUpdatePassword = creds != null && (creds.CredType == McCred.CredTypeEnum.Password || creds.CredType == McCred.CredTypeEnum.OAuth2);
+            bool showUpdatePassword = creds != null && (creds.CredType == McCred.CredTypeEnum.Password || creds.CredType == McCred.CredTypeEnum.OAuth2) && ServerIssue != BackEndStateEnum.CredWait;
             bool showAdvanced = Account.AccountService == McAccount.AccountServiceEnum.Exchange || Account.AccountService == McAccount.AccountServiceEnum.IMAP_SMTP;
             if (showPasswordNotice || showUpdatePassword || showAdvanced) {
                 position = 0;
@@ -466,7 +495,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        private string SignatureText ()
+        public string SignatureText ()
         {
             if (!string.IsNullOrEmpty (Account.HtmlSignature)) {
                 var serializer = new HtmlTextSerializer (Account.HtmlSignature);
@@ -484,6 +513,26 @@ namespace NachoClient.AndroidClient
         private string NotificationsText ()
         {
             return Pretty.NotificationConfiguration (Account.NotificationConfiguration);
+        }
+
+        public void NotifyNameChanged ()
+        {
+            NotifyItemChanged (NameGroupPosition, NameItemPosition);
+        }
+
+        public void NotifySignatureChanged ()
+        {
+            NotifyItemChanged (MiscGroupPosition, SignaturePosition);
+        }
+
+        public void NotifySyncChanged ()
+        {
+            NotifyItemChanged (MiscGroupPosition, SyncPosition);
+        }
+
+        public void NotifyNotificationsChanged ()
+        {
+            NotifyItemChanged (MiscGroupPosition, NotificationsPosition);
         }
 
         class AccountViewHolder : GroupedListRecyclerViewAdapter.ViewHolder

@@ -278,6 +278,9 @@
     <Compile Include="NachoUI.Android\Support\NcDialogFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SimpleTextDialog.cs" />
+    <Compile Include="NachoUI.Android\Activities\DaysToSyncPickerDialog.cs" />
+    <Compile Include="NachoUI.Android\Activities\NotificationsPickerDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -321,8 +324,6 @@
     <None Include="NachoUI.Android\Activities\NoteActivity.cs" />
     <None Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
     <None Include="NachoUI.Android\Activities\EventViewActivity.cs" />
-    <None Include="NachoUI.Android\Activities\NotificationChooserFragment.cs" />
-    <None Include="NachoUI.Android\Activities\DaysToSyncChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeBaseActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeViewActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeEditActivity.cs" />
@@ -1137,10 +1138,6 @@
     <AndroidResource Include="Resources\layout\EmailAddressToken.axml" />
     <AndroidResource Include="Resources\drawable\EmailAddressToken.xml" />
     <AndroidResource Include="Resources\layout\AccountSettingsFragment.axml" />
-    <AndroidResource Include="Resources\layout\NotificationChooserFragment.axml" />
-    <AndroidResource Include="Resources\layout\NotificationChooserCell.axml" />
-    <AndroidResource Include="Resources\layout\DaysToSyncChooserCell.axml" />
-    <AndroidResource Include="Resources\layout\DaysToSyncChooserFragment.axml" />
     <AndroidResource Include="Resources\layout\AttendeeListFragment.axml" />
     <AndroidResource Include="Resources\drawable\BlackBorder.xml" />
     <AndroidResource Include="Resources\layout\AttendeeListCell.axml" />
@@ -1517,6 +1514,7 @@
     <AndroidResource Include="Resources\menu\settings.xml" />
     <AndroidResource Include="Resources\menu\account_settings.xml" />
     <AndroidResource Include="Resources\drawable\RoundedButton.xml" />
+    <AndroidResource Include="Resources\layout\SimpleTextDialog.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

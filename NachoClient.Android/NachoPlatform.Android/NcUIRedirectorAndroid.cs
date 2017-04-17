@@ -30,12 +30,8 @@ namespace NachoPlatform
 
         public void GoBackToMainScreen ()
         {
-            // go back to main screen
             var context = MainApplication.Context;
-            var intent = new Intent (context, typeof(SetupActivity));
-            intent.AddFlags (ActivityFlags.ClearTop | ActivityFlags.NewTask);
-            context.StartActivity (intent);
-
+            MainTabsActivity.ShowSetup (context);
         }
 
     }

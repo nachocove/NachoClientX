@@ -25,6 +25,7 @@ namespace NachoClient.AndroidClient
     [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon", LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
     public class MainTabsActivity : NcActivity
     {
+        private const string ACTION_SHOW_SETUP = "NachocClient.AndroidClient.MainTabsActivity.ACTION_SHOW_SETUP";
 
         private MainTabsPagerAdapter TabsAdapter;
         private EventHandler ActionButtonClickHandler;
@@ -34,6 +35,14 @@ namespace NachoClient.AndroidClient
         public static void Show (Context context)
         {
             var intent = new Intent (context, typeof (MainTabsActivity));
+            intent.SetFlags (ActivityFlags.SingleTop | ActivityFlags.ClearTop);
+            context.StartActivity (intent);
+        }
+
+        public static void ShowSetup (Context context)
+        {
+            var intent = new Intent (context, typeof (MainTabsActivity));
+            intent.SetAction (ACTION_SHOW_SETUP);
             intent.SetFlags (ActivityFlags.SingleTop | ActivityFlags.ClearTop);
             context.StartActivity (intent);
         }
@@ -93,14 +102,12 @@ namespace NachoClient.AndroidClient
             UpdateToolbarAccountInfo ();
         }
 
-        protected override void OnRestoreInstanceState (Bundle savedInstanceState)
+        protected override void OnNewIntent (Intent intent)
         {
-            base.OnRestoreInstanceState (savedInstanceState);
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            base.OnSaveInstanceState (outState);
+            base.OnNewIntent (intent);
+            if (intent.Action == ACTION_SHOW_SETUP) {
+                ShowSetup ();
+            }
         }
 
         protected override void OnDestroy ()

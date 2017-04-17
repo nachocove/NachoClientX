@@ -14,10 +14,12 @@ using Android.Views;
 using Android.Support.V7.Widget;
 using NachoCore.Model;
 
+using NachoCore.Utils;
+
 namespace NachoClient.AndroidClient
 {
 
-    [Activity (Label="@string/account_settings_label", ParentActivity=typeof(SettingsActivity))]
+    [Activity (Label = "@string/account_settings_label", ParentActivity = typeof (SettingsActivity))]
     public class AccountSettingsActivity : NcActivity
     {
 
@@ -114,9 +116,15 @@ namespace NachoClient.AndroidClient
 
         void DeleteAccount ()
         {
-            // TODO: delete account
-            //SetResult (RESULT_DELETED);
-            Finish ();
+            // TODO: lock UI and show activity indicator
+            Action action = () => {
+				NcAccountHandler.Instance.RemoveAccount (Account.Id);
+                NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+        			SetResult (RESULT_DELETED);
+                    Finish ();
+				});
+            };
+            NcTask.Run (action, "RemoveAccount");
         }
 
         #endregion

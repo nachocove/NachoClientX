@@ -35,6 +35,7 @@
     <string name="account_settings_label">Account Settings</string>
     <string name="account_action_delete_account">Delete Account</string>
     <string name="account_name">Nickname</string>
+    <string name="account_name_hint">e.g., Home, Work</string>
     <string name="account_issue_cred">Update Password</string>
     <string name="account_issue_cert">Approve Certificate</string>
     <string name="account_issue_server">Configuration Issue</string>
@@ -42,8 +43,10 @@
     <string name="account_update_password">Update Password</string>
     <string name="account_advanced">Advanced Settings</string>
     <string name="account_signature">Signature</string>
+    <string name="account_signature_hint">Signature</string>
     <string name="account_sync">Days to Sync</string>
     <string name="account_notifications">Notifications</string>
+    <string name="account_notifications_done">Done</string>
     <string name="account_fast_notifications">Fast Notification</string>
     <string name="account_default_email">Default Email Account</string>
     <string name="account_default_calendar">Default Calendar Account</string>
@@ -57,6 +60,10 @@
     <string name="about_intro">Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability.</string>
     <string name="about_detail">In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time, and reduce clutter that gets in your way.</string>
     <string name="about_version_format">Nacho Mail version {0}</string>
+
+    <!-- Simple Text Dialot -->
+    <string name="text_dialog_save">Save</string>
+    <string name="text_dialog_cancel">Cancel</string>
 
 
     <!-- Demo strings are used for visual UI editors -->
