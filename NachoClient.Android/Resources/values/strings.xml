@@ -61,9 +61,16 @@
     <string name="about_detail">In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time, and reduce clutter that gets in your way.</string>
     <string name="about_version_format">Nacho Mail version {0}</string>
 
-    <!-- Simple Text Dialot -->
+    <!-- Simple Text Dialog -->
     <string name="text_dialog_save">Save</string>
     <string name="text_dialog_cancel">Cancel</string>
+
+    <!-- Password Update Dialog -->
+    <string name="password_update_title">Update Password</string>
+    <string name="password_update_save">Save</string>
+    <string name="password_update_cancel">Cancel</string>
+    <string name="password_update_username_hint">Username</string>
+    <string name="password_update_password_hint">Password</string>
 
 
     <!-- Demo strings are used for visual UI editors -->

@@ -28,6 +28,7 @@ namespace NachoClient.AndroidClient
         private const string FRAGMENT_SIGNATURE_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_SIGNATURE_DIALOG";
         private const string FRAGMENT_SYNC_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_SYNC_DIALOG";
         private const string FRAGMENT_NOTIFICATIONS_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_NOTIFICATIONS_DIALOG";
+        private const string FRAGMENT_PASSWORD_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_PASSWORD_DIALOG";
 
         public McAccount Account;
 
@@ -105,7 +106,7 @@ namespace NachoClient.AndroidClient
 
         public void OnPasswordNoticeSelected (string rectifyUrl)
         {
-            ShowPasswordExpiryNotice ();
+            ShowPasswordExpiryNotice (rectifyUrl);
         }
 
         public void OnPasswordUpdateSelected ()
@@ -193,6 +194,8 @@ namespace NachoClient.AndroidClient
 
         private void ShowBasicPasswordUpdate ()
         {
+            var dialog = new PasswordUpdateDialog (Account);
+            dialog.Show (FragmentManager, FRAGMENT_PASSWORD_DIALOG);
         }
 
         private void ShowGooglePasswordUpdate ()
@@ -259,17 +262,24 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        private void ShowPasswordExpiryNotice ()
+        private void ShowPasswordExpiryNotice (string rectifyUrl)
         {
+            // FIXME: needs implementation
+            // Should allow the user to dismiss the alert and visit the rectifyUrl if non-null
             // Not previously implemented in old UI
         }
 
         private void ShowAdvancedSettings ()
         {
+            // FIXME: needs implementation
+            // Old UI went to validate activity and showed advanced fields
+            // Consider rewriting validate activity as AdvancedAccountSettingsActivity
         }
 
         private void ShowCertAccept ()
         {
+            // FIXME: needs implementation
+            // Should show the cert and allow the user to accept/decline
             // Not previously implemented in old UI
         }
 

@@ -726,6 +726,11 @@ namespace NachoCore.Model
                 return AuthType.UserPass;
             }
         }
+
+        public List<McServer> GetServers ()
+        {
+            return McServer.QueryByAccountId<McServer> (Id).ToList ();
+        }
     }
 
     public class ConstMcAccount : McAccount
