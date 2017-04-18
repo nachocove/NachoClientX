@@ -160,8 +160,11 @@ namespace NachoClient.iOS
         private void CompleteAccount ()
         {
             if (Account != null) {
-                Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-                Account.Update ();
+                Account = Account.UpdateWithOCApply<McAccount> ((record) => {
+                    var account = record as McAccount;
+                    account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                    return true;
+                });
             }
         }
 

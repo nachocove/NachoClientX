@@ -361,10 +361,9 @@ namespace NachoClient.AndroidClient
             } else {
                 Toolbar.Title = account.DisplayName;
             }
-            // FIXME: figure out how to size properly
-            // var image = Util.GetAccountImage (this, account);
-            // Also, the white background on our account images looks dumb
-            // Toolbar.Logo = ScaledToolbarIcon (image);
+            int size = (int)Math.Round(40.0 * Resources.DisplayMetrics.Density);
+            var image = Util.GetSizedAndRoundedAccountImage (this, account, size);
+            SupportActionBar.SetHomeAsUpIndicator (image);
         }
 
     }

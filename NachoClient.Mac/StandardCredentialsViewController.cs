@@ -274,8 +274,11 @@ namespace NachoClient.Mac
 
         private void HandleAccountVerified ()
         {
-            Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-            Account.Update ();
+            Account = Account.UpdateWithOCApply<McAccount> ((record) => {
+                var account = record as McAccount;
+                account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                return true;
+            });
             IsConnecting = false;
             Log.Info (Log.LOG_UI, "StandardCredentialsViewController PostAutoDPreInboxSync for reader or writer");
             CredentialsViewDelegate accountDelegate;

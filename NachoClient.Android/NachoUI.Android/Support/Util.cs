@@ -18,6 +18,16 @@ namespace NachoClient.AndroidClient
     public static class Util
     {
 
+        public static Drawable GetSizedAndRoundedAccountImage (Context context, McAccount account, int size)
+        {
+            var bitmap = (GetAccountImage (context, account) as BitmapDrawable).Bitmap;
+            using (bitmap = Android.Graphics.Bitmap.CreateScaledBitmap (bitmap, size, size, true)) {
+                var roundedBitmap = Android.Support.V4.Graphics.Drawable.RoundedBitmapDrawableFactory.Create (context.Resources, bitmap);
+                roundedBitmap.CornerRadius = size / 2;
+                return roundedBitmap;
+            }
+        }
+
         public static Drawable GetAccountImage (Context context, McAccount account)
         {
             if (account.DisplayPortraitId == 0) {
