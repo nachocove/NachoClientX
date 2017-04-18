@@ -307,8 +307,6 @@
     <None Include="NachoUI.Android\Activities\FileListFragment.cs" />
     <None Include="NachoUI.Android\Activities\FoldersActivity.cs" />
     <None Include="NachoUI.Android\Activities\MessageListFragment.cs" />
-    <None Include="NachoUI.Android\Activities\MoreActivity.cs" />
-    <None Include="NachoUI.Android\Activities\MoreFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
@@ -767,7 +765,6 @@
     <AndroidResource Include="Resources\layout\MessageToolbar.axml" />
     <AndroidResource Include="Resources\layout\MessageViewFragment.axml" />
     <AndroidResource Include="Resources\layout\MigrationFragment.axml" />
-    <AndroidResource Include="Resources\layout\MoreFragment.axml" />
     <AndroidResource Include="Resources\layout\NavigationBar.axml" />
     <AndroidResource Include="Resources\layout\NavigationToolbar.axml" />
     <AndroidResource Include="Resources\layout\NowActivity.axml" />
@@ -1255,7 +1252,6 @@
     <AndroidResource Include="Resources\drawable-mdpi\gen_delete_small.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\gen_delete_small.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_delete_small.png" />
-    <AndroidResource Include="Resources\layout\MoreActivity.axml" />
     <AndroidResource Include="Resources\drawable-xxhdpi\nav_more_active.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\nav_more.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\nav_more_active.png" />
