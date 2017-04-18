@@ -282,6 +282,7 @@
     <Compile Include="NachoUI.Android\Activities\DaysToSyncPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationsPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\PasswordUpdateDialog.cs" />
+    <Compile Include="NachoUI.Android\Activities\PasswordNoticeDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

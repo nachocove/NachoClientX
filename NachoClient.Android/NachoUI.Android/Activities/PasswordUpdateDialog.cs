@@ -101,7 +101,6 @@ namespace NachoClient.AndroidClient
 
         void CancelClicked (object sender, DialogClickEventArgs e)
         {
-            Dismiss ();
         }
 
         #endregion

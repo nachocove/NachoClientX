@@ -72,6 +72,13 @@
     <string name="password_update_username_hint">Username</string>
     <string name="password_update_password_hint">Password</string>
 
+    <!-- Password Notice Dialog -->
+    <string name="password_notice_title">Password Expiring</string>
+    <string name="password_notice_message_format">Your password expires {0}</string>
+    <string name="password_notice_close">Close</string>
+    <string name="password_notice_clear">Clear Warning</string>
+    <string name="password_notice_rectify">Set New Password</string>
+
 
     <!-- Demo strings are used for visual UI editors -->
     <string name="demo_account">Work</string>

@@ -29,6 +29,7 @@ namespace NachoClient.AndroidClient
         private const string FRAGMENT_SYNC_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_SYNC_DIALOG";
         private const string FRAGMENT_NOTIFICATIONS_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_NOTIFICATIONS_DIALOG";
         private const string FRAGMENT_PASSWORD_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_PASSWORD_DIALOG";
+        private const string FRAGMENT_PASSWORD_NOTICE_DIALOG = "NachoClient.AndroidClient.AccountSettingsFragment.FRAGMENT_PASSWORD_NOTICE_DIALOG";
 
         public McAccount Account;
 
@@ -104,9 +105,9 @@ namespace NachoClient.AndroidClient
             AttemptServerIssueFix ();
         }
 
-        public void OnPasswordNoticeSelected (string rectifyUrl)
+        public void OnPasswordNoticeSelected ()
         {
-            ShowPasswordExpiryNotice (rectifyUrl);
+            ShowPasswordExpiryNotice ();
         }
 
         public void OnPasswordUpdateSelected ()
@@ -262,11 +263,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        private void ShowPasswordExpiryNotice (string rectifyUrl)
+        private void ShowPasswordExpiryNotice ()
         {
-            // FIXME: needs implementation
-            // Should allow the user to dismiss the alert and visit the rectifyUrl if non-null
-            // Not previously implemented in old UI
+            var dialog = new PasswordNoticeDialog (Account, ItemsAdapter.PasswordExpiry, ItemsAdapter.PasswordRectifyUrl);
+            dialog.Show (FragmentManager, FRAGMENT_PASSWORD_NOTICE_DIALOG, () => {
+                ItemsAdapter.Refresh ();
+            });
         }
 
         private void ShowAdvancedSettings ()
@@ -307,7 +309,7 @@ namespace NachoClient.AndroidClient
             void OnCredIssueSelected ();
             void OnCertIssueSelected ();
             void OnServerIssueSelected ();
-            void OnPasswordNoticeSelected (string rectifyUrl);
+            void OnPasswordNoticeSelected ();
             void OnPasswordUpdateSelected ();
             void OnAdvancedSelected ();
             void OnSignatureSelected ();
@@ -317,8 +319,8 @@ namespace NachoClient.AndroidClient
 
         public McAccount Account;
         WeakReference<Listener> WeakListener;
-        string PasswordRectifyUrl;
-        DateTime PasswordExpiry;
+        public string PasswordRectifyUrl { get; private set; }
+        public DateTime PasswordExpiry { get; private set; }
         public BackEndStateEnum ServerIssue { get; private set; }
         public McServer ServerWithIssue { get; private set; }
 
@@ -413,9 +415,13 @@ namespace NachoClient.AndroidClient
 
             PasswordRectifyUrl = null;
             var creds = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
-            bool showPasswordNotice = LoginHelpers.PasswordWillExpire (Account.Id, out PasswordExpiry, out PasswordRectifyUrl);
+            DateTime expriry;
+            string rectifyUrl;
+            bool showPasswordNotice = LoginHelpers.PasswordWillExpire (Account.Id, out expriry, out rectifyUrl);
             bool showUpdatePassword = creds != null && (creds.CredType == McCred.CredTypeEnum.Password || creds.CredType == McCred.CredTypeEnum.OAuth2) && ServerIssue != BackEndStateEnum.CredWait;
             bool showAdvanced = Account.AccountService == McAccount.AccountServiceEnum.Exchange || Account.AccountService == McAccount.AccountServiceEnum.IMAP_SMTP;
+            PasswordExpiry = expriry;
+            PasswordRectifyUrl = rectifyUrl;
             if (showPasswordNotice || showUpdatePassword || showAdvanced) {
                 position = 0;
                 PasswordNoticePosition = -1;
@@ -640,7 +646,7 @@ namespace NachoClient.AndroidClient
                     }
                 } else if (groupPosition == AdvancedGroupPosition) {
                     if (position == PasswordNoticePosition){
-                        listener.OnPasswordNoticeSelected (PasswordRectifyUrl);
+                        listener.OnPasswordNoticeSelected ();
                     } else if (position == UpdatePasswordPosition){
                         listener.OnPasswordUpdateSelected ();
                     }else if (position == AdvancedSettingsPosition){
