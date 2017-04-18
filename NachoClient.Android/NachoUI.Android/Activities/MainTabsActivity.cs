@@ -55,6 +55,7 @@ namespace NachoClient.AndroidClient
         private Toolbar Toolbar;
         private ViewPager ViewPager;
         private TabLayout TabLayout;
+        private Android.Support.V4.Widget.DrawerLayout DrawerLayout;
 
         private void FindSubviews ()
         {
@@ -62,6 +63,7 @@ namespace NachoClient.AndroidClient
             Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
             ViewPager = FindViewById (Resource.Id.container) as ViewPager;
             TabLayout = FindViewById (Resource.Id.tabs) as TabLayout;
+            DrawerLayout = FindViewById (Resource.Id.main_drawer_layout) as Android.Support.V4.Widget.DrawerLayout;
         }
 
         private void ClearSubviews ()
@@ -70,6 +72,7 @@ namespace NachoClient.AndroidClient
             Toolbar = null;
             ViewPager = null;
             TabLayout = null;
+            DrawerLayout = null;
         }
 
         #endregion
@@ -93,7 +96,7 @@ namespace NachoClient.AndroidClient
 
             SetSupportActionBar (Toolbar);
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);
-            SupportActionBar.SetHomeAsUpIndicator (Resource.Drawable.action_hamburger);
+            SupportActionBar.SetHomeAsUpIndicator (Resource.Drawable.action_switch_account);
 
             TabsAdapter = new MainTabsPagerAdapter (this, SupportFragmentManager);
             ViewPager.Adapter = TabsAdapter;
@@ -102,12 +105,22 @@ namespace NachoClient.AndroidClient
             UpdateToolbarAccountInfo ();
         }
 
+        protected override void OnPostCreate (Bundle savedInstanceState)
+        {
+            base.OnPostCreate (savedInstanceState);
+        }
+
         protected override void OnNewIntent (Intent intent)
         {
             base.OnNewIntent (intent);
             if (intent.Action == ACTION_SHOW_SETUP) {
                 ShowSetup ();
             }
+        }
+
+        public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)
+        {
+	        base.OnConfigurationChanged (newConfig);
         }
 
         protected override void OnDestroy ()
@@ -142,8 +155,12 @@ namespace NachoClient.AndroidClient
 
         public override bool OnOptionsItemSelected (IMenuItem item)
         {
+            //if (DrawerToggle.OnOptionsItemSelected (item)) {
+            //    return true;
+            //}
             if (item.ItemId == Resource.Id.action_settings) {
                 ShowSettings ();
+                return true;
             } else if (item.ItemId == Android.Resource.Id.Home) {
                 ShowAccountSwitcher ();
                 return true;
@@ -331,7 +348,7 @@ namespace NachoClient.AndroidClient
 
         void ShowAccountSwitcher ()
         {
-            ShowSettings ();
+            DrawerLayout.OpenDrawer (GravityCompat.Start, true);
         }
 
         #endregion

@@ -1514,6 +1514,10 @@
     <AndroidResource Include="Resources\drawable\RoundedButton.xml" />
     <AndroidResource Include="Resources\layout\SimpleTextDialog.axml" />
     <AndroidResource Include="Resources\layout\PasswordUpdateDialog.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_switch_account.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_switch_account.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_switch_account.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_switch_account.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

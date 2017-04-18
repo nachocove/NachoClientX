@@ -14,6 +14,8 @@
     <string name="welcome_continue_action">Continue</string>
 
     <!-- Main Activity -->
+    <string name="main_drawer_open">Open</string>
+    <string name="main_drawer_close">Close</string>
     <string name="tab_home">Home</string>
     <string name="tab_inbox">Inbox</string>
     <string name="tab_all_mail">All</string>

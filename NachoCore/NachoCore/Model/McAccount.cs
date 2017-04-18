@@ -637,17 +637,28 @@ namespace NachoCore.Model
             }
         }
 
-        public async void PopulateProfilePhotoFromURL (Uri imageUrl)
+        public void PopulateProfilePhotoFromURL (Uri imageUrl)
         {
-            try {
-                var httpClient = new System.Net.Http.HttpClient ();
-                byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
-                var portrait = McPortrait.InsertFile (Id, contents);
-                DisplayPortraitId = portrait.Id;
-                Update ();
-            } catch (Exception e) {
-                Log.Info (Log.LOG_DB, "McAccount: PopulateProfilePhotoFromURL exception: {0}", e);
-            }
+            NcTask.Run (() => {
+                try {
+                    var httpClient = new System.Net.Http.HttpClient ();
+                    byte [] contents = httpClient.GetByteArrayAsync (imageUrl).Result;
+                    var portrait = McPortrait.InsertFile (Id, contents);
+                    UpdateWithOCApply<McAccount> ((record) => {
+                        var account = record as McAccount;
+                        account.DisplayPortraitId = portrait.Id;
+                        return true;
+                    });
+                    DisplayPortraitId = portrait.Id;
+                } catch (Exception e) {
+                    Log.Info (Log.LOG_DB, "McAccount: PopulateProfilePhotoFromURL exception: {0}", e);
+                }
+            }, "PopulateProfilePhotoFromURL");
+        }
+
+        public override int Update ()
+        {
+            return base.Update ();
         }
 
         public bool ContainsAccount (int accountId)

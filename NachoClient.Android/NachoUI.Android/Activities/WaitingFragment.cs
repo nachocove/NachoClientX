@@ -134,8 +134,11 @@ namespace NachoClient.AndroidClient
         private void CompleteAccount ()
         {
             if (account != null) {
-                account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-                account.Update ();
+                account = account.UpdateWithOCApply<McAccount> ((record) => {
+                    var _account = record as McAccount;
+                    _account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                    return true;
+                });
                 NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
             }
         }

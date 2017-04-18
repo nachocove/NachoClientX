@@ -183,8 +183,12 @@ namespace NachoClient.AndroidClient
                         var imageUrlString = ((string)picture).Replace ("/photo.jpg", "/s200-c-k/photo.jpg");
                         Account.PopulateProfilePhotoFromURL (new Uri (imageUrlString));
                     }
-                    Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.CredentialsValidated;
-                    Account.Update ();
+
+                    Account = Account.UpdateWithOCApply<McAccount> ((record) => {
+                        var account = record as McAccount;
+                        account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.CredentialsValidated;
+                        return true;
+                    });
                     BackEnd.Instance.Start (Account.Id);
                 }
                 ValidationIsFinished ();
