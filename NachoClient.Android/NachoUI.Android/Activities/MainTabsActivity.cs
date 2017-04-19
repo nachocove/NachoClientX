@@ -436,10 +436,10 @@ namespace NachoClient.AndroidClient
 
         void UpdateToolbarAccountInfo ()
         {
-            var account = NcApplication.Instance.Account;
-            if (account == null) {
+            if (Toolbar == null) {
                 return;
             }
+            var account = NcApplication.Instance.Account;
             if (String.IsNullOrEmpty (account.DisplayName)) {
                 Toolbar.Title = account.EmailAddr;
             } else {
