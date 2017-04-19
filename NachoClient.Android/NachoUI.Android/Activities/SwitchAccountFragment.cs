@@ -65,6 +65,15 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Public API
+
+        public void Refresh ()
+        {
+            AccountsAdapter.Refresh ();
+        }
+
+        #endregion
+
         #region Listern
 
         public void OnAccountSelected (McAccount account)
@@ -104,7 +113,7 @@ namespace NachoClient.AndroidClient
             Refresh ();
         }
 
-        void Refresh ()
+        public void Refresh ()
         {
             Accounts = new List<NcAccountMonitor.AccountInfo> ();
             if (NcAccountMonitor.Instance.Accounts.Count > 1) {

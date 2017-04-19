@@ -52,6 +52,7 @@ namespace NachoCore
             case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
             case NcResult.SubKindEnum.Info_ChatMessageAdded:
             case NcResult.SubKindEnum.Info_ActionMarkedNotNew:
+            case NcResult.SubKindEnum.Info_AccountNameChanged:
                 ReloadAccounts ();
                 break;
             case NcResult.SubKindEnum.Info_AccountChanged:

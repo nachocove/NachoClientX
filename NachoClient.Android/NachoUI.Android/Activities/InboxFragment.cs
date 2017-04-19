@@ -15,10 +15,15 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 
+using NachoCore;
+using NachoCore.Model;
+
 namespace NachoClient.AndroidClient
 {
     public class InboxFragment : Fragment, MainTabsActivity.Tab
     {
+
+        private McAccount Account;
 
         #region Tab Interface
 
@@ -30,10 +35,17 @@ namespace NachoClient.AndroidClient
 
         public void OnTabSelected (MainTabsActivity tabActivity)
         {
+            if (Account.Id != NcApplication.Instance.Account.Id) {
+                OnAccountSwitched (tabActivity);
+            }
             tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_mail_filled, ActionButtonClicked);
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
+        {
+        }
+
+        public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
         }
 
@@ -44,6 +56,7 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            Account = NcApplication.Instance.Account;
 
             // Create your fragment here
         }

@@ -136,6 +136,9 @@ namespace NachoClient.AndroidClient
                     MainTabsActivity.ShowSetup (Activity);
                 }
             } else {
+                if (accountId == NcApplication.Instance.Account.Id) {
+                    NcApplication.Instance.Account = McAccount.QueryById<McAccount> (accountId);
+                }
                 ItemsAdapter.NotifyAccountChanged (accountId);
             }
         }
@@ -366,7 +369,7 @@ namespace NachoClient.AndroidClient
                 if (LoginHelpers.ShouldAlertUser (account.Id)) {
                     ErrorIndicatorView.Visibility = ViewStates.Visible;
                 } else {
-                    //ErrorIndicatorView.Visibility = ViewStates.Gone;
+                    ErrorIndicatorView.Visibility = ViewStates.Gone;
                 }
             }
         }

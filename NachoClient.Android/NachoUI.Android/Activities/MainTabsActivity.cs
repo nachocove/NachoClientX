@@ -27,6 +27,7 @@ namespace NachoClient.AndroidClient
     public class MainTabsActivity : NcActivity
     {
         private const string ACTION_SHOW_SETUP = "NachocClient.AndroidClient.MainTabsActivity.ACTION_SHOW_SETUP";
+        private const int REQUEST_ADD_ACCOUNT = 1;
 
         private MainTabsPagerAdapter TabsAdapter;
         private EventHandler ActionButtonClickHandler;
@@ -57,6 +58,7 @@ namespace NachoClient.AndroidClient
         private ViewPager ViewPager;
         private TabLayout TabLayout;
         private Android.Support.V4.Widget.DrawerLayout DrawerLayout;
+        SwitchAccountFragment SwitchAccountFragment;
 
         private void FindSubviews ()
         {
@@ -74,6 +76,7 @@ namespace NachoClient.AndroidClient
             ViewPager = null;
             TabLayout = null;
             DrawerLayout = null;
+            SwitchAccountFragment = null;
         }
 
         #endregion
@@ -102,6 +105,8 @@ namespace NachoClient.AndroidClient
             TabsAdapter = new MainTabsPagerAdapter (this, SupportFragmentManager);
             ViewPager.Adapter = TabsAdapter;
             TabLayout.SetupWithViewPager (ViewPager);
+
+            NcAccountMonitor.Instance.AccountSwitched += AccountSwitched;
 
             UpdateToolbarAccountInfo ();
         }
@@ -138,9 +143,18 @@ namespace NachoClient.AndroidClient
             MainApplication.SetupHockeyAppCrashManager (this);
         }
 
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            UpdateToolbarAccountInfo ();
+        }
+
         public override void OnAttachFragment (Fragment fragment)
         {
             base.OnAttachFragment (fragment);
+            if (fragment is SwitchAccountFragment) {
+                SwitchAccountFragment = fragment as SwitchAccountFragment;
+            }
         }
 
         public override void OnBackPressed ()
@@ -149,6 +163,18 @@ namespace NachoClient.AndroidClient
                 DrawerLayout.CloseDrawers ();
             }else{
                 base.OnBackPressed ();
+            }
+        }
+
+        protected override void OnActivityResult (int requestCode, Android.App.Result resultCode, Intent data)
+        {
+            switch (requestCode) {
+            case REQUEST_ADD_ACCOUNT:
+                HandleAddAccountResult (resultCode);
+                break;
+            default:
+                base.OnActivityResult (requestCode, resultCode, data);
+                break;
             }
         }
 
@@ -194,7 +220,6 @@ namespace NachoClient.AndroidClient
                 LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
                 LoginHelpers.SetMostRecentAccount (account.Id);
                 NcAccountMonitor.Instance.ChangeAccount (account);
-                UpdateToolbarAccountInfo ();
             }
             DrawerLayout.CloseDrawers ();
         }
@@ -203,7 +228,23 @@ namespace NachoClient.AndroidClient
         {
             var intent = AddAccountActivity.BuildIntent (this);
             DrawerLayout.CloseDrawers ();
-            StartActivity (intent);
+            StartActivityForResult (intent, REQUEST_ADD_ACCOUNT);
+        }
+
+        void HandleAddAccountResult (Android.App.Result result)
+        {
+            if (result == Android.App.Result.Ok) {
+                UpdateToolbarAccountInfo ();
+            }
+        }
+
+        void AccountSwitched (object sender, EventArgs e)
+        {
+            UpdateToolbarAccountInfo ();
+            var tab = TabsAdapter.SelectedTab;
+            if (tab != null) {
+                tab.OnAccountSwitched (this);
+            }
         }
 
         #endregion
@@ -360,6 +401,7 @@ namespace NachoClient.AndroidClient
 
             void OnTabSelected (MainTabsActivity tabActivity);
             void OnTabUnselected (MainTabsActivity tabActivity);
+            void OnAccountSwitched (MainTabsActivity tabActivity);
 
             int TabMenuResource { get; }
 
@@ -386,6 +428,7 @@ namespace NachoClient.AndroidClient
 
         void ShowAccountSwitcher ()
         {
+            SwitchAccountFragment.Refresh ();
             DrawerLayout.OpenDrawer (GravityCompat.Start, true);
         }
 
@@ -394,6 +437,9 @@ namespace NachoClient.AndroidClient
         void UpdateToolbarAccountInfo ()
         {
             var account = NcApplication.Instance.Account;
+            if (account == null) {
+                return;
+            }
             if (String.IsNullOrEmpty (account.DisplayName)) {
                 Toolbar.Title = account.EmailAddr;
             } else {

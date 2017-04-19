@@ -37,6 +37,10 @@ namespace NachoClient.AndroidClient
 		{
 		}
 
+        public void OnAccountSwitched (MainTabsActivity tabActivity)
+        {
+        }
+
 		#endregion
 
 		#region Fragment Lifecycle

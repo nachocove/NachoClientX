@@ -144,6 +144,10 @@ namespace NachoClient.AndroidClient
             var dialog = new SimpleTextDialog (Resource.String.account_name, Resource.String.account_name_hint, Account.DisplayName, (text) => {
                 Account.DisplayName = text;
                 Account.Update ();
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_AccountNameChanged),
+                    Account = Account,
+                });
             });
             dialog.Show (FragmentManager, FRAGMENT_NAME_DIALOG, () => {
                 ItemsAdapter.NotifyNameChanged ();
