@@ -23,6 +23,9 @@
     <string name="tab_contacts">People</string>
     <string name="main_action_settings">Settings</string>
 
+    <!-- Account Switcher -->
+    <string name="switcher_action_add_account">Add Account</string>
+
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
     <string name="settings_action_add_account">Add Account</string>
@@ -89,6 +92,8 @@
     <string name="demo_setting_detail">All Messages</string>
     <string name="demo_section_name">General Settings</string>
     <string name="demo_version">Nacho Mail version 3.5 (100)</string>
+    <string name="demo_unread">10</string>
+    <string name="demo_switch_action">Add Account</string>
 
 
 

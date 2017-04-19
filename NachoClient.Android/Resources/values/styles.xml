@@ -1,25 +1,38 @@
 ﻿<resources>
-    <style name="NachoListItemDetailTextAppearance" parent="TextAppearance.AppCompat.Small">
+
+    <style name="TextAppearanceNachoListItemDetail" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">#A4A4A4</item>
     </style>
 
-    <style name="NachoListItemHeaderTextAppearance" parent="TextAppearance.AppCompat.Small">
+    <style name="TextAppearanceNachoListItemHeader" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">@color/NachoMainGreen</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="NachoAboutIntroTextAppearance" parent="TextAppearance.AppCompat.Medium">
+    <style name="TextAppearanceNachoAboutIntro" parent="TextAppearance.AppCompat.Medium">
         <item name="android:textColor">@color/NachoMainGreen</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="NachoWelcomeTextAppearance" parent="TextAppearance.AppCompat.Medium">
+    <style name="TextAppearanceNachoWelcome" parent="TextAppearance.AppCompat.Medium">
         <item name="android:textColor">#FFFFFF</item>
     </style>
 
-    <style name="NachoWelcomeButtonTextAppearance" parent="TextAppearance.AppCompat.Medium">
+    <style name="TextAppearanceNachoWelcomeButton" parent="TextAppearance.AppCompat.Medium">
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearanceNachoAccountSwitcherItem" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="TextAppearanceNachoAccountSwitcherItemDetail" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">#d6dfe0</item>
+    </style>
+
+    <style name="TextAppearanceNachoAccountSwitcherItemUnread" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">?attr/colorAccent</item>
     </style>
 
     <style name="NachoTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -28,11 +41,14 @@
         <item name="colorAccent">@color/NachoDarkenedBrightGreen</item>
         <item name="colorListItemSeparator">#E0E0E0</item>
         <item name="colorListGroupSeparator">#F0F0F0</item>
-        <item name="textAppearanceListItemDetail">@style/NachoListItemDetailTextAppearance</item>
-        <item name="textAppearanceListItemHeader">@style/NachoListItemHeaderTextAppearance</item>
-        <item name="textAppearanceAboutIntro">@style/NachoAboutIntroTextAppearance</item>
-        <item name="textAppearanceWelcome">@style/NachoWelcomeTextAppearance</item>
-        <item name="textAppearanceWelcomeButton">@style/NachoWelcomeButtonTextAppearance</item>
+        <item name="textAppearanceListItemDetail">@style/TextAppearanceNachoListItemDetail</item>
+        <item name="textAppearanceListItemHeader">@style/TextAppearanceNachoListItemHeader</item>
+        <item name="textAppearanceAboutIntro">@style/TextAppearanceNachoAboutIntro</item>
+        <item name="textAppearanceWelcome">@style/TextAppearanceNachoWelcome</item>
+        <item name="textAppearanceWelcomeButton">@style/TextAppearanceNachoWelcomeButton</item>
+        <item name="textAppearanceAccountSwitcherItem">@style/TextAppearanceNachoAccountSwitcherItem</item>
+        <item name="textAppearanceAccountSwitcherItemDetail">@style/TextAppearanceNachoAccountSwitcherItemDetail</item>
+        <item name="textAppearanceAccountSwitcherItemUnread">@style/TextAppearanceNachoAccountSwitcherItemUnread</item>
     </style>
 
     <style name="NachoTheme.NoActionBar">

@@ -18,6 +18,7 @@ using Android.Graphics.Drawables;
 
 using NachoCore;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
@@ -121,6 +122,7 @@ namespace NachoClient.AndroidClient
         public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)
         {
 	        base.OnConfigurationChanged (newConfig);
+            UpdateToolbarAccountInfo ();
         }
 
         protected override void OnDestroy ()
@@ -134,6 +136,20 @@ namespace NachoClient.AndroidClient
             base.OnPause ();
             MainApplication.UnregisterHockeyAppUpdateManager ();
             MainApplication.SetupHockeyAppCrashManager (this);
+        }
+
+        public override void OnAttachFragment (Fragment fragment)
+        {
+            base.OnAttachFragment (fragment);
+        }
+
+        public override void OnBackPressed ()
+        {
+            if (DrawerLayout.IsDrawerOpen (GravityCompat.Start)) {
+                DrawerLayout.CloseDrawers ();
+            }else{
+                base.OnBackPressed ();
+            }
         }
 
         #endregion
@@ -166,6 +182,28 @@ namespace NachoClient.AndroidClient
                 return true;
             }
             return base.OnOptionsItemSelected (item);
+        }
+
+        #endregion
+
+        #region Account Switching
+
+        public void SwitchToAccount (McAccount account)
+        {
+            if (account.Id != NcApplication.Instance.Account.Id) {
+                LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+                LoginHelpers.SetMostRecentAccount (account.Id);
+                NcAccountMonitor.Instance.ChangeAccount (account);
+                UpdateToolbarAccountInfo ();
+            }
+            DrawerLayout.CloseDrawers ();
+        }
+
+        public void AddAccount ()
+        {
+            var intent = AddAccountActivity.BuildIntent (this);
+            DrawerLayout.CloseDrawers ();
+            StartActivity (intent);
         }
 
         #endregion

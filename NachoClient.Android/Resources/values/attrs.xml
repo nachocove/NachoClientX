@@ -6,4 +6,7 @@
 	<attr name="textAppearanceListItemDetail" format="reference"/>
 	<attr name="textAppearanceListItemHeader" format="reference"/>
     <attr name="textAppearanceAboutIntro" format="reference"/>
+    <attr name="textAppearanceAccountSwitcherItem" format="reference"/>
+    <attr name="textAppearanceAccountSwitcherItemDetail" format="reference"/>
+    <attr name="textAppearanceAccountSwitcherItemUnread" format="reference"/>
 </resources>

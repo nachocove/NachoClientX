@@ -366,7 +366,7 @@ namespace NachoClient.AndroidClient
                 if (LoginHelpers.ShouldAlertUser (account.Id)) {
                     ErrorIndicatorView.Visibility = ViewStates.Visible;
                 } else {
-                    ErrorIndicatorView.Visibility = ViewStates.Gone;
+                    //ErrorIndicatorView.Visibility = ViewStates.Gone;
                 }
             }
         }

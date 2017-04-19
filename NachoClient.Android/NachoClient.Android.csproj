@@ -283,6 +283,7 @@
     <Compile Include="NachoUI.Android\Activities\NotificationsPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\PasswordUpdateDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\PasswordNoticeDialog.cs" />
+    <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -313,7 +314,6 @@
     <None Include="NachoUI.Android\Activities\EventViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\PriorityFragment.cs" />
-    <None Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
     <None Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportFragment.cs" />
@@ -1518,6 +1518,13 @@
     <AndroidResource Include="Resources\drawable-mdpi\action_switch_account.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\action_switch_account.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_switch_account.png" />
+    <AndroidResource Include="Resources\layout\SwitchAccountListAccountItem.axml" />
+    <AndroidResource Include="Resources\layout\SwitchAccountListActionItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\switcher_action_add_account.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\switcher_action_add_account.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\switcher_action_add_account.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\switcher_action_add_account.png" />
+    <AndroidResource Include="Resources\drawable\UnreadIndicatorBackground.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
