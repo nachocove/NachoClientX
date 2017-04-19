@@ -65,6 +65,11 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+        }
+
         public override void OnDestroyView ()
         {
             ClearSubviews ();

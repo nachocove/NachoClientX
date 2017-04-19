@@ -34,6 +34,7 @@ namespace NachoClient.AndroidClient
             Account = account;
             Expiry = expiry;
             RectifyUrl = rectifyUrl;
+            RetainInstance = true;
         }
 
         #endregion

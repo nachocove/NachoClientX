@@ -38,6 +38,7 @@ namespace NachoClient.AndroidClient
         public NotificationsPickerDialog (McAccount account) : base ()
         {
             Account = account;
+            RetainInstance = true;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)

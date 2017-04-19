@@ -37,6 +37,7 @@ namespace NachoClient.AndroidClient
         public DaysToSyncPickerDialog (McAccount account) : base ()
         {
             Account = account;
+            RetainInstance = true;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)

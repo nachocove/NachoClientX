@@ -38,6 +38,7 @@ namespace NachoClient.AndroidClient
         public PasswordUpdateDialog (McAccount account) : base ()
         {
             Account = account;
+            RetainInstance = true;
         }
 
         #endregion

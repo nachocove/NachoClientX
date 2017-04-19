@@ -31,6 +31,7 @@ namespace NachoClient.AndroidClient
             HintResource = hintResource;
             Value = value;
             SaveAction = saveAction;
+            RetainInstance = true;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
@@ -45,6 +46,16 @@ namespace NachoClient.AndroidClient
             builder.SetNegativeButton (Resource.String.text_dialog_cancel, CancelClicked);
             builder.SetPositiveButton (Resource.String.text_dialog_save, SaveClicked);
             return builder.Create ();
+        }
+
+        public override void OnDestroy ()
+        {
+            base.OnDestroy ();
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
         }
 
         public override void OnResume ()
