@@ -9,4 +9,8 @@
     <attr name="textAppearanceAccountSwitcherItem" format="reference"/>
     <attr name="textAppearanceAccountSwitcherItemDetail" format="reference"/>
     <attr name="textAppearanceAccountSwitcherItemUnread" format="reference"/>
+    <attr name="messageItemPaddingLeft" format="dimension"/>
+    <attr name="messageItemPaddingRight" format="dimension"/>
+    <attr name="messageItemPaddingTop" format="dimension"/>
+    <attr name="messageItemPaddingBottom" format="dimension"/>
 </resources>

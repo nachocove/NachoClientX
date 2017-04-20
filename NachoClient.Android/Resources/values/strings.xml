@@ -94,7 +94,9 @@
     <string name="demo_version">Nacho Mail version 3.5 (100)</string>
     <string name="demo_unread">10</string>
     <string name="demo_switch_action">Add Account</string>
-
+	<string name="demo_message_label">Sender Name</string>
+	<string name="demo_message_date">11:15 am</string>
+	<string name="demo_message_detail">Hi there, this is a message that just happens to wrap to multiple lines because it is too long for one line, and in fact is also too long for two lines or even three lines!</string>
 
 
     <!-- OLD -->

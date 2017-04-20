@@ -708,6 +708,8 @@ namespace NachoClient.iOS
                 } else {
                     cell.AccessoryView = null;
                 }
+            }else{
+                cell.AccessoryView = null;
             }
 
             // TODO: enable after merging David's brain scheduling fixes

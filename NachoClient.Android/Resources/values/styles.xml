@@ -49,6 +49,10 @@
         <item name="textAppearanceAccountSwitcherItem">@style/TextAppearanceNachoAccountSwitcherItem</item>
         <item name="textAppearanceAccountSwitcherItemDetail">@style/TextAppearanceNachoAccountSwitcherItemDetail</item>
         <item name="textAppearanceAccountSwitcherItemUnread">@style/TextAppearanceNachoAccountSwitcherItemUnread</item>
+        <item name="messageItemPaddingLeft">12dp</item>
+        <item name="messageItemPaddingRight">10dp</item>
+        <item name="messageItemPaddingTop">7dp</item>
+        <item name="messageItemPaddingBottom">7dp</item>
     </style>
 
     <style name="NachoTheme.NoActionBar">

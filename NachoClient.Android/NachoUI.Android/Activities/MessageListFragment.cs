@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 using Android.Views;
+using Android.Widget;
 using Android.Support.V4.App;
 using Android.Support.V4.Widget;
 using Android.Support.V7.Widget;
@@ -32,6 +33,7 @@ namespace NachoClient.AndroidClient
         {
             SwipeRefresh = view.FindViewById (Resource.Id.swipe_refresh_layout) as SwipeRefreshLayout;
             ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+            ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
         }
 
         void ClearSubviews ()
@@ -49,6 +51,8 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
             FindSubviews (view);
             MessagesAdapter = new MessageListAdapter (this);
+            MessagesAdapter.SetMessages (Messages);
+            ListView.SetAdapter (MessagesAdapter);
             return view;
         }
 
@@ -84,6 +88,9 @@ namespace NachoClient.AndroidClient
         {
             lock (MessagesLock) {
                 Messages = messages;
+                if (MessagesAdapter != null) {
+                    MessagesAdapter.SetMessages (Messages);
+                }
             }
         }
 
@@ -139,7 +146,8 @@ namespace NachoClient.AndroidClient
                 HasLoadedOnce = true;
                 MessagesAdapter.NotifyDataSetChanged ();
             } else {
-                // TODO: selective adds and deletes
+                // FIXME: selective adds and deletes
+                MessagesAdapter.NotifyDataSetChanged ();
             }
             IsReloading = false;
             if (NeedsReload) {
@@ -261,6 +269,11 @@ namespace NachoClient.AndroidClient
             WeakListener = new WeakReference<Listener> (listener);
         }
 
+        public void SetMessages (NachoEmailMessages messages)
+        {
+            Messages = messages;
+        }
+
         public override int ItemCount {
             get {
                 return Messages.Count ();
@@ -329,9 +342,20 @@ namespace NachoClient.AndroidClient
             }
             set {
                 _IndicatorColor = value;
-                // TODO: update/show/hide indicator view
+                if (_IndicatorColor < 0) {
+                    AccountIndicatorView.Visibility = ViewStates.Gone;
+                } else {
+                    AccountIndicatorView.Visibility = ViewStates.Visible;
+                    AccountIndicatorView.SetBackgroundResource (_IndicatorColor);
+                }
             }
         }
+
+        View AccountIndicatorView;
+        TextView MainLabel;
+        TextView DetailLabel;
+        TextView DateLabel;
+        View PortraitFrame;
 
         public static MessageViewHolder Create (ViewGroup parent)
         {
@@ -346,11 +370,33 @@ namespace NachoClient.AndroidClient
 
         void FindSubviews ()
         {
+            AccountIndicatorView = ItemView.FindViewById (Resource.Id.account_indicator);
+            MainLabel = ItemView.FindViewById (Resource.Id.main_label) as TextView;
+            DetailLabel = ItemView.FindViewById (Resource.Id.detail_label) as TextView;
+            DateLabel = ItemView.FindViewById (Resource.Id.date_label) as TextView;
+            PortraitFrame = ItemView.FindViewById (Resource.Id.portrait_frame);
         }
 
         public void SetMessage (McEmailMessage message, int threadCount)
         {
-            // TODO: update views
+            if (UseRecipientName) {
+                MainLabel.Text = Pretty.RecipientString (message.To);
+                PortraitFrame.Visibility = ViewStates.Gone;
+            } else {
+                MainLabel.Text = Pretty.SenderString (message.From);
+                // TODO: set portrait
+                PortraitFrame.Visibility = ViewStates.Visible;
+            }
+            int subjectLength;
+            var previewText = Pretty.MessagePreview (message, out subjectLength);
+            // TODO: style preview
+            // TODO: insert hot icon
+            // TODO: insert attachment icon
+            DetailLabel.Text = previewText;
+            // TODO: intents as part of date ("due by" prefix)
+            DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
+            // TODO: thread indicator
+            // TODO: unread indicator
         }
 
     }
