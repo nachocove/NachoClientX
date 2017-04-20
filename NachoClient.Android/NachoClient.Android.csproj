@@ -284,6 +284,7 @@
     <Compile Include="NachoUI.Android\Activities\PasswordUpdateDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\PasswordNoticeDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageListFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -307,7 +308,6 @@
     <None Include="NachoUI.Android\Activities\EventListFragment.cs" />
     <None Include="NachoUI.Android\Activities\FileListFragment.cs" />
     <None Include="NachoUI.Android\Activities\FoldersActivity.cs" />
-    <None Include="NachoUI.Android\Activities\MessageListFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
@@ -1525,6 +1525,7 @@
     <AndroidResource Include="Resources\drawable-xhdpi\switcher_action_add_account.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\switcher_action_add_account.png" />
     <AndroidResource Include="Resources\drawable\UnreadIndicatorBackground.xml" />
+    <AndroidResource Include="Resources\layout\MessageListItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

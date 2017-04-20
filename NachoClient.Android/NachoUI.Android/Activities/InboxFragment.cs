@@ -20,7 +20,7 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    public class InboxFragment : Fragment, MainTabsActivity.Tab
+    public class InboxFragment : MessageListFragment, MainTabsActivity.Tab
     {
 
         private McAccount Account;
@@ -47,6 +47,20 @@ namespace NachoClient.AndroidClient
 
         public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
+            Account = NcApplication.Instance.Account;
+            // TODO: syncing
+            //CancelSyncing ();
+            // TODO: cancel editing (if active)
+            // TODO: cancel row swiping (if active)
+
+			SetEmailMessages (NcEmailManager.Inbox (Account.Id));
+
+            // TODO: update filter bar
+            //UpdateFilterBar ();
+            ReloadTable (); // to clear the table since the new Messages is empty
+            HasLoadedOnce = false;
+
+			SetNeedsReload ();
         }
 
         #endregion
@@ -57,15 +71,11 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
             Account = NcApplication.Instance.Account;
-
-            // Create your fragment here
+            SetEmailMessages (NcEmailManager.Inbox (Account.Id));
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-
             return base.OnCreateView (inflater, container, savedInstanceState);
         }
 

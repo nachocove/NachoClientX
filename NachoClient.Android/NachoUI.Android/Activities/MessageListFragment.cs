@@ -4,33 +4,358 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-
-//using Android.Util;
 using Android.Views;
-using Android.Support.V4.View;
+using Android.Support.V4.App;
 using Android.Support.V4.Widget;
-using Android.Support.V7.App;
 using Android.Support.V7.Widget;
-using Android.Support.Design.Widget;
 
 using NachoCore;
-using NachoCore.Model;
 using NachoCore.Utils;
-using Android.Graphics.Drawables;
-using NachoCore.Brain;
+using NachoCore.Model;
 using NachoPlatform;
-using Android.Widget;
-using Android.Views.InputMethods;
-using Android.Webkit;
-using NachoCore.Index;
-using Android.Graphics;
 
 namespace NachoClient.AndroidClient
 {
+
+    public class MessageListFragment : Fragment, MessageListAdapter.Listener
+    {
+
+        NachoEmailMessages Messages;
+        MessageListAdapter MessagesAdapter;
+
+        #region Subviews
+
+        SwipeRefreshLayout SwipeRefresh;
+        RecyclerView ListView;
+
+        void FindSubviews (View view)
+        {
+            SwipeRefresh = view.FindViewById (Resource.Id.swipe_refresh_layout) as SwipeRefreshLayout;
+            ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+        }
+
+        void ClearSubviews ()
+        {
+            SwipeRefresh = null;
+            ListView = null;
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Android.OS.Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
+            FindSubviews (view);
+            MessagesAdapter = new MessageListAdapter (this);
+            return view;
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            Reload ();
+            StartListeningForStatusInd ();
+        }
+
+        public override void OnPause ()
+        {
+            StopListeningForStatusInd ();
+            base.OnPause ();
+        }
+
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
+
+        #endregion
+
+        #region Managing & Reloading Messages
+
+        object MessagesLock = new object ();
+        bool NeedsReload;
+        bool IsReloading;
+        protected bool HasLoadedOnce;
+
+        public void SetEmailMessages (NachoEmailMessages messages)
+        {
+            lock (MessagesLock) {
+                Messages = messages;
+            }
+        }
+
+        public void SetNeedsReload ()
+        {
+            NeedsReload = true;
+            if (!IsReloading) {
+                Reload ();
+            }
+        }
+
+        void Reload ()
+        {
+            if (!IsReloading) {
+                IsReloading = true;
+                NeedsReload = false;
+                if (Messages.HasBackgroundRefresh ()) {
+                    Messages.BackgroundRefresh (HandleReloadResults);
+                } else {
+                    NcTask.Run (() => {
+                        List<int> adds;
+                        List<int> deletes;
+                        NachoEmailMessages messages;
+                        lock (MessagesLock){
+                            messages = Messages;
+                        }
+                        bool changed = messages.BeginRefresh (out adds, out deletes);
+                        InvokeOnUIThread.Instance.Invoke (() => {
+                            bool handledResults = false;
+                            lock (MessagesLock){
+                                if (messages == Messages) {
+                                    Messages.CommitRefresh ();
+									HandleReloadResults (changed, adds, deletes);
+                                    handledResults = true;
+                                }
+                            }
+                            if (!handledResults) {
+                                IsReloading = false;
+                                if (NeedsReload) {
+									Reload ();
+                                }
+                            }
+                        });
+                    }, "MessageListFragment.Reload");
+                }
+            }
+        }
+
+        void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
+        {
+            Messages.ClearCache ();
+            if (!HasLoadedOnce) {
+                HasLoadedOnce = true;
+                MessagesAdapter.NotifyDataSetChanged ();
+            } else {
+                // TODO: selective adds and deletes
+            }
+            IsReloading = false;
+            if (NeedsReload) {
+                Reload ();
+            }
+        }
+
+        protected void ReloadTable ()
+        {
+            MessagesAdapter.NotifyDataSetChanged ();
+        }
+
+        void UpdateVisibleRows ()
+        {
+            // FIXME: could we do this without a full reload, like how we loop through visible items on iOS?
+            MessagesAdapter.NotifyDataSetChanged ();
+        }
+
+        #endregion
+
+        #region System Events
+
+        bool IsListeningForStatusInd = false;
+
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent += StatusIndCallback;
+                IsListeningForStatusInd = true;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndCallback;
+                IsListeningForStatusInd = false;
+            }
+        }
+
+        void StatusIndCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
+                switch (s.Status.SubKind) {
+                case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+					SetNeedsReload ();
+                    break;
+                case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+                case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+                case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+                case NcResult.SubKindEnum.Info_EmailMessageChanged:
+                case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+					UpdateVisibleRows ();
+                    break;
+                case NcResult.SubKindEnum.Error_SyncFailed:
+                case NcResult.SubKindEnum.Info_SyncSucceeded:
+                    Messages.RefetchSyncTime ();
+                    break;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Adapter Listener
+
+        public void OnMessageSelected (McEmailMessage message, McEmailMessageThread thread)
+        {
+            if (Messages.HasDraftsSemantics ()) {
+                ComposeDraft (message);
+            } else if (Messages.HasOutboxSemantics ()) {
+                ShowOutboxMessage (message);
+            } else if (thread.HasMultipleMessages ()) {
+                ShowThread (thread);
+            } else {
+                ShowMessage (message);
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void ComposeDraft (McEmailMessage message)
+        {
+        }
+
+        void ShowOutboxMessage (McEmailMessage message)
+        {
+        }
+
+        void ShowThread (McEmailMessageThread thread)
+        {
+        }
+
+        void ShowMessage (McEmailMessage message)
+        {
+        }
+
+        #endregion
+
+    }
+
+    public class MessageListAdapter : RecyclerView.Adapter
+    {
+
+        public interface Listener
+        {
+            void OnMessageSelected (McEmailMessage message, McEmailMessageThread thread);
+        }
+
+        NachoEmailMessages Messages;
+        WeakReference<Listener> WeakListener;
+
+        public MessageListAdapter (Listener listener) : base ()
+        {
+            WeakListener = new WeakReference<Listener> (listener);
+        }
+
+        public override int ItemCount {
+            get {
+                return Messages.Count ();
+            }
+        }
+
+        public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
+        {
+            var holder = MessageViewHolder.Create (parent);
+            holder.ItemView.Click += (sender, e) => {
+                ItemClicked (holder.AdapterPosition);
+            };
+            return holder;
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
+        {
+            var messageHolder = (holder as MessageViewHolder);
+            var message = Messages.GetCachedMessage (position);
+            var thread = Messages.GetEmailThread (position);
+            messageHolder.UseRecipientName = Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics () || Messages.HasSentSemantics ();
+            messageHolder.SetMessage (message, thread.MessageCount);
+            if (Messages.IncludesMultipleAccounts ()) {
+                messageHolder.IndicatorColor = Util.ColorForAccount (message.AccountId);
+            } else {
+                messageHolder.IndicatorColor = -1;
+            }
+            if (Messages.HasOutboxSemantics ()) {
+                var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+                if (pending != null && pending.ResultKind == NcResult.KindEnum.Error) {
+                    // TODO: indicate error
+                } else {
+                    // TODO: hide error
+                }
+            } else {
+                // TODO: hide error
+            }
+            if (message.BodyId == 0) {
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+                }, "MessageListFragment.SendEmailBodyFetchHint");
+            }
+        }
+
+        void ItemClicked (int position)
+        {
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                var message = Messages.GetCachedMessage (position);
+                var thread = Messages.GetEmailThread (position);
+                if (message != null && thread != null) {
+                    listener.OnMessageSelected (message, thread);
+                }
+            }
+        }
+    }
+
+    public class MessageViewHolder : RecyclerView.ViewHolder
+    {
+
+        public bool UseRecipientName = false;
+        private int _IndicatorColor = -1;
+        public int IndicatorColor {
+            get {
+                return _IndicatorColor;
+            }
+            set {
+                _IndicatorColor = value;
+                // TODO: update/show/hide indicator view
+            }
+        }
+
+        public static MessageViewHolder Create (ViewGroup parent)
+        {
+            var view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageListItem, parent, false);
+            return new MessageViewHolder (view);
+        }
+
+        public MessageViewHolder (View view) : base (view)
+        {
+            FindSubviews ();
+        }
+
+        void FindSubviews ()
+        {
+        }
+
+        public void SetMessage (McEmailMessage message, int threadCount)
+        {
+            // TODO: update views
+        }
+
+    }
+
+    /*
     public interface MessageListDelegate
     {
         void ListIsEmpty ();
@@ -1132,4 +1457,5 @@ namespace NachoClient.AndroidClient
             }
         }
     }
+    */
 }
