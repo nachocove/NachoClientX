@@ -286,6 +286,7 @@
     <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageListFragment.cs" />
     <Compile Include="NachoUI.Android\Support\PortraitView.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageListActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -319,7 +320,6 @@
     <None Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
-    <None Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
     <None Include="NachoUI.Android\Activities\EventEditActivity.cs" />
     <None Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <None Include="NachoUI.Android\Activities\NoteActivity.cs" />
@@ -362,6 +362,7 @@
     <None Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
     <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
     <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
+    <None Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\raw\" />
@@ -1532,6 +1533,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\thread_arrows.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\thread_arrows.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\thread_arrows.png" />
+    <AndroidResource Include="Resources\layout\MessageListActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -311,6 +311,9 @@ namespace NachoClient.AndroidClient
 
         void ShowThread (McEmailMessageThread thread)
         {
+            var folder = Messages.GetFolderForThread (thread);
+            var intent = MessageListActivity.BuildThreadIntent (Activity, folder, thread);
+            StartActivity (intent);
         }
 
         void ShowMessage (McEmailMessage message)

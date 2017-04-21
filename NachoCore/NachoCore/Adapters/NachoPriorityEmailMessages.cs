@@ -102,6 +102,11 @@ namespace NachoCore
             return new NachoThreadedEmailMessages (folder, thread.GetThreadId ());
         }
 
+        public override McFolder GetFolderForThread (McEmailMessageThread thread)
+        {
+            return folder;
+        }
+
         public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == folder.AccountId;

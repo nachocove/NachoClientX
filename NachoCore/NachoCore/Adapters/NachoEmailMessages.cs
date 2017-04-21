@@ -90,6 +90,11 @@ namespace NachoCore
             return null;
         }
 
+        public virtual McFolder GetFolderForThread (McEmailMessageThread thread)
+        {
+            return null;
+        }
+
         public virtual bool HasFilterSemantics ()
         {
             return false;

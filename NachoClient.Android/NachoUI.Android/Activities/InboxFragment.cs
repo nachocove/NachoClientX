@@ -48,8 +48,7 @@ namespace NachoClient.AndroidClient
         public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
             Account = NcApplication.Instance.Account;
-            // TODO: syncing
-            //CancelSyncing ();
+            CancelSyncing ();
             // TODO: cancel editing (if active)
             // TODO: cancel row swiping (if active)
 

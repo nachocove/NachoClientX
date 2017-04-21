@@ -82,9 +82,14 @@ namespace NachoCore
 
         public override NachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
-            var firstMessage = thread.FirstMessage ();
-            var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
+            var inbox = GetFolderForThread (thread);
             return new NachoThreadedEmailMessages (inbox, thread.GetThreadId ());
+        }
+
+        public override McFolder GetFolderForThread (McEmailMessageThread thread)
+        {
+            var firstMessage = thread.FirstMessage ();
+            return McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
         }
 
         public override bool IsCompatibleWithAccount (McAccount account)
