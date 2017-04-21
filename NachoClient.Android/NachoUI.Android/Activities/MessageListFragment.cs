@@ -9,6 +9,8 @@ using Android.Widget;
 using Android.Support.V4.App;
 using Android.Support.V4.Widget;
 using Android.Support.V7.Widget;
+using Android.Text;
+using Android.Text.Style;
 
 using NachoCore;
 using NachoCore.Utils;
@@ -470,10 +472,11 @@ namespace NachoClient.AndroidClient
             }
             int subjectLength;
             var previewText = Pretty.MessagePreview (message, out subjectLength);
-            // TODO: style preview
+            var styledPreview = new SpannableString (previewText);
+            styledPreview.SetSpan (new ForegroundColorSpan (ThemeColor (Android.Resource.Attribute.ColorPrimary)), 0, subjectLength, 0);
             // TODO: insert hot icon
             // TODO: insert attachment icon
-            DetailLabel.Text = previewText;
+            DetailLabel.SetText (styledPreview, TextView.BufferType.Spannable);
             // TODO: intents as part of date ("due by" prefix)
             DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
             if (threadCount > 1) {
@@ -483,6 +486,13 @@ namespace NachoClient.AndroidClient
                 ThreadIndicator.Visibility = ViewStates.Gone;
             }
             UnreadIndicator.Visibility = message.IsRead ? ViewStates.Gone : ViewStates.Visible;
+        }
+
+        public Android.Graphics.Color ThemeColor (int attr)
+        {
+            var typedVal = new Android.Util.TypedValue ();
+            ItemView.Context.Theme.ResolveAttribute (attr, typedVal, true);
+            return (ItemView.Context.GetDrawable (typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
         }
 
     }
