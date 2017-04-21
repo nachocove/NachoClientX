@@ -132,6 +132,7 @@ namespace NachoClient.AndroidClient
 
         protected override void OnDestroy ()
         {
+            NcAccountMonitor.Instance.AccountSwitched -= AccountSwitched;
             ClearSubviews ();
             base.OnDestroy ();
         }

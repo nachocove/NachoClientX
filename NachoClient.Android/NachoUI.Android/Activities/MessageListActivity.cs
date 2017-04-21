@@ -64,7 +64,7 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle savedInstanceState)
         {
-            PopulateFromBundle (savedInstanceState != null ? savedInstanceState : Intent.Extras);
+            PopulateFromIntent ();
             base.OnCreate (savedInstanceState);
             SetContentView (Resource.Layout.MessageListActivity);
             FindSubviews ();
@@ -97,8 +97,9 @@ namespace NachoClient.AndroidClient
             base.OnDestroy ();
         }
 
-        void PopulateFromBundle (Android.OS.Bundle bundle)
+        void PopulateFromIntent ()
         {
+            var bundle = Intent.Extras;
             if (bundle.ContainsKey (MessageListActivity.EXTRA_FOLDER_ID)) {
                 var folderId = bundle.GetInt (MessageListActivity.EXTRA_FOLDER_ID);
                 Folder = McFolder.QueryById<McFolder> (folderId);
