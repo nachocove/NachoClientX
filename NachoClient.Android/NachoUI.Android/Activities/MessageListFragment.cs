@@ -424,6 +424,7 @@ namespace NachoClient.AndroidClient
         TextView DetailLabel;
         TextView DateLabel;
         View PortraitFrame;
+        PortraitView PortraitView;
 
         public static MessageViewHolder Create (ViewGroup parent)
         {
@@ -443,6 +444,7 @@ namespace NachoClient.AndroidClient
             DetailLabel = ItemView.FindViewById (Resource.Id.detail_label) as TextView;
             DateLabel = ItemView.FindViewById (Resource.Id.date_label) as TextView;
             PortraitFrame = ItemView.FindViewById (Resource.Id.portrait_frame);
+            PortraitView = ItemView.FindViewById (Resource.Id.portrait_view) as PortraitView;
         }
 
         public void SetMessage (McEmailMessage message, int threadCount)
@@ -452,7 +454,7 @@ namespace NachoClient.AndroidClient
                 PortraitFrame.Visibility = ViewStates.Gone;
             } else {
                 MainLabel.Text = Pretty.SenderString (message.From);
-                // TODO: set portrait
+                PortraitView.SetPortrait (message.cachedPortraitId, message.cachedFromColor, message.cachedFromLetters);
                 PortraitFrame.Visibility = ViewStates.Visible;
             }
             int subjectLength;

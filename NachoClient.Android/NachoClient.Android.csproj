@@ -285,6 +285,7 @@
     <Compile Include="NachoUI.Android\Activities\PasswordNoticeDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageListFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\PortraitView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

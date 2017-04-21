@@ -211,8 +211,17 @@ namespace NachoClient.AndroidClient
             var index = AccountColorIndexCache [accountId];
             return accountColors [index];
         }
-    }
 
+        public static Drawable PortraitToDrawable (int portraitId)
+        {
+            if (portraitId == 0) {
+                return null;
+            }
+            var portrait = McPortrait.QueryById<McPortrait> (portraitId);
+            var drawable = Drawable.CreateFromPath (portrait.GetFilePath ());
+            return drawable;
+        }
+    }
 
     /// <summary>
     /// Use JavaObjectWrapper to store an object with a C# type in a place that

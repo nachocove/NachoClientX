@@ -15,14 +15,10 @@
             android:layout_height="40dp"
             android:layout_gravity="top"
             android:layout_marginRight="?attr/messageItemPaddingLeft">
-            <nachoclient.androidclient.RoundedImageView
+            <nachoclient.androidclient.PortraitView
                 android:id="@+id/portrait_view"
-                android:src="@drawable/avatar_unified"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="fitXY"
-                android:layout_gravity="center" />
-        <!-- TODO: circle in place of missing photo -->
+                android:layout_height="match_parent" />
         <!-- TODO: unread indicator -->
         </FrameLayout>
         <LinearLayout
