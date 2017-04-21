@@ -103,6 +103,8 @@ namespace NachoClient.AndroidClient
 
         void ShowMessageCompose ()
         {
+            var intent = MessageComposeActivity.NewMessageIntent (Activity, NcApplication.Instance.Account.Id);
+			StartActivity (intent);
         }
 
         #endregion

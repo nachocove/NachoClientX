@@ -23,6 +23,22 @@ using NachoCore.Brain;
 namespace NachoClient.AndroidClient
 {
 
+    public class MessageViewFragment : Fragment
+    {
+
+        #region Fragment Lifecycle
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
+            return view;
+        }
+
+        #endregion
+
+    }
+
+    /*
     public class MessageScrollView : ScrollView, GestureDetector.IOnGestureListener
     {
         GestureDetectorCompat GestureDetector;
@@ -906,4 +922,6 @@ namespace NachoClient.AndroidClient
             return false;
         }
     }
+
+    */
 }

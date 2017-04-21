@@ -287,6 +287,8 @@
     <Compile Include="NachoUI.Android\Activities\MessageListFragment.cs" />
     <Compile Include="NachoUI.Android\Support\PortraitView.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageListActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -314,7 +316,6 @@
     <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\EventViewFragment.cs" />
-    <None Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\PriorityFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
     <None Include="NachoUI.Android\Activities\FolderListFragment.cs" />
@@ -338,7 +339,6 @@
     <None Include="NachoUI.Android\Activities\ContactEmailChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
     <None Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
-    <None Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <None Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <None Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
@@ -1534,6 +1534,37 @@
     <AndroidResource Include="Resources\drawable-xhdpi\thread_arrows.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\thread_arrows.png" />
     <AndroidResource Include="Resources\layout\MessageListActivity.axml" />
+    <AndroidResource Include="Resources\menu\allmail.xml" />
+    <AndroidResource Include="Resources\layout\AllMailFragment.axml" />
+    <AndroidResource Include="Resources\layout\FolderListItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_archive.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_default.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_drafts.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_outbox.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_sent.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_trash.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_archive.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_default.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_drafts.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_outbox.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_sent.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_trash.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_archive.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_default.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_drafts.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_outbox.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_sent.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_trash.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_archive.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_default.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_drafts.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_outbox.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_sent.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_trash.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_icon_inbox.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_icon_inbox.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_inbox.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_inbox.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

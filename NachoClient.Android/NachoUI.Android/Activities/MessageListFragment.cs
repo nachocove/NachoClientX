@@ -318,6 +318,8 @@ namespace NachoClient.AndroidClient
 
         void ShowMessage (McEmailMessage message)
         {
+            var intent = MessageViewActivity.BuildIntent (Activity, message.Id);
+            StartActivity (intent);
         }
 
         #endregion

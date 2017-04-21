@@ -22,9 +22,12 @@ namespace NachoClient.AndroidClient
 
         public const string EXTRA_THREAD_ID = "NachoClient.AndroidClient.MessageListActivity.EXTRA_THREAD_ID";
         public const string EXTRA_FOLDER_ID = "NachoClient.AndroidClient.MessageListActivity.EXTRA_FOLDER_ID";
+        public const string EXTRA_IS_DRAFTS = "NachoClient.AndroidClient.MessageListActivity.EXTRA_IS_DRAFTS";
 
         McFolder Folder;
         string ThreadId;
+        bool IsDrafts;
+
 
         #region Intents
 
@@ -39,6 +42,13 @@ namespace NachoClient.AndroidClient
         {
             var intent = new Intent (context, typeof (MessageListActivity));
             intent.PutExtra (EXTRA_FOLDER_ID, folder.Id);
+            return intent;
+        }
+
+        public static Intent BuildDraftsIntent (Context context, McFolder folder)
+        {
+            var intent = BuildFolderIntent (context, folder);
+            intent.PutExtra (EXTRA_IS_DRAFTS, true);
             return intent;
         }
 
@@ -82,7 +92,9 @@ namespace NachoClient.AndroidClient
             base.OnAttachFragment (fragment);
             if (fragment is MessageListFragment) {
                 NachoEmailMessages messages;
-                if (ThreadId != null) {
+                if (IsDrafts){
+                    messages = new NachoDraftMessages (Folder);
+                }else if (ThreadId != null) {
                     messages = new NachoThreadedEmailMessages (Folder, ThreadId);
                 } else {
                     messages = new NachoFolderMessages (Folder);
@@ -100,13 +112,16 @@ namespace NachoClient.AndroidClient
         void PopulateFromIntent ()
         {
             var bundle = Intent.Extras;
-            if (bundle.ContainsKey (MessageListActivity.EXTRA_FOLDER_ID)) {
-                var folderId = bundle.GetInt (MessageListActivity.EXTRA_FOLDER_ID);
+            Folder = null;
+            IsDrafts = false;
+            ThreadId = null;
+            if (bundle.ContainsKey (EXTRA_FOLDER_ID)) {
+                var folderId = bundle.GetInt (EXTRA_FOLDER_ID);
                 Folder = McFolder.QueryById<McFolder> (folderId);
-                if (bundle.ContainsKey (MessageListActivity.EXTRA_THREAD_ID)) {
-                    ThreadId = bundle.GetString (MessageListActivity.EXTRA_THREAD_ID);
-                } else {
-                    ThreadId = null;
+                if (bundle.ContainsKey (EXTRA_IS_DRAFTS) && bundle.GetBoolean (EXTRA_IS_DRAFTS)) {
+                    IsDrafts = true;
+                }else if (bundle.ContainsKey (EXTRA_THREAD_ID)) {
+                    ThreadId = bundle.GetString (EXTRA_THREAD_ID);
                 }
             }
         }

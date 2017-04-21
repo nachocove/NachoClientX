@@ -51,10 +51,11 @@ namespace NachoCore.Utils
         public void Reload ()
         {
             ResultAccounts.Clear ();
+            AccountEntries.Clear ();
+            AccountsById.Clear ();
 
             if (Account.Id == McAccount.GetUnifiedAccount ().Id) {
                 var foldersByAccountId = new Dictionary<int, List<McFolder>> ();
-                AccountsById.Clear ();
                 var folders = McFolder.QueryNonHiddenFoldersOfTypeUnified (EmailFolderTypes);
                 foreach (var folder in folders) {
                     if (!AccountsById.ContainsKey (folder.AccountId)) {
@@ -74,6 +75,7 @@ namespace NachoCore.Utils
                 }
                 Recents = McFolder.QueryByMostRecentlyAccessedVisibleFoldersUnified ();
             } else {
+                AccountsById.Add (Account.Id, Account);
                 var folders = McFolder.QueryNonHiddenFoldersOfType (Account.Id, EmailFolderTypes);
                 CreateEntriesForAccount (Account, folders);
                 Recents = McFolder.QueryByMostRecentlyAccessedVisibleFolders (Account.Id);

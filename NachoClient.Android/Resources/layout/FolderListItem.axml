@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:background="?attr/selectableItemBackground"
+    android:paddingLeft="?attr/messageItemPaddingLeft"
+    android:paddingTop="?attr/messageItemPaddingLeft">
+    <View
+        android:id="@+id/folder_indent"
+        android:layout_width="0dp"
+        android:layout_height="0dp" />
+    <ImageView
+        android:id="@+id/folder_icon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top"
+        android:src="@drawable/folder_icon_default"
+        android:layout_marginRight="?attr/messageItemPaddingLeft" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_weight="1.0"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingRight="?attr/messageItemPaddingRight"
+            android:paddingBottom="?attr/messageItemPaddingLeft">
+            <TextView
+                android:id="@+id/folder_name"
+                android:text="@string/demo_folder_name"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:textAppearance="?attr/textAppearanceListItem" />
+            <TextView
+                android:id="@+id/folder_account"
+                android:text="@string/demo_folder_account"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:textAppearance="?attr/textAppearanceListItemDetail" />
+        </LinearLayout>
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorListItemSeparator" />
+    </LinearLayout>
+</LinearLayout>
