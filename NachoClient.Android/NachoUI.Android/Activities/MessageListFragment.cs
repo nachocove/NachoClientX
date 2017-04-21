@@ -18,11 +18,12 @@ using NachoPlatform;
 namespace NachoClient.AndroidClient
 {
 
-    public class MessageListFragment : Fragment, MessageListAdapter.Listener
+    public class MessageListFragment : Fragment, MessageListAdapter.Listener, MessagesSyncManagerDelegate
     {
 
         NachoEmailMessages Messages;
         MessageListAdapter MessagesAdapter;
+        MessagesSyncManager SyncManager;
 
         #region Subviews
 
@@ -53,12 +54,19 @@ namespace NachoClient.AndroidClient
             MessagesAdapter = new MessageListAdapter (this);
             MessagesAdapter.SetMessages (Messages);
             ListView.SetAdapter (MessagesAdapter);
+            SwipeRefresh.Refresh += SwipeRefreshActivated;
+            SyncManager = new MessagesSyncManager ();
+            SyncManager.Delegate = this;
             return view;
         }
 
         public override void OnResume ()
         {
             base.OnResume ();
+            if (SyncManager.IsSyncing) {
+                SyncManager.ResumeEvents ();
+            }
+            Messages.RefetchSyncTime ();
             Reload ();
             StartListeningForStatusInd ();
         }
@@ -66,11 +74,13 @@ namespace NachoClient.AndroidClient
         public override void OnPause ()
         {
             StopListeningForStatusInd ();
+            SyncManager.PauseEvents ();
             base.OnPause ();
         }
 
         public override void OnDestroyView ()
         {
+            SyncManager.Delegate = null;
             ClearSubviews ();
             base.OnDestroyView ();
         }
@@ -141,6 +151,9 @@ namespace NachoClient.AndroidClient
 
         void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
         {
+            if (SwipeRefresh.Refreshing && !SyncManager.IsSyncing) {
+                EndRefreshing ();
+            }
             Messages.ClearCache ();
             if (!HasLoadedOnce) {
                 HasLoadedOnce = true;
@@ -164,6 +177,61 @@ namespace NachoClient.AndroidClient
         {
             // FIXME: could we do this without a full reload, like how we loop through visible items on iOS?
             MessagesAdapter.NotifyDataSetChanged ();
+        }
+
+        void SwipeRefreshActivated (object sender, EventArgs e)
+        {
+            StartSync ();
+        }
+
+        public void MessagesSyncDidComplete (MessagesSyncManager manager)
+        {
+            EndRefreshing ();
+            ShowLastUpdatedToast ();
+        }
+
+        public void MessagesSyncDidTimeOut (MessagesSyncManager manager)
+        {
+            EndRefreshing ();
+        }
+
+        void EndRefreshing ()
+        {
+            SwipeRefresh.Refreshing = false;
+        }
+
+        void ShowLastUpdatedToast ()
+        {
+            DateTime? lastSyncDate = null;
+            if (Messages != null) {
+                lastSyncDate = Messages.LastSuccessfulSyncTime ();
+            }
+            if (lastSyncDate.HasValue) {
+                var diff = DateTime.UtcNow - lastSyncDate.Value;
+                string message;
+                if (diff.TotalSeconds < 60) {
+                    message = GetString (Resource.String.messages_sync_time_latest);
+                } else {
+                    var format = GetString (Resource.String.messages_sync_time_format);
+                    message = String.Format (format, Pretty.TimeWithDecreasingPrecision (lastSyncDate.Value));
+                }
+                var toast = Toast.MakeText (Activity, message, ToastLength.Short);
+                toast.Show ();
+            }
+        }
+
+        void StartSync ()
+        {
+            if (!SyncManager.SyncEmailMessages (Messages)) {
+                MessagesAdapter.NotifyDataSetChanged ();
+                EndRefreshing ();
+            }
+        }
+
+        protected void CancelSyncing ()
+        {
+            SyncManager.Cancel ();
+            EndRefreshing ();
         }
 
         #endregion
@@ -299,7 +367,7 @@ namespace NachoClient.AndroidClient
             if (Messages.IncludesMultipleAccounts ()) {
                 messageHolder.IndicatorColor = Util.ColorForAccount (message.AccountId);
             } else {
-                messageHolder.IndicatorColor = -1;
+                messageHolder.IndicatorColor = 0;
             }
             if (Messages.HasOutboxSemantics ()) {
                 var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
@@ -335,18 +403,18 @@ namespace NachoClient.AndroidClient
     {
 
         public bool UseRecipientName = false;
-        private int _IndicatorColor = -1;
+        private int _IndicatorColor = 0;
         public int IndicatorColor {
             get {
                 return _IndicatorColor;
             }
             set {
                 _IndicatorColor = value;
-                if (_IndicatorColor < 0) {
+                if (_IndicatorColor == 0) {
                     AccountIndicatorView.Visibility = ViewStates.Gone;
                 } else {
                     AccountIndicatorView.Visibility = ViewStates.Visible;
-                    AccountIndicatorView.SetBackgroundResource (_IndicatorColor);
+                    AccountIndicatorView.SetBackgroundColor (new Android.Graphics.Color (_IndicatorColor));
                 }
             }
         }

@@ -26,6 +26,10 @@
     <!-- Account Switcher -->
     <string name="switcher_action_add_account">Add Account</string>
 
+    <!-- Message List -->
+    <string name="messages_sync_time_latest">Up to date!</string>
+    <string name="messages_sync_time_format">Last updated {0}</string>
+
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
     <string name="settings_action_add_account">Add Account</string>

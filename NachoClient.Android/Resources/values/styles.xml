@@ -35,6 +35,11 @@
         <item name="android:textColor">?attr/colorAccent</item>
     </style>
 
+    <style name="TextAppearanceNachoMessageItem" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
     <style name="NachoTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/NachoMainGreen</item>
         <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
@@ -49,6 +54,7 @@
         <item name="textAppearanceAccountSwitcherItem">@style/TextAppearanceNachoAccountSwitcherItem</item>
         <item name="textAppearanceAccountSwitcherItemDetail">@style/TextAppearanceNachoAccountSwitcherItemDetail</item>
         <item name="textAppearanceAccountSwitcherItemUnread">@style/TextAppearanceNachoAccountSwitcherItemUnread</item>
+        <item name="textAppearanceMessageItem">@style/TextAppearanceNachoMessageItem</item>
         <item name="messageItemPaddingLeft">12dp</item>
         <item name="messageItemPaddingRight">10dp</item>
         <item name="messageItemPaddingTop">7dp</item>
