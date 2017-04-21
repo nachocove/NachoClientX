@@ -19,7 +19,12 @@
                 android:id="@+id/portrait_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
-        <!-- TODO: unread indicator -->
+            <ImageView
+                android:id="@+id/unread_indicator"
+                android:src="@drawable/UnreadIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right" />
         </FrameLayout>
         <LinearLayout
             android:orientation="vertical"

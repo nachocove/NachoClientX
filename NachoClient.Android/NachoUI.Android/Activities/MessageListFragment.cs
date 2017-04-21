@@ -425,6 +425,7 @@ namespace NachoClient.AndroidClient
         TextView DateLabel;
         View PortraitFrame;
         PortraitView PortraitView;
+        ImageView UnreadIndicator;
 
         public static MessageViewHolder Create (ViewGroup parent)
         {
@@ -445,6 +446,7 @@ namespace NachoClient.AndroidClient
             DateLabel = ItemView.FindViewById (Resource.Id.date_label) as TextView;
             PortraitFrame = ItemView.FindViewById (Resource.Id.portrait_frame);
             PortraitView = ItemView.FindViewById (Resource.Id.portrait_view) as PortraitView;
+            UnreadIndicator = ItemView.FindViewById (Resource.Id.unread_indicator) as ImageView;
         }
 
         public void SetMessage (McEmailMessage message, int threadCount)
@@ -466,7 +468,7 @@ namespace NachoClient.AndroidClient
             // TODO: intents as part of date ("due by" prefix)
             DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
             // TODO: thread indicator
-            // TODO: unread indicator
+            UnreadIndicator.Visibility = message.IsRead ? ViewStates.Gone : ViewStates.Visible;
         }
 
     }

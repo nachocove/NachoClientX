@@ -1527,6 +1527,7 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\switcher_action_add_account.png" />
     <AndroidResource Include="Resources\drawable\UnreadIndicatorBackground.xml" />
     <AndroidResource Include="Resources\layout\MessageListItem.axml" />
+    <AndroidResource Include="Resources\drawable\UnreadIndicator.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
