@@ -426,6 +426,8 @@ namespace NachoClient.AndroidClient
         View PortraitFrame;
         PortraitView PortraitView;
         ImageView UnreadIndicator;
+        View ThreadIndicator;
+        TextView ThreadCountLabel;
 
         public static MessageViewHolder Create (ViewGroup parent)
         {
@@ -447,6 +449,8 @@ namespace NachoClient.AndroidClient
             PortraitFrame = ItemView.FindViewById (Resource.Id.portrait_frame);
             PortraitView = ItemView.FindViewById (Resource.Id.portrait_view) as PortraitView;
             UnreadIndicator = ItemView.FindViewById (Resource.Id.unread_indicator) as ImageView;
+            ThreadIndicator = ItemView.FindViewById (Resource.Id.thread_indicator);
+            ThreadCountLabel = ItemView.FindViewById (Resource.Id.thread_count) as TextView;
         }
 
         public void SetMessage (McEmailMessage message, int threadCount)
@@ -467,7 +471,12 @@ namespace NachoClient.AndroidClient
             DetailLabel.Text = previewText;
             // TODO: intents as part of date ("due by" prefix)
             DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
-            // TODO: thread indicator
+            if (threadCount > 1) {
+                ThreadIndicator.Visibility = ViewStates.Visible;
+                ThreadCountLabel.Text = String.Format ("{0}", threadCount);
+            } else {
+                ThreadIndicator.Visibility = ViewStates.Gone;
+            }
             UnreadIndicator.Visibility = message.IsRead ? ViewStates.Gone : ViewStates.Visible;
         }
 

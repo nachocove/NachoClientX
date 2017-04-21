@@ -1528,6 +1528,10 @@
     <AndroidResource Include="Resources\drawable\UnreadIndicatorBackground.xml" />
     <AndroidResource Include="Resources\layout\MessageListItem.axml" />
     <AndroidResource Include="Resources\drawable\UnreadIndicator.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\thread_arrows.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\thread_arrows.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\thread_arrows.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\thread_arrows.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

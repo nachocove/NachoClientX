@@ -84,7 +84,27 @@
                             android:lines="3"
                             android:layout_marginRight="0.0dp" />
                     <!-- TODO: error indicator -->
-                    <!-- TODO: thread indicator -->
+                        <LinearLayout
+                            android:id="@+id/thread_indicator"
+                            android:orientation="horizontal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical">
+                            <TextView
+                                android:id="@+id/thread_count"
+                                android:text="12"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:textAppearance="?attr/textAppearanceMessageThreadCount"
+                                android:textSize="12dp" />
+                            <ImageView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:src="@drawable/thread_arrows"
+                                android:layout_marginLeft="1dp" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
                 <View
