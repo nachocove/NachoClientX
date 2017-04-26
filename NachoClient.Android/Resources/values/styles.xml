@@ -40,6 +40,15 @@
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
+    <style name="TextAppearanceNachoMessageViewSender" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="TextAppearanceNachoMessageViewSubject" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
     <style name="TextAppearanceNachoMessageThreadCount" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">?attr/colorPrimary</item>
     </style>
@@ -60,10 +69,20 @@
         <item name="textAppearanceAccountSwitcherItemUnread">@style/TextAppearanceNachoAccountSwitcherItemUnread</item>
         <item name="textAppearanceMessageItem">@style/TextAppearanceNachoMessageItem</item>
         <item name="textAppearanceMessageThreadCount">@style/TextAppearanceNachoMessageThreadCount</item>
+        <item name="textAppearanceMessageViewSender">@style/TextAppearanceNachoMessageViewSender</item>
+        <item name="textAppearanceMessageViewSubject">@style/TextAppearanceNachoMessageViewSubject</item>
         <item name="messageItemPaddingLeft">12dp</item>
         <item name="messageItemPaddingRight">10dp</item>
         <item name="messageItemPaddingTop">7dp</item>
         <item name="messageItemPaddingBottom">7dp</item>
+        <item name="messageViewPaddingLeft">12dp</item>
+        <item name="messageViewPaddingRight">10dp</item>
+        <item name="messageHeaderViewPaddingTop">7dp</item>
+        <item name="messageHeaderViewPaddingBottom">7dp</item>
+        <item name="folderItemPaddingLeft">12dp</item>
+        <item name="folderItemPaddingRight">10dp</item>
+        <item name="folderItemPaddingTop">7dp</item>
+        <item name="folderItemPaddingBottom">7dp</item> 
     </style>
 
     <style name="NachoTheme.NoActionBar">

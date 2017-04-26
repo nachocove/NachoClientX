@@ -1,95 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent" />
-<!--
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:background="@android:color/white">
-    <include
-        layout="@layout/ButtonBar" />
-    <NachoClient.AndroidClient.MessageScrollView
-        android:id="@+id/message_scrollview"
-        android:layout_above="@+id/footer"
-        android:layout_below="@id/button_bar"
-        android:orientation="vertical"
+    android:layout_height="fill_parent">
+    <android.support.v4.widget.NestedScrollView
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="fill_parent"
+        android:scrollbars="vertical|horizontal">
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content">
-            <View
+            <NachoClient.AndroidClient.MessageHeaderView
+                android:id="@+id/message_header"
                 android:layout_width="fill_parent"
-                android:layout_height="15dp"
-                android:background="@color/NachoLightGray" />
-            <include
-                layout="@layout/MessageHeader" />
-            <LinearLayout
-                android:id="@+id/address_block"
-                android:paddingLeft="63dp"
-                android:paddingBottom="5dp"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/error_label"
+                android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone">
-                <TextView
-                    android:id="@+id/to_block"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
-                    android:textSize="14dp"
-                    android:visibility="gone" />
-                <TextView
-                    android:id="@+id/cc_block"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
-                    android:textSize="14dp"
-                    android:visibility="gone" />
-                <TextView
-                    android:id="@+id/bcc_block"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
-                    android:textSize="14dp"
-                    android:visibility="gone" />
-            </LinearLayout>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/NachoBackgroundGray" />
-            <include
-                layout="@layout/AttachmentListView" />
-            <include
-                layout="@layout/EventInMessageLayout" />
+                android:visibility="gone"
+                android:clickable="true"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackground" />
             <android.webkit.WebView
                 android:id="@+id/webview"
                 android:layout_width="fill_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
-    </NachoClient.AndroidClient.MessageScrollView>
-    <LinearLayout
-        android:id="@+id/footer"
-        android:layout_alignParentBottom="true"
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="1dp"
-            android:background="@color/NachoLightGray" />
-        <include
-            layout="@layout/MessageToolbar" />
-    </LinearLayout>
-    <ProgressBar
-        android:id="@+id/spinner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        style="?android:attr/progressBarStyleLargeInverse"
-        android:layout_centerInParent="true" />
-</RelativeLayout>
--->
+    </android.support.v4.widget.NestedScrollView>
+</LinearLayout>

@@ -11,8 +11,18 @@
     <attr name="textAppearanceAccountSwitcherItemUnread" format="reference"/>
     <attr name="textAppearanceMessageItem" format="reference"/>
     <attr name="textAppearanceMessageThreadCount" format="reference"/>
+    <attr name="textAppearanceMessageViewSender" format="reference"/>
+    <attr name="textAppearanceMessageViewSubject" format="reference"/>
     <attr name="messageItemPaddingLeft" format="dimension"/>
     <attr name="messageItemPaddingRight" format="dimension"/>
     <attr name="messageItemPaddingTop" format="dimension"/>
     <attr name="messageItemPaddingBottom" format="dimension"/>
+    <attr name="messageViewPaddingLeft" format="dimension"/>
+    <attr name="messageViewPaddingRight" format="dimension"/>
+    <attr name="messageHeaderViewPaddingTop" format="dimension"/>
+    <attr name="messageHeaderViewPaddingBottom" format="dimension"/>
+    <attr name="folderItemPaddingLeft" format="dimension"/>
+    <attr name="folderItemPaddingRight" format="dimension"/>
+    <attr name="folderItemPaddingTop" format="dimension"/>
+    <attr name="folderItemPaddingBottom" format="dimension"/>
 </resources>

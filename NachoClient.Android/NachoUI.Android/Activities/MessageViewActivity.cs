@@ -72,6 +72,14 @@ namespace NachoClient.AndroidClient
             Message = McEmailMessage.QueryById<McEmailMessage> (messageId);
         }
 
+        public override void OnAttachFragment (Fragment fragment)
+        {
+            base.OnAttachFragment (fragment);
+            if (fragment is MessageViewFragment) {
+                (fragment as MessageViewFragment).Message = Message;
+            }
+        }
+
         #endregion
 
         #region Menu

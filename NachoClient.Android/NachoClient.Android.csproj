@@ -289,6 +289,7 @@
     <Compile Include="NachoUI.Android\Activities\MessageListActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\MessageHeaderView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1565,6 +1566,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\folder_icon_inbox.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_inbox.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_inbox.png" />
+    <AndroidResource Include="Resources\layout\MessageHeaderView.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

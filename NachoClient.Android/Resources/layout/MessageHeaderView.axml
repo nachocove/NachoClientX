@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/message_header_view"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="?attr/messageViewPaddingLeft"
+    android:clickable="true"
+    android:background="?attr/selectableItemBackground">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:paddingTop="?attr/messageHeaderViewPaddingTop"
+        android:paddingRight="?attr/messageViewPaddingRight"
+        android:paddingBottom="?attr/messageHeaderViewPaddingBottom"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1.0"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/sender"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:text="@string/demo_message_sender"
+                android:textAppearance="?attr/textAppearanceMessageViewSender" />
+            <TextView
+                android:id="@+id/subject"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/demo_message_subject"
+                android:textAppearance="?attr/textAppearanceMessageViewSubject" />
+            <TextView
+                android:id="@+id/date"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/demo_message_date_full"
+                android:textAppearance="?attr/textAppearanceListItemDetail" />
+        </LinearLayout>
+        <NachoClient.AndroidClient.PortraitView
+            android:id="@+id/portrait"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top"
+            android:layout_marginLeft="?attr/messageViewPaddingRight" />
+    </LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

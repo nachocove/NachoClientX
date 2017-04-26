@@ -5,8 +5,8 @@
     android:layout_height="wrap_content"
     android:clickable="true"
     android:background="?attr/selectableItemBackground"
-    android:paddingLeft="?attr/messageItemPaddingLeft"
-    android:paddingTop="?attr/messageItemPaddingLeft">
+    android:paddingLeft="?attr/folderItemPaddingLeft"
+    android:paddingTop="?attr/folderItemPaddingLeft">
     <View
         android:id="@+id/folder_indent"
         android:layout_width="0dp"
@@ -17,7 +17,7 @@
         android:layout_height="20dp"
         android:layout_gravity="top"
         android:src="@drawable/folder_icon_default"
-        android:layout_marginRight="?attr/messageItemPaddingLeft" />
+        android:layout_marginRight="?attr/folderItemPaddingLeft" />
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="0dp"
@@ -28,8 +28,8 @@
             android:gravity="center_vertical"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:paddingRight="?attr/messageItemPaddingRight"
-            android:paddingBottom="?attr/messageItemPaddingLeft">
+            android:paddingRight="?attr/folderItemPaddingRight"
+            android:paddingBottom="?attr/folderItemPaddingLeft">
             <TextView
                 android:id="@+id/folder_name"
                 android:text="@string/demo_folder_name"
