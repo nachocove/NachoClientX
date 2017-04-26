@@ -30,6 +30,13 @@
     <string name="messages_sync_time_latest">Up to date!</string>
     <string name="messages_sync_time_format">Last updated {0}</string>
 
+    <!-- Message View -->
+    <string name="message_action_forward">Forward</string>
+    <string name="message_action_event">Create Event</string>
+    <string name="message_action_move">Move</string>
+    <string name="message_action_archive">Archive</string>
+    <string name="message_action_delete">Delete</string>
+
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
 

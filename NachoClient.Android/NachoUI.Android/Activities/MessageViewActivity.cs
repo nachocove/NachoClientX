@@ -13,6 +13,10 @@ using Android.Runtime;
 using Android.Views;
 using Android.Support.V7.Widget;
 using NachoCore.Model;
+using Android.Support.Design.Widget;
+
+using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -39,15 +43,18 @@ namespace NachoClient.AndroidClient
         #region Subviews
 
         Toolbar Toolbar;
+        FloatingActionButton FloatingActionButton;
 
         void FindSubviews ()
         {
             Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
+            FloatingActionButton = FindViewById (Resource.Id.fab) as FloatingActionButton;
         }
 
         void ClearSubviews ()
         {
             Toolbar = null;
+            FloatingActionButton = null;
         }
 
         #endregion
@@ -63,6 +70,7 @@ namespace NachoClient.AndroidClient
             Toolbar.Title = "";
             SetSupportActionBar (Toolbar);
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+            FloatingActionButton.Click += FloatingActionButtonClicked;
         }
 
         void PopulateFromIntent ()
@@ -80,9 +88,21 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        protected override void OnDestroy ()
+        {
+            FloatingActionButton.Click -= FloatingActionButtonClicked;
+            base.OnDestroy ();
+        }
+
         #endregion
 
         #region Menu
+
+        public override bool OnCreateOptionsMenu (IMenu menu)
+        {
+            MenuInflater.Inflate (Resource.Menu.message_view, menu);
+            return base.OnCreateOptionsMenu (menu);
+        }
 
         public override bool OnOptionsItemSelected (IMenuItem item)
         {
@@ -90,71 +110,74 @@ namespace NachoClient.AndroidClient
             case Android.Resource.Id.Home:
                 Finish ();
                 return true;
+            case Resource.Id.forward:
+                Forward ();
+                return true;
+            case Resource.Id.create_event:
+                return true;
+            case Resource.Id.move:
+                ShowMoveOptions ();
+                return true;
+            case Resource.Id.archive:
+                Archive ();
+                return true;
+            case Resource.Id.delete:
+                Delete ();
+                return true;
             }
             return base.OnOptionsItemSelected (item);
         }
 
         #endregion
 
+        #region User Actions
+
+        void FloatingActionButtonClicked (object sender, EventArgs e)
+        {
+            Reply ();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void Reply ()
+        {
+            var intent = MessageComposeActivity.RespondIntent (this, NachoCore.Utils.EmailHelper.Action.ReplyAll, Message);
+            StartActivity (intent);
+        }
+
+        void Forward ()
+        {
+            var intent = MessageComposeActivity.RespondIntent (this, NachoCore.Utils.EmailHelper.Action.Forward, Message);
+			StartActivity (intent);
+        }
+
+        void CreateEvent ()
+        {
+        }
+
+        void ShowMoveOptions ()
+        {
+        }
+
+        void Archive ()
+        {
+            if (Message.StillExists ()) {
+                NcEmailArchiver.Archive (Message);
+            }
+            Finish ();
+        }
+
+        void Delete ()
+        {
+            if (Message.StillExists ()) {
+                NcEmailArchiver.Delete (Message);
+            }
+            Finish ();
+        }
+
+        #endregion
     }
 
-    /*
-    public class MessageViewActivityData
-    {
-        public McEmailMessageThread Thread;
-        public McEmailMessage Message;
-    }
-
-    [Activity (Label = "MessageViewActivity")]
-    public class MessageViewActivity : NcActivityWithData<MessageViewActivityData>, IMessageViewFragmentOwner
-    {
-        private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
-        private const string EXTRA_MESSAGE = "com.nachocove.nachomail.EXTRA_MESSAGE";
-
-        private McEmailMessageThread thread;
-        private McEmailMessage message;
-
-        protected override void OnCreate (Bundle bundle)
-        {
-            base.OnCreate (bundle);
-            var dataFromIntent = RetainedData;
-            if (null == dataFromIntent) {
-                dataFromIntent = new MessageViewActivityData ();
-                dataFromIntent.Thread = IntentHelper.RetrieveValue<McEmailMessageThread> (Intent.GetStringExtra (EXTRA_THREAD));
-                dataFromIntent.Message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
-                RetainedData = dataFromIntent;
-            }
-            this.thread = dataFromIntent.Thread;
-            this.message = dataFromIntent.Message;
-
-            SetContentView (Resource.Layout.MessageViewActivity);
-        }
-
-        public static Intent ShowMessageIntent (Context context, McEmailMessageThread thread, McEmailMessage message)
-        {
-            var intent = new Intent (context, typeof(MessageViewActivity));
-            intent.SetAction (Intent.ActionView);
-            intent.PutExtra (EXTRA_THREAD, IntentHelper.StoreValue (thread));
-            intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
-            return intent;
-        }
-
-        void IMessageViewFragmentOwner.DoneWithMessage()
-        {
-            Finish();
-        }
-
-        McEmailMessage IMessageViewFragmentOwner.MessageToView {
-            get {
-                return this.message;
-            }
-        }
-
-        McEmailMessageThread IMessageViewFragmentOwner.ThreadToView {
-            get {
-                return this.thread;
-            }
-        }
-    }
-    */
 }

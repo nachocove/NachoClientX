@@ -1567,6 +1567,26 @@
     <AndroidResource Include="Resources\drawable-xhdpi\folder_icon_inbox.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\folder_icon_inbox.png" />
     <AndroidResource Include="Resources\layout\MessageHeaderView.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_reply.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_reply.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_reply.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_reply.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_message_archive.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_message_event.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_message_forward.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_message_move.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_message_archive.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_message_event.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_message_forward.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_message_move.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_message_archive.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_message_event.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_message_forward.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_message_move.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_message_archive.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_message_event.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_message_forward.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_message_move.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

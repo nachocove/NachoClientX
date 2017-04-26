@@ -1,16 +1,36 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <menu
-    xmlns:android="http://schemas.android.com/apk/res/android">
+	xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MessageViewActivity">
     <item
-        android:id="@+id/quick_reply"
-        android:icon="@drawable/contact_quickemail"
-        android:title="@string/menu_quick_reply" />
-    <item
-        android:id="@+id/create_deadline"
-        android:icon="@drawable/email_calendartime"
-        android:title="@string/menu_create_deadline" />
+        android:id="@+id/forward"
+        android:orderInCategory="100"
+        android:title="@string/message_action_forward"
+		android:icon="@drawable/action_message_forward"
+        app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/create_event"
-        android:icon="@drawable/cal_add"
-        android:title="@string/menu_create_event" />
+        android:orderInCategory="101"
+        android:title="@string/message_action_event"
+		android:icon="@drawable/action_message_event"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/archive"
+        android:orderInCategory="102"
+        android:title="@string/message_action_archive"
+		android:icon="@drawable/action_message_archive"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/move"
+        android:orderInCategory="103"
+        android:title="@string/message_action_move"
+        android:icon="@drawable/action_message_move"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/delete"
+        android:orderInCategory="104"
+        android:title="@string/message_action_delete"
+        app:showAsAction="never"/>
 </menu>
