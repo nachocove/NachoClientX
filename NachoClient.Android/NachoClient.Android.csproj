@@ -293,6 +293,8 @@
     <Compile Include="NachoUI.Android\Support\AttachmentsView.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageHeaderDetailActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageHeaderDetailFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -315,14 +317,12 @@
     <None Include="NachoUI.Android\Activities\ContactsActivity.cs" />
     <None Include="NachoUI.Android\Activities\EventListFragment.cs" />
     <None Include="NachoUI.Android\Activities\FileListFragment.cs" />
-    <None Include="NachoUI.Android\Activities\FoldersActivity.cs" />
     <None Include="NachoUI.Android\Activities\SupportActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooserFragment.cs" />
     <None Include="NachoUI.Android\Activities\EventViewFragment.cs" />
     <None Include="NachoUI.Android\Activities\PriorityFragment.cs" />
     <None Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
-    <None Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportFragment.cs" />
     <None Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
     <None Include="NachoUI.Android\Activities\EventEditActivity.cs" />
@@ -1539,7 +1539,6 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\thread_arrows.png" />
     <AndroidResource Include="Resources\layout\MessageListActivity.axml" />
     <AndroidResource Include="Resources\menu\allmail.xml" />
-    <AndroidResource Include="Resources\layout\AllMailFragment.axml" />
     <AndroidResource Include="Resources\layout\FolderListItem.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\folder_icon_archive.png" />
     <AndroidResource Include="Resources\drawable-hdpi\folder_icon_default.png" />

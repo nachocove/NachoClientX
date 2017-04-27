@@ -26,6 +26,7 @@ namespace NachoClient.AndroidClient
     {
 
         public const string EXTRA_MESSAGE_ID = "NachoClient.AndroidClient.MessageViewActivity.EXTRA_MESSAGE_ID";
+        private const int REQUEST_MOVE = 1;
 
         McEmailMessage Message;
 
@@ -86,6 +87,15 @@ namespace NachoClient.AndroidClient
             if (fragment is MessageViewFragment) {
                 (fragment as MessageViewFragment).Message = Message;
             }
+        }
+
+        protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            if (requestCode == REQUEST_MOVE && resultCode == Result.Ok) {
+                MoveThisMessage (data.Extras.GetInt (FoldersActivity.EXTRA_FOLDER_ID));
+                return;
+            }
+            base.OnActivityResult (requestCode, resultCode, data);
         }
 
         protected override void OnDestroy ()
@@ -159,6 +169,8 @@ namespace NachoClient.AndroidClient
 
         void ShowMoveOptions ()
         {
+            var intent = FoldersActivity.BuildIntent (this, Message.AccountId);
+            StartActivityForResult (intent, REQUEST_MOVE);
         }
 
         void Archive ()
@@ -175,6 +187,12 @@ namespace NachoClient.AndroidClient
                 NcEmailArchiver.Delete (Message);
             }
             Finish ();
+        }
+
+        void MoveThisMessage (int folderId)
+        {
+            var folder = McFolder.QueryById<McFolder> (folderId);
+            NcEmailArchiver.Move (Message, folder);
         }
 
         #endregion

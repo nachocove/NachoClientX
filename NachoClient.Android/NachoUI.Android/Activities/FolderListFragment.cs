@@ -1,37 +1,68 @@
-﻿
+﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
+//
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Android.App;
+using Android.Support.V4.App;
+using Android.Support.Design.Widget;
+using Android.Support.V7.Widget;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
-using NachoCore;
+
 using NachoCore.Model;
-using Android.Support.V7.Widget;
-using Android.Support.V4.Widget;
 using NachoCore.Utils;
+using NachoCore;
+using NachoCore.ActiveSync;
 
 namespace NachoClient.AndroidClient
 {
-    public class FolderListFragment : Fragment
+    public class FolderListFragment : Fragment, FoldersAdapter.Listener
     {
-        public event EventHandler<McFolder> OnFolderSelected;
 
-        int accountId;
-        FolderListAdapter folderListAdapter;
-
-        public static FolderListFragment newInstance (int accountId)
-        {
-            var fragment = new FolderListFragment ();
-            fragment.accountId = accountId;
-            return fragment;
+        public McAccount Account {
+        	get {
+                if (Folders == null) {
+                    return null;
+                }
+        		return Folders.Account;
+        	}
+        	set {
+                if (Folders == null) {
+                    Folders = new NachoMailFolders (value);
+                } else {
+                    Folders.Account = value;
+                }
+            }
         }
+        NachoMailFolders Folders;
+        FoldersAdapter FoldersAdapter;
+        public bool IsPicker;
+        public event EventHandler<McFolder> PickFolder;
+
+        #region Subviews
+
+        RecyclerView ListView;
+
+        void FindSubviews (View view)
+        {
+            ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+            ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
+        }
+
+        void ClearSubviews ()
+        {
+            ListView = null;
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -41,327 +72,323 @@ namespace NachoClient.AndroidClient
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var view = inflater.Inflate (Resource.Layout.FolderListFragment, container, false);
-
-            var activity = (NcTabBarActivity)this.Activity;
-            activity.HookNavigationToolbar (view);
-
-            var SwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
-            SwipeRefreshLayout.Enabled = false;
-
-            folderListAdapter = new FolderListAdapter (accountId, hideFakeFolders: false);
-            var layoutManager = new LinearLayoutManager (Activity);
-
-            var recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
-            recyclerView.SetAdapter (folderListAdapter);
-            recyclerView.SetLayoutManager (layoutManager);
-
-            folderListAdapter.OnFolderSelected += FolderListAdapter_OnFolderSelected;
-            folderListAdapter.OnAccountSelected += FolderListAdapter_OnAccountSelected;
-
+            FindSubviews (view);
+            FoldersAdapter = new FoldersAdapter (this, Folders);
+            ListView.SetAdapter (FoldersAdapter);
             return view;
         }
 
         public override void OnResume ()
         {
             base.OnResume ();
-            if (null != folderListAdapter) {
-                folderListAdapter.SwitchAccount (NcApplication.Instance.Account);
-            }
+            ReloadFolders ();
+        }
 
-            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
-            if (LoginHelpers.ShouldAlertUser ()) {
-                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
+
+        #endregion
+
+        #region Data Loading
+
+        protected void ReloadFolders ()
+        {
+            FoldersAdapter.Reload ();
+        }
+
+        #endregion
+
+        #region User Actions
+
+        public void OnFolderSelected (McFolder folder)
+        {
+            if (IsPicker) {
+                Pick (folder);
             } else {
-                moreImage.SetImageResource (Resource.Drawable.nav_more);
+                ShowFolder (folder);
             }
         }
 
-        void FolderListAdapter_OnFolderSelected (object sender, McFolder folder)
+        #endregion
+
+        #region Private Helpers 
+
+        void ShowFolder (McFolder folder)
         {
-            if (null != OnFolderSelected) {
-                OnFolderSelected (this, folder);
+            folder.UpdateSet_LastAccessed (DateTime.UtcNow);
+            if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
+                ShowDrafts (folder);
+            } else {
+                ShowMessages (folder);
             }
         }
 
-        void FolderListAdapter_OnAccountSelected (object sender, McAccount account)
+        void ShowDrafts (McFolder folder)
         {
-            if (null != folderListAdapter) {
-                FolderLists.SetDefaultAccount (account.Id);
-                folderListAdapter.Refresh (accountId);
-            }
+            var intent = MessageListActivity.BuildDraftsIntent (Activity, folder);
+            StartActivity (intent);
         }
 
-        public void SwitchAccount (McAccount account)
+        void ShowMessages (McFolder folder)
         {
-            if (null != folderListAdapter) {
-                accountId = account.Id;
-                folderListAdapter.SwitchAccount (account);
-            }
+            var intent = MessageListActivity.BuildFolderIntent (Activity, folder);
+            StartActivity (intent);
         }
+
+        void Pick (McFolder folder)
+        {
+            PickFolder.Invoke (this, folder);
+        }
+
+        #endregion
+
     }
 
-    public class FolderListAdapter : RecyclerView.Adapter
+    public class FoldersAdapter : GroupedListRecyclerViewAdapter
     {
-        public event EventHandler<McFolder> OnFolderSelected;
-        public event EventHandler<McAccount> OnAccountSelected;
 
-        const int ROW_TYPE = 1;
-        const int HEADER_ROW_TYPE = 2;
-        const int ACCOUNT_ROW_TYPE = 3;
-
-        public override int GetItemViewType (int position)
+        public interface Listener
         {
-            var d = folderLists.displayList [position];
-            if (null == d.node) {
-                return HEADER_ROW_TYPE;
-            } else {
-                if (null == d.node.account) {
-                    return ROW_TYPE;
-                } else {
-                    return ACCOUNT_ROW_TYPE;
-                }
-            }
+            void OnFolderSelected (McFolder folder);
         }
 
-        public class HeaderViewHolder : RecyclerView.ViewHolder
+        WeakReference<Listener> WeakListener;
+        public NachoMailFolders Folders;
+
+        int _GroupCount = 0;
+        int RecentGroupPosition = -1;
+        int FirstAccountGroupPosition = -1;
+
+        public FoldersAdapter (Listener listener, NachoMailFolders folders) : base ()
         {
-            public TextView header { get; private set; }
-
-            public View listHeader { get; private set; }
-
-            public HeaderViewHolder (View itemView) : base (itemView)
-            {
-                header = itemView.FindViewById<TextView> (Resource.Id.header);
-                listHeader = itemView.FindViewById<View> (Resource.Id.list_header);
-            }
+            WeakListener = new WeakReference<Listener> (listener);
+            Folders = folders;
         }
 
-        public class AccountViewHolder : RecyclerView.ViewHolder
+        public void Reload ()
         {
-            public TextView name { get; private set; }
-
-            public ImageView accountSelector { get; private set; }
-
-            public ImageView accountImage { get; private set; }
-
-            public View separator { get; private set; }
-
-            public AccountViewHolder (View itemView, Action<int> listener) : base (itemView)
-            {
-                name = itemView.FindViewById<TextView> (Resource.Id.name);
-                accountSelector = itemView.FindViewById<ImageView> (Resource.Id.account_selector);
-                accountImage = itemView.FindViewById<ImageView> (Resource.Id.account_image);
-                separator = itemView.FindViewById<View> (Resource.Id.separator);
-
-                itemView.Click += (object sender, EventArgs e) => listener (base.AdapterPosition);
-            }
-        }
-
-        public class FolderViewHolder : RecyclerView.ViewHolder
-        {
-            public TextView name { get; private set; }
-
-            public ImageView folder { get; private set; }
-
-            public ImageView toggle { get; private set; }
-
-            public View separator { get; private set; }
-
-            public FolderViewHolder (View itemView, Action<int> listener, Action<int> toggleListener) : base (itemView)
-            {
-                name = itemView.FindViewById<TextView> (Resource.Id.name);
-                toggle = itemView.FindViewById<ImageView> (Resource.Id.toggle);
-                separator = itemView.FindViewById<View> (Resource.Id.separator);
-                folder = itemView.FindViewById<ImageView> (Resource.Id.folder);
-
-                itemView.Click += (object sender, EventArgs e) => listener (base.AdapterPosition);
-                toggle.Click += (object sender, EventArgs e) => toggleListener (base.AdapterPosition);
-            }
-        }
-
-        bool hideFakeFolders;
-        FolderLists folderLists;
-
-        public FolderListAdapter (int accountId, bool hideFakeFolders)
-        {
-            HasStableIds = true;
-            this.hideFakeFolders = hideFakeFolders;
-            folderLists = new FolderLists (accountId, hideFakeFolders);
-        }
-
-        public void SwitchAccount (McAccount account)
-        {
-            folderLists = new FolderLists (account.Id, hideFakeFolders);
-            NotifyDataSetChanged ();
-        }
-
-        public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
-        {
-            switch (viewType) {
-            case HEADER_ROW_TYPE:
-                var headerView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCellHeader, parent, false);
-                var headerHolder = new HeaderViewHolder (headerView);
-                return headerHolder;
-            case ACCOUNT_ROW_TYPE:
-                var accountView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCellAccount, parent, false);
-                var accountHolder = new AccountViewHolder (accountView, OnClick);
-                return accountHolder;
-            default:
-                var rowView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCell, parent, false);
-                var rowHolder = new FolderViewHolder (rowView, OnClick, OnToggle);
-                return rowHolder;
-            }
-        }
-
-        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
-        {
-            switch (holder.ItemViewType) {
-            case HEADER_ROW_TYPE:
-                BindHeader (holder, position);
-                break;
-            case ACCOUNT_ROW_TYPE:
-                BindAccount (holder, position);
-                break;
-            default:
-                BindRow (holder, position);
-                break;
-            }
-        }
-
-        void BindHeader (RecyclerView.ViewHolder holder, int position)
-        {
-            var vh = holder as HeaderViewHolder;
-            var d = folderLists.displayList [position];
-
-            if (0 == position) {
-                vh.header.Visibility = ViewStates.Gone;
-                vh.listHeader.Visibility = ViewStates.Visible;
+            if (Folders == null) {
+                _GroupCount = 0;
                 return;
             }
-
-            vh.header.Visibility = ViewStates.Visible;
-            vh.listHeader.Visibility = ViewStates.Gone;
-
-            switch (d.header) {
-            case FolderLists.Header.None:
-                vh.header.Text = "";
-                break;
-            case FolderLists.Header.Accounts:
-                vh.header.Text = "Accounts";
-                break;
-            case FolderLists.Header.Default:
-                vh.header.Text = "Default Folders";
-                break;
-            case FolderLists.Header.Folders:
-                vh.header.Text = "Your Folders";
-                break;
-            case FolderLists.Header.Recents:
-                vh.header.Text = "Recent Folders";
-                break;
+            Folders.Reload ();
+            RecentGroupPosition = -1;
+            FirstAccountGroupPosition = -1;
+            var groupPosition = 0;
+            if (Folders.RecentCount > 0) {
+                RecentGroupPosition = groupPosition++;
             }
+            FirstAccountGroupPosition = groupPosition++;
+            _GroupCount = FirstAccountGroupPosition + Folders.AccountCount;
+            NotifyDataSetChanged ();
         }
 
-        void BindAccount (RecyclerView.ViewHolder holder, int position)
-        {
-            var vh = holder as AccountViewHolder;
-            var d = folderLists.displayList [position];
-            var node = d.node;
-
-            vh.name.Text = node.account.EmailAddr;
-            vh.accountImage.SetImageResource (Util.GetAccountServiceImageId (node.account.AccountService));
-
-            if (node.opened) {
-                vh.accountSelector.SetImageResource (Resource.Drawable.gen_checkbox_checked);
-            } else {
-                vh.accountSelector.SetImageResource (Resource.Drawable.gen_checkbox);
-            }
-
-            if (d.lastInSection) {
-                vh.separator.Visibility = ViewStates.Gone;
-            } else {
-                vh.separator.Visibility = ViewStates.Visible;
-            }
-        }
-
-        void BindRow (RecyclerView.ViewHolder holder, int position)
-        {
-            var vh = holder as FolderViewHolder;
-
-            var d = folderLists.displayList [position];
-            var node = d.node;
-
-            vh.name.Text = node.folder.DisplayName;
-
-            var marginParams = (Android.Views.ViewGroup.MarginLayoutParams)vh.folder.LayoutParameters;
-            marginParams.LeftMargin = dp2px (16) * d.level;
-            vh.folder.LayoutParameters = marginParams;
-
-            if (0 == node.children.Count) {
-                vh.toggle.Visibility = ViewStates.Invisible;
-            } else {
-                vh.toggle.Visibility = ViewStates.Visible;
-                if (folderLists.IsOpen (node)) {
-                    vh.toggle.SetImageResource (Resource.Drawable.gen_readmore_active);
-                } else {
-                    vh.toggle.SetImageResource (Resource.Drawable.gen_readmore);
-                }
-            }
-
-            if (d.lastInSection) {
-                vh.separator.Visibility = ViewStates.Gone;
-            } else {
-                vh.separator.Visibility = ViewStates.Visible;
-            }
-
-        }
-
-        private int dp2px (int dp)
-        {
-            return (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, (float)dp, MainApplication.Instance.Resources.DisplayMetrics);
-        }
-
-        public override int ItemCount {
+        public override int GroupCount {
             get {
-                return folderLists.displayList.Count;
+                return _GroupCount;
             }
         }
 
-        public override long GetItemId (int position)
+        public override int GroupItemCount (int groupPosition)
         {
-            var displayItem = folderLists.displayList [position];
-
-            if (displayItem.header != FolderLists.Header.None) {
-                return ((int)displayItem.header) - 100;
+            if (groupPosition == RecentGroupPosition) {
+                return Folders.RecentCount;
             } else {
-                return displayItem.node.UniqueId;
+                var accountIndex = groupPosition - FirstAccountGroupPosition;
+                if (accountIndex < Folders.AccountCount) {
+                    return Folders.EntryCountAtAccountIndex (accountIndex);
+                }
             }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("FolderListFragment.GroupHeaderValue unexpected group position: {0}", groupPosition));
         }
 
-        void OnClick (int position)
+        public override string GroupHeaderValue (Context context, int groupPosition)
         {
-            var node = folderLists.displayList [position].node;
+            if (groupPosition == RecentGroupPosition) {
+                return context.GetString (Resource.String.folders_recent);
+            }
+            if (groupPosition >= FirstAccountGroupPosition) {
+                if (groupPosition == 0 && Folders.AccountCount == 1) {
+                    return null;
+                }
+                var accountIndex = groupPosition - FirstAccountGroupPosition;
+                if (accountIndex < Folders.AccountCount) {
+                    var account = Folders.AccountAtIndex (accountIndex);
+                    if (!String.IsNullOrEmpty (account.DisplayName)) {
+                        return account.DisplayName;
+                    }
+                    return account.EmailAddr;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("FolderListFragment.GroupHeaderValue unexpected group position: {0}", groupPosition));
+        }
 
-            if (null != node) {
-                if (null != node.account) {
-                    OnAccountSelected (this, node.account);
-                } else if (null != OnFolderSelected) {
-                    OnFolderSelected (this, folderLists.displayList [position].node.folder);
+        public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
+        {
+            return FolderViewHolder.Create (parent);
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            if (groupPosition == RecentGroupPosition) {
+                if (position < Folders.RecentCount) {
+                    var folderHolder = (holder as FolderViewHolder);
+                    var folder = Folders.RecentAtIndex (position);
+                    McAccount account = null;
+                    if (Folders.AccountCount > 1) {
+                        account = Folders.AccountForId (folder.AccountId);
+                    }
+                    folderHolder.SetFolder (folder, account);
+                    folderHolder.CanSelect = true;
+                    folderHolder.IntentLevel = 0;
+                    return;
+                }
+            } else {
+                var accountIndex = groupPosition - FirstAccountGroupPosition;
+                if (accountIndex < Folders.AccountCount) {
+                    var folderHolder = (holder as FolderViewHolder);
+                    var entry = Folders.EntryAtIndex (accountIndex, position);
+                    folderHolder.SetFolder (entry.Folder);
+                    folderHolder.CanSelect = !entry.Folder.ImapNoSelect;
+                    folderHolder.IntentLevel = entry.IndentLevel;
+                    return;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("FolderListFragment.OnBindViewHolder unexpected position: {0}.{1}", groupPosition, position));
+        }
+
+        public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            var folderHolder = (holder as FolderViewHolder);
+            McFolder folder = null;;
+            if (folderHolder.CanSelect){
+                if (groupPosition == RecentGroupPosition) {
+                    if (position < Folders.RecentCount) {
+                        folder = Folders.RecentAtIndex (position);
+                    }
+                } else {
+                    var accountIndex = groupPosition - FirstAccountGroupPosition;
+                    if (accountIndex < Folders.AccountCount) {
+                        var entry = Folders.EntryAtIndex (accountIndex, position);
+                        folder = entry.Folder;
+                    }
+                }
+            }
+            if (folder != null) {
+                Listener listener;
+                if (WeakListener.TryGetTarget (out listener)) {
+                    listener.OnFolderSelected (folder);
                 }
             }
         }
 
-        void OnToggle (int position)
+        class FolderViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
         {
-            folderLists.Toggle (position);
-            NotifyDataSetChanged ();
-        }
 
-        public void Refresh (int accountId)
-        {
-            folderLists.Create (accountId, hideFakeFolders);
-            NotifyDataSetChanged ();
+            View IndentView;
+            TextView NameLabel;
+            TextView AccountLabel;
+            ImageView IconView;
+
+            float IndentWidth = 40.0f;
+
+            public bool CanSelect {
+                get {
+                    return ItemView.Clickable;
+                }
+                set {
+                    ItemView.Clickable = value;
+                }
+            }
+
+            int _IntentLevel = 0;
+            public int IntentLevel {
+                get {
+                    return _IntentLevel;
+                }
+                set {
+                    _IntentLevel = value;
+                    float indentDevicePixels = IndentWidth * _IntentLevel;
+                    IndentView.LayoutParameters = new LinearLayout.LayoutParams ((int)(indentDevicePixels * ItemView.Context.Resources.DisplayMetrics.Density), 0);
+                }
+            }
+
+            public static FolderViewHolder Create (ViewGroup parent)
+            {
+                var view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderListItem, parent, false);
+                return new FolderViewHolder (view);
+            }
+
+            public FolderViewHolder (View view) : base (view)
+            {
+                NameLabel = view.FindViewById (Resource.Id.folder_name) as TextView;
+                AccountLabel = view.FindViewById (Resource.Id.folder_account) as TextView;
+                IconView = view.FindViewById (Resource.Id.folder_icon) as ImageView;
+                IndentView = view.FindViewById (Resource.Id.folder_indent);
+            }
+
+            public void SetFolder (McFolder folder, McAccount account = null)
+            {
+                NameLabel.Text = PrettyMailboxName (folder.DisplayName);
+                IconView.SetImageResource (IconResourceForFolder (folder));
+                if (account == null) {
+                    AccountLabel.Visibility = ViewStates.Gone;
+                } else {
+                    if (!String.IsNullOrEmpty (account.DisplayName)) {
+                        AccountLabel.Text = account.DisplayName;
+                    } else {
+                        AccountLabel.Text = account.EmailAddr;
+                    }
+                    AccountLabel.Visibility = ViewStates.Visible;
+                }
+            }
+
+            string PrettyMailboxName (string name)
+            {
+                if (name == "INBOX") {
+                    return "Inbox";
+                }
+                return name;
+            }
+
+            int IconResourceForFolder (McFolder folder)
+            {
+                var iconResource = Resource.Drawable.folder_icon_default;
+                if (folder.IsClientOwnedOutboxFolder ()) {
+                    iconResource = Resource.Drawable.folder_icon_outbox;
+                } else if (folder.IsClientOwnedDraftsFolder ()) {
+                    iconResource = Resource.Drawable.folder_icon_drafts;
+                } else if ((folder.ServerId == "[Gmail]/All Mail") || (folder.DisplayName == "Archive")) {
+                    iconResource = Resource.Drawable.folder_icon_archive;
+                } else {
+                    switch (folder.Type) {
+                        case Xml.FolderHierarchy.TypeCode.DefaultInbox_2:
+                        iconResource = Resource.Drawable.folder_icon_inbox;
+                        break;
+                    case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
+                        iconResource = Resource.Drawable.folder_icon_drafts;
+                        break;
+                    case Xml.FolderHierarchy.TypeCode.DefaultDeleted_4:
+                        iconResource = Resource.Drawable.folder_icon_trash;
+                        break;
+                    case Xml.FolderHierarchy.TypeCode.DefaultSent_5:
+                        iconResource = Resource.Drawable.folder_icon_sent;
+                        break;
+                    case Xml.FolderHierarchy.TypeCode.DefaultOutbox_6:
+                        iconResource = Resource.Drawable.folder_icon_outbox;
+                        break;
+                    default:
+                        iconResource = Resource.Drawable.folder_icon_default;
+                        break;
+                    }
+                }
+                return iconResource;
+            }
+
         }
 
     }
 }
-

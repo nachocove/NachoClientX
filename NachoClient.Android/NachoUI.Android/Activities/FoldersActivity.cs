@@ -1,4 +1,7 @@
-﻿using System;
+﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
+//
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,79 +11,111 @@ using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using Android.Widget;
+using Android.Support.V7.Widget;
 
-using NachoCore;
 using NachoCore.Model;
-using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "FoldersActivity")]            
-    public class FoldersActivity : NcTabBarActivity
+    [Activity (Label="@string/folder_picker_title")]
+    public class FoldersActivity : NcActivity
     {
-        FolderListFragment folderListFragment;
 
-        protected override void OnCreate (Bundle bundle)
+        public const string EXTRA_ACCOUNT_ID = "NachoClient.NachoAndroid.FoldersActivity.EXTRA_ACCOUNT_ID";
+        public const string EXTRA_FOLDER_ID = "NachoClient.NachoAndroid.FoldersActivity.EXTRA_FOLDER_ID";
+
+        McAccount Account;
+
+        #region Intents
+
+        public static Intent BuildIntent (Context context, int accountId)
         {
-            base.OnCreate (bundle, Resource.Layout.FoldersActivity);
-
-            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
-
-            folderListFragment = FolderListFragment.newInstance (NcApplication.Instance.Account.Id);
-            folderListFragment.OnFolderSelected += FolderListFragment_OnFolderSelected;
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, folderListFragment).Commit ();
+            var intent = new Intent (context, typeof (FoldersActivity));
+            intent.PutExtra (EXTRA_ACCOUNT_ID, accountId);
+            return intent;
         }
 
-        protected override void OnResume ()
+        #endregion
+
+        #region Subviews
+
+        Toolbar Toolbar;
+
+        void FindSubviews ()
         {
-            base.OnResume ();
-            // Highlight the tab bar icon of this activity
-            var moreImage = FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
-            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
+            Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
         }
 
-        void FolderListFragment_OnFolderSelected (object sender, McFolder folder)
+        void ClearSubviews ()
         {
-            Log.Info (Log.LOG_UI, "FoldersActivity OnFolderSelected: {0}", folder);
+            Toolbar = null;
+        }
 
-            Intent intent = null;
+        #endregion
 
-            switch (folder.Id) {
-            case McFolder.INBOX_FAKE_FOLDER_ID:
-                intent = InboxFolderActivity.ShowInboxFolderIntent (this, folder);
-                break;
-            case McFolder.HOT_FAKE_FOLDER_ID:
-                intent = HotFolderActivity.ShowHotFolderIntent (this, folder);
-                break;
-            case McFolder.LTR_FAKE_FOLDER_ID:
-                intent = LtrFolderActivity.ShowLtrFolderIntent (this, folder);
-                break;
-            default:
-                intent = MessageFolderActivity.ShowFolderIntent (this, folder);
-                folder.UpdateSet_LastAccessed (DateTime.UtcNow);
-                break;
+        #region Activity Lifecycle
+
+        protected override void OnCreate (Bundle savedInstanceState)
+        {
+            PopulateFromIntent ();
+            base.OnCreate (savedInstanceState);
+            SetContentView (Resource.Layout.FoldersActivity);
+            FindSubviews ();
+            Toolbar.Subtitle = String.IsNullOrEmpty (Account.DisplayName) ? Account.EmailAddr : Account.DisplayName;
+            SetSupportActionBar (Toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+        }
+
+        public override void OnAttachFragment (Android.Support.V4.App.Fragment fragment)
+        {
+            base.OnAttachFragment (fragment);
+            if (fragment is FolderListFragment) {
+                var folderFragment = (fragment as FolderListFragment);
+                folderFragment.Account = Account;
+                folderFragment.IsPicker = true;
+                folderFragment.PickFolder += FolderPicked;
             }
-            StartActivity (intent);
         }
 
-        public override void OnBackPressed ()
+        protected override void OnDestroy ()
         {
-            base.OnBackPressed ();
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            base.OnSaveInstanceState (outState);
-        }
-
-        public override void MaybeSwitchAccount ()
-        {
-            base.MaybeSwitchAccount ();
-
-            if (null != folderListFragment) {
-                folderListFragment.SwitchAccount (NcApplication.Instance.Account);
+            foreach (var fragment in SupportFragmentManager.Fragments) {
+                if (fragment is FolderListFragment) {
+                    (fragment as FolderListFragment).PickFolder -= FolderPicked;
+                }
             }
+            ClearSubviews ();
+            base.OnDestroy ();
+        }
+
+        void PopulateFromIntent ()
+        {
+            var accountId = Intent.Extras.GetInt (EXTRA_ACCOUNT_ID);
+            Account = McAccount.QueryById<McAccount> (accountId);
+        }
+
+        #endregion
+
+        #region Menu
+
+        public override bool OnOptionsItemSelected (IMenuItem item)
+        {
+            switch (item.ItemId) {
+            case Android.Resource.Id.Home:
+                Finish ();
+                return true;
+            }
+            return base.OnOptionsItemSelected (item);
+        }
+
+        #endregion
+
+        void FolderPicked (object sender, NachoCore.Model.McFolder folder)
+        {
+            var intent = new Intent ();
+            intent.PutExtra (EXTRA_FOLDER_ID, folder.Id);
+            SetResult (Result.Ok, intent);
+            Finish ();
         }
     }
 }

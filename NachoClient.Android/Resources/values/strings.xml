@@ -52,6 +52,9 @@
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
 
+    <!-- Folder picker -->
+    <string name="folder_picker_title">Move Message</string>
+
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
     <string name="settings_action_add_account">Add Account</string>
