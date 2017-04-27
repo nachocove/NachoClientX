@@ -291,6 +291,8 @@
     <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <Compile Include="NachoUI.Android\Support\MessageHeaderView.cs" />
     <Compile Include="NachoUI.Android\Support\AttachmentsView.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageHeaderDetailActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageHeaderDetailFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1598,6 +1600,9 @@
     <AndroidResource Include="Resources\drawable-mdpi\attachments_header_icon.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\attachments_header_icon.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\attachments_header_icon.png" />
+    <AndroidResource Include="Resources\layout\MessageHeaderDetailActivity.axml" />
+    <AndroidResource Include="Resources\layout\MessageHeaderDetailFragment.axml" />
+    <AndroidResource Include="Resources\layout\MessageHeaderDetailListItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

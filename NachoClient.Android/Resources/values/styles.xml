@@ -71,18 +71,23 @@
         <item name="textAppearanceMessageThreadCount">@style/TextAppearanceNachoMessageThreadCount</item>
         <item name="textAppearanceMessageViewSender">@style/TextAppearanceNachoMessageViewSender</item>
         <item name="textAppearanceMessageViewSubject">@style/TextAppearanceNachoMessageViewSubject</item>
-        <item name="messageItemPaddingLeft">12dp</item>
-        <item name="messageItemPaddingRight">10dp</item>
-        <item name="messageItemPaddingTop">7dp</item>
-        <item name="messageItemPaddingBottom">7dp</item>
-        <item name="messageViewPaddingLeft">12dp</item>
-        <item name="messageViewPaddingRight">10dp</item>
-        <item name="messageHeaderViewPaddingTop">7dp</item>
-        <item name="messageHeaderViewPaddingBottom">7dp</item>
-        <item name="folderItemPaddingLeft">12dp</item>
-        <item name="folderItemPaddingRight">10dp</item>
-        <item name="folderItemPaddingTop">7dp</item>
-        <item name="folderItemPaddingBottom">7dp</item> 
+        <item name="textAppearanceContactItem">@style/TextAppearanceNachoMessageItem</item>
+        <item name="messageItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="messageItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="messageItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="messageItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
+        <item name="messageViewPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="messageViewPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="messageHeaderViewPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="messageHeaderViewPaddingBottom">@dimen/nacho_item_padding_bottom</item>
+        <item name="folderItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="folderItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="folderItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="folderItemPaddingBottom">@dimen/nacho_item_padding_bottom</item> 
+        <item name="contactItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="contactItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="contactItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="contactItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
     </style>
 
     <style name="NachoTheme.NoActionBar">

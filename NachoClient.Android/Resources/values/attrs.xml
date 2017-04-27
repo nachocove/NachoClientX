@@ -13,6 +13,7 @@
     <attr name="textAppearanceMessageThreadCount" format="reference"/>
     <attr name="textAppearanceMessageViewSender" format="reference"/>
     <attr name="textAppearanceMessageViewSubject" format="reference"/>
+    <attr name="textAppearanceContactItem" format="reference"/>
     <attr name="messageItemPaddingLeft" format="dimension"/>
     <attr name="messageItemPaddingRight" format="dimension"/>
     <attr name="messageItemPaddingTop" format="dimension"/>
@@ -25,4 +26,8 @@
     <attr name="folderItemPaddingRight" format="dimension"/>
     <attr name="folderItemPaddingTop" format="dimension"/>
     <attr name="folderItemPaddingBottom" format="dimension"/>
+    <attr name="contactItemPaddingLeft" format="dimension"/>
+    <attr name="contactItemPaddingRight" format="dimension"/>
+    <attr name="contactItemPaddingTop" format="dimension"/>
+    <attr name="contactItemPaddingBottom" format="dimension"/>
 </resources>

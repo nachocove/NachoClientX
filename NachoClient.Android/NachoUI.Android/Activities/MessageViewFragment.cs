@@ -63,15 +63,22 @@ namespace NachoClient.AndroidClient
             HeaderView = view.FindViewById (Resource.Id.message_header) as MessageHeaderView;
             BodyView = view.FindViewById (Resource.Id.webview) as WebView;
             ErrorLabel = view.FindViewById (Resource.Id.error_label) as TextView;
-            ErrorLabel.Click += ErrorLabelClicked;
             AttachmentsView = view.FindViewById (Resource.Id.attachments_view) as AttachmentsView;
+            HeaderView.Click += HeaderViewClicked;
+            ErrorLabel.Click += ErrorLabelClicked;
             AttachmentsView.SelectAttachment += AttachmentSelected;
         }
 
         void ClearSubviews ()
         {
+            HeaderView.Click -= HeaderViewClicked;
+            ErrorLabel.Click -= ErrorLabelClicked;
+            AttachmentsView.SelectAttachment -= AttachmentSelected;
+            AttachmentsView.Cleanup ();
             HeaderView = null;
             BodyView = null;
+            ErrorLabel = null;
+            AttachmentsView = null;
         }
 
         #endregion
@@ -103,7 +110,6 @@ namespace NachoClient.AndroidClient
                 BodyDownloader.Delegate = null;
                 BodyDownloader = null;
             }
-            AttachmentsView.Cleanup ();
             ClearSubviews ();
             base.OnDestroyView ();
         }
@@ -124,7 +130,7 @@ namespace NachoClient.AndroidClient
         {
             ErrorLabel.Visibility = ViewStates.Gone;
             BodyView.Visibility = ViewStates.Visible;
-        	StartBodyDownload ();
+            StartBodyDownload ();
         }
 
         public void MessageDownloadDidFinish (MessageDownloader downloader)
@@ -199,9 +205,24 @@ namespace NachoClient.AndroidClient
             RetryDownload ();
         }
 
+        void HeaderViewClicked (object sender, EventArgs e)
+        {
+            ShowHeaderDetails ();
+        }
+
         void AttachmentSelected (object sender, NachoCore.Model.McAttachment e)
         {
             AttachmentHelper.OpenAttachment (Activity, e);
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void ShowHeaderDetails ()
+        {
+            var intent = MessageHeaderDetailActivity.BuildIntent (Activity, Message.Id);
+            StartActivity (intent);
         }
 
         #endregion

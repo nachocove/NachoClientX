@@ -14,7 +14,9 @@
             <NachoClient.AndroidClient.MessageHeaderView
                 android:id="@+id/message_header"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content" 
+                android:clickable="true"
+                android:background="?attr/selectableItemBackground"/>
             <NachoClient.AndroidClient.AttachmentsView
                 android:id="@+id/attachments_view"
                 android:layout_width="fill_parent"

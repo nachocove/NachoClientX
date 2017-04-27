@@ -41,6 +41,14 @@
     <string name="attachments_header_show_format">Show {0} attachments</string>
     <string name="attachments_header_hide">Hide attachments</string>
 
+    <!-- Message Header Detail View -->
+    <string name="message_header_detail_title">Message Details</string>
+    <string name="message_header_detail_from">From</string>
+    <string name="message_header_detail_from_replyto">From/Reply-To</string>
+    <string name="message_header_detail_to">To</string>
+    <string name="message_header_detail_cc">CC</string>
+    <string name="message_header_detail_bcc">BCC</string>
+
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
 
@@ -123,6 +131,8 @@
     <string name="demo_attachments_header">Show 4 attachments</string>
     <string name="demo_attachment_name">Some File Name</string>
     <string name="demo_attachment_detail">100 kb</string>
+    <string name="demo_contact_name">Test Contact</string>
+    <string name="demo_contact_email">email@address.com</string>
 
 
     <!-- OLD -->
@@ -157,8 +167,6 @@
     <string name="demo_date">Wed, Jun 17 - 2:58pm</string>
     <string name="demo_preview">Get the most from your inbox today!  Get Nacho Mail pronto for your Chromebook."</string>
     <string name="demo_initials">JB</string>
-    <string name="demo_contact_name">Joe Smith</string>
-    <string name="demo_contact_email">joe@smith.com</string>
     <string name="demo_contact_phone">505 555 5678</string>
     <string name="demo_contact_section_header">A</string>
     <string name="demo_attachment_size">JPG file - 23.4KB</string>
