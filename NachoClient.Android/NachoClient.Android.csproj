@@ -290,6 +290,7 @@
     <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <Compile Include="NachoUI.Android\Support\MessageHeaderView.cs" />
+    <Compile Include="NachoUI.Android\Support\AttachmentsView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1587,6 +1588,16 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\action_message_event.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_message_forward.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_message_move.png" />
+    <AndroidResource Include="Resources\layout\AttachmentListItem.axml" />
+    <AndroidResource Include="Resources\layout\AttachmentsView.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\subject_attach.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\subject_attach.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\subject_attach.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\subject_attach.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\attachments_header_icon.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\attachments_header_icon.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\attachments_header_icon.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\attachments_header_icon.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

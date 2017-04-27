@@ -37,6 +37,10 @@
     <string name="message_action_archive">Archive</string>
     <string name="message_action_delete">Delete</string>
 
+    <!-- Attachments View -->
+    <string name="attachments_header_show_format">Show {0} attachments</string>
+    <string name="attachments_header_hide">Hide attachments</string>
+
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
 
@@ -116,6 +120,9 @@
     <string name="demo_message_date_full">Monday, April 3 - 1:05 pm</string>
     <string name="demo_folder_name">Inbox</string>
     <string name="demo_folder_account">Gmail</string>
+    <string name="demo_attachments_header">Show 4 attachments</string>
+    <string name="demo_attachment_name">Some File Name</string>
+    <string name="demo_attachment_detail">100 kb</string>
 
 
     <!-- OLD -->
@@ -154,7 +161,6 @@
     <string name="demo_contact_email">joe@smith.com</string>
     <string name="demo_contact_phone">505 555 5678</string>
     <string name="demo_contact_section_header">A</string>
-    <string name="demo_attachment_name">photo.jpg</string>
     <string name="demo_attachment_size">JPG file - 23.4KB</string>
     <string name="demo_attachment_count">3</string>
     <string name="demo_signature">Sent by Nacho Mail</string>

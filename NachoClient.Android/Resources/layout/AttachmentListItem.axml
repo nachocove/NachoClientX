@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:background="?attr/selectableItemBackground"
+    android:paddingLeft="?attr/messageViewPaddingLeft">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingRight="?attr/messageViewPaddingRight"
+        android:paddingTop="?attr/messageItemPaddingTop"
+        android:paddingBottom="?attr/messageItemPaddingBottom">
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/email_att_files"
+            android:layout_marginRight="?attr/messageViewPaddingLeft"
+            android:layout_gravity="center_vertical" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1.0"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical">
+            <TextView
+                android:id="@+id/attachment_name"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/demo_attachment_name"
+                android:textAppearance="?attr/textAppearanceListItemSmall" />
+            <TextView
+                android:id="@+id/attachment_detail"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/demo_attachment_detail"
+                android:textAppearance="?attr/textAppearanceListItemDetail" />
+        </LinearLayout>
+        <FrameLayout
+            android:id="@+id/attachment_download_frame"
+            android:layout_gravity="center_vertical"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginLeft="?attr/messageViewPaddingLeft">
+            <ImageView
+                android:id="@+id/error_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/error_indicator"
+                android:visibility="gone" />
+            <ImageView
+                android:id="@+id/download_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/email_att_download"
+                android:visibility="gone" />
+            <ProgressBar
+                android:id="@+id/download_progress"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                style="@android:style/Widget.ProgressBar.Small.Inverse"
+                android:progressTint="?attr/colorAccent"
+                android:indeterminateOnly="true" />
+        </FrameLayout>
+    </LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

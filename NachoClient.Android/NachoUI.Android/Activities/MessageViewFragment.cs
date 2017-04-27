@@ -11,6 +11,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.Support.V4.View;
+using Android.Support.V7.Widget;
 using Android.Webkit;
 
 using NachoCore;
@@ -34,6 +35,11 @@ namespace NachoClient.AndroidClient
             }
             set {
                 _Message = value;
+                if (_Message.cachedHasAttachments) {
+                    Attachments = McAttachment.QueryByItem (_Message);
+                } else {
+                    Attachments = new List<McAttachment> ();
+                }
                 if (Message.BodyId != 0) {
                     Bundle = new NcEmailMessageBundle (_Message);
                 } else {
@@ -41,12 +47,14 @@ namespace NachoClient.AndroidClient
                 }
             }
         }
+        List<McAttachment> Attachments;
         NcEmailMessageBundle Bundle;
         MessageDownloader BodyDownloader;
 
         #region Subviews
 
         MessageHeaderView HeaderView;
+        AttachmentsView AttachmentsView;
         WebView BodyView;
         TextView ErrorLabel;
 
@@ -56,6 +64,8 @@ namespace NachoClient.AndroidClient
             BodyView = view.FindViewById (Resource.Id.webview) as WebView;
             ErrorLabel = view.FindViewById (Resource.Id.error_label) as TextView;
             ErrorLabel.Click += ErrorLabelClicked;
+            AttachmentsView = view.FindViewById (Resource.Id.attachments_view) as AttachmentsView;
+            AttachmentsView.SelectAttachment += AttachmentSelected;
         }
 
         void ClearSubviews ()
@@ -72,7 +82,9 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
             FindSubviews (view);
+
             Update ();
+
             if (Bundle == null || Bundle.NeedsUpdate) {
                 StartBodyDownload ();
             } else {
@@ -81,6 +93,7 @@ namespace NachoClient.AndroidClient
                     EmailHelper.MarkAsRead (Message);
                 }
             }
+
             return view;
         }
 
@@ -90,6 +103,7 @@ namespace NachoClient.AndroidClient
                 BodyDownloader.Delegate = null;
                 BodyDownloader = null;
             }
+            AttachmentsView.Cleanup ();
             ClearSubviews ();
             base.OnDestroyView ();
         }
@@ -159,6 +173,7 @@ namespace NachoClient.AndroidClient
         void Update ()
         {
             HeaderView.SetMessage (Message);
+            AttachmentsView.Attachments = Attachments;
         }
 
         void ShowDownloadErrorForResult (NcResult result)
@@ -184,8 +199,12 @@ namespace NachoClient.AndroidClient
             RetryDownload ();
         }
 
-        #endregion
+        void AttachmentSelected (object sender, NachoCore.Model.McAttachment e)
+        {
+            AttachmentHelper.OpenAttachment (Activity, e);
+        }
 
+        #endregion
     }
 
     /*

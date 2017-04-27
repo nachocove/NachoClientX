@@ -15,6 +15,11 @@
                 android:id="@+id/message_header"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" />
+            <NachoClient.AndroidClient.AttachmentsView
+                android:id="@+id/attachments_view"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
             <TextView
                 android:id="@+id/error_label"
                 android:layout_width="fill_parent"
@@ -22,6 +27,7 @@
                 android:visibility="gone"
                 android:clickable="true"
                 android:gravity="center"
+                android:padding="20dp"
                 android:background="?attr/selectableItemBackground" />
             <android.webkit.WebView
                 android:id="@+id/webview"

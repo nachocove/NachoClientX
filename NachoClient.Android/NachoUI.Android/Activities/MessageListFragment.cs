@@ -11,6 +11,9 @@ using Android.Support.V4.Widget;
 using Android.Support.V7.Widget;
 using Android.Text;
 using Android.Text.Style;
+using Android.Content;
+using Android.Graphics;
+using Android.Graphics.Drawables;
 
 using NachoCore;
 using NachoCore.Utils;
@@ -472,10 +475,23 @@ namespace NachoClient.AndroidClient
             }
             int subjectLength;
             var previewText = Pretty.MessagePreview (message, out subjectLength);
+            int attachmentIndex = -1;
+            if (message.cachedHasAttachments) {
+                if (subjectLength > 0) {
+                    previewText = previewText.Substring (0, subjectLength) + "  " + previewText.Substring (subjectLength);
+                    attachmentIndex = subjectLength + 1;
+                } else {
+                    previewText = "  " + previewText;
+                    attachmentIndex = 0;
+                }
+            }
             var styledPreview = new SpannableString (previewText);
             styledPreview.SetSpan (new ForegroundColorSpan (ThemeColor (Android.Resource.Attribute.ColorPrimary)), 0, subjectLength, 0);
             // TODO: insert hot icon
-            // TODO: insert attachment icon
+            if (attachmentIndex >= 0) {
+                var imageSpan = new ImageSpan (ItemView.Context, Resource.Drawable.subject_attach);
+                styledPreview.SetSpan (imageSpan, attachmentIndex, attachmentIndex + 1, 0);
+            }
             DetailLabel.SetText (styledPreview, TextView.BufferType.Spannable);
             // TODO: intents as part of date ("due by" prefix)
             DateLabel.Text = Pretty.TimeWithDecreasingPrecision (message.DateReceived);
@@ -493,6 +509,17 @@ namespace NachoClient.AndroidClient
             var typedVal = new Android.Util.TypedValue ();
             ItemView.Context.Theme.ResolveAttribute (attr, typedVal, true);
             return (ItemView.Context.GetDrawable (typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
+        }
+
+        static Drawable FontSizedImage (Context context, int resource, float size)
+        {
+            size *= context.Resources.DisplayMetrics.Density;
+            var drawable = context.GetDrawable (resource);
+            var w = drawable.IntrinsicWidth;
+            var h = drawable.IntrinsicHeight;
+            var s = size / h;
+            var scaleDrawable = new ScaleDrawable (drawable, GravityFlags.Fill, s, s);
+            return scaleDrawable;
         }
 
     }
