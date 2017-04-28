@@ -232,5 +232,32 @@ namespace NachoClient.AndroidClient
     {
         public T Item { get; set; }
     }
+
+    public static class AlertHelper
+    {
+
+        private class AlertCancelListener : Java.Lang.Object, IDialogInterfaceOnCancelListener
+        {
+
+        	Action CancelAction;
+
+        	public AlertCancelListener (Action cancelAction)
+        	{
+        		CancelAction = cancelAction;
+        	}
+
+            public void OnCancel (IDialogInterface dialog)
+            {
+                CancelAction ();
+            }
+        }
+
+        public static void ShowWithCancelAction (this AlertDialog.Builder builder, Action cancelAction)
+        {
+            var listener = new AlertCancelListener (cancelAction);
+            builder.SetOnCancelListener (listener);
+            builder.Show ();
+        }
+    }
 }
 

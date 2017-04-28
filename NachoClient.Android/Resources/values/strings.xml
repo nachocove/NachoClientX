@@ -57,6 +57,24 @@
     <string name="message_header_detail_cc">CC</string>
     <string name="message_header_detail_bcc">BCC</string>
 
+    <!-- Message Compose -->
+    <string name="message_compose_close_save">Save Draft</string>
+    <string name="message_compose_close_discard">Discard Draft</string>
+    <string name="message_compose_action_send">Send</string>
+    <string name="message_compose_action_attach">Add Attachment</string>
+    <string name="message_compose_empty_subject_title">Empty Subject</string>
+    <string name="message_compose_empty_subject_message">This message does not have a subject.  How would you like to proceed?</string>
+    <string name="message_compose_empty_subject_edit">Add Subject</string>
+    <string name="message_compose_empty_subject_send">Send Anyway</string>
+    <string name="message_compose_resize_title_format">This message is {0}. You can make it smaller by reducing the size of the attached images.</string>
+    <string name="message_compose_resize_choice_small_format">Small Images ({0})</string>
+    <string name="message_compose_resize_choice_medium_format">Medium Images ({0})</string>
+    <string name="message_compose_resize_choice_large_format">Large Images ({0})</string>
+    <string name="message_compose_resize_choice_actual_format">Actual Size ({0})</string>
+    <string name="message_compose_oversize_title">Large Message</string>
+    <string name="message_compose_oversize_message_format">This message is {0}</string>
+    <string name="message_compose_oversize_message_send">Send Anyway</string>
+
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
 

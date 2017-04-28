@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context=".MessageComposeActivity">
+    <item
+        android:id="@+id/send"
+        android:orderInCategory="0"
+        android:title="@string/message_compose_action_send"
+		android:icon="@drawable/action_send"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/attach"
+        android:orderInCategory="1"
+        android:title="@string/message_compose_action_attach"
+        android:icon="@drawable/action_attach"
+        app:showAsAction="never"/>
+</menu>

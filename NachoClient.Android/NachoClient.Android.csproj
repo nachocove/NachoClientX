@@ -241,7 +241,7 @@
     <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageComposeActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ComposeFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageComposeFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\IntentFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\FilePickerFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
@@ -755,7 +755,7 @@
     <AndroidResource Include="Resources\layout\ButtonBar.axml" />
     <AndroidResource Include="Resources\layout\ChooseProviderFragment.axml" />
     <AndroidResource Include="Resources\layout\ChooserFragment.axml" />
-    <AndroidResource Include="Resources\layout\ComposeFragment.axml" />
+    <AndroidResource Include="Resources\layout\MessageComposeFragment.axml" />
     <AndroidResource Include="Resources\layout\CredentialsFragment.axml" />
     <AndroidResource Include="Resources\layout\drawer_header.xml" />
     <AndroidResource Include="Resources\layout\EventViewFragment.axml" />
@@ -1603,6 +1603,15 @@
     <AndroidResource Include="Resources\layout\MessageHeaderDetailFragment.axml" />
     <AndroidResource Include="Resources\layout\MessageHeaderDetailListItem.axml" />
     <AndroidResource Include="Resources\values\ids.xml" />
+    <AndroidResource Include="Resources\menu\message_compose.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_send.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_send.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_send.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_send.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_attach.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_attach.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_attach.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_attach.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

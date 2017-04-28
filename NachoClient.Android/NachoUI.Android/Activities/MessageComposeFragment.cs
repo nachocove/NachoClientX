@@ -24,7 +24,8 @@ using Android.Views.InputMethods;
 
 namespace NachoClient.AndroidClient
 {
-    public class ComposeFragment : 
+    
+    public class MessageComposeFragment : 
         Fragment,
         NachoJavascriptMessageHandler,
         MessageComposerDelegate,
@@ -43,54 +44,87 @@ namespace NachoClient.AndroidClient
 
         #region Properties
 
+        MessageComposer _Composer;
         public MessageComposer Composer {
-            get;
-            private set;
+            get {
+                return _Composer;
+            }
+            set {
+                _Composer = value;
+                _Composer.Delegate = this;
+                BeginComposing ();
+            }
         }
 
-        MessageComposeHeaderView HeaderView;
-        Android.Webkit.WebView WebView;
-        Android.Widget.ImageView SendButton;
+        public McAccount Account {
+        	get {
+        		if (Composer != null) {
+        			return Composer.Account;
+        		}
+        		return null;
+        	}
+        	set {
+                if (Composer == null) {
+                    Composer = new MessageComposer (value);
+                }
+            }
+        }
+
+        public bool CanSend { get; private set; }
+
+        private bool _MessageIsReady = true;
+
+        public bool MessageIsReady {
+        	private get {
+        		return _MessageIsReady;
+        	}
+        	set {
+        		if (!_MessageIsReady && value) {
+        			Composer.Message = McEmailMessage.QueryById<McEmailMessage> (Composer.Message.Id);
+        			BeginComposing ();
+        		}
+                _MessageIsReady = value;
+            }
+        }
+
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
         Android.Net.Uri CameraOutputUri;
-        ButtonBar buttonBar;
 
         #endregion
 
         #region Constructor/Factory
 
-        public ComposeFragment () : base ()
+        public MessageComposeFragment () : base ()
         {
             JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
-        }
-
-        public McAccount Account {
-            get {
-                if (Composer != null) {
-                    return Composer.Account;
-                }
-                return null;
-            }
-            set {
-                if (Composer == null) {
-                    Composer = new MessageComposer (value);
-                    Composer.Delegate = this;
-                }
-            }
-        }
-
-        public static ComposeFragment newInstance (McAccount account)
-        {
-            var fragment = new ComposeFragment ();
-            fragment.Account = account;
-            return fragment;
+            RetainInstance = true;
         }
 
         #endregion
 
-        #region Lifecycle
+        #region Subviews
+
+        MessageComposeHeaderView HeaderView;
+        Android.Webkit.WebView WebView;
+
+        void FindSubviews (View view)
+        {
+            HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
+            WebView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.message);
+        }
+
+        void ClearSubviews ()
+        {
+            HeaderView.Cleanup ();
+            HeaderView = null;
+            WebView = null;
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -108,30 +142,18 @@ namespace NachoClient.AndroidClient
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreateView");
-            var view = inflater.Inflate (Resource.Layout.ComposeFragment, container, false);
+            var view = inflater.Inflate (Resource.Layout.MessageComposeFragment, container, false);
 
-            buttonBar = new ButtonBar (view);
+            FindSubviews (view);
 
-            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.email_icn_attachment, AddAttachmentButton_Click);
-            SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-
-            HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             HeaderView.Delegate = this;
 
-            WebView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.message);
             WebView.Settings.JavaScriptEnabled = true;
             WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nacho"), "_android_messageHandlers_nacho");
             WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
             WebView.SetWebViewClient (new NachoWebClient (this));
 
-            if (MessageIsReady) {
-                Composer.StartPreparingMessage ();
-                UpdateHeader ();
-                UpdateSendEnabled ();
-                MaybeShowQuickResponses ();
-            }
+            BeginComposing ();
 
             return view;
         }
@@ -148,56 +170,59 @@ namespace NachoClient.AndroidClient
         public override void OnDestroyView ()
         {
             Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnDestroyView");
-            HeaderView.Cleanup ();
+            ClearSubviews ();
             base.OnDestroyView ();
         }
 
-        private bool messageIsReady = true;
-
-        public bool MessageIsReady {
-            private get {
-                return messageIsReady;
-            }
-            set {
-                if (!messageIsReady && value) {
-                    Composer.Message = McEmailMessage.QueryById<McEmailMessage> (Composer.Message.Id);
-                    Composer.StartPreparingMessage ();
-                    UpdateHeader ();
-                    UpdateSendEnabled ();
-                    MaybeShowQuickResponses ();
+        void BeginComposing ()
+        {
+            if (MessageIsReady && Composer != null) {
+                Composer.StartPreparingMessage ();
+                UpdateHeader ();
+                UpdateSendEnabled ();
+                if (Composer.InitialQuickReply) {
+                    Composer.InitialQuickReply = false;
+                    ShowQuickResponses ();
                 }
-                messageIsReady = value;
             }
         }
 
         #endregion
 
-        #region User Actions - Navbar
+        #region User Actions
 
-        bool BasicAddressValidation (List<NcEmailAddress> addresses)
+        Action<bool> SendCompletion;
+
+        public void Send (Action<bool> completion)
         {
-            foreach (var address in addresses) {
-                if (!address.address.Contains ("@")) {
-                    NcAlertView.ShowMessage (this.Activity, "Invalid Email Address",
-                        string.Format ("The email address \"{0}\" is missing a '@' character.", address.address));
-                    return false;
-                }
+            SendCompletion = completion;
+            EndEditing ();
+            if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
+                var alert = new AlertDialog.Builder (Activity);
+                alert.SetTitle (Resource.String.message_compose_empty_subject_title);
+                alert.SetMessage (Resource.String.message_compose_empty_subject_message);
+                alert.SetNeutralButton (Resource.String.message_compose_empty_subject_send, SendWithoutSubject);
+                alert.SetPositiveButton (Resource.String.message_compose_empty_subject_edit, AddSubject);
+                alert.ShowWithCancelAction (SendCanceled);
+            } else {
+    			CheckSizeBeforeSending ();
             }
-            return true;
         }
 
-        void SendButton_Click (object sender, EventArgs e)
+        public void PickAttachment ()
         {
-            if (BasicAddressValidation (HeaderView.ToField.AddressList) && BasicAddressValidation (HeaderView.CcField.AddressList) && BasicAddressValidation (HeaderView.BccField.AddressList)) {
-                if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
-                    var alert = new AlertDialog.Builder (Activity).SetTitle ("Empty Subject").SetMessage ("This message does not have a subject.  How would you like to proceed?");
-                    alert.SetNeutralButton ("Send Anyway", SendWithoutSubject);
-                    alert.SetPositiveButton ("Add Subject", AddSubject);
-                    alert.Show ();
-                } else {
-                    CheckSizeBeforeSending ();
-                }
-            }
+            EndEditing ();
+            Save (ShowAttachmentPicker);
+        }
+
+        #endregion
+
+        #region Send Process
+
+        void SendCanceled ()
+        {
+            SendCompletion (false);
+            SendCompletion = null;
         }
 
         void SendWithoutSubject (object sender, EventArgs args)
@@ -208,22 +233,24 @@ namespace NachoClient.AndroidClient
         void AddSubject (object sender, EventArgs args)
         {
             HeaderView.FocusSubject ();
+            SendCompletion (false);
+            SendCompletion = null;
         }
 
         void CheckSizeBeforeSending ()
         {
-            SendButton.Enabled = false;
             GetHtmlContent ((string html) => {
-                SendButton.Enabled = true;
                 Composer.Save (html);
                 if (Composer.IsOversize) {
                     if (Composer.CanResize) {
-                        var alert = new AlertDialog.Builder (Activity).SetTitle (String.Format ("This message is {0}. Do you want to resize images?", Pretty.PrettyFileSize (Composer.MessageSize)));
+                        var alert = new AlertDialog.Builder (Activity);
+                        var format = GetString (Resource.String.message_compose_resize_title_format);
+                        alert.SetTitle (String.Format (format, Pretty.PrettyFileSize (Composer.MessageSize)));
                         alert.SetSingleChoiceItems (new string[] {
-                            String.Format ("Small Images ({0})", Pretty.PrettyFileSize (Composer.EstimatedSmallSize)),
-                            String.Format ("Medium Images ({0})", Pretty.PrettyFileSize (Composer.EstimatedMediumSize)),
-                            String.Format ("Large Images ({0})", Pretty.PrettyFileSize (Composer.EstimatedLargeSize)),
-                            String.Format ("Actual Size ({0})", Pretty.PrettyFileSize (Composer.MessageSize))
+                            String.Format (GetString (Resource.String.message_compose_resize_choice_small_format), Pretty.PrettyFileSize (Composer.EstimatedSmallSize)),
+                            String.Format (GetString (Resource.String.message_compose_resize_choice_medium_format), Pretty.PrettyFileSize (Composer.EstimatedMediumSize)),
+                            String.Format (GetString (Resource.String.message_compose_resize_choice_large_format), Pretty.PrettyFileSize (Composer.EstimatedLargeSize)),
+                            String.Format (GetString (Resource.String.message_compose_resize_choice_actual_format), Pretty.PrettyFileSize (Composer.MessageSize))
                         }, -1, (object sender, DialogClickEventArgs e) => {
                             switch (e.Which) {
                             case 0:
@@ -243,11 +270,13 @@ namespace NachoClient.AndroidClient
                                 break;
                             }
                         });
-                        alert.Show ();
+                        alert.ShowWithCancelAction (SendCanceled);
                     } else {
-                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}", Pretty.PrettyFileSize (Composer.MessageSize)));
-                        alert.SetNeutralButton ("Send Anyway", AcknowlegeSizeWarning);
-                        alert.Show ();
+                        var alert = new AlertDialog.Builder (Activity);
+                        alert.SetTitle (Resource.String.message_compose_oversize_title);
+                        alert.SetMessage (String.Format (GetString (Resource.String.message_compose_oversize_message_format), Pretty.PrettyFileSize (Composer.MessageSize)));
+                        alert.SetNeutralButton (Resource.String.message_compose_oversize_message_send, AcknowlegeSizeWarning);
+                        alert.ShowWithCancelAction (SendCanceled);
                     }
                 } else {
                     Send ();
@@ -284,27 +313,17 @@ namespace NachoClient.AndroidClient
         void Send ()
         {
             Composer.Send ();
-            Activity.Finish ();
+            if (SendCompletion != null) {
+                SendCompletion (true);
+            }
         }
 
-        void QuickResponseButton_Click (object sender, EventArgs e)
+        #endregion
+
+        #region Attachment Picking
+
+        void ShowAttachmentPicker ()
         {
-            ShowQuickResponses ();
-        }
-
-        void AddAttachmentButton_Click (object sender, EventArgs e)
-        {
-            PickAttachment ();
-        }
-
-        void PickAttachment ()
-        {
-
-            Save (() => {});
-
-            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
-            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
-
             Intent shareIntent = new Intent ();
             shareIntent.SetAction (Intent.ActionGetContent);
             shareIntent.AddCategory (Intent.CategoryOpenable);
@@ -409,19 +428,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void Discard ()
-        {
-            Composer.Message.Delete ();
-        }
-
-        public void Save (Action callback)
-        {
-            GetHtmlContent ((string html) => {
-                Composer.Save (html);
-                callback ();
-            });
-        }
-
         #endregion
 
         #region User Action - Header
@@ -429,7 +435,7 @@ namespace NachoClient.AndroidClient
         bool SalesforceBccAdded = false;
         Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
 
-        void MaybeAddSalesforceBcc()
+        void AddSalesforceBccIfNeeded ()
         {
             if (!SalesforceBccAdded) {
                 string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
@@ -449,21 +455,21 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
             Composer.Message.To = to;
-            MaybeAddSalesforceBcc ();
+            AddSalesforceBccIfNeeded ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
         {
             Composer.Message.Cc = cc;
-            MaybeAddSalesforceBcc ();
+            AddSalesforceBccIfNeeded ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
         {
             Composer.Message.Bcc = bcc;
-            MaybeAddSalesforceBcc ();
+            AddSalesforceBccIfNeeded ();
             UpdateSendEnabled ();
         }
 
@@ -626,35 +632,12 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
-        #region Helpers
-
-        string JavaScriptEscapedString (string s)
-        {
-            var primitive = new System.Json.JsonPrimitive (s);
-            string escaped = "";
-            using (var writer = new StringWriter ()) {
-                primitive.Save (writer);
-                escaped = writer.ToString ();
-            }
-            return escaped.Replace ("\n", "\\n");
-        }
-
-        delegate void HtmlContentCallback (string html);
-
-        void GetHtmlContent (HtmlContentCallback callback)
-        {
-            EvaluateJavascript ("document.documentElement.outerHTML", (Java.Lang.Object result) => {
-                var stringResult = result as Java.Lang.String;
-                // I don't know why the result is coming in as a JSON-encoded string value, but it is
-                var json = stringResult.ToString ();
-                var str = System.Json.JsonValue.Parse (json);
-                callback ("<!DOCTYPE html>\n" + str);
-            });
-        }
+        #region View Updates
 
         private void UpdateSendEnabled ()
         {
-            SendButton.Enabled = Composer.HasRecipient;
+            CanSend = Composer.HasRecipient;
+            Activity.InvalidateOptionsMenu ();
         }
 
         private void UpdateHeader ()
@@ -694,12 +677,55 @@ namespace NachoClient.AndroidClient
             HeaderView.AttachmentsView.SetAttachments (attachments);
         }
 
-        void MaybeShowQuickResponses ()
+        #endregion
+
+        #region Draft Management
+
+        public void Discard ()
         {
-            if (Composer.InitialQuickReply) {
-                Composer.InitialQuickReply = false;
-                ShowQuickResponses ();
+            Composer.Message.Delete ();
+        }
+
+        public void Save (Action callback)
+        {
+        	GetHtmlContent ((string html) => {
+        		Composer.Save (html);
+                callback ();
+            });
+        }
+
+        delegate void HtmlContentCallback (string html);
+
+        void GetHtmlContent (HtmlContentCallback callback)
+        {
+            EvaluateJavascript ("document.documentElement.outerHTML", (Java.Lang.Object result) => {
+                var stringResult = result as Java.Lang.String;
+                // I don't know why the result is coming in as a JSON-encoded string value, but it is
+                var json = stringResult.ToString ();
+                var str = System.Json.JsonValue.Parse (json);
+                callback ("<!DOCTYPE html>\n" + str);
+            });
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        public void EndEditing ()
+        {
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+        }
+
+        string JavaScriptEscapedString (string s)
+        {
+            var primitive = new System.Json.JsonPrimitive (s);
+            string escaped = "";
+            using (var writer = new StringWriter ()) {
+                primitive.Save (writer);
+                escaped = writer.ToString ();
             }
+            return escaped.Replace ("\n", "\\n");
         }
 
         void ShowQuickResponses ()

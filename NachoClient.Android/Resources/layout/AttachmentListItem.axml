@@ -31,12 +31,16 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/demo_attachment_name"
+                android:singleLine="true"
+                android:ellipsize="end"
                 android:textAppearance="?attr/textAppearanceListItemSmall" />
             <TextView
                 android:id="@+id/attachment_detail"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/demo_attachment_detail"
+                android:singleLine="true"
+                android:ellipsize="end"
                 android:textAppearance="?attr/textAppearanceListItemDetail" />
         </LinearLayout>
         <FrameLayout

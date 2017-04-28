@@ -5,17 +5,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white">
-    <include
-        layout="@layout/ButtonBar" />
-    <ScrollView
-        android:fillViewport="false"
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent">
+    <android.support.v4.widget.NestedScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:scrollbars="vertical|horizontal"
+        android:background="@android:color/white">
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/white">
+            android:layout_height="wrap_content">
             <NachoClient.AndroidClient.MessageComposeHeaderView
                 android:id="@+id/header"
                 android:orientation="vertical"
@@ -24,8 +22,7 @@
             <WebView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/white"
                 android:id="@+id/message" />
         </LinearLayout>
-    </ScrollView>
+    </android.support.v4.widget.NestedScrollView>
 </LinearLayout>

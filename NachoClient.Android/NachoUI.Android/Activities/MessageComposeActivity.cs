@@ -9,6 +9,7 @@ using Android.Support.Design.Widget;
 using Android.Support.V4.View;
 using Android.Support.V4.Widget;
 using Android.Support.V7.App;
+using Android.Support.V7.Widget;
 
 using NachoCore;
 using NachoCore.Model;
@@ -32,121 +33,37 @@ namespace NachoClient.AndroidClient
     }
 
     [Activity (Label = "MessageComposeActivity")]            
-    public class MessageComposeActivity : NcActivityWithData<MessageComposeActivityData>
+    public class MessageComposeActivity : NcActivity
     {
+        
+        private MessageComposeActivityData savedMessageInfo;
+
+        private MessageComposer Composer;
+        private MessageComposeFragment ComposeFragment;
+        private bool _IsSending;
+        private bool IsSending {
+            get {
+                return _IsSending;
+            }
+            set {
+                _IsSending = value;
+                InvalidateOptionsMenu ();
+            }
+        }
+
+        #region Intents
+
         public const string EXTRA_ACTION = "com.nachocove.nachomail.action";
         public const string EXTRA_ACCOUNT_ID = "com.nachocove.nachomail.accountId";
         public const string EXTRA_RELATED_MESSAGE_ID = "com.nachocove.nachomail.relatedMessageId";
         public const string EXTRA_RELATED_CALENDAR_ID = "com.nachocove.nachomail.relatedCalendarId";
         public const string EXTRA_MESSAGE = "com.nachocove.nachomail.message";
+        public const string EXTRA_MESSAGE_ID = "com.nachocove.nachomail.messageId";
         public const string EXTRA_INITIAL_TEXT = "com.nachocove.nachomail.initialText";
         public const string EXTRA_INITIAL_RECIPIENT = "com.nachocove.nachomail.initialRecipient";
         public const string EXTRA_INITIAL_QUICK_REPLY = "com.nachocove.nachomail.initialQuickReply";
         public const string EXTRA_INITIAL_ATTACHMENT = "com.nachocove.nachomail.initialAttachment";
         public const string EXTRA_INITIAL_ATTACHMENTS = "com.nachocove.nachomail.initialAttachments";
-
-        private const string COMPOSE_FRAGMENT_TAG = "ComposeFragment";
-
-        private ComposeFragment composeFragment;
-        private MessageComposeActivityData savedMessageInfo;
-
-        protected override void OnCreate (Bundle bundle)
-        {
-            Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate");
-            base.OnCreate (bundle);
-
-            SetContentView (Resource.Layout.MessageComposeActivity);
-
-            composeFragment = null;
-            if (null != bundle) {
-                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...bundle != null");
-                composeFragment = FragmentManager.FindFragmentByTag<ComposeFragment> (COMPOSE_FRAGMENT_TAG);
-            }
-            if (null == composeFragment) {
-                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...creating ComposeFragment");
-                composeFragment = new ComposeFragment ();
-                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment, COMPOSE_FRAGMENT_TAG).Commit ();
-            }
-            NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
-            var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
-            composeFragment.Account = account;
-
-            if (Intent.HasExtra (EXTRA_ACTION)) {
-                composeFragment.Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.GetIntExtra (EXTRA_ACTION, 0);
-            }
-            if (Intent.HasExtra (EXTRA_RELATED_CALENDAR_ID)) {
-                var relatedCalendarItem = McCalendar.QueryById<McCalendar> (Intent.GetIntExtra (EXTRA_RELATED_CALENDAR_ID, 0));
-                composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
-            }
-
-            if (null != RetainedData) {
-                savedMessageInfo = RetainedData;
-                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...RetainedData != null (message {0})", savedMessageInfo.MessageId);
-                composeFragment.Composer.Message = McEmailMessage.QueryById<McEmailMessage> (savedMessageInfo.MessageId);
-                if (!savedMessageInfo.MessageSaved) {
-                    composeFragment.MessageIsReady = false;
-                    savedMessageInfo.MessageSavedEvents.Add (() => {
-                        composeFragment.MessageIsReady = true;
-                    });
-                }
-            } else {
-                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...RetainedData == null");
-                if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
-                    var relatedThread = new McEmailMessageThread ();
-                    relatedThread.FirstMessageId = Intent.GetIntExtra (EXTRA_RELATED_MESSAGE_ID, 0);
-                    relatedThread.MessageCount = 1;
-                    composeFragment.Composer.RelatedThread = relatedThread;
-                }
-                if (Intent.HasExtra (EXTRA_MESSAGE)) {
-                    var message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
-                    composeFragment.Composer.Message = message;
-                }
-                if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
-                    var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
-                    composeFragment.Composer.InitialText = text;
-                }
-                if (Intent.HasExtra (EXTRA_INITIAL_RECIPIENT)) {
-                    var to = Intent.GetStringExtra (EXTRA_INITIAL_RECIPIENT);
-                    composeFragment.Composer.InitialRecipient = to;
-                }
-                if (Intent.HasExtra (EXTRA_INITIAL_QUICK_REPLY)) {
-                    composeFragment.Composer.InitialQuickReply = Intent.GetBooleanExtra (EXTRA_INITIAL_QUICK_REPLY, false);
-                }
-                if (Intent.HasExtra (EXTRA_INITIAL_ATTACHMENT)) {
-                    var attachmentId = Intent.GetIntExtra (EXTRA_INITIAL_ATTACHMENT, 0);
-                    if (0 != attachmentId) {
-                        var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
-                        if (null != attachment) {
-                            composeFragment.Composer.InitialAttachments.Add (attachment);
-                        }
-                    }
-                }
-                if (Intent.HasExtra (EXTRA_INITIAL_ATTACHMENTS)) {
-                    var attachmentIds = Intent.GetIntArrayExtra (EXTRA_INITIAL_ATTACHMENTS);
-                    foreach (int id in attachmentIds) {
-                        var attachment = McAttachment.QueryById<McAttachment> (id);
-                        if (null != attachment) {
-                            composeFragment.Composer.InitialAttachments.Add (attachment);
-                        }
-                    }
-                }
-                savedMessageInfo = new MessageComposeActivityData ();
-                RetainedData = savedMessageInfo;
-            }
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            Log.Info (Log.LOG_UI, "MessageComposeActivity OnSaveInstanceState");
-            base.OnSaveInstanceState (outState);
-            savedMessageInfo.MessageId = composeFragment.Composer.Message.Id;
-            savedMessageInfo.MessageSaved = false;
-            composeFragment.Save (() => {
-                Log.Info (Log.LOG_UI, "MessageComposeActivity OnSaveInstanceState...Save done");
-                savedMessageInfo.MessageSaved = true;
-                savedMessageInfo.FireEvent ();
-            });
-        }
 
         public static Intent NewMessageIntent (Context context, int accountId, string recipient = null)
         {
@@ -225,28 +142,232 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
+        #endregion
+
+        #region Subviews
+
+        Toolbar Toolbar;
+
+        void FindSubviews ()
+        {
+            Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
+        }
+
+        void ClearSubviews ()
+        {
+            Toolbar = null;
+        }
+
+        #endregion
+
+        #region Activity Lifecycle
+
+        protected override void OnCreate (Bundle bundle)
+        {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate");
+            base.OnCreate (bundle);
+            SetContentView (Resource.Layout.MessageComposeActivity);
+            FindSubviews ();
+            if (ComposeFragment.Composer != null) {
+                Composer = ComposeFragment.Composer;
+            } else if (bundle != null){
+                PopulateFromSavedBundle (bundle);
+            } else {
+                PopulateFromIntent ();
+            }
+            Toolbar.Title = "";
+            SetSupportActionBar (Toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+        }
+
+        public override void OnAttachFragment (Fragment fragment)
+        {
+            base.OnAttachFragment (fragment);
+            if (fragment is MessageComposeFragment) {
+                ComposeFragment = (fragment as MessageComposeFragment);
+            }
+        }
+
+        protected override void OnSaveInstanceState (Bundle outState)
+        {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity OnSaveInstanceState");
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (EXTRA_MESSAGE_ID, Composer.Message.Id);
+            ComposeFragment.Save (() => {
+                Log.Info (Log.LOG_UI, "MessageComposeActivity OnSaveInstanceState...Save done");
+            });
+        }
+
+        protected override void OnDestroy ()
+        {
+            ClearSubviews ();
+            base.OnDestroy ();
+        }
+
+        void PopulateFromSavedBundle (Bundle bundle)
+        {
+            var messageId = bundle.GetInt (EXTRA_MESSAGE_ID);
+            var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+            var accountId = message.AccountId;
+            Composer = new MessageComposer (accountId);
+            Composer.Message = message;
+            ComposeFragment.Composer = Composer;
+        }
+
+        void PopulateFromIntent ()
+        {
+            NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
+            var accountId = Intent.Extras.GetInt (EXTRA_ACCOUNT_ID);
+            Composer = new MessageComposer (accountId);
+
+            if (Intent.HasExtra (EXTRA_ACTION)) {
+                Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.GetIntExtra (EXTRA_ACTION, 0);
+            }
+            if (Intent.HasExtra (EXTRA_RELATED_CALENDAR_ID)) {
+                var relatedCalendarItem = McCalendar.QueryById<McCalendar> (Intent.GetIntExtra (EXTRA_RELATED_CALENDAR_ID, 0));
+                Composer.RelatedCalendarItem = relatedCalendarItem;
+            }
+            Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...RetainedData == null");
+            if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
+                var relatedThread = new McEmailMessageThread ();
+                relatedThread.FirstMessageId = Intent.GetIntExtra (EXTRA_RELATED_MESSAGE_ID, 0);
+                relatedThread.MessageCount = 1;
+                Composer.RelatedThread = relatedThread;
+            }
+            if (Intent.HasExtra (EXTRA_MESSAGE)) {
+                var message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                Composer.Message = message;
+            }
+            if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
+                var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
+                Composer.InitialText = text;
+            }
+            if (Intent.HasExtra (EXTRA_INITIAL_RECIPIENT)) {
+                var to = Intent.GetStringExtra (EXTRA_INITIAL_RECIPIENT);
+                Composer.InitialRecipient = to;
+            }
+            if (Intent.HasExtra (EXTRA_INITIAL_QUICK_REPLY)) {
+                Composer.InitialQuickReply = Intent.GetBooleanExtra (EXTRA_INITIAL_QUICK_REPLY, false);
+            }
+            if (Intent.HasExtra (EXTRA_INITIAL_ATTACHMENT)) {
+                var attachmentId = Intent.GetIntExtra (EXTRA_INITIAL_ATTACHMENT, 0);
+                if (0 != attachmentId) {
+                    var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
+                    if (null != attachment) {
+                        Composer.InitialAttachments.Add (attachment);
+                    }
+                }
+            }
+            if (Intent.HasExtra (EXTRA_INITIAL_ATTACHMENTS)) {
+                var attachmentIds = Intent.GetIntArrayExtra (EXTRA_INITIAL_ATTACHMENTS);
+                foreach (int id in attachmentIds) {
+                    var attachment = McAttachment.QueryById<McAttachment> (id);
+                    if (null != attachment) {
+                        Composer.InitialAttachments.Add (attachment);
+                    }
+                }
+            }
+            ComposeFragment.Composer = Composer;
+        }
+
+        #endregion
+
+        #region Options Menu
+
+        public override bool OnCreateOptionsMenu (Android.Views.IMenu menu)
+        {
+            MenuInflater.Inflate (Resource.Menu.message_compose, menu);
+            var sendItem = menu.FindItem (Resource.Id.send);
+            bool sendEnabled = ComposeFragment.CanSend && !IsSending;
+            sendItem.SetEnabled (sendEnabled);
+            if (!sendEnabled) {
+                var dimmedIcon = sendItem.Icon.Mutate ();
+                dimmedIcon.SetAlpha (85);
+                sendItem.SetIcon (dimmedIcon);
+            }
+            return base.OnCreateOptionsMenu (menu);
+        }
+
+        public override bool OnOptionsItemSelected (Android.Views.IMenuItem item)
+        {
+            switch (item.ItemId) {
+            case Android.Resource.Id.Home:
+                FinishWithSaveConfirmation ();
+                return true;
+            case Resource.Id.send:
+                Send ();
+                return true;
+            case Resource.Id.attach:
+                PickAttachment ();
+                return true;
+            }
+            return base.OnOptionsItemSelected (item);
+        }
+
         public override void OnBackPressed ()
         {
-            var alert = new Android.App.AlertDialog.Builder (this).SetTitle ("Would you like to save this message?").SetMessage ("You can access saved messages from your Drafts folder.");
-            alert.SetNegativeButton ("Discard Draft", Discard);
-            alert.SetPositiveButton ("Save Draft", Save);
+        	FinishWithSaveConfirmation ();
+        }
+
+        #endregion
+
+        #region User Actions
+
+        void Send ()
+        {
+            IsSending = true;
+            ComposeFragment.Send ((bool sent) => {
+                if (sent) {
+                    Finish ();
+                } else {
+                    IsSending = false;
+                }
+            });
+        }
+
+        void PickAttachment ()
+        {
+            ComposeFragment.PickAttachment ();
+        }
+
+        #endregion
+
+        #region Draft Management
+
+        private void FinishWithSaveConfirmation ()
+        {
+            ComposeFragment.EndEditing ();
+            var alert = new Android.App.AlertDialog.Builder (this);
+            alert.SetItems (new string []{
+                GetString (Resource.String.message_compose_close_save),
+                GetString (Resource.String.message_compose_close_discard),
+            }, (sender, e) => {
+                switch (e.Which) {
+                case 0:
+                    Save ();
+                    break;
+                case 1:
+                    Discard ();
+                    break;
+                }
+            });
             alert.Show ();
         }
 
-        public void Discard (object sender, EventArgs args)
+        public void Discard ()
         {
-            var fragment = FragmentManager.FindFragmentById<ComposeFragment> (Resource.Id.content);
-            fragment.Discard ();
+            Composer.Message.Delete ();
             Finish ();
         }
 
-        public void Save (object sender, EventArgs args)
+        public void Save ()
         {
-            var fragment = FragmentManager.FindFragmentById<ComposeFragment> (Resource.Id.content);
-            fragment.Save (() => {
+            ComposeFragment.Save (() => {
                 Finish ();
             });
         }
+
+        #endregion
     }
 }
 
