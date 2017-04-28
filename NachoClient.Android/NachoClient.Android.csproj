@@ -1602,6 +1602,7 @@
     <AndroidResource Include="Resources\layout\MessageHeaderDetailActivity.axml" />
     <AndroidResource Include="Resources\layout\MessageHeaderDetailFragment.axml" />
     <AndroidResource Include="Resources\layout\MessageHeaderDetailListItem.axml" />
+    <AndroidResource Include="Resources\values\ids.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

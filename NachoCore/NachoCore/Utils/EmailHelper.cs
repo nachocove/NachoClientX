@@ -1166,6 +1166,12 @@ namespace NachoCore.Utils
             MarkAsRead (message, force);
         }
 
+        public static void MarkAsUnread (McEmailMessageThread thread, bool force = false)
+        {
+        	var message = thread.SingleMessageSpecialCase ();
+            MarkAsUnread (message, force);
+        }
+
         public static void ToggleRead (McEmailMessage message)
         {
             if (null != message) {

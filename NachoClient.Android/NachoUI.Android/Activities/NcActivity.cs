@@ -77,6 +77,21 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.TelemetryService.RecordUiViewController (ClassName, TELEMETRY_ON_RESTART);
             base.OnRestart ();
         }
+
+        public override void OnContextMenuClosed (Android.Views.IMenu menu)
+        {
+            foreach (var fragment in SupportFragmentManager.Fragments) {
+                if (fragment is NcContextMenuFragment) {
+                    (fragment as NcContextMenuFragment).OnContextMenuClosed (menu);
+                }
+            }
+            base.OnContextMenuClosed (menu);
+        }
+    }
+
+    public interface NcContextMenuFragment
+    {
+        void OnContextMenuClosed (Android.Views.IMenu menu);
     }
 
     /// <summary>

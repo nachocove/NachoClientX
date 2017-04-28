@@ -23,8 +23,10 @@ using NachoPlatform;
 namespace NachoClient.AndroidClient
 {
 
-    public class MessageListFragment : Fragment, MessageListAdapter.Listener, MessagesSyncManagerDelegate
+    public class MessageListFragment : Fragment, MessageListAdapter.Listener, MessagesSyncManagerDelegate, NcContextMenuFragment
     {
+
+        const int REQUEST_MOVE = 1;
 
         NachoEmailMessages Messages;
         MessageListAdapter MessagesAdapter;
@@ -90,6 +92,19 @@ namespace NachoClient.AndroidClient
             base.OnDestroyView ();
         }
 
+        public override void OnActivityResult (int requestCode, int resultCode, Intent data)
+        {
+            if (requestCode == REQUEST_MOVE) {
+                if (resultCode == (int)Android.App.Result.Ok) {
+                    var folderId = data.Extras.GetInt (FoldersActivity.EXTRA_FOLDER_ID);
+                    MoveThread (SelectedThread, folderId);
+                }
+                SelectedThread = null;
+            } else {
+                base.OnActivityResult (requestCode, resultCode, data);
+            }
+        }
+
         #endregion
 
         #region Managing & Reloading Messages
@@ -119,7 +134,7 @@ namespace NachoClient.AndroidClient
 
         void Reload ()
         {
-            if (!IsReloading) {
+            if (!IsReloading && !IsContextMenuOpen) {
                 IsReloading = true;
                 NeedsReload = false;
                 if (Messages.HasBackgroundRefresh ()) {
@@ -129,23 +144,23 @@ namespace NachoClient.AndroidClient
                         List<int> adds;
                         List<int> deletes;
                         NachoEmailMessages messages;
-                        lock (MessagesLock){
+                        lock (MessagesLock) {
                             messages = Messages;
                         }
                         bool changed = messages.BeginRefresh (out adds, out deletes);
                         InvokeOnUIThread.Instance.Invoke (() => {
                             bool handledResults = false;
-                            lock (MessagesLock){
+                            lock (MessagesLock) {
                                 if (messages == Messages) {
                                     Messages.CommitRefresh ();
-									HandleReloadResults (changed, adds, deletes);
+                                    HandleReloadResults (changed, adds, deletes);
                                     handledResults = true;
                                 }
                             }
                             if (!handledResults) {
                                 IsReloading = false;
                                 if (NeedsReload) {
-									Reload ();
+                                    Reload ();
                                 }
                             }
                         });
@@ -241,6 +256,130 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Context Menus
+
+        bool IsContextMenuOpen = false;
+
+        public void OnContextMenuClosed (IMenu menu)
+        {
+            IsContextMenuOpen = false;
+            if (NeedsReload) {
+                Reload ();
+            }
+        }
+
+        public override bool OnContextItemSelected (IMenuItem item)
+        {
+            var position = -1;
+            if (item.Intent != null && item.Intent.HasExtra (MessageListAdapter.EXTRA_POSITION)) {
+                position = item.Intent.Extras.GetInt (MessageListAdapter.EXTRA_POSITION);
+            }
+            if (position >= 0) {
+                switch (item.ItemId) {
+                case Resource.Id.forward:
+                    ForwardMessageAtPosition (position);
+                    return true;
+                case Resource.Id.move:
+                    MoveMessageAtPosition (position);
+                    return true;
+                case Resource.Id.create_event:
+                    CreateEventFromMessageAtPosition (position);
+                    return true;
+                case Resource.Id.archive:
+                    ArchiveMessageAtPosition (position);
+                    return true;
+                case Resource.Id.delete:
+                    DeleteMessageAtPosition (position);
+                    return true;
+                case Resource.Id.reply:
+                    ReplyToMessageAtPosition (position);
+                    return true;
+                case Resource.Id.read:
+                    MarkAsReadThreadAtPosition (position);
+                    return true;
+                case Resource.Id.unread:
+                    MarkAsUnreadThreadAtPosition (position);
+                    return true;
+                }
+            }
+            return base.OnContextItemSelected (item);
+        }
+
+        void ReplyToMessageAtPosition (int position)
+        {
+            var message = Messages.GetCachedMessage (position);
+            if (message != null) {
+                ComposeReply (message);
+            }
+        }
+
+        void ForwardMessageAtPosition (int position)
+        {
+            var message = Messages.GetCachedMessage (position);
+            if (message != null) {
+                ComposeForward (message);
+            }
+        }
+
+        void MoveMessageAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            var message = Messages.GetCachedMessage (position);
+            if (thread != null && message != null) {
+                ShowMoveOptions (thread, message.AccountId);
+            }
+        }
+
+        void DeleteMessageAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            if (thread != null) {
+                DeleteThread (thread);
+                RemoveItemViewAtPosition (position);
+            }
+        }
+
+        void ArchiveMessageAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            if (thread != null) {
+                ArchiveThread (thread);
+                RemoveItemViewAtPosition (position);
+            }
+        }
+
+        void CreateEventFromMessageAtPosition (int position)
+        {
+            var message = Messages.GetCachedMessage (position);
+            if (message != null) {
+                CreateEvent (message);
+            }
+        }
+
+        void MarkAsReadThreadAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            var message = Messages.GetCachedMessage (position);
+            if (thread != null && message != null) {
+                MarkAsRead (thread);
+                message.IsRead = true;
+                MessagesAdapter.NotifyItemChanged (position);
+            }
+        }
+
+        void MarkAsUnreadThreadAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            var message = Messages.GetCachedMessage (position);
+            if (thread != null && message != null) {
+                MarkAsUnread (thread);
+                message.IsRead = false;
+                MessagesAdapter.NotifyItemChanged (position);
+            }
+        }
+
+        #endregion
+
         #region System Events
 
         bool IsListeningForStatusInd = false;
@@ -289,6 +428,11 @@ namespace NachoClient.AndroidClient
 
         #region Adapter Listener
 
+        public void OnContextMenuCreated ()
+        {
+            IsContextMenuOpen = true;
+        }
+
         public void OnMessageSelected (McEmailMessage message, McEmailMessageThread thread)
         {
             if (Messages.HasDraftsSemantics ()) {
@@ -308,10 +452,45 @@ namespace NachoClient.AndroidClient
 
         void ComposeDraft (McEmailMessage message)
         {
+            var intent = MessageComposeActivity.DraftIntent (Activity, message);
+			StartActivity (intent);
+        }
+
+        void ComposeOutboxMessage (McEmailMessage message)
+        {
+        	var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+        	ComposeDraft (copy);
+        }
+
+        void ComposeForward (McEmailMessage message)
+        {
+            var intent = MessageComposeActivity.RespondIntent (Activity, EmailHelper.Action.Forward, message);
+            StartActivity (intent);
+        }
+
+        void CreateEvent (McEmailMessage message)
+        {
+            // TODO: launch event activity
+        }
+
+        void MarkAsRead (McEmailMessageThread thread)
+        {
+            EmailHelper.MarkAsRead (thread, force: true);
+        }
+
+        void MarkAsUnread (McEmailMessageThread thread)
+        {
+            EmailHelper.MarkAsUnread (thread, force: true);
         }
 
         void ShowOutboxMessage (McEmailMessage message)
         {
+            var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+            if (pending != null && pending.ResultKind == NcResult.KindEnum.Error) {
+				ShowOutboxError (message, pending);
+            } else {
+				ComposeOutboxMessage (message);
+            }
         }
 
         void ShowThread (McEmailMessageThread thread)
@@ -327,6 +506,85 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        McEmailMessageThread SelectedThread;
+
+        void ShowMoveOptions (McEmailMessageThread thread, int accountId)
+        {
+            SelectedThread = thread;
+            var intent = FoldersActivity.BuildIntent (Activity, accountId);
+            StartActivityForResult (intent, REQUEST_MOVE);
+        }
+
+        void MoveThread (McEmailMessageThread thread, int folderId)
+        {
+            NcTask.Run (() => {
+                var folder = McFolder.QueryById<McFolder> (folderId);
+                NcEmailArchiver.Move (thread, folder);
+            }, "MessageListFragment_Move");
+            Messages.IgnoreMessage (thread.FirstMessageId);
+        }
+
+        void DeleteThread (McEmailMessageThread thread)
+        {
+            if (Messages.HasOutboxSemantics ()) {
+                NcTask.Run (() => {
+                    EmailHelper.DeleteEmailThreadFromOutbox (thread);
+                }, "MessageListFragment_Delete");
+            } else if (Messages.HasDraftsSemantics ()) {
+                NcTask.Run (() => {
+                    EmailHelper.DeleteEmailThreadFromDrafts (thread);
+                }, "MessageListFragment_Delete");
+            } else {
+                NcTask.Run (() => {
+                    NcEmailArchiver.Delete (thread);
+                }, "MessageListFragment_Delete");
+            }
+            Messages.IgnoreMessage (thread.FirstMessageId);
+        }
+
+        void ArchiveThread (McEmailMessageThread thread)
+        {
+    		NcTask.Run (() => {
+                NcEmailArchiver.Archive (thread);
+    		}, "MessageListFragment_Archive");
+        	Messages.IgnoreMessage (thread.FirstMessageId);
+        }
+
+        void ComposeReply (McEmailMessage message)
+        {
+            var intent = MessageComposeActivity.RespondIntent (Activity, EmailHelper.Action.ReplyAll, message);
+			StartActivity (intent);
+        }
+
+        void RemoveItemViewAtPosition (int position)
+        {
+            if (!IsReloading) {
+                Messages.RemoveIgnoredMessages ();
+                MessagesAdapter.NotifyItemRemoved (position);
+            } else {
+                SetNeedsReload ();
+            }
+        }
+
+        void ShowOutboxError (McEmailMessage message, McPending pending)
+        {
+        	string errorString;
+        	if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
+        		errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
+        	}
+        	var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
+        	var alertString = String.Format ("{0}\n{1}", messageString, errorString);
+            var builder = new Android.App.AlertDialog.Builder (Activity);
+            builder.SetMessage (alertString);
+            builder.SetPositiveButton ("Edit Message", (dialog, which) => {
+                ComposeOutboxMessage (message);
+            });
+            builder.SetNegativeButton ("Cancel", (dialog, which) => {
+            });
+            var alert = builder.Create ();
+            alert.Show ();
+        }
+
         #endregion
 
     }
@@ -334,9 +592,12 @@ namespace NachoClient.AndroidClient
     public class MessageListAdapter : RecyclerView.Adapter
     {
 
+        public const string EXTRA_POSITION = "NachoClient.AndroidClient.MessageListAdapter.EXTRA_POSITION";
+
         public interface Listener
         {
             void OnMessageSelected (McEmailMessage message, McEmailMessageThread thread);
+            void OnContextMenuCreated ();
         }
 
         NachoEmailMessages Messages;
@@ -363,6 +624,10 @@ namespace NachoClient.AndroidClient
             var holder = MessageViewHolder.Create (parent);
             holder.ItemView.Click += (sender, e) => {
                 ItemClicked (holder.AdapterPosition);
+            };
+            holder.ItemView.ContextClickable = true;
+            holder.ItemView.ContextMenuCreated += (sender, e) => {
+                ItemContextMenuCreated (holder.AdapterPosition, e.Menu);
             };
             return holder;
         }
@@ -405,6 +670,33 @@ namespace NachoClient.AndroidClient
                 if (message != null && thread != null) {
                     listener.OnMessageSelected (message, thread);
                 }
+            }
+        }
+
+        void ItemContextMenuCreated (int position, IContextMenu menu)
+        {
+            var message = Messages.GetCachedMessage (position);
+            var intent = new Intent ();
+            intent.PutExtra (EXTRA_POSITION, position);
+            int order = 0;
+            List<IMenuItem> items = new List<IMenuItem> ();
+            items.Add (menu.Add (0, Resource.Id.reply, order++, Resource.String.message_item_action_reply));
+            items.Add (menu.Add (0, Resource.Id.forward, order++, Resource.String.message_item_action_forward));
+            items.Add (menu.Add (0, Resource.Id.move, order++, Resource.String.message_item_action_move));
+            items.Add (menu.Add (0, Resource.Id.archive, order++, Resource.String.message_item_action_archive));
+            items.Add (menu.Add (0, Resource.Id.delete, order++, Resource.String.message_item_action_delete));
+            if (message.IsRead) {
+                items.Add (menu.Add (0, Resource.Id.unread, order++, Resource.String.message_item_action_unread));
+            } else {
+                items.Add (menu.Add (0, Resource.Id.read, order++, Resource.String.message_item_action_read));
+            }
+            foreach (var item in items) {
+                item.SetIntent (intent);
+            }
+            menu.SetHeaderTitle (message.Subject);
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                listener.OnContextMenuCreated ();
             }
         }
     }
@@ -509,17 +801,6 @@ namespace NachoClient.AndroidClient
             var typedVal = new Android.Util.TypedValue ();
             ItemView.Context.Theme.ResolveAttribute (attr, typedVal, true);
             return (ItemView.Context.GetDrawable (typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
-        }
-
-        static Drawable FontSizedImage (Context context, int resource, float size)
-        {
-            size *= context.Resources.DisplayMetrics.Density;
-            var drawable = context.GetDrawable (resource);
-            var w = drawable.IntrinsicWidth;
-            var h = drawable.IntrinsicHeight;
-            var s = size / h;
-            var scaleDrawable = new ScaleDrawable (drawable, GravityFlags.Fill, s, s);
-            return scaleDrawable;
         }
 
     }

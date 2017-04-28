@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+	<item name="reply" type="id"/>
+    <item name="read" type="id"/>
+    <item name="unread" type="id"/>
+</resources>
