@@ -371,6 +371,7 @@ namespace NachoClient.AndroidClient
         void CollapsedFromClicked (object sender, EventArgs e)
         {
             UserHasOpenedFrom = true;
+            CcField.AddressField.RequestFocus ();
             RequestLayout ();
         }
 
@@ -390,9 +391,6 @@ namespace NachoClient.AndroidClient
 
         void CreateSubviews ()
         {
-
-            var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
-            var view = inflater.Inflate (Resource.Layout.MessageComposeHeaderView, this);
 
             CcField.FocusChange += CcFieldFocused;
             SubjectField.FocusChange += SubjectFieldFocused;
@@ -552,13 +550,12 @@ namespace NachoClient.AndroidClient
         {
             var view = convertView as LinearLayout;
             if (convertView == null) {
-                var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
-                view = inflater.Inflate (Resource.Layout.ContactSearchMenuItem, null) as LinearLayout;
+                view = LayoutInflater.From (Context).Inflate (Resource.Layout.ContactSearchMenuItem, null) as LinearLayout;
             }
 
-            var primaryLabel = view.FindViewById<TextView> (Resource.Id.contact_item_primary_label);
-            var secondaryLabel = view.FindViewById<TextView> (Resource.Id.contact_item_secondary_label);
-            var photoView = view.FindViewById<ContactPhotoView> (Resource.Id.contact_item_photo);
+            var primaryLabel = view.FindViewById<TextView> (Resource.Id.main_label);
+            var secondaryLabel = view.FindViewById<TextView> (Resource.Id.detail_label);
+            var photoView = view.FindViewById<PortraitView> (Resource.Id.portrait_view);
 
             var contact = SearchResults [position].GetContact ();
             string email = SearchResults [position].Value;
@@ -572,7 +569,8 @@ namespace NachoClient.AndroidClient
                 primaryLabel.Text = email;
                 secondaryLabel.Visibility = ViewStates.Gone;
             }
-            photoView.SetContact (contact);
+            var initials = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+            photoView.SetPortrait (contact.PortraitId, contact.CircleColor, initials);
 
             return view;
         }

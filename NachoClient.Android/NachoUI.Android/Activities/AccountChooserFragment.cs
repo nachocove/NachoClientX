@@ -25,6 +25,7 @@ namespace NachoClient.AndroidClient
         {
             this.initialSelection = initialSelection;
             this.selectedCallback = selectedCallback;
+            RetainInstance = true;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
