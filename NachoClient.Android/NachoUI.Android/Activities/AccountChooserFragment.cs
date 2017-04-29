@@ -55,6 +55,8 @@ namespace NachoClient.AndroidClient
 
         private void ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
+            initialSelection = adapter [e.Position];
+            adapter.NotifyDataSetChanged ();
             dialog.Dismiss ();
             if (null != selectedCallback) {
                 selectedCallback (adapter [e.Position]);
@@ -98,16 +100,26 @@ namespace NachoClient.AndroidClient
             public override View GetView (int position, View convertView, ViewGroup parent)
             {
                 View cellView;
-                var item = listItems [position];
+                var account = listItems [position];
                 cellView = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.AccountChooserCell, parent, false);
-                var icon = cellView.FindViewById<ImageView> (Resource.Id.account_chooser_icon);
-                if (item.Id == selected.Id) {
-                    icon.SetImageResource (Resource.Drawable.gen_checkbox_checked);
+                var imageView = cellView.FindViewById<ImageView> (Resource.Id.account_icon);
+                imageView.SetImageDrawable (Util.GetAccountImage (imageView.Context, account));
+                if (account.Id == selected.Id) {
+                    cellView.SetBackgroundColor (new Android.Graphics.Color (0x11000000));
                 } else {
-                    icon.SetImageResource (Resource.Drawable.gen_checkbox);
+                    var values = cellView.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.SelectableItemBackground });
+                    cellView.SetBackgroundResource (values.GetResourceId (0, 0));
                 }
-                var text = cellView.FindViewById<TextView> (Resource.Id.account_chooser_text);
-                text.Text = item.EmailAddr;
+                var nameLabel = cellView.FindViewById<TextView> (Resource.Id.account_name);
+                var emailLabel = cellView.FindViewById<TextView> (Resource.Id.account_email);
+                if (!String.IsNullOrEmpty (account.DisplayName)) {
+                    nameLabel.Text = account.DisplayName;
+                    emailLabel.Text = account.EmailAddr;
+                    emailLabel.Visibility = ViewStates.Visible;
+                } else {
+                    nameLabel.Text = account.EmailAddr;
+                    emailLabel.Visibility = ViewStates.Gone;
+                }
                 return cellView;
             }
         }

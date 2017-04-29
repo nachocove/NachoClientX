@@ -98,9 +98,7 @@ namespace NachoClient.AndroidClient
         {
             var wrapper = p0 as TokenObject;
             if (wrapper != null) {
-                var inflater = Context.GetSystemService (Activity.LayoutInflaterService) as LayoutInflater;
-                var view = inflater.Inflate (Resource.Layout.EmailAddressToken, null);
-                var textView = view.FindViewById<TextView> (Resource.Id.email_address_token_text);
+                var textView = LayoutInflater.From(Context).Inflate (Resource.Layout.EmailAddressToken, null) as TextView;
                 if (wrapper.Contact != null) {
                     var displayName = wrapper.Contact.GetDisplayName ();
                     if (!String.IsNullOrWhiteSpace (displayName)) {
@@ -118,7 +116,7 @@ namespace NachoClient.AndroidClient
                         textView.Text = mailbox.Address;
                     }
                 }
-                return view;
+                return textView;
             }
             return null;
         }

@@ -90,8 +90,12 @@
         <item name="contactItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
         <item name="messageComposeFieldPaddingLeft">@dimen/nacho_item_padding_left</item>
         <item name="messageComposeFieldPaddingRight">@dimen/nacho_item_padding_right</item>
-        <item name="messageComposeFieldPaddingTop">2dp</item>
-        <item name="messageComposeFieldPaddingBottom">2dp</item>
+        <item name="messageComposeFieldPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="messageComposeFieldPaddingBottom">@dimen/nacho_item_padding_bottom</item>
+        <item name="accountPickerItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="accountPickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="accountPickerItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="accountPickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
     </style>
 
     <style name="NachoTheme.NoActionBar">

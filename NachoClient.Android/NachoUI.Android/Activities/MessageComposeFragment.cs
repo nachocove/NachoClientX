@@ -484,6 +484,7 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view, string from)
         {
+            EndEditing ();
             var accountFragment = new AccountChooserFragment ();
             accountFragment.SetValues (Composer.Account, (McAccount selectedAccount) => {
                 if (selectedAccount.Id != Composer.Account.Id) {
@@ -657,7 +658,8 @@ namespace NachoClient.AndroidClient
 
         void UpdateHeaderFromView ()
         {
-            //HeaderView.FromField.Text = Composer.Message.From;
+            HeaderView.CollapsedFromField.ValueLabel.Text = Composer.Message.From;
+            HeaderView.FromField.ValueLabel.Text = Composer.Message.From;
         }
 
         void UpdateHeaderBccView ()
@@ -667,7 +669,7 @@ namespace NachoClient.AndroidClient
 
         void UpdateHeaderSubjectView ()
         {
-            //HeaderView.SubjectField.Text = Composer.Message.Subject;
+            HeaderView.SubjectField.TextField.Text = Composer.Message.Subject;
         }
 
         void UpdateHeaderIntentView ()

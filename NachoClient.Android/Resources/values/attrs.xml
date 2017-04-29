@@ -34,7 +34,12 @@
     <attr name="messageComposeFieldPaddingRight" format="dimension"/>
     <attr name="messageComposeFieldPaddingTop" format="dimension"/>
     <attr name="messageComposeFieldPaddingBottom" format="dimension"/>
+    <attr name="accountPickerItemPaddingLeft" format="dimension"/>
+    <attr name="accountPickerItemPaddingTop" format="dimension"/>
+    <attr name="accountPickerItemPaddingRight" format="dimension"/>
+    <attr name="accountPickerItemPaddingBottom" format="dimension"/>
     <attr name="labelTextAppearance" format="reference"/>
+    <attr name="valueTextAppearance" format="reference"/>
     <attr name="labelText" format="reference|string"/>
     <attr name="labelMarginTop" format="dimension"/>
     <attr name="labelMarginRight" format="dimension"/>
@@ -44,8 +49,9 @@
     <attr name="contentPaddingRight" format="dimension"/>
     <attr name="contentPaddingBottom" format="dimension"/>
     <attr name="separatorColor" format="reference|color"/>
-	<declare-styleable name="MessageComposeHeaderAddressField">
+	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
+        <attr name="valueTextAppearance"/>
     	<attr name="labelMarginTop"/>
     	<attr name="labelWidth"/>
     	<attr name="labelText"/>
