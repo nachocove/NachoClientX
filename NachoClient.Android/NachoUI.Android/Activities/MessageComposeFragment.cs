@@ -113,11 +113,23 @@ namespace NachoClient.AndroidClient
         {
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             WebView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.message);
+
+            HeaderView.Delegate = this;
+
+            WebView.Settings.JavaScriptEnabled = true;
+			WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nacho"), "_android_messageHandlers_nacho");
+            WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
+            WebView.SetWebViewClient (new NachoWebClient (this));
         }
 
         void ClearSubviews ()
         {
             HeaderView.Cleanup ();
+            HeaderView.Delegate = null;
+            WebView.SetWebViewClient (null);
+            WebView.RemoveJavascriptInterface ("_android_messageHandlers_nacho");
+            WebView.RemoveJavascriptInterface ("_android_messageHandlers_nachoCompose");
+            WebView.StopLoading ();
             HeaderView = null;
             WebView = null;
         }
@@ -145,13 +157,6 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.MessageComposeFragment, container, false);
 
             FindSubviews (view);
-
-            HeaderView.Delegate = this;
-
-            WebView.Settings.JavaScriptEnabled = true;
-            WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nacho"), "_android_messageHandlers_nacho");
-            WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
-            WebView.SetWebViewClient (new NachoWebClient (this));
 
             BeginComposing ();
 
@@ -341,7 +346,6 @@ namespace NachoClient.AndroidClient
             if (packages.Count > 1) {
                 ArrayAdapter<String> adapter = new ChooserArrayAdapter (Activity, Android.Resource.Layout.SelectDialogItem, Android.Resource.Id.Text1, packages);
                 var builder = new AlertDialog.Builder (Activity);
-                builder.SetTitle ("Get File");
                 builder.SetAdapter (adapter, (s, ev) => {
                     InvokeApplication (packages [ev.Which]);
                 });
@@ -392,7 +396,7 @@ namespace NachoClient.AndroidClient
                 attachment.UpdateSaveFinish ();
                 File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
-                HeaderView.AttachmentsView.AddAttachment (attachment);
+                //HeaderView.AttachmentsView.AddAttachment (attachment);
             } else if (PICK_REQUEST_CODE == requestCode) {
                 try {
                     var clipData = data.ClipData;
@@ -400,7 +404,7 @@ namespace NachoClient.AndroidClient
                         var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, data.Data, data.Type);
                         if (null != attachment) {
                             attachment.Link (Composer.Message);
-                            HeaderView.AttachmentsView.AddAttachment (attachment);
+                            //HeaderView.AttachmentsView.AddAttachment (attachment);
                         }
                     } else {
                         for (int i = 0; i < clipData.ItemCount; i++) {
@@ -408,7 +412,7 @@ namespace NachoClient.AndroidClient
                             var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, uri, data.Type);
                             if (null != attachment) {
                                 attachment.Link (Composer.Message);
-                                HeaderView.AttachmentsView.AddAttachment (attachment);
+                                //HeaderView.AttachmentsView.AddAttachment (attachment);
                             }
                         }
                     }
@@ -424,7 +428,7 @@ namespace NachoClient.AndroidClient
             var attachment = file as McAttachment;
             if (attachment != null) {
                 attachment.Link (Composer.Message);
-                HeaderView.AttachmentsView.AddAttachment (attachment);
+                //HeaderView.AttachmentsView.AddAttachment (attachment);
             }
         }
 
@@ -446,7 +450,7 @@ namespace NachoClient.AndroidClient
                     } else {
                         Composer.Message.Bcc += ", " + extraBcc;
                     }
-                    UpdateHeaderFromBcc ();
+                    UpdateHeaderBccView  ();
                 }
             }
         }
@@ -555,7 +559,7 @@ namespace NachoClient.AndroidClient
             Composer.Message.IntentDate = DateTime.MinValue;
             Composer.Message.IntentDateType = MessageDeferralType.None;
             UpdateHeaderIntentView ();
-            HeaderView.ShowIntentField ();
+            //HeaderView.ShowIntentField ();
         }
 
         #endregion
@@ -642,9 +646,9 @@ namespace NachoClient.AndroidClient
 
         private void UpdateHeader ()
         {
-            HeaderView.ToField.AddressString = Composer.Message.To;
-            HeaderView.CcField.AddressString = Composer.Message.Cc;
-            HeaderView.BccField.AddressString = Composer.Message.Bcc;
+            HeaderView.ToField.AddressField.AddressString = Composer.Message.To;
+            HeaderView.CcField.AddressField.AddressString = Composer.Message.Cc;
+            UpdateHeaderBccView ();
             UpdateHeaderFromView ();
             UpdateHeaderSubjectView ();
             UpdateHeaderIntentView ();
@@ -653,28 +657,28 @@ namespace NachoClient.AndroidClient
 
         void UpdateHeaderFromView ()
         {
-            HeaderView.FromField.Text = Composer.Message.From;
+            //HeaderView.FromField.Text = Composer.Message.From;
         }
 
-        void UpdateHeaderFromBcc()
+        void UpdateHeaderBccView ()
         {
-            HeaderView.BccField.AddressString = Composer.Message.Bcc;
+            HeaderView.BccField.AddressField.AddressString = Composer.Message.Bcc;
         }
 
         void UpdateHeaderSubjectView ()
         {
-            HeaderView.SubjectField.Text = Composer.Message.Subject;
+            //HeaderView.SubjectField.Text = Composer.Message.Subject;
         }
 
         void UpdateHeaderIntentView ()
         {
-            HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
+            //HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
         private void UpdateHeaderAttachmentsView ()
         {
             var attachments = McAttachment.QueryByItem (Composer.Message);
-            HeaderView.AttachmentsView.SetAttachments (attachments);
+            //HeaderView.AttachmentsView.SetAttachments (attachments);
         }
 
         #endregion

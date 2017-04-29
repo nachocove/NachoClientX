@@ -30,4 +30,30 @@
     <attr name="contactItemPaddingRight" format="dimension"/>
     <attr name="contactItemPaddingTop" format="dimension"/>
     <attr name="contactItemPaddingBottom" format="dimension"/>
+    <attr name="messageComposeFieldPaddingLeft" format="dimension"/>
+    <attr name="messageComposeFieldPaddingRight" format="dimension"/>
+    <attr name="messageComposeFieldPaddingTop" format="dimension"/>
+    <attr name="messageComposeFieldPaddingBottom" format="dimension"/>
+    <attr name="labelTextAppearance" format="reference"/>
+    <attr name="labelText" format="reference|string"/>
+    <attr name="labelMarginTop" format="dimension"/>
+    <attr name="labelMarginRight" format="dimension"/>
+    <attr name="labelWidth" format="dimension"/>
+    <attr name="contentPaddingLeft" format="dimension"/>
+    <attr name="contentPaddingTop" format="dimension"/>
+    <attr name="contentPaddingRight" format="dimension"/>
+    <attr name="contentPaddingBottom" format="dimension"/>
+    <attr name="separatorColor" format="reference|color"/>
+	<declare-styleable name="MessageComposeHeaderAddressField">
+    	<attr name="labelTextAppearance"/>
+    	<attr name="labelMarginTop"/>
+    	<attr name="labelWidth"/>
+    	<attr name="labelText"/>
+    	<attr name="labelMarginRight"/>
+    	<attr name="contentPaddingLeft"/>
+    	<attr name="contentPaddingTop"/>
+    	<attr name="contentPaddingRight"/>
+    	<attr name="contentPaddingBottom"/>
+    	<attr name="separatorColor"/>
+    </declare-styleable>
 </resources>

@@ -8,7 +8,7 @@
         android:orderInCategory="0"
         android:title="@string/message_compose_action_send"
 		android:icon="@drawable/action_send"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/attach"
         android:orderInCategory="1"

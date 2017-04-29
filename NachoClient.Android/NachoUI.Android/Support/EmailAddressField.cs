@@ -78,7 +78,17 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public EmailAddressField (Context context) : base (context)
+        {
+            Initialize ();
+        }
+
         public EmailAddressField (Context context, IAttributeSet attrs) : base (context, attrs)
+        {
+            Initialize ();
+        }
+
+        void Initialize ()
         {
             Threshold = 1;
             SetTokenListener (this);

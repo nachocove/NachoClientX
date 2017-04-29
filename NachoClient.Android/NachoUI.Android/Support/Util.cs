@@ -259,5 +259,54 @@ namespace NachoClient.AndroidClient
             builder.Show ();
         }
     }
+    
+
+    public class AttributeValues : IDisposable
+    {
+
+        Android.Content.Res.TypedArray Values;
+        Dictionary<int, int> ResourceIndex;
+
+        public AttributeValues (Context context, Android.Util.IAttributeSet attrs, int [] attrIds)
+        {
+            // If the ids aren't sorted, ObtainStyledAttributes will return bad values...really
+            Array.Sort (attrIds);
+            ResourceIndex = new Dictionary<int, int> ();
+            for (int i = 0; i < attrIds.Length; ++i) {
+                ResourceIndex.Add (attrIds [i], i); 
+            }
+            Values = context.Theme.ObtainStyledAttributes (attrs, attrIds, 0, 0);
+        }
+
+        public int GetDimensionPixelSize (int attrId, int defaultValue)
+        {
+            return Values.GetDimensionPixelSize (ResourceIndex [attrId], defaultValue);
+        }
+
+        public string GetString (int attrId)
+        {
+            return Values.GetString (ResourceIndex [attrId]);
+        }
+
+        public string GetNonResourceString (int attrId)
+        {
+            return Values.GetNonResourceString (ResourceIndex [attrId]);
+        }
+
+        public int GetResourceId (int attrId, int defaultValue)
+        {
+            return Values.GetResourceId (ResourceIndex [attrId], defaultValue);
+        }
+
+        public Android.Graphics.Color GetColor (int attrId, int defaultValue)
+        {
+            return Values.GetColor (ResourceIndex [attrId], defaultValue);
+        }
+
+        public void Dispose ()
+        {
+            Values.Recycle ();
+        }
+    }
 }
 

@@ -61,7 +61,7 @@ namespace NachoClient.AndroidClient
 
         void Initialize ()
         {
-            var view = LayoutInflater.From (Context).Inflate (Resource.Layout.MessageHeaderView, this);
+            LayoutInflater.From (Context).Inflate (Resource.Layout.MessageHeaderView, this);
             FindSubviews ();
         }
 

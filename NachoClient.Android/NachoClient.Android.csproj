@@ -1141,7 +1141,7 @@
     <AndroidResource Include="Resources\drawable-xhdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\layout\EmailAddressToken.axml" />
-    <AndroidResource Include="Resources\drawable\EmailAddressToken.xml" />
+    <AndroidResource Include="Resources\drawable\EmailAddressTokenBackground.xml" />
     <AndroidResource Include="Resources\layout\AccountSettingsFragment.axml" />
     <AndroidResource Include="Resources\layout\AttendeeListFragment.axml" />
     <AndroidResource Include="Resources\drawable\BlackBorder.xml" />

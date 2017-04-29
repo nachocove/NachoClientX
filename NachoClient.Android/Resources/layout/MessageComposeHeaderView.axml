@@ -1,9 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:nacho="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@android:color/white">
+    <NachoClient.AndroidClient.MessageComposeHeaderAddressField
+        android:id="@+id/to"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        nacho:labelText="@string/message_compose_field_to"
+        nacho:labelMarginTop="2dp"
+        nacho:labelWidth="40dp"
+        nacho:labelTextAppearance="?attr/textAppearanceListItemSmall"
+        nacho:contentPaddingLeft="?attr/messageComposeFieldPaddingLeft"
+        nacho:contentPaddingTop="?attr/messageComposeFieldPaddingTop"
+        nacho:contentPaddingRight="?attr/messageComposeFieldPaddingRight"
+        nacho:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
+        nacho:separatorColor="?attr/colorListItemSeparator" />
+    <NachoClient.AndroidClient.MessageComposeHeaderAddressField
+        android:id="@+id/cc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        nacho:labelText="CC"
+        nacho:labelMarginTop="2dp"
+        nacho:labelWidth="40dp"
+        nacho:labelTextAppearance="?attr/textAppearanceListItemSmall"
+        nacho:contentPaddingLeft="?attr/messageComposeFieldPaddingLeft"
+        nacho:contentPaddingTop="?attr/messageComposeFieldPaddingTop"
+        nacho:contentPaddingRight="?attr/messageComposeFieldPaddingRight"
+        nacho:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
+        nacho:separatorColor="?attr/colorListItemSeparator" />
+    <NachoClient.AndroidClient.MessageComposeHeaderAddressField
+        android:id="@+id/bcc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        nacho:labelText="@string/message_compose_field_bcc"
+        nacho:labelMarginTop="2dp"
+        nacho:labelWidth="40dp"
+        nacho:labelTextAppearance="?attr/textAppearanceListItemSmall"
+        nacho:contentPaddingLeft="?attr/messageComposeFieldPaddingLeft"
+        nacho:contentPaddingTop="?attr/messageComposeFieldPaddingTop"
+        nacho:contentPaddingRight="?attr/messageComposeFieldPaddingRight"
+        nacho:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
+        nacho:separatorColor="?attr/colorListItemSeparator" />
+<!--
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
@@ -169,4 +210,5 @@
         android:layout_width="fill_parent"
         android:layout_height="1dp"
         android:background="@color/NachoLightGray" />
+	-->
 </LinearLayout>

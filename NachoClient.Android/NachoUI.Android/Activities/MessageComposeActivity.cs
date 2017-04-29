@@ -17,26 +17,10 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class MessageComposeActivityData
-    {
-        public int MessageId;
-        public bool MessageSaved;
-        public List<Action> MessageSavedEvents = new List<Action> ();
 
-        public void FireEvent ()
-        {
-            foreach (var action in MessageSavedEvents) {
-                action ();
-            }
-            MessageSavedEvents.Clear ();
-        }
-    }
-
-    [Activity (Label = "MessageComposeActivity")]            
+    [Activity (WindowSoftInputMode=Android.Views.SoftInput.AdjustResize)]
     public class MessageComposeActivity : NcActivity
     {
-        
-        private MessageComposeActivityData savedMessageInfo;
 
         private MessageComposer Composer;
         private MessageComposeFragment ComposeFragment;

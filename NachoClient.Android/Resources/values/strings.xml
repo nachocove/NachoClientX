@@ -74,6 +74,9 @@
     <string name="message_compose_oversize_title">Large Message</string>
     <string name="message_compose_oversize_message_format">This message is {0}</string>
     <string name="message_compose_oversize_message_send">Send Anyway</string>
+    <string name="message_compose_field_to">To:</string>
+    <string name="message_compose_field_cc">Cc:</string>
+    <string name="message_compose_field_bcc">Bcc:</string>
 
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
