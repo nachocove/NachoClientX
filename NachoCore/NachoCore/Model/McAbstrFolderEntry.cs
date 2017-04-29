@@ -46,13 +46,18 @@ namespace NachoCore.Model
 
         public static T QueryByServerId<T> (int accountId, string serverId) where T : McAbstrFolderEntry, new()
         {
-            return NcModel.Instance.Db.Query<T> (
+            var result = NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " likelihood (f.AccountId = ?, 1.0) AND " + 
+                    " likelihood (f.AccountId = ?, 1.0) AND " +
                     " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                    " likelihood (f.ServerId = ?, 0.001) ", 
-                    typeof(T).Name), 
-                accountId, serverId).SingleOrDefault ();
+                    " likelihood (f.ServerId = ?, 0.001) ",
+                    typeof (T).Name),
+                accountId, serverId);
+            if (result.Count > 1) {
+                Log.Error (Log.LOG_DB, "Expecting only 1 message for account {0} and serverId {1}, found {2}", accountId, serverId, result.Count);
+                return result.First ();
+            }
+            return result.SingleOrDefault ();
         }
 
         public static IEnumerable<T> QueryByServerIdMult<T> (int accountId, string serverId) where T : McAbstrFolderEntry, new()

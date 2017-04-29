@@ -188,6 +188,16 @@ namespace NachoClient.AndroidClient
                 if (Composer.InitialQuickReply) {
                     Composer.InitialQuickReply = false;
                     ShowQuickResponses ();
+                } else {
+                    if (!Composer.HasRecipient) {
+                        HeaderView.ToField.RequestFocus ();
+                    } else if (String.IsNullOrEmpty (Composer.Message.Subject)) {
+                        HeaderView.SubjectField.RequestFocus ();
+                    } else if (IsWebViewLoaded) {
+                        FocusWebView ();
+                    } else {
+                        FocusWebViewOnLoad = true;
+                    }
                 }
             }
         }
@@ -604,7 +614,10 @@ namespace NachoClient.AndroidClient
 
         private void FocusWebView ()
         {
+            WebView.RequestFocus ();
             EvaluateJavascript ("Editor.defaultEditor.focus()");
+            var scrollView = View.FindViewById (Resource.Id.scroll_view) as Android.Support.V4.Widget.NestedScrollView;
+            scrollView.ScrollY = 0;
         }
 
         #endregion
