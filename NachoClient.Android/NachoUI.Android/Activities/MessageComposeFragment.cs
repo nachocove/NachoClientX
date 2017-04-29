@@ -614,10 +614,18 @@ namespace NachoClient.AndroidClient
 
         private void FocusWebView ()
         {
+            WebView.FocusChange += WebViewFocused;
             WebView.RequestFocus ();
-            EvaluateJavascript ("Editor.defaultEditor.focus()");
+        }
+
+        void WebViewFocused (object sender, Android.Views.View.FocusChangeEventArgs e)
+        {
             var scrollView = View.FindViewById (Resource.Id.scroll_view) as Android.Support.V4.Widget.NestedScrollView;
+			EvaluateJavascript ("Editor.defaultEditor.focus()", (result) => {
+                scrollView.ScrollY = 0;
+            });
             scrollView.ScrollY = 0;
+            WebView.FocusChange -= WebViewFocused;
         }
 
         #endregion
