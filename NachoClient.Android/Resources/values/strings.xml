@@ -79,6 +79,7 @@
     <string name="message_compose_field_bcc">Bcc:</string>
     <string name="message_compose_field_from">From:</string>
     <string name="message_compose_field_from_collapsed">Cc/Bcc/From:</string>
+    <string name="message_compose_field_ccbcc_collapsed">Cc/Bcc:</string>
     <string name="message_compose_field_subject">Subject:</string>
 
     <!-- All Mail -->

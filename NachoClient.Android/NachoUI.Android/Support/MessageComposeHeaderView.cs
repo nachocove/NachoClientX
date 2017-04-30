@@ -41,7 +41,7 @@ namespace NachoClient.AndroidClient
     public class MessageComposeHeaderField : LinearLayout
     {
 
-        TextView Label;
+        public TextView Label { get; private set; }
         LinearLayout ContainerView;
         View SeparatorView;
         protected LinearLayout ContentView { get; private set; }
@@ -239,6 +239,7 @@ namespace NachoClient.AndroidClient
 
         public MessageComposeHeaderViewDelegate Delegate;
         bool UserHasOpenedFrom;
+        bool HasMultipleAccounts;
 
         bool ShouldCollapseFrom {
         	get {
@@ -305,15 +306,28 @@ namespace NachoClient.AndroidClient
         {
             LayoutInflater.From (Context).Inflate (Resource.Layout.MessageComposeHeaderView, this);
             FindSubviews ();
+            var accounts = McAccount.GetAllConfiguredNormalAccounts ();
+            HasMultipleAccounts = accounts.Count > 1;
+            if (!HasMultipleAccounts) {
+                CollapsedFromField.Label.Text = Context.GetString (Resource.String.message_compose_field_ccbcc_collapsed);
+            }
         }
 
         #endregion
+
+        public void SetFromValue (string fromValue)
+        {
+            FromField.ValueLabel.Text = fromValue;
+            if (HasMultipleAccounts) {
+                CollapsedFromField.ValueLabel.Text = fromValue;
+            }
+        }
 
         protected override void OnLayout (bool changed, int l, int t, int r, int b)
         {
             CcField.Visibility = ShouldCollapseFrom ? ViewStates.Gone : ViewStates.Visible;
             BccField.Visibility = ShouldCollapseFrom ? ViewStates.Gone : ViewStates.Visible;
-            FromField.Visibility = ShouldCollapseFrom ? ViewStates.Gone : ViewStates.Visible;
+            FromField.Visibility = ShouldCollapseFrom || !HasMultipleAccounts ? ViewStates.Gone : ViewStates.Visible;
             CollapsedFromField.Visibility = ShouldCollapseFrom ? ViewStates.Visible : ViewStates.Gone;
         	base.OnLayout (changed, l, t, r, b);
         }

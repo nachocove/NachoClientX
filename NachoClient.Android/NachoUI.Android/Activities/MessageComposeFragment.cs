@@ -679,8 +679,7 @@ namespace NachoClient.AndroidClient
 
         void UpdateHeaderFromView ()
         {
-            HeaderView.CollapsedFromField.ValueLabel.Text = Composer.Message.From;
-            HeaderView.FromField.ValueLabel.Text = Composer.Message.From;
+            HeaderView.SetFromValue (Composer.Message.From);
         }
 
         void UpdateHeaderBccView ()
