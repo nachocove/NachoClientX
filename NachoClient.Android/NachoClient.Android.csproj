@@ -239,16 +239,11 @@
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AccountChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
-    <Compile Include="NachoUI.Android\Activities\CalendarFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactsFragment.cs" />
     <Compile Include="NachoUI.Android\Support\NcDialogFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationsPickerDialog.cs" />
-    <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\MessageComposeActivity.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\MessageComposeFragment.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\MessageComposeHeaderField.cs" />
@@ -295,6 +290,11 @@
     <Compile Include="NachoUI.Android\Views\RoundedImageView.cs" />
     <Compile Include="NachoUI.Android\Base\GroupedListRecyclerViewAdapter.cs" />
     <Compile Include="NachoUI.Android\Base\NcActivity.cs" />
+    <Compile Include="NachoUI.Android\MessageCompose\AccountChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\MainTabs\CalendarFragment.cs" />
+    <Compile Include="NachoUI.Android\MainTabs\ContactsFragment.cs" />
+    <Compile Include="NachoUI.Android\FoldersList\FolderListFragment.cs" />
+    <Compile Include="NachoUI.Android\FoldersList\FoldersActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -403,6 +403,7 @@
     <Folder Include="NachoUI.Android\MessageList\" />
     <Folder Include="NachoUI.Android\Views\" />
     <Folder Include="NachoUI.Android\Base\" />
+    <Folder Include="NachoUI.Android\FoldersList\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
