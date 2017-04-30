@@ -281,6 +281,7 @@ namespace NachoClient.AndroidClient
             CollapsedFromField.Click += CollapsedFromClicked;
 
             SubjectField.TextField.TextChanged += SubjectChanged;
+            SubjectField.TextField.InputType = InputTypes.ClassText | InputTypes.TextFlagCapSentences;
         }
 
         #endregion

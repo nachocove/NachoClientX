@@ -91,6 +91,7 @@ namespace NachoClient.AndroidClient
         void Initialize ()
         {
             Threshold = 1;
+            InputType = Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationEmailAddress;
             SetTokenListener (this);
         }
 
