@@ -406,7 +406,7 @@ namespace NachoClient.AndroidClient
                 attachment.UpdateSaveFinish ();
                 File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
-                //HeaderView.AttachmentsView.AddAttachment (attachment);
+                HeaderView.AddAttachment (attachment);
             } else if (PICK_REQUEST_CODE == requestCode) {
                 try {
                     var clipData = data.ClipData;
@@ -414,7 +414,7 @@ namespace NachoClient.AndroidClient
                         var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, data.Data, data.Type);
                         if (null != attachment) {
                             attachment.Link (Composer.Message);
-                            //HeaderView.AttachmentsView.AddAttachment (attachment);
+                            HeaderView.AddAttachment (attachment);
                         }
                     } else {
                         for (int i = 0; i < clipData.ItemCount; i++) {
@@ -422,7 +422,7 @@ namespace NachoClient.AndroidClient
                             var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, uri, data.Type);
                             if (null != attachment) {
                                 attachment.Link (Composer.Message);
-                                //HeaderView.AttachmentsView.AddAttachment (attachment);
+                                HeaderView.AddAttachment (attachment);
                             }
                         }
                     }
@@ -438,7 +438,7 @@ namespace NachoClient.AndroidClient
             var attachment = file as McAttachment;
             if (attachment != null) {
                 attachment.Link (Composer.Message);
-                //HeaderView.AttachmentsView.AddAttachment (attachment);
+                HeaderView.AddAttachment (attachment);
             }
         }
 
@@ -700,7 +700,7 @@ namespace NachoClient.AndroidClient
         private void UpdateHeaderAttachmentsView ()
         {
             var attachments = McAttachment.QueryByItem (Composer.Message);
-            //HeaderView.AttachmentsView.SetAttachments (attachments);
+            HeaderView.SetAttachments (attachments);
         }
 
         #endregion

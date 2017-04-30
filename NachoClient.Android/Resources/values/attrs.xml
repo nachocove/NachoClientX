@@ -49,6 +49,7 @@
     <attr name="contentPaddingRight" format="dimension"/>
     <attr name="contentPaddingBottom" format="dimension"/>
     <attr name="separatorColor" format="reference|color"/>
+    <attr name="iconSrc" format="reference"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>
@@ -61,5 +62,6 @@
     	<attr name="contentPaddingRight"/>
     	<attr name="contentPaddingBottom"/>
     	<attr name="separatorColor"/>
+        <attr name="iconSrc"/>
     </declare-styleable>
 </resources>

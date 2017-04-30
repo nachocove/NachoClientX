@@ -221,7 +221,6 @@
     <Compile Include="NachoUI.Android\Support\EmailAddressField.cs" />
     <Compile Include="NachoPlatform.Android\DnsAndroid.cs" />
     <Compile Include="NachoUI.Android\Support\ButtonBar.cs" />
-    <Compile Include="NachoUI.Android\Support\MessageComposeAttachmentsView.cs" />
     <Compile Include="NachoUI.Android\Support\LifecycleSpy.cs" />
     <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
     <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
@@ -295,6 +294,7 @@
     <Compile Include="NachoUI.Android\Activities\MessageHeaderDetailFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\MessageComposeHeaderField.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -367,6 +367,7 @@
     <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
     <None Include="NachoUI.Android\Activities\InboxActivity.cs" />
     <None Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
+    <None Include="NachoUI.Android\Support\MessageComposeAttachmentsView.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\raw\" />
@@ -1612,6 +1613,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\action_attach.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\action_attach.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_attach.png" />
+    <AndroidResource Include="Resources\layout\MessageComposeAttachmentListItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -87,6 +87,20 @@
         nacho:contentPaddingRight="?attr/messageComposeFieldPaddingRight"
         nacho:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
         nacho:separatorColor="?attr/colorListItemSeparator" />
+    <NachoClient.AndroidClient.MessageComposeHeaderAttachmentsField
+        android:id="@+id/attachments"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        nacho:labelText="@string/message_compose_field_attachments"
+        nacho:labelMarginRight="?attr/messageComposeFieldPaddingLeft"
+        nacho:labelTextAppearance="?attr/textAppearanceListItemSmall"
+        nacho:valueTextAppearance="?attr/textAppearanceListItemSmall"
+        nacho:contentPaddingLeft="?attr/messageComposeFieldPaddingLeft"
+        nacho:contentPaddingTop="?attr/messageComposeFieldPaddingTop"
+        nacho:contentPaddingRight="?attr/messageComposeFieldPaddingRight"
+        nacho:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
+        nacho:separatorColor="?attr/colorListItemSeparator"
+        nacho:iconSrc="@drawable/email_add" />
 <!--
     <LinearLayout
         android:orientation="horizontal"

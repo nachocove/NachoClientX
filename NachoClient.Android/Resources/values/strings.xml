@@ -81,6 +81,7 @@
     <string name="message_compose_field_from_collapsed">Cc/Bcc/From:</string>
     <string name="message_compose_field_ccbcc_collapsed">Cc/Bcc:</string>
     <string name="message_compose_field_subject">Subject:</string>
+    <string name="message_compose_field_attachments">Attachments:</string>
 
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>

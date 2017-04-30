@@ -38,202 +38,6 @@ namespace NachoClient.AndroidClient
         //        void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
     }
 
-    public class MessageComposeHeaderField : LinearLayout
-    {
-
-        public TextView Label { get; private set; }
-        LinearLayout ContainerView;
-        View SeparatorView;
-        protected LinearLayout ContentView { get; private set; }
-
-        public MessageComposeHeaderField (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
-        {
-            Orientation = Orientation.Vertical;
-            CreateContainerView (attrs);
-            CreateSeparator (attrs);
-            CreateLabel (attrs);
-            CreateContentView ();
-
-            AddView (ContainerView);
-            AddView (SeparatorView);
-            ContainerView.AddView (Label);
-            ContainerView.AddView (ContentView);
-        }
-
-        void CreateContainerView (Android.Util.IAttributeSet attrs)
-        {
-            var attrIds = new int [] {
-                Resource.Attribute.contentPaddingLeft,
-                Resource.Attribute.contentPaddingTop,
-                Resource.Attribute.contentPaddingRight,
-                Resource.Attribute.contentPaddingBottom
-            };
-            ContainerView = new LinearLayout (Context);
-            ContainerView.LayoutParameters = new LinearLayout.LayoutParams (LayoutParams.MatchParent, LayoutParams.WrapContent);
-            ContainerView.Orientation = Orientation.Horizontal;
-            using (var values = new AttributeValues (Context, attrs, attrIds)) {
-                ContainerView.SetPadding (
-                    values.GetDimensionPixelSize (Resource.Attribute.contentPaddingLeft, ContainerView.PaddingLeft),
-                    values.GetDimensionPixelSize (Resource.Attribute.contentPaddingTop, ContainerView.PaddingTop),
-                    values.GetDimensionPixelSize (Resource.Attribute.contentPaddingRight, ContainerView.PaddingRight),
-                    values.GetDimensionPixelSize (Resource.Attribute.contentPaddingBottom, ContainerView.PaddingBottom)
-                );
-            }
-        }
-
-        void CreateSeparator (Android.Util.IAttributeSet attrs)
-        {
-            var attrIds = new int [] {
-                Resource.Attribute.separatorColor
-            };
-            SeparatorView = new View (Context);
-            var height = (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, 1.0f, Context.Resources.DisplayMetrics);
-            SeparatorView.LayoutParameters = new LinearLayout.LayoutParams (LayoutParams.MatchParent, height);
-            using (var values = new AttributeValues (Context, attrs, attrIds)) {
-                SeparatorView.SetBackgroundColor (values.GetColor (Resource.Attribute.separatorColor, Android.Resource.Color.White));
-            }
-        }
-
-        void CreateLabel (Android.Util.IAttributeSet attrs)
-        {
-            var attrIds = new int [] {
-                Resource.Attribute.labelTextAppearance,
-                Resource.Attribute.labelMarginTop,
-                Resource.Attribute.labelMarginRight,
-                Resource.Attribute.labelWidth,
-                Resource.Attribute.labelText
-            };
-            Label = new TextView (Context);
-            Label.SetSingleLine (true);
-            Label.Ellipsize = TextUtils.TruncateAt.End;
-            using (var values = new AttributeValues (Context, attrs, attrIds)) {
-                var width = values.GetDimensionPixelSize (Resource.Attribute.labelWidth, LayoutParams.WrapContent);
-                var layoutParams = new LinearLayout.LayoutParams (width, LayoutParams.WrapContent);
-                layoutParams.Gravity = GravityFlags.Top;
-                layoutParams.TopMargin = values.GetDimensionPixelSize (Resource.Attribute.labelMarginTop, layoutParams.TopMargin);
-                layoutParams.RightMargin = values.GetDimensionPixelSize (Resource.Attribute.labelMarginRight, layoutParams.RightMargin);
-                Label.LayoutParameters = layoutParams;
-
-                var textAppearance = values.GetResourceId (Resource.Attribute.labelTextAppearance, 0);
-                if (textAppearance != 0) {
-                    Label.SetTextAppearance (textAppearance);
-                }
-
-                Label.Text = values.GetString (Resource.Attribute.labelText);
-            }
-
-        }
-
-        void CreateContentView ()
-        {
-            ContentView = new LinearLayout (Context);
-            var layoutParams = new LinearLayout.LayoutParams (0, LayoutParams.WrapContent);
-            layoutParams.Weight = 1.0f;
-            layoutParams.Gravity = GravityFlags.Top;
-            ContentView.LayoutParameters = layoutParams;
-        }
-    }
-
-    public class MessageComposeHeaderAddressField : MessageComposeHeaderField
-    {
-        public EmailAddressField AddressField { get; private set; }
-
-        public MessageComposeHeaderAddressField (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
-        {
-            CreateAddressField (attrs);
-            Clickable = true;
-            Click += (sender, e) => {
-                AddressField.RequestFocus ();
-            };
-        }
-
-        void CreateAddressField (Android.Util.IAttributeSet attrs)
-        {
-            AddressField = new EmailAddressField (Context);
-            var attrIds = new int [] {
-                Resource.Attribute.valueTextAppearance
-            };
-            var layoutParams = new LinearLayout.LayoutParams (LayoutParams.MatchParent, LayoutParams.WrapContent);
-            using (var values = new AttributeValues (Context, attrs, attrIds)) {
-                var textAppearance = values.GetResourceId (Resource.Attribute.valueTextAppearance, 0);
-                if (textAppearance != 0) {
-                    AddressField.SetTextAppearance (textAppearance);
-                }
-            }
-            AddressField.Background = null;
-            AddressField.SetPadding (0, 0, 0, 0);
-            var spacing = Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, 3.0f, Context.Resources.DisplayMetrics);
-            AddressField.SetLineSpacing (spacing, 1.0f);
-            AddressField.LayoutParameters = layoutParams;
-            ContentView.AddView (AddressField);
-        }
-    }
-
-    public class MessageComposeHeaderTextField : MessageComposeHeaderField
-    {
-        public EditText TextField { get; private set; }
-
-        public MessageComposeHeaderTextField (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
-        {
-            CreateTextField (attrs);
-            Clickable = true;
-            Click += (sender, e) => {
-                TextField.RequestFocus ();
-            };
-        }
-
-        void CreateTextField (Android.Util.IAttributeSet attrs)
-        {
-            TextField = new EditText (Context);
-            var attrIds = new int [] {
-                Resource.Attribute.valueTextAppearance
-            };
-            var layoutParams = new LinearLayout.LayoutParams (LayoutParams.MatchParent, LayoutParams.WrapContent);
-            using (var values = new AttributeValues (Context, attrs, attrIds)) {
-                var textAppearance = values.GetResourceId (Resource.Attribute.valueTextAppearance, 0);
-                if (textAppearance != 0) {
-                    TextField.SetTextAppearance (textAppearance);
-                }
-            }
-            TextField.SetSingleLine (true);
-            TextField.Background = null;
-            TextField.SetPadding (0, 0, 0, 0);
-            TextField.LayoutParameters = layoutParams;
-            ContentView.AddView (TextField);
-        }
-    }
-
-    public class MessageComposeHeaderLabelField : MessageComposeHeaderField
-    {
-        public TextView ValueLabel { get; private set; }
-
-        public MessageComposeHeaderLabelField (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
-        {
-            CreateValueLabel (attrs);
-        }
-
-        void CreateValueLabel (Android.Util.IAttributeSet attrs)
-        {
-            ValueLabel = new TextView (Context);
-            var attrIds = new int [] {
-                Resource.Attribute.valueTextAppearance
-            };
-            var layoutParams = new LinearLayout.LayoutParams (LayoutParams.MatchParent, LayoutParams.WrapContent);
-            using (var values = new AttributeValues (Context, attrs, attrIds)) {
-                var textAppearance = values.GetResourceId (Resource.Attribute.valueTextAppearance, 0);
-                if (textAppearance != 0) {
-                    ValueLabel.SetTextAppearance (textAppearance);
-                }
-            }
-            ValueLabel.SetSingleLine (true);
-            ValueLabel.Ellipsize = TextUtils.TruncateAt.End;
-            ValueLabel.Background = null;
-            ValueLabel.SetPadding (0, 0, 0, 0);
-            ValueLabel.LayoutParameters = layoutParams;
-            ContentView.AddView (ValueLabel);
-        }
-    }
-
     public class MessageComposeHeaderView : LinearLayout
     {
 
@@ -242,7 +46,7 @@ namespace NachoClient.AndroidClient
         bool HasMultipleAccounts;
 
         bool ShouldCollapseFrom {
-        	get {
+            get {
                 return (!UserHasOpenedFrom) && CcField.AddressField.Objects.Count == 0 && BccField.AddressField.Objects.Count == 0;
             }
         }
@@ -255,6 +59,7 @@ namespace NachoClient.AndroidClient
         public MessageComposeHeaderLabelField FromField { get; private set; }
         public MessageComposeHeaderLabelField CollapsedFromField { get; private set; }
         public MessageComposeHeaderTextField SubjectField { get; private set; }
+        public MessageComposeHeaderAttachmentsField AttachmentsField { get; private set; }
 
         void FindSubviews ()
         {
@@ -264,6 +69,7 @@ namespace NachoClient.AndroidClient
             FromField = FindViewById (Resource.Id.from) as MessageComposeHeaderLabelField;
             CollapsedFromField = FindViewById (Resource.Id.from_collapsed) as MessageComposeHeaderLabelField;
             SubjectField = FindViewById (Resource.Id.subject) as MessageComposeHeaderTextField;
+            AttachmentsField = FindViewById (Resource.Id.attachments) as MessageComposeHeaderAttachmentsField;
 
             ToField.AddressField.AllowDuplicates (false);
             ToField.AddressField.Adapter = new ContactAddressAdapter (Context);
@@ -282,6 +88,10 @@ namespace NachoClient.AndroidClient
 
             SubjectField.TextField.TextChanged += SubjectChanged;
             SubjectField.TextField.InputType = InputTypes.ClassText | InputTypes.TextFlagCapSentences;
+
+            AttachmentsField.AddAttachment += AttachmentFieldClicked;
+            AttachmentsField.AttachmentClicked += AttachmentClicked;
+            AttachmentsField.AttachmentRemoved += AttachmentRemoved;
         }
 
         #endregion
@@ -330,7 +140,7 @@ namespace NachoClient.AndroidClient
             BccField.Visibility = ShouldCollapseFrom ? ViewStates.Gone : ViewStates.Visible;
             FromField.Visibility = ShouldCollapseFrom || !HasMultipleAccounts ? ViewStates.Gone : ViewStates.Visible;
             CollapsedFromField.Visibility = ShouldCollapseFrom ? ViewStates.Visible : ViewStates.Gone;
-        	base.OnLayout (changed, l, t, r, b);
+            base.OnLayout (changed, l, t, r, b);
         }
 
         public void FocusSubject ()
@@ -349,14 +159,14 @@ namespace NachoClient.AndroidClient
 
         void ToFieldChanged (object sender, EventArgs e)
         {
-        	if (Delegate != null) {
+            if (Delegate != null) {
                 Delegate.MessageComposeHeaderViewDidChangeTo (this, ToField.AddressField.AddressString);
             }
         }
 
         void SubjectChanged (object sender, TextChangedEventArgs e)
         {
-        	if (Delegate != null) {
+            if (Delegate != null) {
                 Delegate.MessageComposeHeaderViewDidChangeSubject (this, SubjectField.TextField.Text);
             }
         }
@@ -371,7 +181,7 @@ namespace NachoClient.AndroidClient
 
         void CcFieldChanged (object sender, EventArgs e)
         {
-        	if (Delegate != null) {
+            if (Delegate != null) {
                 Delegate.MessageComposeHeaderViewDidChangeCc (this, CcField.AddressField.AddressString);
             }
         }
@@ -388,6 +198,42 @@ namespace NachoClient.AndroidClient
             UserHasOpenedFrom = true;
             CcField.AddressField.RequestFocus ();
             RequestLayout ();
+        }
+
+        void AttachmentFieldClicked (object sender, EventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidSelectAddAttachment (this);
+            }
+        }
+
+        void AttachmentClicked (object sender, NachoCore.Model.McAttachment e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidSelectAttachment (this, e);
+            }
+        }
+
+
+        void AttachmentRemoved (object sender, NachoCore.Model.McAttachment e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidRemoveAttachment (this, e);
+            }
+        }
+
+        #endregion
+
+        #region Attachments
+
+        public void SetAttachments (List<McAttachment> attachments)
+        {
+            AttachmentsField.Adapter.SetAttachments (attachments);
+        }
+
+        public void AddAttachment (McAttachment attachment)
+        {
+            AttachmentsField.Adapter.AddAttachment (attachment);
         }
 
         #endregion
