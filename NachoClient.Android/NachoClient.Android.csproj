@@ -296,6 +296,7 @@
     <Compile Include="NachoUI.Android\FoldersList\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\FoldersList\FoldersActivity.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\AttachmentChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\MessageList\MessageListFilterbar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1631,6 +1632,38 @@
     <AndroidResource Include="Resources\drawable-mdpi\action_share.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\action_share.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_share.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_all_selected.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_all.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_focus_selected.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_focus.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_hot_selected.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_hot.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_unread_selected.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_filter_unread.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_all_selected.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_all.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_focus_selected.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_focus.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_hot_selected.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_hot.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_unread_selected.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_filter_unread.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_all_selected.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_all.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_focus_selected.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_focus.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_hot_selected.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_hot.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_unread_selected.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_filter_unread.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_all_selected.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_all.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_focus_selected.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_focus.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_hot_selected.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_hot.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_unread_selected.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_filter_unread.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
         #region Subviews
 
         SwipeRefreshLayout SwipeRefresh;
+        MessageListFilterbar FilterBar;
         RecyclerView ListView;
 
         void FindSubviews (View view)
@@ -42,12 +43,15 @@ namespace NachoClient.AndroidClient
             SwipeRefresh = view.FindViewById (Resource.Id.swipe_refresh_layout) as SwipeRefreshLayout;
             ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
             ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
+            FilterBar = view.FindViewById (Resource.Id.filterbar) as MessageListFilterbar;
         }
 
         void ClearSubviews ()
         {
             SwipeRefresh = null;
             ListView = null;
+            FilterBar.Cleanup ();
+            FilterBar = null;
         }
 
         #endregion
@@ -64,6 +68,7 @@ namespace NachoClient.AndroidClient
             SwipeRefresh.Refresh += SwipeRefreshActivated;
             SyncManager = new MessagesSyncManager ();
             SyncManager.Delegate = this;
+            UpdateFilterbar ();
             return view;
         }
 
@@ -252,6 +257,88 @@ namespace NachoClient.AndroidClient
         {
             SyncManager.Cancel ();
             EndRefreshing ();
+        }
+
+        #endregion
+
+        #region Filtering
+
+        protected bool ShouldShowFilterBar {
+        	get {
+        		return Messages.HasFilterSemantics () && Messages.PossibleFilterSettings.Length > 1;
+            }
+        }
+
+        void UpdateFilterbar ()
+        {
+            if (ShouldShowFilterBar) {
+                FilterBar.Visibility = ViewStates.Visible;
+
+                var items = new List<MessageListFilterbar.Item> ();
+                var filters = Messages.PossibleFilterSettingsMask;
+                MessageListFilterbar.Item selectedItem = null;
+
+                if (filters.HasFlag (FolderFilterOptions.All)) {
+                    items.Add (new MessageListFilterbar.Item (Resource.String.messages_filter_all, Resource.Drawable.email_filter_all, Resource.Drawable.email_filter_all_selected, FilterAll));
+                    if (Messages.FilterSetting == FolderFilterOptions.All) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Hot)) {
+                    items.Add (new MessageListFilterbar.Item (Resource.String.messages_filter_hot, Resource.Drawable.email_filter_hot, Resource.Drawable.email_filter_hot_selected, FilterHot));
+                    if (Messages.FilterSetting == FolderFilterOptions.Hot) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Unread)) {
+                    items.Add (new MessageListFilterbar.Item (Resource.String.messages_filter_unread, Resource.Drawable.email_filter_unread, Resource.Drawable.email_filter_unread_selected, FilterUnread));
+                    if (Messages.FilterSetting == FolderFilterOptions.Unread) {
+                        selectedItem = items.Last ();
+                    }
+                }
+                if (filters.HasFlag (FolderFilterOptions.Focused)) {
+                    items.Add (new MessageListFilterbar.Item (Resource.String.messages_filter_focus, Resource.Drawable.email_filter_focus, Resource.Drawable.email_filter_focus_selected, FilterFocus));
+                    if (Messages.FilterSetting == FolderFilterOptions.Focused) {
+                        selectedItem = items.Last ();
+                    }
+                }
+
+                FilterBar.SetItems (items.ToArray ());
+                FilterBar.SelectItem (selectedItem);
+
+            } else {
+                FilterBar.Visibility = ViewStates.Gone;
+            }
+        }
+
+
+
+        void FilterAll ()
+        {
+            //EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.All;
+            SetNeedsReload ();
+        }
+
+        void FilterHot ()
+        {
+            //EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.Hot;
+            SetNeedsReload ();
+        }
+
+        void FilterUnread ()
+        {
+            //EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.Unread;
+            SetNeedsReload ();
+        }
+
+        void FilterFocus ()
+        {
+        	//EndAllTableEdits ();
+        	Messages.FilterSetting = FolderFilterOptions.Focused;
+        	SetNeedsReload ();
         }
 
         #endregion

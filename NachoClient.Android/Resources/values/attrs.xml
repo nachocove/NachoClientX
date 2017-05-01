@@ -50,6 +50,12 @@
     <attr name="contentPaddingBottom" format="dimension"/>
     <attr name="separatorColor" format="reference|color"/>
     <attr name="iconSrc" format="reference"/>
+    <attr name="filterbarPaddingLeft" format="dimension"/>
+    <attr name="filterbarPaddingTop" format="dimension"/>
+    <attr name="filterbarPaddingRight" format="dimension"/>
+    <attr name="filterbarPaddingBottom" format="dimension"/>
+    <attr name="filterbarColor" format="color"/>
+    <attr name="filterbarSeparatorColor" format="color"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>
@@ -63,5 +69,8 @@
     	<attr name="contentPaddingBottom"/>
     	<attr name="separatorColor"/>
         <attr name="iconSrc"/>
+    </declare-styleable>
+    <declare-styleable name="MessageListFilterbar">
+        <attr name="filterbarSeparatorColor"/>
     </declare-styleable>
 </resources>

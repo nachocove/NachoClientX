@@ -37,6 +37,10 @@
     <string name="message_item_action_event">Create Event</string>
     <string name="message_item_action_read">Mark as Read</string>
     <string name="message_item_action_unread">Mark as Unread</string>
+    <string name="messages_filter_all">All</string>
+    <string name="messages_filter_hot">Hot</string>
+    <string name="messages_filter_unread">Unread</string>
+    <string name="messages_filter_focus">Focus</string>
 
     <!-- Message View -->
     <string name="message_action_forward">Forward</string>
