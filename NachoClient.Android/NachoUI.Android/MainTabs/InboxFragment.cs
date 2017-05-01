@@ -54,8 +54,7 @@ namespace NachoClient.AndroidClient
 
 			SetEmailMessages (NcEmailManager.Inbox (Account.Id));
 
-            // TODO: update filter bar
-            //UpdateFilterBar ();
+            UpdateFilterbar ();
             ReloadTable (); // to clear the table since the new Messages is empty
             HasLoadedOnce = false;
 

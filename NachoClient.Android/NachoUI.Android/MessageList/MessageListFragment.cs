@@ -269,7 +269,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void UpdateFilterbar ()
+        protected void UpdateFilterbar ()
         {
             if (ShouldShowFilterBar) {
                 FilterBar.Visibility = ViewStates.Visible;

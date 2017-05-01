@@ -96,8 +96,8 @@
         <item name="accountPickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
         <item name="accountPickerItemPaddingTop">@dimen/nacho_item_padding_top</item>
         <item name="accountPickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
-        <item name="filterbarPaddingLeft">@dimen/nacho_item_padding_left</item>
-        <item name="filterbarPaddingRight">@dimen/nacho_item_padding_left</item>
+        <item name="filterbarPaddingLeft">40dp</item>
+        <item name="filterbarPaddingRight">40dp</item>
         <item name="filterbarPaddingTop">0dp</item>
         <item name="filterbarPaddingBottom">0dp</item>
         <item name="filterbarColor">#e6e7e8</item>
