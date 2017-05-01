@@ -37,13 +37,13 @@ namespace NachoClient.AndroidClient
     {
 
         private const string FRAGMENT_ATTACHMENT_CHOOSER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_ATTACHMENT_CHOOSER";
+        private const string FRAGMENT_FILE_PICKER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_FILE_PICKER";
+        private const string FRAGMENT_ACCOUNT_CHOOSER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_ACCOUNT_CHOOSER";
 
-        private const string FILE_PICKER_TAG = "FilePickerFragment";
-        private const string ACCOUNT_CHOOSER_TAG = "AccountChooser";
         private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
 
-        private const int PICK_REQUEST_CODE = 1;
-        private const int TAKE_PHOTO_REQUEST_CODE = 2;
+        private const int REQUEST_EXTERNAL_APP = 1;
+        private const int REQUEST_TAKE_PHOTO = 2;
 
         #region Properties
 
@@ -75,21 +75,8 @@ namespace NachoClient.AndroidClient
 
         public bool CanSend { get; private set; }
 
-        private bool _MessageIsReady = true;
-
-        public bool MessageIsReady {
-        	private get {
-        		return _MessageIsReady;
-        	}
-        	set {
-        		if (!_MessageIsReady && value) {
-        			Composer.Message = McEmailMessage.QueryById<McEmailMessage> (Composer.Message.Id);
-        			BeginComposing ();
-        		}
-                _MessageIsReady = value;
-            }
-        }
-
+        bool IsSavingHTML;
+        string SavedHTML;
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
@@ -101,7 +88,6 @@ namespace NachoClient.AndroidClient
 
         public MessageComposeFragment () : base ()
         {
-            JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
             RetainInstance = true;
         }
 
@@ -159,6 +145,8 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreateView");
             var view = inflater.Inflate (Resource.Layout.MessageComposeFragment, container, false);
 
+            JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
+
             FindSubviews (view);
 
             BeginComposing ();
@@ -173,19 +161,35 @@ namespace NachoClient.AndroidClient
             if (CameraOutputUri != null) {
                 outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
             }
+            EndEditing ();
+            IsSavingHTML = true;
+            GetHtmlContent ((html) => {
+                SavedHTML = html;
+                IsSavingHTML = false;
+                if (WebView != null) {
+                    DisplayMessageBody ();
+                    SavedHTML = null;
+                }
+            });
         }
 
         public override void OnDestroyView ()
         {
             Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnDestroyView");
             ClearSubviews ();
+            IsWebViewLoaded = false;
             base.OnDestroyView ();
         }
 
         void BeginComposing ()
         {
-            if (MessageIsReady && Composer != null) {
-                Composer.StartPreparingMessage ();
+            if (Composer != null) {
+                if (SavedHTML != null) {
+                    DisplayMessageBody ();
+                    SavedHTML = null;
+                } else if (!IsSavingHTML) {
+                    Composer.StartPreparingMessage ();
+                }
                 UpdateHeader ();
                 UpdateSendEnabled ();
                 if (Composer.InitialQuickReply) {
@@ -350,12 +354,12 @@ namespace NachoClient.AndroidClient
                 }
                 switch (attachmentChooser.SelectedSource.Identifier) {
                 case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_TAKE_PHOTO:
-                    CameraOutputUri = Util.TakePhoto (this, TAKE_PHOTO_REQUEST_CODE);
+                    CameraOutputUri = Util.TakePhoto (this, REQUEST_TAKE_PHOTO);
                     break;
                 case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_NACHO_FILE:
                     var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
                     filePicker.Delegate = this;
-                    filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
+                    filePicker.Show (FragmentManager, FRAGMENT_FILE_PICKER); 
                     break;
                 default:
                     InvokeApplication (attachmentChooser.SelectedSource.Identifier);
@@ -375,7 +379,7 @@ namespace NachoClient.AndroidClient
             intent.PutExtra (Intent.ExtraAllowMultiple, true);
             intent.SetPackage (packageName);
 
-            StartActivityForResult (intent, PICK_REQUEST_CODE);
+            StartActivityForResult (intent, REQUEST_EXTERNAL_APP);
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -383,7 +387,7 @@ namespace NachoClient.AndroidClient
             if (Result.Ok != resultCode) {
                 return;
             }
-            if (TAKE_PHOTO_REQUEST_CODE == requestCode) {
+            if (REQUEST_TAKE_PHOTO == requestCode) {
                 var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
                 mediaScanIntent.SetData (CameraOutputUri);
                 Activity.SendBroadcast (mediaScanIntent);
@@ -396,7 +400,7 @@ namespace NachoClient.AndroidClient
                 File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
                 HeaderView.AddAttachment (attachment);
-            } else if (PICK_REQUEST_CODE == requestCode) {
+            } else if (REQUEST_EXTERNAL_APP == requestCode) {
                 try {
                     var clipData = data.ClipData;
                     if (null == clipData) {
@@ -485,7 +489,7 @@ namespace NachoClient.AndroidClient
         {
             EndEditing ();
             var accountChooser = new AccountChooserFragment ();
-            accountChooser.Show (FragmentManager, ACCOUNT_CHOOSER_TAG, Composer.Account, () => {
+            accountChooser.Show (FragmentManager, FRAGMENT_ACCOUNT_CHOOSER, Composer.Account, () => {
                 var selectedAccount = accountChooser.SelectedAccount;
                 if (selectedAccount.Id != Composer.Account.Id) {
                     Composer.SetAccount (selectedAccount);
@@ -636,7 +640,9 @@ namespace NachoClient.AndroidClient
         void DisplayMessageBody ()
         {
             if (Composer.Bundle != null) {
-                if (Composer.Bundle.FullHtmlUrl != null) {
+                if (SavedHTML != null) {
+                    WebView.LoadDataWithBaseURL (Composer.Bundle.BaseUrl.AbsoluteUri, SavedHTML, "text/html", "utf-8", null);
+                } else if (Composer.Bundle.FullHtmlUrl != null) {
                     WebView.LoadUrl (Composer.Bundle.FullHtmlUrl.AbsoluteUri);
                 } else {
                     var html = Composer.Bundle.FullHtml;
