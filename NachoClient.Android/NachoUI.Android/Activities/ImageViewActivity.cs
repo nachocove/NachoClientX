@@ -11,40 +11,109 @@ using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using Android.Widget;
+using Android.Support.V7.Widget;
 using NachoCore.Model;
+
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "ImageViewActivity")]            
+    [Activity ()]
     public class ImageViewActivity : NcActivity
     {
+
         private const string EXTRA_ATTACHMENT_ID = "com.nachocove.nachomail.EXTRA_ATTACHMENT_ID";
 
+        McAttachment Attachment;
 
-        public static Intent ImageViewIntent (Context context, McAttachment attachment)
+        #region Intents
+
+        public static Intent BuildIntent (Context context, McAttachment attachment)
         {
-            var intent = new Intent (context, typeof(ImageViewActivity));
+            var intent = new Intent (context, typeof (ImageViewActivity));
             intent.SetAction (Intent.ActionView);
             intent.PutExtra (EXTRA_ATTACHMENT_ID, attachment.Id);
             return intent;
         }
 
-        public static void ExtractValues (Intent intent, out McAttachment attachment)
+        #endregion
+
+        #region Subviews
+
+        Toolbar Toolbar;
+
+        void FindSubviews ()
         {
-            var id = intent.GetIntExtra (EXTRA_ATTACHMENT_ID, 0);
-            attachment = McAttachment.QueryById<McAttachment> (id);
+            Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
         }
+
+        void ClearSubviews ()
+        {
+            Toolbar = null;
+        }
+
+        #endregion
+
+        #region Activity Lifecycle
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
+            PopulateFromIntent ();
             SetContentView (Resource.Layout.ImageViewActivity);
+            FindSubviews ();
+            Toolbar.Title = "";
+            SetSupportActionBar (Toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+        }
 
-            if (null == FragmentManager.FindFragmentByTag ("Viewer")) {
-                var imageViewFragment = ImageViewFragment.newInstance ();
-                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, imageViewFragment, "Viewer").Commit ();
+        public override void OnAttachFragment (Fragment fragment)
+        {
+            base.OnAttachFragment (fragment);
+            if (fragment is ImageViewFragment) {
+                (fragment as ImageViewFragment).Attachment = Attachment;
             }
+        }
+
+        protected override void OnDestroy ()
+        {
+            ClearSubviews ();
+            base.OnDestroy ();
+        }
+
+        public void PopulateFromIntent ()
+        {
+        	var attachmentId = Intent.GetIntExtra (EXTRA_ATTACHMENT_ID, 0);
+        	Attachment = McAttachment.QueryById<McAttachment> (attachmentId);
+        }
+
+        #endregion
+
+        #region Options Menu
+
+        public override bool OnCreateOptionsMenu (IMenu menu)
+        {
+            MenuInflater.Inflate (Resource.Menu.image_view, menu);
+            return base.OnCreateOptionsMenu (menu);
+        }
+
+        public override bool OnOptionsItemSelected (IMenuItem item)
+        {
+            switch (item.ItemId) {
+            case Android.Resource.Id.Home:
+                Finish ();
+                return true;
+            case Resource.Id.action_share:
+                Share ();
+                return true;
+            }
+            return base.OnOptionsItemSelected (item);
+        }
+
+        #endregion
+
+        void Share ()
+        {
+            AttachmentHelper.OpenAttachment (this, Attachment, useInternalViewer: false);
         }
     }
 }

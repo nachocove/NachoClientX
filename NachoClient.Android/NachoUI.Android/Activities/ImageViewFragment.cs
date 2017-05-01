@@ -20,13 +20,30 @@ namespace NachoClient.AndroidClient
 {
     public class ImageViewFragment : Fragment
     {
-        McAttachment attachment;
+        public McAttachment Attachment;
 
-        public static ImageViewFragment newInstance ()
+        public ImageViewFragment () : base ()
         {
-            var fragment = new ImageViewFragment ();
-            return fragment;
+            RetainInstance = true;
         }
+
+        #region Subviews
+
+        WebView WebView;
+
+        void FindSubviews (View view)
+        {
+            WebView = view.FindViewById (Resource.Id.webview) as WebView;
+        }
+
+        void ClearSubviews ()
+        {
+            WebView = null;
+        }
+
+        #endregion
+
+        #region Fragment Lifecycle
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -37,34 +54,30 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.ImageViewFragment, container, false);
 
-            ImageViewActivity.ExtractValues (Activity.Intent, out attachment);
+            FindSubviews (view);
+            WebView.Settings.LoadWithOverviewMode = true;
+            WebView.Settings.BuiltInZoomControls = true;
 
-            if (null == attachment) {
-                Activity.Finish ();
-                return view;
-            }
-
-            var buttonBar = new ButtonBar (view);
-            buttonBar.SetIconButton (ButtonBar.Button.Right1, Android.Resource.Drawable.IcMenuShare, ShareButton_Click);
-
-            var webview = view.FindViewById<WebView> (Resource.Id.webview);
-            webview.Settings.LoadWithOverviewMode = true;
-            webview.Settings.BuiltInZoomControls = true;
-
-            var pathToImage = attachment.GetFileDirectory ();
-            var imageName = attachment.GetFileName ();
-
-            var baseUri = Android.Net.Uri.FromFile (new Java.IO.File (pathToImage));
-
-            var body = String.Format ("<style>img{{display: inline; height: auto; max-width: 100%;}}</style><body><image src=\"{0}\"/></body>", imageName);
-            webview.LoadDataWithBaseURL (baseUri.ToString () + "/", body, "text/html", "utf-8", null);
+            LoadAttachment ();
 
             return view;
         }
 
-        private void ShareButton_Click (object sender, EventArgs e)
+        public override void OnDestroyView ()
         {
-            AttachmentHelper.OpenAttachment (Activity, attachment, useInternalViewer: false);
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
+
+        #endregion
+
+        void LoadAttachment ()
+        {
+            var pathToImage = Attachment.GetFileDirectory ();
+            var imageName = Attachment.GetFileName ();
+            var baseUri = Android.Net.Uri.FromFile (new Java.IO.File (pathToImage));
+            var body = String.Format ("<!DOCTYPE html><html><head><style>img{{display: inline; height: auto; max-width: 100%;}}</style></head><body><image src=\"{0}\"/></body>", imageName);
+            WebView.LoadDataWithBaseURL (baseUri.ToString () + "/", body, "text/html", "utf-8", null);
         }
     }
 }

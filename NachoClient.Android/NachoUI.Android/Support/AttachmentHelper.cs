@@ -100,7 +100,7 @@ namespace NachoClient.AndroidClient
         public static void OpenAttachment (Context context, McAttachment attachment, bool useInternalViewer = true)
         {
             if (useInternalViewer && attachment.IsImageFile ()) {
-                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment);
+                var viewerIntent = ImageViewActivity.BuildIntent (context, attachment);
                 context.StartActivity (viewerIntent);
                 return;
             }

@@ -1626,6 +1626,11 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\action_attach.png" />
     <AndroidResource Include="Resources\layout\MessageComposeAttachmentListItem.axml" />
     <AndroidResource Include="Resources\layout\AttachmentSourceListItem.axml" />
+    <AndroidResource Include="Resources\menu\image_view.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_share.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_share.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_share.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_share.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
