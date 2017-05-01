@@ -12,107 +12,92 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
-    public class AccountChooserFragment : DialogFragment
+    public class AccountChooserFragment : NcDialogFragment
     {
-        public delegate void AccountSelectedDelegate (McAccount selectedAccount);
 
-        private McAccount initialSelection;
-        private AccountSelectedDelegate selectedCallback;
-        private AlertDialog dialog;
-        private AccountChooserAdapter adapter;
+        public McAccount SelectedAccount { get; private set; }
+        private AccountChooserAdapter Adapter;
 
-        public void SetValues (McAccount initialSelection, AccountSelectedDelegate selectedCallback)
+        public AccountChooserFragment () : base ()
         {
-            this.initialSelection = initialSelection;
-            this.selectedCallback = selectedCallback;
             RetainInstance = true;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
             var accounts = McAccount.GetAllConfiguredNormalAccounts ();
-            adapter = new AccountChooserAdapter (accounts, initialSelection);
+            Adapter = new AccountChooserAdapter (accounts, SelectedAccount);
 
-            var view = new ListView (this.Activity);
-            view.Id = Resource.Id.listView;
-            view.Adapter = adapter;
-
-            dialog = new AlertDialog.Builder (this.Activity).Create ();
-            dialog.SetView (view);
-            return dialog;
+            var builder = new AlertDialog.Builder (this.Activity);
+            builder.SetAdapter (Adapter, ItemClick);
+            return builder.Create ();
         }
 
-        public override void OnResume ()
+        private void ItemClick (object sender, Android.Content.DialogClickEventArgs e)
         {
-            base.OnResume ();
-            dialog.FindViewById<ListView> (Resource.Id.listView).ItemClick += ItemClick;
+            SelectedAccount = Adapter [e.Which];
+            Adapter.NotifyDataSetChanged ();
+            Dismiss ();
         }
 
-        public override void OnPause ()
+        public void Show (FragmentManager manager, string tag, McAccount selectedAccount, Action dismissAction)
         {
-            base.OnPause ();
-            dialog.FindViewById<ListView> (Resource.Id.listView).ItemClick -= ItemClick;
-        }
-
-        private void ItemClick (object sender, AdapterView.ItemClickEventArgs e)
-        {
-            initialSelection = adapter [e.Position];
-            adapter.NotifyDataSetChanged ();
-            dialog.Dismiss ();
-            if (null != selectedCallback) {
-                selectedCallback (adapter [e.Position]);
-            }
+            SelectedAccount = selectedAccount;
+            Show (manager, tag, dismissAction);
         }
 
         private class AccountChooserAdapter : BaseAdapter<McAccount>
         {
-            private List<McAccount> listItems;
-            private McAccount selected;
+            private List<McAccount> Accounts;
+            private McAccount SelectedAccount;
 
-            public AccountChooserAdapter (List<McAccount> accounts, McAccount initialSelection)
+            public AccountChooserAdapter (List<McAccount> accounts, McAccount selectedAccount)
             {
-                this.selected = initialSelection;
+                SelectedAccount = selectedAccount;
 
-                listItems = new List<McAccount> ();
+                Accounts = new List<McAccount> ();
                 foreach (var account in accounts) {
                     if (McAccount.AccountTypeEnum.Unified != account.AccountType) {
-                        listItems.Add (account);
+                        Accounts.Add (account);
                     }
                 }
             }
 
             public override int Count {
                 get {
-                    return listItems.Count;
+                    return Accounts.Count;
                 }
             }
 
             public override McAccount this [int index] {
                 get {
-                    return listItems [index];
+                    return Accounts [index];
                 }
             }
 
             public override long GetItemId (int position)
             {
-                return listItems [position].Id;
+                return Accounts [position].Id;
             }
 
             public override View GetView (int position, View convertView, ViewGroup parent)
             {
-                View cellView;
-                var account = listItems [position];
-                cellView = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.AccountChooserCell, parent, false);
-                var imageView = cellView.FindViewById<ImageView> (Resource.Id.account_icon);
-                imageView.SetImageDrawable (Util.GetAccountImage (imageView.Context, account));
-                if (account.Id == selected.Id) {
-                    cellView.SetBackgroundColor (new Android.Graphics.Color (0x11000000));
+                View view = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.AccountChooserCell, parent, false);
+                var account = Accounts [position];
+
+                var imageView = view.FindViewById<ImageView> (Resource.Id.account_icon);
+                var nameLabel = view.FindViewById<TextView> (Resource.Id.account_name);
+                var emailLabel = view.FindViewById<TextView> (Resource.Id.account_email);
+
+                if (account.Id == SelectedAccount.Id) {
+                    view.SetBackgroundColor (new Android.Graphics.Color (0x11000000));
                 } else {
-                    var values = cellView.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.SelectableItemBackground });
-                    cellView.SetBackgroundResource (values.GetResourceId (0, 0));
+                    var values = view.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.SelectableItemBackground });
+                    view.SetBackgroundResource (values.GetResourceId (0, 0));
                 }
-                var nameLabel = cellView.FindViewById<TextView> (Resource.Id.account_name);
-                var emailLabel = cellView.FindViewById<TextView> (Resource.Id.account_email);
+
+                imageView.SetImageDrawable (Util.GetAccountImage (imageView.Context, account));
+
                 if (!String.IsNullOrEmpty (account.DisplayName)) {
                     nameLabel.Text = account.DisplayName;
                     emailLabel.Text = account.EmailAddr;
@@ -121,7 +106,8 @@ namespace NachoClient.AndroidClient
                     nameLabel.Text = account.EmailAddr;
                     emailLabel.Visibility = ViewStates.Gone;
                 }
-                return cellView;
+
+                return view;
             }
         }
     }

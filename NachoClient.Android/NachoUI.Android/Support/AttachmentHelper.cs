@@ -141,52 +141,5 @@ namespace NachoClient.AndroidClient
 
     }
 
-
-    public class ChooserArrayAdapter : ArrayAdapter<String>
-    {
-        PackageManager mPm;
-        int mTextViewResourceId;
-        List<String> mPackages;
-
-        public static string ADD_FILE = "Browse Attachments";
-        public static string TAKE_PHOTO = "Take Photo";
-
-        public ChooserArrayAdapter (Context context, int resource, int textViewResourceId, List<String> packages) :
-            base (context, resource, textViewResourceId, packages)
-        {
-            mPm = context.PackageManager;
-            mTextViewResourceId = textViewResourceId;
-            mPackages = packages;
-        }
-
-        public override View GetView (int position, View convertView, ViewGroup parent)
-        {
-            var pkg = mPackages [position];
-            var view = base.GetView (position, convertView, parent);
-
-            try {
-                string appName;
-                Drawable appIcon;
-                if (ADD_FILE == pkg) {
-                    appName = pkg;
-                    appIcon = parent.Resources.GetDrawable (Resource.Drawable.attachment_add_files);
-                } else if (TAKE_PHOTO == pkg) {
-                    appName = pkg;
-                    appIcon = parent.Resources.GetDrawable (Resource.Drawable.attachment_take_photo);
-                } else {
-                    var ai = mPm.GetApplicationInfo (pkg, 0);
-                    appName = mPm.GetApplicationLabel (ai);
-                    appIcon = mPm.GetApplicationIcon (pkg);
-                }
-                TextView textView = (TextView)view.FindViewById (mTextViewResourceId);
-                textView.Text = appName;
-                textView.SetCompoundDrawablesWithIntrinsicBounds (appIcon, null, null, null);
-                textView.CompoundDrawablePadding = (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, 14, Context.Resources.DisplayMetrics);
-            } catch (Android.Content.PM.PackageManager.NameNotFoundException e) {
-                NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_EMAIL, "ChooserArrayAdapter: {0}", e);
-            }
-            return view;
-        }
-    }
 }
 

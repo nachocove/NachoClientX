@@ -83,6 +83,10 @@
     <string name="message_compose_field_subject">Subject:</string>
     <string name="message_compose_field_attachments">Attachments:</string>
 
+    <!-- Attachment Picker -->
+    <string name="attachment_chooser_take_photo">Take Photo</string>
+    <string name="attachment_chooser_nacho_files">Browse Attachments</string>
+
     <!-- All Mail -->
     <string name="folders_recent">Recent Folders</string>
 
@@ -170,6 +174,7 @@
     <string name="demo_attachment_detail">100 kb</string>
     <string name="demo_contact_name">Test Contact</string>
     <string name="demo_contact_email">email@address.com</string>
+    <string name="demo_attachment_source">Take a Photo</string>
 
 
     <!-- OLD -->

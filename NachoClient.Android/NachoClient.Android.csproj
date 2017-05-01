@@ -295,6 +295,7 @@
     <Compile Include="NachoUI.Android\MainTabs\ContactsFragment.cs" />
     <Compile Include="NachoUI.Android\FoldersList\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\FoldersList\FoldersActivity.cs" />
+    <Compile Include="NachoUI.Android\MessageCompose\AttachmentChooserFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1624,6 +1625,7 @@
     <AndroidResource Include="Resources\drawable-xhdpi\action_attach.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_attach.png" />
     <AndroidResource Include="Resources\layout\MessageComposeAttachmentListItem.axml" />
+    <AndroidResource Include="Resources\layout\AttachmentSourceListItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

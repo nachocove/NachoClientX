@@ -35,6 +35,9 @@ namespace NachoClient.AndroidClient
         FilePickerFragmentDelegate,
         QuickResponseFragmentDelegate
     {
+
+        private const string FRAGMENT_ATTACHMENT_CHOOSER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_ATTACHMENT_CHOOSER";
+
         private const string FILE_PICKER_TAG = "FilePickerFragment";
         private const string ACCOUNT_CHOOSER_TAG = "AccountChooser";
         private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
@@ -339,45 +342,31 @@ namespace NachoClient.AndroidClient
 
         void ShowAttachmentPicker ()
         {
-            Intent shareIntent = new Intent ();
-            shareIntent.SetAction (Intent.ActionGetContent);
-            shareIntent.AddCategory (Intent.CategoryOpenable);
-            shareIntent.SetType ("*/*");
-            shareIntent.PutExtra (Intent.ExtraAllowMultiple, true);
-            var resInfos = Activity.PackageManager.QueryIntentActivities (shareIntent, 0);
-            var packages = new List<string> ();
-            if (Util.CanTakePhoto (Activity)) {
-                packages.Add (ChooserArrayAdapter.TAKE_PHOTO);
-            }
-            packages.Add (ChooserArrayAdapter.ADD_FILE);
-            foreach (var resInfo in resInfos) {
-                packages.Add (resInfo.ActivityInfo.PackageName);
-            }
-            if (packages.Count > 1) {
-                ArrayAdapter<String> adapter = new ChooserArrayAdapter (Activity, Android.Resource.Layout.SelectDialogItem, Android.Resource.Id.Text1, packages);
-                var builder = new AlertDialog.Builder (Activity);
-                builder.SetAdapter (adapter, (s, ev) => {
-                    InvokeApplication (packages [ev.Which]);
-                });
-                builder.Show ();
-            } else if (1 == packages.Count) {
-                InvokeApplication (packages [0]);
-            }
+
+            var attachmentChooser = new AttachmentChooserFragment ();
+            attachmentChooser.Show (FragmentManager, FRAGMENT_ATTACHMENT_CHOOSER, () => {
+                if (attachmentChooser.SelectedSource == null) {
+                    return;
+                }
+                switch (attachmentChooser.SelectedSource.Identifier) {
+                case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_TAKE_PHOTO:
+                    CameraOutputUri = Util.TakePhoto (this, TAKE_PHOTO_REQUEST_CODE);
+                    break;
+                case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_NACHO_FILE:
+                    var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
+                    filePicker.Delegate = this;
+                    filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
+                    break;
+                default:
+                    InvokeApplication (attachmentChooser.SelectedSource.Identifier);
+                    break;
+                }
+            });
 
         }
 
         void InvokeApplication (string packageName)
         {
-            if (ChooserArrayAdapter.TAKE_PHOTO == packageName) {
-                CameraOutputUri = Util.TakePhoto (this, TAKE_PHOTO_REQUEST_CODE);
-                return;
-            }
-            if (ChooserArrayAdapter.ADD_FILE == packageName) {
-                var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
-                filePicker.Delegate = this;
-                filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
-                return;
-            }
             var intent = new Intent ();
             intent.SetAction (Intent.ActionGetContent);
             intent.AddCategory (Intent.CategoryOpenable);
@@ -495,16 +484,16 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view, string from)
         {
             EndEditing ();
-            var accountFragment = new AccountChooserFragment ();
-            accountFragment.SetValues (Composer.Account, (McAccount selectedAccount) => {
+            var accountChooser = new AccountChooserFragment ();
+            accountChooser.Show (FragmentManager, ACCOUNT_CHOOSER_TAG, Composer.Account, () => {
+                var selectedAccount = accountChooser.SelectedAccount;
                 if (selectedAccount.Id != Composer.Account.Id) {
                     Composer.SetAccount (selectedAccount);
                     var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Composer.Account), Composer.Account.EmailAddr);
                     Composer.Message.From = mailbox.ToString ();
-                    UpdateHeaderFromView();
+					UpdateHeaderFromView();
                 }
             });
-            accountFragment.Show (FragmentManager, ACCOUNT_CHOOSER_TAG);
         }
 
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
