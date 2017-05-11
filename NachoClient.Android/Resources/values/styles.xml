@@ -53,7 +53,7 @@
         <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
-    <style name="NachoTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="NachoTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/NachoMainGreen</item>
         <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
         <item name="colorAccent">@color/NachoDarkenedBrightGreen</item>
@@ -102,11 +102,6 @@
         <item name="filterbarPaddingBottom">0dp</item>
         <item name="filterbarColor">#e6e7e8</item>
         <item name="filterbarSeparatorColor">#c3c4c5</item>
-    </style>
-
-    <style name="NachoTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

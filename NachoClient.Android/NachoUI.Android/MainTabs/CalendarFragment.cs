@@ -22,11 +22,10 @@ namespace NachoClient.AndroidClient
 
 		#region Tab Interface
 
-		public int TabMenuResource {
-			get {
-                return -1;
-			}
-		}
+        public bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu)
+        {
+            return false;
+        }
 
 		public void OnTabSelected (MainTabsActivity tabActivity)
 		{
@@ -39,6 +38,11 @@ namespace NachoClient.AndroidClient
 
         public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
+        }
+
+        public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            return false;
         }
 
 		#endregion

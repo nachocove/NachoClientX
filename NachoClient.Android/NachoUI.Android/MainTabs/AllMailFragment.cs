@@ -28,10 +28,10 @@ namespace NachoClient.AndroidClient
 
         #region Tab Interface
 
-        public int TabMenuResource {
-            get {
-                return Resource.Menu.allmail;
-            }
+        public bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu)
+        {
+            tabActivity.MenuInflater.Inflate (Resource.Menu.allmail, menu);
+            return true;
         }
 
         public void OnTabSelected (MainTabsActivity tabActivity)
@@ -50,6 +50,11 @@ namespace NachoClient.AndroidClient
         {
             Account = NcApplication.Instance.Account;
             ReloadFolders ();
+        }
+
+        public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            return false;
         }
 
         #endregion

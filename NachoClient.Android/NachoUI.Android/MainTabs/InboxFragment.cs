@@ -14,23 +14,28 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Android.Views.InputMethods;
 
 using NachoCore;
 using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    public class InboxFragment : MessageListFragment, MainTabsActivity.Tab
+    public class InboxFragment : MessageListFragment, MainTabsActivity.Tab, Android.Support.V4.View.MenuItemCompat.IOnActionExpandListener
     {
 
         private McAccount Account;
 
         #region Tab Interface
 
-        public int TabMenuResource {
-            get {
-                return Resource.Menu.inbox;
-            }
+        public bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu)
+        {
+            tabActivity.MenuInflater.Inflate (Resource.Menu.inbox, menu);
+            var searchItem = menu.FindItem (Resource.Id.search);
+            var searchView = (searchItem.ActionView as SearchView);
+            Android.Support.V4.View.MenuItemCompat.SetOnActionExpandListener (searchItem, this);
+            searchView.SetIconifiedByDefault (false);
+            return true;
         }
 
         public void OnTabSelected (MainTabsActivity tabActivity)
@@ -59,6 +64,16 @@ namespace NachoClient.AndroidClient
             HasLoadedOnce = false;
 
 			SetNeedsReload ();
+        }
+
+        public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            switch (item.ItemId) {
+            case Resource.Id.search:
+                ShowSearch (tabActivity, item);
+                return true;
+            }
+            return false;
         }
 
         #endregion
@@ -104,6 +119,47 @@ namespace NachoClient.AndroidClient
         {
             var intent = MessageComposeActivity.NewMessageIntent (Activity, NcApplication.Instance.Account.Id);
 			StartActivity (intent);
+        }
+
+        MessageSearchFragment SearchFragment;
+
+        void ShowSearch (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            tabActivity.EnterSearchMode ();
+            SearchFragment = new MessageSearchFragment ();
+            var searchView = (item.ActionView as SearchView);
+            var transaction = FragmentManager.BeginTransaction ();
+            transaction.Add (Resource.Id.content, SearchFragment);
+            transaction.Commit ();
+        }
+
+        void HideSearch (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            tabActivity.ExitSearchMode ();
+            var searchView = (item.ActionView as SearchView);
+            searchView.SetQuery ("", false);
+            var transaction = FragmentManager.BeginTransaction ();
+            transaction.Remove (SearchFragment);
+            transaction.Commit ();
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Context.InputMethodService);
+            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+        }
+
+        public bool OnMenuItemActionCollapse (IMenuItem item)
+        {
+            HideSearch ((Activity as MainTabsActivity), item);
+            return true;
+        }
+
+        public bool OnMenuItemActionExpand (IMenuItem item)
+        {
+            var searchView = (item.ActionView as SearchView);
+            searchView.RequestFocus ();
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Context.InputMethodService);
+                imm.ShowSoftInput (searchView.FindFocus (), ShowFlags.Implicit);
+            });
+        	return true;
         }
 
         #endregion

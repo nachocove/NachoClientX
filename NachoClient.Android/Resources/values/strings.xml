@@ -2,6 +2,7 @@
 <resources>
     
     <string name="app_name">Nacho Mail</string>
+    <string name="search_hint">Search</string>
 
     <!-- Startup -->
     <string name="startup_welcome">Welcome to</string>
@@ -22,6 +23,7 @@
     <string name="tab_calendar">Events</string>
     <string name="tab_contacts">People</string>
     <string name="main_action_settings">Settings</string>
+    <string name="main_action_search">Search</string>
 
     <!-- Account Switcher -->
     <string name="switcher_action_add_account">Add Account</string>

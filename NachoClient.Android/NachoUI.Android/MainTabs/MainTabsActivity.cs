@@ -189,10 +189,9 @@ namespace NachoClient.AndroidClient
             if (tab == null) {
                 return false;
             }
-            if (tab.TabMenuResource < 0) {
+            if (!tab.OnCreateOptionsMenu (this, menu)) {
                 return false;
             }
-            MenuInflater.Inflate (tab.TabMenuResource, menu);
             return true;
         }
 
@@ -207,6 +206,12 @@ namespace NachoClient.AndroidClient
             } else if (item.ItemId == Android.Resource.Id.Home) {
                 ShowAccountSwitcher ();
                 return true;
+            }
+            var tab = TabsAdapter.SelectedTab;
+            if (tab != null){
+                if (tab.OnOptionsItemSelected (this, item)) {
+                    return true;
+                }
             }
             return base.OnOptionsItemSelected (item);
         }
@@ -281,6 +286,25 @@ namespace NachoClient.AndroidClient
         public void EnableActionButton ()
         {
             ActionButton.Enabled = true;
+        }
+
+        #endregion
+
+        #region View Customization
+
+        Android.Views.ViewStates ActionButtonVisibiltyBeforeSearchMode;
+
+        public void EnterSearchMode ()
+        {
+            ActionButtonVisibiltyBeforeSearchMode = ActionButton.Visibility;
+            ActionButton.Hide ();
+            TabLayout.Visibility = ViewStates.Gone;
+        }
+
+        public void ExitSearchMode ()
+        {
+            ActionButton.Visibility = ActionButtonVisibiltyBeforeSearchMode;
+            TabLayout.Visibility = ViewStates.Visible;
         }
 
         #endregion
@@ -403,8 +427,8 @@ namespace NachoClient.AndroidClient
             void OnTabSelected (MainTabsActivity tabActivity);
             void OnTabUnselected (MainTabsActivity tabActivity);
             void OnAccountSwitched (MainTabsActivity tabActivity);
-
-            int TabMenuResource { get; }
+            bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu);
+            bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item);
 
         }
 
