@@ -298,7 +298,6 @@
     <Compile Include="NachoUI.Android\MessageCompose\AttachmentChooserFragment.cs" />
     <Compile Include="NachoUI.Android\MessageList\MessageListFilterbar.cs" />
     <Compile Include="NachoUI.Android\MessageList\MessageSearchFragment.cs" />
-    <Compile Include="NachoUI.Android\MessageList\MessageSearchActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

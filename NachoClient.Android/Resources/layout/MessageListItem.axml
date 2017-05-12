@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/background"
     android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:clickable="true"
-    android:background="?attr/selectableItemBackground">
+    android:layout_height="wrap_content">
     <LinearLayout
+        android:id="@+id/content"
         android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:paddingLeft="?attr/messageItemPaddingLeft">
+        android:paddingLeft="?attr/messageItemPaddingLeft"
+        android:clickable="true"
+        android:background="?attr/selectableItemBackground">
         <FrameLayout
             android:id="@+id/portrait_frame"
             android:layout_marginTop="?attr/messageItemPaddingTop"

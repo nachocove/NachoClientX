@@ -32,8 +32,8 @@ namespace NachoClient.AndroidClient
         {
             tabActivity.MenuInflater.Inflate (Resource.Menu.inbox, menu);
             var searchItem = menu.FindItem (Resource.Id.search);
-            var searchView = (searchItem.ActionView as SearchView);
             Android.Support.V4.View.MenuItemCompat.SetOnActionExpandListener (searchItem, this);
+            var searchView = (searchItem.ActionView as SearchView);
             searchView.SetIconifiedByDefault (false);
             return true;
         }
@@ -121,6 +121,10 @@ namespace NachoClient.AndroidClient
 			StartActivity (intent);
         }
 
+        #endregion
+
+        #region Search
+
         MessageSearchFragment SearchFragment;
 
         void ShowSearch (MainTabsActivity tabActivity, IMenuItem item)
@@ -128,6 +132,8 @@ namespace NachoClient.AndroidClient
             tabActivity.EnterSearchMode ();
             SearchFragment = new MessageSearchFragment ();
             var searchView = (item.ActionView as SearchView);
+            searchView.QueryTextChange += SearchViewQueryTextChanged;
+            searchView.QueryTextSubmit += SearchViewQueryDidSubmit;
             var transaction = FragmentManager.BeginTransaction ();
             transaction.Add (Resource.Id.content, SearchFragment);
             transaction.Commit ();
@@ -137,12 +143,15 @@ namespace NachoClient.AndroidClient
         {
             tabActivity.ExitSearchMode ();
             var searchView = (item.ActionView as SearchView);
+            searchView.QueryTextChange -= SearchViewQueryTextChanged;
+            searchView.QueryTextSubmit -= SearchViewQueryDidSubmit;
             searchView.SetQuery ("", false);
             var transaction = FragmentManager.BeginTransaction ();
             transaction.Remove (SearchFragment);
             transaction.Commit ();
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Context.InputMethodService);
             imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+            SearchFragment = null;
         }
 
         public bool OnMenuItemActionCollapse (IMenuItem item)
@@ -160,6 +169,16 @@ namespace NachoClient.AndroidClient
                 imm.ShowSoftInput (searchView.FindFocus (), ShowFlags.Implicit);
             });
         	return true;
+        }
+
+        void SearchViewQueryTextChanged (object sender, SearchView.QueryTextChangeEventArgs e)
+        {
+            SearchFragment.SearchForText (e.NewText);
+        }
+
+        void SearchViewQueryDidSubmit (object sender, SearchView.QueryTextSubmitEventArgs e)
+        {
+            SearchFragment.StartServerSearch ();
         }
 
         #endregion

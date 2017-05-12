@@ -709,11 +709,11 @@ namespace NachoClient.AndroidClient
         public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
         {
             var holder = MessageViewHolder.Create (parent);
-            holder.ItemView.Click += (sender, e) => {
+            holder.ContentView.Click += (sender, e) => {
                 ItemClicked (holder.AdapterPosition);
             };
-            holder.ItemView.ContextClickable = true;
-            holder.ItemView.ContextMenuCreated += (sender, e) => {
+            holder.ContentView.ContextClickable = true;
+            holder.ContentView.ContextMenuCreated += (sender, e) => {
                 ItemContextMenuCreated (holder.AdapterPosition, e.Menu);
             };
             return holder;
@@ -808,6 +808,8 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public View ContentView { get; private set; }
+        public View BackgroundView { get; private set; }
         View AccountIndicatorView;
         TextView MainLabel;
         TextView DetailLabel;
@@ -831,6 +833,8 @@ namespace NachoClient.AndroidClient
 
         void FindSubviews ()
         {
+            ContentView = ItemView.FindViewById (Resource.Id.content);
+            BackgroundView = ItemView.FindViewById (Resource.Id.background);
             AccountIndicatorView = ItemView.FindViewById (Resource.Id.account_indicator);
             MainLabel = ItemView.FindViewById (Resource.Id.main_label) as TextView;
             DetailLabel = ItemView.FindViewById (Resource.Id.detail_label) as TextView;

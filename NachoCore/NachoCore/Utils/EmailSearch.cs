@@ -62,6 +62,11 @@ namespace NachoCore.Utils
             CancelServerSearches ();
         }
 
+        public override bool IncludesMultipleAccounts ()
+        {
+            return accounts.Count > 1;
+        }
+
         public void SearchFor (string searchString)
         {
             // Since the search string has changed, clear any server results and prevent
