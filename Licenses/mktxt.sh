@@ -16,7 +16,6 @@ LIST="MimeKit \
     SFHFKeychainUtils \
     SwipeView \
     TTTAttributedLabel \
-    UIImageEffects \
     protobuf-c \
     registered-domain-libs \
     sqlite-net \

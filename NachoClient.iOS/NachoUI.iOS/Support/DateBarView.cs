@@ -5,7 +5,6 @@ using CoreGraphics;
 using System.Collections.Generic;
 using Foundation;
 using UIKit;
-using UIImageEffectsBinding;
 using NachoCore.Utils;
 using NachoCore;
 

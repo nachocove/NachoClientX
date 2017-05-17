@@ -1529,10 +1529,6 @@
     <BundleResource Include="Resources\ReleaseNotes.html" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
-      <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
-      <Name>UIImageEffectsBinding</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">
       <Project>{B516077B-652E-4AC9-B728-AB64B65044F4}</Project>
       <Name>NachoUIMonitor.iOS</Name>
