@@ -30,7 +30,6 @@
     </MtouchI18n>
     <MtouchArch>i386</MtouchArch>
     <CodesignKey>iPhone Developer</CodesignKey>
-    <MtouchUseRefCounting>true</MtouchUseRefCounting>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>full</DebugType>
@@ -42,7 +41,6 @@
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
-    <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>i386</MtouchArch>
@@ -65,7 +63,6 @@
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
     <MtouchProfiling>true</MtouchProfiling>
-    <MtouchUseRefCounting>true</MtouchUseRefCounting>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
@@ -78,7 +75,6 @@
     <CodesignKey>iPhone Developer</CodesignKey>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
-    <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
   </PropertyGroup>
@@ -95,7 +91,6 @@
     <CodesignKey>iPhone Distribution</CodesignKey>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
-    <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
   </PropertyGroup>
@@ -110,7 +105,6 @@
     <CodesignProvision>7ed5936a-a594-4a8f-aebf-6aba9546cfc4</CodesignProvision>
     <CodesignKey>iPhone Developer: Henry Kwok (E5VR34U847)</CodesignKey>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>

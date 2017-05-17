@@ -3,7 +3,6 @@ repos = (
     'registered-domain-libs',
     'SwipeView',
     'SwipeViewBinding',
-    'UIImageEffects',
     'SWRevealViewController',
     'SWRevealViewControllerBinding',
     'ios-openssl',

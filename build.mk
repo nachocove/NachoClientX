@@ -3,7 +3,6 @@
 all:
 	make -C ../TokenAutoComplete -f ../NachoClientX/TokenAutoComplete.mk
 	make -C ../SwipeViewBinding
-	make -C ../UIImageEffects
 	make -C ../NachoPlatformBinding
 	make -C ../NachoUIMonitorBinding
 	make -C ../DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
@@ -16,7 +15,6 @@ all:
 
 clean:
 	make -C ../SwipeViewBinding clean
-	make -C ../UIImageEffects clean
 	make -C ../ios-openssl clean
 	make -C ../NachoPlatformBinding clean
 	make -C ../NachoUIMonitorBinding clean
