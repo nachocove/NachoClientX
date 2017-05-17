@@ -15,56 +15,173 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 
+using NachoCore;
+using NachoCore.Model;
+
 namespace NachoClient.AndroidClient
 {
-	public class CalendarFragment : Fragment, MainTabsActivity.Tab
-	{
+    public class CalendarFragment : Fragment, MainTabsActivity.Tab
+    {
 
-		#region Tab Interface
+        private const int REQUEST_SHOW_EVENT = 1;
+
+        #region Tab Interface
+
+        INcEventProvider Events;
 
         public bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu)
         {
-            return false;
+            tabActivity.MenuInflater.Inflate (Resource.Menu.calendar, menu);
+            // TODO: Customize today button with today's date
+            return true;
         }
 
-		public void OnTabSelected (MainTabsActivity tabActivity)
-		{
-            tabActivity.HideActionButton ();
-		}
+        public void OnTabSelected (MainTabsActivity tabActivity)
+        {
+            tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_event, ActionButtonClicked);
+        }
 
-		public void OnTabUnselected (MainTabsActivity tabActivity)
-		{
-		}
+        public void OnTabUnselected (MainTabsActivity tabActivity)
+        {
+        }
 
         public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
+            // Calendar always shows all accounts, so there's nothing we need to do on account switch
         }
 
         public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
         {
+            switch (item.ItemId) {
+            case Resource.Id.today:
+                GoToToday ();
+                return true;
+            }
             return false;
         }
 
-		#endregion
+        #endregion
 
-		#region Fragment Lifecycle
+        #region Subviews
 
-		public override void OnCreate (Bundle savedInstanceState)
-		{
-			base.OnCreate (savedInstanceState);
+        CalendarPagerView PagerView;
 
-			// Create your fragment here
-		}
+        void FindSubviews (View view)
+        {
+            PagerView = view.FindViewById (Resource.Id.pager) as CalendarPagerView;
+            PagerView.DateSelected = PagerSelectedDate;
+            PagerView.HasEvents = PagerHasEvents;
+            PagerView.IsSupportedDate = PagerIsSupportedDate;
+        }
 
-		public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-		{
-			// Use this to return your custom view for this Fragment
-			// return inflater.Inflate(Resource.Layout.YourFragment, container, false);
+        void ClearSubviews ()
+        {
+            PagerView.DateSelected = null;
+            PagerView.HasEvents = null;
+            PagerView.IsSupportedDate = null;
+            PagerView = null;
+        }
 
-			return base.OnCreateView (inflater, container, savedInstanceState);
-		}
+        #endregion
 
-		#endregion
+        #region Fragment Lifecycle
 
-	}
+        public override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
+            Events = NachoPlatform.Calendars.Instance.EventProviderInstance;
+        }
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.CalendarFragment, container, false);
+            FindSubviews (view);
+            return view;
+        }
+
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
+
+        public override void OnActivityResult (int requestCode, int resultCode, Intent data)
+        {
+            switch (requestCode) {
+            case REQUEST_SHOW_EVENT:
+                HandleShowEventResult ((Android.App.Result)resultCode, data);
+                break;
+            default:
+                base.OnActivityResult (requestCode, resultCode, data);
+                break;
+            }
+        }
+
+        #endregion
+
+        #region Pager
+
+        void PagerSelectedDate (DateTime date)
+        {
+            // TODO: scroll to appropriate date
+            //var position = eventListAdapter.PositionForDate (date);
+            //ScrollToPosition (position);
+        }
+
+        bool PagerHasEvents (DateTime date)
+        {
+            return false;
+            //return eventListAdapter.HasEvents (date);
+        }
+
+        bool PagerIsSupportedDate (DateTime date)
+        {
+            return true;
+            //return eventListAdapter.IsSupportedDate (date);
+        }
+
+        #endregion
+
+        #region User Actions
+
+        void ActionButtonClicked (object sender, EventArgs args)
+        {
+            ShowNewEvent ();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void GoToToday ()
+        {
+            PagerView.SetHighlightedDate (DateTime.Today);
+            // TODO: scroll to date
+        }
+
+        void ShowNewEvent ()
+        {
+            var intent = EventEditActivity.BuildNewEventIntent (Activity);
+            StartActivity (intent);
+        }
+
+        void ShowEvent (McEvent event_)
+        {
+            var intent = EventViewActivity.BuildIntent (Activity, event_.Id);
+            StartActivityForResult (intent, REQUEST_SHOW_EVENT);
+        }
+
+        void HandleShowEventResult (Android.App.Result result, Intent data)
+        {
+            if (result == Android.App.Result.Ok) {
+                if (data != null) {
+                    if (data.Action == EventViewActivity.ACTION_DELETE) {
+                        // TODO: remove event from list view
+                    }
+                }
+            }
+        }
+
+        #endregion
+    }
 }

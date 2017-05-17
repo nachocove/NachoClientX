@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".EventViewActivity">
+    <item
+        android:id="@+id/forward"
+        android:orderInCategory="100"
+        android:title="@string/event_action_forward"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/delete"
+        android:orderInCategory="101"
+        android:title="@string/event_action_delete"
+        app:showAsAction="never"/>
+</menu>

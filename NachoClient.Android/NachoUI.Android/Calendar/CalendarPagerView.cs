@@ -228,6 +228,9 @@ namespace NachoClient.AndroidClient
 
         public override bool OnInterceptTouchEvent (MotionEvent ev)
         {
+            // Disallow our parent to intercept any events, otherwise we may not be able to scroll horizontally,
+            // like when we're inside a PagerView
+            Parent.RequestDisallowInterceptTouchEvent (true);
             if (ScrollDirection != PagerScrollDirection.None) {
                 // If we're scrolling, we want all the events so nothing gets to child click listeners
                 return true;

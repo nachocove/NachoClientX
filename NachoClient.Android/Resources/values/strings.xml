@@ -102,6 +102,15 @@
     <!-- Folder picker -->
     <string name="folder_picker_title">Move Message</string>
 
+    <!-- Calendar -->
+    <string name="calendar_action_today">Today</string>
+
+    <!-- Calendar Event View -->
+    <string name="event_action_forward">Forward</string>
+    <string name="event_action_delete">Delete</string>
+    <string name="event_delete_confirmation_message">Deleting this event will permanently remove it from your calendar</string>
+    <string name="event_delete_confirmation_accept">Yes, Delete Event</string>
+
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
     <string name="settings_action_add_account">Add Account</string>

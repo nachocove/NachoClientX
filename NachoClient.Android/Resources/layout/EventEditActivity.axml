@@ -1,263 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
-    <include
-        layout="@layout/ButtonBar" />
-    <ScrollView
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".EventEditActivity">
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/appbar_padding_top"
+        android:theme="@style/NachoTheme.AppBarOverlay">
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:popupTheme="@style/NachoTheme.PopupOverlay" />
+    </android.support.design.widget.AppBarLayout>
+    <fragment
+        android:id="@+id/fragment"
+        android:name="NachoClient.AndroidClient.EventEditFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/NachoLightGray">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <EditText
-                android:id="@+id/event_edit_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                android:padding="4dp"
-                android:hint="Title"
-                android:background="@android:color/white" />
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp" />
-            <EditText
-                android:id="@+id/event_edit_description"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapSentences|textMultiLine"
-                android:padding="4dp"
-                android:hint="Description"
-                android:background="@android:color/white" />
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white">
-                <TextView
-                    android:layout_alignParentLeft="true"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:padding="4dp"
-                    android:text="All day" />
-                <Switch
-                    android:id="@+id/event_edit_allday_toggle"
-                    android:layout_alignParentRight="true"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:padding="4dp" />
-            </RelativeLayout>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp" />
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Starts" />
-                <TextView
-                    android:id="@+id/event_edit_start_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Jan 1"
-                    android:gravity="right" />
-                <ImageView
-                    android:id="@+id/event_edit_start_date_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-                <TextView
-                    android:id="@+id/event_edit_start_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="12:00 am"
-                    android:gravity="right" />
-                <ImageView
-                    android:id="@+id/event_edit_start_time_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-            </LinearLayout>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp" />
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Until" />
-                <TextView
-                    android:id="@+id/event_edit_end_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Dec 31"
-                    android:gravity="right" />
-                <ImageView
-                    android:id="@+id/event_edit_end_date_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-                <TextView
-                    android:id="@+id/event_edit_end_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="11:59 pm"
-                    android:gravity="right" />
-                <ImageView
-                    android:id="@+id/event_edit_end_time_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-            </LinearLayout>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-            <EditText
-                android:id="@+id/event_edit_location"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                android:padding="4dp"
-                android:hint="Location"
-                android:background="@android:color/white" />
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp" />
-            <LinearLayout
-                android:id="@+id/event_edit_attendee_section"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Attendees" />
-                <TextView
-                    android:id="@+id/event_edit_attendee_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="(0)"
-                    android:gravity="right" />
-                <ImageView
-                    android:id="@+id/event_edit_attendee_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-            </LinearLayout>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Reminder" />
-                <TextView
-                    android:id="@+id/event_edit_reminder"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_gravity="center_vertical"
-                    android:gravity="right"
-                    android:padding="4dp" />
-                <ImageView
-                    android:id="@+id/event_edit_reminder_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-            </LinearLayout>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:padding="4dp"
-                    android:text="Calendar" />
-                <TextView
-                    android:id="@+id/event_edit_calendar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_gravity="center_vertical"
-                    android:gravity="right"
-                    android:padding="4dp" />
-                <ImageView
-                    android:id="@+id/event_edit_calendar_arrow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="15dp"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/gen_more_arrow" />
-            </LinearLayout>
-            <View
-                android:id="@+id/event_delete_button_filler"
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-            <TextView
-                android:id="@+id/event_delete_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="4dp"
-                android:background="@android:color/white"
-                android:textColor="@android:color/holo_red_dark"
-                android:text="Delete event" />
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-        </LinearLayout>
-    </ScrollView>
-</LinearLayout>
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:layout="@layout/EventEditFragment" />
+</android.support.design.widget.CoordinatorLayout>

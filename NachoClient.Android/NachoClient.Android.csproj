@@ -224,7 +224,6 @@
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
     <Compile Include="NachoPlatform.Android\NcHttpClientAndroid.cs" />
     <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
-    <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
     <Compile Include="NachoUI.Android\Support\HotEventAdapter.cs" />
     <Compile Include="NachoUI.Android\Support\SwipeMenuRecyclerView.cs" />
     <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
@@ -298,6 +297,12 @@
     <Compile Include="NachoUI.Android\MessageCompose\AttachmentChooserFragment.cs" />
     <Compile Include="NachoUI.Android\MessageList\MessageListFilterbar.cs" />
     <Compile Include="NachoUI.Android\MessageList\MessageSearchFragment.cs" />
+    <Compile Include="NachoUI.Android\Calendar\CalendarListView.cs" />
+    <Compile Include="NachoUI.Android\Calendar\CalendarPagerView.cs" />
+    <Compile Include="NachoUI.Android\Calendar\EventViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Calendar\EventEditActivity.cs" />
+    <Compile Include="NachoUI.Android\Calendar\EventViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Calendar\EventEditFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -332,7 +337,6 @@
     <None Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <None Include="NachoUI.Android\Activities\NoteActivity.cs" />
     <None Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
-    <None Include="NachoUI.Android\Activities\EventViewActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeBaseActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeViewActivity.cs" />
     <None Include="NachoUI.Android\Activities\AttendeeEditActivity.cs" />
@@ -407,6 +411,7 @@
     <Folder Include="NachoUI.Android\Views\" />
     <Folder Include="NachoUI.Android\Base\" />
     <Folder Include="NachoUI.Android\FoldersList\" />
+    <Folder Include="NachoUI.Android\Calendar\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -1670,6 +1675,18 @@
     <AndroidResource Include="Resources\drawable-xhdpi\action_search.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_search.png" />
     <AndroidResource Include="Resources\layout\MessageSearchFragment.axml" />
+    <AndroidResource Include="Resources\layout\CalendarFragment.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_new_event.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_new_event.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_new_event.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_new_event.png" />
+    <AndroidResource Include="Resources\menu\calendar.xml" />
+    <AndroidResource Include="Resources\layout\EventEditFragment.axml" />
+    <AndroidResource Include="Resources\menu\event_view.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_edit.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_edit.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_edit.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_edit.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
