@@ -45,7 +45,7 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        #region
+        #endregion
 
         #region Subviews
 
