@@ -349,6 +349,21 @@
     <Folder Include="Resources\Images.xcassets\folder-icon-archive.imageset\" />
     <Folder Include="Resources\Images.xcassets\LaunchCircle.imageset\" />
     <Folder Include="Resources\Images.xcassets\ChatErrorIndicator.imageset\" />
+    <Folder Include="NachoUI.iOS\MainTabs\" />
+    <Folder Include="NachoUI.iOS\Settings\" />
+    <Folder Include="NachoUI.iOS\AccountCreation\" />
+    <Folder Include="NachoUI.iOS\Setup\" />
+    <Folder Include="NachoUI.iOS\Actions\" />
+    <Folder Include="NachoUI.iOS\Calendar\" />
+    <Folder Include="NachoUI.iOS\Contacts\" />
+    <Folder Include="NachoUI.iOS\MessageList\" />
+    <Folder Include="NachoUI.iOS\MessageView\" />
+    <Folder Include="NachoUI.iOS\MessageCompose\" />
+    <Folder Include="NachoUI.iOS\Chat\" />
+    <Folder Include="NachoUI.iOS\FoldersList\" />
+    <Folder Include="NachoUI.iOS\Home\" />
+    <Folder Include="NachoUI.iOS\Base\" />
+    <Folder Include="NachoUI.iOS\Views\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -358,18 +373,6 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
-    <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
-    <Compile Include="NachoUI.iOS\LabelSelectionViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactSearchViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageListViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessagePriorityViewController.cs" />
-    <Compile Include="NachoUI.iOS\NachoNowViewController.cs" />
-    <Compile Include="NachoUI.iOS\StartupViewController.cs" />
-    <Compile Include="NachoUI.iOS\StartupViewController.designer.cs">
-      <DependentUpon>StartupViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\DatePickerViewController.cs" />
     <Compile Include="NachoPlatform.iOS\AssetsiOS.cs" />
     <Compile Include="NachoPlatform.iOS\DeviceiOS.cs" />
     <Compile Include="NachoPlatform.iOS\InvokeOnUIThreadiOS.cs" />
@@ -380,230 +383,236 @@
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\SegueHolder.cs" />
-    <Compile Include="NachoUI.iOS\MessageViewController.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoCalendarController.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoFileChooser.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="LogSettings.cs" />
-    <Compile Include="NachoUI.iOS\ViewControllers\NcUIViewController.cs" />
-    <Compile Include="NachoUI.iOS\ViewControllers\NcUITableViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\A.cs" />
-    <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
-    <Compile Include="NachoUI.iOS\Support\DateBarView.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
-    <Compile Include="NachoUI.iOS\MessageComposeViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAttachmentBlock.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAttachmentBlock.cs" />
     <Compile Include="NachoPlatform.iOS\NotifiOS.cs" />
     <Compile Include="NachoPlatform.iOS\PlatformUserColorIndex.cs" />
-    <Compile Include="NachoUI.iOS\EventViewController.cs" />
-    <Compile Include="NachoUI.iOS\ChooseCalendarViewController.cs" />
-    <Compile Include="NachoUI.iOS\AlertChooserViewController.cs" />
     <Compile Include="NachoPlatform.iOS\ContactsiOS.cs" />
-    <Compile Include="NachoUI.iOS\SupportViewController.cs" />
-    <Compile Include="NachoUI.iOS\NotesViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
-    <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\ContactDetailViewController.cs" />
     <Compile Include="NachoPlatform.iOS\CalendarsiOS.cs" />
-    <Compile Include="NachoUI.iOS\EditEventViewController.cs" />
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
-    <Compile Include="NachoUI.iOS\EventAttendeeViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAttendeeListChooser.cs" />
-    <Compile Include="NachoUI.iOS\Support\CertificateView.cs" />
-    <Compile Include="NachoUI.iOS\SupportMessageViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttachmentTableViewSourceDelegate.cs" />
-    <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
-    <Compile Include="NachoUI.iOS\NachoTabBarController.cs" />
-    <Compile Include="NachoUI.iOS\FoldersViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyView.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyWebView.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
-    <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoIntentChooser.cs" />
-    <Compile Include="NachoUI.iOS\ContactListViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageToolbar.cs" />
     <Compile Include="NachoUI.iOS\Support\UIBlockMenu.cs" />
     <Compile Include="NachoUI.iOS\Support\ExpandButton.cs" />
     <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
-    <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
     <Compile Include="NachoUI.iOS\Support\SwipeActionView.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageHeaderView.cs" />
-    <Compile Include="NachoUI.iOS\QuickResponseViewController.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
-    <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
-    <Compile Include="NachoUI.iOS\AccountSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\SignatureEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\AboutUsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
-    <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
-    <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
-    <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
-    <Compile Include="NachoUI.iOS\MessageThreadViewController.cs" />
-    <Compile Include="NachoUI.iOS\NotesViewerViewController.cs" />
-    <Compile Include="NachoUI.iOS\ManageItemsViewController.cs" />
     <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
     <Compile Include="NachoPlatform.iOS\StoreHandleriOS.cs" />
     <Compile Include="NachoPlatform.iOS\CloudHandlerIOS.cs" />
-    <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
     <Compile Include="NachoPlatform.iOS\NcFileHandleriOS.cs" />
     <Compile Include="NachoUI.iOS\Support\UcNameValuePair.cs" />
     <Compile Include="NachoUI.iOS\Support\NcAlertView.cs" />
     <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
     <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
     <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
-    <Compile Include="NachoUI.iOS\NotificationChooserViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
-    <Compile Include="NachoUI.iOS\FileListViewController.cs" />
     <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Support\AccountsTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
-    <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
-    <Compile Include="NachoUI.iOS\AccountTypeViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountTypeViewController.designer.cs">
-      <DependentUpon>AccountTypeViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\AdvancedTextField.cs" />
-    <Compile Include="NachoUI.iOS\Support\ExchangeFields.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
-    <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
-    <Compile Include="NachoUI.iOS\Support\UnreadMessagesView.cs" />
     <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
-    <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountValidationViewController.cs" />
-    <Compile Include="NachoUI.iOS\CertAskViewController.cs" />
-    <Compile Include="NachoUI.iOS\CertAskViewController.designer.cs">
-      <DependentUpon>CertAskViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\NcActivityIndicatorView.cs" />
-    <Compile Include="NachoUI.iOS\StartupMigrationViewController.cs" />
-    <Compile Include="NachoUI.iOS\StartupMigrationViewController.designer.cs">
-      <DependentUpon>StartupMigrationViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\StartupRecoveryViewController.cs" />
-    <Compile Include="NachoUI.iOS\StartupRecoveryViewController.designer.cs">
-      <DependentUpon>StartupRecoveryViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\GettingStartedViewController.cs" />
-    <Compile Include="NachoUI.iOS\GettingStartedViewController.designer.cs">
-      <DependentUpon>GettingStartedViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\NcSimpleColorButton.cs" />
-    <Compile Include="NachoUI.iOS\Support\NcAccountTypeCollectionViewCell.cs" />
-    <Compile Include="NachoUI.iOS\Support\NcAccountTypeCollectionViewCell.designer.cs">
-      <DependentUpon>NcAccountTypeCollectionViewCell.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\AccountSyncingViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountSyncingViewController.designer.cs">
-      <DependentUpon>AccountSyncingViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\NcAdjustableLayoutTextField.cs" />
-    <Compile Include="NachoUI.iOS\ImapAdvancedFieldsViewController.cs" />
-    <Compile Include="NachoUI.iOS\ImapAdvancedFieldsViewController.designer.cs">
-      <DependentUpon>ImapAdvancedFieldsViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\ExchangeAdvancedFieldsViewController.cs" />
-    <Compile Include="NachoUI.iOS\ExchangeAdvancedFieldsViewController.designer.cs">
-      <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\AccountAdvancedFieldsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\StandardCredentialsViewController.designer.cs">
-      <DependentUpon>StandardCredentialsViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\StandardCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.designer.cs">
-      <DependentUpon>GoogleCredentialsViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\HotHelpMessageView.cs" />
-    <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
     <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
-    <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
     <Compile Include="NachoPlatform.iOS\DnsiOS.cs" />
     <Compile Include="NachoPlatform.iOS\NcHttpClientiOS.cs" />
     <Compile Include="NachoPlatform.iOS\PushAssistiOS.cs" />
-    <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
-    <Compile Include="NachoUI.iOS\ChatsViewController.cs" />
-    <Compile Include="NachoUI.iOS\ChatMessagesViewController.cs" />
-    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
-    <Compile Include="NachoUI.iOS\ChatParticipantListViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\UnreadMessageIndicator.cs" />
-    <Compile Include="NachoUI.iOS\SettingsTextPropertyViewController.cs" />
-    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
+    <Compile Include="NachoUI.iOS\Support\UIColor+Utils.cs" />
+    <Compile Include="NachoUI.iOS\Support\UIFont+Utils.cs" />
+    <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
+    <Compile Include="NachoUI.iOS\Support\Theme.cs" />
+    <Compile Include="NachoUI.iOS\Settings\AboutUsViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\AccountSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\AccountCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\AccountSyncingViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\AccountSyncingViewController.designer.cs">
+      <DependentUpon>AccountSyncingViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Actions\ActionEditViewController.cs" />
+    <Compile Include="NachoUI.iOS\Actions\ActionListViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\AdvancedSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\CalendarViewController.cs" />
+    <Compile Include="NachoUI.iOS\Chat\ChatMessagesViewController.cs" />
+    <Compile Include="NachoUI.iOS\Chat\ChatParticipantListViewController.cs" />
+    <Compile Include="NachoUI.iOS\Chat\ChatsViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\ChooseCalendarViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactDetailViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactListViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactEditViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactSearchViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactDefaultSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\EditEventViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\EventAttendeeViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\EventViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\ExchangeAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\ExchangeAdvancedFieldsViewController.designer.cs">
+      <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountCreation\CertAskViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\CertAskViewController.designer.cs">
+      <DependentUpon>CertAskViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Settings\GeneralSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\FoldersList\FoldersViewController.cs" />
+    <Compile Include="NachoUI.iOS\Setup\GettingStartedViewController.cs" />
+    <Compile Include="NachoUI.iOS\Setup\GettingStartedViewController.designer.cs">
+      <DependentUpon>GettingStartedViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountCreation\GoogleCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\GoogleCredentialsViewController.designer.cs">
+      <DependentUpon>GoogleCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountCreation\ImapAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\ImapAdvancedFieldsViewController.designer.cs">
+      <DependentUpon>ImapAdvancedFieldsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\MainTabs\InboxViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\IntentSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\MessageComposeViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageHeaderDetailViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageMimePartViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageList\MessageThreadViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageList\MessageListViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageRawBodyViewController.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\NachoTabBarController.cs" />
+    <Compile Include="NachoUI.iOS\Home\NachoNowViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\NotesViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\NotesViewerViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\QuickResponseViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\SalesforceSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\SettingsLegalViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\SettingsTextPropertyViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\SettingsUnreadCountViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\SalesforceCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\SalesforceCredentialsViewController.designer.cs">
       <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\ViewControllers\NachoTableViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\UIColor+Utils.cs" />
-    <Compile Include="NachoUI.iOS\Support\PressGestureRecognizer.cs" />
-    <Compile Include="NachoUI.iOS\Support\SwipeTableViewCell.cs" />
-    <Compile Include="NachoUI.iOS\Support\SwipeActionsView.cs" />
-    <Compile Include="NachoUI.iOS\Support\UIFont+Utils.cs" />
-    <Compile Include="NachoUI.iOS\Support\ImageAccessoryView.cs" />
-    <Compile Include="NachoUI.iOS\Support\InsetLabelView.cs" />
-    <Compile Include="NachoUI.iOS\SettingsUnreadCountViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\ErrorIndicatorView.cs" />
-    <Compile Include="NachoUI.iOS\InboxViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\CornerLayer.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageListFilterBar.cs" />
-    <Compile Include="NachoUI.iOS\Support\NachoSearchController.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageCell.cs" />
-    <Compile Include="NachoUI.iOS\Support\ErrorAccessoryView.cs" />
-    <Compile Include="NachoUI.iOS\Support\SubjectAttachment.cs" />
-    <Compile Include="NachoUI.iOS\Support\AttachmentsView.cs" />
-    <Compile Include="NachoUI.iOS\MessageHeaderDetailViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\NameValueCell.cs" />
-    <Compile Include="NachoUI.iOS\MessageRawBodyViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageMimePartViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\ActionCell.cs" />
-    <Compile Include="NachoUI.iOS\Support\ActionCheckboxView.cs" />
-    <Compile Include="NachoUI.iOS\ActionEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\EditableTextCell.cs" />
-    <Compile Include="NachoUI.iOS\Support\MessageActionHeaderView.cs" />
-    <Compile Include="NachoUI.iOS\ActionListViewController.cs" />
-    <Compile Include="NachoUI.iOS\Support\DatePickerView.cs" />
-    <Compile Include="NachoUI.iOS\Support\SwitchAccountControl.cs" />
-    <Compile Include="NachoUI.iOS\Support\NachoNavigationBar.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\IAccountSwitching.cs" />
-    <Compile Include="NachoUI.iOS\Support\PercentagePressGestureRecognizer.cs" />
-    <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
-    <Compile Include="NachoUI.iOS\Support\Theme.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\SignatureEditViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\StandardCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\StandardCredentialsViewController.designer.cs">
+      <DependentUpon>StandardCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Setup\StartupMigrationViewController.cs" />
+    <Compile Include="NachoUI.iOS\Setup\StartupMigrationViewController.designer.cs">
+      <DependentUpon>StartupMigrationViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Setup\StartupRecoveryViewController.cs" />
+    <Compile Include="NachoUI.iOS\Setup\StartupRecoveryViewController.designer.cs">
+      <DependentUpon>StartupRecoveryViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Setup\StartupViewController.cs" />
+    <Compile Include="NachoUI.iOS\Setup\StartupViewController.designer.cs">
+      <DependentUpon>StartupViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Settings\SupportMessageViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\SupportViewController.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\SwitchAccountViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\AccountTypeViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\AccountTypeViewController.designer.cs">
+      <DependentUpon>AccountTypeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Settings\AccountValidationViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\AccountAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\Actions\ActionCell.cs" />
+    <Compile Include="NachoUI.iOS\Actions\ActionCheckboxView.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\BodyCalendarView.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\BodyView.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\BodyWebView.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\CalendarTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\AttendeeTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactCell.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactsTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Home\HotEventView.cs" />
+    <Compile Include="NachoUI.iOS\Home\HotHelpMessageView.cs" />
+    <Compile Include="NachoUI.iOS\MessageList\MessageCell.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\LabelSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\ViewControllers\AccountPickerViewController.cs" />
+    <Compile Include="NachoUI.iOS\ViewControllers\AddAttachmentViewController.cs" />
+    <Compile Include="NachoUI.iOS\Base\NachoTableViewController.cs" />
+    <Compile Include="NachoUI.iOS\Base\NcUITableViewController.cs" />
+    <Compile Include="NachoUI.iOS\Base\NcUIViewController.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\AlertChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\DatePickerViewController.cs" />
+    <Compile Include="NachoUI.iOS\ViewControllers\FileListViewController.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\ManageItemsViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\MessagePriorityViewController.cs" />
+    <Compile Include="NachoUI.iOS\Settings\NotificationChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\CertificateView.cs" />
+    <Compile Include="NachoUI.iOS\Base\CompoundScrollView.cs" />
+    <Compile Include="NachoUI.iOS\Base\CornerLayer.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\DateBarView.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\AttachmentsView.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\AttachmentView.cs" />
+    <Compile Include="NachoUI.iOS\Actions\DatePickerView.cs" />
+    <Compile Include="NachoUI.iOS\Base\EditableTextCell.cs" />
+    <Compile Include="NachoUI.iOS\Settings\ExchangeFields.cs" />
+    <Compile Include="NachoUI.iOS\Base\FadeCustomSegue.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\ICalendarTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\IBodyRender.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\IContactsTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\iAttendeeTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Base\ImageAccessoryView.cs" />
+    <Compile Include="NachoUI.iOS\Settings\IMapFields.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageActionHeaderView.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\MessageComposeHeaderView.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageHeaderView.cs" />
+    <Compile Include="NachoUI.iOS\MessageList\MessageListFilterBar.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\MessageToolbar.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\NachoInlineImageTextAttachment.cs" />
+    <Compile Include="NachoUI.iOS\Home\NachoNavigationBar.cs" />
+    <Compile Include="NachoUI.iOS\Base\NameValueCell.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\NcAccountTypeCollectionViewCell.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\NcAccountTypeCollectionViewCell.designer.cs">
+      <DependentUpon>NcAccountTypeCollectionViewCell.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Base\NcActivityIndicatorView.cs" />
+    <Compile Include="NachoUI.iOS\Base\NcAdjustableLayoutTextField.cs" />
+    <Compile Include="NachoUI.iOS\Base\NcUIBarButtonItem.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\NcWebViewMessageProtocol.cs" />
+    <Compile Include="NachoUI.iOS\Views\PortraitView.cs" />
+    <Compile Include="NachoUI.iOS\Views\ErrorAccessoryView.cs" />
+    <Compile Include="NachoUI.iOS\Views\NcSimpleColorButton.cs" />
+    <Compile Include="NachoUI.iOS\Views\NcTextView.cs" />
+    <Compile Include="NachoUI.iOS\Views\PercentagePressGestureRecognizer.cs" />
+    <Compile Include="NachoUI.iOS\Views\InsetLabelView.cs" />
+    <Compile Include="NachoUI.iOS\Settings\AdvancedTextField.cs" />
+    <Compile Include="NachoUI.iOS\Views\ErrorIndicatorView.cs" />
+    <Compile Include="NachoUI.iOS\MessageList\SubjectAttachment.cs" />
+    <Compile Include="NachoUI.iOS\Base\SwipeTableViewCell.cs" />
+    <Compile Include="NachoUI.iOS\Views\SwipeActionsView.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\SwitchAccountView.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\SwitchAccountControl.cs" />
+    <Compile Include="NachoUI.iOS\Views\PressGestureRecognizer.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
-    <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
-    <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />
-    <InterfaceDefinition Include="NachoUI.iOS\AccountCreation.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\AccountCreation\AccountCreation.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\Setup\Startup.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\Setup\Welcome.storyboard" />
   </ItemGroup>
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
