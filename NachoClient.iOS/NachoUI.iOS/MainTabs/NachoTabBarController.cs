@@ -51,26 +51,30 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            var nowNavController = CreateAccountSwitchingNavigationController (new NachoNowViewController () { IsLongLived = true });
-            nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
+            //var nowNavController = CreateAccountSwitchingNavigationController (new NachoNowViewController () { IsLongLived = true });
+            //nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
             var inboxNavController = CreateAccountSwitchingNavigationController (new InboxViewController () { IsLongLived = true });
             inboxItem = inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-inbox");
 
+            var foldersNavController = CreateAccountSwitchingNavigationController (new FoldersViewController ());
+            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
+
             var calendarNavController = CreateAccountSwitchingNavigationController (new CalendarViewController ());
             calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");
 
-            var foldersNavController = CreateAccountSwitchingNavigationController (new FoldersViewController ());
-            foldersItem = foldersNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
+            var contactsNavController = CreateAccountSwitchingNavigationController (new ContactListViewController ());
+            contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
 
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });
             settingsItem = settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
 
             ViewControllers = new UIViewController[] {
-                nowNavController,
+                //nowNavController,
                 inboxNavController,
                 foldersNavController,
                 calendarNavController,
+                contactsNavController,
                 settingsNavController
             };
 
