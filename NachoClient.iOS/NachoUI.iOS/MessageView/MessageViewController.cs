@@ -865,7 +865,8 @@ namespace NachoClient.iOS
             if (Action == null) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     CreateEventButton,
-                    ActionButton,
+                    // Temporarily disabling actions until we have a new place for them
+                    //ActionButton,
                     HotButton
                 };
             } else {
