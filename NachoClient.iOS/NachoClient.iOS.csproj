@@ -458,7 +458,7 @@
     <Compile Include="NachoUI.iOS\Chat\ChatsViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\ChooseCalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactDetailViewController.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\ContactListViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactsViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactEditViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactSearchViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactChooserViewController.cs" />
@@ -543,7 +543,7 @@
     <Compile Include="NachoUI.iOS\MessageView\BodyWebView.cs" />
     <Compile Include="NachoUI.iOS\Calendar\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Calendar\AttendeeTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\ContactCell.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactCellOld.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactsTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Home\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\Home\HotHelpMessageView.cs" />
@@ -606,6 +606,8 @@
     <Compile Include="NachoUI.iOS\MainTabs\SwitchAccountView.cs" />
     <Compile Include="NachoUI.iOS\MainTabs\SwitchAccountControl.cs" />
     <Compile Include="NachoUI.iOS\Views\PressGestureRecognizer.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactCell.cs" />
+    <Compile Include="NachoUI.iOS\Base\SearchResultsViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

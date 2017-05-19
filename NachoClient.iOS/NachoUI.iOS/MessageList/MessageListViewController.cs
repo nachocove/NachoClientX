@@ -1180,18 +1180,15 @@ namespace NachoClient.iOS
     }
 
 
-    public class MessageSearchResultsViewController : NachoTableViewController, ThemeAdopter
+    public class MessageSearchResultsViewController : SearchResultsViewController, ThemeAdopter
     {
-
-        NSObject KeyboardWillShowNotificationToken;
-        NSObject KeyboardWillHideNotificationToken;
 
         const string MessageCellIdentifier = "MessageCellIdentifier";
         public int NumberOfPreviewLines = 3;
 
         EmailSearch SearchResults;
 
-        public MessageSearchResultsViewController () : base (UITableViewStyle.Plain)
+        public MessageSearchResultsViewController () : base ()
         {
             SearchResults = new EmailSearch (UpdateResults);
         }
@@ -1202,69 +1199,11 @@ namespace NachoClient.iOS
             base.Cleanup ();
         }
 
-        Theme adoptedTheme;
-
-        public void AdoptTheme (Theme theme)
-        {
-            if (theme != adoptedTheme) {
-                adoptedTheme = theme;
-                TableView.TintColor = theme.TableViewTintColor;
-                TableView.AdoptTheme (theme);
-            }
-        }
-
         public override void LoadView ()
         {
             base.LoadView ();
             TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
             TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
-        }
-
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
-            if (!NavigationController.NavigationBarHidden) {
-                NavigationController.SetNavigationBarHidden (true, true);
-            }
-            KeyboardWillShowNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, KeyboardWillShow);
-            KeyboardWillHideNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, KeyboardWillHide);
-            AdoptTheme (Theme.Active);
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-            if (NcKeyboardSpy.Instance.keyboardShowing) {
-                AdjustInsetsForKeyboard ();
-            }
-        }
-
-        void AdjustInsetsForKeyboard ()
-        {
-            nfloat keyboardHeight = NcKeyboardSpy.Instance.KeyboardHeightInView (View);
-            TableView.ContentInset = new UIEdgeInsets (TableView.ContentInset.Top, 0.0f, keyboardHeight, 0.0f);
-            TableView.ScrollIndicatorInsets = new UIEdgeInsets (TableView.ScrollIndicatorInsets.Top, TableView.ScrollIndicatorInsets.Left, keyboardHeight, TableView.ScrollIndicatorInsets.Right);
-        }
-
-        public override void ViewDidDisappear (bool animated)
-        {
-            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillShowNotificationToken);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (KeyboardWillHideNotificationToken);
-            base.ViewDidDisappear (animated);
-        }
-
-        void KeyboardWillShow (NSNotification notification)
-        {
-            if (IsViewLoaded && View.Window != null) {
-                AdjustInsetsForKeyboard ();
-            }
-        }
-
-        void KeyboardWillHide (NSNotification notification)
-        {
-            if (IsViewLoaded) {
-                AdjustInsetsForKeyboard ();
-            }
         }
 
         public void PrepareForSearching ()
@@ -1324,15 +1263,6 @@ namespace NachoClient.iOS
             messageViewController.Message = message;
             NavigationController.PushViewController (messageViewController, true);
             NavigationController.SetNavigationBarHidden (false, true);
-        }
-
-        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
-        {
-            base.WillDisplay (tableView, cell, indexPath);
-            var themed = cell as ThemeAdopter;
-            if (themed != null && adoptedTheme != null) {
-                themed.AdoptTheme (adoptedTheme);
-            }
         }
 
     }

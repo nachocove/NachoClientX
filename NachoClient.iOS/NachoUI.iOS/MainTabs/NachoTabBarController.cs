@@ -63,7 +63,7 @@ namespace NachoClient.iOS
             var calendarNavController = CreateAccountSwitchingNavigationController (new CalendarViewController ());
             calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");
 
-            var contactsNavController = CreateAccountSwitchingNavigationController (new ContactListViewController ());
+            var contactsNavController = CreateAccountSwitchingNavigationController (new ContactsViewController ());
             contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
 
             var settingsNavController = new UINavigationController (new GeneralSettingsViewController () { IsLongLived = true });

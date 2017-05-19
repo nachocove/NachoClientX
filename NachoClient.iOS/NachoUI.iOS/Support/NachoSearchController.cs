@@ -69,20 +69,20 @@ namespace NachoClient.iOS
 
         public void PresentOverViewController (UIViewController parentViewController)
         {
-            var navController = parentViewController.NavigationController;
-            View.Frame = navController.View.Bounds;
+            var parentNavController = parentViewController.NavigationController;
+            View.Frame = parentNavController.View.Bounds;
             View.Alpha = 0.0f;
-            navController.View.AddSubview(View);
+            parentNavController.View.AddSubview(View);
             SearchBar.BecomeFirstResponder ();
             UIView.Animate (0.25f, () => {
                 View.Alpha = 1.0f;
             }, () => {
-                AdjustViewForBarShown (navController.TopViewController.View);
+                AdjustViewForBarShown (parentNavController.TopViewController.View);
                 SearchResultsController.RemoveFromParentViewController ();
                 parentViewController.View.AddSubview(View);
                 parentViewController.AddChildViewController(SearchResultsController);
                 View.Frame = parentViewController.View.Bounds;
-                navController.SetNavigationBarHidden(true, false);
+                parentNavController.SetNavigationBarHidden(true, false);
             });
         }
 

@@ -241,7 +241,7 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return ContactCell.ROW_HEIGHT;
+            return ContactCellOld.ROW_HEIGHT;
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -249,11 +249,11 @@ namespace NachoClient.iOS
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
             if (null == cell) {
-                cell = ContactCell.CreateCell (tableView, VipButtonTouched);
+                cell = ContactCellOld.CreateCell (tableView, VipButtonTouched);
             }
             string emailAddress = null;
             var contact = ContactFromIndexPath (tableView, indexPath, out emailAddress);
-            ContactCell.ConfigureCell (tableView, cell, contact, owner, allowSwiping, emailAddress);
+            ContactCellOld.ConfigureCell (tableView, cell, contact, owner, allowSwiping, emailAddress);
             return cell;
         }
 
@@ -318,7 +318,7 @@ namespace NachoClient.iOS
                     if (null != cell) {
                         string emailAddress = null;
                         var contact = ContactFromIndexPath (tableView, path, out emailAddress);
-                        ContactCell.ConfigureCell (tableView, cell, contact, owner, allowSwiping, emailAddress);
+                        ContactCellOld.ConfigureCell (tableView, cell, contact, owner, allowSwiping, emailAddress);
                     }
                 }
             }

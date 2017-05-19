@@ -7,7 +7,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class PortraitView : UIView
+    public class PortraitView : UIView, ThemeAdopter
     {
 
         UILabel InitialsLabel;
@@ -18,7 +18,6 @@ namespace NachoClient.iOS
         {
             ClipsToBounds = true;
             InitialsLabel = new UILabel (Bounds);
-            InitialsLabel.Font = A.Font_AvenirNextRegular24.WithSize(Bounds.Height * FontSizeRatio);
             InitialsLabel.TextColor = UIColor.White;
             InitialsLabel.TextAlignment = UITextAlignment.Center;
             InitialsLabel.LineBreakMode = UILineBreakMode.Clip;
@@ -27,6 +26,11 @@ namespace NachoClient.iOS
             PhotoView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             AddSubview (InitialsLabel);
             AddSubview (PhotoView);
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            InitialsLabel.Font = theme.DefaultFont.WithSize (Bounds.Height * FontSizeRatio);
         }
 
         public void SetPortrait (int portraitId, int color, string initials)

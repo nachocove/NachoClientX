@@ -275,18 +275,18 @@ namespace NachoClient.iOS
 
             public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
-                return ContactCell.ROW_HEIGHT;
+                return ContactCellOld.ROW_HEIGHT;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
                 var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
                 if (null == cell) {
-                    cell = ContactCell.CreateCell (tableView, VipButtonTouched);
+                    cell = ContactCellOld.CreateCell (tableView, VipButtonTouched);
                 }
                 var contactAddress = Owner.searchResults [indexPath.Row];
                 var contact = contactAddress.GetContact ();
-                ContactCell.ConfigureCell (tableView, cell, contact, null, false, contactAddress.Value);
+                ContactCellOld.ConfigureCell (tableView, cell, contact, null, false, contactAddress.Value);
                 return cell;
             }
 

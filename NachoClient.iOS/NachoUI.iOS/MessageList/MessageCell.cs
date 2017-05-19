@@ -140,6 +140,7 @@ namespace NachoClient.iOS
                 DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
                 DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
                 DateLabel.TextColor = theme.TableViewCellDateLabelTextColor;
+                PortraitView.AdoptTheme (theme);
                 if (_ThreadIndicator != null) {
                     _ThreadIndicator.AdoptTheme (theme);
                 }

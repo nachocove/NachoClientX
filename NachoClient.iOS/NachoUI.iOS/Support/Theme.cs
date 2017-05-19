@@ -379,6 +379,21 @@ namespace NachoClient.iOS
                     }
                 }
             }
+            if (tableView.Style == UITableViewStyle.Plain) {
+                var indexPaths = tableView.IndexPathsForVisibleRows;
+                var sections = new System.Collections.Generic.HashSet<int>();
+                if (indexPaths != null) {
+                    foreach (var indexPath in indexPaths) {
+                        sections.Add (indexPath.Section);
+                    }
+                    foreach (var section in sections) {
+                        var headerView = tableView.GetHeaderView (section);
+                        if (headerView != null && headerView is ThemeAdopter) {
+                            (headerView as ThemeAdopter).AdoptTheme (theme);
+                        }
+                    }
+                }
+            }
         }
     }
 
