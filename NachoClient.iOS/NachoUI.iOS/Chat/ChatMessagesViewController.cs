@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent, AccountPickerViewControllerDelegate
+    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ContactPickerViewControllerDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent, AccountPickerViewControllerDelegate
     {
 
         #region Properties
@@ -550,12 +550,26 @@ namespace NachoClient.iOS
 
         public void ShowContactSearch (NcEmailAddress address)
         {
-            var searchController = new ContactSearchViewController ();
-            searchController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
-            FadeCustomSegue.Transition (this, searchController);
+            var picker = new ContactPickerViewController ();
+            picker.PickerDelegate = this;
+            PresentViewController (new UINavigationController (picker), true, null);
+        }
+
+        public void ContactPickerDidPickContact (ContactPickerViewController vc, McContact contact)
+        {
+            var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown);
+            address.contact = contact;
+            address.address = contact.GetEmailAddress ();
+            AddAddress (address);
+            DismissViewController (true, null);
         }
 
         public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
+        {
+            AddAddress (address);
+        }
+
+        void AddAddress (NcEmailAddress address)
         {
             if (String.IsNullOrEmpty (address.address)) {
                 NcAlertView.ShowMessage (NavigationController.TopViewController, "No Email Address", String.Format ("Sorry, the contact you chose does not have an email address, which is required for chat."));
@@ -716,9 +730,9 @@ namespace NachoClient.iOS
             ChatViewController.ShowContactChooser (address);
         }
 
-        public void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix)
+        public void AddressBlockContactPickerRequested(UcAddressBlock view)
         {
-            var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, prefix);
+            var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, null);
             ChatViewController.ShowContactSearch (address);
         }
 

@@ -54,7 +54,7 @@ namespace NachoClient.iOS
             base.LoadView ();
             AutomaticallyAdjustsScrollViewInsets = false;
             TableView.RegisterClassForCellReuse (typeof (ContactCell), ContactCellReuseIdentifier);
-            TableView.RegisterClassForHeaderFooterViewReuse (typeof (ContactGroupHeaderView), ContactGroupHeaderReuseIdentifier);
+            TableView.RegisterClassForHeaderFooterViewReuse (typeof (ContactGroupTableViewHeaderView), ContactGroupHeaderReuseIdentifier);
             TableView.RowHeight = 64.0f;
             TableView.SectionIndexMinimumDisplayRowCount = 20;
             TableView.SectionIndexBackgroundColor = UIColor.Clear;
@@ -68,16 +68,6 @@ namespace NachoClient.iOS
             StartListeningForStatusInd ();
         }
 
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
-        }
-
         public override void ViewDidDisappear (bool animated)
         {
             StopListeningForStatusInd ();
@@ -88,6 +78,25 @@ namespace NachoClient.iOS
         {
             Account = account;
             // TODO: reload recents
+        }
+
+        public override void Cleanup ()
+        {
+            // Clean up nav bar
+            SearchButton.Clicked -= ShowSearch;
+            NewContactButton.Clicked -= NewContact;
+            DoneSwipingButton.Clicked -= EndSwiping;
+
+            // Clean up search
+            if (SearchController != null) {
+                SearchController.Delegate = null;
+            }
+            if (SearchResultsViewController != null) {
+                SearchResultsViewController.Cleanup ();
+                SearchResultsViewController = null;
+            }
+            
+            base.Cleanup ();
         }
 
         #endregion
@@ -129,7 +138,7 @@ namespace NachoClient.iOS
                     // TODO: recents
                     //var recents = McContact.RicContactsSortedByRank (Account.Id, 5);
                     var contacts = McContact.AllContactsSortedByName (true);
-                    var contactGroups = GroupContacts (contacts);
+                    var contactGroups = ContactGroup.CreateGroups (contacts, Cache);
                     InvokeOnMainThread (() => {
                         IsReloading = false;
                         if (NeedsReload) {
@@ -140,24 +149,6 @@ namespace NachoClient.iOS
                     });
                 }, "ContactsViewController.Reload");
             }
-        }
-
-        List<ContactGroup> GroupContacts (List<NcContactIndex> contacts)
-        {
-            var previousFirstLetter = "";
-            var firstLetter = "";
-            var contactGroups = new List<ContactGroup> ();
-            ContactGroup group = null;
-            foreach (var contact in contacts) {
-                firstLetter = contact.FirstLetter.ToUpper ();
-                if (firstLetter != previousFirstLetter) {
-                    group = new ContactGroup (firstLetter, Cache);
-                    contactGroups.Add (group);
-                    previousFirstLetter = firstLetter;
-                }
-                group.Contacts.Add (contact);
-            }
-            return contactGroups;
         }
 
         void HandleReloadResults (List<ContactGroup> contactGroups)
@@ -239,13 +230,13 @@ namespace NachoClient.iOS
 
         public override nint NumberOfSections (UITableView tableView)
         {
-            return ContactGroups.Count ();
+            return ContactGroups.Count;
         }
 
         public override nint RowsInSection (UITableView tableView, nint section)
         {
             var group = ContactGroups [(int)section];
-            return group.Contacts.Count ();
+            return group.Contacts.Count;
         }
 
         public override nfloat GetHeightForHeader (UITableView tableView, nint section)
@@ -255,7 +246,7 @@ namespace NachoClient.iOS
 
         public override UIView GetViewForHeader (UITableView tableView, nint section)
         {
-            var headerView = tableView.DequeueReusableHeaderFooterView (ContactGroupHeaderReuseIdentifier) as ContactGroupHeaderView;
+            var headerView = tableView.DequeueReusableHeaderFooterView (ContactGroupHeaderReuseIdentifier) as ContactGroupTableViewHeaderView;
             var group = ContactGroups [(int)section];
             headerView.NameLabel.Text = group.Name;
             if (adoptedTheme != null) {
@@ -464,95 +455,113 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region Caching
-
-        class ContactGroup
-        {
-            public string Name;
-            public List<NcContactIndex> Contacts;
-            private ContactCache Cache;
-
-            public ContactGroup (string name, ContactCache cache)
-            {
-                Name = name;
-                Contacts = new List<NcContactIndex> ();
-                Cache = cache;
-            }
-
-            public McContact GetCachedContact (int index)
-            {
-                var contactIndex = Contacts [index];
-                return Cache.GetContact (contactIndex.Id);
-            }
-        }
-
-        class ContactCache
-        {
-
-            Dictionary<int, McContact> ContactsById;
-            Queue<int> ContactIds;
-            int MaxContactCount = 100;
-
-            public ContactCache ()
-            {
-                ContactsById = new Dictionary<int, McContact> ();
-                ContactIds = new Queue<int> ();
-            }
-
-            public McContact GetContact (int contactId)
-            {
-                McContact contact;
-                if (!ContactsById.TryGetValue (contactId, out contact)) {
-                    contact = McContact.QueryById<McContact> (contactId);
-                    ContactsById.Add (contactId, contact);
-                    ContactIds.Enqueue (contactId);
-                    if (ContactIds.Count > MaxContactCount) {
-                        var contactIdToRemove = ContactIds.Dequeue ();
-                        ContactsById.Remove (contactIdToRemove);
-                    }
-                }
-                return contact;
-            }
-        }
-
-        #endregion
-
         public override UIStatusBarStyle PreferredStatusBarStyle ()
         {
             return UIStatusBarStyle.LightContent;
         }
+    }
 
-        class ContactGroupHeaderView : UITableViewHeaderFooterView, ThemeAdopter
+    #region Caching
+
+    class ContactGroup
+    {
+        public string Name;
+        public List<NcContactIndex> Contacts;
+        private ContactCache Cache;
+
+        public ContactGroup (string name, ContactCache cache)
         {
-            public UILabel NameLabel { get; private set; }
-            CALayer BorderLayer;
-            nfloat BorderWidth = 0.5f;
-            
-            public ContactGroupHeaderView (IntPtr handle) : base (handle)
-            {
-                NameLabel = new UILabel ();
-                BorderLayer = new CALayer ();
-                ContentView.AddSubview (NameLabel);
-                ContentView.Layer.AddSublayer (BorderLayer);
-            }
+            Name = name;
+            Contacts = new List<NcContactIndex> ();
+            Cache = cache;
+        }
 
-            public void AdoptTheme (Theme theme)
-            {
-                //BackgroundView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
-                ContentView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
-                NameLabel.BackgroundColor = theme.TableViewGroupedBackgroundColor;
-                NameLabel.TextColor = theme.TableSectionHeaderTextColor;
-                NameLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
-                BorderLayer.BackgroundColor = theme.FilterbarBorderColor.CGColor;
+        public static List<ContactGroup> CreateGroups (List<NcContactIndex> contacts, ContactCache cache)
+        {
+            var previousFirstLetter = "";
+            var firstLetter = "";
+            var contactGroups = new List<ContactGroup> ();
+            ContactGroup group = null;
+            foreach (var contact in contacts) {
+                firstLetter = contact.FirstLetter.ToUpper ();
+                if (firstLetter != previousFirstLetter) {
+                    group = new ContactGroup (firstLetter, cache);
+                    contactGroups.Add (group);
+                    previousFirstLetter = firstLetter;
+                }
+                group.Contacts.Add (contact);
             }
+            return contactGroups;
+        }
 
-            public override void LayoutSubviews ()
-            {
-                base.LayoutSubviews ();
-                nfloat leftPadding = 12.0f;
-                NameLabel.Frame = new CGRect (leftPadding, 0.0f, ContentView.Bounds.Width - leftPadding, ContentView.Bounds.Height);
-                BorderLayer.Frame = new CGRect (0.0f, ContentView.Bounds.Height - BorderWidth, ContentView.Bounds.Width, BorderWidth);
+        public McContact GetCachedContact (int index)
+        {
+            var contactIndex = Contacts [index];
+            return Cache.GetContact (contactIndex.Id);
+        }
+    }
+
+    class ContactCache
+    {
+
+        Dictionary<int, McContact> ContactsById;
+        Queue<int> ContactIds;
+        int MaxContactCount = 100;
+
+        public ContactCache ()
+        {
+            ContactsById = new Dictionary<int, McContact> ();
+            ContactIds = new Queue<int> ();
+        }
+
+        public McContact GetContact (int contactId)
+        {
+            McContact contact;
+            if (!ContactsById.TryGetValue (contactId, out contact)) {
+                contact = McContact.QueryById<McContact> (contactId);
+                ContactsById.Add (contactId, contact);
+                ContactIds.Enqueue (contactId);
+                if (ContactIds.Count > MaxContactCount) {
+                    var contactIdToRemove = ContactIds.Dequeue ();
+                    ContactsById.Remove (contactIdToRemove);
+                }
             }
+            return contact;
+        }
+    }
+
+    #endregion
+
+    class ContactGroupTableViewHeaderView : UITableViewHeaderFooterView, ThemeAdopter
+    {
+        public UILabel NameLabel { get; private set; }
+        CALayer BorderLayer;
+        nfloat BorderWidth = 0.5f;
+        
+        public ContactGroupTableViewHeaderView (IntPtr handle) : base (handle)
+        {
+            NameLabel = new UILabel ();
+            BorderLayer = new CALayer ();
+            ContentView.AddSubview (NameLabel);
+            ContentView.Layer.AddSublayer (BorderLayer);
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            //BackgroundView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+            ContentView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+            NameLabel.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+            NameLabel.TextColor = theme.TableSectionHeaderTextColor;
+            NameLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
+            BorderLayer.BackgroundColor = theme.FilterbarBorderColor.CGColor;
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            nfloat leftPadding = 12.0f;
+            NameLabel.Frame = new CGRect (leftPadding, 0.0f, ContentView.Bounds.Width - leftPadding, ContentView.Bounds.Height);
+            BorderLayer.Frame = new CGRect (0.0f, ContentView.Bounds.Height - BorderWidth, ContentView.Bounds.Width, BorderWidth);
         }
     }
 
@@ -562,6 +571,7 @@ namespace NachoClient.iOS
         const string ContactCellIdentifier = "ContactCellIdentifier";
         ContactsGeneralSearch Searcher;
         List<McContactEmailAddressAttribute> Results;
+        public event EventHandler<McContact> ContactSelected;
 
         public ContactSearchResultsViewController () : base ()
         {
@@ -610,7 +620,7 @@ namespace NachoClient.iOS
 
         public override nint RowsInSection (UITableView tableView, nint section)
         {
-            return Results.Count ();
+            return Results.Count;
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -626,7 +636,11 @@ namespace NachoClient.iOS
         {
             var emailAttribute = Results [indexPath.Row];
             var contact = emailAttribute.GetContact ();
-            ShowContact (contact);
+            if (ContactSelected != null) {
+                ContactSelected (this, contact);
+            } else {
+                ShowContact (contact);
+            }
         }
 
         void ShowContact (McContact contact)
@@ -638,408 +652,4 @@ namespace NachoClient.iOS
         }
 
     }
-
-    /*
-    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate, INachoContactDefaultSelector, IAccountSwitching
-    {
-        SwipeView swipeView;
-        LettersSwipeViewDataSource swipeViewDateSource;
-        UITableView TableView;
-
-        NcUIBarButtonItem addContactButton;
-
-        protected bool contactsNeedsRefresh;
-
-        ContactsTableViewSource contactTableViewSource;
-        ContactsGeneralSearch searcher;
-
-        protected NcCapture ReloadCapture;
-        private string ReloadCaptureName;
-
-        public ContactListViewController () : base ()
-        {
-            // iOS 8 bug sez stack overflow
-            //  var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(ContactListViewController));
-            // a.Font = A.Font_AvenirNextMedium24;
-            // a.TextColor = A.Color_NachoDarkText;
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-
-            View.BackgroundColor = UIColor.White;
-
-            ReloadCaptureName = "ContactListViewController.Reload";
-            NcCapture.AddKind (ReloadCaptureName);
-            ReloadCapture = NcCapture.Create (ReloadCaptureName);
-
-            swipeView = new SwipeView ();
-            swipeView.Frame = new CGRect (10, 0, View.Frame.Width - 20, 55);
-            swipeView.BackgroundColor = UIColor.White;
-            swipeView.PagingEnabled = false;
-            swipeView.DecelerationRate = 0.1f;
-
-            View.AddSubview (swipeView);
-            swipeViewDateSource = new LettersSwipeViewDataSource (this);
-            swipeView.DataSource = swipeViewDateSource;
-            swipeView.Delegate = new LettersSwipeViewDelegate (this);
-
-            var lineView = new UIView (new CGRect (0, 55, View.Frame.Width, 1));
-            lineView.BackgroundColor = A.Color_NachoBorderGray;
-            View.AddSubview (lineView);
-
-            TableView = new UITableView (new CGRect (0, 56, View.Frame.Width, View.Frame.Height - 56), UITableViewStyle.Grouped);
-            TableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            TableView.TableFooterView = new UIView (new CGRect (0, 0, TableView.Frame.Width, 100));
-            TableView.AccessibilityLabel = "Contact list";
-            View.AddSubview (TableView);
-
-            InitializeSearchDisplayController ();
-
-            // Manages the search bar & auto-complete table.
-            contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, NcApplication.Instance.Account, true, SearchDisplayController);
-
-            TableView.Source = contactTableViewSource;
-
-            SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
-            SearchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            SearchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            var searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
-            searchButton.AccessibilityLabel = "Search";
-            searchButton.TintColor = A.Color_NachoBlue;
-
-            addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
-            addContactButton.AccessibilityLabel = "Add contact";
-            addContactButton.TintColor = A.Color_NachoBlue;
-
-            NavigationItem.RightBarButtonItem = addContactButton;
-            NavigationItem.LeftItemsSupplementBackButton = true;
-            NavigationItem.LeftBarButtonItem = searchButton;
-
-            NavigationController.NavigationBar.Translucent = false;
-
-            // Adjust the icon; contacts covers all account
-            SwitchToAccount (NcApplication.Instance.Account);
-
-            addContactButton.Clicked += (object sender, EventArgs e) => {
-                if (NcApplication.Instance.Account.CanAddContact ()) {
-                    AddContact (NcApplication.Instance.Account);
-                } else {
-                    var canAddAccounts = McAccount.GetCanAddContactAccounts ();
-                    var actions = new NcAlertAction[canAddAccounts.Count];
-                    for (int n = 0; n < canAddAccounts.Count; n++) {
-                        var account = canAddAccounts [n];
-                        var displayName = account.DisplayName + ": " + account.EmailAddr;
-                        actions [n] = new NcAlertAction (displayName, () => {
-                            AddContact (account);
-                        });
-                    }
-                    NcActionSheet.Show (addContactButton, this, null,
-                        "Cannot add contacts to the current account. Select other account for the new contact.", actions);
-                }
-            };
-
-            searchButton.Clicked += (object sender, EventArgs e) => {
-                SearchDisplayController.SearchBar.BecomeFirstResponder ();
-            };
-
-            // Load when view becomes visible
-            contactsNeedsRefresh = true;
-        }
-
-        protected void InitializeSearchDisplayController ()
-        {
-            var sb = new UISearchBar ();
-
-            // creating the controller sets up its pointers
-            new UISearchDisplayController (sb, this);
-
-            TableView.TableHeaderView = sb;
-        }
-
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            searcher = new ContactsGeneralSearch (UpdateSearchResultsUi);
-            SearchDisplayController.Delegate = new ContactsSearchDisplayDelegate (searcher);
-            MaybeRefreshContacts ();
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-            PermissionManager.DealWithContactsPermission ();
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            searcher.Dispose ();
-            searcher = null;
-            SearchDisplayController.Delegate = null;
-        }
-
-        public void SwitchToAccount (McAccount account)
-        {
-            // If no account supports adding contacts, hide the button
-            bool hide = (0 == McAccount.GetCanAddContactAccounts ().Count);
-            NavigationItem.RightBarButtonItem = hide ? null : addContactButton;
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
-                RefreshContactsIfVisible ();
-            }
-        }
-
-        void UpdateSearchResultsUi (string searchString, List<McContactEmailAddressAttribute> results)
-        {
-            contactTableViewSource.SetSearchResults (results);
-            SearchDisplayController.SearchResultsTableView.ReloadData ();
-        }
-
-        void AddContact (McAccount account)
-        {
-            var destinationViewController = new ContactEditViewController ();
-            destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
-            destinationViewController.account = account;
-            NavigationController.PushViewController (destinationViewController, true);
-        }
-
-        protected void RefreshContactsIfVisible ()
-        {
-            contactsNeedsRefresh = true;
-            if (!this.IsVisible ()) {
-                return;
-            }
-            if (SearchDisplayController.Active) {
-                return;
-            }
-            MaybeRefreshContacts ();
-        }
-
-        protected void MaybeRefreshContacts ()
-        {
-            using (NcAbate.UIAbatement ()) {
-                if (contactsNeedsRefresh) {
-                    contactsNeedsRefresh = false;
-                    ReloadCapture.Start ();
-                    // RIC -- only highlight recents from the current account
-                    var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
-                    var contacts = McContact.AllContactsSortedByName (true);
-                    contactTableViewSource.SetContacts (recents, contacts, true);
-                    TableView.ReloadData ();
-                    ReloadCapture.Stop ();
-                } else {
-                    contactTableViewSource.ReconfigureVisibleCells (TableView);
-                }
-            }
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void ContactSelectedCallback (McContact contact)
-        {
-            ShowContact (contact);
-        }
-
-        void ShowContact (McContact contact)
-        {
-            var destinationController = new ContactDetailViewController ();
-            destinationController.contact = contact;
-            NavigationController.PushViewController (destinationController, true);
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void EmailSwipeHandler (McContact contact)
-        {
-            if (contact == null) {
-                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
-            } else {
-                var address = Util.GetContactDefaultEmail (contact);
-                if (address == null) {
-                    if (contact.EmailAddresses.Count == 0) {
-                        if (contact.CanUserEdit ()) {
-                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
-                        } else {
-                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
-                        }
-                    } else {
-                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
-                    }
-                } else {
-                    ComposeMessage (address);
-                }
-            }
-        }
-
-        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
-        {
-            var destinationController = new ContactDefaultSelectionViewController ();
-            destinationController.SetContact (contact);
-            destinationController.viewType = type;
-            destinationController.owner = this;
-            PresentViewController (destinationController, true, null);
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void CallSwipeHandler (McContact contact)
-        {
-            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
-                SelectDefault(contact, type);
-            });
-        }
-
-        public void SelectSectionIncludingRecent (int index)
-        {
-            contactTableViewSource.ScrollToSectionIncludingRecent (TableView, index);
-        }
-
-        public void ContactDefaultSelectorComposeMessage (string address)
-        {
-            ComposeMessage (address);
-        }
-
-        public void ComposeMessage (string address)
-        {
-            var account = NcApplication.Instance.DefaultEmailAccount;
-            var message = McEmailMessage.MessageWithSubject (account, "");
-            message.To = address;
-            var composeViewController = new MessageComposeViewController (account);
-            composeViewController.Composer.Message = message;
-            composeViewController.Present ();
-        }
-
-        public class LettersSwipeViewDelegate : SwipeViewDelegate
-        {
-            ContactListViewController owner;
-
-            public LettersSwipeViewDelegate (ContactListViewController owner) : base ()
-            {
-                this.owner = owner;
-            }
-
-            public override void DidSelectItemAtIndex (SwipeView swipeView, int index)
-            {
-                if (null != owner) {
-                    owner.SelectSectionIncludingRecent (index);
-                }
-            }
-        }
-
-        public class LettersSwipeViewDataSource : SwipeViewDataSource
-        {
-            UIView[] viewList;
-
-            ContactListViewController owner;
-
-            // Recent, A..Z, #
-            public override int NumberOfItemsInSwipeView (SwipeView swipeView)
-            {
-                return 28;
-            }
-
-            public LettersSwipeViewDataSource (ContactListViewController owner) : base ()
-            {
-                this.owner = owner;
-                viewList = new UIView[28];
-                viewList [0] = CreateImageView (0);
-                const string letters = "!ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
-                for (int i = 1; i < 28; i++) {
-                    viewList [i] = CreateLetterView (i, letters [i]);
-                }
-            }
-
-            public override UIView ViewForItemAtIndex (SwipeView swipeView, int index, UIView view)
-            {
-                return viewList [index];
-            }
-
-            protected void SelectButton (UIButton button)
-            {
-                foreach (var v in viewList) {
-                    var b = (UIButton)v.Subviews [0];
-                    if (b.Selected) {
-                        b.Selected = false;
-                        b.BackgroundColor = UIColor.Clear;
-                    }
-                }
-                button.Selected = true;
-                button.BackgroundColor = A.Color_NachoGreen;
-            }
-
-            public void SelectButton (int section)
-            {
-                var n = section;
-                var view = viewList [n];
-                var button = (UIButton)view.Subviews [0];
-                SelectButton (button);
-            }
-
-            protected UIView CreateLetterView (int index, char c)
-            {
-                var view = new UIView (new CGRect (0, 0, 50, 50));
-                var title = new String (c, 1);
-                var button = UIButton.FromType (UIButtonType.RoundedRect);
-                button.Frame = new CGRect (7, 7, 36, 36);
-                button.Layer.CornerRadius = 18;
-                button.Layer.MasksToBounds = true;
-                button.TintColor = UIColor.Clear;
-                button.BackgroundColor = UIColor.Clear;
-                button.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
-                button.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                button.Layer.BorderWidth = 1f;
-                button.SetTitle (title, UIControlState.Normal);
-                button.SetTitle (title, UIControlState.Selected);
-                button.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-                button.SetTitleColor (UIColor.White, UIControlState.Selected);
-                button.AccessibilityLabel = title;
-                button.Font = A.Font_AvenirNextDemiBold17;
-                button.TouchUpInside += (object sender, EventArgs e) => {
-                    SelectButton ((UIButton)sender);
-                    if (null != owner) {
-                        owner.SelectSectionIncludingRecent (index);
-                    }
-                };
-                view.AddSubview (button);
-                return view;
-            }
-
-            protected UIView CreateImageView (int index)
-            {
-                var button = UIButton.FromType (UIButtonType.Custom);
-                button.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                button.Layer.BorderWidth = 1.0f;
-                button.Frame = new CGRect (7, 7, 36, 36);
-                button.Layer.CornerRadius = 18;
-                button.Layer.MasksToBounds = true;
-                using (var image = UIImage.FromBundle ("contacts-recent")) {
-                    button.SetImage (image, UIControlState.Normal);
-                }
-                using (var image = UIImage.FromBundle ("contacts-recent-active")) {
-                    button.SetImage (image, UIControlState.Selected);
-                }
-                button.TouchUpInside += (object sender, EventArgs e) => {
-                    SelectButton ((UIButton)sender);
-                    if (null != owner) {
-                        owner.SelectSectionIncludingRecent (index);
-                    }
-                };
-                var view = new UIView (new CGRect (0, 0, 50, 50));
-                view.AddSubview (button);
-                return view;
-            }
-        }
-    }
-    */
 }

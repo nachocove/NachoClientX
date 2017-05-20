@@ -384,9 +384,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix)
+        public void AddressBlockContactPickerRequested(UcAddressBlock view)
         {
-            var address = EmailAddressForAddressView (view, prefix);
+            var address = EmailAddressForAddressView (view, null);
             if (HeaderDelegate != null) {
                 HeaderDelegate.MessageComposeHeaderViewDidSelectContactSearch (this, address);
             }

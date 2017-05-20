@@ -59,7 +59,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            NavigationItem.RightBarButtonItem = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, Search);
+            //NavigationItem.RightBarButtonItem = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, Search);
 
             NavigationItem.Title = "Chooser";
 
@@ -73,9 +73,9 @@ namespace NachoClient.iOS
 
         void Search (object sender, EventArgs e)
         {
-            var searchViewController = new ContactSearchViewController ();
-            searchViewController.SetOwner (this, account, address, NachoContactType.EmailRequired);
-            NavigationController.PushViewController (searchViewController, true);
+            //var searchViewController = new ContactSearchViewController ();
+            //searchViewController.SetOwner (this, account, address, NachoContactType.EmailRequired);
+            //NavigationController.PushViewController (searchViewController, true);
         }
 
         public override void ViewWillAppear (bool animated)

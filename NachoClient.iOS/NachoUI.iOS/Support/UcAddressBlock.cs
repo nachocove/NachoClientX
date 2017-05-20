@@ -264,7 +264,7 @@ namespace NachoClient.iOS
             chooserButton.Hidden = !isEditable;
             chooserButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (null != owner) {
-                    owner.AddressBlockSearchContactClicked (this, null);
+                    owner.AddressBlockContactPickerRequested (this);
                 }
             };
 

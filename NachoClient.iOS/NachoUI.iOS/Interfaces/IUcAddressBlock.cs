@@ -22,7 +22,7 @@ namespace NachoClient.iOS
 
         void AddressBlockAutoCompleteContactClicked(UcAddressBlock view, string prefix);
 
-        void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix);
+        void AddressBlockContactPickerRequested(UcAddressBlock view);
 
         void AddressBlockRemovedAddress (UcAddressBlock view, NcEmailAddress address);
     }

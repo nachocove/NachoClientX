@@ -48,6 +48,7 @@ namespace NachoClient.iOS
         MessageComposerDelegate,
         NcWebViewMessageHandler,
         AccountPickerViewControllerDelegate,
+        ContactPickerViewControllerDelegate,
         ThemeAdopter
     {
 
@@ -435,12 +436,24 @@ namespace NachoClient.iOS
             FadeCustomSegue.Transition (this, chooserController);
         }
 
+        NcEmailAddress.Kind PickingKind;
+
         // User starting to type in To/CC/BCC field
         public void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address)
         {
-            var searchController = new ContactSearchViewController ();
-            searchController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
-            FadeCustomSegue.Transition (this, searchController);
+            PickingKind = address.kind;
+            var picker = new ContactPickerViewController ();
+            picker.PickerDelegate = this;
+            PresentViewController (new UINavigationController (picker), true, null);
+        }
+
+        public void ContactPickerDidPickContact (ContactPickerViewController vc, McContact contact)
+        {
+            var address = new NcEmailAddress (PickingKind);
+            address.contact = contact;
+            address.address = contact.GetEmailAddress ();
+			AddEmailAddresss (address);
+            DismissViewController (true, null);
         }
 
         bool SalesforceBccAdded = false;
@@ -466,6 +479,11 @@ namespace NachoClient.iOS
 
         // User selecting contact for To/CC/BCC field
         public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
+        {
+            AddEmailAddresss (address);
+        }
+
+        void AddEmailAddresss (NcEmailAddress address)
         {
             if (address.kind == NcEmailAddress.Kind.To) {
                 HeaderView.ToView.Append (address);

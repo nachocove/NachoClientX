@@ -460,7 +460,6 @@
     <Compile Include="NachoUI.iOS\Contacts\ContactDetailViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactsViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\ContactSearchViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactDefaultSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\EditEventViewController.cs" />
@@ -608,6 +607,7 @@
     <Compile Include="NachoUI.iOS\Views\PressGestureRecognizer.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactCell.cs" />
     <Compile Include="NachoUI.iOS\Base\SearchResultsViewController.cs" />
+    <Compile Include="NachoUI.iOS\Contacts\ContactPickerViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

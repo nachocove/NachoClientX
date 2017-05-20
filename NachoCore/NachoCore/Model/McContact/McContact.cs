@@ -1709,6 +1709,30 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
+        public static List<NcContactIndex> AllEmailContactsSortedByName ()
+        {
+            string sql =
+				" SELECT DISTINCT Id, substr(FullIndex, 1, 1) as FirstLetter FROM " +
+				" ( " +
+				" SELECT " +
+				"     c.Id as Id, FirstName, LastName, s.Value, CompanyName, " +
+				"     ltrim( " +
+				"         ifnull(c.FirstName,'') || ' ' || " +
+				"         ifnull(c.LastName,'') || ' ' || " +
+				"         ifnull(ltrim(s.Value,'\"'),'') || ' ' || " +
+				"         ifnull(c.CompanyName,'') " +
+				"         , ' '''" +
+				"      ) as FullIndex " +
+				" FROM McContact AS c   " +
+				" LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId   " +
+				" WHERE s.Value IS NOT NULL AND" +
+				" likelihood (c.IsAwaitingDelete = 0, 1.0)   " +
+				" ORDER BY " +
+				" FullIndex " +
+				" COLLATE NOCASE ASC)";
+            return NcModel.Instance.Db.Query<NcContactIndex> (sql);
+        }
+
         public static List<NcContactIndex> RicContactsSortedByRank (int accountId, int limit)
         {
             // Get the RIC folder

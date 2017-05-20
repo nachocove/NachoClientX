@@ -54,9 +54,9 @@ namespace NachoClient.iOS
 
         public void ShowContactSearch (NcEmailAddress address)
         {
-            var searchController = new ContactSearchViewController ();
-            searchController.SetOwner (MessagesViewController, MessagesViewController.Account, address, NachoContactType.EmailRequired);
-            FadeCustomSegue.Transition (this, searchController);
+            var picker = new ContactPickerViewController ();
+            picker.PickerDelegate = MessagesViewController;
+            PresentViewController (new UINavigationController (picker), true, null);
         }
     }
 
