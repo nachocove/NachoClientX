@@ -543,7 +543,6 @@
     <Compile Include="NachoUI.iOS\Calendar\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Calendar\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactCellOld.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\ContactsTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Home\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\Home\HotHelpMessageView.cs" />
     <Compile Include="NachoUI.iOS\MessageList\MessageCell.cs" />
@@ -571,7 +570,6 @@
     <Compile Include="NachoUI.iOS\Base\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Calendar\ICalendarTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\MessageView\IBodyRender.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\IContactsTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Calendar\iAttendeeTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Base\ImageAccessoryView.cs" />
     <Compile Include="NachoUI.iOS\Settings\IMapFields.cs" />

@@ -564,6 +564,11 @@ namespace NachoClient.iOS
             DismissViewController (true, null);
         }
 
+        public void ContactPickerDidPickCancel (ContactPickerViewController vc)
+        {
+            DismissViewController (true, null);
+        }
+
         public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             AddAddress (address);

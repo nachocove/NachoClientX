@@ -106,7 +106,6 @@ namespace NachoClient.iOS
         {
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
-                TableView.TintColor = theme.TableViewTintColor;
                 TableView.AdoptTheme (theme);
                 FilterBar.AdoptTheme (theme);
             }

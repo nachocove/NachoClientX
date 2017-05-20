@@ -37,7 +37,6 @@ namespace NachoClient.iOS
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
                 TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
-                TableView.TintColor = theme.TableViewTintColor;
                 AboutFooter.Label.Font = theme.BoldDefaultFont.WithSize (14.0f);
                 AboutFooter.Label.TextColor = theme.TableSectionHeaderTextColor;
                 TableView.AdoptTheme (theme);

@@ -91,7 +91,6 @@ namespace NachoClient.iOS
                 foreach (var header in AccountHeaders) {
                     ApplyThemeToHeader (header);
                 }
-                TableView.TintColor = theme.TableViewTintColor;
                 TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
                 TableView.AdoptTheme (theme);
             }

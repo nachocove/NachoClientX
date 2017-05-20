@@ -453,7 +453,28 @@ namespace NachoClient.iOS
             address.contact = contact;
             address.address = contact.GetEmailAddress ();
 			AddEmailAddresss (address);
+            CloseContactPicker();
+        }
+
+        public void ContactPickerDidPickCancel (ContactPickerViewController vc)
+        {
+            CloseContactPicker();
+        }
+
+        void CloseContactPicker ()
+        {
             DismissViewController (true, null);
+            switch (PickingKind) {
+            case NcEmailAddress.Kind.To:
+                HeaderView.ToView.SetEditFieldAsFirstResponder ();
+                break;
+            case NcEmailAddress.Kind.Cc:
+                HeaderView.CcView.SetEditFieldAsFirstResponder ();
+                break;
+            case NcEmailAddress.Kind.Bcc:
+                HeaderView.BccView.SetEditFieldAsFirstResponder ();
+                break;
+            }
         }
 
         bool SalesforceBccAdded = false;

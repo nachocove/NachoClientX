@@ -98,7 +98,7 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        public static void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact, IContactsTableViewSourceDelegate owner, bool allowSwiping, string alternateEmailAddress = null)
+        public static void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact, bool allowSwiping, string alternateEmailAddress = null)
         {
             var titleLabel = (UILabel)cell.ViewWithTag (TITLE_LABEL_TAG);
             var subtitle1Label = (UILabel)cell.ViewWithTag (SUBTITLE1_LABEL_TAG);
@@ -184,18 +184,6 @@ namespace NachoClient.iOS
                 portraitView.Hidden = false;
             }
 
-            view.OnClick = (int tag) => {
-                switch (tag) {
-                case EMAIL_SWIPE_TAG:
-                    EmailSwipeHandler (owner, contact);
-                    break;
-                case CALL_SWIPE_TAG:
-                    CallSwipeHandler (owner, contact);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
-                }
-            };
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
@@ -225,16 +213,6 @@ namespace NachoClient.iOS
             labelView.Hidden = false;
             labelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
             labelView.BackgroundColor = contactColor;
-        }
-
-        private static void CallSwipeHandler (IContactsTableViewSourceDelegate owner, McContact contact)
-        {
-            owner.CallSwipeHandler (contact);
-        }
-
-        private static void EmailSwipeHandler (IContactsTableViewSourceDelegate owner, McContact contact)
-        {
-            owner.EmailSwipeHandler (contact);
         }
     }
 }

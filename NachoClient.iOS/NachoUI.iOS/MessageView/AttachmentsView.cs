@@ -102,7 +102,10 @@ namespace NachoClient.iOS
 
         public void AdoptTheme (Theme theme)
         {
-            adoptedTheme = theme;
+            if (adoptedTheme != theme) {
+                adoptedTheme = theme;
+                TableView.AdoptTheme (theme);
+            }
         }
 
         void HeaderPressed ()

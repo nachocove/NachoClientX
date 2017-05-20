@@ -370,6 +370,7 @@ namespace NachoClient.iOS
 
         public static void AdoptTheme (this UITableView tableView, Theme theme)
         {
+            tableView.TintColor = theme.TableViewTintColor;
             var cells = tableView.VisibleCells;
             if (cells != null) {
                 foreach (var cell in cells) {

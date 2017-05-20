@@ -15,6 +15,7 @@ namespace NachoClient.iOS
     public interface ContactPickerViewControllerDelegate
     {
         void ContactPickerDidPickContact (ContactPickerViewController vc, McContact contact);
+        void ContactPickerDidPickCancel (ContactPickerViewController vc);
     }
 
     public class ContactPickerViewController : NachoWrappedTableViewController, ThemeAdopter, NachoSearchControllerDelegate
@@ -118,7 +119,6 @@ namespace NachoClient.iOS
         {
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
-                TableView.TintColor = theme.TableViewTintColor;
                 TableView.AdoptTheme (theme);
             }
         }
@@ -167,7 +167,10 @@ namespace NachoClient.iOS
 
         void Close (object sender, EventArgs e)
         {
-            DismissViewController (true, null);
+            var pickerDelegate = PickerDelegate;
+            if (pickerDelegate != null) {
+                pickerDelegate.ContactPickerDidPickCancel (this);
+            }
         }
 
         #endregion

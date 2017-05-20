@@ -103,7 +103,6 @@ namespace NachoClient.iOS
                 ActionsHeader.Label.Font = theme.DefaultFont.WithSize (14.0f);
                 ActionsHeader.Label.TextColor = theme.TableSectionHeaderTextColor;
                 TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
-                TableView.TintColor = theme.TableViewTintColor;
                 TableView.AdoptTheme (theme);
             }
         }

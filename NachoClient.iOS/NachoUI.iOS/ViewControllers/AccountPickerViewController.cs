@@ -61,7 +61,6 @@ namespace NachoClient.iOS
             if (theme != adoptedTheme) {
                 adoptedTheme = theme;
                 TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
-                TableView.TintColor = theme.TableViewTintColor;
                 TableView.AdoptTheme (theme);
             }
         }

@@ -286,7 +286,7 @@ namespace NachoClient.iOS
                 }
                 var contactAddress = Owner.searchResults [indexPath.Row];
                 var contact = contactAddress.GetContact ();
-                ContactCellOld.ConfigureCell (tableView, cell, contact, null, false, contactAddress.Value);
+                ContactCellOld.ConfigureCell (tableView, cell, contact, false, contactAddress.Value);
                 return cell;
             }
 
