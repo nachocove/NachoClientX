@@ -606,6 +606,9 @@
     <Compile Include="NachoUI.iOS\Contacts\ContactCell.cs" />
     <Compile Include="NachoUI.iOS\Base\SearchResultsViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactPickerViewController.cs" />
+    <Compile Include="NachoUI.iOS\Views\TokenTextField.cs" />
+    <Compile Include="NachoUI.iOS\Views\EmailAddressTokenTextField.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\TestViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
