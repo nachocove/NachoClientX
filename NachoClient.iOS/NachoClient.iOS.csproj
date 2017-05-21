@@ -609,6 +609,10 @@
     <Compile Include="NachoUI.iOS\Views\TokenTextField.cs" />
     <Compile Include="NachoUI.iOS\Views\EmailAddressTokenTextField.cs" />
     <Compile Include="NachoUI.iOS\MainTabs\TestViewController.cs" />
+    <Compile Include="NotificationsHandler.cs" />
+    <Compile Include="UiMonitor.cs" />
+    <Compile Include="CrashReporter.cs" />
+    <Compile Include="BackgroundController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
