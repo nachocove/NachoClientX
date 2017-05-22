@@ -1015,7 +1015,7 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
-        void ShowMessage (McEmailMessage message)
+        public void ShowMessage (McEmailMessage message)
         {
             var messageViewController = new MessageViewController ();
             messageViewController.Message = message;

@@ -352,31 +352,6 @@ namespace NachoClient
             return ColorForUser (contact.CircleColor);
         }
 
-
-        public static NachoTabBarController GetActiveTabBarOrNull ()
-        {
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-
-            NachoTabBarController activeTabBar;
-            if (appDelegate.Window.RootViewController is NachoTabBarController) {
-                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController;
-            } else if (null == appDelegate.Window.RootViewController.PresentedViewController) {
-                return null;
-            } else if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
-                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController.TabBarController;
-            } else {
-                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController;
-            }
-            return activeTabBar;
-        }
-
-        public static NachoTabBarController GetActiveTabBar ()
-        {
-            var activeTabBar = GetActiveTabBarOrNull ();
-            NcAssert.NotNull (activeTabBar);
-            return activeTabBar;
-        }
-
         public static UIImage DotWithColor (UIColor color)
         {
             UIGraphics.BeginImageContext (new CGSize (22, 22));

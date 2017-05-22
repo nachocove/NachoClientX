@@ -290,7 +290,7 @@ namespace NachoClient.iOS
 
         #region Private Helpers
 
-        void ShowChat (McChat chat)
+        public void ShowChat (McChat chat)
         {
             var messagesViewController = new ChatMessagesViewController ();
             messagesViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);

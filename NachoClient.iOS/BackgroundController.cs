@@ -3,6 +3,7 @@
 using System;
 using System.Threading;
 using System.Collections.Generic;
+using System.Linq;
 
 using Foundation;
 using UIKit;
@@ -10,16 +11,21 @@ using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoPlatform;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
     public class BackgroundController
     {
-        public enum FetchCause { PerformFetch, RemoteNotification };
+
+        public NotificationsHandler NotificationsHandler;
+
+        public enum FetchCause { None, PerformFetch, RemoteNotification };
         private enum FetchState { None, Active, Finishing, Done };
 
-        private bool IsFetching = false;
-        private FetchCause Cause;
+        public bool IsFetching { get; private set; } = false;
+        private FetchCause Cause = FetchCause.None;
         private int FetchCount = 0;
 
         private FetchState BadgeCountState = FetchState.None;
@@ -27,14 +33,25 @@ namespace NachoClient.iOS
 
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult Result;
+        
+        // used to ensure that a race condition doesn't let the ShutdownTimer stop things after re-activation.
+        private int ShutdownCounter = 0;
+        private bool FinalShutdownHasHappened = false;
+
+        // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
+        #pragma warning disable 414
+        private Timer ShutdownTimer = null;
+        #pragma warning restore 414
+
+        private nint BackgroundTaskId = -1;
 
         /// <summary>
         /// The PerformFetch timer. This needs to be a Timer, not an NcTimer,
-        /// because performFetchTimer needs to keep running after FinalShutdown()
+        /// because FetchTimer needs to keep running after FinalShutdown()
         /// has been called to make sure the badge count update code completes in
         /// time. If it is an NcTimer, then it will get killed during FinalShutdown().
         /// </summary>
-        private Timer performFetchTimer = null;
+        private Timer FetchTimer = null;
 
         // A list of all account ids that are waiting to be synced.
         private List<int> Accounts;
@@ -42,22 +59,36 @@ namespace NachoClient.iOS
         private List<int> PushAccounts;
         // PushAssist is active only when the app is registered for remote notifications
 
-
-        private class PerformFetchCountObject
-        {
-            public int count;
-            public PerformFetchCountObject (int count) { this.count = count; }
-        }
-
-        private bool IsFetchComplete {
+        public string FetchCauseString {
             get {
-                return (0 == Accounts.Count);
+                switch (Cause) {
+                case FetchCause.None:
+                    return "BG";
+                case FetchCause.PerformFetch:
+                    return "PF";
+                case FetchCause.RemoteNotification:
+                    return "RN";
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure ("");
+                }
             }
         }
 
-        private bool IsPushAssistArmComplete {
+        private class FetchCountObject
+        {
+            public int count;
+            public FetchCountObject (int count) { this.count = count; }
+        }
+
+        private bool HasFetchedAllAccounts {
             get {
-                return !NotificationsHandler.HasRegisteredForRemoteNotifications || (0 == PushAccounts.Count);
+                return Accounts.Count == 0;
+            }
+        }
+
+        private bool HasArmedAllPushAccounts {
+            get {
+                return PushAccounts.Count == 0;
             }
         }
 
@@ -65,11 +96,79 @@ namespace NachoClient.iOS
         {
         }
 
-        protected void StartFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler, FetchCause cause)
+        public void BecomeActive ()
+        {
+            if (IsFetching) {
+                CompleteFetch ();
+            }
+
+            if (BackgroundTaskId >= 0) {
+                UIApplication.SharedApplication.EndBackgroundTask (BackgroundTaskId);
+            }
+            BackgroundTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
+                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0:n2}", UIApplication.SharedApplication.BackgroundTimeRemaining);
+                FinalShutdown (null);
+                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
+            });
+        }
+
+        public void EnterForeground ()
+        {
+            Interlocked.Increment (ref ShutdownCounter);
+            if (null != ShutdownTimer) {
+                ShutdownTimer.Dispose ();
+                ShutdownTimer = null;
+            }
+            if (IsFetching) {
+                CompleteFetch ();
+            }
+            if (FinalShutdownHasHappened) {
+                ReverseFinalShutdown ();
+            }
+        }
+
+        public void EnterBackground ()
+        {
+            var timeRemaining = UIApplication.SharedApplication.BackgroundTimeRemaining;
+            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0:n2}", timeRemaining);
+            if (25.0 > timeRemaining) {
+                FinalShutdown (null);
+            } else {
+                var didShutdown = false;
+                TimeSpan initialTimerDelay = TimeSpan.FromSeconds (1);
+                if (35 < timeRemaining && timeRemaining < 1000) {
+                    initialTimerDelay = TimeSpan.FromSeconds (timeRemaining - 30);
+                }
+                ShutdownTimer = new Timer ((opaque) => {
+                    InvokeOnUIThread.Instance.Invoke (delegate {
+                        // check remaining background time. If too little, shut us down.
+                        // iOS caveat: BackgroundTimeRemaining can be MAX_DOUBLE early on.
+                        // It also seems to return to MAX_DOUBLE value after we call EndBackgroundTask().
+                        var remaining = UIApplication.SharedApplication.BackgroundTimeRemaining;
+                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0:n2}", remaining);
+                        if (!didShutdown && 25.0 > remaining) {
+                            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: Background time is running low. Shutting down the app.");
+                            try {
+                                // This seems to work, but we do get some extra callbacks after Change().
+                                ShutdownTimer.Change (Timeout.Infinite, Timeout.Infinite);
+                            } catch (Exception ex) {
+                                // Wrapper to protect against unknown C# timer stupidity.
+                                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer exception: {0}", ex);
+                            }
+                            didShutdown = true;
+                            FinalShutdown (opaque);
+                        }
+                    });
+                }, ShutdownCounter, initialTimerDelay, TimeSpan.FromSeconds (1));
+                Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: ShutdownTimer");
+            }
+        }
+
+        public void StartFetch (Action<UIBackgroundFetchResult> completionHandler, FetchCause cause)
         {
 
             if (IsFetching) {
-                if (Cause == FetchCause.RemoteNotification && cause == PerformFetch){
+                if (Cause == FetchCause.RemoteNotification && cause == FetchCause.PerformFetch){
                     // iOS often starts a PerformFetch while a remote notification is still in progress.
                     // This is not desirable, but it is normal.
                     Log.Info (Log.LOG_LIFECYCLE, "RemoteNotification was immediately followed by PerformFetch.");
@@ -96,10 +195,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (8.0 > application.BackgroundTimeRemaining) {
+            if (8.0 > UIApplication.SharedApplication.BackgroundTimeRemaining) {
                 // Launching the app took up most of the perform fetch window.  There isn't enough
                 // time left to run a full quick sync.
-                Log.Warn (Log.LOG_LIFECYCLE, "Skipping quick sync {0} because only {1:n2} seconds are left.", cause, application.BackgroundTimeRemaining);
+                Log.Warn (Log.LOG_LIFECYCLE, "Skipping quick sync {0} because only {1:n2} seconds are left.", cause, UIApplication.SharedApplication.BackgroundTimeRemaining);
                 CompleteFetch ();
                 return;
             }
@@ -138,53 +237,80 @@ namespace NachoClient.iOS
             // Set a timer to force everything to shut down before iOS kills the app.
             // The timer should fire once per second starting when the app has about
             // ten seconds left.
-            var performFetchTime = application.BackgroundTimeRemaining;
-            Log.Info (Log.LOG_LIFECYCLE, "Starting PerformFetch timer: {0:n2} seconds of background time remaining.", performFetchTime);
-            performFetchTimer = new Timer (((object state) => {
+            Log.Info (Log.LOG_LIFECYCLE, "Starting PerformFetch timer: {0:n2} seconds of background time remaining.", UIApplication.SharedApplication.BackgroundTimeRemaining);
+            FetchTimer = new Timer (((object state) => {
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    var remaining = application.BackgroundTimeRemaining;
+                    var remaining = UIApplication.SharedApplication.BackgroundTimeRemaining;
                     Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer: {0:n2} seconds remaining.", remaining);
-                    if (((PerformFetchCountObject)state).count == FetchCount) {
+                    if (((FetchCountObject)state).count == FetchCount) {
                         if (10.0 >= remaining && FetchState.Active == BackEndState) {
                             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch ran out of time. Shutting down the app.");
                             if (FetchState.Active == BadgeCountState) {
-                                FinalQuickSyncBadgeNotifications ();
+                                NotifyAndCompleteFetch ();
                             }
                             CompleteFetchAndShutdown ();
                         }
                         if (4.0 >= remaining) {
                             Log.Error (Log.LOG_LIFECYCLE, "PerformFetch didn't shut down in time. Calling the completion handler now.");
-                            FinalizeFetch (Result);
+                            CompleteFetch ();
                         }
-                    } else if (null != performFetchTimer) {
+                    } else if (null != FetchTimer) {
                         Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired after perform fetch completed. Disabling the timer.");
                         try {
-                            performFetchTimer.Change (Timeout.Infinite, Timeout.Infinite);
+                            FetchTimer.Change (Timeout.Infinite, Timeout.Infinite);
                         } catch (Exception ex) {
                             // Wrapper to protect against unknown C# timer stupidity.
                             Log.Error (Log.LOG_LIFECYCLE, "PerformFetch timer exception: {0}", ex);
                         }
                     }
                 });
-            }), new PerformFetchCountObject (FetchCount), TimeSpan.FromSeconds (5), TimeSpan.FromSeconds (1));
+            }), new FetchCountObject (FetchCount), TimeSpan.FromSeconds (5), TimeSpan.FromSeconds (1));
         }
 
-        private void FinalQuickSyncBadgeNotifications ()
+        private void NotifyAndCompleteFetch ()
         {
-            int savedPerformFetchCount = FetchCount;
+            int fetchCount = FetchCount;
             BadgeCountState = FetchState.Finishing;
-            BadgeCountAndMessageNotifications (() => {
+            NotificationsHandler.BadgeCountAndMessageNotifications (() => {
                 // The BadgeCountAndMessageNotifications() might survive across a shutdown and complete when the next
                 // PerformFetch is running.  Only finalize the PerformFetch if it is the same one
                 // as when the call was started.
-                if (FetchCount == savedPerformFetchCount) {
+                if (FetchCount == fetchCount) {
                     BadgeCountState = FetchState.Done;
                     if (FetchState.Done == BackEndState) {
-                        FinalizeFetch (Result);
+                        CompleteFetch ();
                         NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
                     }
                 }
             });
+        }
+
+        public void FinalShutdown (object opaque)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Called");
+            if (null != opaque && (int)opaque != ShutdownCounter) {
+                Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
+                return;
+            }
+            NcApplication.Instance.StopBasalServices ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopBasalServices complete");
+            if (BackgroundTaskId >= 0) {
+                UIApplication.SharedApplication.EndBackgroundTask (BackgroundTaskId);
+                BackgroundTaskId = -1;
+            }
+            FinalShutdownHasHappened = true;
+            Log.Info (Log.LOG_PUSH, "[PA] finalshutdown: client_id={0}", NcApplication.Instance.ClientId);
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Exit");
+        }
+
+        private void ReverseFinalShutdown ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Called");
+            NcApplication.Instance.StartBasalServices ();
+            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartBasalServices complete");
+            FinalShutdownHasHappened = false;
+            NcTask.Run (() => NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20), "ReverseFinalShutdownCleanupOldDbConnections");
+            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
         }
 
         #region Ending a Fetch
@@ -209,14 +335,14 @@ namespace NachoClient.iOS
         private void FinalizeFetch (UIBackgroundFetchResult result)
         {
             Log.Info (Log.LOG_LIFECYCLE, "Finalize PerformFetch ({0})", result.ToString ());
-            if (null != performFetchTimer) {
-                performFetchTimer.Dispose ();
-                performFetchTimer = null;
+            if (null != FetchTimer) {
+                FetchTimer.Dispose ();
+                FetchTimer = null;
             }
             StopListeningForStatusEvents ();
             var handler = CompletionHandler;
             CompletionHandler = null;
-            Cause = null;
+            Cause = FetchCause.None;
             ++FetchCount;
             IsFetching = false;
             BadgeCountState = FetchState.None;
@@ -262,16 +388,16 @@ namespace NachoClient.iOS
                 if (0 >= accountId) {
                     Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded for unspecified account {0}", accountId);
                 }
-                bool fetchWasComplete = IsFetchComplete;
+                bool fetchWasComplete = HasFetchedAllAccounts;
                 Accounts.Remove (accountId);
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded account {0}. {1} accounts and {2} push assists remaining.", accountId, Accounts.Count, PushAccounts.Count);
-                if (IsFetchComplete) {
+                if (HasFetchedAllAccounts) {
                     // There will sometimes be duplicate Info_SyncSucceeded for an account.
                     // Only call BadgeCountAndMessageNotifications once.
                     if (!fetchWasComplete) {
-                        FinalQuickSyncBadgeNotifications ();
+                        NotifyAndCompleteFetch ();
                     }
-                    if (IsPushAssistArmComplete) {
+                    if (HasArmedAllPushAccounts) {
                         CompleteFetchAndShutdown ();
                     }
                 }
@@ -283,7 +409,7 @@ namespace NachoClient.iOS
                 }
                 PushAccounts.Remove (accountId);
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed account {0}. {1} accounts and {2} push assists remaining.", accountId, Accounts.Count, PushAccounts.Count);
-                if (IsFetchComplete && IsPushAssistArmComplete) {
+                if (HasFetchedAllAccounts && HasArmedAllPushAccounts) {
                     CompleteFetchAndShutdown ();
                 }
                 break;
@@ -299,9 +425,9 @@ namespace NachoClient.iOS
                 if (UIBackgroundFetchResult.NoData == Result) {
                     Result = UIBackgroundFetchResult.Failed;
                 }
-                if (IsFetchComplete) {
-                    FinalQuickSyncBadgeNotifications ();
-                    if (IsPushAssistArmComplete) {
+                if (HasFetchedAllAccounts) {
+                    NotifyAndCompleteFetch ();
+                    if (HasArmedAllPushAccounts) {
                         CompleteFetchAndShutdown ();
                     }
                 }

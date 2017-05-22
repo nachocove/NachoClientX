@@ -31,25 +31,22 @@ namespace NachoClient.iOS
 
         UiMonitor UiMonitor = new UiMonitor ();
         CrashReporter CrashReporter = new CrashReporter ();
+        public NotificationsHandler NotificationsHandler { get; private set; } = new NotificationsHandler ();
+        BackgroundController BackgroundController = new BackgroundController ();
 
         // class-level declarations
         public override UIWindow Window { get; set; }
 
-        private nint BackgroundIosTaskId = -1;
-
-        // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
-        #pragma warning disable 414
-        private Timer ShutdownTimer = null;
-        #pragma warning restore 414
-
-        // used to ensure that a race condition doesn't let the ShutdownTimer stop things after re-activation.
-        private int ShutdownCounter = 0;
-
-        private bool FinalShutdownHasHappened = false;
         private bool FirstLaunchInitialization = false;
         private bool DidEnterBackgroundCalled = false;
 
-        private DateTime foregroundTime = DateTime.MinValue;
+        private DateTime ForegroundTime = DateTime.MinValue;
+
+        public AppDelegate () : base()
+        {
+            NotificationsHandler.BackgroundController = BackgroundController;
+            BackgroundController.NotificationsHandler = NotificationsHandler;
+        }
 
         #region Application Lifecycle
 
@@ -156,17 +153,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
             DidEnterBackgroundCalled = false;
-            Interlocked.Increment (ref ShutdownCounter);
-            if (null != ShutdownTimer) {
-                ShutdownTimer.Dispose ();
-                ShutdownTimer = null;
-            }
-            if (doingPerformFetch) {
-                CompletePerformFetchWithoutShutdown ();
-            }
-            if (FinalShutdownHasHappened) {
-                ReverseFinalShutdown ();
-            }
+            BackgroundController.EnterForeground ();
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Cleanup complete");
 
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (653);
@@ -187,21 +174,12 @@ namespace NachoClient.iOS
         public override void OnActivated (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
-            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
-            NotificationsHandler.BecomeActive ();
-            if (doingPerformFetch) {
-                CompletePerformFetchWithoutShutdown ();
-            }
-            foregroundTime = DateTime.UtcNow;
+            ForegroundTime = DateTime.UtcNow;
 
-            if (-1 != BackgroundIosTaskId) {
-                UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
-            }
-            BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
-                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0:n2}", application.BackgroundTimeRemaining);
-                FinalShutdown (null);
-                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
-            });
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
+
+            NotificationsHandler.BecomeActive ();
+            BackgroundController.BecomeActive ();
 
             NcApplication.Instance.ContinueOnActivation ();
 
@@ -218,15 +196,18 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Called");
+
             bool isInitializing = NcApplication.Instance.IsInitializing;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+
+            UpdateGoInactiveTime ();
             NotificationsHandler.BecomeInactive ();
 
-            if (DateTime.MinValue != foregroundTime) {
+            if (DateTime.MinValue != ForegroundTime) {
                 // Log the duration of foreground for usage analytics
-                var duration = (int)(DateTime.UtcNow - foregroundTime).TotalMilliseconds;
-                NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
-                foregroundTime = DateTime.MinValue;
+                var duration = (int)(DateTime.UtcNow - ForegroundTime).TotalMilliseconds;
+                NcApplication.Instance.TelemetryService.RecordIntTimeSeries ("Client.Foreground.Duration", ForegroundTime, duration);
+                ForegroundTime = DateTime.MinValue;
             }
 
             if (!isInitializing) {
@@ -247,39 +228,9 @@ namespace NachoClient.iOS
                 return;
             }
             DidEnterBackgroundCalled = true;
-            var timeRemaining = application.BackgroundTimeRemaining;
-            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0:n2}", timeRemaining);
-            if (25.0 > timeRemaining) {
-                FinalShutdown (null);
-            } else {
-                var didShutdown = false;
-                TimeSpan initialTimerDelay = TimeSpan.FromSeconds (1);
-                if (35 < timeRemaining && timeRemaining < 1000) {
-                    initialTimerDelay = TimeSpan.FromSeconds (timeRemaining - 30);
-                }
-                ShutdownTimer = new Timer ((opaque) => {
-                    InvokeOnUIThread.Instance.Invoke (delegate {
-                        // check remaining background time. If too little, shut us down.
-                        // iOS caveat: BackgroundTimeRemaining can be MAX_DOUBLE early on.
-                        // It also seems to return to MAX_DOUBLE value after we call EndBackgroundTask().
-                        var remaining = application.BackgroundTimeRemaining;
-                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0:n2}", remaining);
-                        if (!didShutdown && 25.0 > remaining) {
-                            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: Background time is running low. Shutting down the app.");
-                            try {
-                                // This seems to work, but we do get some extra callbacks after Change().
-                                ShutdownTimer.Change (Timeout.Infinite, Timeout.Infinite);
-                            } catch (Exception ex) {
-                                // Wrapper to protect against unknown C# timer stupidity.
-                                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer exception: {0}", ex);
-                            }
-                            didShutdown = true;
-                            FinalShutdown (opaque);
-                        }
-                    });
-                }, ShutdownCounter, initialTimerDelay, TimeSpan.FromSeconds (1));
-                Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: ShutdownTimer");
-            }
+
+            BackgroundController.EnterBackground ();
+
             var imageView = new UIImageView (Window.Frame);
             imageView.Tag = 653;    // Give some decent tagvalue or keep a reference of imageView in self
             /* As A security Measure we may do something like this here
@@ -302,7 +253,7 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
         	Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
-        	StartFetch (application, completionHandler, BackgroundController.FetchCause.PerformFetch);
+        	BackgroundController.StartFetch (completionHandler, BackgroundController.FetchCause.PerformFetch);
         }
 
         public override void ReceiveMemoryWarning (UIApplication application)
@@ -317,7 +268,7 @@ namespace NachoClient.iOS
         public override void WillTerminate (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Called");
-            FinalShutdown (null);
+            BackgroundController.FinalShutdown (null);
             Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Exit");
         }
 
@@ -398,8 +349,6 @@ namespace NachoClient.iOS
         #endregion
 
         #region Notifications
-
-        NotificationsHandler NotificationsHandler = new NotificationsHandler ();
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
@@ -522,66 +471,10 @@ namespace NachoClient.iOS
             }
         }
 
-        private void FinalShutdown (object opaque)
+        private void UpdateGoInactiveTime ()
         {
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Called");
-            if (null != opaque && (int)opaque != ShutdownCounter) {
-                Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
-                return;
-            }
-            NcApplication.Instance.StopBasalServices ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopBasalServices complete");
-            if (0 < BackgroundIosTaskId) {
-                UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
-                BackgroundIosTaskId = -1;
-            }
-            FinalShutdownHasHappened = true;
-            Log.Info (Log.LOG_PUSH, "[PA] finalshutdown: client_id={0}", NcApplication.Instance.ClientId);
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Exit");
-        }
-
-        private void ReverseFinalShutdown ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Called");
-            NcApplication.Instance.StartBasalServices ();
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartBasalServices complete");
-            FinalShutdownHasHappened = false;
-            NcTask.Run (() => NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20), "ReverseFinalShutdownCleanupOldDbConnections");
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
-        }
-
-        #endregion
-
-        #region Test/Debug Helpers
-
-        public static void TestScheduleEmailNotification ()
-        {
-            var list = NcEmailManager.PriorityInbox (2);
-            var thread = list.GetEmailThread (0);
-            var message = thread.FirstMessageSpecialCase ();
-            var notif = new UILocalNotification () {
-                AlertAction = null,
-                AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
-                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
-                FireDate = NSDate.FromTimeIntervalSinceNow (15),
-            };
-            notif.SoundName = UILocalNotification.DefaultSoundName;
-            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
-        }
-
-
-        public static void TestScheduleCalendarNotification ()
-        {
-            var e = NcModel.Instance.Db.Table<McEvent> ().Last ();
-            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            var notif = new UILocalNotification () {
-                AlertAction = null,
-                AlertBody = c.Subject + Pretty.ReminderTime (new TimeSpan (0, 7, 0)),
-                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (c.Id), EventNotificationKey),
-                FireDate = NSDate.FromTimeIntervalSinceNow (15),
-            };
-            notif.SoundName = UILocalNotification.DefaultSoundName;
-            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
+            Log.Info (Log.LOG_UI, "UpdateGoInactiveTime: exit");
         }
 
         #endregion

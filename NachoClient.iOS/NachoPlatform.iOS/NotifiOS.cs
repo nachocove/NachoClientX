@@ -38,7 +38,7 @@ namespace NachoPlatform
         {
             foreach (var notification in UIApplication.SharedApplication.ScheduledLocalNotifications) {
                 if (null != notification.UserInfo) {
-                    var value = notification.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
+                    var value = notification.UserInfo.ValueForKey (NachoClient.iOS.NotificationsHandler.EventNotificationKey);
                     if (null != value && value is NSNumber && handle == ((NSNumber)value).NIntValue) {
                         return notification;
                     }
@@ -64,7 +64,7 @@ namespace NachoPlatform
                 FireDate = ev.ReminderTime.ToNSDate (),
                 TimeZone = null,
                 SoundName = UILocalNotification.DefaultSoundName,
-                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (ev.Id), NachoClient.iOS.AppDelegate.EventNotificationKey),
+                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (ev.Id), NachoClient.iOS.NotificationsHandler.EventNotificationKey),
             };
         }
 
@@ -121,7 +121,7 @@ namespace NachoPlatform
                 UILocalNotification[] notifications = UIApplication.SharedApplication.ScheduledLocalNotifications;
                 Log.Info (Log.LOG_CALENDAR, "LocalNotificationManager: currently scheduled: {0}:", notifications.Length);
                 foreach (var notification in notifications) {
-                    var handleValue = notification.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
+                    var handleValue = notification.UserInfo.ValueForKey (NachoClient.iOS.NotificationsHandler.EventNotificationKey);
                     nint handle = -1;
                     if (null != handleValue && handleValue is NSNumber) {
                         handle = ((NSNumber)handleValue).NIntValue;

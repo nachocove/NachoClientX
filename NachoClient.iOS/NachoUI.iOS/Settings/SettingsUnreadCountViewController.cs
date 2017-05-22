@@ -99,7 +99,7 @@ namespace NachoClient.iOS
             EmailHelper.SetHowToDisplayUnreadCount (option.Option);
             UpdateCheckmark (indexPath);
             NavigationController.PopViewController (true);
-            (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadgeCount ();
+            (UIApplication.SharedApplication.Delegate as AppDelegate).NotificationsHandler.UpdateBadgeCount ();
         }
 
         void UpdateCheckmark (Foundation.NSIndexPath selectedIndexPath)
