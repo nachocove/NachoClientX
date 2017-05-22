@@ -240,7 +240,7 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForHeader (UITableView tableView, nint section)
         {
-            return 28.0f;
+            return 32.0f;
         }
 
         public override UIView GetViewForHeader (UITableView tableView, nint section)

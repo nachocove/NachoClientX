@@ -310,8 +310,7 @@ namespace NachoClient.iOS
                     return false;
                 }
             } else {
-                // Disabling contact selection for now (until contact app returns?)
-                return false;
+                return true;
             }
             return base.ShouldHighlightRow (tableView, indexPath);
         }
@@ -323,8 +322,7 @@ namespace NachoClient.iOS
                     return null;
                 }
             } else {
-                // Disabling contact selection for now (until contact app returns?)
-                return null;
+                return indexPath;
             }
             return base.WillSelectRow (tableView, indexPath);
         }
