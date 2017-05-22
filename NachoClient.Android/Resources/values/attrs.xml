@@ -56,6 +56,13 @@
     <attr name="filterbarPaddingBottom" format="dimension"/>
     <attr name="filterbarColor" format="color"/>
     <attr name="filterbarSeparatorColor" format="color"/>
+    <attr name="colorCalendarListHeader" format="color"/>
+    <attr name="calendarItemPaddingLeft" format="dimension"/>
+    <attr name="calendarItemPaddingTop" format="dimension"/>
+    <attr name="calendarItemPaddingRight" format="dimension"/>
+    <attr name="calendarItemPaddingBottom" format="dimension"/>
+    <attr name="textAppearanceCalendarHeaderNumber" format="reference"/>
+    <attr name="textAppearanceCalendarItem" format="reference"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

@@ -104,6 +104,7 @@
 
     <!-- Calendar -->
     <string name="calendar_action_today">Today</string>
+    <string name="calendar_event_item_all_day">All Day</string>
 
     <!-- Calendar Event View -->
     <string name="event_action_forward">Forward</string>
@@ -193,6 +194,12 @@
     <string name="demo_contact_name">Test Contact</string>
     <string name="demo_contact_email">email@address.com</string>
     <string name="demo_attachment_source">Take a Photo</string>
+    <string name="demo_calendar_day_number">31</string>
+    <string name="demo_calendar_day_name">Monday</string>
+    <string name="demo_calendar_day_date">January 31, 2015</string>
+    <string name="demo_calendar_event_title">Important Meeting</string>
+    <string name="demo_calendar_event_duration">10am, 1h</string>
+    <string name="demo_calendar_event_location">Conference Room</string>
 
 
     <!-- OLD -->

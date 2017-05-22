@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:background="?attr/selectableItemBackground">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="?attr/calendarItemPaddingLeft"
+        android:paddingRight="?attr/calendarItemPaddingLeft">
+        <FrameLayout
+            android:layout_width="60dp"
+            android:layout_height="match_parent">
+            <View
+                android:layout_height="match_parent"
+                android:layout_width="1dp"
+                android:layout_gravity="center"
+                android:background="?attr/colorListItemSeparator" />
+            <View
+                android:id="@+id/dot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_gravity="center|top"
+                android:background="@drawable/UserColor2"
+                android:layout_marginTop="12dp" />
+        </FrameLayout>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingTop="?attr/calendarItemPaddingTop"
+            android:paddingBottom="?attr/calendarItemPaddingBottom">
+            <TextView
+                android:id="@+id/event_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lines="1"
+                android:ellipsize="end"
+                android:textAppearance="?attr/textAppearanceCalendarItem"
+                android:text="@string/demo_calendar_event_title" />
+            <TextView
+                android:id="@+id/event_duration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lines="1"
+                android:ellipsize="end"
+                android:textAppearance="?attr/textAppearanceListItemDetail"
+                android:text="@string/demo_calendar_event_duration" />
+            <LinearLayout
+                android:id="@+id/event_location_group"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:src="@drawable/cal_icn_pin"
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginRight="2dp" />
+                <TextView
+                    android:id="@+id/event_location"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceListItemDetail"
+                    android:text="@string/demo_calendar_event_location" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

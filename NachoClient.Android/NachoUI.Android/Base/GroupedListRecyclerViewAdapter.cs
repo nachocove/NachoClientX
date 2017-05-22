@@ -26,6 +26,12 @@ namespace NachoClient.AndroidClient
 
         #region Methods For Subclasses
 
+        public virtual bool HasFooters {
+            get {
+                return true;
+            }
+        }
+
         public abstract int GroupCount { get; }
 
         public abstract int GroupItemCount (int groupPosition);
@@ -39,7 +45,31 @@ namespace NachoClient.AndroidClient
 
         public abstract void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position);
 
-        public abstract string GroupHeaderValue (Context context, int groupPosition);
+        public virtual string GroupHeaderValue (Context context, int groupPosition)
+        {
+            return null;
+        }
+
+        public virtual RecyclerView.ViewHolder OnCreateGroupedHeaderViewHolder (ViewGroup parent)
+        {
+            return HeaderItemViewHolder.Create (parent);
+        }
+
+        public virtual void OnBindHeaderViewHolder (RecyclerView.ViewHolder holder, int groupPosition)
+        {
+            var headerValue = GroupHeaderValue (holder.ItemView.Context, groupPosition);
+            (holder as HeaderItemViewHolder).SetHeader (headerValue);
+        }
+
+        public virtual RecyclerView.ViewHolder OnCreateGroupedFooterViewHolder (ViewGroup parent)
+        {
+            return FooterItemViewHolder.Create (parent);
+        }
+
+        public virtual void OnBindFooterViewHolder (RecyclerView.ViewHolder holder, int groupPosition)
+        {
+            // Nothing to do for footers because they have no text/values, but subclasses can override
+        }
 
         public virtual void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
         {
@@ -54,7 +84,7 @@ namespace NachoClient.AndroidClient
                 int groups = GroupCount;
                 int count = 0;
                 for (int i = 0; i < groups; ++i) {
-                    count += GroupItemCount (i) + 2;  // + 2 for header and footer
+                    count += GroupItemCount (i) + 1 + (HasFooters ? 1 : 0);
                 }
                 return count;
             }
@@ -78,9 +108,9 @@ namespace NachoClient.AndroidClient
         {
             switch (viewType){
             case HeaderItemViewHolder.VIEW_TYPE:
-                return HeaderItemViewHolder.Create (parent);
+                return OnCreateGroupedHeaderViewHolder (parent);
             case FooterItemViewHolder.VIEW_TYPE:
-                return FooterItemViewHolder.Create (parent);
+                return OnCreateGroupedFooterViewHolder (parent);
             }
             var holder = OnCreateGroupedViewHolder(parent, viewType) as ViewHolder;
             holder.ItemView.Click += (sender, e) => {
@@ -94,10 +124,9 @@ namespace NachoClient.AndroidClient
             var groupedHolder = (holder as ViewHolder);
             GetGroupPosition (position, out groupedHolder.groupPosition, out groupedHolder.itemPosition);
             if (groupedHolder.itemPosition == HEADER_ITEM_POSITION){
-                var header = GroupHeaderValue (holder.ItemView.Context, groupedHolder.groupPosition);
-                (holder as HeaderItemViewHolder).SetHeader (header);
+                OnBindHeaderViewHolder (holder, groupedHolder.groupPosition);
             }else if (groupedHolder.itemPosition == FOOTER_ITEM_POSITION){
-                // Nothing to do for footers because they have no text/values
+                OnBindFooterViewHolder (holder, groupedHolder.groupPosition);
             }else{
                 OnBindViewHolder(holder, groupedHolder.groupPosition, groupedHolder.itemPosition);
             }
@@ -121,11 +150,13 @@ namespace NachoClient.AndroidClient
                     return;
                 }
                 position -= groupItemCount;
-                if (position == 0){
-                    itemPosition = FOOTER_ITEM_POSITION;
-                    return;
+                if (HasFooters) {
+                    if (position == 0) {
+                        itemPosition = FOOTER_ITEM_POSITION;
+                        return;
+                    }
+                    position -= 1;
                 }
-                position -= 1;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("GroupedListRecyclerViewAdapter.GetGroupPosition: Unexpecetd position: {0}", position));
         }
@@ -134,7 +165,7 @@ namespace NachoClient.AndroidClient
         {
             int position = 0;
             for (int i = 0; i < groupPosition; ++i) {
-                position += GroupItemCount (i) + 2; // header and footer
+                position += GroupItemCount (i) + 1 + (HasFooters ? 1 : 0); // header and footer
             }
             position += 1; // header
             position += itemPosition;

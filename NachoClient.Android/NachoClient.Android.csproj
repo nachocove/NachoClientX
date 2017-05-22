@@ -293,7 +293,6 @@
     <Compile Include="NachoUI.Android\Base\GroupedListRecyclerViewAdapter.cs" />
     <Compile Include="NachoUI.Android\Base\NcActivity.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\AccountChooserFragment.cs" />
-    <Compile Include="NachoUI.Android\MainTabs\CalendarFragment.cs" />
     <Compile Include="NachoUI.Android\MainTabs\ContactsFragment.cs" />
     <Compile Include="NachoUI.Android\FoldersList\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\FoldersList\FoldersActivity.cs" />
@@ -306,6 +305,7 @@
     <Compile Include="NachoUI.Android\Calendar\EventEditActivity.cs" />
     <Compile Include="NachoUI.Android\Calendar\EventViewFragment.cs" />
     <Compile Include="NachoUI.Android\Calendar\EventEditFragment.cs" />
+    <Compile Include="NachoUI.Android\Calendar\CalendarFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1013,7 +1013,7 @@
     <AndroidResource Include="Resources\layout\ContactViewCell.axml" />
     <AndroidResource Include="Resources\layout\EventListFragment.axml" />
     <AndroidResource Include="Resources\layout\CalendarActivity.axml" />
-    <AndroidResource Include="Resources\layout\EventCell.axml" />
+    <AndroidResource Include="Resources\layout\CalendarListEventItem.axml" />
     <AndroidResource Include="Resources\drawable-mdpi\cal_icn_pin.png" />
     <AndroidResource Include="Resources\drawable\cal_icn_pin.png" />
     <AndroidResource Include="Resources\drawable-hdpi\event_attend_active.png" />
@@ -1079,7 +1079,7 @@
     <AndroidResource Include="Resources\layout\ChooseProviderCell.axml" />
     <AndroidResource Include="Resources\layout\AdvancedExchangeView.axml" />
     <AndroidResource Include="Resources\layout\AdvancedImapView.axml" />
-    <AndroidResource Include="Resources\layout\EventDateCell.axml" />
+    <AndroidResource Include="Resources\layout\CalendarListDayHeaderItem.axml" />
     <AndroidResource Include="Resources\anim\slide_in_left.xml" />
     <AndroidResource Include="Resources\anim\slide_in_right.xml" />
     <AndroidResource Include="Resources\anim\slide_out_left.xml" />

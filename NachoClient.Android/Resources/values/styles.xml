@@ -53,6 +53,16 @@
         <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
+    <style name="TextAppearanceNachoCalendarHeaderNumber" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="android:textSize">28dp</item>
+    </style>
+
+    <style name="TextAppearanceNachoCalendarItem" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
     <style name="NachoTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/NachoMainGreen</item>
         <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
@@ -102,6 +112,13 @@
         <item name="filterbarPaddingBottom">0dp</item>
         <item name="filterbarColor">#e6e7e8</item>
         <item name="filterbarSeparatorColor">#c3c4c5</item>
+        <item name="colorCalendarListHeader">@color/NachoLightGrayBackground</item>
+        <item name="calendarItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="calendarItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="calendarItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="calendarItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
+        <item name="textAppearanceCalendarHeaderNumber">@style/TextAppearanceNachoCalendarHeaderNumber</item>
+        <item name="textAppearanceCalendarItem">@style/TextAppearanceNachoCalendarItem</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
