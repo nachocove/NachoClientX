@@ -111,6 +111,17 @@
     <string name="event_action_delete">Delete</string>
     <string name="event_delete_confirmation_message">Deleting this event will permanently remove it from your calendar</string>
     <string name="event_delete_confirmation_accept">Yes, Delete Event</string>
+    <string name="event_header_attachments">Attachments</string>
+    <string name="event_header_attendees">Attendees</string>
+    <string name="event_header_attendees_organizer">Attendees (you are the organizer)</string>
+
+    <!-- Calendar Event Edit View -->
+    <string name="event_edit_action_save">Save</string>
+    <string name="event_edit_action_delete">Delete</string>
+    <string name="event_edit_delete_confirmation_message">Deleting this event will permanently remove it from your calendar</string>
+    <string name="event_edit_delete_confirmation_accept">Yes, Delete Event</string>
+    <string name="event_edit_close_save">Save Changes</string>
+    <string name="event_edit_close_discard">Discard Changes</string>
 
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
@@ -200,6 +211,11 @@
     <string name="demo_calendar_event_title">Important Meeting</string>
     <string name="demo_calendar_event_duration">10am, 1h</string>
     <string name="demo_calendar_event_location">Conference Room</string>
+    <string name="demo_event_header_text">Attendees</string>
+    <string name="demo_event_property_value">Some Text Value</string>
+    <string name="demo_event_subject">Important Meeting</string>
+    <string name="demo_event_time">Tuesday May 23, 2017\nfrom 2pm to 3pm</string>
+    <string name="demo_event_location">Someplace nice</string>
 
 
     <!-- OLD -->

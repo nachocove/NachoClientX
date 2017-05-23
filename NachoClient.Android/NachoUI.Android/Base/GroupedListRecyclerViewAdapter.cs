@@ -41,6 +41,16 @@ namespace NachoClient.AndroidClient
             return 0;
         }
 
+        public virtual int GetHeaderViewType (int groupPosition)
+        {
+            return HeaderItemViewHolder.VIEW_TYPE;
+        }
+
+        public virtual int GetFooterViewType (int groupPosition)
+        {
+        	return FooterItemViewHolder.VIEW_TYPE;
+        }
+
         public abstract RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType);
 
         public abstract void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position);
@@ -50,20 +60,10 @@ namespace NachoClient.AndroidClient
             return null;
         }
 
-        public virtual RecyclerView.ViewHolder OnCreateGroupedHeaderViewHolder (ViewGroup parent)
-        {
-            return HeaderItemViewHolder.Create (parent);
-        }
-
         public virtual void OnBindHeaderViewHolder (RecyclerView.ViewHolder holder, int groupPosition)
         {
             var headerValue = GroupHeaderValue (holder.ItemView.Context, groupPosition);
             (holder as HeaderItemViewHolder).SetHeader (headerValue);
-        }
-
-        public virtual RecyclerView.ViewHolder OnCreateGroupedFooterViewHolder (ViewGroup parent)
-        {
-            return FooterItemViewHolder.Create (parent);
         }
 
         public virtual void OnBindFooterViewHolder (RecyclerView.ViewHolder holder, int groupPosition)
@@ -96,9 +96,9 @@ namespace NachoClient.AndroidClient
             int itemPosition;
             GetGroupPosition(position, out groupPosition, out itemPosition);
             if (itemPosition == HEADER_ITEM_POSITION){
-                return HeaderItemViewHolder.VIEW_TYPE;
+                return GetHeaderViewType (groupPosition);
             }else if (itemPosition == FOOTER_ITEM_POSITION){
-                return FooterItemViewHolder.VIEW_TYPE;
+                return GetFooterViewType (groupPosition);
             }else{
                 return GetItemViewType(groupPosition, itemPosition);
             }
@@ -108,9 +108,9 @@ namespace NachoClient.AndroidClient
         {
             switch (viewType){
             case HeaderItemViewHolder.VIEW_TYPE:
-                return OnCreateGroupedHeaderViewHolder (parent);
+                return HeaderItemViewHolder.Create (parent);
             case FooterItemViewHolder.VIEW_TYPE:
-                return OnCreateGroupedFooterViewHolder (parent);
+                return FooterItemViewHolder.Create (parent);
             }
             var holder = OnCreateGroupedViewHolder(parent, viewType) as ViewHolder;
             holder.ItemView.Click += (sender, e) => {

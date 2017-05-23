@@ -63,6 +63,18 @@
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
+    <style name="TextAppearanceNachoEventHeader" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">#A4A4A4</item>
+    </style>
+
+    <style name="TextAppearanceNachoEventItem" parent="TextAppearance.AppCompat.Small">
+    </style>
+
+    <style name="TextAppearanceNachoEventSubject" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
     <style name="NachoTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/NachoMainGreen</item>
         <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
@@ -119,6 +131,16 @@
         <item name="calendarItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
         <item name="textAppearanceCalendarHeaderNumber">@style/TextAppearanceNachoCalendarHeaderNumber</item>
         <item name="textAppearanceCalendarItem">@style/TextAppearanceNachoCalendarItem</item>
+        <item name="eventItemPaddingLeft">20dp</item>
+        <item name="eventItemPaddingTop">14dp</item>
+        <item name="eventItemPaddingRight">10dp</item>
+        <item name="eventItemPaddingBottom">14dp</item>
+        <item name="eventItemIconSpacing">10dp</item>
+        <!-- should be eventItemPaddingLeft + eventItemIconSpacing + 16dp (icon size) -->
+        <item name="eventItemNoIconPaddingLeft">46dp</item>
+        <item name="textAppearanceEventHeader">@style/TextAppearanceNachoEventHeader</item>
+        <item name="textAppearanceEventItem">@style/TextAppearanceNachoEventItem</item>
+        <item name="textAppearanceEventSubject">@style/TextAppearanceNachoEventSubject</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

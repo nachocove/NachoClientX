@@ -11,17 +11,19 @@ using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using Android.Widget;
+using Android.Support.V7.Widget;
 
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
     [Activity ()]
-    public class EventEditActivity : Activity
+    public class EventEditActivity : NcActivity
     {
-
+        
+        public const string ACTION_DELETE = "NachoClient.AndroidClient.EventEditActivity.ACTION_DELETE";
         public const string EXTRA_CALENDAR_ID = "NachoClient.AndroidClient.EventEditActivity.EXTRA_CALENDAR_ID";
         public const string EXTRA_START_TIME = "NachoClient.AndroidClient.EventEditActivity.EXTRA_START_TIME";
 
@@ -33,7 +35,7 @@ namespace NachoClient.AndroidClient
         {
             var intent = new Intent (context, typeof (EventEditActivity));
             if (start.HasValue) {
-                intent.PutExtra (EXTRA_START_TIME, start.Value.ToAsUtcString());
+                intent.PutExtra (EXTRA_START_TIME, start.Value.ToAsUtcString ());
             }
             return intent;
         }
@@ -73,6 +75,9 @@ namespace NachoClient.AndroidClient
             base.OnCreate (savedInstanceState);
             SetContentView (Resource.Layout.EventEditActivity);
             FindSubviews ();
+            Toolbar.Title = "";
+            SetSupportActionBar (Toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
         }
 
         void PopulateFromIntent ()
@@ -85,6 +90,20 @@ namespace NachoClient.AndroidClient
                 var startTime = dateTimeString.ToDateTime ();
                 CalendarItem = new McCalendar ();
                 CalendarItem.StartTime = startTime;
+            } else {
+                var now = DateTime.Now;
+                var startTime = DateTime.Today.AddHours (now.Hour);
+                CalendarItem = new McCalendar ();
+                CalendarItem.StartTime = startTime;
+            }
+        }
+
+        public override void OnAttachFragment (Fragment fragment)
+        {
+            base.OnAttachFragment (fragment);
+            if (fragment is EventEditFragment) {
+                EventEditFragment = fragment as EventEditFragment;
+                EventEditFragment.CalendarItem = CalendarItem;
             }
         }
 
@@ -92,6 +111,111 @@ namespace NachoClient.AndroidClient
         {
             ClearSubviews ();
             base.OnDestroy ();
+        }
+
+        #endregion
+
+        #region Options Menu
+
+        public override bool OnCreateOptionsMenu (IMenu menu)
+        {
+            MenuInflater.Inflate (Resource.Menu.event_edit, menu);
+            return base.OnCreateOptionsMenu (menu);
+        }
+
+        public override bool OnOptionsItemSelected (IMenuItem item)
+        {
+            switch (item.ItemId) {
+            case Android.Resource.Id.Home:
+                FinishWithSaveConfirmation ();
+                return true;
+            case Resource.Id.delete:
+                ShowDeleteConfirmation ();
+                return true;
+            case Resource.Id.save:
+                SaveAndFinish ();
+                return true;
+            }
+            return base.OnOptionsItemSelected (item);
+        }
+
+        public override void OnBackPressed ()
+        {
+        	FinishWithSaveConfirmation ();
+        }
+
+        #endregion
+
+        #region Draft Management
+
+        private void FinishWithSaveConfirmation ()
+        {
+            EventEditFragment.EndEditing ();
+            var alert = new Android.App.AlertDialog.Builder (this);
+            alert.SetItems (new string []{
+                GetString (Resource.String.event_edit_close_save),
+                GetString (Resource.String.event_edit_close_discard),
+            }, (sender, e) => {
+                switch (e.Which) {
+                case 0:
+                    SaveAndFinish ();
+                    break;
+                case 1:
+                    Discard ();
+                    break;
+                }
+            });
+            alert.Show ();
+        }
+
+        public void Discard ()
+        {
+            SetResult (Result.Canceled);
+            Finish ();
+        }
+
+        public void Save ()
+        {
+            // TODO: save changes to DB
+        }
+
+        public void SaveAndFinish ()
+        {
+            Save ();
+            SetResult (Result.Ok);
+            Finish ();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void ShowDeleteConfirmation ()
+        {
+            var builder = new AlertDialog.Builder (this);
+            builder.SetMessage (Resource.String.event_delete_confirmation_message);
+            var items = new string [] {
+                GetString (Resource.String.event_delete_confirmation_accept)
+            };
+            builder.SetItems (items, (sender, e) => {
+                switch (e.Which) {
+                case 0:
+                    DeleteEvent ();
+                    break;
+                default:
+                    break;
+                }
+            });
+            builder.Show ();
+        }
+
+        void DeleteEvent ()
+        {
+            // TODO: send cancelation notices
+            BackEnd.Instance.DeleteCalCmd (CalendarItem.AccountId, CalendarItem.Id);
+        	var intent = new Intent (ACTION_DELETE);
+        	SetResult (Result.Ok, intent);
+        	Finish ();
         }
 
         #endregion

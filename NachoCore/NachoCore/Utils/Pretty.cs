@@ -755,7 +755,7 @@ namespace NachoCore.Utils
 
         public static void EventNotification (McEvent ev, out string title, out string body)
         {
-            var calendarItem = ev.GetCalendarItemforEvent ();
+            var calendarItem = ev.CalendarItem;
             if (null == calendarItem) {
                 title = "Event";
             } else {

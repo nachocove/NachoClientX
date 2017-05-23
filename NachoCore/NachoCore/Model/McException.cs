@@ -132,6 +132,17 @@ namespace NachoCore.Model
             }
         }
 
+        public override McBody GetBody ()
+        {
+            if (BodyId == 0) {
+                var calendarItem = CalendarItem ();
+                if (calendarItem != null) {
+                    return calendarItem.GetBody ();
+                }
+            }
+            return base.GetBody ();
+        }
+
         private McCalendar cachedCal = null;
 
         private McCalendar CalendarItem ()

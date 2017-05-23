@@ -235,7 +235,7 @@ namespace NachoClient.AndroidClient
             var eventTitle = view.FindViewById<TextView> (Resource.Id.event_title);
             var eventSummary = view.FindViewById<TextView> (Resource.Id.event_summary);
 
-            var c = currentEvent.GetCalendarItemforEvent ();
+            var c = currentEvent.CalendarItem;
             var cRoot = CalendarHelper.GetMcCalendarRootForEvent (currentEvent.Id);
 
             if (null == c || null == cRoot) {

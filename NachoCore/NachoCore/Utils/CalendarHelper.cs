@@ -1364,7 +1364,7 @@ namespace NachoCore.Utils
                     // all-day event that is already over.  Ignore such events.
                     continue;
                 }
-                var cal = evt.GetCalendarItemforEvent ();
+                var cal = evt.CalendarItem;
                 if (null == cal || NcMeetingStatus.MeetingOrganizerCancelled == cal.GetMeetingStatus () || NcMeetingStatus.MeetingAttendeeCancelled == cal.GetMeetingStatus ()) {
                     // Ignore events that don't have a corresponding calendar item or that have been cancelled.
                     continue;

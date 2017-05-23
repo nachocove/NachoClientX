@@ -23,6 +23,8 @@ namespace NachoClient.AndroidClient
     public class EventViewActivity : NcActivity
     {
 
+        // TODO: accept/reject/maybe
+
         public const string ACTION_DELETE = "NachoClient.AndroidClient.EventViewActivity.ACTION_DELETE";
         public const string EXTRA_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_EVENT_ID";
         public const int REQUEST_EDIT_EVENT = 1;
@@ -101,7 +103,7 @@ namespace NachoClient.AndroidClient
         {
             switch (requestCode) {
             case REQUEST_EDIT_EVENT:
-                HandleEditComplete (resultCode);
+                HandleEditComplete (resultCode, data);
                 break;
             default:
                 base.OnActivityResult (requestCode, resultCode, data);
@@ -122,6 +124,9 @@ namespace NachoClient.AndroidClient
         public override bool OnOptionsItemSelected (IMenuItem item)
         {
             switch (item.ItemId) {
+            case Android.Resource.Id.Home:
+                Finish ();
+                return true;
             case Resource.Id.delete:
                 ShowDeleteConfirmation ();
                 return true;
@@ -145,11 +150,15 @@ namespace NachoClient.AndroidClient
 
         #region View Updates
 
-        void HandleEditComplete (Result resultCode)
+        void HandleEditComplete (Result resultCode, Intent data)
         {
             if (resultCode == Result.Ok) {
-                Event = McEvent.QueryById<McEvent> (Event.Id);
-                Update ();
+                if (data != null && data.Action == EventEditActivity.ACTION_DELETE) {
+                    FinishWithDeleteAction ();
+                } else {
+                    Event = McEvent.QueryById<McEvent> (Event.Id);
+                    Update ();
+                }
             }
         }
 
@@ -196,8 +205,13 @@ namespace NachoClient.AndroidClient
         {
             // TODO: send cancelation notices
             BackEnd.Instance.DeleteCalCmd (Event.AccountId, Event.CalendarId);
+            FinishWithDeleteAction ();
+        }
+
+        void FinishWithDeleteAction ()
+        {
             var intent = new Intent (ACTION_DELETE);
-            SetResult (Result.Ok, intent);
+			SetResult (Result.Ok, intent);
             Finish ();
         }
 

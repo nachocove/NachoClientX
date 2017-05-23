@@ -63,6 +63,15 @@
     <attr name="calendarItemPaddingBottom" format="dimension"/>
     <attr name="textAppearanceCalendarHeaderNumber" format="reference"/>
     <attr name="textAppearanceCalendarItem" format="reference"/>
+    <attr name="eventItemPaddingLeft" format="dimension"/>
+    <attr name="eventItemPaddingTop" format="dimension"/>
+    <attr name="eventItemPaddingRight" format="dimension"/>
+    <attr name="eventItemPaddingBottom" format="dimension"/>
+    <attr name="eventItemIconSpacing" format="dimension"/>
+    <attr name="eventItemNoIconPaddingLeft" format="dimension"/>
+    <attr name="textAppearanceEventHeader" format="reference"/>
+    <attr name="textAppearanceEventItem" format="reference"/>
+    <attr name="textAppearanceEventSubject" format="reference"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

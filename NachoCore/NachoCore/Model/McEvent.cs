@@ -72,34 +72,34 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        private McAbstrCalendarRoot CalendarOrException
+        public McAbstrCalendarRoot CalendarItem
         {
             get {
                 if (_CalendarOrException == null) {
-                    _CalendarOrException = GetCalendarItemforEvent ();
+                    _CalendarOrException = QueryCalendarOrException ();
                 }
                 return _CalendarOrException;
             }
         }
 
         [Ignore]
-        public string Subject {
+        public virtual string Subject {
             get {
-                return CalendarOrException.GetSubject ();
+                return CalendarItem.GetSubject ();
             }
         }
 
         [Ignore]
-        public string OrganizerEmail {
+        public virtual string OrganizerEmail {
             get {
                 return Calendar.OrganizerEmail;
             }
         }
 
         [Ignore]
-        public string Location {
+        public virtual string Location {
             get {
-                return CalendarOrException.GetLocation ();
+                return CalendarItem.GetLocation ();
             }
         }
 
@@ -126,10 +126,10 @@ namespace NachoCore.Model
 
         public bool IsValid ()
         {
-            return Calendar != null && CalendarOrException != null;
+            return Calendar != null && CalendarItem != null;
         }
 
-        public int GetColorIndex ()
+        public virtual int GetColorIndex ()
         {
             int colorIndex = 0;
             var folder = McFolder.QueryByFolderEntryId<McCalendar> (Calendar.AccountId, Calendar.Id).FirstOrDefault ();
@@ -192,7 +192,7 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public McAbstrCalendarRoot GetCalendarItemforEvent()
+        private McAbstrCalendarRoot QueryCalendarOrException()
         {
             if (0 != ExceptionId) {
                 return McException.QueryById<McException> (ExceptionId);
@@ -275,6 +275,21 @@ namespace NachoCore.Model
             NcAssert.True (NcModel.Instance.IsInTransaction ());
             return NcModel.Instance.Db.Execute (
                 "DELETE FROM McEvent WHERE CalendarId = ?", calendarId);
+        }
+
+        public virtual IList<McAttendee> QueryAttendees ()
+        {
+            return CalendarItem.attendees;
+        }
+
+        public virtual IList<McAttachment> QueryAttachments ()
+        {
+            return CalendarItem.attachments;
+        }
+
+        public virtual McBody GetBody ()
+        {
+            return CalendarItem.GetBody ();
         }
     }
 }

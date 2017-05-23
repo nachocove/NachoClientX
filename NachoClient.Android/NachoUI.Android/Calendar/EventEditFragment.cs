@@ -13,20 +13,32 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Android.Support.V7.Widget;
+using Android.Views.InputMethods;
+
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-	public class EventEditFragment : Fragment
+    public class EventEditFragment : Fragment, EventEditAdapter.Listener
 	{
 
-		#region Subviews
+        public McCalendar CalendarItem;
+        EventEditAdapter Adapter;
+
+        #region Subviews
+
+        RecyclerView ListView;
 
 		void FindSubviews (View view)
 		{
+            ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+            ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
 		}
 
 		void ClearSubviews ()
 		{
+            ListView = null;
 		}
 
 		#endregion
@@ -42,6 +54,8 @@ namespace NachoClient.AndroidClient
 		{
 			var view = inflater.Inflate (Resource.Layout.EventEditFragment, container, false);
 			FindSubviews (view);
+            Adapter = new EventEditAdapter (this, CalendarItem);
+            ListView.SetAdapter (Adapter);
 			return view;
 		}
 
@@ -51,7 +65,55 @@ namespace NachoClient.AndroidClient
 			base.OnDestroyView ();
 		}
 
-		#endregion
+        #endregion
+
+        #region Listener
+
+        #endregion
+
+        public void EndEditing ()
+        {
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+        }
 
 	}
+
+    public class EventEditAdapter : GroupedListRecyclerViewAdapter
+    {
+        public interface Listener
+        {
+        }
+
+        WeakReference<Listener> WeakListener;
+
+        McCalendar CalendarItem;
+
+        public EventEditAdapter (Listener listener, McCalendar calendarItem) : base ()
+        {
+            WeakListener = new WeakReference<Listener> (listener);
+            CalendarItem = calendarItem;
+        }
+
+        public override int GroupCount {
+            get {
+                return 0;
+            }
+        }
+
+        public override int GroupItemCount (int groupPosition)
+        {
+            return 0;
+        }
+
+        public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            throw new NotImplementedException ();
+        }
+    }
 }

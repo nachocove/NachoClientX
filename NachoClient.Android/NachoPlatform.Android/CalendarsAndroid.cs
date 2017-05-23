@@ -94,14 +94,7 @@ namespace NachoPlatform
                 bool allDay = eventCursor.GetInt (INSTANCES_ALL_DAY_INDEX) != 0;
                 string uid = eventCursor.GetString (INSTANCES_UID_INDEX);
 
-                result.Add (new McEvent () {
-                    AccountId = deviceAccount,
-                    DeviceEventId = eventId,
-                    StartTime = start,
-                    EndTime = end,
-                    AllDayEvent = allDay,
-                    UID = uid,
-                });
+                result.Add (new AndroidCalendarEvent (deviceAccount, eventId, start, end, allDay, uid));
             }
 
             lock (deviceEventsLock) {
@@ -853,7 +846,7 @@ namespace NachoPlatform
                             }
                             string fTitle = null;
                             if (0 == f.DeviceEventId) {
-                                var appCal = f.GetCalendarItemforEvent ();
+                                var appCal = f.CalendarItem;
                                 if (null != appCal) {
                                     fTitle = appCal.GetSubject ();
                                 }
@@ -888,6 +881,69 @@ namespace NachoPlatform
         public override void OnReceive (Context context, Intent intent)
         {
             Calendars.Instance.DeviceCalendarChanged ();
+        }
+    }
+
+    public class AndroidCalendarEvent : McEvent
+    {
+
+        string CachedSubject;
+        string CachedLocation;
+        int CachedColor;
+
+        public AndroidCalendarEvent (int accountId, long deviceEventId, DateTime start, DateTime end, bool allDayEvent, string uid) : base ()
+        {
+            AccountId = accountId;
+            DeviceEventId = deviceEventId;
+            StartTime = start;
+            EndTime = end;
+            AllDayEvent = allDayEvent;
+            UID = uid;
+            UpdateCachedProperties ();
+        }
+
+        void UpdateCachedProperties ()
+        {
+            AndroidCalendars.GetEventDetails (DeviceEventId, out CachedSubject, out CachedLocation, out CachedColor);
+        }
+
+        public override string Subject {
+            get {
+                return CachedSubject;
+            }
+        }
+
+        public override string Location {
+            get {
+                return CachedLocation;
+            }
+        }
+
+        public override string OrganizerEmail {
+            get {
+                return null;
+            }
+        }
+
+        public override int GetColorIndex ()
+        {
+            // FIXME: somehow map color to colorIndex 
+            return 0;
+        }
+
+        public override IList<McAttachment> QueryAttachments ()
+        {
+            return new List<McAttachment> ();
+        }
+
+        public override IList<McAttendee> QueryAttendees ()
+        {
+            return new List<McAttendee> ();
+        }
+
+        public override McBody GetBody ()
+        {
+            return null;
         }
     }
 }

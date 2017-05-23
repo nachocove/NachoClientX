@@ -191,7 +191,7 @@ namespace NachoCore.Model
                 accountId, accountId, folderId, currentEpoch, limit);
         }
 
-        public McBody GetBody ()
+        public virtual McBody GetBody ()
         {
             if (0 == BodyId) {
                 return null;

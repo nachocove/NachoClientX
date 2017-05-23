@@ -243,7 +243,7 @@ namespace NachoClient.iOS
                 return;
             }
             var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
-            var c = e.GetCalendarItemforEvent ();
+            var c = e.CalendarItem;
             var cRoot = CalendarHelper.GetMcCalendarRootForEvent (e.Id);
 
             if (null == c || null == cRoot) {

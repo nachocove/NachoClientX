@@ -114,7 +114,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnResume ();
             Events.UiRefresh = () => {
-                // TODO: ??
+                Adapter.NotifyDataSetChanged ();
             };
         }
 
@@ -189,8 +189,12 @@ namespace NachoClient.AndroidClient
 
         public void OnEventCreateRequested (DateTime day)
         {
-            // TODO: use day
-            ShowNewEvent ();
+            if (day.Date.Equals (DateTime.Today)) {
+                ShowNewEvent ();
+            } else {
+                var morning = day.Date.AddHours (9.0f);
+                ShowNewEvent (morning);
+            }
         }
 
         #endregion
@@ -206,6 +210,13 @@ namespace NachoClient.AndroidClient
         void ShowNewEvent ()
         {
             var intent = EventEditActivity.BuildNewEventIntent (Activity);
+			StartActivity (intent);
+        }
+
+        void ShowNewEvent (DateTime date)
+        {
+            var intent = EventEditActivity.BuildNewEventIntent (Activity);
+            intent.PutExtra (EventEditActivity.EXTRA_START_TIME, date.ToAsUtcString ());
             StartActivity (intent);
         }
 
@@ -272,6 +283,12 @@ namespace NachoClient.AndroidClient
             void OnEventCreateRequested (DateTime day);
         }
 
+        enum ViewType
+        {
+            DayHeader,
+            Event
+        }
+
         INcEventProvider Events;
         WeakReference<Listener> WeakListener;
 
@@ -317,10 +334,14 @@ namespace NachoClient.AndroidClient
             return Events.NumberOfItemsForDay (groupPosition);
         }
 
-        public override RecyclerView.ViewHolder OnCreateGroupedHeaderViewHolder (ViewGroup parent)
+        public override int GetHeaderViewType (int groupPosition)
         {
-            // TODO: click listener?
-            return DayHeaderViewHolder.Create (parent);
+            return (int)ViewType.DayHeader;
+        }
+
+        public override int GetItemViewType (int groupPosition, int position)
+        {
+            return (int)ViewType.Event;
         }
 
         public override void OnBindHeaderViewHolder (RecyclerView.ViewHolder holder, int groupPosition)
@@ -338,7 +359,13 @@ namespace NachoClient.AndroidClient
 
         public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
         {
-            return EventViewHolder.Create (parent);
+            switch ((ViewType)viewType) {
+            case ViewType.DayHeader:
+                return DayHeaderViewHolder.Create (parent);
+            case ViewType.Event:
+                return EventViewHolder.Create (parent);
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("CalendarFragment.OnCreateGroupedViewHolder unexpected viewType: {0}", viewType));
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
@@ -384,51 +411,23 @@ namespace NachoClient.AndroidClient
 
             public void SetEvent (McEvent calendarEvent)
             {
-                string title = "";
-                string location = "";
-                bool isAllDay = false;
-                DateTime start;
-                DateTime end;
-
-                if (calendarEvent.DeviceEventId != 0) {
-                    isAllDay = calendarEvent.AllDayEvent;
-                    start = calendarEvent.StartTime;
-                    end = calendarEvent.EndTime;
-                    int displayColor = 0; AndroidCalendars.GetEventDetails (calendarEvent.Id, out title, out location, out displayColor);
-                    var dot = ItemView.Resources.GetDrawable (Resource.Drawable.UserColor0, ItemView.Context.Theme).Mutate () as Android.Graphics.Drawables.GradientDrawable;
-                    dot.SetColor (displayColor);
-                    DotView.Background = dot;
-                } else {
-                    var calendarItem = calendarEvent.GetCalendarItemforEvent ();
-                    var calendarRoot = CalendarHelper.GetMcCalendarRootForEvent (calendarEvent.Id);
-                    var folder = McFolder.QueryByFolderEntryId<McCalendar> (calendarRoot.AccountId, calendarRoot.Id).FirstOrDefault ();
-                    title = calendarItem.Subject ?? "";
-                    location = calendarItem.Location ?? "";
-                    isAllDay = calendarItem.AllDayEvent;
-                    start = calendarItem.StartTime;
-                    end = calendarItem.EndTime;
-                    int colorIndex = 0;
-                    if (folder != null) {
-                        colorIndex = folder.DisplayColor;
-                    }
-                    DotView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
-                }
-                TitleLabel.Text = title;
-                LocationLabel.Text = location;
-                if (String.IsNullOrEmpty (location)) {
+                TitleLabel.Text = calendarEvent.Subject ?? "";
+                LocationLabel.Text = calendarEvent.Location ?? "";
+                if (String.IsNullOrEmpty (calendarEvent.Location)) {
                     LocationGroup.Visibility = ViewStates.Gone;
                 } else {
                     LocationGroup.Visibility = ViewStates.Visible;
                 }
-                if (isAllDay) {
+                if (calendarEvent.AllDayEvent) {
                     DurationLabel.SetText (Resource.String.calendar_event_item_all_day);
                 } else {
-                    var duration = Pretty.Time (start);
-                    if (end > start) {
-                        duration += ", " + Pretty.CompactDuration (start, end);
+                    var duration = Pretty.Time (calendarEvent.StartTime);
+                    if (calendarEvent.EndTime > calendarEvent.StartTime) {
+                        duration += ", " + Pretty.CompactDuration (calendarEvent.StartTime, calendarEvent.EndTime);
                     }
                     DurationLabel.Text = duration;
                 }
+                DotView.SetBackgroundResource (Bind.ColorForUser (calendarEvent.GetColorIndex ()));
             }
         }
 
