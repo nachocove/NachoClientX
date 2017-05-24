@@ -16,6 +16,7 @@ using Android.Support.Design.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -27,16 +28,33 @@ namespace NachoClient.AndroidClient
 
         public const string ACTION_DELETE = "NachoClient.AndroidClient.EventViewActivity.ACTION_DELETE";
         public const string EXTRA_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_EVENT_ID";
+        public const string EXTRA_ANDROID_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_ANDROID_EVENT_ID";
         public const int REQUEST_EDIT_EVENT = 1;
 
         McEvent Event;
+        bool CanEditEvent;
 
         #region Intents
+
+        public static Intent BuildIntent (Context context, McEvent calendarEvent)
+        {
+            if (calendarEvent.DeviceEventId != 0) {
+                return BuildAndroidEventIntent (context, calendarEvent.DeviceEventId);
+            }
+            return BuildIntent (context, calendarEvent.Id);
+        }
 
         public static Intent BuildIntent (Context context, int eventId)
         {
             var intent = new Intent (context, typeof (EventViewActivity));
             intent.PutExtra (EXTRA_EVENT_ID, eventId);
+            return intent;
+        }
+
+        public static Intent BuildAndroidEventIntent (Context context, long androidEventId)
+        {
+            var intent = new Intent (context, typeof (EventViewActivity));
+            intent.PutExtra (EXTRA_ANDROID_EVENT_ID, androidEventId);
             return intent;
         }
 
@@ -74,14 +92,23 @@ namespace NachoClient.AndroidClient
             Toolbar.Title = "";
             SetSupportActionBar (Toolbar);
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+            if (!CanEditEvent) {
+                FloatingActionButton.Hide ();
+            }
             FloatingActionButton.Click += ActionButtonClicked;
         }
 
         void PopulateFromIntent ()
         {
         	var bundle = Intent.Extras;
-            var eventId = bundle.GetInt (EXTRA_EVENT_ID);
-            Event = McEvent.QueryById<McEvent> (eventId);
+            if (Intent.HasExtra (EXTRA_EVENT_ID)) {
+                var eventId = bundle.GetInt (EXTRA_EVENT_ID);
+                Event = McEvent.QueryById<McEvent> (eventId);
+            } else {
+                var androidEventId = bundle.GetLong (EXTRA_ANDROID_EVENT_ID);
+                Event = NachoPlatform.AndroidCalendars.GetEvent (androidEventId);
+            }
+            CanEditEvent = CalendarHelper.CanEdit (Event);
         }
 
         public override void OnAttachFragment (Fragment fragment)
@@ -90,6 +117,7 @@ namespace NachoClient.AndroidClient
             if (fragment is EventViewFragment) {
                 EventViewFragment = (fragment as EventViewFragment);
                 EventViewFragment.Event = Event;
+                EventViewFragment.CanEditEvent = CanEditEvent;
             }
         }
 
@@ -118,6 +146,10 @@ namespace NachoClient.AndroidClient
         public override bool OnCreateOptionsMenu (IMenu menu)
         {
             MenuInflater.Inflate (Resource.Menu.event_view, menu);
+            if (!CanEditEvent) {
+                var deleteItem = menu.FindItem (Resource.Id.delete);
+                deleteItem.SetVisible (false);
+            }
             return base.OnCreateOptionsMenu (menu);
         }
 
@@ -199,6 +231,14 @@ namespace NachoClient.AndroidClient
 
         void ShowForward ()
         {
+            var calendarItem = Event.Calendar;
+            if (calendarItem != null) {
+                var account = McAccount.EmailAccountForCalendar (calendarItem);
+                var subject = EmailHelper.CreateInitialSubjectLine (EmailHelper.Action.Forward, calendarItem.Subject);
+                var message = McEmailMessage.MessageWithSubject (account, subject);
+                var intent = MessageComposeActivity.ForwardCalendarIntent (this, calendarItem.Id, message);
+                StartActivity (intent);
+            }
         }
 
         void DeleteEvent ()

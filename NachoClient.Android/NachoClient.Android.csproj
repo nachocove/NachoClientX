@@ -306,6 +306,8 @@
     <Compile Include="NachoUI.Android\Calendar\EventViewFragment.cs" />
     <Compile Include="NachoUI.Android\Calendar\EventEditFragment.cs" />
     <Compile Include="NachoUI.Android\Calendar\CalendarFragment.cs" />
+    <Compile Include="NachoUI.Android\Calendar\EventReminderPickerDialog.cs" />
+    <Compile Include="NachoUI.Android\Calendar\NoteEditDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1728,6 +1730,7 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\event_icon_reminder.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\event_icon_time.png" />
     <AndroidResource Include="Resources\layout\EventViewIconTextHeader.axml" />
+    <AndroidResource Include="Resources\layout\NoteEditDialog.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

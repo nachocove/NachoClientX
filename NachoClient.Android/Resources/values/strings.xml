@@ -105,6 +105,8 @@
     <!-- Calendar -->
     <string name="calendar_action_today">Today</string>
     <string name="calendar_event_item_all_day">All Day</string>
+    <string name="calendar_event_item_action_forward">Forward</string>
+    <string name="calendar_event_item_action_late">I\'m Running Late</string>
 
     <!-- Calendar Event View -->
     <string name="event_action_forward">Forward</string>
@@ -114,6 +116,9 @@
     <string name="event_header_attachments">Attachments</string>
     <string name="event_header_attendees">Attendees</string>
     <string name="event_header_attendees_organizer">Attendees (you are the organizer)</string>
+    <string name="event_remider_set">Set a Reminder</string>
+    <string name="event_reminder">Reminder</string>
+    <string name="event_note_set">Add a Note</string>
 
     <!-- Calendar Event Edit View -->
     <string name="event_edit_action_save">Save</string>
@@ -277,7 +282,6 @@
     <string name="event_when">WHEN</string>
     <string name="event_location">LOCATION</string>
     <string name="event_description">DESCRIPTION</string>
-    <string name="event_reminder">REMINDER</string>
     <string name="event_attachments">ATTACHMENTS</string>
     <string name="event_attendees">ATTENDEES</string>
     <string name="event_notes">NOTES</string>

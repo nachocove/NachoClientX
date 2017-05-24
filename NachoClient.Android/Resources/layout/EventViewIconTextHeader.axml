@@ -13,12 +13,14 @@
         android:layout_height="wrap_content">
         <ImageView
             android:id="@+id/icon"
+            android:layout_gravity="top"
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:src="@drawable/event_icon_attendees"
             android:layout_marginRight="?attr/eventItemIconSpacing" />
         <TextView
             android:id="@+id/label"
+            android:layout_gravity="top"
             android:layout_width="0dp"
             android:layout_weight="1.0"
             android:layout_height="wrap_content"

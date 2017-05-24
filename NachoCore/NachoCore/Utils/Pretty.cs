@@ -560,6 +560,37 @@ namespace NachoCore.Utils
             }
         }
 
+        static public string EventDetailTime (McEvent calendarEvent)
+        {
+            var start = calendarEvent.StartTime;
+            var end = calendarEvent.EndTime;
+            if (calendarEvent.AllDayEvent) {
+                start = new DateTime (start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Local);
+                end = new DateTime (end.Year, end.Month, end.Day, end.Hour, end.Minute, end.Second, DateTimeKind.Local);
+            }
+            var lines = new List<string>();
+            var day = LongFullDate(start);
+            lines.Add (day);
+            if (calendarEvent.AllDayEvent){
+                var span = (end - start);
+                if (span > TimeSpan.FromDays (1)) {
+                    var endDay = LongFullDate(end);
+                    lines.Add (String.Format ("through {0}", endDay));
+                }
+            }else{
+                if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
+                    lines.Add (string.Format ("{0} to {1}", Pretty.ShortTime (start), Pretty.ShortTime (end)));
+                } else {
+                    lines.Add (string.Format ("{0} to {1}", Pretty.ShortTime (start), Pretty.MediumFullDateTime (end)));
+                }
+            }
+            var recurrences = calendarEvent.QueryRecurrences ();
+            if (recurrences.Count > 0) {
+                lines.Add (MakeRecurrenceString (recurrences));
+            }
+            return String.Join ("\n", lines);
+        }
+
         /// <summary>
         /// Given an email address, return a string
         /// worthy of being displayed in the message list.
@@ -1150,6 +1181,41 @@ namespace NachoCore.Utils
             } else {
                 return "100K+";
             }
+        }
+
+        public static string AttendeeStatus (McAttendee attendee)
+        {
+            var tokens = new List<string> ();
+            if (attendee.AttendeeTypeIsSet) {
+                switch (attendee.AttendeeType) {
+                case NcAttendeeType.Optional:
+                    tokens.Add ("Optional");
+                    break;
+                case NcAttendeeType.Required:
+                    tokens.Add ("Required");
+                    break;
+                case NcAttendeeType.Resource:
+                    tokens.Add ("Resource");
+                    break;
+                }
+            }
+            if (attendee.AttendeeStatusIsSet) {
+                switch (attendee.AttendeeStatus) {
+                case NcAttendeeStatus.Accept:
+                    tokens.Add ("Accepted");
+                    break;
+                case NcAttendeeStatus.Decline:
+                    tokens.Add ("Declined");
+                    break;
+                case NcAttendeeStatus.Tentative:
+                    tokens.Add ("Tentative");
+                    break;
+                case NcAttendeeStatus.NotResponded:
+                    tokens.Add ("No Response");
+                    break;
+                }
+            }
+            return String.Join (", ", tokens);
         }
     }
 }

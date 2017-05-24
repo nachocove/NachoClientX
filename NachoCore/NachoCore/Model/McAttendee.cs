@@ -216,6 +216,20 @@ namespace NachoCore.Model
             }
         }
 
+        public McContact GetContact ()
+        {
+            var contacts = McContact.QueryByEmailAddress (AccountId, Email);
+            foreach (var contact in contacts) {
+                if (contact.PortraitId != 0) {
+                    return contact;
+                }
+            }
+            if (contacts.Count > 0) {
+                return contacts [0];
+            }
+            return null;
+        }
+
         private NcEmailAddress.Kind GetAddressMapType ()
         {
             switch (AttendeeType) {

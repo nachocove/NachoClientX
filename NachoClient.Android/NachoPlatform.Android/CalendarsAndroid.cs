@@ -21,6 +21,7 @@ namespace NachoPlatform
     /// </summary>
     public static class AndroidCalendars
     {
+        private static Dictionary<long, McEvent> cachedDeviceEventsById = new Dictionary<long, McEvent> ();
         private static List<McEvent> cachedDeviceEvents = new List<McEvent> ();
         private static DateTime cachedStartRange = NcEventManager.BeginningOfEventsOfInterest;
         private static DateTime cachedEndRange = DateTime.Now.AddDays (151).Date.ToUniversalTime ();
@@ -40,6 +41,15 @@ namespace NachoPlatform
                 Calendars.Instance.DeviceCalendarChanged ();
             }
             return result;
+        }
+
+        public static McEvent GetEvent (long deviceEventId)
+        {
+            McEvent ev;
+            if (cachedDeviceEventsById.TryGetValue (deviceEventId, out ev)) {
+                return ev;
+            }
+            return null;
         }
 
         private static string[] instancesProjection = new string[] {
@@ -71,6 +81,7 @@ namespace NachoPlatform
             } catch (Exception e) {
                 Log.Error (Log.LOG_SYS, "Querying device events failed with {0}", e.ToString ());
                 lock (deviceEventsLock) {
+                    cachedDeviceEventsById.Clear ();
                     cachedDeviceEvents = new List<McEvent> ();
                 }
                 return;
@@ -78,6 +89,7 @@ namespace NachoPlatform
 
             if (null == eventCursor) {
                 lock (deviceEventsLock) {
+                    cachedDeviceEventsById.Clear ();
                     cachedDeviceEvents = new List<McEvent> ();
                 }
                 return;
@@ -98,6 +110,10 @@ namespace NachoPlatform
             }
 
             lock (deviceEventsLock) {
+                cachedDeviceEventsById.Clear ();
+                foreach (var androidEvent in result) {
+                    cachedDeviceEventsById [androidEvent.DeviceEventId] = androidEvent;
+                }
                 cachedDeviceEvents = result;
             }
         }
@@ -941,9 +957,77 @@ namespace NachoPlatform
             return new List<McAttendee> ();
         }
 
+        public override IList<McRecurrence> QueryRecurrences ()
+        {
+            return new List<McRecurrence> ();
+        }
+
+        public override McNote QueryNote ()
+        {
+            return null;
+        }
+
         public override McBody GetBody ()
         {
             return null;
+        }
+
+        public override string PlainDescription {
+            get {
+                return null;
+            }
+        }
+
+        public override bool SupportsReminder {
+            get {
+                return false;
+            }
+        }
+
+        public override uint Reminder {
+            get {
+                return 0;
+            }
+        }
+
+        public override bool IsReminderSet {
+            get {
+                return false;
+            }
+        }
+
+        public override bool SupportsNote {
+            get {
+                return false;
+            }
+        }
+
+        public override void UpdateReminder (bool isSet, uint reminder)
+        {
+            throw new NcAssert.NachoAssertionFailure ("Cannot UpdateReminder() on android device event");
+        }
+
+        public override void UpdateNote (string noteContent)
+        {
+            throw new NcAssert.NachoAssertionFailure ("Cannot UpdateNote() on android device event");
+        }
+
+        public override bool IsAppointment {
+            get {
+                return true;
+            }
+        }
+
+        public override bool IsOrganizer {
+            get {
+                return true;
+            }
+        }
+
+        public override bool HasNonSelfOrganizer {
+            get {
+                return false;
+            }
         }
     }
 }

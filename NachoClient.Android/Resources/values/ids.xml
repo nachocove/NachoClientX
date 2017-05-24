@@ -3,4 +3,6 @@
 	<item name="reply" type="id"/>
     <item name="read" type="id"/>
     <item name="unread" type="id"/>
+    <item name="forward" type="id"/>
+    <item name="late" type="id"/>
 </resources>

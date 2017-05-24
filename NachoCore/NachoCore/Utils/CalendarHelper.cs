@@ -69,6 +69,14 @@ namespace NachoCore.Utils
             return organizerEmail == userEmail;
         }
 
+        public static bool CanEdit (McEvent calendarEvent)
+        {
+            bool isRecurring = calendarEvent.QueryRecurrences ().Count > 0;
+            bool hasAttendees = calendarEvent.QueryAttendees ().Count > 0;
+            var account = McAccount.QueryById<McAccount> (calendarEvent.AccountId);
+            return calendarEvent.IsOrganizer && !isRecurring && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && (!hasAttendees || account.AccountType != McAccount.AccountTypeEnum.Device);
+        }
+
         public static DateTime ReturnAllDayEventEndTime (DateTime date)
         {
             return date.AddDays (-1);

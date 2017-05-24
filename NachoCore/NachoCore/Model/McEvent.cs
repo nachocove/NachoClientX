@@ -59,10 +59,10 @@ namespace NachoCore.Model
 
         private McCalendar _Calendar;
 
-        private McAbstrCalendarRoot _CalendarOrException;
+        private McException _Exception;
 
         [Ignore]
-        private McCalendar Calendar {
+        public McCalendar Calendar {
             get {
                 if (_Calendar == null) {
                     _Calendar = McCalendar.QueryById<McCalendar> (CalendarId);
@@ -72,13 +72,20 @@ namespace NachoCore.Model
         }
 
         [Ignore]
+        public McException Exception {
+            get {
+                if (_Exception == null && ExceptionId != 0) {
+                    _Exception = McException.QueryById<McException> (ExceptionId);
+                }
+                return _Exception;
+            }
+        }
+
+        [Ignore]
         public McAbstrCalendarRoot CalendarItem
         {
             get {
-                if (_CalendarOrException == null) {
-                    _CalendarOrException = QueryCalendarOrException ();
-                }
-                return _CalendarOrException;
+                return Exception != null ? Exception as McAbstrCalendarRoot : Calendar as McAbstrCalendarRoot;
             }
         }
 
@@ -100,6 +107,60 @@ namespace NachoCore.Model
         public virtual string Location {
             get {
                 return CalendarItem.GetLocation ();
+            }
+        }
+
+        [Ignore]
+        public virtual string PlainDescription {
+        	get {
+                return CalendarItem.PlainDescription;
+            }
+        }
+
+        [Ignore]
+        public virtual bool IsReminderSet {
+        	get {
+                return CalendarItem.ReminderIsSet;
+            }
+        }
+
+        [Ignore]
+        public virtual bool SupportsReminder {
+        	get {
+                return true;
+            }
+        }
+
+        [Ignore]
+        public virtual bool SupportsNote {
+            get {
+                return true;
+            }
+        }
+
+        [Ignore]
+        public virtual uint Reminder {
+            get {
+                return CalendarItem.Reminder;
+            }
+        }
+
+        [Ignore]
+        public virtual bool IsAppointment {
+            get {
+                return Calendar.IsAppointment;
+            }
+        }
+
+        public virtual bool IsOrganizer {
+            get {
+                return Calendar.IsOrganizer;
+            }
+        }
+
+        public virtual bool HasNonSelfOrganizer {
+            get {
+                return Calendar.HasNonSelfOrganizer;
             }
         }
 
@@ -132,11 +193,25 @@ namespace NachoCore.Model
         public virtual int GetColorIndex ()
         {
             int colorIndex = 0;
-            var folder = McFolder.QueryByFolderEntryId<McCalendar> (Calendar.AccountId, Calendar.Id).FirstOrDefault ();
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, CalendarId).FirstOrDefault ();
             if (null != folder) {
                 colorIndex = folder.DisplayColor;
             }
             return colorIndex;
+        }
+
+        public virtual string GetCalendarName()
+        {
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            var accountName = account.DisplayName ?? account.EmailAddr;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, CalendarId).FirstOrDefault ();
+            if (null != folder) {
+                var folderName = folder.DisplayName;
+                if (folderName != accountName) {
+                    return String.Format ("{0} - {1}", accountName, folderName);
+                }
+            }
+            return accountName;
         }
 
         public DateTime GetStartTimeUtc ()
@@ -190,15 +265,6 @@ namespace NachoCore.Model
         {
             LocalNotificationManager.CancelNotification (this);
             return base.Delete ();
-        }
-
-        private McAbstrCalendarRoot QueryCalendarOrException()
-        {
-            if (0 != ExceptionId) {
-                return McException.QueryById<McException> (ExceptionId);
-            } else {
-                return McCalendar.QueryById<McCalendar> (CalendarId);
-            }
         }
 
         public static TableQuery<McEvent> UpcomingEvents (TimeSpan window)
@@ -287,9 +353,44 @@ namespace NachoCore.Model
             return CalendarItem.attachments;
         }
 
+        public virtual IList<McRecurrence> QueryRecurrences ()
+        {
+            return Calendar.recurrences;
+        }
+
         public virtual McBody GetBody ()
         {
             return CalendarItem.GetBody ();
+        }
+
+        public virtual McNote QueryNote ()
+        {
+            return McNote.QueryByTypeId (CalendarId, McNote.NoteType.Event).FirstOrDefault ();
+        }
+
+        public virtual void UpdateReminder (bool isSet, uint reminder)
+        {
+            CalendarItem.ReminderIsSet = isSet;
+            CalendarItem.Reminder = reminder;
+            CalendarItem.Update ();
+            BackEnd.Instance.UpdateCalCmd (AccountId, CalendarItem.Id, false);
+        }
+
+        public virtual void UpdateNote (string noteContent)
+        {
+            var note = QueryNote ();
+            if (note != null) {
+                note.noteContent = noteContent;
+                note.Update ();
+            } else {
+                note = new McNote ();
+                note.AccountId = AccountId;
+                note.DisplayName = (Subject + " - " + Pretty.ShortDate (DateTime.UtcNow));
+                note.TypeId = CalendarId;
+                note.noteType = McNote.NoteType.Event;
+                note.noteContent = noteContent;
+                note.Insert ();
+            }
         }
     }
 }

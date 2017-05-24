@@ -129,6 +129,18 @@ namespace NachoCore.Model
             return HasMeetingStatus () ? MeetingStatus : NcMeetingStatus.Appointment;
         }
 
+        public virtual bool IsAppointment {
+            get {
+                return GetMeetingStatus () == NcMeetingStatus.Appointment;
+            }
+        }
+
+        public virtual bool IsOrganizer {
+            get {
+                return IsAppointment || GetMeetingStatus () == NcMeetingStatus.MeetingOrganizer || GetMeetingStatus () == NcMeetingStatus.MeetingOrganizerCancelled;
+            }
+        }
+
         /// <summary>
         /// Return the UID for this event.  This method must be overridden by derived classes.
         /// </summary>
@@ -252,6 +264,27 @@ namespace NachoCore.Model
             }
         }
 
+        public string PlainDescription {
+            get {
+                var description = Description;
+                switch (DescriptionType) {
+                case McAbstrFileDesc.BodyTypeEnum.None:
+                    return null;
+                case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                    return description;
+                case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                    var serializer = new HtmlTextSerializer (description);
+                    return serializer.Serialize ();
+                case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                    var rtfConverter = new NachoPlatform.RtfConverter ();
+                    return rtfConverter.ToTxt (description);
+                default:
+                    Log.Error (Log.LOG_CALENDAR, "Unexpected description type, {0}, for calendar item {1}", DescriptionType, Id);
+                    return null;
+                }
+            }
+        }
+
         [Ignore]
         public McAbstrFileDesc.BodyTypeEnum DescriptionType {
             get {
@@ -278,14 +311,8 @@ namespace NachoCore.Model
             if (null != cachedDescription) {
                 return;
             }
-            if (0 == BodyId) {
-                cachedDescription = "";
-                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
-                return;
-            }
-            McBody body = McBody.QueryById<McBody> (BodyId);
-            if (null == body) {
-                Log.Error (Log.LOG_CALENDAR, "{0} has an invalid BodyId", this.GetType ().Name);
+            var body = GetBody ();
+            if (body == null) {
                 cachedDescription = "";
                 cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
                 return;

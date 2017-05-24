@@ -48,6 +48,13 @@ namespace NachoCore.Model
             return UID;
         }
 
+        [Ignore]
+        public bool HasNonSelfOrganizer {
+            get {
+                return !String.IsNullOrEmpty (OrganizerEmail) && !IsOrganizer;
+            }
+        }
+
         private List<McException> dbExceptions = null;
         private IList<McException> appExceptions = null;
 

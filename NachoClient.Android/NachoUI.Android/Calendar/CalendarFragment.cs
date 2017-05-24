@@ -180,6 +180,48 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Context Menus
+
+        bool IsContextMenuOpen = false;
+
+        public void OnContextMenuClosed (IMenu menu)
+        {
+        	IsContextMenuOpen = false;
+        }
+
+        public override bool OnContextItemSelected (IMenuItem item)
+        {
+            var groupPosition = -1;
+            var position = -1;
+            var eventId = -1;
+            if (item.Intent != null && item.Intent.HasExtra (CalendarAdapter.EXTRA_GROUP_POSITION)) {
+                groupPosition = item.Intent.Extras.GetInt (CalendarAdapter.EXTRA_GROUP_POSITION);
+            }
+            if (item.Intent != null && item.Intent.HasExtra (CalendarAdapter.EXTRA_POSITION)) {
+                position = item.Intent.Extras.GetInt (CalendarAdapter.EXTRA_POSITION);
+            }
+            if (item.Intent != null && item.Intent.HasExtra (CalendarAdapter.EXTRA_EVENT_ID)) {
+                eventId = item.Intent.Extras.GetInt (CalendarAdapter.EXTRA_EVENT_ID);
+            }
+            if (groupPosition >= 0 && position >= 0 && eventId >= 0) {
+                var calendarEvent = Events.GetEvent (groupPosition, position);
+                if (calendarEvent.Id != eventId) {
+                    calendarEvent = McEvent.QueryById<McEvent> (eventId);
+                }
+                switch (item.ItemId) {
+                case Resource.Id.forward:
+                    ShowForward (calendarEvent);
+                    return true;
+                case Resource.Id.late:
+                    ShowRunningLate (calendarEvent);
+                    return true;
+                }
+            }
+            return base.OnContextItemSelected (item);
+        }
+
+        #endregion
+
         #region Listener
 
         public void OnEventSelected (McEvent calendarEvent)
@@ -195,6 +237,11 @@ namespace NachoClient.AndroidClient
                 var morning = day.Date.AddHours (9.0f);
                 ShowNewEvent (morning);
             }
+        }
+
+        public void OnContextMenuCreated ()
+        {
+            IsContextMenuOpen = true;
         }
 
         #endregion
@@ -220,9 +267,9 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
-        void ShowEvent (McEvent event_)
+        void ShowEvent (McEvent calendarEvent)
         {
-            var intent = EventViewActivity.BuildIntent (Activity, event_.Id);
+            var intent = EventViewActivity.BuildIntent (Activity, calendarEvent);
             StartActivityForResult (intent, REQUEST_SHOW_EVENT);
         }
 
@@ -271,16 +318,46 @@ namespace NachoClient.AndroidClient
             //}
         }
 
+        void ShowRunningLate (McEvent calendarEvent)
+        {
+            var calendarItem = calendarEvent.Calendar;
+            if (calendarItem != null) {
+                var account = McAccount.EmailAccountForCalendar (calendarItem);
+                var subject = EmailHelper.CreateInitialSubjectLine (EmailHelper.Action.Reply, calendarItem.Subject);
+                var message = McEmailMessage.MessageWithSubject (account, calendarItem.Subject);
+                message.To = calendarItem.OrganizerEmail;
+                var intent = MessageComposeActivity.ForwardCalendarIntent (Activity, calendarItem.Id, message);
+                StartActivity (intent);
+            }
+        }
+
+        void ShowForward (McEvent calendarEvent)
+        {
+            var calendarItem = calendarEvent.Calendar;
+            if (calendarItem != null) {
+                var account = McAccount.EmailAccountForCalendar (calendarItem);
+                var subject = EmailHelper.CreateInitialSubjectLine (EmailHelper.Action.Forward, calendarItem.Subject);
+                var message = McEmailMessage.MessageWithSubject (account, subject);
+                var intent = MessageComposeActivity.ForwardCalendarIntent (Activity, calendarItem.Id, message);
+				StartActivity (intent);
+            }
+        }
+
         #endregion
     }
 
     public class CalendarAdapter : GroupedListRecyclerViewAdapter
     {
 
+        public const string EXTRA_GROUP_POSITION = "NachoClient.AndroidClient.MessageListAdapter.EXTRA_GROUP_POSITION";
+        public const string EXTRA_POSITION = "NachoClient.AndroidClient.MessageListAdapter.EXTRA_POSITION";
+        public const string EXTRA_EVENT_ID = "NachoClient.AndroidClient.MessageListAdapter.EXTRA_EVENT_ID";
+
         public interface Listener
         {
             void OnEventSelected (McEvent calendarEvent);
             void OnEventCreateRequested (DateTime day);
+            void OnContextMenuCreated ();
         }
 
         enum ViewType
@@ -363,7 +440,11 @@ namespace NachoClient.AndroidClient
             case ViewType.DayHeader:
                 return DayHeaderViewHolder.Create (parent);
             case ViewType.Event:
-                return EventViewHolder.Create (parent);
+                var eventHolder = EventViewHolder.Create (parent);
+                eventHolder.ItemView.ContextMenuCreated += (sender, e) => {
+                    ItemContextMenuCreated (eventHolder.groupPosition, eventHolder.itemPosition, e.Menu);
+                };
+                return eventHolder;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("CalendarFragment.OnCreateGroupedViewHolder unexpected viewType: {0}", viewType));
         }
@@ -381,6 +462,29 @@ namespace NachoClient.AndroidClient
             Listener listener;
             if (WeakListener.TryGetTarget (out listener)) {
                 listener.OnEventSelected (calendarEvent);
+            }
+        }
+
+        void ItemContextMenuCreated (int groupPosition, int position, IContextMenu menu)
+        {
+            var calendarEvent = Events.GetEvent (groupPosition, position);
+            var intent = new Intent ();
+            intent.PutExtra (EXTRA_GROUP_POSITION, groupPosition);
+            intent.PutExtra (EXTRA_POSITION, position);
+            intent.PutExtra (EXTRA_EVENT_ID, calendarEvent.Id);
+            int order = 0;
+            List<IMenuItem> items = new List<IMenuItem> ();
+            if (calendarEvent.HasNonSelfOrganizer) {
+                items.Add (menu.Add (0, Resource.Id.late, order++, Resource.String.calendar_event_item_action_late));
+            }
+            items.Add (menu.Add (0, Resource.Id.forward, order++, Resource.String.calendar_event_item_action_forward));
+            foreach (var item in items) {
+                item.SetIntent (intent);
+            }
+            menu.SetHeaderTitle (calendarEvent.Subject);
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                listener.OnContextMenuCreated ();
             }
         }
 

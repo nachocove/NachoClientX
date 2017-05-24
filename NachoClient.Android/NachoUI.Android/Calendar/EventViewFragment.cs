@@ -23,9 +23,12 @@ namespace NachoClient.AndroidClient
     public class EventViewFragment : Fragment, EventViewAdapter.Listener
     {
 
+        private const string FRAGMENT_REMINDER_DIALOG = "NachoClient.AndroidClient.EventViewFragment.FRAGMENT_REMINDER_DIALOG";
+        private const string FRAGMENT_NOTE_DIALOG = "NachoClient.AndroidClient.EventViewFragment.FRAGMENT_NOTE_DIALOG";
         // TODO: accept/reject/maybe
 
         public McEvent Event;
+        public bool CanEditEvent;
 
         #region Subviews
 
@@ -78,7 +81,7 @@ namespace NachoClient.AndroidClient
 
         public void OnNotesSelected ()
         {
-            ShowNotes ();
+            ShowNote ();
         }
 
         public void OnAttachmentSelected (McAttachment attachment)
@@ -101,12 +104,23 @@ namespace NachoClient.AndroidClient
 
         void ShowRemiderPicker ()
         {
-            // TODO: show reminder picker
+            var dialog = new EventReminderPickerDialog (Event.IsReminderSet, Event.Reminder);
+            dialog.Show (FragmentManager, FRAGMENT_REMINDER_DIALOG, (isSet, reminder) => {
+                if (Event.IsReminderSet != isSet || reminder != Event.Reminder) {
+                    Event.UpdateReminder (isSet, reminder);
+                    Adapter.NotifyReminderChanged ();
+                }
+            });
         }
 
-        void ShowNotes ()
+        void ShowNote ()
         {
-            // TODO: show notes editor
+            var note = Adapter.Note;
+            var dialog = new NoteEditDialog (Adapter.Note == null ? "" : Adapter.Note.noteContent, (string newContent) => {
+                Event.UpdateNote (newContent);
+                Adapter.NotifyNoteChanged ();
+            });
+            dialog.Show (FragmentManager, FRAGMENT_NOTE_DIALOG);
         }
 
         #endregion
@@ -137,6 +151,7 @@ namespace NachoClient.AndroidClient
         IList<McAttachment> Attachments;
         IList<McAttendee> Attendees;
         McBody Body;
+        public McNote Note { get; private set; }
 
         int _GroupCount = 0;
         int InfoGroupPosition = 0;
@@ -155,7 +170,9 @@ namespace NachoClient.AndroidClient
             Attachments = Event.QueryAttachments ();
             Attendees = Event.QueryAttendees ();
             Body = Event.GetBody ();
+            Note = Event.QueryNote ();
             ConfigureGroups ();
+            // TODO: download body if needed?
         }
 
         void ConfigureGroups ()
@@ -167,18 +184,33 @@ namespace NachoClient.AndroidClient
             CalendarGroupPosition = -1;
             AttendeesGroupPosition = -1;
             _GroupCount = 1;
-            if (Body != null) {
+            if (Body != null && McAbstrFileDesc.IsNontruncatedBodyComplete (Body) && !String.IsNullOrWhiteSpace (Event.PlainDescription)) {
                 DescriptionGroupPosition = _GroupCount++;
             }
             if (Attachments.Count > 0) {
                 AttachmentsGroupPosition = _GroupCount++;
             }
-            ReminderGroupPosition = _GroupCount++;
-            NotesGroupPosition = _GroupCount++;
+            if (Event.SupportsReminder) {
+                ReminderGroupPosition = _GroupCount++;
+            }
+            if (Event.SupportsNote) {
+                NotesGroupPosition = _GroupCount++;
+            }
             CalendarGroupPosition = _GroupCount++;
             if (Attendees.Count > 0) {
                 AttendeesGroupPosition = _GroupCount++;
             }
+        }
+
+        public void NotifyNoteChanged ()
+        {
+            Note = Event.QueryNote ();
+            NotifyItemChanged (NotesGroupPosition, 0);
+        }
+
+        public void NotifyReminderChanged ()
+        {
+            NotifyItemChanged (ReminderGroupPosition, 0);
         }
 
         public override int GroupCount {
@@ -298,8 +330,7 @@ namespace NachoClient.AndroidClient
                 }
             } else if (groupPosition == DescriptionGroupPosition) {
                 if (position == 0) {
-                    // TODO: get body text
-                    var text = "";
+                    var text = Event.PlainDescription.Trim ();
                     holder.ItemView.Clickable = false;
                     (holder as IconTextViewHolder).SetIconText (Resource.Drawable.event_icon_description, text);
                     return;
@@ -312,24 +343,31 @@ namespace NachoClient.AndroidClient
                 }
             } else if (groupPosition == ReminderGroupPosition) {
                 if (position == 0) {
-                    // TODO: get reminder text
-                    var text = "";
+                    string text;
+                    if (Event.IsReminderSet) {
+                        text = Pretty.ReminderString (true, Event.Reminder);
+                    } else {
+                        text = holder.ItemView.Context.GetString (Resource.String.event_remider_set);
+                    }
                     holder.ItemView.Clickable = true;
                     (holder as IconTextViewHolder).SetIconText (Resource.Drawable.event_icon_reminder, text);
                     return;
                 }
             } else if (groupPosition == NotesGroupPosition) {
                 if (position == 0) {
-                    // TODO: get notes text
-                    var text = "";
+                    string text;
+                    if (Note == null || String.IsNullOrWhiteSpace (Note.noteContent)) {
+                        text = holder.ItemView.Context.GetString (Resource.String.event_note_set);
+                    } else {
+                        text = Note.noteContent;
+                    }
                     holder.ItemView.Clickable = true;
                     (holder as IconTextViewHolder).SetIconText (Resource.Drawable.event_icon_notes, text);
                     return;
                 }
             } else if (groupPosition == CalendarGroupPosition) {
                 if (position == 0) {
-                    // TODO: get calendar text
-                    var text = "";
+                    var text = Event.GetCalendarName ();
                     holder.ItemView.Clickable = false;
                     (holder as IconTextViewHolder).SetIconText (Resource.Drawable.event_icon_calendar, text);
                     return;
@@ -423,7 +461,7 @@ namespace NachoClient.AndroidClient
             public void SetEvent (McEvent calendarEvent)
             {
                 SubjectLabel.Text = calendarEvent.Subject ?? "";
-                // TODO: fill in TimeLabel.Text
+                TimeLabel.Text = Pretty.EventDetailTime (calendarEvent);
                 if (String.IsNullOrWhiteSpace (calendarEvent.Location)) {
                     LocationGroup.Visibility = ViewStates.Gone;
                 } else {
@@ -500,12 +538,29 @@ namespace NachoClient.AndroidClient
 
             public AttendeeViewHolder (View view) : base (view)
             {
-                // TODO: find views
+                PortraitView = view.FindViewById (Resource.Id.portrait_view) as PortraitView;
+                NameLabel = view.FindViewById (Resource.Id.name) as TextView;
+                StatusLabel = view.FindViewById (Resource.Id.status) as TextView;
+
             }
 
             public void SetAttendee (McAttendee attendee)
             {
-                // TODO:
+                var contact = attendee.GetContact ();
+                if (contact != null) {
+                    NameLabel.Text = contact.DisplayName;
+                    PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, ContactsHelper.GetInitials (contact));
+                } else {
+                    NameLabel.Text = attendee.DisplayName;
+                    PortraitView.SetPortrait (0, 1, ContactsHelper.NameToLetters (attendee.DisplayName));
+                }
+                var status = Pretty.AttendeeStatus (attendee);
+                if (String.IsNullOrEmpty (status)) {
+                    StatusLabel.Visibility = ViewStates.Gone;
+                } else {
+                    StatusLabel.Visibility = ViewStates.Visible;
+                    StatusLabel.Text = status;
+                }
             }
         }
     }
