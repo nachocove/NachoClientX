@@ -111,14 +111,23 @@
     <!-- Calendar Event View -->
     <string name="event_action_forward">Forward</string>
     <string name="event_action_delete">Delete</string>
+    <string name="event_action_cancel">Cancel Occurrence</string>
     <string name="event_delete_confirmation_message">Deleting this event will permanently remove it from your calendar</string>
     <string name="event_delete_confirmation_accept">Yes, Delete Event</string>
+    <string name="event_cancel_confirmation_message">Canceling  will affect only this occurrence of the meeting and will send a cancellation notice to all of the attendees</string>
+    <string name="event_cancel_confirmation_accept">Yes, Cancel Occurrence</string>
     <string name="event_header_attachments">Attachments</string>
     <string name="event_header_attendees">Attendees</string>
     <string name="event_header_attendees_organizer">Attendees (you are the organizer)</string>
     <string name="event_remider_set">Set a Reminder</string>
     <string name="event_reminder">Reminder</string>
     <string name="event_note_set">Add a Note</string>
+    <string name="event_response_confirmation_message">This is a recurring event, so you can respond to the entire series, or just this occurrence.</string>
+    <string name="event_response_confirmation_all_format">{0} the entire series</string>
+    <string name="event_response_confirmation_occurrence_format">{0} only this occurrence</string>
+    <string name="event_response_confirmation_accept">Accept</string>
+    <string name="event_response_confirmation_decline">Decline</string>
+    <string name="event_response_confirmation_tentative">Say maybe to</string>
 
     <!-- Calendar Event Edit View -->
     <string name="event_edit_action_save">Save</string>

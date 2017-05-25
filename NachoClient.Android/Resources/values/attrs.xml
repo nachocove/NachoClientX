@@ -72,6 +72,9 @@
     <attr name="textAppearanceEventHeader" format="reference"/>
     <attr name="textAppearanceEventItem" format="reference"/>
     <attr name="textAppearanceEventSubject" format="reference"/>
+    <attr name="colorPositiveAction" format="color"/>
+    <attr name="colorNegativeAction" format="color"/>
+    <attr name="colorNeutralAction" format="color"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

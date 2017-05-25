@@ -61,6 +61,12 @@ namespace NachoCore.Model
 
         private McException _Exception;
 
+        private bool? _IsRecurring;
+
+        private bool? _HasAttendees;
+
+        private McAccount _Account;
+
         [Ignore]
         public McCalendar Calendar {
             get {
@@ -86,6 +92,43 @@ namespace NachoCore.Model
         {
             get {
                 return Exception != null ? Exception as McAbstrCalendarRoot : Calendar as McAbstrCalendarRoot;
+            }
+        }
+
+        [Ignore]
+        public McAccount Account {
+            get {
+                if (_Account == null) {
+                    _Account = McAccount.QueryById<McAccount> (AccountId);
+                }
+                return _Account;
+            }
+        }
+
+        [Ignore]
+        public virtual bool IsRecurring {
+            get {
+                if (!_IsRecurring.HasValue) {
+                    _IsRecurring = QueryRecurrences ().Count > 0;
+                }
+                return _IsRecurring.Value;
+            }
+        }
+
+        [Ignore]
+        public virtual bool HasAttendees {
+            get {
+                if (!_HasAttendees.HasValue) {
+                    _HasAttendees = QueryAttendees ().Count > 0;
+                }
+                return _HasAttendees.Value;
+            }
+        }
+
+        [Ignore]
+        public virtual bool IsResponseRequested {
+            get {
+                return !IsAppointment && !IsOrganizer && CalendarItem.MeetingStatus != NcMeetingStatus.MeetingAttendeeCancelled;
             }
         }
 

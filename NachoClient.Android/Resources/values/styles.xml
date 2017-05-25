@@ -141,6 +141,9 @@
         <item name="textAppearanceEventHeader">@style/TextAppearanceNachoEventHeader</item>
         <item name="textAppearanceEventItem">@style/TextAppearanceNachoEventItem</item>
         <item name="textAppearanceEventSubject">@style/TextAppearanceNachoEventSubject</item>
+        <item name="colorPositiveAction">@color/NachoPositiveAction</item>
+        <item name="colorNegativeAction">@color/NachoNegativeAction</item>
+        <item name="colorNeutralAction">@color/NachoNeutralAction</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

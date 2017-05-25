@@ -14,4 +14,9 @@
         android:orderInCategory="101"
         android:title="@string/event_action_delete"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/cancel"
+        android:orderInCategory="101"
+        android:title="@string/event_action_cancel"
+        app:showAsAction="never"/>
 </menu>

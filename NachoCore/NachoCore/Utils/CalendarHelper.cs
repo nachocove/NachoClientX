@@ -71,10 +71,17 @@ namespace NachoCore.Utils
 
         public static bool CanEdit (McEvent calendarEvent)
         {
-            bool isRecurring = calendarEvent.QueryRecurrences ().Count > 0;
-            bool hasAttendees = calendarEvent.QueryAttendees ().Count > 0;
-            var account = McAccount.QueryById<McAccount> (calendarEvent.AccountId);
-            return calendarEvent.IsOrganizer && !isRecurring && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && (!hasAttendees || account.AccountType != McAccount.AccountTypeEnum.Device);
+            return calendarEvent.IsOrganizer && !calendarEvent.IsRecurring && calendarEvent.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && (!calendarEvent.HasAttendees || calendarEvent.Account.AccountType != McAccount.AccountTypeEnum.Device);
+        }
+
+        public static bool CanEditReminder (McEvent calendarEvent)
+        {
+            return calendarEvent.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && (calendarEvent.Account.AccountType != McAccount.AccountTypeEnum.Device || !calendarEvent.IsRecurring);
+        }
+
+        public static bool CanCancel (McEvent calendarEvent)
+        {
+            return calendarEvent.IsOrganizer && calendarEvent.IsRecurring && calendarEvent.HasAttendees && calendarEvent.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && calendarEvent.Account.AccountType != McAccount.AccountTypeEnum.Device;
         }
 
         public static DateTime ReturnAllDayEventEndTime (DateTime date)
@@ -89,6 +96,22 @@ namespace NachoCore.Utils
                 return null;  // may be deleted
             }
             return McCalendar.QueryById<McCalendar> (e.CalendarId);
+        }
+
+        public static void CancelOccurrence (McEvent calendarEvent)
+        {
+            DateTime occurrenceStartTime;
+            if (calendarEvent.Exception != null) {
+                occurrenceStartTime = calendarEvent.Exception.ExceptionStartTime;
+            } else {
+                occurrenceStartTime = calendarEvent.StartTime;
+            }
+            CancelOccurrence (calendarEvent.Calendar, occurrenceStartTime);
+            BackEnd.Instance.UpdateCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId, false);
+
+            var iCalCancelPart = MimeCancelFromOccurrence (calendarEvent.Calendar, calendarEvent.CalendarItem, calendarEvent, occurrenceStartTime);
+            var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
+            SendMeetingCancelations (calendarEvent.Account, calendarEvent.Calendar, "Canceled: " + calendarEvent.Subject, mimeBody);
         }
 
         public static void CancelOccurrence (McCalendar cal, DateTime occurrence)
@@ -119,6 +142,54 @@ namespace NachoCore.Utils
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
                 Account = McAccount.QueryById<McAccount> (cal.AccountId),
             });
+        }
+
+        public static void DeleteEvent (McEvent calendarEvent)
+        {
+            if (calendarEvent.HasAttendees) {
+                var iCalCancelPart = CalendarHelper.MimeCancelFromCalendar (calendarEvent.Calendar);
+                var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
+                CalendarHelper.SendMeetingCancelations (calendarEvent.Account, calendarEvent.Calendar, null, mimeBody);
+            }
+            BackEnd.Instance.DeleteCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId);
+        }
+
+        public static void RemoveEvent (McEvent calendarEvent)
+        {
+            // Remove the item from the calendar.
+            if (calendarEvent.Exception != null && calendarEvent.Calendar.MeetingStatus != NcMeetingStatus.MeetingAttendeeCancelled) {
+                // The user is viewing an occurrence of a recurring meeting, and it appears that the
+                // entire series has not been canceled.  So delete just this one occurrence.
+                CalendarHelper.CancelOccurrence (calendarEvent.Calendar, calendarEvent.Exception.ExceptionStartTime);
+                BackEnd.Instance.UpdateCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId, sendBody: false);
+            } else {
+                BackEnd.Instance.DeleteCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId);
+            }
+        }
+
+        public static void SendMeetingResponse (McEvent calendarEvent, NcResponseType response, bool occurrenceOnly)
+        {
+            if (occurrenceOnly) {
+                DateTime occurrenceStartTime;
+                if (calendarEvent.Exception != null) {
+                    occurrenceStartTime = calendarEvent.Exception.ExceptionStartTime;
+                } else {
+                    occurrenceStartTime = calendarEvent.StartTime;
+                }
+                BackEnd.Instance.RespondCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId, response, occurrenceStartTime);
+                if (calendarEvent.Calendar.ResponseRequestedIsSet && calendarEvent.Calendar.ResponseRequested) {
+                    var icalpart = MimeResponseFromCalendar (calendarEvent.Calendar, response, occurrenceStartTime);
+                    var mimeBody = CreateMime ("", icalpart, new List<McAttachment> ());
+                    SendMeetingResponse (calendarEvent.Account, calendarEvent.Calendar, mimeBody, response);
+                }
+            } else {
+                BackEnd.Instance.RespondCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId, response);
+                if (calendarEvent.Calendar.ResponseRequestedIsSet && calendarEvent.Calendar.ResponseRequested) {
+                    var iCalPart = MimeResponseFromCalendar (calendarEvent.Calendar, response);
+                    var mimeBody = CreateMime ("", iCalPart, new List<McAttachment> ());
+                    CalendarHelper.SendMeetingResponse (calendarEvent.Account, calendarEvent.Calendar, mimeBody, response);
+                }
+            }
         }
 
         public static void MarkEventAsCancelled (McMeetingRequest eventInfo)

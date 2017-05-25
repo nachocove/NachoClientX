@@ -1731,6 +1731,18 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\event_icon_time.png" />
     <AndroidResource Include="Resources\layout\EventViewIconTextHeader.axml" />
     <AndroidResource Include="Resources\layout\NoteEditDialog.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_event_accept.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_event_decline.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_event_tentative.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_event_accept.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_event_decline.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_event_tentative.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_event_accept.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_event_decline.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_event_tentative.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_event_accept.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_event_decline.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_event_tentative.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

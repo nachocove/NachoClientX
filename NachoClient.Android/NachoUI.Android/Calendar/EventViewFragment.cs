@@ -151,6 +151,7 @@ namespace NachoClient.AndroidClient
         IList<McAttachment> Attachments;
         IList<McAttendee> Attendees;
         McBody Body;
+        bool CanEditReminder;
         public McNote Note { get; private set; }
 
         int _GroupCount = 0;
@@ -171,6 +172,7 @@ namespace NachoClient.AndroidClient
             Attendees = Event.QueryAttendees ();
             Body = Event.GetBody ();
             Note = Event.QueryNote ();
+            CanEditReminder = CalendarHelper.CanEditReminder (Event);
             ConfigureGroups ();
             // TODO: download body if needed?
         }
@@ -349,7 +351,7 @@ namespace NachoClient.AndroidClient
                     } else {
                         text = holder.ItemView.Context.GetString (Resource.String.event_remider_set);
                     }
-                    holder.ItemView.Clickable = true;
+                    holder.ItemView.Clickable = CanEditReminder;
                     (holder as IconTextViewHolder).SetIconText (Resource.Drawable.event_icon_reminder, text);
                     return;
                 }

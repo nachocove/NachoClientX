@@ -63,20 +63,40 @@ namespace NachoClient.AndroidClient
         #region Subviews
 
         Toolbar Toolbar;
-        FloatingActionButton FloatingActionButton;
+        FloatingActionButton EditActionButton;
+        FloatingActionButton AcceptButton;
+        FloatingActionButton DeclineButton;
+        FloatingActionButton TentativeButton;
         EventViewFragment EventViewFragment;
+        View ResponseActionGroup;
 
         void FindSubviews ()
         {
             Toolbar = FindViewById (Resource.Id.toolbar) as Toolbar;
-            FloatingActionButton = FindViewById (Resource.Id.fab) as FloatingActionButton;
+            EditActionButton = FindViewById (Resource.Id.fab) as FloatingActionButton;
+            ResponseActionGroup = FindViewById (Resource.Id.response_actions);
+            AcceptButton = FindViewById (Resource.Id.accept) as FloatingActionButton;
+            DeclineButton = FindViewById (Resource.Id.decline) as FloatingActionButton;
+            TentativeButton = FindViewById (Resource.Id.tentative) as FloatingActionButton;
+
+            EditActionButton.Click += EditButtonClicked;
+            AcceptButton.Click += AcceptButtonClicked;
+            DeclineButton.Click += DeclineButtonClicked;
+            TentativeButton.Click += TentativeButtonClicked;
         }
 
         void ClearSubviews ()
         {
+
+            EditActionButton.Click -= EditButtonClicked;
+            AcceptButton.Click -= AcceptButtonClicked;
+            DeclineButton.Click -= DeclineButtonClicked;
+            TentativeButton.Click -= TentativeButtonClicked;
+
             Toolbar = null;
-            FloatingActionButton = null;
+            EditActionButton = null;
             EventViewFragment = null;
+            ResponseActionGroup = null;
         }
 
         #endregion
@@ -93,9 +113,11 @@ namespace NachoClient.AndroidClient
             SetSupportActionBar (Toolbar);
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);
             if (!CanEditEvent) {
-                FloatingActionButton.Hide ();
+                EditActionButton.Hide ();
+                if (Event.IsResponseRequested) {
+                    ResponseActionGroup.Visibility = ViewStates.Visible;
+                }
             }
-            FloatingActionButton.Click += ActionButtonClicked;
         }
 
         void PopulateFromIntent ()
@@ -150,6 +172,10 @@ namespace NachoClient.AndroidClient
                 var deleteItem = menu.FindItem (Resource.Id.delete);
                 deleteItem.SetVisible (false);
             }
+            if (!CalendarHelper.CanCancel (Event)) {
+                var cancelItem = menu.FindItem (Resource.Id.cancel);
+                cancelItem.SetVisible (false);
+            }
             return base.OnCreateOptionsMenu (menu);
         }
 
@@ -162,6 +188,9 @@ namespace NachoClient.AndroidClient
             case Resource.Id.delete:
                 ShowDeleteConfirmation ();
                 return true;
+            case Resource.Id.cancel:
+                ShowCancelConfirmation ();
+                return true;
             case Resource.Id.forward:
                 ShowForward ();
                 return true;
@@ -173,9 +202,24 @@ namespace NachoClient.AndroidClient
 
         #region User Actions
 
-        void ActionButtonClicked (object sender, EventArgs e)
+        void EditButtonClicked (object sender, EventArgs e)
         {
             ShowEdit ();
+        }
+
+        void AcceptButtonClicked (object sender, EventArgs e)
+        {
+            SendAcceptResponse ();
+        }
+
+        void DeclineButtonClicked (object sender, EventArgs e)
+        {
+            SendDeclineResponse ();
+        }
+
+        void TentativeButtonClicked (object sender, EventArgs e)
+        {
+            SendTentativeResponse ();
         }
 
         #endregion
@@ -229,6 +273,25 @@ namespace NachoClient.AndroidClient
             builder.Show ();
         }
 
+        void ShowCancelConfirmation ()
+        {
+        	var builder = new AlertDialog.Builder (this);
+        	builder.SetMessage (Resource.String.event_cancel_confirmation_message);
+        	var items = new string [] {
+        				GetString (Resource.String.event_cancel_confirmation_accept)
+        			};
+        	builder.SetItems (items, (sender, e) => {
+        		switch (e.Which) {
+        		case 0:
+        			CancelOccurrence ();
+        			break;
+        		default:
+        			break;
+        		}
+        	});
+        	builder.Show ();
+        }
+
         void ShowForward ()
         {
             var calendarItem = Event.Calendar;
@@ -243,9 +306,13 @@ namespace NachoClient.AndroidClient
 
         void DeleteEvent ()
         {
-            // TODO: send cancelation notices
-            BackEnd.Instance.DeleteCalCmd (Event.AccountId, Event.CalendarId);
+            CalendarHelper.DeleteEvent (Event);
             FinishWithDeleteAction ();
+        }
+
+        void CancelOccurrence ()
+        {
+            CalendarHelper.CancelOccurrence (Event);
         }
 
         void FinishWithDeleteAction ()
@@ -253,6 +320,67 @@ namespace NachoClient.AndroidClient
             var intent = new Intent (ACTION_DELETE);
 			SetResult (Result.Ok, intent);
             Finish ();
+        }
+
+        void SendAcceptResponse ()
+        {
+            SendResponse (NcResponseType.Accepted);
+        }
+
+        void SendDeclineResponse ()
+        {
+            SendResponse (NcResponseType.Declined);
+        }
+
+        void SendTentativeResponse ()
+        {
+            SendResponse (NcResponseType.Tentative);
+        }
+
+        void SendResponse (NcResponseType response)
+        {
+            if (Event.IsRecurring) {
+                ShowResponseConfirmation (response);
+            } else {
+                CalendarHelper.SendMeetingResponse (Event, response, false);
+            }
+        }
+
+        void ShowResponseConfirmation (NcResponseType response)
+        {
+        	var builder = new AlertDialog.Builder (this);
+        	builder.SetMessage (Resource.String.event_response_confirmation_message);
+            var all_format = GetString (Resource.String.event_response_confirmation_all_format);
+            var occurrence_format = GetString (Resource.String.event_response_confirmation_occurrence_format);
+            string action = "";
+            switch (response) {
+            case NcResponseType.Accepted:
+                action = GetString (Resource.String.event_response_confirmation_accept);
+                break;
+            case NcResponseType.Declined:
+                action = GetString (Resource.String.event_response_confirmation_decline);
+                break;
+            case NcResponseType.Tentative:
+                action = GetString (Resource.String.event_response_confirmation_tentative);
+                break;
+            }
+            var items = new string [] {
+                String.Format (all_format, action),
+                String.Format (occurrence_format, action)
+            };
+        	builder.SetItems (items, (sender, e) => {
+        		switch (e.Which) {
+        		case 0:
+                    CalendarHelper.SendMeetingResponse (Event, response, false);
+        			break;
+                case 1:
+                    CalendarHelper.SendMeetingResponse (Event, response, true);
+                    break;
+        		default:
+        			break;
+        		}
+        	});
+        	builder.Show ();
         }
 
         #endregion

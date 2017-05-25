@@ -4,6 +4,9 @@
 	<color name="NachoDarkGreen">#082c32</color>
 	<color name="NachoBrightGreen">#73FFF3</color>
 	<color name="NachoDarkenedBrightGreen">#1AC8B6</color>
+    <color name="NachoPositiveAction">#1AC8B6</color>
+    <color name="NachoNegativeAction">#d24747</color>
+    <color name="NachoNeutralAction">#708792</color>
 	<!-- old -->
 	<!-- TODO: phase out and remove -->
     <color name="secondary">#ff752c5e</color>
