@@ -257,7 +257,7 @@ namespace NachoClient.AndroidClient
         void ShowDeleteConfirmation ()
         {
             var builder = new AlertDialog.Builder (this);
-            builder.SetMessage (Resource.String.event_delete_confirmation_message);
+            builder.SetTitle (Resource.String.event_delete_confirmation_message);
             var items = new string [] {
                 GetString (Resource.String.event_delete_confirmation_accept)
             };
@@ -276,7 +276,7 @@ namespace NachoClient.AndroidClient
         void ShowCancelConfirmation ()
         {
         	var builder = new AlertDialog.Builder (this);
-        	builder.SetMessage (Resource.String.event_cancel_confirmation_message);
+            builder.SetTitle (Resource.String.event_cancel_confirmation_message);
         	var items = new string [] {
         				GetString (Resource.String.event_cancel_confirmation_accept)
         			};
@@ -349,7 +349,7 @@ namespace NachoClient.AndroidClient
         void ShowResponseConfirmation (NcResponseType response)
         {
         	var builder = new AlertDialog.Builder (this);
-        	builder.SetMessage (Resource.String.event_response_confirmation_message);
+            builder.SetTitle (Resource.String.event_response_confirmation_message);
             var all_format = GetString (Resource.String.event_response_confirmation_all_format);
             var occurrence_format = GetString (Resource.String.event_response_confirmation_occurrence_format);
             string action = "";
