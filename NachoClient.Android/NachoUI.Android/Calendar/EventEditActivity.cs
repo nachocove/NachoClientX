@@ -25,19 +25,26 @@ namespace NachoClient.AndroidClient
         
         public const string ACTION_DELETE = "NachoClient.AndroidClient.EventEditActivity.ACTION_DELETE";
         public const string EXTRA_CALENDAR_ID = "NachoClient.AndroidClient.EventEditActivity.EXTRA_CALENDAR_ID";
+        public const string EXTRA_ACCOUNT_ID = "NachoClient.AndroidClient.EventEditActivity.EXTRA_ACCOUNT_ID";
         public const string EXTRA_START_TIME = "NachoClient.AndroidClient.EventEditActivity.EXTRA_START_TIME";
 
         McCalendar CalendarItem;
 
         #region Intents
 
-        public static Intent BuildNewEventIntent (Context context, DateTime? start = null)
+        public static Intent BuildNewEventIntent (Context context, int accountId, DateTime? start = null)
         {
             var intent = new Intent (context, typeof (EventEditActivity));
+            intent.PutExtra (EXTRA_ACCOUNT_ID, accountId);
             if (start.HasValue) {
                 intent.PutExtra (EXTRA_START_TIME, start.Value.ToAsUtcString ());
             }
             return intent;
+        }
+
+        public static Intent BuildIntent (Context context, McEvent calendarEvent)
+        {
+            return BuildIntent (context, calendarEvent.CalendarId);
         }
 
         public static Intent BuildIntent (Context context, int calendarId)
@@ -85,16 +92,19 @@ namespace NachoClient.AndroidClient
             if (Intent.HasExtra (EXTRA_CALENDAR_ID)) {
                 var calendarId = Intent.Extras.GetInt (EXTRA_CALENDAR_ID);
                 CalendarItem = McCalendar.QueryById<McCalendar> (calendarId);
-            } else if (Intent.HasExtra (EXTRA_START_TIME)) {
-                var dateTimeString = Intent.Extras.GetString (EXTRA_START_TIME);
-                var startTime = dateTimeString.ToDateTime ();
-                CalendarItem = new McCalendar ();
-                CalendarItem.StartTime = startTime;
             } else {
-                var now = DateTime.Now;
-                var startTime = DateTime.Today.AddHours (now.Hour);
                 CalendarItem = new McCalendar ();
+                CalendarItem.AccountId = Intent.Extras.GetInt (EXTRA_ACCOUNT_ID);
+                DateTime startTime;
+                if (Intent.HasExtra (EXTRA_START_TIME)) {
+                    var dateTimeString = Intent.Extras.GetString (EXTRA_START_TIME);
+                    startTime = dateTimeString.ToDateTime ();
+                } else {
+                    var now = DateTime.Now;
+                    startTime = DateTime.Today.AddHours (now.Hour);
+                }
                 CalendarItem.StartTime = startTime;
+                CalendarItem.EndTime = startTime + TimeSpan.FromHours (1.0);
             }
         }
 
@@ -176,7 +186,7 @@ namespace NachoClient.AndroidClient
 
         public void Save ()
         {
-            // TODO: save changes to DB
+            EventEditFragment.Save ();
         }
 
         public void SaveAndFinish ()

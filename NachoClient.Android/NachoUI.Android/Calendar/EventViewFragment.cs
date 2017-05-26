@@ -25,7 +25,6 @@ namespace NachoClient.AndroidClient
 
         private const string FRAGMENT_REMINDER_DIALOG = "NachoClient.AndroidClient.EventViewFragment.FRAGMENT_REMINDER_DIALOG";
         private const string FRAGMENT_NOTE_DIALOG = "NachoClient.AndroidClient.EventViewFragment.FRAGMENT_NOTE_DIALOG";
-        // TODO: accept/reject/maybe
 
         public McEvent Event;
         public bool CanEditEvent;
@@ -332,7 +331,7 @@ namespace NachoClient.AndroidClient
                 }
             } else if (groupPosition == DescriptionGroupPosition) {
                 if (position == 0) {
-                    var text = Event.PlainDescription.Trim ();
+                    var text = Event.PlainDescription;
                     holder.ItemView.Clickable = false;
                     (holder as IconTextViewHolder).SetIconText (Resource.Drawable.event_icon_description, text);
                     return;
@@ -550,7 +549,11 @@ namespace NachoClient.AndroidClient
             {
                 var contact = attendee.GetContact ();
                 if (contact != null) {
-                    NameLabel.Text = contact.DisplayName;
+                    var name = contact.GetDisplayName ();
+                    if (String.IsNullOrWhiteSpace (name)) {
+                        name = attendee.Email;
+                    }
+                    NameLabel.Text = name;
                     PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, ContactsHelper.GetInitials (contact));
                 } else {
                     NameLabel.Text = attendee.DisplayName;

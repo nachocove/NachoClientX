@@ -136,6 +136,26 @@
     <string name="event_edit_delete_confirmation_accept">Yes, Delete Event</string>
     <string name="event_edit_close_save">Save Changes</string>
     <string name="event_edit_close_discard">Discard Changes</string>
+    <string name="event_edit_section_info">Subject, Time &amp; Place</string>
+    <string name="event_edit_section_description">Details</string>
+    <string name="event_edit_section_reminder">Reminder</string>
+    <string name="event_edit_section_attachments">Attachments</string>
+    <string name="event_edit_section_attendees">Attendees</string>
+    <string name="event_edit_subject">Subject</string>
+    <string name="event_edit_all_day">All Day</string>
+    <string name="event_edit_start">Start</string>
+    <string name="event_edit_end">End</string>
+    <string name="event_edit_location">Location</string>
+    <string name="event_edit_calendar">Calendar</string>
+    <string name="event_edit_description">Detailed description</string>
+    <string name="event_edit_add_attachment">Add Attachment</string>
+    <string name="event_edit_add_attendees">Add Attendees</string>
+
+    <!-- Add Calendar Event Attendee Dialog -->
+    <string name="add_attendee_required">Required:</string>
+    <string name="add_attendee_optional">Optional:</string>
+    <string name="add_attendee_done">Done</string>
+    <string name="add_attendee_cancel">Cancel</string>
 
     <!-- General Settings -->
     <string name="settings_label">Settings</string>

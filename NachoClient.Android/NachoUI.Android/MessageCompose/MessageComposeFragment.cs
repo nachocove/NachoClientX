@@ -32,18 +32,10 @@ namespace NachoClient.AndroidClient
         NachoWebClientDelegate,
         MessageComposeHeaderViewDelegate,
         IntentFragmentDelegate,
-        FilePickerFragmentDelegate,
         QuickResponseFragmentDelegate
     {
 
-        private const string FRAGMENT_ATTACHMENT_CHOOSER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_ATTACHMENT_CHOOSER";
-        private const string FRAGMENT_FILE_PICKER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_FILE_PICKER";
         private const string FRAGMENT_ACCOUNT_CHOOSER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_ACCOUNT_CHOOSER";
-
-        private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
-
-        private const int REQUEST_EXTERNAL_APP = 1;
-        private const int REQUEST_TAKE_PHOTO = 2;
 
         #region Properties
 
@@ -80,7 +72,6 @@ namespace NachoClient.AndroidClient
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
-        Android.Net.Uri CameraOutputUri;
 
         #endregion
 
@@ -131,12 +122,10 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreate");
             base.OnCreate (savedInstanceState);
+            AttachmentPicker.AttachmentPicked += AttachmentPicked;
             if (savedInstanceState != null) {
                 Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment savedInstanceState != null");
-                var cameraUriString = savedInstanceState.GetString (CAMERA_OUTPUT_URI_KEY);
-                if (cameraUriString != null) {
-                    CameraOutputUri = Android.Net.Uri.Parse (cameraUriString);
-                }
+                AttachmentPicker.OnCreate (savedInstanceState);
             }
         }
 
@@ -158,9 +147,7 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnSaveInstanceState");
             base.OnSaveInstanceState (outState);
-            if (CameraOutputUri != null) {
-                outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
-            }
+            AttachmentPicker.OnSaveInstanceState (outState);
             EndEditing ();
             IsSavingHTML = true;
             GetHtmlContent ((html) => {
@@ -179,6 +166,12 @@ namespace NachoClient.AndroidClient
             ClearSubviews ();
             IsWebViewLoaded = false;
             base.OnDestroyView ();
+        }
+
+        public override void OnDestroy ()
+        {
+            AttachmentPicker.AttachmentPicked -= AttachmentPicked;
+            base.OnDestroy ();
         }
 
         void BeginComposing ()
@@ -344,95 +337,24 @@ namespace NachoClient.AndroidClient
 
         #region Attachment Picking
 
+        AttachmentPicker AttachmentPicker = new AttachmentPicker();
+
         void ShowAttachmentPicker ()
         {
-
-            var attachmentChooser = new AttachmentChooserFragment ();
-            attachmentChooser.Show (FragmentManager, FRAGMENT_ATTACHMENT_CHOOSER, () => {
-                if (attachmentChooser.SelectedSource == null) {
-                    return;
-                }
-                switch (attachmentChooser.SelectedSource.Identifier) {
-                case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_TAKE_PHOTO:
-                    CameraOutputUri = Util.TakePhoto (this, REQUEST_TAKE_PHOTO);
-                    break;
-                case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_NACHO_FILE:
-                    var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
-                    filePicker.Delegate = this;
-                    filePicker.Show (FragmentManager, FRAGMENT_FILE_PICKER); 
-                    break;
-                default:
-                    InvokeApplication (attachmentChooser.SelectedSource.Identifier);
-                    break;
-                }
-            });
-
-        }
-
-        void InvokeApplication (string packageName)
-        {
-            var intent = new Intent ();
-            intent.SetAction (Intent.ActionGetContent);
-            intent.AddCategory (Intent.CategoryOpenable);
-            intent.SetType ("*/*");
-            intent.SetFlags (ActivityFlags.SingleTop);
-            intent.PutExtra (Intent.ExtraAllowMultiple, true);
-            intent.SetPackage (packageName);
-
-            StartActivityForResult (intent, REQUEST_EXTERNAL_APP);
+            AttachmentPicker.Show (this, Composer.Account.Id);
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
         {
-            if (Result.Ok != resultCode) {
+            if (AttachmentPicker.OnActivityResult (this, Composer.Account.Id, requestCode, resultCode, data)){
                 return;
-            }
-            if (REQUEST_TAKE_PHOTO == requestCode) {
-                var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
-                mediaScanIntent.SetData (CameraOutputUri);
-                Activity.SendBroadcast (mediaScanIntent);
-                var attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
-                var filename = Path.GetFileName (CameraOutputUri.Path);
-                attachment.SetDisplayName (filename);
-                attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
-                attachment.UpdateFileCopy (CameraOutputUri.Path);
-                attachment.UpdateSaveFinish ();
-                File.Delete (CameraOutputUri.Path);
-                attachment.Link (Composer.Message);
-                HeaderView.AddAttachment (attachment);
-            } else if (REQUEST_EXTERNAL_APP == requestCode) {
-                try {
-                    var clipData = data.ClipData;
-                    if (null == clipData) {
-                        var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, data.Data, data.Type);
-                        if (null != attachment) {
-                            attachment.Link (Composer.Message);
-                            HeaderView.AddAttachment (attachment);
-                        }
-                    } else {
-                        for (int i = 0; i < clipData.ItemCount; i++) {
-                            var uri = clipData.GetItemAt (i).Uri;
-                            var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, uri, data.Type);
-                            if (null != attachment) {
-                                attachment.Link (Composer.Message);
-                                HeaderView.AddAttachment (attachment);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_LIFECYCLE, "Exception while processing the STREAM extra of a Send intent: {0}", e.ToString ());
-                }
             }
         }
 
-        public void FilePickerDidPickFile (FilePickerFragment picker, McAbstrFileDesc file)
+        void AttachmentPicked (object sender, McAttachment attachment)
         {
-            picker.Dismiss ();
-            var attachment = file as McAttachment;
-            if (attachment != null) {
-                attachment.Link (Composer.Message);
-                HeaderView.AddAttachment (attachment);
-            }
+            attachment.Link (Composer.Message);
+            HeaderView.AddAttachment (attachment);
         }
 
         #endregion

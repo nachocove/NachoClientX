@@ -188,6 +188,12 @@ namespace NachoClient.AndroidClient
             NotifyItemRemoved (position);
         }
 
+        public void NotifyItemRangeInserted (int groupPosition, int positionStart, int count)
+        {
+            var position = GetPosition (groupPosition, positionStart);
+            NotifyItemRangeInserted (position, count);
+        }
+
         #endregion
 
         #region View Holders

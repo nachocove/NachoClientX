@@ -1029,5 +1029,10 @@ namespace NachoPlatform
                 return false;
             }
         }
+
+        public override string GetCalendarName()
+        {
+            return Account.DisplayName;
+        }
     }
 }

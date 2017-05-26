@@ -308,6 +308,8 @@
     <Compile Include="NachoUI.Android\Calendar\CalendarFragment.cs" />
     <Compile Include="NachoUI.Android\Calendar\EventReminderPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Calendar\NoteEditDialog.cs" />
+    <Compile Include="NachoUI.Android\Calendar\AddAttendeeDialog.cs" />
+    <Compile Include="NachoUI.Android\Support\AttachmentPicker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1743,6 +1745,10 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_event_accept.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_event_decline.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_event_tentative.png" />
+    <AndroidResource Include="Resources\layout\AddAttendeeDialog.axml" />
+    <AndroidResource Include="Resources\layout\EventEditAttendeeItem.axml" />
+    <AndroidResource Include="Resources\layout\EventEditAttachmentItem.axml" />
+    <AndroidResource Include="Resources\layout\EventEditInlineTextItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

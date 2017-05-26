@@ -144,6 +144,19 @@ namespace NachoCore.Utils
             });
         }
 
+        public static void Save (McCalendar calendar, IList<McAttachment> attachments, IList<McAttendee> attendees)
+        {
+            calendar.attachments = attachments;
+            calendar.attendees = attendees;
+            if (calendar.Id == 0) {
+                calendar.Insert ();
+            } else {
+                calendar.Update ();
+            }
+            // TODO: backend sync?
+            // TODO: send notifications
+        }
+
         public static void DeleteEvent (McEvent calendarEvent)
         {
             if (calendarEvent.HasAttendees) {
@@ -165,6 +178,34 @@ namespace NachoCore.Utils
             } else {
                 BackEnd.Instance.DeleteCalCmd (calendarEvent.AccountId, calendarEvent.CalendarId);
             }
+        }
+
+        public static List<McAttendee> CreateAttendees (int accountId, string required, string optional)
+        {
+            var requiredAddresses = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, required);
+            var optionalAddresses = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, optional);
+            var requiredAttendees = CreateAttendees (accountId, requiredAddresses, NcAttendeeType.Required);
+            var optionalAttendees = CreateAttendees (accountId, optionalAddresses, NcAttendeeType.Optional);
+            var attendees = new List<McAttendee> ();
+            foreach (var attendee in requiredAttendees) {
+                attendees.Add (attendee);
+            }
+            foreach (var attendee in optionalAttendees) {
+                attendees.Add (attendee);
+            }
+            return attendees;
+        }
+
+        public static List<McAttendee> CreateAttendees (int accountId, List<NcEmailAddress> addresses, NcAttendeeType attendeeType)
+        {
+            var attendees = new List<McAttendee> ();
+            foreach (var address in addresses) {
+                var mailbox = address.ToMailboxAddress (mustUseAddress: true);
+                var name = String.IsNullOrWhiteSpace (mailbox.Name) ? mailbox.Address : mailbox.Name;
+                var attendee = new McAttendee (accountId, name, mailbox.Address, attendeeType, NcAttendeeStatus.NotResponded);
+                attendees.Add (attendee);
+            }
+            return attendees;
         }
 
         public static void SendMeetingResponse (McEvent calendarEvent, NcResponseType response, bool occurrenceOnly)

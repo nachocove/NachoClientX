@@ -591,6 +591,15 @@ namespace NachoCore.Utils
             return String.Join ("\n", lines);
         }
 
+        static public string EventEditTime (DateTime date, bool isAllDay)
+        {
+            if (isAllDay) {
+                date = new DateTime (date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, DateTimeKind.Local);
+                return Pretty.LongFullDate (date);
+            }
+            return Pretty.LongFullDate (date) + " " + Pretty.Time (date);
+        }
+
         /// <summary>
         /// Given an email address, return a string
         /// worthy of being displayed in the message list.

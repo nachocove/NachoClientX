@@ -117,6 +117,9 @@ namespace NachoClient.AndroidClient
 
         public MessageComposeHeaderAddressField (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
         {
+            if (Id == 0) {
+                Id = GenerateViewId ();
+            }
             CreateAddressField (attrs);
             Clickable = true;
             Click += (sender, e) => {
@@ -139,6 +142,7 @@ namespace NachoClient.AndroidClient
             }
             AddressField.Background = null;
             AddressField.SetPadding (0, 0, 0, 0);
+            AddressField.DropDownAnchor = Id;
             var spacing = Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, 3.0f, Context.Resources.DisplayMetrics);
             AddressField.SetLineSpacing (spacing, 1.0f);
             AddressField.LayoutParameters = layoutParams;

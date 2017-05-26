@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="?attr/dialogPreferredPadding">
+    <NachoClient.AndroidClient.MessageComposeHeaderAddressField
+        android:id="@+id/required"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:labelText="@string/add_attendee_required"
+        app:labelWidth="80dp"
+        app:labelTextAppearance="?attr/textAppearanceListItemSmall"
+        app:valueTextAppearance="?attr/textAppearanceListItemSmall"
+        app:contentPaddingLeft="0dp"
+        app:contentPaddingTop="?attr/messageComposeFieldPaddingTop"
+        app:contentPaddingRight="0dp"
+        app:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
+        app:separatorColor="?attr/colorListItemSeparator" />
+    <NachoClient.AndroidClient.MessageComposeHeaderAddressField
+        android:id="@+id/optional"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:labelText="@string/add_attendee_optional"
+        app:labelWidth="80dp"
+        app:labelTextAppearance="?attr/textAppearanceListItemSmall"
+        app:valueTextAppearance="?attr/textAppearanceListItemSmall"
+        app:contentPaddingLeft="0dp"
+        app:contentPaddingTop="?attr/messageComposeFieldPaddingTop"
+        app:contentPaddingRight="0dp"
+        app:contentPaddingBottom="?attr/messageComposeFieldPaddingBottom"
+        app:separatorColor="?attr/colorListItemSeparator" />
+</LinearLayout>

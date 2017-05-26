@@ -256,14 +256,15 @@ namespace NachoClient.AndroidClient
 
         void ShowNewEvent ()
         {
-            var intent = EventEditActivity.BuildNewEventIntent (Activity);
+            var account = McAccount.CalendarAccountForInstance ();
+            var intent = EventEditActivity.BuildNewEventIntent (Activity, account.Id);
 			StartActivity (intent);
         }
 
         void ShowNewEvent (DateTime date)
         {
-            var intent = EventEditActivity.BuildNewEventIntent (Activity);
-            intent.PutExtra (EventEditActivity.EXTRA_START_TIME, date.ToAsUtcString ());
+            var account = McAccount.CalendarAccountForInstance ();
+            var intent = EventEditActivity.BuildNewEventIntent (Activity, account.Id, start: date);
             StartActivity (intent);
         }
 

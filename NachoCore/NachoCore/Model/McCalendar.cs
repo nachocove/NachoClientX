@@ -48,6 +48,20 @@ namespace NachoCore.Model
             return UID;
         }
 
+        public virtual string GetCalendarName()
+        {
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            var accountName = account.DisplayName ?? account.EmailAddr;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, Id).FirstOrDefault ();
+            if (null != folder) {
+                var folderName = folder.DisplayName;
+                if (folderName != accountName) {
+                    return String.Format ("{0} - {1}", accountName, folderName);
+                }
+            }
+            return accountName;
+        }
+
         [Ignore]
         public bool HasNonSelfOrganizer {
             get {

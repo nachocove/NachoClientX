@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="?attr/listPreferredItemPaddingLeft"
+        android:paddingTop="?attr/listPreferredItemPaddingLeft"
+        android:paddingBottom="?attr/listPreferredItemPaddingLeft">
+        <nachoclient.androidclient.PortraitView
+            android:id="@+id/portrait_view"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top"
+            android:layout_marginRight="?attr/listPreferredItemPaddingLeft" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1.0"
+            android:layout_gravity="center_vertical">
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceEventItem"
+                android:text="Attendee Name" />
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceListItemDetail"
+                android:text="Required" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/remove_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:clickable="true"
+            android:paddingRight="?attr/listPreferredItemPaddingRight"
+            android:paddingLeft="?attr/listPreferredItemPaddingRight"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/gen_delete_small"
+                android:layout_gravity="center_vertical" />
+        </LinearLayout>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

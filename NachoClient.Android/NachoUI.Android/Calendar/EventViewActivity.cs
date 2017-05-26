@@ -24,8 +24,6 @@ namespace NachoClient.AndroidClient
     public class EventViewActivity : NcActivity
     {
 
-        // TODO: accept/reject/maybe
-
         public const string ACTION_DELETE = "NachoClient.AndroidClient.EventViewActivity.ACTION_DELETE";
         public const string EXTRA_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_EVENT_ID";
         public const string EXTRA_ANDROID_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_ANDROID_EVENT_ID";
@@ -130,7 +128,13 @@ namespace NachoClient.AndroidClient
                 var androidEventId = bundle.GetLong (EXTRA_ANDROID_EVENT_ID);
                 Event = NachoPlatform.AndroidCalendars.GetEvent (androidEventId);
             }
-            CanEditEvent = CalendarHelper.CanEdit (Event);
+            // FIXME: allow editing of device events (remove the && Event.CalendarId != 0)
+            // Currently the edit view is based off of a McCalendar, which android device events
+            // do not have, as they exist only in memory and not in the database linked to other objects.
+            // AndroidCalendars has a method for creating a McCalendar from a device event, but it needs to
+            // be reworked a little bit so the edit view doesn't have to care if the McCalendar is in the datbase
+            // or not.
+            CanEditEvent = CalendarHelper.CanEdit (Event) && Event.CalendarId != 0;
         }
 
         public override void OnAttachFragment (Fragment fragment)
@@ -250,7 +254,7 @@ namespace NachoClient.AndroidClient
 
         void ShowEdit ()
         {
-            var intent = EventEditActivity.BuildIntent (this, Event.Id);
+            var intent = EventEditActivity.BuildIntent (this, Event);
             StartActivityForResult (intent, REQUEST_EDIT_EVENT);
         }
 

@@ -405,6 +405,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public void SetLabels (int nameResource, string detail = null)
+        {
+            var name = ItemView.Context.GetString (nameResource);
+            SetLabels (name, detail);
+        }
+
     }
 
     public class SettingsSwitchItemViewHolder : SettingsBasicItemViewHolder

@@ -271,17 +271,20 @@ namespace NachoCore.Model
                 case McAbstrFileDesc.BodyTypeEnum.None:
                     return null;
                 case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                    return description;
+                    return (description ?? "").Trim ();
                 case McAbstrFileDesc.BodyTypeEnum.HTML_2:
                     var serializer = new HtmlTextSerializer (description);
-                    return serializer.Serialize ();
+                    return (serializer.Serialize () ?? "").Trim ();
                 case McAbstrFileDesc.BodyTypeEnum.RTF_3:
                     var rtfConverter = new NachoPlatform.RtfConverter ();
-                    return rtfConverter.ToTxt (description);
+                    return (rtfConverter.ToTxt (description) ?? "").Trim ();
                 default:
                     Log.Error (Log.LOG_CALENDAR, "Unexpected description type, {0}, for calendar item {1}", DescriptionType, Id);
                     return null;
                 }
+            }
+            set {
+                SetDescription (value, McAbstrFileDesc.BodyTypeEnum.PlainText_1);
             }
         }
 
