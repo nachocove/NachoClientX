@@ -41,7 +41,12 @@ namespace NachoClient.AndroidClient
 
         public void OnTabSelected (MainTabsActivity tabActivity)
         {
-            tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_event, ActionButtonClicked);
+            var account = NcApplication.Instance.DefaultCalendarAccount;
+            if (account == null || account.AccountType == McAccount.AccountTypeEnum.Device) {
+                tabActivity.HideActionButton ();
+            } else {
+                tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_event, ActionButtonClicked);
+            }
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
@@ -256,14 +261,14 @@ namespace NachoClient.AndroidClient
 
         void ShowNewEvent ()
         {
-            var account = McAccount.CalendarAccountForInstance ();
+            var account = NcApplication.Instance.DefaultCalendarAccount;
             var intent = EventEditActivity.BuildNewEventIntent (Activity, account.Id);
 			StartActivity (intent);
         }
 
         void ShowNewEvent (DateTime date)
         {
-            var account = McAccount.CalendarAccountForInstance ();
+            var account = NcApplication.Instance.DefaultCalendarAccount;
             var intent = EventEditActivity.BuildNewEventIntent (Activity, account.Id, start: date);
             StartActivity (intent);
         }

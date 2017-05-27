@@ -591,10 +591,13 @@ namespace NachoCore.Utils
             return String.Join ("\n", lines);
         }
 
-        static public string EventEditTime (DateTime date, bool isAllDay)
+        static public string EventEditTime (DateTime date, bool isAllDay, bool isEnd)
         {
             if (isAllDay) {
                 date = new DateTime (date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, DateTimeKind.Local);
+                if (isEnd) {
+                    date = date.AddDays (-1.0);
+                }
                 return Pretty.LongFullDate (date);
             }
             return Pretty.LongFullDate (date) + " " + Pretty.Time (date);

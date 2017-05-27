@@ -144,6 +144,10 @@
         <item name="colorPositiveAction">@color/NachoPositiveAction</item>
         <item name="colorNegativeAction">@color/NachoNegativeAction</item>
         <item name="colorNeutralAction">@color/NachoNeutralAction</item>
+        <item name="calendarPickerItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="calendarPickerItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="calendarPickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="calendarPickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

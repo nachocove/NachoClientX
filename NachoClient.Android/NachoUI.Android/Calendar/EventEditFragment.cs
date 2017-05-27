@@ -28,8 +28,10 @@ namespace NachoClient.AndroidClient
 
         private const string FRAGMENT_ADD_ATTENDEE = "NachoClient.AndroidClient.EventEditFragment.ADD_ATTENDEE";
         private const string FRAGMENT_REMINDER_DIALOG = "NachoClient.AndroidClient.EventEditFragment.FRAGMENT_REMINDER_DIALOG";
+        private const string FRAGMENT_CALENDAR_DIALOG = "NachoClient.AndroidClient.EventEditFragment.FRAGMENT_CALENDAR_DIALOG";
 
         public McCalendar CalendarItem;
+
         EventEditAdapter Adapter;
         AttachmentPicker AttachmentPicker = new AttachmentPicker ();
 
@@ -154,7 +156,7 @@ namespace NachoClient.AndroidClient
 
         public void Save ()
         {
-            CalendarHelper.Save (CalendarItem, Adapter.Attachments, Adapter.Attendees);
+            CalendarHelper.Save (CalendarItem, Adapter.Account, Adapter.Folder, Adapter.Attachments, Adapter.Attendees);
         }
 
         void ShowReminderPicker ()
@@ -171,6 +173,12 @@ namespace NachoClient.AndroidClient
 
         void ShowCalendarPicker ()
         {
+            var dialog = new CalendarPickerDialog ();
+            dialog.Show (FragmentManager, FRAGMENT_CALENDAR_DIALOG, Adapter.Account, Adapter.Folder, () => {
+                Adapter.Account = dialog.SelectedAccount;
+                Adapter.Folder = dialog.SelectedFolder;
+                Adapter.NotifyCalendarChanged ();
+            });
         }
 
         void ShowAddAttendees ()
@@ -239,6 +247,8 @@ namespace NachoClient.AndroidClient
         WeakReference<Listener> WeakListener;
 
         McCalendar CalendarItem;
+        public McAccount Account;
+        public McFolder Folder;
         public List<McAttachment> Attachments { get; private set; }
         public List<McAttendee> Attendees { get; private set; }
 
@@ -268,6 +278,15 @@ namespace NachoClient.AndroidClient
             CalendarItem = calendarItem;
             Attachments = new List<McAttachment> (CalendarItem.attachments);
             Attendees = new List<McAttendee> (CalendarItem.attendees);
+            Account = McAccount.QueryById<McAccount> (CalendarItem.AccountId);
+            Folder = null;
+            if (CalendarItem.Id != 0) {
+                Folder = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, CalendarItem.Id).FirstOrDefault ();
+            }
+            if (Folder == null) {
+                var folders = new NachoFolders (Account.Id, NachoFolders.FilterForCalendars);
+                Folder = folders.GetFirstOfTypeOrDefault (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            }
             ConfigureGroups ();
         }
 
@@ -484,12 +503,12 @@ namespace NachoClient.AndroidClient
                     return;
                 }
                 if (position == InfoStartPosition) {
-                    var text = Pretty.EventEditTime (CalendarItem.StartTime, CalendarItem.AllDayEvent);
+                    var text = Pretty.EventEditTime (CalendarItem.StartTime, CalendarItem.AllDayEvent, isEnd: false);
                     (holder as SettingsBasicItemViewHolder).SetLabels (Resource.String.event_edit_start, text);
                     return;
                 }
                 if (position == InfoEndPosition) {
-                    var text = Pretty.EventEditTime (CalendarItem.EndTime, CalendarItem.AllDayEvent);
+                    var text = Pretty.EventEditTime (CalendarItem.EndTime, CalendarItem.AllDayEvent, isEnd: true);
                     (holder as SettingsBasicItemViewHolder).SetLabels (Resource.String.event_edit_end, text);
                     return;
                 }
@@ -502,7 +521,7 @@ namespace NachoClient.AndroidClient
                     return;
                 }
                 if (position == InfoCalendarPosition) {
-                    (holder as SettingsBasicItemViewHolder).SetLabels (Resource.String.event_edit_calendar, CalendarItem.GetCalendarName ());
+                    (holder as SettingsBasicItemViewHolder).SetLabels (Resource.String.event_edit_calendar, CalendarHelper.CalendarName (Account, Folder));
                     return;
                 }
             } else if (groupPosition == DetailsGroupPosition) {

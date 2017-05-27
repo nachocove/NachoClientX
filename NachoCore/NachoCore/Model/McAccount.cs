@@ -470,20 +470,6 @@ namespace NachoCore.Model
             return McAccount.GetDefaultAccount (AccountCapabilityEnum.EmailSender);
         }
 
-        public static McAccount CalendarAccountForInstance ()
-        {
-            return CalendarAccountForAccountId (NcApplication.Instance.Account.Id);
-        }
-
-        private static McAccount CalendarAccountForAccountId (int accountId)
-        {
-            var account = McAccount.QueryById<McAccount> (accountId);
-            if (account.HasCapability (AccountCapabilityEnum.CalWriter) && account.AccountType != AccountTypeEnum.Unified){
-                return account;
-            }
-            return McAccount.GetDefaultAccount (AccountCapabilityEnum.CalWriter);
-        }
-
         public static List<McAccount> GetAllAccounts ()
         {
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");

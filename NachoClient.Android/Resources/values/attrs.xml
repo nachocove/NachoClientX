@@ -75,6 +75,10 @@
     <attr name="colorPositiveAction" format="color"/>
     <attr name="colorNegativeAction" format="color"/>
     <attr name="colorNeutralAction" format="color"/>
+    <attr name="calendarPickerItemPaddingLeft" format="dimension"/>
+    <attr name="calendarPickerItemPaddingTop" format="dimension"/>
+    <attr name="calendarPickerItemPaddingRight" format="dimension"/>
+    <attr name="calendarPickerItemPaddingBottom" format="dimension"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

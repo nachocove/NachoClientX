@@ -310,6 +310,7 @@
     <Compile Include="NachoUI.Android\Calendar\NoteEditDialog.cs" />
     <Compile Include="NachoUI.Android\Calendar\AddAttendeeDialog.cs" />
     <Compile Include="NachoUI.Android\Support\AttachmentPicker.cs" />
+    <Compile Include="NachoUI.Android\Calendar\CalendarPickerDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1749,6 +1750,9 @@
     <AndroidResource Include="Resources\layout\EventEditAttendeeItem.axml" />
     <AndroidResource Include="Resources\layout\EventEditAttachmentItem.axml" />
     <AndroidResource Include="Resources\layout\EventEditInlineTextItem.axml" />
+    <AndroidResource Include="Resources\layout\CalendarPickerAccountItem.axml" />
+    <AndroidResource Include="Resources\layout\CalendarPickerDialog.axml" />
+    <AndroidResource Include="Resources\layout\CalendarPickerFolderItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

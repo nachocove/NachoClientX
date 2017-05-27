@@ -113,8 +113,10 @@ namespace NachoClient.AndroidClient
                 return FooterItemViewHolder.Create (parent);
             }
             var holder = OnCreateGroupedViewHolder(parent, viewType) as ViewHolder;
-            holder.ItemView.Click += (sender, e) => {
-                OnViewHolderClick (holder, holder.groupPosition, holder.itemPosition);
+            holder.ClickTargetView.Click += (sender, e) => {
+                if (holder.itemPosition >= 0) {
+                    OnViewHolderClick (holder, holder.groupPosition, holder.itemPosition);
+                }
             };
             return holder;
         }
@@ -202,6 +204,12 @@ namespace NachoClient.AndroidClient
         {
             public int groupPosition;
             public int itemPosition;
+
+            public virtual View ClickTargetView {
+                get {
+                    return ItemView;
+                }
+            }
 
             public ViewHolder (View view) : base (view)
             {

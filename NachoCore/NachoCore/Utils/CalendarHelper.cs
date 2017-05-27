@@ -144,17 +144,91 @@ namespace NachoCore.Utils
             });
         }
 
-        public static void Save (McCalendar calendar, IList<McAttachment> attachments, IList<McAttendee> attendees)
+        public static string CalendarName (McAccount account, McFolder folder)
         {
+            var accountName = account.DisplayName ?? account.EmailAddr;
+            if (null != folder) {
+                var folderName = folder.DisplayName;
+                if (folderName != accountName) {
+                    return String.Format ("{0} - {1}", accountName, folderName);
+                }
+            }
+            return accountName;
+        }
+
+        public static void Save (McCalendar calendar, McAccount account, McFolder folder, IList<McAttachment> attachments, IList<McAttendee> attendees)
+        {
+            AutoFill (calendar, account, folder, attachments, attendees);
+            SaveAndSync (calendar, account, folder);
+        }
+
+        private static void AutoFill (McCalendar calendar, McAccount account, McFolder folder, IList<McAttachment> attachments, IList<McAttendee> attendees)
+        {
+            // Auto-set the organizer info based on the account
+            // The app does not keep track of the account owner's name.  Use the e-mail address instead.
+            calendar.OrganizerName = account.EmailAddr; //Pretty.UserNameForAccount (account);
+            calendar.OrganizerEmail = account.EmailAddr;
+
+            // Auto-set the meeting status information based on the attendees
+            if (0 == attendees.Count) {
+                calendar.MeetingStatusIsSet = true;
+                calendar.MeetingStatus = NcMeetingStatus.Appointment;
+                calendar.ResponseRequested = false;
+                calendar.ResponseRequestedIsSet = true;
+            } else {
+                calendar.MeetingStatusIsSet = true;
+                calendar.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
+                calendar.ResponseRequested = true;
+                calendar.ResponseRequestedIsSet = true;
+            }
+
+            // There is no UI for setting the BusyStatus.  For new events, set it to Free for
+            // all-day events and Busy for other events.  If we don't explicitly set BusyStatus,
+            // some servers will treat it as if it were Free, while others will act as if it
+            // were Busy.
+            if (!calendar.BusyStatusIsSet) {
+                calendar.BusyStatus = calendar.AllDayEvent ? NcBusyStatus.Free : NcBusyStatus.Busy;
+                calendar.BusyStatusIsSet = true;
+            }
+
+            // The event always uses the local time zone.
+            calendar.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), calendar.StartTime).toEncodedTimeZone ();
+
+            if (String.IsNullOrEmpty (calendar.UID)) {
+                calendar.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpperInvariant ();
+            }
+            calendar.DtStamp = DateTime.UtcNow;
+
             calendar.attachments = attachments;
             calendar.attendees = attendees;
+        }
+
+        private static void SaveAndSync (McCalendar calendar, McAccount account, McFolder folder)
+        {
             if (calendar.Id == 0) {
                 calendar.Insert ();
+                folder.Link (calendar);
+                BackEnd.Instance.CreateCalCmd (account.Id, calendar.Id, folder.Id);
             } else {
+                var sendBody = calendar.DescriptionWasChanged; // access DescriptionWasChanged before Update(), which clears it
+                calendar.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
                 calendar.Update ();
+                var oldFolder = McFolder.QueryByFolderEntryId<McCalendar> (calendar.AccountId, calendar.Id).FirstOrDefault ();
+                if (folder.Id != oldFolder.Id) {
+                    BackEnd.Instance.MoveCalCmd (account.Id, calendar.Id, folder.Id);
+                    oldFolder.Unlink (calendar);
+                    folder.Link (calendar);
+                }
+                BackEnd.Instance.UpdateCalCmd (account.Id, calendar.Id, sendBody);
             }
-            // TODO: backend sync?
-            // TODO: send notifications
+
+            calendar = McCalendar.QueryById<McCalendar> (calendar.Id);
+
+            if (calendar.attendees.Count > 0){
+                var iCalPart = MimeRequestFromCalendar (calendar);
+                var mimeBody = CreateMime (calendar.PlainDescription, iCalPart, calendar.attachments);
+                SendInvites (account, calendar, null, null, mimeBody, null);
+            }
         }
 
         public static void DeleteEvent (McEvent calendarEvent)

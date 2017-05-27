@@ -309,6 +309,12 @@ namespace NachoCore.Model
         private McAbstrFileDesc.BodyTypeEnum cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
         private bool descriptionWasChanged = false;
 
+        public bool DescriptionWasChanged {
+            get {
+                return descriptionWasChanged;
+            }
+        }
+
         private void GetDescription ()
         {
             if (null != cachedDescription) {
@@ -366,6 +372,15 @@ namespace NachoCore.Model
             BodyId = body.Id;
             descriptionWasChanged = false;
             cachedDescription = null;
+        }
+
+        public void SetAllDay (bool isAllDay)
+        {
+            AllDayEvent = isAllDay;
+            if (AllDayEvent) {
+                StartTime = StartTime.ToLocalTime ().Date.ToUniversalTime ();
+                EndTime = EndTime.ToLocalTime ().AddDays (1.0).Date.ToUniversalTime ();
+            }
         }
 
         private List<McAttachment> dbAttachments = null;

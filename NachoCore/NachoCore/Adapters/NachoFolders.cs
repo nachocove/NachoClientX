@@ -89,5 +89,18 @@ namespace NachoCore
         {
             return McAbstrObject.QueryById<McFolder>(id);
         }
+
+        public McFolder GetFirstOfTypeOrDefault (Xml.FolderHierarchy.TypeCode folderType)
+        {
+            if (FoldersList.Count > 0) {
+                foreach (var folder in FoldersList) {
+                    if (folder.Type == folderType) {
+                        return folder;
+                    }
+                }
+                return FoldersList [0];
+            }
+            return null;
+        }
     }
 }
