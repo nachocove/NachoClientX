@@ -483,6 +483,9 @@ namespace NachoClient.iOS
             ContactGroup group = null;
             foreach (var contact in contacts) {
                 firstLetter = contact.FirstLetter.ToUpper ();
+                if (firstLetter.Length == 0) {
+                    firstLetter = " ";
+                }
                 if (firstLetter != previousFirstLetter) {
                     group = new ContactGroup (firstLetter, cache);
                     contactGroups.Add (group);
