@@ -482,9 +482,11 @@ namespace NachoClient.iOS
             var contactGroups = new List<ContactGroup> ();
             ContactGroup group = null;
             foreach (var contact in contacts) {
-                firstLetter = contact.FirstLetter.ToUpper ();
-                if (firstLetter.Length == 0) {
-                    firstLetter = " ";
+                firstLetter = contact.FirstLetter;
+                if (String.IsNullOrEmpty (firstLetter)) {
+                    // If we get here, then something is wrong in the DB because a contact should always have
+                    // a first letter
+                    firstLetter = "#";
                 }
                 if (firstLetter != previousFirstLetter) {
                     group = new ContactGroup (firstLetter, cache);
@@ -492,6 +494,13 @@ namespace NachoClient.iOS
                     previousFirstLetter = firstLetter;
                 }
                 group.Contacts.Add (contact);
+            }
+            // If we have two or more groups, make sure the # group, if present, is at the end.
+            // It will be sorted out of the DB first.
+            if (contactGroups.Count > 1 && contactGroups [0].Name == "#") {
+                var numberGroup = contactGroups [0];
+                contactGroups.RemoveAt (0);
+                contactGroups.Add (numberGroup);
             }
             return contactGroups;
         }

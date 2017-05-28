@@ -243,6 +243,16 @@ namespace NachoCore.Model
 
         public bool IsVip { get; set; }
 
+        [Indexed]
+        public string CachedSortFirstName { get; set; }
+
+        [Indexed]
+        public string CachedSortLastName { get; set; }
+
+        public string CachedGroupFirstName { get; set; }
+
+        public string CachedGroupLastName { get; set; }
+
         // 0 means unindexed. If IndexedVersion == ContactIndexDocument.Version - 1, only McContact fields
         // are indexed. If IndexedVersion == ContactIndexDocument.Version, both fields and body (note) are
         // indexed.
@@ -873,6 +883,37 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
+        public void UpdateCachedSortNames ()
+        {
+            // cached names for sorting are always lowercase so the sql index can be used to return results
+            // as efficiently as possible already sorted in a case-insensitive manner
+            CachedSortFirstName = (GetDisplayName () ?? "").Trim ().ToLower ();
+            CachedSortLastName = (GetDisplayName (lastNameFirst: true) ?? "").Trim ().ToLower ();
+            if (CachedSortFirstName.Length == 0) {
+                var email = (GetEmailAddress () ?? "").Trim ().ToLower ();
+                CachedSortFirstName = email;
+                CachedSortLastName = email;
+            }
+
+            // group names are always uppercase so they don't need to be converted in the UI, which is
+            // the only place they're used
+            CachedGroupFirstName = GroupForName (CachedSortFirstName);
+            CachedGroupLastName = GroupForName (CachedSortLastName);
+        }
+
+        private static string GroupForName (string name)
+        {
+            if (String.IsNullOrWhiteSpace (name) || !IsAsciiLetter (name[0])) {
+                return "#";
+            }
+            return name.Substring (0, 1).ToUpper ();
+        }
+
+        private static bool IsAsciiLetter (char c)
+        {
+            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        }
+
         public override int Insert ()
         {
             using (var capture = CaptureWithStart ("Insert")) {
@@ -880,6 +921,7 @@ namespace NachoCore.Model
                     CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
                 }
                 EvaluateSelfEclipsing ();
+                UpdateCachedSortNames ();
 
                 // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
                 if (this.IsGleaned()) {
@@ -901,6 +943,7 @@ namespace NachoCore.Model
         {
             using (var capture = CaptureWithStart ("Update")) {
                 EvaluateSelfEclipsing ();
+                UpdateCachedSortNames ();
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     retval = base.Update ();
@@ -1661,75 +1704,55 @@ namespace NachoCore.Model
             }
         }
 
-        static string GetAllContactsQueryString (bool withEclipsing, int accountId = 0)
-        {
-            string fmt =
-                " SELECT DISTINCT Id, substr(FullIndex, 1, 1) as FirstLetter FROM " +
-                " ( " +
-                " SELECT " +
-                "     c.Id as Id, FirstName, LastName, s.Value, CompanyName, " +
-                "     ltrim( " +
-                "         ifnull(c.FirstName,'') || ' ' || " +
-                "         ifnull(c.LastName,'') || ' ' || " +
-                "         ifnull(ltrim(s.Value,'\"'),'') || ' ' || " +
-                "         ifnull(c.CompanyName,'') " +
-                "         , ' '''" +
-                "      ) as FullIndex " +
-                " FROM McContact AS c   " +
-                " LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId   " +
-                " WHERE  " +
-                (withEclipsing ? " (c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
-                " {0} " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0)   " +
-                " ORDER BY " +
-                " FullIndex " +
-                " COLLATE NOCASE ASC" +
-                " ) ";
-
-            if (0 == accountId) {
-                return String.Format (fmt, "");
-            } else {
-                var selectAccount = String.Format ("    c.AccountId = {0} AND ", accountId);
-                return String.Format (fmt, selectAccount);
-            }
-        }
-
         public static int CountByAccountId (int accountId)
         {
             return NcModel.Instance.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)
+        public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false, bool usingLastName = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+            if (accountId == 0) {
+                return AllContactsSortedByName (withEclipsing: withEclipsing);
+            }
+            var format = "SELECT Id, {0} as FirstLetter FROM McContact WHERE accountId = ? AND likelihood (IsAwaitingDelete = 0, 1.0)";
+            if (withEclipsing) {
+                format += " AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0)";
+            }
+            format += " ORDER BY {1}";
+            string sql;
+            if (usingLastName) {
+                sql = String.Format (format, "CachedGroupLastName", "CachedSortLastName");
+            } else {
+                sql = String.Format (format, "CachedGroupFirstName", "CachedSortFirstName");
+            }
+            return NcModel.Instance.Db.Query<NcContactIndex> (sql, accountId);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false)
+        public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false, bool usingLastName = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+            var format = "SELECT Id, {0} as FirstLetter FROM McContact WHERE likelihood (IsAwaitingDelete = 0, 1.0)";
+            if (withEclipsing) {
+                format += " AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0)";
+            }
+            format += " ORDER BY {1}";
+            string sql;
+            if (usingLastName) {
+                sql = String.Format (format, "CachedGroupLastName", "CachedSortLastName");
+            } else {
+                sql = String.Format (format, "CachedGroupFirstName", "CachedSortFirstName");
+            }
+            return NcModel.Instance.Db.Query<NcContactIndex> (sql);
         }
 
-        public static List<NcContactIndex> AllEmailContactsSortedByName ()
+        public static List<NcContactIndex> AllEmailContactsSortedByName (bool usingLastName = false)
         {
-            string sql =
-				" SELECT DISTINCT Id, substr(FullIndex, 1, 1) as FirstLetter FROM " +
-				" ( " +
-				" SELECT " +
-				"     c.Id as Id, FirstName, LastName, s.Value, CompanyName, " +
-				"     ltrim( " +
-				"         ifnull(c.FirstName,'') || ' ' || " +
-				"         ifnull(c.LastName,'') || ' ' || " +
-				"         ifnull(ltrim(s.Value,'\"'),'') || ' ' || " +
-				"         ifnull(c.CompanyName,'') " +
-				"         , ' '''" +
-				"      ) as FullIndex " +
-				" FROM McContact AS c   " +
-				" LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId   " +
-				" WHERE s.Value IS NOT NULL AND" +
-				" likelihood (c.IsAwaitingDelete = 0, 1.0)   " +
-				" ORDER BY " +
-				" FullIndex " +
-				" COLLATE NOCASE ASC)";
+            var format = "SELECT Id, {0} as FirstLetter FROM McContact c WHERE likelihood (c.IsAwaitingDelete = 0, 1.0) AND EXISTS (SELECT Id FROM McContactEmailAddressAttribute a WHERE a.ContactId = c.Id AND trim(ifnull(a.Value, '')) != '') ORDER BY {1}";
+            string sql;
+            if (usingLastName) {
+                sql = String.Format (format, "CachedGroupLastName", "CachedSortLastName");
+            } else {
+                sql = String.Format (format, "CachedGroupFirstName", "CachedSortFirstName");
+            }
             return NcModel.Instance.Db.Query<NcContactIndex> (sql);
         }
 
@@ -1774,7 +1797,7 @@ namespace NachoCore.Model
             return new List<object> (QueryNeedIndexing (maxContacts));
         }
 
-        public string GetDisplayName ()
+        public string GetDisplayName (bool lastNameFirst = false)
         {
             if (!String.IsNullOrEmpty (DisplayName)) {
                 return DisplayName;
@@ -1787,7 +1810,11 @@ namespace NachoCore.Model
                 value.Add (MiddleName);
             }           
             if (!String.IsNullOrEmpty (LastName)) {
-                value.Add (LastName);
+                if (lastNameFirst) {
+                    value.Insert (0, LastName);
+                } else {
+                    value.Add (LastName);
+                }
             }
             if (!String.IsNullOrEmpty (Suffix)) {
                 value.Add (Suffix);
