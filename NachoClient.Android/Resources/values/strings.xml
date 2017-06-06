@@ -250,6 +250,7 @@
     <string name="demo_event_subject">Important Meeting</string>
     <string name="demo_event_time">Tuesday May 23, 2017\nfrom 2pm to 3pm</string>
     <string name="demo_event_location">Someplace nice</string>
+    <string name="demo_contact_header">A</string>
 
 
     <!-- OLD -->
