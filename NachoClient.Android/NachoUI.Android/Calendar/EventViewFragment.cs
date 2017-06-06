@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 using Android.App;
 using Android.Content;
@@ -20,7 +21,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class EventViewFragment : Fragment, EventViewAdapter.Listener
+    public class EventViewFragment : Fragment, EventViewAdapter.Listener, AttachmentDownloaderDelegate
     {
 
         private const string FRAGMENT_REMINDER_DIALOG = "NachoClient.AndroidClient.EventViewFragment.FRAGMENT_REMINDER_DIALOG";
@@ -33,6 +34,7 @@ namespace NachoClient.AndroidClient
 
         RecyclerView ListView;
         EventViewAdapter Adapter;
+        Dictionary<int, AttachmentDownloader> DownloadersByAttachmentId;
 
         void FindSubviews (View view)
         {
@@ -52,6 +54,7 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            DownloadersByAttachmentId = new Dictionary<int, AttachmentDownloader> ();
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -67,6 +70,15 @@ namespace NachoClient.AndroidClient
         {
             ClearSubviews ();
             base.OnDestroyView ();
+        }
+
+        public override void OnStop ()
+        {
+            foreach (var pair in DownloadersByAttachmentId) {
+                pair.Value.Delegate = null;
+            }
+            DownloadersByAttachmentId.Clear ();
+            base.OnStop ();
         }
 
         #endregion
@@ -85,7 +97,29 @@ namespace NachoClient.AndroidClient
 
         public void OnAttachmentSelected (McAttachment attachment)
         {
-            // TODO:
+            if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                OpenAttachment (attachment);
+            } else {
+                if (!DownloadersByAttachmentId.ContainsKey (attachment.Id)) {
+                    var downloader = new AttachmentDownloader ();
+                    DownloadersByAttachmentId.Add (attachment.Id, downloader);
+                    downloader.Delegate = this;
+                    downloader.Download (attachment);
+                }
+                Adapter.ReplaceAttachment (McAttachment.QueryById<McAttachment> (attachment.Id));
+            }
+        }
+
+        public void AttachmentDownloadDidFinish (AttachmentDownloader downloader)
+        {
+            DownloadersByAttachmentId.Remove (downloader.Attachment.Id);
+            Adapter.ReplaceAttachment (downloader.Attachment);
+        }
+
+        public void AttachmentDownloadDidFail (AttachmentDownloader downloader, NcResult result)
+        {
+            DownloadersByAttachmentId.Remove (downloader.Attachment.Id);
+            Adapter.ReplaceAttachment (downloader.Attachment);
         }
 
         #endregion
@@ -120,6 +154,11 @@ namespace NachoClient.AndroidClient
                 Adapter.NotifyNoteChanged ();
             });
             dialog.Show (FragmentManager, FRAGMENT_NOTE_DIALOG);
+        }
+
+        void OpenAttachment (McAttachment attachment)
+        {
+            AttachmentHelper.OpenAttachment (Activity, attachment, true);
         }
 
         #endregion
@@ -212,6 +251,18 @@ namespace NachoClient.AndroidClient
         public void NotifyReminderChanged ()
         {
             NotifyItemChanged (ReminderGroupPosition, 0);
+        }
+
+        public void ReplaceAttachment (McAttachment attachment)
+        {
+            for (int i = 0; i < Attachments.Count; ++i) {
+                if (Attachments [i].Id == attachment.Id) {
+                    Attachments.RemoveAt (i);
+                    Attachments.Insert (i, attachment);
+                    NotifyItemChanged (AttachmentsGroupPosition, i);
+                    break;
+                }
+            }
         }
 
         public override int GroupCount {
@@ -504,6 +555,10 @@ namespace NachoClient.AndroidClient
             ImageView IconView;
             TextView NameLabel;
             TextView DetailLabel;
+            View DownloadFrame;
+            ImageView DownloadIndicator;
+            ImageView ErrorIndicator;
+            ProgressBar DownloadProgress;
 
             public static AttachmentViewHolder Create (ViewGroup parent)
             {
@@ -514,12 +569,48 @@ namespace NachoClient.AndroidClient
 
             public AttachmentViewHolder (View view) : base (view)
             {
-                // TODO: find views
+                IconView = view.FindViewById (Resource.Id.icon) as ImageView;
+                NameLabel = view.FindViewById (Resource.Id.attachment_name) as TextView;
+                DetailLabel = view.FindViewById (Resource.Id.attachment_detail) as TextView;
+                DownloadFrame = view.FindViewById (Resource.Id.attachment_download_frame);
+                ErrorIndicator = DownloadFrame.FindViewById (Resource.Id.error_indicator) as ImageView;
+                DownloadIndicator = DownloadFrame.FindViewById (Resource.Id.download_indicator) as ImageView;
+                DownloadProgress = DownloadFrame.FindViewById (Resource.Id.download_progress) as ProgressBar;
             }
 
             public void SetAttachment (McAttachment attachment)
             {
-                
+                var name = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+                if (String.IsNullOrEmpty (name)) {
+                    name = "(no name)";
+                }
+                IconView.SetImageResource (AttachmentHelper.FileIconFromExtension (attachment));
+                NameLabel.Text = name;
+                DetailLabel.Text = Pretty.GetAttachmentDetail (attachment);
+                if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Error) {
+                    DownloadFrame.Visibility = ViewStates.Visible;
+                    ErrorIndicator.Visibility = ViewStates.Visible;
+                    DownloadIndicator.Visibility = ViewStates.Gone;
+                    DownloadProgress.Visibility = ViewStates.Gone;
+                } else if (attachment.FilePresence != McAbstrFileDesc.FilePresenceEnum.Complete) {
+                    DownloadFrame.Visibility = ViewStates.Visible;
+                    ErrorIndicator.Visibility = ViewStates.Gone;
+                    if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Partial) {
+                        var pending = McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id);
+                        if (pending != null && pending.State != McPending.StateEnum.Failed) {
+                            DownloadIndicator.Visibility = ViewStates.Gone;
+                            DownloadProgress.Visibility = ViewStates.Visible;
+                        } else {
+                            DownloadIndicator.Visibility = ViewStates.Visible;
+                            DownloadProgress.Visibility = ViewStates.Gone;
+                        }
+                    } else {
+                        DownloadIndicator.Visibility = ViewStates.Visible;
+                        DownloadProgress.Visibility = ViewStates.Gone;
+                    }
+                } else {
+                    DownloadFrame.Visibility = ViewStates.Gone;
+                }
             }
         }
 

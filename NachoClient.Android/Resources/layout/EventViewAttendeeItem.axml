@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:paddingLeft="?attr/eventItemNoIconPaddingLeft"
         android:paddingTop="?attr/eventItemPaddingTop"
-        android:paddingRight="?attr/eventItemPaddingTop"
+        android:paddingRight="?attr/eventItemPaddingRight"
         android:paddingBottom="?attr/eventItemPaddingBottom">
         <nachoclient.androidclient.PortraitView
             android:id="@+id/portrait_view"
