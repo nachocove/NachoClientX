@@ -50,6 +50,16 @@
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchArch>i386, x86_64</MtouchArch>
@@ -92,6 +102,16 @@
           <type>AfterBuild</type>
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
         </Command>
       </CustomCommands>
     </CustomCommands>
