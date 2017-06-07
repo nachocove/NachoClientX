@@ -1549,10 +1549,6 @@
       <Project>{B516077B-652E-4AC9-B728-AB64B65044F4}</Project>
       <Name>NachoUIMonitor.iOS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj">
-      <Project>{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}</Project>
-      <Name>SwipeViewBinding</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj">
       <Project>{35BDE52C-1FAD-42BB-841B-9298F354AFE8}</Project>
       <Name>Lucene.Net.iOS</Name>

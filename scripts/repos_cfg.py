@@ -1,8 +1,6 @@
 repos = (
     'Reachability',
     'registered-domain-libs',
-    'SwipeView',
-    'SwipeViewBinding',
     'SWRevealViewController',
     'SWRevealViewControllerBinding',
     'ios-openssl',

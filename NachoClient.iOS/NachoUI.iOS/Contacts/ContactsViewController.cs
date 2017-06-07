@@ -12,7 +12,6 @@ using CoreAnimation;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
-using SwipeViewBinding;
 
 namespace NachoClient.iOS
 {
