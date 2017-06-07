@@ -2,15 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:background="?attr/selectableItemBackground">
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="?attr/contactItemPaddingLeft"
-        android:paddingTop="?attr/contactItemPaddingTop"
-        android:paddingRight="?attr/contactItemPaddingRight"
-        android:paddingBottom="?attr/contactItemPaddingBottom">
+        android:paddingTop="?attr/contactItemPaddingTop">
         <nachoclient.androidclient.PortraitView
             android:id="@+id/portrait"
             android:layout_width="40dp"
@@ -45,7 +45,7 @@
                         android:gravity="left"
                         android:singleLine="true"
                         android:ellipsize="end"
-                        android:textAppearance="?attr/textAppearanceListItem" />
+                        android:textAppearance="?attr/textAppearanceContactItem" />
                     <TextView
                         android:id="@+id/detail"
                         android:text="@string/demo_contact_email"

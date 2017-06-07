@@ -16,6 +16,7 @@ using Android.Views;
 using Android.Widget;
 using Android.Support.V7.Widget;
 
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -32,12 +33,18 @@ namespace NachoClient.AndroidClient
 
         public bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu)
         {
-            return false;
+            tabActivity.MenuInflater.Inflate (Resource.Menu.contacts, menu);
+            return true;
         }
 
         public void OnTabSelected (MainTabsActivity tabActivity)
         {
-            tabActivity.HideActionButton ();
+            var account = NcApplication.Instance.DefaultContactAccount;
+            if (account == null || account.AccountType == McAccount.AccountTypeEnum.Device) {
+                tabActivity.HideActionButton ();
+            } else {
+                tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_contact, ActionButtonClicked);
+            }
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
@@ -46,6 +53,7 @@ namespace NachoClient.AndroidClient
 
         public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
+            Account = NcApplication.Instance.Account;
         }
 
         public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
@@ -89,6 +97,46 @@ namespace NachoClient.AndroidClient
             ListView.SetAdapter (Adapter);
             Reload ();
             return view;
+        }
+
+        #endregion
+
+        #region User Actions
+
+        void ActionButtonClicked (object sender, EventArgs args)
+        {
+            ShowNewContact ();
+        }
+
+        public override bool OnContextItemSelected (IMenuItem item)
+        {
+        	var groupPosition = -1;
+        	var position = -1;
+        	var contactId = -1;
+            if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_GROUP_POSITION)) {
+        		groupPosition = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_GROUP_POSITION);
+        	}
+        	if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_POSITION)) {
+        		position = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_POSITION);
+        	}
+        	if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_CONTACT_ID)) {
+                contactId = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_CONTACT_ID);
+        	}
+            if (groupPosition >= 0 && position >= 0 && contactId >= 0) {
+                var contact = Adapter.GetContact (groupPosition, position);
+                if (contact.Id != contactId) {
+                    contact = McContact.QueryById<McContact> (contactId);
+        		}
+        		switch (item.ItemId) {
+                case Resource.Id.call:
+                    CallContact (contact);
+        			return true;
+                case Resource.Id.email:
+                    EmailContact (contact);
+        			return true;
+        		}
+        	}
+        	return base.OnContextItemSelected (item);
         }
 
         #endregion
@@ -151,11 +199,32 @@ namespace NachoClient.AndroidClient
             // TODO:
         }
 
+        void ShowNewContact ()
+        {
+            // TODO:
+        }
+
+        void CallContact (McContact contact)
+        {
+            Util.CallNumber (Activity, contact, null);
+        }
+
+        void EmailContact (McContact contact)
+        {
+            var account = McAccount.EmailAccountForContact (contact);
+            var intent = MessageComposeActivity.NewMessageIntent (Activity, account.Id, contact.GetPrimaryCanonicalEmailAddress ());
+            StartActivity (intent);
+        }
+
         #endregion
     }
 
     public class ContactsAdapter : GroupedListRecyclerViewAdapter
     {
+
+        public const string EXTRA_GROUP_POSITION = "NachoClient.AndroidClient.ContactsAdapter.EXTRA_GROUP_POSITION";
+        public const string EXTRA_POSITION = "NachoClient.AndroidClient.ContactsAdapter.EXTRA_POSITION";
+        public const string EXTRA_CONTACT_ID = "NachoClient.AndroidClient.ContactsAdapter.EXTRA_CONTACT_ID";
 
         public interface Listener
         {
@@ -185,6 +254,12 @@ namespace NachoClient.AndroidClient
         {
             ContactGroups = contactGroups;
             NotifyDataSetChanged ();
+        }
+
+        public McContact GetContact (int groupPosition, int position)
+        {
+            var contactGroup = ContactGroups [groupPosition];
+            return contactGroup.GetCachedContact (position);
         }
 
         public override bool HasFooters {
@@ -221,7 +296,12 @@ namespace NachoClient.AndroidClient
             case ViewType.GroupHeader:
                 return HeaderViewHolder.Create (parent);
             case ViewType.Contact:
-                return ContactViewHolder.Create (parent);
+                var holder = ContactViewHolder.Create (parent);
+                holder.ItemView.ContextClickable = true;
+                holder.ItemView.ContextMenuCreated += (sender, e) => {
+                    ItemContextMenuCreated (holder.groupPosition, holder.itemPosition, e.Menu);
+                };
+                return holder;
             }
             throw new NotImplementedException ();
         }
@@ -234,8 +314,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
         {
-            var contactGroup = ContactGroups [groupPosition];
-            var contact = contactGroup.GetCachedContact (position);
+            var contact = GetContact (groupPosition, position);
             var contactHolder = (holder as ContactViewHolder);
             contactHolder.SetContact (contact);
             contactHolder.SetClickHandler ((sender, e) => {
@@ -244,7 +323,40 @@ namespace NachoClient.AndroidClient
                     listener.OnContactSelected (contact);
                 }
             });
-            // TODO: context menu
+        }
+
+        void ItemContextMenuCreated (int groupPosition, int position, IContextMenu menu)
+        {
+            var contact = GetContact (groupPosition, position);
+            var intent = new Intent ();
+            intent.PutExtra (EXTRA_GROUP_POSITION, groupPosition);
+            intent.PutExtra (EXTRA_POSITION, position);
+            intent.PutExtra (EXTRA_CONTACT_ID, contact.Id);
+
+            var hasEmail = contact.EmailAddresses.Count > 0;
+            var hasPhone = contact.PhoneNumbers.Count > 0;
+
+            if (hasEmail || hasPhone) {
+                int order = 0;
+                List<IMenuItem> items = new List<IMenuItem> ();
+                if (hasPhone) {
+                    items.Add (menu.Add (0, Resource.Id.call, order++, Resource.String.contact_item_action_call));
+                }
+                if (hasEmail) {
+                    items.Add (menu.Add (0, Resource.Id.email, order++, Resource.String.contact_item_action_email));
+                }
+                foreach (var item in items) {
+                    item.SetIntent (intent);
+                }
+                var name = contact.GetDisplayName ();
+                if (String.IsNullOrEmpty (name)) {
+                    name = contact.GetPrimaryCanonicalEmailAddress ();
+                    if (String.IsNullOrEmpty (name)) {
+                        name = contact.GetPrimaryPhoneNumber ();
+                    }
+                }
+                menu.SetHeaderTitle (name);
+            }
         }
 
         class HeaderViewHolder : GroupedListRecyclerViewAdapter.ViewHolder

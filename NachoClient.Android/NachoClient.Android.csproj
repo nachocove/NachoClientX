@@ -1778,6 +1778,11 @@
     <AndroidResource Include="Resources\layout\ContactsFragment.axml" />
     <AndroidResource Include="Resources\layout\ContactListHeaderItem.axml" />
     <AndroidResource Include="Resources\layout\ContactListItem.axml" />
+    <AndroidResource Include="Resources\menu\contacts.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\floating_action_new_contact.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\floating_action_new_contact.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\floating_action_new_contact.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_new_contact.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

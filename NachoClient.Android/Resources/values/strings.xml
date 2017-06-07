@@ -157,6 +157,10 @@
     <string name="add_attendee_done">Done</string>
     <string name="add_attendee_cancel">Cancel</string>
 
+    <!-- Contacts List -->
+    <string name="contact_item_action_call">Call</string>
+    <string name="contact_item_action_email">Email</string>
+
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
     <string name="settings_action_add_account">Add Account</string>

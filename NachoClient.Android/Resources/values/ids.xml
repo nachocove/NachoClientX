@@ -5,4 +5,6 @@
     <item name="unread" type="id"/>
     <item name="forward" type="id"/>
     <item name="late" type="id"/>
+    <item name="call" type="id"/>
+    <item name="email" type="id"/>
 </resources>
