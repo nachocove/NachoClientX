@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
     <AndroidLinkMode>None</AndroidLinkMode>
     <ConsolePause>false</ConsolePause>
-    <AndroidSupportedAbis>armeabi;x86</AndroidSupportedAbis>
+    <AndroidSupportedAbis>armeabi;x86;armeabi-v7a</AndroidSupportedAbis>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <CustomCommands>
       <CustomCommands>
