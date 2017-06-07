@@ -57,6 +57,17 @@
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.Android</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.Android</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -91,6 +102,16 @@
           <type>AfterBuild</type>
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.Android</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.Android</workingdir>
         </Command>
       </CustomCommands>
     </CustomCommands>

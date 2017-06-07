@@ -137,6 +137,16 @@
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
       </CustomCommands>
     </CustomCommands>
     <MtouchProfiling>true</MtouchProfiling>
@@ -180,6 +190,16 @@
           <type>AfterBuild</type>
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
         </Command>
       </CustomCommands>
     </CustomCommands>
@@ -225,6 +245,16 @@
           <type>AfterBuild</type>
           <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
         </Command>
       </CustomCommands>
     </CustomCommands>
@@ -275,6 +305,16 @@
         <Command>
           <type>AfterBuild</type>
           <command>${SolutionDir}/scripts/remove_itunesmetadata.sh</command>
+        </Command>
+        <Command>
+          <type>BeforeBuild</type>
+          <command>make</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>make clean</command>
+          <workingdir>${ProjectDir}/../native.iOS</workingdir>
         </Command>
       </CustomCommands>
     </CustomCommands>
