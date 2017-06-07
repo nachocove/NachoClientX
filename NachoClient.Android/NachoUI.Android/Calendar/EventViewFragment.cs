@@ -128,7 +128,7 @@ namespace NachoClient.AndroidClient
 
         public void Update ()
         {
-            Adapter.NotifyDataSetChanged ();
+            Adapter.SetEvent (Event);
         }
 
         #endregion
@@ -204,15 +204,7 @@ namespace NachoClient.AndroidClient
         public EventViewAdapter (Listener listener, McEvent calendarEvent) : base ()
         {
             WeakListener = new WeakReference<Listener> (listener);
-            Event = calendarEvent;
-            CalendarItem = Event.CalendarItem;
-            Attachments = Event.QueryAttachments ();
-            Attendees = Event.QueryAttendees ();
-            Body = Event.GetBody ();
-            Note = Event.QueryNote ();
-            CanEditReminder = CalendarHelper.CanEditReminder (Event);
-            ConfigureGroups ();
-            // TODO: download body if needed?
+            SetEvent (calendarEvent);
         }
 
         void ConfigureGroups ()
@@ -240,6 +232,20 @@ namespace NachoClient.AndroidClient
             if (Attendees.Count > 0) {
                 AttendeesGroupPosition = _GroupCount++;
             }
+        }
+
+        public void SetEvent (McEvent calendarEvent)
+        {
+            Event = calendarEvent;
+            CalendarItem = Event.CalendarItem;
+            Attachments = Event.QueryAttachments ();
+            Attendees = Event.QueryAttendees ();
+            Body = Event.GetBody ();
+            Note = Event.QueryNote ();
+            CanEditReminder = CalendarHelper.CanEditReminder (Event);
+            ConfigureGroups ();
+            // TODO: download body if needed?
+            NotifyDataSetChanged ();
         }
 
         public void NotifyNoteChanged ()

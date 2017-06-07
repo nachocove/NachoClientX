@@ -169,6 +169,9 @@ namespace NachoCore.Utils
             calendar.OrganizerName = account.EmailAddr; //Pretty.UserNameForAccount (account);
             calendar.OrganizerEmail = account.EmailAddr;
 
+            calendar.StartTime = calendar.StartTime.ToUniversalTime ();
+            calendar.EndTime = calendar.EndTime.ToUniversalTime ();
+
             // Auto-set the meeting status information based on the attendees
             if (0 == attendees.Count) {
                 calendar.MeetingStatusIsSet = true;

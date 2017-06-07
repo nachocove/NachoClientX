@@ -202,11 +202,12 @@ namespace NachoClient.AndroidClient
 
         void ShowDatePicker (DateTime initialValue, Action<DateTime> completion)
         {
-            DatePicker.Show (Activity, initialValue, DateTime.MinValue, DateTime.MaxValue, (DateTime date) => {
+            var localInitialValue = initialValue.ToLocalTime ();
+            DatePicker.Show (Activity, localInitialValue, DateTime.MinValue, DateTime.MaxValue, (DateTime date) => {
                 if (CalendarItem.AllDayEvent) {
                     completion (date);
                 } else {
-                    TimePicker.Show (Activity, initialValue.TimeOfDay, (span) => {
+                    TimePicker.Show (Activity, localInitialValue.TimeOfDay, (span) => {
                         completion (date + span);
                     });
                 }
