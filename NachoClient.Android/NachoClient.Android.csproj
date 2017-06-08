@@ -332,6 +332,7 @@
     <Compile Include="NachoUI.Android\Support\AttachmentPicker.cs" />
     <Compile Include="NachoUI.Android\Calendar\CalendarPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactsFragment.cs" />
+    <Compile Include="NachoUI.Android\Contacts\ContactsSearchFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1783,6 +1784,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\floating_action_new_contact.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\floating_action_new_contact.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_new_contact.png" />
+    <AndroidResource Include="Resources\layout\ContactsSearchFragment.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -15,6 +15,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Android.Support.V7.Widget;
+using Android.Views.InputMethods;
 
 using NachoCore;
 using NachoCore.Model;
@@ -23,7 +24,7 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
-    public class ContactsFragment : Fragment, MainTabsActivity.Tab, ContactsAdapter.Listener
+    public class ContactsFragment : Fragment, MainTabsActivity.Tab, ContactsAdapter.Listener, Android.Support.V4.View.MenuItemCompat.IOnActionExpandListener
     {
 
         McAccount Account;
@@ -34,6 +35,10 @@ namespace NachoClient.AndroidClient
         public bool OnCreateOptionsMenu (MainTabsActivity tabActivity, IMenu menu)
         {
             tabActivity.MenuInflater.Inflate (Resource.Menu.contacts, menu);
+            var searchItem = menu.FindItem (Resource.Id.search);
+            Android.Support.V4.View.MenuItemCompat.SetOnActionExpandListener (searchItem, this);
+            var searchView = (searchItem.ActionView as Android.Widget.SearchView);
+            searchView.SetIconifiedByDefault (false);
             return true;
         }
 
@@ -58,7 +63,12 @@ namespace NachoClient.AndroidClient
 
         public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
         {
-            return false;
+        	switch (item.ItemId) {
+        	case Resource.Id.search:
+        		ShowSearch (tabActivity, item);
+        		return true;
+        	}
+        	return false;
         }
 
         #endregion
@@ -183,6 +193,66 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region Search
+
+        ContactsSearchFragment SearchFragment;
+
+        void ShowSearch (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            tabActivity.EnterSearchMode ();
+            SearchFragment = new ContactsSearchFragment ();
+            var searchView = (item.ActionView as Android.Widget.SearchView);
+            searchView.QueryTextChange += SearchViewQueryTextChanged;
+            searchView.QueryTextSubmit += SearchViewQueryDidSubmit;
+            var transaction = FragmentManager.BeginTransaction ();
+            transaction.Add (Resource.Id.content, SearchFragment);
+            transaction.Commit ();
+        }
+
+        void HideSearch (MainTabsActivity tabActivity, IMenuItem item)
+        {
+            tabActivity.ExitSearchMode ();
+            var searchView = (item.ActionView as Android.Widget.SearchView);
+            searchView.QueryTextChange -= SearchViewQueryTextChanged;
+            searchView.QueryTextSubmit -= SearchViewQueryDidSubmit;
+            searchView.SetQuery ("", false);
+            var transaction = FragmentManager.BeginTransaction ();
+            transaction.Remove (SearchFragment);
+            transaction.Commit ();
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Context.InputMethodService);
+            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+            SearchFragment = null;
+        }
+
+        public bool OnMenuItemActionCollapse (IMenuItem item)
+        {
+            HideSearch ((Activity as MainTabsActivity), item);
+            return true;
+        }
+
+        public bool OnMenuItemActionExpand (IMenuItem item)
+        {
+            var searchView = (item.ActionView as Android.Widget.SearchView);
+            searchView.RequestFocus ();
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Context.InputMethodService);
+                imm.ShowSoftInput (searchView.FindFocus (), ShowFlags.Implicit);
+            });
+            return true;
+        }
+
+        void SearchViewQueryTextChanged (object sender, Android.Widget.SearchView.QueryTextChangeEventArgs e)
+        {
+            SearchFragment.SearchForText (e.NewText);
+        }
+
+        void SearchViewQueryDidSubmit (object sender, Android.Widget.SearchView.QueryTextSubmitEventArgs e)
+        {
+            SearchFragment.StartServerSearch ();
+        }
+
+        #endregion
+
         #region Listener
 
         public void OnContactSelected (McContact contact)
@@ -297,8 +367,8 @@ namespace NachoClient.AndroidClient
                 return HeaderViewHolder.Create (parent);
             case ViewType.Contact:
                 var holder = ContactViewHolder.Create (parent);
-                holder.ItemView.ContextClickable = true;
-                holder.ItemView.ContextMenuCreated += (sender, e) => {
+                holder.ContentView.ContextClickable = true;
+                holder.ContentView.ContextMenuCreated += (sender, e) => {
                     ItemContextMenuCreated (holder.groupPosition, holder.itemPosition, e.Menu);
                 };
                 return holder;
@@ -382,75 +452,79 @@ namespace NachoClient.AndroidClient
             }
 
         }
+    }
 
-        class ContactViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
+    public class ContactViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
+    {
+
+        public View BackgroundView { get; private set; }
+        public View ContentView { get; private set; }
+        PortraitView PortraitView;
+        TextView NameLabel;
+        TextView DetailLabel;
+
+        EventHandler ClickHandler;
+
+        public static ContactViewHolder Create (ViewGroup parent)
         {
+            var inflater = LayoutInflater.From (parent.Context);
+            var view = inflater.Inflate (Resource.Layout.ContactListItem, parent, false);
+            return new ContactViewHolder (view);
+        }
 
-            PortraitView PortraitView;
-            TextView NameLabel;
-            TextView DetailLabel;
+        public ContactViewHolder (View view) : base (view)
+        {
+            BackgroundView = view.FindViewById (Resource.Id.background);
+            ContentView = view.FindViewById (Resource.Id.content);
+            PortraitView = view.FindViewById (Resource.Id.portrait) as PortraitView;
+            NameLabel = view.FindViewById (Resource.Id.name) as TextView;
+            DetailLabel = view.FindViewById (Resource.Id.detail) as TextView;
+        }
 
-            EventHandler ClickHandler;
+        public void SetContact (McContact contact, string alternateEmail = null)
+        {
+            var name = contact.GetDisplayName ();
+            var email = alternateEmail ?? contact.GetPrimaryCanonicalEmailAddress ();
+            var phone = contact.GetPrimaryPhoneNumber ();
 
-            public static ContactViewHolder Create (ViewGroup parent)
-            {
-                var inflater = LayoutInflater.From (parent.Context);
-                var view = inflater.Inflate (Resource.Layout.ContactListItem, parent, false);
-                return new ContactViewHolder (view);
-            }
+            if (!String.IsNullOrEmpty (name)) {
+                NameLabel.Text = name;
 
-            public ContactViewHolder (View view) : base (view)
-            {
-                PortraitView = view.FindViewById (Resource.Id.portrait) as PortraitView;
-                NameLabel = view.FindViewById (Resource.Id.name) as TextView;
-                DetailLabel = view.FindViewById (Resource.Id.detail) as TextView;
-            }
-
-            public void SetContact (McContact contact, string alternateEmail = null)
-            {
-                var name = contact.GetDisplayName ();
-                var email = alternateEmail ?? contact.GetPrimaryCanonicalEmailAddress ();
-                var phone = contact.GetPrimaryPhoneNumber ();
-
-                if (!String.IsNullOrEmpty (name)) {
-                    NameLabel.Text = name;
-
-                    if (!String.IsNullOrEmpty (email)) {
-                        DetailLabel.Text = email;
-                    } else if (!String.IsNullOrEmpty (phone)) {
+                if (!String.IsNullOrEmpty (email)) {
+                    DetailLabel.Text = email;
+                } else if (!String.IsNullOrEmpty (phone)) {
+                    DetailLabel.Text = phone;
+                } else {
+                    DetailLabel.Text = "";
+                }
+            } else {
+                if (!String.IsNullOrEmpty (email)) {
+                    NameLabel.Text = email;
+                    if (!String.IsNullOrEmpty (phone)) {
                         DetailLabel.Text = phone;
                     } else {
                         DetailLabel.Text = "";
                     }
+                } else if (!String.IsNullOrEmpty (phone)){
+                    NameLabel.Text = phone;
+                    DetailLabel.Text = "";
                 } else {
-                    if (!String.IsNullOrEmpty (email)) {
-                        NameLabel.Text = email;
-                        if (!String.IsNullOrEmpty (phone)) {
-                            DetailLabel.Text = phone;
-                        } else {
-                            DetailLabel.Text = "";
-                        }
-                    } else if (!String.IsNullOrEmpty (phone)){
-                        NameLabel.Text = phone;
-                        DetailLabel.Text = "";
-                    } else {
-                        NameLabel.Text = "Unnamed";
-                        DetailLabel.Text = "";
-                    }
+                    NameLabel.Text = "Unnamed";
+                    DetailLabel.Text = "";
                 }
-
-                PortraitView.SetPortrait(contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
             }
 
-            public void SetClickHandler (EventHandler clickHandler)
-            {
-                if (ClickHandler != null) {
-                    ItemView.Click -= ClickHandler;
-                }
-                ClickHandler = clickHandler;
-                if (ClickHandler != null) {
-                    ItemView.Click += ClickHandler;
-                }
+            PortraitView.SetPortrait(contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
+        }
+
+        public void SetClickHandler (EventHandler clickHandler)
+        {
+            if (ClickHandler != null) {
+                ItemView.Click -= ClickHandler;
+            }
+            ClickHandler = clickHandler;
+            if (ClickHandler != null) {
+                ItemView.Click += ClickHandler;
             }
         }
     }
