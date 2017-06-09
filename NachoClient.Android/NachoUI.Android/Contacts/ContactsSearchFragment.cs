@@ -94,8 +94,9 @@ namespace NachoClient.AndroidClient
 
         void ShowContact (McContact contact)
 		{
-            // TODO:
-		}
+            var intent = ContactViewActivity.BuildIntent (Activity, contact);
+            StartActivity (intent);
+        }
 
 		#endregion
 	}

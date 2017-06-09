@@ -72,6 +72,7 @@
     </CustomCommands>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <JavaOptions></JavaOptions>
+    <AndroidEnableMultiDex>true</AndroidEnableMultiDex>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -333,6 +334,10 @@
     <Compile Include="NachoUI.Android\Calendar\CalendarPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactsFragment.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactsSearchFragment.cs" />
+    <Compile Include="NachoUI.Android\Contacts\ContactViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Contacts\ContactEditActvity.cs" />
+    <Compile Include="NachoUI.Android\Contacts\ContactViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Contacts\ContactEditFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1785,6 +1790,8 @@
     <AndroidResource Include="Resources\drawable-xhdpi\floating_action_new_contact.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\floating_action_new_contact.png" />
     <AndroidResource Include="Resources\layout\ContactsSearchFragment.axml" />
+    <AndroidResource Include="Resources\menu\contact_edit.xml" />
+    <AndroidResource Include="Resources\menu\contact_view.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

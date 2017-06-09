@@ -160,6 +160,20 @@
     <!-- Contacts List -->
     <string name="contact_item_action_call">Call</string>
     <string name="contact_item_action_email">Email</string>
+    <string name="contact_choose_account">Choose the account for this new contact</string>
+
+    <!-- Contact View -->
+    <string name="contact_action_delete">Delete</string>
+    <string name="contact_delete_confirmation_message">Deleting this contact will permanently remove it from your device</string>
+    <string name="contact_delete_confirmation_accept">Yes, Delete Contact</string>
+
+    <!-- Contact Edit -->
+    <string name="contact_edit_action_save">Save</string>
+    <string name="contact_edit_action_delete">Delete</string>
+    <string name="contact_edit_close_save">Save Changes</string>
+    <string name="contact_edit_close_discard">Discard Changes</string>
+    <string name="contact_edit_delete_confirmation_message">Deleting this contact will permanently remove it from your device</string>
+    <string name="contact_edit_delete_confirmation_accept">Yes, Delete Contact</string>
 
     <!-- General Settings -->
     <string name="settings_label">Settings</string>

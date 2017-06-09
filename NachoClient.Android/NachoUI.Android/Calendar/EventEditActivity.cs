@@ -78,7 +78,6 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle savedInstanceState)
         {
-            PopulateFromIntent ();
             base.OnCreate (savedInstanceState);
             SetContentView (Resource.Layout.EventEditActivity);
             FindSubviews ();
@@ -106,6 +105,7 @@ namespace NachoClient.AndroidClient
                 CalendarItem.StartTime = startTime;
                 CalendarItem.EndTime = startTime + TimeSpan.FromHours (1.0);
             }
+            EventEditFragment.CalendarItem = CalendarItem;
         }
 
         public override void OnAttachFragment (Fragment fragment)
@@ -113,7 +113,11 @@ namespace NachoClient.AndroidClient
             base.OnAttachFragment (fragment);
             if (fragment is EventEditFragment) {
                 EventEditFragment = fragment as EventEditFragment;
-                EventEditFragment.CalendarItem = CalendarItem;
+                if (EventEditFragment.CalendarItem != null) {
+                    CalendarItem = EventEditFragment.CalendarItem;
+                } else {
+                    PopulateFromIntent ();
+                }
             }
         }
 

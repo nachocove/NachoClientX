@@ -29,6 +29,7 @@ namespace NachoClient.AndroidClient
 
         McAccount Account;
         ContactsAdapter Adapter;
+        bool CanCreateContact;
 
         #region Tab Interface
 
@@ -44,12 +45,8 @@ namespace NachoClient.AndroidClient
 
         public void OnTabSelected (MainTabsActivity tabActivity)
         {
-            var account = NcApplication.Instance.DefaultContactAccount;
-            if (account == null || account.AccountType == McAccount.AccountTypeEnum.Device) {
-                tabActivity.HideActionButton ();
-            } else {
-                tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_contact, ActionButtonClicked);
-            }
+            CanCreateContact = McAccount.GetCanAddContactAccounts ().Count > 0;
+            UpdateActions (tabActivity);
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
@@ -59,6 +56,17 @@ namespace NachoClient.AndroidClient
         public void OnAccountSwitched (MainTabsActivity tabActivity)
         {
             Account = NcApplication.Instance.Account;
+            CanCreateContact = McAccount.GetCanAddContactAccounts ().Count > 0;
+            UpdateActions (tabActivity);
+        }
+
+        private void UpdateActions (MainTabsActivity tabActivity)
+        {
+            if (CanCreateContact) {
+                tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_contact, ActionButtonClicked);
+            } else {
+                tabActivity.HideActionButton ();
+            }
         }
 
         public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
@@ -95,8 +103,7 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
+            Account = NcApplication.Instance.Account;
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -266,12 +273,39 @@ namespace NachoClient.AndroidClient
 
         void ShowContact (McContact contact)
         {
-            // TODO:
+            var intent = ContactViewActivity.BuildIntent (Activity, contact);
+            StartActivity (intent);
         }
 
         void ShowNewContact ()
         {
-            // TODO:
+            if (Account.CanAddContact ()) {
+                ShowNewContact (Account);
+            } else {
+                ShowAccountPicker ();
+            }
+        }
+
+        void ShowAccountPicker ()
+        {
+            var builder = new Android.App.AlertDialog.Builder (Activity);
+            builder.SetTitle (Resource.String.contact_choose_account);
+            var accounts = McAccount.GetCanAddContactAccounts ();
+            var items = new string [accounts.Count];
+            for (var i = 0; i < accounts.Count; ++i) {
+                items [i] = accounts [i].DisplayName + ": " + accounts[i].EmailAddr;
+            }
+            builder.SetItems (items, (sender, e) => {
+                var account = accounts [e.Which];
+                ShowNewContact (account);
+            });
+            builder.Show ();
+        }
+
+        void ShowNewContact (McAccount account)
+        {
+            var intent = ContactEditActivity.BuildNewIntent (Activity, account);
+			StartActivity (intent);
         }
 
         void CallContact (McContact contact)
@@ -520,11 +554,11 @@ namespace NachoClient.AndroidClient
         public void SetClickHandler (EventHandler clickHandler)
         {
             if (ClickHandler != null) {
-                ItemView.Click -= ClickHandler;
+                ContentView.Click -= ClickHandler;
             }
             ClickHandler = clickHandler;
             if (ClickHandler != null) {
-                ItemView.Click += ClickHandler;
+                ContentView.Click += ClickHandler;
             }
         }
     }

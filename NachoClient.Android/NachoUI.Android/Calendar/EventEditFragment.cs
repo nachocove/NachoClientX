@@ -35,6 +35,11 @@ namespace NachoClient.AndroidClient
         EventEditAdapter Adapter;
         AttachmentPicker AttachmentPicker = new AttachmentPicker ();
 
+        public EventEditFragment () : base ()
+        {
+            RetainInstance = true;
+        }
+
         #region Subviews
 
         RecyclerView ListView;
