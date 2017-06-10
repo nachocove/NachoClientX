@@ -207,7 +207,7 @@ namespace NachoClient.AndroidClient
         void ShowDeleteConfirmation ()
         {
             var builder = new AlertDialog.Builder (this);
-            builder.SetMessage (Resource.String.event_delete_confirmation_message);
+            builder.SetTitle (Resource.String.event_delete_confirmation_message);
             var items = new string [] {
                 GetString (Resource.String.event_delete_confirmation_accept)
             };

@@ -27,7 +27,7 @@
                 android:paddingTop="?attr/contactItemPaddingTop"
                 android:paddingBottom="?attr/contactItemPaddingBottom"
                 android:paddingRight="?attr/contactItemPaddingRight"
-                android:inputType="text"
+                android:inputType="text|textCapWords"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:hint="@string/contact_edit_hint_first_name"
                 android:background="@null" />
@@ -42,7 +42,7 @@
                 android:paddingTop="?attr/contactItemPaddingTop"
                 android:paddingBottom="?attr/contactItemPaddingBottom"
                 android:paddingRight="?attr/contactItemPaddingRight"
-                android:inputType="text"
+                android:inputType="text|textCapWords"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:hint="@string/contact_edit_hint_middle_name"
                 android:background="@null" />
@@ -57,7 +57,7 @@
                 android:paddingTop="?attr/contactItemPaddingTop"
                 android:paddingBottom="?attr/contactItemPaddingBottom"
                 android:paddingRight="?attr/contactItemPaddingRight"
-                android:inputType="text"
+                android:inputType="text|textCapWords"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:hint="@string/contact_edit_hint_last_name"
                 android:background="@null" />
@@ -72,7 +72,7 @@
                 android:paddingTop="?attr/contactItemPaddingTop"
                 android:paddingBottom="?attr/contactItemPaddingBottom"
                 android:paddingRight="?attr/contactItemPaddingRight"
-                android:inputType="text"
+                android:inputType="text|textCapWords"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:hint="@string/contact_edit_hint_suffix"
                 android:background="@null" />
@@ -87,7 +87,7 @@
                 android:paddingTop="?attr/contactItemPaddingTop"
                 android:paddingBottom="?attr/contactItemPaddingBottom"
                 android:paddingRight="?attr/contactItemPaddingRight"
-                android:inputType="text"
+                android:inputType="text|textCapWords"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:hint="@string/contact_edit_hint_company"
                 android:background="@null" />

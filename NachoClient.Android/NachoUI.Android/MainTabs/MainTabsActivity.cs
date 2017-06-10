@@ -303,7 +303,9 @@ namespace NachoClient.AndroidClient
 
         public void ExitSearchMode ()
         {
-            ActionButton.Visibility = ActionButtonVisibiltyBeforeSearchMode;
+            if (ActionButtonVisibiltyBeforeSearchMode == ViewStates.Visible){
+                ActionButton.Show ();
+            }
             TabLayout.Visibility = ViewStates.Visible;
         }
 

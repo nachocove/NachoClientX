@@ -109,6 +109,7 @@ namespace NachoClient.AndroidClient
 
         public void Update ()
         {
+            Adapter.SetContact (Contact);
             Adapter.NotifyDataSetChanged ();
         }
 

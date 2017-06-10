@@ -179,7 +179,7 @@ namespace NachoClient.AndroidClient
         void ShowDeleteConfirmation ()
         {
             var builder = new AlertDialog.Builder (this);
-            builder.SetMessage (Resource.String.contact_delete_confirmation_message);
+            builder.SetTitle (Resource.String.contact_delete_confirmation_message);
             var items = new string [] {
                 GetString (Resource.String.contact_delete_confirmation_accept)
             };
@@ -197,7 +197,7 @@ namespace NachoClient.AndroidClient
 
         void DeleteContact ()
         {
-            // TODO: actuall delete
+            BackEnd.Instance.DeleteContactCmd (Contact.AccountId, Contact.Id);
             var intent = new Intent (ACTION_DELETE);
             SetResult (Result.Ok, intent);
             Finish ();
