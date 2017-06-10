@@ -41,6 +41,27 @@ namespace NachoCore.Model
         public McAbstrContactAttribute ()
         {
         }
+
+        public virtual void ChangeName (string name)
+        {
+            Name = name;
+            Label = ContactsHelper.ExchangeNameToLabel (Name);
+        }
+
+        public virtual string GetDisplayLabel (string fallback = null)
+        {
+            if (!String.IsNullOrWhiteSpace (Label)) {
+                return Label;
+            }
+            var label = ContactsHelper.ExchangeNameToLabel (Name);
+            if (!String.IsNullOrWhiteSpace (label)) {
+                return label;
+            }
+            if (!String.IsNullOrWhiteSpace (fallback)) {
+                return fallback;
+            }
+            return Name;
+        }
     }
 }
 

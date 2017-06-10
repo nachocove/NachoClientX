@@ -448,7 +448,10 @@ namespace NachoClient.AndroidClient
             case ViewType.Event:
                 var eventHolder = EventViewHolder.Create (parent);
                 eventHolder.ItemView.ContextMenuCreated += (sender, e) => {
-                    ItemContextMenuCreated (eventHolder.groupPosition, eventHolder.itemPosition, e.Menu);
+                    int groupPosition;
+                    int itemPosition;
+                    GetGroupPosition (eventHolder.AdapterPosition, out groupPosition, out itemPosition);
+                    ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
                 };
                 return eventHolder;
             }

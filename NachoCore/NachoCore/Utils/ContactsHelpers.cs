@@ -282,6 +282,9 @@ namespace NachoCore.Utils
                 } else {
                     contact.BodyId = McBody.InsertFile (contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, notes).Id;
                 }
+                foreach (var email in contact.EmailAddresses) {
+                    email.EmailAddress = McEmailAddress.Get (email.AccountId, email.Value);
+                }
                 if (contact.Id == 0) {
                     contact.Insert ();
                     var folder = McFolder.GetDefaultContactFolder (contact.AccountId);
@@ -586,6 +589,37 @@ namespace NachoCore.Utils
         }
     }
 
+    public class ContactOtherAttribute : McAbstrContactAttribute
+    {
+        McContact Contact;
+
+        public ContactOtherAttribute (McContact contact, string name) : base()
+        {
+            Contact = contact;
+            Name = name;
+            Label = ContactsHelper.ExchangeNameToLabel (Name);
+        }
+        
+        public string Value {
+            get {
+                return ContactsHelper.MiscContactAttributeNameToValue (Name, Contact);
+            }
+            set {
+                ContactsHelper.AssignMiscContactAttribute (Contact, Name, value);
+            }
+        }
+        
+        public override void ChangeName (string name)
+        {
+            // Since Value really comes from a Contact property, we need to move the value
+            // from the old property to the new property when changing our name
+            var val = Value;
+            Value = null;
+            base.ChangeName (name);
+            Value = val;
+        }
+    }
+
     #region Platform Independent UI Models
 
     public class ContactGroup
@@ -699,8 +733,7 @@ namespace NachoCore.Utils
             });
             foreach (var email in emails) {
                 var mcemail = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
-                var name = !String.IsNullOrWhiteSpace (email.Label) ? email.Label : "Email";
-                fields.Add (new ContactField (name, mcemail.CanonicalEmailAddress, email: mcemail.CanonicalEmailAddress));
+                fields.Add (new ContactField (email.GetDisplayLabel (fallback: "Email"), mcemail.CanonicalEmailAddress, email: mcemail.CanonicalEmailAddress));
             }
 
             // Phone numbers come next, and the default is always at the top
@@ -715,46 +748,39 @@ namespace NachoCore.Utils
                 return 0;
             });
             foreach (var phone in phones) {
-                var name = !String.IsNullOrWhiteSpace (phone.Label) ? phone.Label : "Phone";
-                fields.Add (new ContactField (name, phone.Value, phone: "tel:" + phone.Value));
+                fields.Add (new ContactField (phone.GetDisplayLabel (fallback: "Phone"), phone.Value, phone: "tel:" + phone.Value));
             }
 
             // Addresses come next
             var addresses = contact.Addresses;
             foreach (var address in addresses) {
-                var name = !String.IsNullOrWhiteSpace (address.Label) ? address.Label : ContactsHelper.ExchangeNameToLabel (address.Name, "Address");
-                fields.Add (new ContactField (name, address.FormattedAddress));
+                fields.Add (new ContactField (address.GetDisplayLabel (fallback: "Address"), address.FormattedAddress));
             }
 
             // IMs come next
             var ims = contact.IMAddresses;
             foreach (var im in ims) {
-                var name = !String.IsNullOrWhiteSpace (im.Label) ? im.Label : ContactsHelper.ExchangeNameToLabel (im.Name, "IM");
-                fields.Add (new ContactField (name, im.Value));
+                fields.Add (new ContactField (im.GetDisplayLabel (fallback: "IM"), im.Value));
             }
 
             // Dates next
             var dates = contact.Dates;
             foreach (var date in dates) {
                 if (date.Value != DateTime.MinValue) {
-                    var name = ContactsHelper.ExchangeNameToLabel (date.Name, date.Name);
-                    fields.Add (new ContactField (name, Pretty.BirthdayOrAnniversary (date.Value)));
+                    fields.Add (new ContactField (date.GetDisplayLabel (), Pretty.BirthdayOrAnniversary (date.Value)));
                 }
             }
 
             // Relationships next
             var relationships = contact.Relationships;
             foreach (var relationship in relationships) {
-                var name = ContactsHelper.ExchangeNameToLabel (relationship.Name);
-                fields.Add (new ContactField (name, relationship.Value));
+                fields.Add (new ContactField (relationship.GetDisplayLabel (), relationship.Value));
             }
 
             // Any other fields next
-            var others = ContactsHelper.GetTakenMiscNames (contact);
-            foreach (var attr in others) {
-                var name = ContactsHelper.ExchangeNameToLabel (attr);
-                var val = ContactsHelper.MiscContactAttributeNameToValue (attr, contact);
-                fields.Add (new ContactField (name, val));
+            var others = contact.Others;
+            foreach (var other in others) {
+                fields.Add (new ContactField (other.GetDisplayLabel (), other.Value));
             }
 
             // Finally notes

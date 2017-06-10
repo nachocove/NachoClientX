@@ -403,7 +403,10 @@ namespace NachoClient.AndroidClient
                 var holder = ContactViewHolder.Create (parent);
                 holder.ContentView.ContextClickable = true;
                 holder.ContentView.ContextMenuCreated += (sender, e) => {
-                    ItemContextMenuCreated (holder.groupPosition, holder.itemPosition, e.Menu);
+                    int groupPosition;
+                    int itemPosition;
+                    GetGroupPosition (holder.AdapterPosition, out groupPosition, out itemPosition);
+                    ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
                 };
                 return holder;
             }
@@ -421,12 +424,15 @@ namespace NachoClient.AndroidClient
             var contact = GetContact (groupPosition, position);
             var contactHolder = (holder as ContactViewHolder);
             contactHolder.SetContact (contact);
-            contactHolder.SetClickHandler ((sender, e) => {
-                Listener listener;
-                if (WeakListener.TryGetTarget (out listener)) {
-                    listener.OnContactSelected (contact);
-                }
-            });
+        }
+        
+        public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            var contact = GetContact (groupPosition, position);
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                listener.OnContactSelected (contact);
+            }
         }
 
         void ItemContextMenuCreated (int groupPosition, int position, IContextMenu menu)
@@ -549,17 +555,6 @@ namespace NachoClient.AndroidClient
             }
 
             PortraitView.SetPortrait(contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
-        }
-
-        public void SetClickHandler (EventHandler clickHandler)
-        {
-            if (ClickHandler != null) {
-                ContentView.Click -= ClickHandler;
-            }
-            ClickHandler = clickHandler;
-            if (ClickHandler != null) {
-                ContentView.Click += ClickHandler;
-            }
         }
     }
 }

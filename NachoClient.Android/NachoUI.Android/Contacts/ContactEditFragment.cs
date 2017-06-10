@@ -108,15 +108,43 @@ namespace NachoClient.AndroidClient
         List<McContactAddressAttribute> Addresses;
         List<McContactStringAttribute> ImHandles;
         List<McContactStringAttribute> Relationships;
-        List<string> Others;
+        List<ContactOtherAttribute> Others;
         WeakReference<Listener> WeakListener;
-        List<string> AvailablePhoneNames;
-        List<string> AvailableEmailNames;
-        List<string> AvailableDateNames;
-        List<string> AvailableAddressNames;
-        List<string> AvailableRelationshipNames;
-        List<string> AvailableOtherNames;
-        List<string> AvailableImNames;
+        List<string> AvailablePhoneNames {
+            get {
+                return ContactsHelper.GetAvailablePhoneNames (Contact);
+            }
+        }
+        List<string> AvailableEmailNames {
+            get {
+                return ContactsHelper.GetAvailableEmailNames (Contact);
+            }
+        }
+        List<string> AvailableDateNames {
+            get {
+                return ContactsHelper.GetAvailableDateNames (Contact);
+            }
+        }
+        List<string> AvailableAddressNames {
+            get {
+                return ContactsHelper.GetAvailableAddressNames (Contact);
+            }
+        }
+        List<string> AvailableRelationshipNames {
+            get {
+                return ContactsHelper.GetAvailableRelationshipNames (Contact);
+            }
+        }
+        List<string> AvailableOtherNames {
+            get {
+                return ContactsHelper.GetAvailableMiscNames (Contact);
+            }
+        }
+        List<string> AvailableImNames {
+            get {
+                return ContactsHelper.GetAvailableIMAddressNames (Contact);
+            }
+        }
 
         public ContactEditAdapter (Listener listener, McContact contact) : base ()
 		{
@@ -128,8 +156,7 @@ namespace NachoClient.AndroidClient
             Addresses = Contact.Addresses;
             ImHandles = Contact.IMAddresses;
             Relationships = Contact.Relationships;
-            Others = ContactsHelper.GetTakenMiscNames (Contact);
-            // TODO: populate available name lists
+            Others = Contact.Others;
             ConfigureGroups ();
 		}
 
@@ -352,10 +379,12 @@ namespace NachoClient.AndroidClient
             if (groupPosition == PhonesGroupPosition) {
                 if (position < PhoneNumbers.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
-                    stringHolder.SetAttribute (PhoneNumbers [position], () => AvailablePhoneNames);
+                    var attr = PhoneNumbers [position];
+                    stringHolder.SetAttribute (attr, () => AvailablePhoneNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
-                        PhoneNumbers.RemoveAt (stringHolder.itemPosition);
-                        NotifyItemRemoved (stringHolder.groupPosition, stringHolder.itemPosition);
+                        var index = PhoneNumbers.IndexOf (attr);
+                        PhoneNumbers.RemoveAt (index);
+                        NotifyItemRemoved (PhonesGroupPosition, index);
                     });
                     return;
                 } else {
@@ -369,10 +398,12 @@ namespace NachoClient.AndroidClient
             if (groupPosition == EmailsGroupPosition) {
                 if (position < EmailAddresses.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
-                    stringHolder.SetAttribute (EmailAddresses [position], () => AvailableEmailNames);
+                    var attr = EmailAddresses [position];
+                    stringHolder.SetAttribute (attr, () => AvailableEmailNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
-                        EmailAddresses.RemoveAt (stringHolder.itemPosition);
-                        NotifyItemRemoved (stringHolder.groupPosition, stringHolder.itemPosition);
+                        var index = EmailAddresses.IndexOf (attr);
+                        EmailAddresses.RemoveAt (index);
+                        NotifyItemRemoved (EmailsGroupPosition, index);
                     });
                     return;
                 } else {
@@ -386,10 +417,12 @@ namespace NachoClient.AndroidClient
             if (groupPosition == DatesGroupPosition) {
                 if (position < Dates.Count) {
                     var dateHolder = holder as DateFieldViewHolder;
-                    dateHolder.SetAttribute (Dates [position], () => AvailableDateNames);
+                    var attr = Dates [position];
+                    dateHolder.SetAttribute (attr, () => AvailableDateNames);
                     dateHolder.SetRemoveHandler ((sender, e) => {
-                        Dates.RemoveAt (dateHolder.itemPosition);
-                        NotifyItemRemoved (dateHolder.groupPosition, dateHolder.itemPosition);
+                        var index = Dates.IndexOf (attr);
+                        Dates.RemoveAt (index);
+                        NotifyItemRemoved (DatesGroupPosition, index);
                     });
                     return;
                 } else {
@@ -403,10 +436,12 @@ namespace NachoClient.AndroidClient
             if (groupPosition == ImsGroupPosition) {
                 if (position < ImHandles.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
-                    stringHolder.SetAttribute (ImHandles [position], () => AvailableImNames);
+                    var attr = ImHandles [position];
+                    stringHolder.SetAttribute (attr, () => AvailableImNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
-                        ImHandles.RemoveAt (stringHolder.itemPosition);
-                        NotifyItemRemoved (stringHolder.groupPosition, stringHolder.itemPosition);
+                        var index = ImHandles.IndexOf (attr);
+                        ImHandles.RemoveAt (index);
+                        NotifyItemRemoved (ImsGroupPosition index);
                     });
                     return;
                 } else {
@@ -420,10 +455,12 @@ namespace NachoClient.AndroidClient
             if (groupPosition == AddressesGroupPosition) {
                 if (position < Addresses.Count) {
                     var addressHolder = holder as AddressFieldViewHolder;
-                    addressHolder.SetAttribute (Addresses [position], () => AvailableAddressNames);
+                    var attr = Addresses [position];
+                    addressHolder.SetAttribute (attr, () => AvailableAddressNames);
                     addressHolder.SetRemoveHandler ((sender, e) => {
-                        EmailAddresses.RemoveAt (addressHolder.itemPosition);
-                        NotifyItemRemoved (addressHolder.groupPosition, addressHolder.itemPosition);
+                        var index = Addresses.IndexOf (attr);
+                        Addresses.RemoveAt (index);
+                        NotifyItemRemoved (AddressesGroupPosition, index);
                     });
                     return;
                 } else {
@@ -435,12 +472,14 @@ namespace NachoClient.AndroidClient
                 }
             }
             if (groupPosition == RelationshipsGroupPosition) {
-                if (position < Dates.Count) {
+                if (position < Relationships.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
-                    stringHolder.SetAttribute (Relationships [position], () => AvailableRelationshipNames);
+                    var attr = Relationships [position];
+                    stringHolder.SetAttribute (attr, () => AvailableRelationshipNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
-                        Relationships.RemoveAt (stringHolder.itemPosition);
-                        NotifyItemRemoved (stringHolder.groupPosition, stringHolder.itemPosition);
+                        var index = Relationships.IndexOf (attr);
+                        Relationships.RemoveAt (index);
+                        NotifyItemRemoved (RelationshipsGroupPosition, index);
                     });
                     return;
                 } else {
@@ -454,7 +493,17 @@ namespace NachoClient.AndroidClient
             if (groupPosition == OthersGroupPosition) {
                 if (position < Others.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
-                    // TODO: how to use stringHolder, because we don't have an Attribute object, just a string
+                    var attr = Others [position];
+                    stringHolder.SetAttribute (attr, () => AvailableOtherNames);
+                    stringHolder.SetRemoveHandler ((sender, e) => {
+                        var index = Others.IndexOf (attr);
+                        // Others work a little differently because they map to direct properties on the Contact,
+                        // so removing from the list alone won't update the model like it does for the other lists.
+                        // We have to clear the value to update the relevant McContact property
+                        attr.Value = null;
+                        Others.RemoveAt (index);
+                        NotifyItemRemoved (OthersGroupPosition, index);
+                    });
                     return;
                 } else {
                     var adjustedPosition = position - Others.Count;
@@ -519,30 +568,71 @@ namespace NachoClient.AndroidClient
 
         void AddPhoneNumber ()
         {
+            var names = AvailablePhoneNames;
+            var attr = new McContactStringAttribute ();
+            attr.AccountId = Contact.AccountId;
+            attr.ChangeName (names [0]);
+            PhoneNumbers.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         void AddEmailAddress ()
         {
+            var names = AvailableEmailNames;
+            var attr = new McContactEmailAddressAttribute ();
+            attr.AccountId = Contact.AccountId;
+            attr.ChangeName (names [0]);
+            EmailAddresses.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         void AddImHandle ()
         {
+            var names = AvailableImNames;
+            var attr = new McContactStringAttribute();
+            attr.AccountId = Contact.AccountId;
+            attr.ChangeName (names [0]);
+            ImHandles.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         void AdddDate ()
         {
+            var names = AvailableDateNames;
+            var attr = new McContactDateAttribute ();
+            attr.AccountId = Contact.AccountId;
+            attr.ChangeName (names [0]);
+            attr.Value = DateTime.Today;
+            Dates.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         void AddAddress ()
         {
+            var names = AvailableAddressNames;
+            var attr = new McContactAddressAttribute ();
+            attr.AccountId = Contact.AccountId;
+            attr.ChangeName (names [0]);
+            Addresses.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         void AddRelationship ()
         {
+            var names = AvailableEmailNames;
+            var attr = new McContactStringAttribute ();
+            attr.AccountId = Contact.AccountId;
+            attr.ChangeName (names [0]);
+            Relationships.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         void AddOther ()
         {
+            var names = AvailableOtherNames;
+            var attr = new ContactOtherAttribute (Contact, names[0]);
+            Others.Add (attr);
+            NotifyDataSetChanged ();
         }
 
         class NameFieldsViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
@@ -653,6 +743,7 @@ namespace NachoClient.AndroidClient
             TextView NameLabel;
             View RemoveButton;
             McAbstrContactAttribute Attribute;
+            string OtherAttributeName;
             EventHandler RemoveHandler;
             public delegate List<string> AvailableNamesDelegate ();
             AvailableNamesDelegate AvailableNames;
@@ -667,8 +758,14 @@ namespace NachoClient.AndroidClient
             protected void SetAttribute (McAbstrContactAttribute attr, AvailableNamesDelegate availableNames)
             {
                 Attribute = attr;
+                OtherAttributeName = null;
                 AvailableNames = availableNames;
-                // TODO: update NameLabel
+                NameLabel.Text = Attribute.Label;
+            }
+
+            protected void SetAttribute (string otherAttributeName, AvailableNamesDelegate availableNames)
+            {
+                Attribute = null;
             }
 
             public void SetRemoveHandler (EventHandler removeHandler)
@@ -684,7 +781,18 @@ namespace NachoClient.AndroidClient
             
             void NameLabelClicked (object sender, EventArgs e)
             {
-                // TODO: show name picker
+                var availableNames = AvailableNames ();
+                var items = new string [availableNames.Count];
+                int selectedItem = -1;
+                for (int i = 0; i < availableNames.Count; ++i) {
+                    items [i] = ContactsHelper.ExchangeNameToLabel (availableNames [i]);
+                }
+                var builder = new AlertDialog.Builder (ItemView.Context);
+                builder.SetSingleChoiceItems (items, selectedItem, (sender_, e_) => {
+                    var name = availableNames [e_.Which];
+                    Attribute.ChangeName (name);
+                });
+                builder.Show ();
             }
             
         }
@@ -695,6 +803,7 @@ namespace NachoClient.AndroidClient
             EditText ValueField;
             McContactStringAttribute StringAttribute;
             McContactEmailAddressAttribute EmailAttribute;
+            ContactOtherAttribute OtherAttibute;
 
             public static StringFieldViewHolder Create (ViewGroup parent)
             {
@@ -714,6 +823,7 @@ namespace NachoClient.AndroidClient
                 base.SetAttribute (attr, availableNames);
                 StringAttribute = attr;
                 EmailAttribute = null;
+                OtherAttibute = null;
                 ValueField.Text = StringAttribute.Value;
             }
 
@@ -722,14 +832,25 @@ namespace NachoClient.AndroidClient
                 base.SetAttribute (attr, availableNames);
                 EmailAttribute = attr;
                 StringAttribute = null;
+                OtherAttibute = null;
                 ValueField.Text = EmailAttribute.Value;
             }
+
+            public void SetAttribute (ContactOtherAttribute attr, AvailableNamesDelegate availableNames)
+            {
+                base.SetAttribute (attr, availableNames);
+                OtherAttibute = attr;
+                StringAttribute = null;
+                EmailAttribute = null;
+                ValueField.Text = OtherAttibute.Value;
+            }
             
-            void ValueChanged (object sender, TextChangedEventArgs e)
+            protected virtual void ValueChanged (object sender, TextChangedEventArgs e)
             {
                 if (EmailAttribute != null) {
                     EmailAttribute.Value = ValueField.Text;
-                    EmailAttribute.EmailAddress = McEmailAddress.Get (EmailAttribute.AccountId, EmailAttribute.Value);
+                } else if (OtherAttibute != null) {
+                    OtherAttibute.Value = ValueField.Text;
                 } else {
                     StringAttribute.Value = ValueField.Text;
                 }
@@ -764,7 +885,10 @@ namespace NachoClient.AndroidClient
 
             void ValueClicked (object sender, EventArgs e)
             {
-                // TODO: show date picker
+                var localInitialValue = DateAttribute.Value.ToLocalTime ();
+                DatePicker.Show (ItemView.Context, localInitialValue, DateTime.MinValue, DateTime.MaxValue, (DateTime date) => {
+                    DateAttribute.Value = date.ToUniversalTime ();
+                });
             }
 
         }

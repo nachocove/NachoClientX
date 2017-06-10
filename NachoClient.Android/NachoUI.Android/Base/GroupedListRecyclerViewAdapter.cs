@@ -114,8 +114,11 @@ namespace NachoClient.AndroidClient
             }
             var holder = OnCreateGroupedViewHolder(parent, viewType) as ViewHolder;
             holder.ClickTargetView.Click += (sender, e) => {
-                if (holder.itemPosition >= 0) {
-                    OnViewHolderClick (holder, holder.groupPosition, holder.itemPosition);
+                int groupPosition;
+                int itemPosition;
+                GetGroupPosition (holder.AdapterPosition, out groupPosition, out itemPosition);
+                if (itemPosition >= 0) {
+                    OnViewHolderClick (holder, groupPosition, itemPosition);
                 }
             };
             return holder;
@@ -124,17 +127,19 @@ namespace NachoClient.AndroidClient
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
         {
             var groupedHolder = (holder as ViewHolder);
-            GetGroupPosition (position, out groupedHolder.groupPosition, out groupedHolder.itemPosition);
-            if (groupedHolder.itemPosition == HEADER_ITEM_POSITION){
-                OnBindHeaderViewHolder (holder, groupedHolder.groupPosition);
-            }else if (groupedHolder.itemPosition == FOOTER_ITEM_POSITION){
-                OnBindFooterViewHolder (holder, groupedHolder.groupPosition);
+            int groupPosition;
+            int itemPosition;
+            GetGroupPosition (position, out groupPosition, out itemPosition);
+            if (itemPosition == HEADER_ITEM_POSITION){
+                OnBindHeaderViewHolder (holder, groupPosition);
+            }else if (itemPosition == FOOTER_ITEM_POSITION){
+                OnBindFooterViewHolder (holder, groupPosition);
             }else{
-                OnBindViewHolder(holder, groupedHolder.groupPosition, groupedHolder.itemPosition);
+                OnBindViewHolder(holder, groupPosition, itemPosition);
             }
         }
 
-        private void GetGroupPosition (int position, out int groupPosition, out int itemPosition)
+        protected void GetGroupPosition (int position, out int groupPosition, out int itemPosition)
         {
             int groupCount = GroupCount;
             int groupItemCount;
@@ -202,8 +207,6 @@ namespace NachoClient.AndroidClient
 
         public class ViewHolder : RecyclerView.ViewHolder
         {
-            public int groupPosition;
-            public int itemPosition;
 
             public virtual View ClickTargetView {
                 get {

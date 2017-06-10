@@ -367,6 +367,19 @@ namespace NachoCore.Model
                 DbCategories = value;
             }
         }
+        
+        [Ignore]
+        public List<ContactOtherAttribute> Others 
+        {
+            get {
+                var attributeNames = ContactsHelper.GetTakenMiscNames (this);
+                var others = new List<ContactOtherAttribute> ();
+                foreach (var attr in attributeNames) {
+                    others.Add (new ContactOtherAttribute (this, attr));
+                }
+                return others;
+            }
+        }
 
         public static bool IsNull (DateTime t)
         {

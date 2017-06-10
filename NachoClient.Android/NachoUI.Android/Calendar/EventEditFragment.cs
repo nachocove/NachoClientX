@@ -556,8 +556,9 @@ namespace NachoClient.AndroidClient
                         }
                     });
                     attachmentHolder.SetRemoveHandler ((sender, e) => {
-                        Attachments.RemoveAt (attachmentHolder.itemPosition);
-                        NotifyItemRemoved (attachmentHolder.groupPosition, attachmentHolder.itemPosition);
+                        var index = Attachments.IndexOf (attachment);
+                        Attachments.RemoveAt (index);
+                        NotifyItemRemoved (AttachmentsGroupPosition, index);
                     });
                     return;
                 } else {
@@ -573,8 +574,9 @@ namespace NachoClient.AndroidClient
                     var attendeeHolder = (holder as AttendeeViewHolder);
                     attendeeHolder.SetAttendee (attendee);
                     attendeeHolder.SetRemoveHandler ((sender, e) => {
-                        Attendees.RemoveAt (attendeeHolder.itemPosition);
-                        NotifyItemRemoved (attendeeHolder.groupPosition, attendeeHolder.itemPosition);
+                        var index = Attendees.IndexOf (attendee);
+                        Attendees.RemoveAt (index);
+                        NotifyItemRemoved (AttendeesGroupPosition, index);
                     });
                     return;
                 } else {
