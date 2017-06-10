@@ -503,7 +503,11 @@ namespace NachoClient.AndroidClient
         TextView NameLabel;
         TextView DetailLabel;
 
-        EventHandler ClickHandler;
+        public override View ClickTargetView {
+            get {
+                return ContentView;
+            }
+        }
 
         public static ContactViewHolder Create (ViewGroup parent)
         {
