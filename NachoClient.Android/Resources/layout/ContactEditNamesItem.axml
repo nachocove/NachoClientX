@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="?attr/contactItemPaddingLeft">
+        <NachoClient.AndroidClient.PortraitView
+            android:id="@+id/portrait"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="?attr/contactItemPaddingTop"
+            android:layout_marginRight="?attr/contactItemPaddingLeft" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1.0"
+            android:layout_height="wrap_content">
+            <EditText
+                android:id="@+id/first_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="?attr/contactItemPaddingTop"
+                android:paddingBottom="?attr/contactItemPaddingBottom"
+                android:paddingRight="?attr/contactItemPaddingRight"
+                android:inputType="text"
+                android:textAppearance="?attr/textAppearanceListItem"
+                android:hint="@string/contact_edit_hint_first_name"
+                android:background="@null" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorListItemSeparator" />
+            <EditText
+                android:id="@+id/middle_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="?attr/contactItemPaddingTop"
+                android:paddingBottom="?attr/contactItemPaddingBottom"
+                android:paddingRight="?attr/contactItemPaddingRight"
+                android:inputType="text"
+                android:textAppearance="?attr/textAppearanceListItem"
+                android:hint="@string/contact_edit_hint_middle_name"
+                android:background="@null" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorListItemSeparator" />
+            <EditText
+                android:id="@+id/last_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="?attr/contactItemPaddingTop"
+                android:paddingBottom="?attr/contactItemPaddingBottom"
+                android:paddingRight="?attr/contactItemPaddingRight"
+                android:inputType="text"
+                android:textAppearance="?attr/textAppearanceListItem"
+                android:hint="@string/contact_edit_hint_last_name"
+                android:background="@null" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorListItemSeparator" />
+            <EditText
+                android:id="@+id/suffix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="?attr/contactItemPaddingTop"
+                android:paddingBottom="?attr/contactItemPaddingBottom"
+                android:paddingRight="?attr/contactItemPaddingRight"
+                android:inputType="text"
+                android:textAppearance="?attr/textAppearanceListItem"
+                android:hint="@string/contact_edit_hint_suffix"
+                android:background="@null" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorListItemSeparator" />
+            <EditText
+                android:id="@+id/company"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="?attr/contactItemPaddingTop"
+                android:paddingBottom="?attr/contactItemPaddingBottom"
+                android:paddingRight="?attr/contactItemPaddingRight"
+                android:inputType="text"
+                android:textAppearance="?attr/textAppearanceListItem"
+                android:hint="@string/contact_edit_hint_company"
+                android:background="@null" />
+        </LinearLayout>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

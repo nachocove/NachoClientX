@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="?attr/contactItemPaddingLeft">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/name_label"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:paddingTop="?contactItemPaddingTop"
+            android:paddingBottom="?attr/contactItemPaddingTop"
+            android:paddingRight="3dp"
+            android:lines="1"
+            android:ellipsize="end"
+            android:drawableRight="@drawable/contact_dropdown"
+            android:text="@string/demo_contact_edit_field_name"
+            android:textAppearance="?attr/textAppearanceContactFieldLabel"
+            android:clickable="true"
+            android:background="?attr/selectableItemBackground" />
+        <View
+            android:layout_height="match_parent"
+            android:layout_width="1dp"
+            android:background="?attr/colorListItemSeparator" />
+        <EditText
+            android:id="@+id/value_field"
+            android:inputType="text"
+            android:layout_width="0dp"
+            android:layout_weight="1.0"
+            android:layout_height="wrap_content"
+            android:paddingLeft="?attr/contactItemPaddingLeft"
+            android:paddingTop="?attr/contactItemPaddingTop"
+            android:paddingBottom="?attr/contactItemPaddingBottom"
+            android:paddingRight="?attr/contactItemPaddingRight"
+            android:hint="@string/demo_contact_edit_field_hint"
+            android:textAppearance="?attr/textAppearanceListItem"
+            android:background="@null" />
+        <FrameLayout
+            android:id="@+id/remove_button"
+            android:layout_height="match_parent"
+            android:layout_width="36dp"
+            android:clickable="true"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/gen_delete_small"
+                android:layout_gravity="center|center_vertical" />
+        </FrameLayout>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

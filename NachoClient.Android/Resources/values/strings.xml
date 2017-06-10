@@ -188,6 +188,22 @@
     <string name="contact_edit_add_im">Add IM Address</string>
     <string name="contact_edit_add_relationship">Add Relationship</string>
     <string name="contact_edit_add_other">Add Other</string>
+    <string name="contact_edit_hint_first_name">First</string>
+    <string name="contact_edit_hint_middle_name">Middle</string>
+    <string name="contact_edit_hint_last_name">Last</string>
+    <string name="contact_edit_hint_suffix">Suffix</string>
+    <string name="contact_edit_hint_company">Company</string>
+    <string name="contact_edit_hint_street">Street</string>
+    <string name="contact_edit_hint_city">City</string>
+    <string name="contact_edit_hint_state">State</string>
+    <string name="contact_edit_hint_postcode">Zip Code</string>
+    <string name="contact_edit_hint_country">Country</string>
+    <string name="contact_edit_hint_notes">Notes</string>
+    <string name="contact_edit_hint_phone">Phone</string>
+    <string name="contact_edit_hint_email">Email</string>
+    <string name="contact_edit_hint_relationship">Name</string>
+    <string name="contact_edit_hint_im">IM Address</string>
+    <string name="contact_edit_hint_other">Value</string>
 
     <!-- General Settings -->
     <string name="settings_label">Settings</string>
@@ -283,6 +299,9 @@
     <string name="demo_event_time">Tuesday May 23, 2017\nfrom 2pm to 3pm</string>
     <string name="demo_event_location">Someplace nice</string>
     <string name="demo_contact_header">A</string>
+    <string name="demo_contact_edit_add_button">Add Email</string>
+    <string name="demo_contact_edit_field_name">Mobile</string>
+    <string name="demo_contact_edit_field_hint">Email Address</string>
 
 
     <!-- OLD -->

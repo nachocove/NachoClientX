@@ -260,6 +260,24 @@ namespace NachoClient.AndroidClient
             if (groupPosition == EmailsGroupPosition) {
                 return EmailAddresses.Count + EmailsExtraItemCount;
             }
+            if (groupPosition == DatesGroupPosition){
+                return Dates.Count + DatesExtraItemCount;                
+            }
+            if (groupPosition == ImsGroupPosition){
+                return ImHandles.Count + ImsExtraItemCount;
+            }
+            if (groupPosition == AddressesGroupPosition){
+                return Addresses.Count + AddressesExtraItemCount;
+            }
+            if (groupPosition == RelationshipsGroupPosition){
+                return Relationships.Count + RelationshipsExtraItemCount;
+            }
+            if (groupPosition == OthersGroupPosition){
+                return Others.Count + OthersExtraItemCount;
+            }
+            if (groupPosition == NotesGroupPosition){
+                return 1;
+            }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("ContactEditFragment.GroupItemCount unknown groupPosition: {0}", groupPosition));
 		}
 
@@ -340,7 +358,7 @@ namespace NachoClient.AndroidClient
                 }
             }
             if (groupPosition == RelationshipsGroupPosition) {
-                if (position < Dates.Count) {
+                if (position < Relationships.Count) {
                     return (int)ViewType.StringField;
                 } else {
                     var adjustedPosition = position - Relationships.Count;
@@ -380,7 +398,7 @@ namespace NachoClient.AndroidClient
                 if (position < PhoneNumbers.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
                     var attr = PhoneNumbers [position];
-                    stringHolder.SetAttribute (attr, () => AvailablePhoneNames);
+                    stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_phone, () => AvailablePhoneNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = PhoneNumbers.IndexOf (attr);
                         PhoneNumbers.RemoveAt (index);
@@ -399,7 +417,7 @@ namespace NachoClient.AndroidClient
                 if (position < EmailAddresses.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
                     var attr = EmailAddresses [position];
-                    stringHolder.SetAttribute (attr, () => AvailableEmailNames);
+                    stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_email, () => AvailableEmailNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = EmailAddresses.IndexOf (attr);
                         EmailAddresses.RemoveAt (index);
@@ -437,11 +455,11 @@ namespace NachoClient.AndroidClient
                 if (position < ImHandles.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
                     var attr = ImHandles [position];
-                    stringHolder.SetAttribute (attr, () => AvailableImNames);
+                    stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_im, () => AvailableImNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = ImHandles.IndexOf (attr);
                         ImHandles.RemoveAt (index);
-                        NotifyItemRemoved (ImsGroupPosition index);
+                        NotifyItemRemoved (ImsGroupPosition, index);
                     });
                     return;
                 } else {
@@ -475,7 +493,7 @@ namespace NachoClient.AndroidClient
                 if (position < Relationships.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
                     var attr = Relationships [position];
-                    stringHolder.SetAttribute (attr, () => AvailableRelationshipNames);
+                    stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_relationship, () => AvailableRelationshipNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = Relationships.IndexOf (attr);
                         Relationships.RemoveAt (index);
@@ -494,7 +512,7 @@ namespace NachoClient.AndroidClient
                 if (position < Others.Count) {
                     var stringHolder = holder as StringFieldViewHolder;
                     var attr = Others [position];
-                    stringHolder.SetAttribute (attr, () => AvailableOtherNames);
+                    stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_other, () => AvailableOtherNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = Others.IndexOf (attr);
                         // Others work a little differently because they map to direct properties on the Contact,
@@ -619,7 +637,7 @@ namespace NachoClient.AndroidClient
 
         void AddRelationship ()
         {
-            var names = AvailableEmailNames;
+            var names = AvailableRelationshipNames;
             var attr = new McContactStringAttribute ();
             attr.AccountId = Contact.AccountId;
             attr.ChangeName (names [0]);
@@ -743,10 +761,10 @@ namespace NachoClient.AndroidClient
             TextView NameLabel;
             View RemoveButton;
             McAbstrContactAttribute Attribute;
-            string OtherAttributeName;
             EventHandler RemoveHandler;
             public delegate List<string> AvailableNamesDelegate ();
             AvailableNamesDelegate AvailableNames;
+            AlertDialog NamePicker;
 
             public FieldViewHolder (View view) : base (view)
             {
@@ -758,9 +776,8 @@ namespace NachoClient.AndroidClient
             protected void SetAttribute (McAbstrContactAttribute attr, AvailableNamesDelegate availableNames)
             {
                 Attribute = attr;
-                OtherAttributeName = null;
                 AvailableNames = availableNames;
-                NameLabel.Text = Attribute.Label;
+                NameLabel.Text = Attribute.GetDisplayLabel ();
             }
 
             protected void SetAttribute (string otherAttributeName, AvailableNamesDelegate availableNames)
@@ -782,17 +799,23 @@ namespace NachoClient.AndroidClient
             void NameLabelClicked (object sender, EventArgs e)
             {
                 var availableNames = AvailableNames ();
-                var items = new string [availableNames.Count];
-                int selectedItem = -1;
+                var items = new string [availableNames.Count + 1];
+                int selectedItem = 0;
                 for (int i = 0; i < availableNames.Count; ++i) {
-                    items [i] = ContactsHelper.ExchangeNameToLabel (availableNames [i]);
+                    items [i + 1] = ContactsHelper.ExchangeNameToLabel (availableNames [i]);
                 }
+                items [0] = Attribute.GetDisplayLabel ();
                 var builder = new AlertDialog.Builder (ItemView.Context);
                 builder.SetSingleChoiceItems (items, selectedItem, (sender_, e_) => {
-                    var name = availableNames [e_.Which];
-                    Attribute.ChangeName (name);
+                    var name = availableNames [e_.Which - 1];
+	                Attribute.ChangeName (name);
+                    NameLabel.Text = Attribute.GetDisplayLabel ();
+	                NamePicker.Dismiss ();
                 });
-                builder.Show ();
+                NamePicker = builder.Show ();
+                NamePicker.DismissEvent += (sender_, e_) => {
+                    NamePicker = null;
+                };
             }
             
         }
@@ -818,30 +841,33 @@ namespace NachoClient.AndroidClient
                 ValueField.TextChanged += ValueChanged;
             }
 
-            public void SetAttribute (McContactStringAttribute attr, AvailableNamesDelegate availableNames)
+            public void SetAttribute (McContactStringAttribute attr, int hintResource, AvailableNamesDelegate availableNames)
             {
                 base.SetAttribute (attr, availableNames);
                 StringAttribute = attr;
                 EmailAttribute = null;
                 OtherAttibute = null;
+                ValueField.SetHint (hintResource);
                 ValueField.Text = StringAttribute.Value;
             }
 
-            public void SetAttribute (McContactEmailAddressAttribute attr, AvailableNamesDelegate availableNames)
+            public void SetAttribute (McContactEmailAddressAttribute attr, int hintResource, AvailableNamesDelegate availableNames)
             {
                 base.SetAttribute (attr, availableNames);
                 EmailAttribute = attr;
                 StringAttribute = null;
-                OtherAttibute = null;
+				OtherAttibute = null;
+				ValueField.SetHint (hintResource);
                 ValueField.Text = EmailAttribute.Value;
             }
 
-            public void SetAttribute (ContactOtherAttribute attr, AvailableNamesDelegate availableNames)
+            public void SetAttribute (ContactOtherAttribute attr, int hintResource, AvailableNamesDelegate availableNames)
             {
                 base.SetAttribute (attr, availableNames);
                 OtherAttibute = attr;
                 StringAttribute = null;
-                EmailAttribute = null;
+				EmailAttribute = null;
+				ValueField.SetHint (hintResource);
                 ValueField.Text = OtherAttibute.Value;
             }
             

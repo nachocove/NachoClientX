@@ -1801,6 +1801,16 @@
     <AndroidResource Include="Resources\drawable-xhdpi\contact_action_email.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\contact_action_call.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\contact_action_email.png" />
+    <AndroidResource Include="Resources\layout\ContactEditNamesItem.axml" />
+    <AndroidResource Include="Resources\layout\ContactEditAddButtonItem.axml" />
+    <AndroidResource Include="Resources\layout\ContactEditStringItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\contact_dropdown.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\contact_dropdown.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\contact_dropdown.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\contact_dropdown.png" />
+    <AndroidResource Include="Resources\layout\ContactEditDateItem.axml" />
+    <AndroidResource Include="Resources\layout\ContactEditAddressItem.axml" />
+    <AndroidResource Include="Resources\layout\ContactEditNotesItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

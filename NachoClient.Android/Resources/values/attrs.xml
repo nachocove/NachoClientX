@@ -80,6 +80,7 @@
     <attr name="calendarPickerItemPaddingRight" format="dimension"/>
     <attr name="calendarPickerItemPaddingBottom" format="dimension"/>
     <attr name="textAppearanceContactGroupHeader" format="reference"/>
+    <attr name="textAppearanceContactFieldLabel" format="reference"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

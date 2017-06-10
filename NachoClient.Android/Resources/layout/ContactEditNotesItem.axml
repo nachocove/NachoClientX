@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <EditText
+        android:id="@+id/notes"
+        android:inputType="text|textMultiLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="?attr/contactItemPaddingLeft"
+        android:paddingTop="?attr/contactItemPaddingTop"
+        android:paddingBottom="?attr/contactItemPaddingBottom"
+        android:paddingRight="?attr/contactItemPaddingRight"
+        android:hint="@string/contact_edit_hint_notes"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:background="@null" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorListItemSeparator" />
+</LinearLayout>

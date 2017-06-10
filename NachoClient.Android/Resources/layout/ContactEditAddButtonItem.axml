@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:andrdoid="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    andrdoid:orientation="vertical"
+    andrdoid:layout_width="match_parent"
+    andrdoid:layout_height="wrap_content"
+    andrdoid:clickable="true"
+    andrdoid:background="?attr/selectableItemBackground">
+    <LinearLayout
+        andrdoid:orientation="horizontal"
+        andrdoid:layout_width="match_parent"
+        andrdoid:layout_height="wrap_content"
+        andrdoid:paddingLeft="?attr/contactItemPaddingLeft"
+        andrdoid:paddingTop="?attr/contactItemPaddingTop"
+        andrdoid:paddingRight="?attr/contactItemPaddingRight"
+        andrdoid:paddingBottom="?attr/contactItemPaddingBottom">
+        <TextView
+            andrdoid:id="@+id/label"
+            andrdoid:layout_width="0dp"
+            andrdoid:layout_weight="1.0"
+            andrdoid:layout_height="wrap_content"
+            andrdoid:textAppearance="?attr/textAppearanceListItem"
+            andrdoid:text="@string/demo_contact_edit_add_button" />
+        <ImageView
+            andrdoid:layout_marginLeft="?attr/contactItemPaddingRight"
+            andrdoid:layout_width="wrap_content"
+            andrdoid:layout_height="wrap_content"
+            andrdoid:src="@drawable/email_add" />
+    </LinearLayout>
+    <View
+        andrdoid:layout_width="match_parent"
+        andrdoid:layout_height="1dp"
+        andrdoid:background="?attr/colorListItemSeparator" />
+</LinearLayout>

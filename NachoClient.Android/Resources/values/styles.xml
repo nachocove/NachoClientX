@@ -79,6 +79,10 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <style name="TextAppearanceNachoContactFieldLabel" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
     <style name="NachoTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/NachoMainGreen</item>
         <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
@@ -153,6 +157,7 @@
         <item name="calendarPickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
         <item name="calendarPickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
         <item name="textAppearanceContactGroupHeader">@style/TextAppearanceNachoContactGroupHeader</item>
+        <item name="textAppearanceContactFieldLabel">@style/TextAppearanceNachoContactFieldLabel</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
