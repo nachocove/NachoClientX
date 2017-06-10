@@ -788,7 +788,7 @@ namespace NachoClient.AndroidClient
         }
     }
 
-    public class MessageViewHolder : RecyclerView.ViewHolder
+    public class MessageViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
     {
 
         public bool UseRecipientName = false;
@@ -805,6 +805,12 @@ namespace NachoClient.AndroidClient
                     AccountIndicatorView.Visibility = ViewStates.Visible;
                     AccountIndicatorView.SetBackgroundColor (new Android.Graphics.Color (_IndicatorColor));
                 }
+            }
+        }
+
+        public override View ClickTargetView {
+            get {
+                return ContentView;
             }
         }
 

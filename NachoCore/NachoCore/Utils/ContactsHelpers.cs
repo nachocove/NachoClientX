@@ -273,8 +273,11 @@ namespace NachoCore.Utils
             }
         }
 
-        public static string ExchangeNameToLabel (string name)
+        public static string ExchangeNameToLabel (string name, string defaultLabel = null)
         {
+            if (name == null) {
+                return defaultLabel;
+            }
             string value;
             if (ExchangeLabelDictionary.TryGetValue (name, out value)) {
                 return value;
@@ -641,6 +644,107 @@ namespace NachoCore.Utils
             }
             return contact;
         }
+    }
+
+    public class ContactField
+    {
+        public string Name { get; private set; }
+        public string DisplayValue { get; private set; }
+        public string Email { get; private set; }
+        public string Phone { get; private set; }
+
+        public ContactField (string name, string displayValue, string email = null, string phone = null)
+        {
+            Name = name;
+            DisplayValue = displayValue;
+            Email = email;
+            Phone = phone;
+        }
+
+        public static List<ContactField> FieldsFromContact (McContact contact)
+        {
+            var fields = new List<ContactField> ();
+
+            // Emails fields come first, and the default is always at the top
+            var emails = contact.EmailAddresses;
+            emails.Sort ((x, y) => {
+                if (x.IsDefault && !y.IsDefault) {
+                    return -1;
+                }
+                if (!x.IsDefault && y.IsDefault) {
+                    return 1;
+                }
+                return 0;
+            });
+            foreach (var email in emails) {
+                var mcemail = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
+                var name = !String.IsNullOrWhiteSpace (email.Label) ? email.Label : "Email";
+                fields.Add (new ContactField (name, mcemail.CanonicalEmailAddress, email: mcemail.CanonicalEmailAddress));
+            }
+
+            // Phone numbers come next, and the default is always at the top
+            var phones = contact.PhoneNumbers;
+            phones.Sort ((x, y) => {
+                if (x.IsDefault && !y.IsDefault) {
+                    return -1;
+                }
+                if (!x.IsDefault && y.IsDefault) {
+                    return 1;
+                }
+                return 0;
+            });
+            foreach (var phone in phones) {
+                var name = !String.IsNullOrWhiteSpace (phone.Label) ? phone.Label : "Phone";
+                fields.Add (new ContactField (name, phone.Value, phone: "tel:" + phone.Value));
+            }
+
+            // Addresses come next
+            var addresses = contact.Addresses;
+            foreach (var address in addresses) {
+                var name = !String.IsNullOrWhiteSpace (address.Label) ? address.Label : ContactsHelper.ExchangeNameToLabel (address.Name, "Address");
+                fields.Add (new ContactField (name, address.FormattedAddress));
+            }
+
+            // IMs come next
+            var ims = contact.IMAddresses;
+            foreach (var im in ims) {
+                var name = !String.IsNullOrWhiteSpace (im.Label) ? im.Label : ContactsHelper.ExchangeNameToLabel (im.Name, "IM");
+                fields.Add (new ContactField (name, im.Value));
+            }
+
+            // Dates next, there are only two possible and they work a little different from other fields,
+            // we have to check each for a value
+            var dateAttributes = new string [] {
+                Xml.Contacts.Birthday,
+                Xml.Contacts.Anniversary
+            };
+
+            foreach (var attr in dateAttributes) {
+                var date = contact.GetDateAttribute (attr);
+                if (date != DateTime.MinValue) {
+                    var name = ContactsHelper.ExchangeNameToLabel (attr, attr);
+                    fields.Add (new ContactField (name, Pretty.BirthdayOrAnniversary (date)));
+                }
+            }
+
+            // Relationships next
+            var relationships = contact.Relationships;
+            foreach (var relationship in relationships) {
+                var name = ContactsHelper.ExchangeNameToLabel (relationship.Name);
+                fields.Add (new ContactField (name, relationship.Value));
+            }
+
+            // Finally any other fields
+            var others = ContactsHelper.GetTakenMiscNames (contact);
+            foreach (var attr in others) {
+                var name = ContactsHelper.ExchangeNameToLabel (attr);
+                var val = ContactsHelper.MiscContactAttributeNameToValue (attr, contact);
+                fields.Add (new ContactField (name, val));
+            }
+
+            return fields;
+        }
+
     }
 
     #endregion

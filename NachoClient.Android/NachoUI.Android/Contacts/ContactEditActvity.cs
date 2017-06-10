@@ -72,6 +72,7 @@ namespace NachoClient.AndroidClient
 			base.OnCreate (savedInstanceState);
 			SetContentView (Resource.Layout.ContactEditActivity);
 			FindSubviews ();
+            Toolbar.Title = "";
 			SetSupportActionBar (Toolbar);
 			SupportActionBar.SetDisplayHomeAsUpEnabled (true);
 		}

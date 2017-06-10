@@ -24,7 +24,9 @@ namespace NachoClient.AndroidClient
         public const string EXTRA_THREAD_ID = "NachoClient.AndroidClient.MessageListActivity.EXTRA_THREAD_ID";
         public const string EXTRA_FOLDER_ID = "NachoClient.AndroidClient.MessageListActivity.EXTRA_FOLDER_ID";
         public const string EXTRA_IS_DRAFTS = "NachoClient.AndroidClient.MessageListActivity.EXTRA_IS_DRAFTS";
+        public const string EXTRA_CONTACT_ID = "NachoClient.AndroidClient.MessageListActivity.EXTRA_CONTACT_ID";
 
+        McContact Contact;
         McFolder Folder;
         string ThreadId;
         bool IsDrafts;
@@ -50,6 +52,13 @@ namespace NachoClient.AndroidClient
         {
             var intent = BuildFolderIntent (context, folder);
             intent.PutExtra (EXTRA_IS_DRAFTS, true);
+            return intent;
+        }
+
+        public static Intent BuildContactIntent (Context context, McContact contact)
+        {
+            var intent = new Intent (context, typeof (MessageListActivity));
+            intent.PutExtra (EXTRA_CONTACT_ID, contact.Id);
             return intent;
         }
 
@@ -85,7 +94,13 @@ namespace NachoClient.AndroidClient
             SetContentView (Resource.Layout.MessageListActivity);
             FindSubviews ();
             if (ThreadId == null) {
-                Toolbar.Title = Folder.DisplayName;
+                if (Contact != null) {
+                    Toolbar.Title = Contact.GetDisplayName ();
+                } else if (Folder != null) {
+                    Toolbar.Title = Folder.DisplayName;
+                } else {
+                    Toolbar.Title = "";
+                }
             } else {
                 Toolbar.Title = "";
             }
@@ -102,6 +117,8 @@ namespace NachoClient.AndroidClient
                     messages = new NachoDraftMessages (Folder);
                 } else if (ThreadId != null) {
                     messages = new NachoThreadedEmailMessages (Folder, ThreadId);
+                } else if (Contact != null) {
+                    messages = new UserInteractionEmailMessages (Contact);
                 } else {
                     messages = new NachoFolderMessages (Folder);
                 }
@@ -119,6 +136,7 @@ namespace NachoClient.AndroidClient
         {
             var bundle = Intent.Extras;
             Folder = null;
+            Contact = null;
             IsDrafts = false;
             ThreadId = null;
             if (bundle.ContainsKey (EXTRA_FOLDER_ID)) {
@@ -129,6 +147,9 @@ namespace NachoClient.AndroidClient
                 } else if (bundle.ContainsKey (EXTRA_THREAD_ID)) {
                     ThreadId = bundle.GetString (EXTRA_THREAD_ID);
                 }
+            } else if (bundle.ContainsKey (EXTRA_CONTACT_ID)) {
+                var contactId = bundle.GetInt (EXTRA_CONTACT_ID);
+                Contact = McContact.QueryById<McContact> (contactId);
             }
         }
 
@@ -161,7 +182,15 @@ namespace NachoClient.AndroidClient
 
         void ComposeMessage ()
         {
-            var intent = MessageComposeActivity.NewMessageIntent (this, Folder.AccountId);
+            int accountId;
+            string email = null;
+            if (Contact != null) {
+                accountId = Contact.AccountId;
+                email = Contact.GetPrimaryCanonicalEmailAddress ();
+            } else {
+                accountId = Folder.AccountId;
+            }
+            var intent = MessageComposeActivity.NewMessageIntent (this, accountId, email);
             StartActivity (intent);
         }
 

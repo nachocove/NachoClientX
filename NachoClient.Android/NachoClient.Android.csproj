@@ -1792,6 +1792,15 @@
     <AndroidResource Include="Resources\layout\ContactsSearchFragment.axml" />
     <AndroidResource Include="Resources\menu\contact_edit.xml" />
     <AndroidResource Include="Resources\menu\contact_view.xml" />
+    <AndroidResource Include="Resources\layout\ContactViewInfoItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\contact_action_call.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\contact_action_email.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\contact_action_call.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\contact_action_email.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\contact_action_call.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\contact_action_email.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\contact_action_call.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\contact_action_email.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

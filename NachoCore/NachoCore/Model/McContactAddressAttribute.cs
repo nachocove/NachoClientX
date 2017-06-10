@@ -29,6 +29,35 @@ namespace NachoCore.Model
 
         /// Postal code of the contact's alternate address
         public string PostalCode { get; set; }
+
+        public string FormattedAddress {
+            get {
+                var lines = new List<string>();
+                if (!String.IsNullOrWhiteSpace (Street)){
+                    lines.Add (Street);
+                }
+                if (!String.IsNullOrWhiteSpace (City) || !String.IsNullOrWhiteSpace (State) || !String.IsNullOrWhiteSpace (PostalCode)) {
+                    string line = null;
+                    if (!String.IsNullOrWhiteSpace (City) && !String.IsNullOrWhiteSpace (State)) {
+                        line = City + ", " + State;
+                    } else if (!String.IsNullOrEmpty (City)) {
+                        line = City;
+                    } else if (!String.IsNullOrEmpty (State)) {
+                        line = State;
+                    }
+                    if (line == null) {
+                        line = PostalCode;
+                    } else {
+                        line += " " + PostalCode;
+                    }
+                    lines.Add (line);
+                }
+                if (!String.IsNullOrWhiteSpace (Country)) {
+                    lines.Add (Country);
+                }
+                return String.Join ("\n", lines);
+            }
+        }
     }
 }
 

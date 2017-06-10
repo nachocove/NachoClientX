@@ -20,7 +20,6 @@ namespace NachoCore
         {
             this.contact = contact;
             threadList = new List<McEmailMessageThread> ();
-            BackgroundRefresh (completionAction: null);
         }
 
         public override bool BeginRefresh (out List<int> adds, out List<int> deletes)

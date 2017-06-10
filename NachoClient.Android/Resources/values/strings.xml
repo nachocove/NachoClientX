@@ -166,6 +166,13 @@
     <string name="contact_action_delete">Delete</string>
     <string name="contact_delete_confirmation_message">Deleting this contact will permanently remove it from your device</string>
     <string name="contact_delete_confirmation_accept">Yes, Delete Contact</string>
+    <string name="contact_more_messages">See Older Messages</string>
+    <string name="contact_email_button">Email</string>
+    <string name="contact_call_button">Call</string>
+    <string name="contact_interactions">Interactions</string>
+    <string name="contact_fields">Contact</string>
+    <string name="contact_field_email_label">Email</string>
+    <string name="contact_field_phone_label">Phone</string>
 
     <!-- Contact Edit -->
     <string name="contact_edit_action_save">Save</string>
