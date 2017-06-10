@@ -105,7 +105,8 @@ namespace NachoClient.AndroidClient
                 var accountId = Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0);
                 Contact = new McContact ();
                 Contact.AccountId = accountId;
-                // TODO: other fields (See iOS for guidance)?
+                Contact.Source = McAbstrItem.ItemSource.ActiveSync;
+                Contact.CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
             }
             ContactEditFragment.Contact = Contact;
         }
@@ -164,6 +165,7 @@ namespace NachoClient.AndroidClient
 
         void Save ()
         {
+            ContactEditFragment.Save ();
         }
 
         void SaveAndFinish ()

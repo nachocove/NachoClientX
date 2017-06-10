@@ -10,7 +10,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="?attr/contactItemPaddingLeft"
-        android:paddingTop="?attr/contactItemPaddingTop">
+        android:paddingTop="20dp"
+        android:paddingRight="?attr/contactItemPaddingRight"
+        android:paddingBottom="20dp">
         <nachoclient.androidclient.PortraitView
             android:id="@+id/portrait"
             android:layout_width="60dp"
@@ -27,9 +29,7 @@
                 android:orientation="vertical"
                 android:layout_gravity="center_vertical"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingRight="?attr/contactItemPaddingRight"
-                android:paddingBottom="?attr/contactItemPaddingBottom">
+                android:layout_height="wrap_content">
                 <LinearLayout
                     android:orientation="vertical"
                     android:layout_gravity="center_vertical"

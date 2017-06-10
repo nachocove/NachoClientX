@@ -170,7 +170,7 @@
     <string name="contact_email_button">Email</string>
     <string name="contact_call_button">Call</string>
     <string name="contact_interactions">Interactions</string>
-    <string name="contact_fields">Contact</string>
+    <string name="contact_fields">Contact Details</string>
     <string name="contact_field_email_label">Email</string>
     <string name="contact_field_phone_label">Phone</string>
 
@@ -181,6 +181,13 @@
     <string name="contact_edit_close_discard">Discard Changes</string>
     <string name="contact_edit_delete_confirmation_message">Deleting this contact will permanently remove it from your device</string>
     <string name="contact_edit_delete_confirmation_accept">Yes, Delete Contact</string>
+    <string name="contact_edit_add_phone">Add Phone</string>
+    <string name="contact_edit_add_email">Add Email</string>
+    <string name="contact_edit_add_date">Add Date</string>
+    <string name="contact_edit_add_address">Add Address</string>
+    <string name="contact_edit_add_im">Add IM Address</string>
+    <string name="contact_edit_add_relationship">Add Relationship</string>
+    <string name="contact_edit_add_other">Add Other</string>
 
     <!-- General Settings -->
     <string name="settings_label">Settings</string>

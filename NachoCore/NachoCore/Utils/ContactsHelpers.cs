@@ -273,6 +273,27 @@ namespace NachoCore.Utils
             }
         }
 
+        public static void SaveContact (McContact contact, string notes)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                McBody body = McBody.QueryById<McBody> (contact.BodyId);
+                if (body != null) {
+                    body.UpdateData (notes);
+                } else {
+                    contact.BodyId = McBody.InsertFile (contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, notes).Id;
+                }
+                if (contact.Id == 0) {
+                    contact.Insert ();
+                    var folder = McFolder.GetDefaultContactFolder (contact.AccountId);
+                    folder.Link (contact);
+                    NachoCore.BackEnd.Instance.CreateContactCmd (contact.AccountId, contact.Id, folder.Id);
+                } else {
+                    contact.Update ();
+                    NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                }
+            });
+        }
+
         public static string ExchangeNameToLabel (string name, string defaultLabel = null)
         {
             if (name == null) {
@@ -712,18 +733,12 @@ namespace NachoCore.Utils
                 fields.Add (new ContactField (name, im.Value));
             }
 
-            // Dates next, there are only two possible and they work a little different from other fields,
-            // we have to check each for a value
-            var dateAttributes = new string [] {
-                Xml.Contacts.Birthday,
-                Xml.Contacts.Anniversary
-            };
-
-            foreach (var attr in dateAttributes) {
-                var date = contact.GetDateAttribute (attr);
-                if (date != DateTime.MinValue) {
-                    var name = ContactsHelper.ExchangeNameToLabel (attr, attr);
-                    fields.Add (new ContactField (name, Pretty.BirthdayOrAnniversary (date)));
+            // Dates next
+            var dates = contact.Dates;
+            foreach (var date in dates) {
+                if (date.Value != DateTime.MinValue) {
+                    var name = ContactsHelper.ExchangeNameToLabel (date.Name, date.Name);
+                    fields.Add (new ContactField (name, Pretty.BirthdayOrAnniversary (date.Value)));
                 }
             }
 
@@ -734,12 +749,23 @@ namespace NachoCore.Utils
                 fields.Add (new ContactField (name, relationship.Value));
             }
 
-            // Finally any other fields
+            // Any other fields next
             var others = ContactsHelper.GetTakenMiscNames (contact);
             foreach (var attr in others) {
                 var name = ContactsHelper.ExchangeNameToLabel (attr);
                 var val = ContactsHelper.MiscContactAttributeNameToValue (attr, contact);
                 fields.Add (new ContactField (name, val));
+            }
+
+            // Finally notes
+            if (contact.BodyId != 0) {
+                var body = McBody.QueryById<McBody> (contact.BodyId);
+                if (body != null) {
+                    var notes = body.GetContentsString ();
+                    if (!String.IsNullOrWhiteSpace (notes)) {
+                        fields.Add (new ContactField ("Notes", notes));
+                    }
+                }
             }
 
             return fields;
