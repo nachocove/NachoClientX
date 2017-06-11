@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:clickable="true"
     android:background="?attr/selectableItemBackground">
     <LinearLayout
         android:orientation="vertical"
         android:gravity="center_vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:paddingLeft="?attr/listPreferredItemPaddingLeft"
         android:paddingRight="?attr/listPreferredItemPaddingRight"
         android:paddingTop="?attr/listPreferredItemPaddingLeft"
@@ -17,20 +17,20 @@
         <TextView
             android:id="@+id/setting_name"
             android:text="@string/demo_setting_name"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="left"
             android:textAppearance="?attr/textAppearanceListItem" />
         <TextView
             android:id="@+id/setting_detail"
             android:text="@string/demo_setting_detail"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="left"
             android:textAppearance="?attr/textAppearanceListItemDetail" />
     </LinearLayout>
     <View
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="?attr/colorListItemSeparator" />
 </LinearLayout>

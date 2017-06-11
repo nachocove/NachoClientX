@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:background="@color/NachoBackgroundGray"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="3dp">
     <TextView
@@ -65,7 +65,7 @@
                     <TextView
                         android:id="@+id/preview"
                         android:text="@string/demo_preview"
-                        android:layout_width="fill_parent"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingLeft="10dp"
                         android:paddingTop="5dp"
@@ -81,7 +81,7 @@
                     <LinearLayout
                         android:id="@+id/attachment_list_views"
                         android:orientation="vertical"
-                        android:layout_width="fill_parent"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@android:color/white" />
                 </LinearLayout>

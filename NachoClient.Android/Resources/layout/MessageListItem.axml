@@ -2,13 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/background"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content">
     <LinearLayout
         android:id="@+id/content"
         android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:paddingLeft="?attr/messageItemPaddingLeft"
         android:clickable="true"
         android:background="?attr/selectableItemBackground">
@@ -38,7 +38,7 @@
             android:layout_weight="1.0">
             <LinearLayout
                 android:orientation="horizontal"
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingRight="?attr/messageItemPaddingRight">
                 <LinearLayout
@@ -49,7 +49,7 @@
                     android:paddingTop="?attr/messageItemPaddingTop">
                     <LinearLayout
                         android:orientation="horizontal"
-                        android:layout_width="fill_parent"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingBottom="2dp">
                         <TextView
@@ -73,7 +73,7 @@
                     </LinearLayout>
                     <LinearLayout
                         android:orientation="horizontal"
-                        android:layout_width="fill_parent"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingBottom="?attr/messageItemPaddingBottom">
                         <TextView
@@ -114,14 +114,14 @@
                 <View
                     android:id="@+id/account_indicator"
                     android:layout_width="3dp"
-                    android:layout_height="fill_parent"
+                    android:layout_height="match_parent"
                     android:background="?attr/colorAccent"
                     android:layout_marginLeft="4dp"
                     android:layout_marginTop="1dp"
                     android:layout_marginBottom="1dp" />
             </LinearLayout>
             <View
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?attr/colorListItemSeparator" />
         </LinearLayout>

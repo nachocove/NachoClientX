@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground">
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="?attr/accountPickerItemPaddingLeft"
         android:paddingRight="?attr/accountPickerItemPaddingRight"
@@ -25,18 +25,18 @@
             android:gravity="center_vertical"
             android:layout_width="0dp"
             android:layout_weight="1.0"
-            android:layout_height="fill_parent">
+            android:layout_height="match_parent">
             <TextView
                 android:id="@+id/account_name"
                 android:text="@string/demo_account"
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:textAppearance="?attr/textAppearanceListItem" />
             <TextView
                 android:id="@+id/account_email"
                 android:text="@string/demo_email"
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:textAppearance="?attr/textAppearanceListItemDetail" />

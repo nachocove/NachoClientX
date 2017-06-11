@@ -28,7 +28,7 @@
             <LinearLayout
                 android:orientation="vertical"
                 android:layout_gravity="center_vertical"
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingRight="?attr/contactItemPaddingRight"
                 android:paddingBottom="?attr/contactItemPaddingBottom">
@@ -36,13 +36,13 @@
                     android:orientation="vertical"
                     android:layout_gravity="center_vertical"
                     android:gravity="center_vertical"
-                    android:layout_width="fill_parent"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="40dp">
                     <TextView
                         android:id="@+id/name"
                         android:text="@string/demo_contact_name"
-                        android:layout_width="fill_parent"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="left"
                         android:singleLine="true"
@@ -51,7 +51,7 @@
                     <TextView
                         android:id="@+id/detail"
                         android:text="@string/demo_contact_email"
-                        android:layout_width="fill_parent"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:singleLine="true"
                         android:ellipsize="end"
@@ -59,7 +59,7 @@
                 </LinearLayout>
             </LinearLayout>
             <View
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?attr/colorListItemSeparator" />
         </LinearLayout>

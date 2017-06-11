@@ -3,11 +3,11 @@
     <LinearLayout
         android:id="@+id/advanced_imap_view"
         android:orientation="vertical"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <LinearLayout
             android:orientation="horizontal"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <EditText
@@ -37,7 +37,7 @@
             android:textSize="17dp" />
         <LinearLayout
             android:orientation="horizontal"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
@@ -67,7 +67,7 @@
             android:layout_height="10dp" />
         <LinearLayout
             android:orientation="horizontal"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
@@ -106,7 +106,7 @@
             android:textSize="17dp" />
         <LinearLayout
             android:orientation="horizontal"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
@@ -136,7 +136,7 @@
             android:layout_height="10dp" />
         <LinearLayout
             android:orientation="horizontal"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView

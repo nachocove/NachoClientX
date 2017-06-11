@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:gravity="center"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="?attr/colorPrimary"
     tools:context=".SetupFragment">
     <ImageView
@@ -15,7 +15,7 @@
         android:background="?attr/colorPrimary" />
     <TextView
         android:text="@string/startup_welcome"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="18dp"
         android:gravity="center"
@@ -23,7 +23,7 @@
         android:textAppearance="?attr/textAppearanceWelcome" />
     <TextView
         android:text="@string/app_name"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textSize="29dp"
