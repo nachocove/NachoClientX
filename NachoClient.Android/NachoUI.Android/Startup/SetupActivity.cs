@@ -71,7 +71,7 @@ namespace NachoClient.AndroidClient
                 Log.Info (Log.LOG_UI, "SetupActivity: found incompatible migration");
                 currentState = StartupViewState.Incompatible;
                 // Display an alert view and wait to get out
-                new Android.Support.V7.App.AlertDialog.Builder (this).SetTitle (Resource.String.incompatible_version).SetMessage (Resource.String.incompatible_message).Show ();
+                new Android.Support.V7.App.AlertDialog.Builder (this).SetTitle (Resource.String.startup_incompatible_version).SetMessage (Resource.String.startup_incompatible_message).Show ();
                 return;
             }
             if (currentState == StartupViewState.Startup) {

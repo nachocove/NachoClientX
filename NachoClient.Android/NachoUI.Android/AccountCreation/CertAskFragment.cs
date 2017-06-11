@@ -85,7 +85,7 @@ namespace NachoClient.AndroidClient
             var inflater = this.Activity.LayoutInflater;
             var view = inflater.Inflate (Resource.Layout.CertAskFragment, null);
 
-            var certFmt = GetString (Resource.String.cert_ask);
+            var certFmt = GetString (Resource.String.cert_ask_prompt);
             var certAskView = view.FindViewById<TextView> (Resource.Id.cert_ask);
             certAskView.Text = String.Format (certFmt, certCommonName, certOrganization);
 
@@ -93,11 +93,11 @@ namespace NachoClient.AndroidClient
             certInfoView.Text = certInfo;
 
             builder.SetView (view);
-            builder.SetTitle (Resource.String.security_warning);
-            builder.SetPositiveButton (Resource.String.allow, (sender, args) => {
+            builder.SetTitle (Resource.String.cert_ask_title);
+            builder.SetPositiveButton (Resource.String.cert_ask_allow, (sender, args) => {
                 listener.AcceptCertificate (accountId);
             });
-            builder.SetNegativeButton (Resource.String.cancel, (sender, args) => {
+            builder.SetNegativeButton (Resource.String.cert_ask_cancel, (sender, args) => {
                 listener.DontAcceptCertificate (accountId);
             });
 

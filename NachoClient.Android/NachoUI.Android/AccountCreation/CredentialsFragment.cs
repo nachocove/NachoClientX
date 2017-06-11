@@ -124,7 +124,7 @@ namespace NachoClient.AndroidClient
 
             imageview.SetImageResource (Util.GetAccountServiceImageId (service));
 
-            var serviceFormat = GetString (Resource.String.get_credentials);
+            var serviceFormat = GetString (Resource.String.credentials_prompt);
             labelview.Text = String.Format (serviceFormat, NcServiceHelper.AccountServiceName (service));
 
             emailField = view.FindViewById<EditText> (Resource.Id.email);
@@ -359,7 +359,7 @@ namespace NachoClient.AndroidClient
                     if (advancedSubview != null) {
                         IsShowingAdvanced = true;
                         advancedSubview.Visibility = ViewStates.Visible;
-                        advancedButton.SetText (Resource.String.hide_advanced_signin);
+                        advancedButton.SetText (Resource.String.credentials_hide_advanced);
                         advancedFieldsViewController.PopulateFieldsWithAccount (Account);
                     }
                 }
@@ -367,7 +367,7 @@ namespace NachoClient.AndroidClient
                 if (service == McAccount.AccountServiceEnum.Exchange) {
                     IsShowingAdvanced = false;
                     advancedSubview.Visibility = ViewStates.Gone;
-                    advancedButton.SetText (Resource.String.advanced_signin);
+                    advancedButton.SetText (Resource.String.credentials_advanced);
                     advancedFieldsViewController.UnpopulateAccount (Account);
                 }
             }

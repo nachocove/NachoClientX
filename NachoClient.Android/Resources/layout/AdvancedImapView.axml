@@ -17,7 +17,7 @@
                 android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:hint="@string/username"
+                android:hint="@string/advanced_username"
                 android:paddingLeft="60dp"
                 android:background="@android:color/white"
                 android:padding="5dp"
@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="20dp" />
         <TextView
-            android:text="@string/incoming_mail_server"
+            android:text="@string/advanced_incoming_mail_server"
             android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -41,7 +41,7 @@
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
-                android:text="@string/host"
+                android:text="@string/advanced_host"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
@@ -55,7 +55,7 @@
                 android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:hint="@string/imap_server_example"
+                android:hint="@string/advanced_imap_server_example"
                 android:drawablePadding="10dp"
                 android:background="@android:color/white"
                 android:padding="5dp"
@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
-                android:text="@string/port"
+                android:text="@string/advanced_port"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
@@ -80,13 +80,13 @@
                 android:layout_toLeftOf="@+id/imap_port" />
             <EditText
                 android:id="@+id/imap_port"
-                android:text="@string/default_imap_port"
+                android:text="@string/advanced_default_imap_port"
                 android:textSize="17dp"
                 android:textColor="@android:color/black"
                 android:inputType="number"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:hint="@string/default_imap_port"
+                android:hint="@string/advanced_default_imap_port"
                 android:drawablePadding="10dp"
                 android:background="@android:color/white"
                 android:padding="5dp"
@@ -97,7 +97,7 @@
             android:layout_width="match_parent"
             android:layout_height="20dp" />
         <TextView
-            android:text="@string/outgoing_mail_server"
+            android:text="@string/advanced_outgoing_mail_server"
             android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -110,7 +110,7 @@
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
-                android:text="@string/host"
+                android:text="@string/advanced_host"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
@@ -124,7 +124,7 @@
                 android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:hint="@string/smtp_server_example"
+                android:hint="@string/advanced_smtp_server_example"
                 android:drawablePadding="10dp"
                 android:background="@android:color/white"
                 android:padding="5dp"
@@ -140,7 +140,7 @@
             android:layout_height="wrap_content"
             android:background="@android:color/white">
             <TextView
-                android:text="@string/port"
+                android:text="@string/advanced_port"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
@@ -149,13 +149,13 @@
                 android:layout_toLeftOf="@+id/smtp_port" />
             <EditText
                 android:id="@+id/smtp_port"
-                android:text="@string/default_smtp_port"
+                android:text="@string/advanced_default_smtp_port"
                 android:textColor="@android:color/black"
                 android:textSize="17dp"
                 android:inputType="number"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:hint="@string/default_smtp_port"
+                android:hint="@string/advanced_default_smtp_port"
                 android:drawablePadding="10dp"
                 android:background="@android:color/white"
                 android:padding="5dp"

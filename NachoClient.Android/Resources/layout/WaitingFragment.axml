@@ -13,7 +13,7 @@
         android:layout_above="@id/textview" />
     <TextView
         android:id="@+id/textview"
-        android:text="@string/syncing"
+        android:text="@string/waiting_syncing"
         android:textSize="17dp"
         android:textColor="@android:color/white"
         android:layout_width="match_parent"

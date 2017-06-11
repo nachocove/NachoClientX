@@ -6,6 +6,8 @@
 
     <!-- Startup -->
     <string name="startup_welcome">Welcome to</string>
+    <string name="startup_incompatible_version">Incompatible Version</string>
+    <string name="startup_incompatible_message">"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app."</string>
 
     <!-- Welcome -->
     <string name="welcome_company">company</string>
@@ -13,6 +15,43 @@
     <string name="welcome_mdm_format">Start by setting up your {0} account.</string>
     <string name="welcome_continue">Welcome Back!  We need to finish setting up your account.</string>
     <string name="welcome_continue_action">Continue</string>
+
+    <!-- Account Creation Choose Provider -->
+    <string name="choose_provider_title">Choose Provider</string>
+
+    <!-- Credentials Fragment -->
+    <string name="credentials_submit">Submit</string>
+    <string name="credentials_prompt">Please provide your {0} information</string>
+    <string name="credentials_email_hint">Email Address</string>
+    <string name="credentials_password_hint">Password</string>
+    <string name="credentials_support">Customer Support</string>
+    <string name="credentials_title">Enter Credentials</string>
+    <string name="credentials_advanced">Advanced Sign In</string>
+    <string name="credentials_hide_advanced">Hide Advanced Sign In</string>
+
+    <!-- Advanced Credentials -->
+    <string name="advanced_server">Server</string>
+    <string name="advanced_domain">Domain</string>
+    <string name="advanced_username">Username</string>
+    <string name="advanced_incoming_mail_server">Incoming Mail Server</string>
+    <string name="advanced_outgoing_mail_server">Outgoing Mail Server</string>
+    <string name="advanced_imap_server_example">imap.example.com</string>
+    <string name="advanced_smtp_server_example">smtp.example.com</string>
+    <string name="advanced_port">Port</string>
+    <string name="advanced_host">Host</string>
+    <string name="advanced_default_imap_port">993</string>
+    <string name="advanced_default_smtp_port">587</string>
+
+    <!-- Cert Ask Fragment -->
+    <string name="cert_ask_demo_certificate">Subject: CN=outlook.com</string>
+    <string name="cert_ask_cancel">Cancel</string>
+    <string name="cert_ask_prompt">Do you want to allow {0} from {1} to provide information about your account?</string>
+    <string name="cert_ask_warning">You should only allow sources you know and trust to configure your account.</string>
+    <string name="cert_ask_allow">Allow</string>
+    <string name="cert_ask_title">Security Warning</string>
+
+    <!-- Waiting Fragment -->
+    <string name="waiting_syncing">Syncing your inbox...</string>
 
     <!-- Main Activity -->
     <string name="main_drawer_open">Open</string>
@@ -310,212 +349,4 @@
     <string name="demo_contact_edit_add_button">Add Email</string>
     <string name="demo_contact_edit_field_name">Mobile</string>
     <string name="demo_contact_edit_field_hint">Email Address</string>
-
-
-    <!-- OLD -->
-    <!-- TODO: replace and remove -->
-    <string name="hello">Hello World, Click Me!</string>
-    <string name="cd_logo">logo</string>
-    <string name="open">open navigation drawer</string>
-    <string name="close">close navigation drawer</string>
-    <string name="submit">Submit</string>
-    <string name="demo">Continue</string>
-    <string name="skip">Skip</string>
-    <string name="welcome">Start by choosing your email service provider</string>
-    <string name="welcome_back">Welcome Back!  We need to finish setting up your account.</string>
-    <string name="get_started">Get Started</string>
-    <string name="get_credentials">Please provide your {0} information</string>
-    <string name="email_hint">Email Address</string>
-    <string name="password_hint">Password</string>
-    <string name="customersupport">Customer Support</string>
-    <string name="hot">Hot</string>
-    <string name="inbox">Inbox</string>
-    <string name="mail">Mail</string>
-    <string name="calendar">Calendar</string>
-    <string name="files">Files</string>
-    <string name="support">Support</string>
-	<string name="about">About Nacho Mail</string>
-    <string name="contacts">Contacts</string>
-    <string name="chats">Chats</string>
-    <string name="more">More</string>
-    <string name="add_account">Add Account</string>
-    <string name="connect_to_salesforce">Connect to Salesforce</string>
-    <string name="demo_subject">What is the deal with this long subject line?</string>
-    <string name="demo_date">Wed, Jun 17 - 2:58pm</string>
-    <string name="demo_preview">Get the most from your inbox today!  Get Nacho Mail pronto for your Chromebook."</string>
-    <string name="demo_initials">JB</string>
-    <string name="demo_contact_phone">505 555 5678</string>
-    <string name="demo_contact_section_header">A</string>
-    <string name="demo_attachment_size">JPG file - 23.4KB</string>
-    <string name="demo_attachment_count">3</string>
-    <string name="demo_signature">Sent by Nacho Mail</string>
-    <string name="demo_days_to_sync">One month</string>
-    <string name="demo_notifications">Hot, VIPs, Inbox</string>
-    <string name="demo_certificate">Subject: CN=outlook.com</string>
-    <string name="to_inbox">Go to Inbox</string>
-    <string name="to_deadline">Go to Deadlines</string>
-    <string name="to_deferred">Go to Deferred Messages</string>
-    <string name="account_settings">Account Settings</string>
-    <string name="salesforce_settings">Salesforce Settings</string>
-    <string name="to">To:</string>
-    <string name="cc">Cc:</string>
-    <string name="subject">Subject:</string>
-    <string name="message_not_available">Message not available</string>
-    <string name="defer_message_until">Defer Message</string>
-    <string name="set_deadline">Set Deadline</string>
-    <string name="choose_folder">Choose Folder</string>
-    <string name="email">Email</string>
-    <string name="call">Call</string>
-    <string name="event_self_organizer">You are the organizer</string>
-    <string name="event_organizer">ORGANIZER</string>
-    <string name="event_when">WHEN</string>
-    <string name="event_location">LOCATION</string>
-    <string name="event_description">DESCRIPTION</string>
-    <string name="event_attachments">ATTACHMENTS</string>
-    <string name="event_attendees">ATTENDEES</string>
-    <string name="event_notes">NOTES</string>
-    <string name="event_calendar">CALENDAR</string>
-    <string name="event_cancel">Cancel this meeting</string>
-    <string name="event_remove">Remove from calendar</string>
-    <string name="event_cancelled">The meeting has been cancelled</string>
-    <string name="event_attend">Attend</string>
-    <string name="event_maybe">Maybe</string>
-    <string name="event_decline">Decline</string>
-    <string name="welcometo">Welcome to</string>
-    <string name="nachomail">Nacho Mail</string>
-    <string name="incompatible_version">Incompatible Version</string>
-    <string name="incompatible_message">"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app."</string>
-    <string name="gettingstarted">Start by choosing your email service provider</string>
-    <string name="mdmgettingstarted">Start by setting up your {0} account.</string>
-    <string name="choose_provider">Choose Provider</string>
-    <string name="enter_credentials">Enter Credentials</string>
-    <string name="advanced_signin">Advanced Sign In</string>
-    <string name="hide_advanced_signin">Hide Advanced Sign In</string>
-    <string name="syncing">Syncing your inbox...</string>
-    <string name="server">Server</string>
-    <string name="domain">Domain</string>
-    <string name="username">Username</string>
-    <string name="incoming_mail_server">Incoming Mail Server</string>
-    <string name="outgoing_mail_server">Outgoing Mail Server</string>
-    <string name="imap_server_example">imap.example.com</string>
-    <string name="smtp_server_example">smtp.example.com</string>
-    <string name="port">Port</string>
-    <string name="host">Host</string>
-    <string name="default_imap_port">993</string>
-    <string name="default_smtp_port">587</string>
-    <string name="search">Search</string>
-    <string name="cancel">Cancel</string>
-    <string name="happy">We\'re always more than happy to hear from you.</string>
-    <string name="phone_support">Call us at +1 (971) 803-6226</string>
-    <string name="email_support">Send us a message at support@nachocove.com</string>
-    <string name="version_string">Nacho Mail version {0}</string>
-    <string name="reach">How can we reach you?</string>
-    <string name="reach_prompt">yourname@email.com</string>
-    <string name="assist">What can we help you with?</string>
-    <string name="assist_prompt">Briefly describe what\'s going on</string>
-    <string name="mission_1">Nacho Cove believes that productivity software is more than just a great email app with contacts and calendar capability.</string>
-    <string name="mission_2">In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way.
-    </string>
-    <string name="message_support">Message Support</string>
-    <string name="deferred">Deferred</string>
-    <string name="deadline">Deadlines</string>
-    <string name="likely_to_read">Focused</string>
-    <string name="no_hot_event">No upcoming events</string>
-    <string name="contact_email">EMAIL</string>
-    <string name="contact_phone">PHONE</string>
-    <string name="attachments">Attachments</string>
-    <string name="description">Description</string>
-    <string name="update_password">Update Password</string>
-    <string name="update_settings">Update Settings</string>
-    <string name="signature">Signature</string>
-    <string name="days_to_sync">Days To Sync</string>
-    <string name="notifications">Notifications</string>
-    <string name="fast_notification">Fast Notification</string>
-    <string name="delete_account">Delete This Account</string>
-    <string name="advanced_settings">Advanced Settings</string>
-    <string name="server_error">Server Error</string>
-    <string name="certificate_issue">Certificate Issue"</string>
-    <string name="password_expires">Password expires {0}</string>
-    <string name="description_instructions">Create a descriptive label for this account.</string>
-    <string name="signature_instructions">Create a signature that will appear at the end of every email that you send.</string>
-    <string name="save">Save</string>
-    <string name="removing_account">Removing account...</string>
-    <string name="remove_account">Remove Account</string>
-    <string name="remove_account_warning">Remove the accounts and its data from this device</string>
-    <string name="dismiss">Dismiss</string>
-    <string name="tutorial_done">Go to Nacho Mail</string>
-    <string name="tut1_swipe">Swipe left to continue</string>
-    <string name="tut1_title">Welcome to Nacho Mail</string>
-    <string name="tut1_message">This tutorial will help you use Nacho Mail</string>
-    <string name="tut2_title">Your Email</string>
-    <string name="tut2_message">Important messages go to your Hot List\nAll messages can be found in Mail.</string>
-    <string name="tut3_title">Navigating Your Hot List</string>
-    <string name="tut3_message">Quickly browser through your Hot\nList by swiping up and down.</string>
-    <string name="tut4_title">Your Meetings and Events</string>
-    <string name="tut4_message">Your next meeting is here.  Manage\nyour schedule using Calendar.</string>
-    <string name="tut5_title">Just One Last Thing...</string>
-    <string name="tut5_message">Sliding right or left elsewhere will get you\nshortcuts and options for the items.</string>
-    <string name="cert_ask">Do you want to allow {0} from {1} to provide information about your account?</string>
-    <string name="cert_warn">You should only allow sources you know and trust to configure your account.</string>
-    <string name="allow">Allow</string>
-    <string name="security_warning">Security Warning</string>
-    <string name="contact">Contact</string>
-    <string name="interactions">Interactions</string>
-    <string name="notes">Notes</string>
-    <string name="show_hot_cards">Show Cards on the Hot screen</string>
-    <string name="thread">Thread</string>
-    <string name="recent_folders">Recent Folders</string>
-    <string name="default_folders">Default Folders</string>
-    <string name="your_folders">Your Folders</string>
-    <string name="release_notes">Release Notes</string>
-    <string name="privacy_policy">Privacy Policy</string>
-    <string name="license_agreement">License Agreement</string>
-    <string name="open_source">Open Source Contributions</string>
-    <string name="download_error">Error downloading infomation.  Please try again.</string>
-    <string name="no_messages">No messages</string>
-    <string name="no_contacts">No contacts</string>
-    <string name="no_hot_messages">You do not have any more Hot messages.</string>
-    <string name="no_chats">No chats</string>
-    <string name="add_hot_messages">You can add Hot messages by tapping on the chili icon in your mail.</string>
-    <string name="menu_quick_reply">Quick Reply</string>
-    <string name="menu_create_deadline">Create Deadline</string>
-    <string name="menu_create_event">Create Event</string>
-    <string name="quick_response_title">Quick Messages</string>
-    <string name="intent_title">Message Intent</string>
-    <string name="attachment_picker_title">Add Attachment</string>
-    <string name="first_name">First Name</string>
-    <string name="middle_name">Middle Name</string>
-    <string name="last_name">Last Name</string>
-    <string name="suffix">Suffix</string>
-    <string name="company">Company</string>
-    <string name="delete_contact">Delete Contact</string>
-    <string name="add_phone">Add Phone</string>
-    <string name="add_email">Add Email</string>
-    <string name="add_date">Add Date</string>
-    <string name="add_address">Add Address</string>
-    <string name="add_im">Add IM Address</string>
-    <string name="add_relationship">Add Relationship</string>
-    <string name="add_other">Add Other</string>
-    <string name="edit_contact">Edit Contact</string>
-    <string name="new_contact">New Contact</string>
-    <string name="select_label">Select Label</string>
-    <string name="delete">Delete</string>
-    <string name="make_default">Make Default</string>
-    <string name="street">Street</string>
-    <string name="city">City</string>
-    <string name="state">State</string>
-    <string name="zip">Zip Code</string>
-    <string name="country">Country</string>
-    <string name="contact_not_available">Contact not available</string>
-    <string name="refresh_contacts">Refresh Contacts</string>
-    <string name="add_bcc">Automatically Add Bcc</string>
-    <string name="default_email_account">Default Email Account</string>
-    <string name="default_calendar_account">Default Calendar Account</string>
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
-    <string name="show_new">New</string>
-    <string name="show_all">All</string>
-    <string name="send">Send</string>
-    <string name="chat_prompt">Type a message...</string>
-	<string name="settings">Settings</string>
 </resources>

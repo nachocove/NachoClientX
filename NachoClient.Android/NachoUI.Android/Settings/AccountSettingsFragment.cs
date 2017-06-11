@@ -604,7 +604,7 @@ namespace NachoClient.AndroidClient
                     return;
                 } else if (position == FastNotifyPosition) {
                     var switchHolder = (holder as SettingsSwitchItemViewHolder);
-                    switchHolder.SetLabels (context.GetString (Resource.String.fast_notification));
+                    switchHolder.SetLabels (context.GetString (Resource.String.account_fast_notifications));
                     switchHolder.Switch.Checked = Account.FastNotificationEnabled;
                     switchHolder.SetChangeHandler ((sender, e) => {
                         Account.FastNotificationEnabled = e.IsChecked;
@@ -616,7 +616,7 @@ namespace NachoClient.AndroidClient
                 if (position == DefaultEmailPosition) {
                     var defaultAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
                     var switchHolder = (holder as SettingsSwitchItemViewHolder);
-                    switchHolder.SetLabels (context.GetString (Resource.String.default_email_account));
+                    switchHolder.SetLabels (context.GetString (Resource.String.account_default_email));
                     switchHolder.Switch.Checked = defaultAccount != null && defaultAccount.Id == Account.Id;
                     switchHolder.Switch.Enabled = !switchHolder.Switch.Checked;
                     switchHolder.SetChangeHandler ((sender, e) => {

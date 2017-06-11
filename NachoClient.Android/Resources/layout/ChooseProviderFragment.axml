@@ -6,7 +6,7 @@
     android:background="?attr/colorPrimary">
     <TextView
         android:id="@+id/textview"
-        android:text="@string/choose_provider"
+        android:text="@string/choose_provider_title"
         android:textSize="18dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
