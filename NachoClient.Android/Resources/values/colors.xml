@@ -51,33 +51,5 @@
     <color name="refresh_2">#F7511E</color>
     <color name="refresh_3">#FF850A</color>
     <color name="refresh_4">#FDB508</color>
-    <color name="NachoSwipeAttendeeOptional">#909090</color>
-    <color name="NachoSwipeAttendeeOptional_Pressed">#a0a090</color>
-    <color name="NachoSwipeAttendeeRemove">#e83d0e</color>
-    <color name="NachoSwipeAttendeeRemove_Pressed">#f84d0e</color>
-    <color name="NachoSwipeAttendeeRequired">#ff9b12</color>
-    <color name="NachoSwipeAttendeeRequired_Pressed">#ffab12</color>
-    <color name="NachoSwipeAttendeeResend">#00bad7</color>
-    <color name="NachoSwipeAttendeeResend_Pressed">#10cad7</color>
-    <color name="NachoSwipeCalendarForward">#00bad7</color>
-    <color name="NachoSwipeCalendarForward_Pressed">#10cad7</color>
-    <color name="NachoSwipeCalendarLate">#ff4747</color>
-    <color name="NachoSwipeCalendarLate_Pressed">#ff5747</color>
-    <color name="NachoSwipeContactCall">#f59827</color>
-    <color name="NachoSwipeContactCall_Pressed">#f5a827</color>
-    <color name="NachoSwipeContactEmail">#4f646d</color>
-    <color name="NachoSwipeContactEmail_Pressed">#5f746d</color>
-    <color name="NachoSwipeEmailArchive">#2bd9b2</color>
-    <color name="NachoSwipeEmailArchive_Pressed">#3be9b2</color>
-    <color name="NachoSwipeEmailDefer">#ffbb33</color>
-    <color name="NachoSwipeEmailDefer_Pressed">#ffcb33</color>
-    <color name="NachoSwipeEmailDelete">#ff3f20</color>
-    <color name="NachoSwipeEmailDelete_Pressed">#ff4f20</color>
-    <color name="NachoSwipeEmailMove">#909090</color>
-    <color name="NachoSwipeEmailMove_Pressed">#a0a090</color>
-    <color name="NachoSwipeFileDelete">#ff3f20</color>
-    <color name="NachoSwipeFileDelete_Pressed">#ef2f10</color>
-    <color name="NachoSwipeFileForward">#00bad7</color>
-    <color name="NachoSwipeFileForward_Pressed">#00aac7</color>
 	<!-- end old -->
 </resources>
