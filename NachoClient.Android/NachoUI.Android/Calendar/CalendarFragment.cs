@@ -540,7 +540,7 @@ namespace NachoClient.AndroidClient
                     }
                     DurationLabel.Text = duration;
                 }
-                DotView.SetBackgroundResource (Bind.ColorForUser (calendarEvent.GetColorIndex ()));
+                DotView.SetBackgroundResource (Util.ColorForUser (calendarEvent.GetColorIndex ()));
             }
         }
 

@@ -11,7 +11,7 @@ namespace NachoPlatform
 
         public static int PickRandomColorForUser ()
         {
-            return Bind.PickRandomColorForUser ();
+            return Util.PickRandomColorForUser ();
         }
     }
 }

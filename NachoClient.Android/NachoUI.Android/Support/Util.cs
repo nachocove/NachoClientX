@@ -122,7 +122,7 @@ namespace NachoClient.AndroidClient
         {
             McEmailAddress address;
             if (McEmailAddress.Get (accountId, email, out address)) {
-                return Bind.ColorForUser (address.ColorIndex);
+                return Util.ColorForUser (address.ColorIndex);
             } else {
                 return Resource.Drawable.UserColor0;
             }
@@ -220,7 +220,63 @@ namespace NachoClient.AndroidClient
             var portrait = McPortrait.QueryById<McPortrait> (portraitId);
             var drawable = Drawable.CreateFromPath (portrait.GetFilePath ());
             return drawable;
-        }
+		}
+
+		public static int ColorForUser (int index)
+		{
+			if (0 > index) {
+				NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_UI, "ColorForUser not set");
+				index = 1;
+			}
+			if (userColorMap.Length <= index) {
+				NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_UI, "ColorForUser out of range {0}", index);
+				index = 1;
+			}
+			return userColorMap [index];
+		}
+
+		static Random random = new Random ();
+
+		public static int PickRandomColorForUser ()
+		{
+			int randomNumber = random.Next (2, userColorMap.Length);
+			return randomNumber;
+		}
+
+		static int [] userColorMap = {
+			Resource.Drawable.UserColor0,
+			Resource.Drawable.UserColor1,
+			Resource.Drawable.UserColor2,
+			Resource.Drawable.UserColor3,
+			Resource.Drawable.UserColor4,
+			Resource.Drawable.UserColor5,
+			Resource.Drawable.UserColor6,
+			Resource.Drawable.UserColor7,
+			Resource.Drawable.UserColor8,
+			Resource.Drawable.UserColor9,
+			Resource.Drawable.UserColor10,
+			Resource.Drawable.UserColor11,
+			Resource.Drawable.UserColor12,
+			Resource.Drawable.UserColor13,
+			Resource.Drawable.UserColor14,
+			Resource.Drawable.UserColor15,
+			Resource.Drawable.UserColor16,
+			Resource.Drawable.UserColor17,
+			Resource.Drawable.UserColor18,
+			Resource.Drawable.UserColor19,
+			Resource.Drawable.UserColor20,
+			Resource.Drawable.UserColor21,
+			Resource.Drawable.UserColor22,
+			Resource.Drawable.UserColor23,
+			Resource.Drawable.UserColor24,
+			Resource.Drawable.UserColor25,
+			Resource.Drawable.UserColor26,
+			Resource.Drawable.UserColor27,
+			Resource.Drawable.UserColor28,
+			Resource.Drawable.UserColor29,
+			Resource.Drawable.UserColor30,
+			Resource.Drawable.UserColor31,
+		};
     }
 
     /// <summary>

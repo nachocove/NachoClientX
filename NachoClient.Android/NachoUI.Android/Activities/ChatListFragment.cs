@@ -428,7 +428,22 @@ namespace NachoClient.AndroidClient
 
             int unreadCount = 0;
             unreadCountsByChat.TryGetValue (chat.Id, out unreadCount);
-            Bind.BindChatListCell (chat, view, 0 < unreadCount);
+            var title = view.FindViewById<TextView> (Resource.Id.title);
+            var date = view.FindViewById<TextView> (Resource.Id.date);
+            var preview = view.FindViewById<TextView> (Resource.Id.preview);
+            var initials = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            var chatHasNew = view.FindViewById (Resource.Id.chat_has_new);
+
+            title.Text = chat.CachedParticipantsLabel;
+            date.Text = Pretty.TimeWithDecreasingPrecision (chat.LastMessageDate);
+            if (chat.LastMessagePreview == null) {
+                preview.Text = "";
+            } else {
+                preview.Text = chat.LastMessagePreview;
+            }
+
+            initials.SetPortraitId (chat.CachedPortraitId1, chat.CachedInitials1, ColorForUser (chat.CachedColor1));
+            chatHasNew.Visibility = (0 < unreadCount ? ViewStates.Visible : ViewStates.Invisible);
             return view;
         }
 

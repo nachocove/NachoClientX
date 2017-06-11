@@ -30,9 +30,7 @@ namespace NachoClient.AndroidClient
         NachoJavascriptMessageHandler,
         MessageComposerDelegate,
         NachoWebClientDelegate,
-        MessageComposeHeaderViewDelegate,
-        IntentFragmentDelegate,
-        QuickResponseFragmentDelegate
+        MessageComposeHeaderViewDelegate
     {
 
         private const string FRAGMENT_ACCOUNT_CHOOSER = "NachoClient.AndroidClient.MessageComposeFragment.FRAGMENT_ACCOUNT_CHOOSER";
@@ -422,34 +420,6 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
-        {
-            var intentFragment = new IntentFragment ();
-            intentFragment.Delegate = this;
-            intentFragment.Show (FragmentManager, "com.nachocove.nachomail.composeIntent");
-        }
-
-        public void IntentFragmentDidSelectIntent (NcMessageIntent.MessageIntent intent)
-        {
-            Composer.Message.Intent = intent.type;
-            Composer.Message.IntentDateType = MessageDeferralType.None;
-            Composer.Message.IntentDate = DateTime.MinValue;
-            UpdateHeaderIntentView ();
-            if (intent.dueDateAllowed) {
-                var deferralFragment = new ChooseDeferralFragment ();
-                deferralFragment.Show (FragmentManager, "com.nachocove.nachomail.deferral");
-                deferralFragment.type = NcMessageDeferral.MessageDateType.Intent;
-                deferralFragment.setOnDeferralSelected (IntentDateSelected);
-            }
-        }
-
-        public void IntentDateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            Composer.Message.IntentDateType = request;
-            Composer.Message.IntentDate = selectedDate;
-            UpdateHeaderIntentView ();
-        }
-
         public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
         {
             PickAttachment ();
@@ -465,28 +435,28 @@ namespace NachoClient.AndroidClient
             attachment.Unlink (Composer.Message);
         }
 
-        public void QuickResponseFragmentDidSelectResponse (QuickResponseFragment fragment, NcQuickResponse.QuickResponse response)
-        {
-            if (!EmailHelper.IsReplyAction (Composer.Kind) && !EmailHelper.IsForwardAction (Composer.Kind)) {
-                Composer.Message.Subject = response.subject;
-                UpdateHeaderSubjectView ();
-            }
-            if (Composer.IsMessagePrepared) {
-                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText ());
-                EvaluateJavascript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
-            } else {
-                Composer.InitialText = response.body;
-            }
-            if (response.intent != null) {
-                Composer.Message.Intent = response.intent.type;
-            } else {
-                Composer.Message.Intent = McEmailMessage.IntentType.None;
-            }
-            Composer.Message.IntentDate = DateTime.MinValue;
-            Composer.Message.IntentDateType = MessageDeferralType.None;
-            UpdateHeaderIntentView ();
-            //HeaderView.ShowIntentField ();
-        }
+        //public void QuickResponseFragmentDidSelectResponse (QuickResponseFragment fragment, NcQuickResponse.QuickResponse response)
+        //{
+        //    if (!EmailHelper.IsReplyAction (Composer.Kind) && !EmailHelper.IsForwardAction (Composer.Kind)) {
+        //        Composer.Message.Subject = response.subject;
+        //        UpdateHeaderSubjectView ();
+        //    }
+        //    if (Composer.IsMessagePrepared) {
+        //        var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText ());
+        //        EvaluateJavascript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
+        //    } else {
+        //        Composer.InitialText = response.body;
+        //    }
+        //    if (response.intent != null) {
+        //        Composer.Message.Intent = response.intent.type;
+        //    } else {
+        //        Composer.Message.Intent = McEmailMessage.IntentType.None;
+        //    }
+        //    Composer.Message.IntentDate = DateTime.MinValue;
+        //    Composer.Message.IntentDateType = MessageDeferralType.None;
+        //    UpdateHeaderIntentView ();
+        //    //HeaderView.ShowIntentField ();
+        //}
 
         #endregion
 
@@ -684,9 +654,7 @@ namespace NachoClient.AndroidClient
                 responseType = NcQuickResponse.QRTypeEnum.Forward;
             }
 
-            var quickResponsesFragment = new QuickResponseFragment (responseType);
-            quickResponsesFragment.Delegate = this;
-            quickResponsesFragment.Show (FragmentManager, "quick_responses");
+            // TODO: new quick response picker
         }
 
         #endregion

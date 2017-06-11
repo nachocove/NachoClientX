@@ -26,8 +26,6 @@ namespace NachoClient.AndroidClient
 
         void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view, string from);
 
-        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
-
         void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
 
         void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
@@ -238,60 +236,6 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
-        /*
-        public TextView IntentValueLabel;
-        public MessageComposeAttachmentsView AttachmentsView;
-        LinearLayout IntentContainer;
-        bool HasOpenedSubject;
-
-        bool ShouldHideIntent {
-            get {
-                return !HasOpenedSubject && String.IsNullOrEmpty (SubjectField.Text);
-            }
-        }
-
-        void CreateSubviews ()
-        {
-
-            CcField.FocusChange += CcFieldFocused;
-            SubjectField.FocusChange += SubjectFieldFocused;
-
-            IntentContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_intent_container);
-            IntentValueLabel = view.FindViewById<TextView> (Resource.Id.compose_intent);
-            IntentContainer.Click += SelectIntent;
-            AttachmentsView = view.FindViewById<MessageComposeAttachmentsView> (Resource.Id.compose_attachments);
-            AttachmentsView.HeaderView = this;
-        }
-
-        void CcFieldFocused (object sender, FocusChangeEventArgs e)
-        {
-            if (CcField.HasFocus) {
-                HasOpenedCc = true;
-                RequestLayout ();
-            }
-        }
-
-        void SubjectFieldFocused (object sender, FocusChangeEventArgs e)
-        {
-            if (SubjectField.HasFocus) {
-                HasOpenedSubject = true;
-                RequestLayout ();
-            }
-        }
-
-        void SelectIntent (object sender, EventArgs e)
-        {
-            if (Delegate != null) {
-                Delegate.MessageComposeHeaderViewDidSelectIntentField (this);
-            }
-        }
-
-        public void ShowIntentField ()
-        {
-            HasOpenedSubject = true;
-            RequestLayout ();
-        }
-        */
     }
 
     class ContactAddressAdapter : BaseAdapter<EmailAddressField.TokenObject>, IFilterable

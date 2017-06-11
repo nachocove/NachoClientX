@@ -99,7 +99,7 @@ namespace NachoClient.AndroidClient
             var initialsView = cell.FindViewById<ContactPhotoView> (Resource.Id.user_image);
             var nameView = cell.FindViewById<TextView> (Resource.Id.participant_name);
             var emailView = cell.FindViewById<TextView> (Resource.Id.participant_email);
-            initialsView.SetPortraitId (participant.CachedPortraitId, participant.CachedInitials, Bind.ColorForUser (participant.CachedColor));
+            initialsView.SetPortraitId (participant.CachedPortraitId, participant.CachedInitials, Util.ColorForUser (participant.CachedColor));
             nameView.Text = participant.CachedName;
             emailView.Text = participant.EmailAddress;
             return cell;

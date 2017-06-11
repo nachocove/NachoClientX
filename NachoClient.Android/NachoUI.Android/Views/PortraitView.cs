@@ -51,7 +51,7 @@ namespace NachoClient.AndroidClient
             FallbackView.LayoutParameters = new LayoutParams (LayoutParams.MatchParent, LayoutParams.MatchParent);
             FallbackView.SetTextColor (Android.Graphics.Color.White);
             FallbackView.Text = "AB";
-            FallbackView.SetBackgroundResource (Bind.ColorForUser (1));
+            FallbackView.SetBackgroundResource (Util.ColorForUser (1));
             FallbackView.Gravity = GravityFlags.Center;
             FallbackView.SetIncludeFontPadding (false);
             AddView (ImageView);
@@ -69,7 +69,7 @@ namespace NachoClient.AndroidClient
             } else {
                 ImageView.Visibility = ViewStates.Gone;
                 FallbackView.Visibility = ViewStates.Visible;
-                FallbackView.SetBackgroundResource (Bind.ColorForUser (color));
+                FallbackView.SetBackgroundResource (Util.ColorForUser (color));
             }
         }
 
