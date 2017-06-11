@@ -836,7 +836,6 @@
     <AndroidResource Include="Resources\layout\SetupFragment.axml" />
     <AndroidResource Include="Resources\layout\SwitchAccountFragment.axml" />
     <AndroidResource Include="Resources\layout\WaitingFragment.axml" />
-    <AndroidResource Include="Resources\menu\drawer.xml" />
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\styles.xml" />
     <AndroidResource Include="Resources\values\strings.xml" />
@@ -1114,10 +1113,6 @@
     <AndroidResource Include="Resources\layout\AdvancedExchangeView.axml" />
     <AndroidResource Include="Resources\layout\AdvancedImapView.axml" />
     <AndroidResource Include="Resources\layout\CalendarListDayHeaderItem.axml" />
-    <AndroidResource Include="Resources\anim\slide_in_left.xml" />
-    <AndroidResource Include="Resources\anim\slide_in_right.xml" />
-    <AndroidResource Include="Resources\anim\slide_out_left.xml" />
-    <AndroidResource Include="Resources\anim\slide_out_right.xml" />
     <AndroidResource Include="Resources\anim\fade_in.xml" />
     <AndroidResource Include="Resources\anim\fade_out.xml" />
     <AndroidResource Include="Resources\drawable-hdpi\calendar_empty_cal_alt.png" />
@@ -1362,8 +1357,6 @@
     <AndroidResource Include="Resources\drawable\SwipeEmailMove.xml" />
     <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundToday.xml" />
     <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundHighlighted.xml" />
-    <AndroidResource Include="Resources\anim\fast_fade_in.xml" />
-    <AndroidResource Include="Resources\anim\fast_fade_out.xml" />
     <AndroidResource Include="Resources\layout\FileListFragment.axml" />
     <AndroidResource Include="Resources\layout\FileListActivity.axml" />
     <AndroidResource Include="Resources\drawable\SwipeFileDelete.xml" />
@@ -1378,7 +1371,6 @@
     <AndroidResource Include="Resources\drawable-hdpi\gen_dropdown.png" />
     <AndroidResource Include="Resources\layout\ContactLabelChooserCell.axml" />
     <AndroidResource Include="Resources\layout\ContactLabelChooserFragment.axml" />
-    <AndroidResource Include="Resources\menu\contact_edit_action.xml" />
     <AndroidResource Include="Resources\drawable-hdpi\email_notification_delete.png" />
     <AndroidResource Include="Resources\drawable-mdpi\email_notification_delete.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\email_notification_delete.png" />
