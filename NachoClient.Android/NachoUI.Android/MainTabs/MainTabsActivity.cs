@@ -32,18 +32,30 @@ namespace NachoClient.AndroidClient
         private MainTabsPagerAdapter TabsAdapter;
         private EventHandler ActionButtonClickHandler;
 
+        public static bool IsStarted { get; private set; }
+
+        #region Intents
+
+        public static Intent BuildIntent (Context context)
+        {
+            var intent = new Intent (context, typeof (MainTabsActivity));
+            return intent;
+        }
+
+        #endregion
+
         #region Navigation
 
         public static void Show (Context context)
         {
-            var intent = new Intent (context, typeof (MainTabsActivity));
+            var intent = BuildIntent (context);
             intent.SetFlags (ActivityFlags.SingleTop | ActivityFlags.ClearTop);
             context.StartActivity (intent);
         }
 
         public static void ShowSetup (Context context)
         {
-            var intent = new Intent (context, typeof (MainTabsActivity));
+            var intent = BuildIntent (context);
             intent.SetAction (ACTION_SHOW_SETUP);
             intent.SetFlags (ActivityFlags.SingleTop | ActivityFlags.ClearTop);
             context.StartActivity (intent);
@@ -137,6 +149,18 @@ namespace NachoClient.AndroidClient
             base.OnDestroy ();
         }
 
+        protected override void OnStart ()
+        {
+            base.OnStart ();
+            MainTabsActivity.IsStarted = true;
+		}
+
+		protected override void OnResume ()
+		{
+			base.OnResume ();
+			UpdateToolbarAccountInfo ();
+		}
+
         protected override void OnPause ()
         {
             base.OnPause ();
@@ -144,10 +168,10 @@ namespace NachoClient.AndroidClient
             MainApplication.SetupHockeyAppCrashManager (this);
         }
 
-        protected override void OnResume ()
+        protected override void OnStop ()
         {
-            base.OnResume ();
-            UpdateToolbarAccountInfo ();
+            base.OnStop ();
+            MainTabsActivity.IsStarted = false;
         }
 
         public override void OnAttachFragment (Fragment fragment)

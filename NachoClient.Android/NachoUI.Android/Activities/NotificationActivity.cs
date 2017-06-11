@@ -39,30 +39,27 @@ namespace NachoClient.AndroidClient
 
             // In case notification started the app
             MainApplication.OneTimeStartup ("NotificationActivity");
-            // FIXME: NEWUI
-            //if (null == message) {
-            //    var inboxIntent = NcTabBarActivity.InboxIntent (this);
-            //    StartActivity (inboxIntent);
-            //    Finish ();
-            //    return;
-            //}
 
-            //NcTask.Run (() => {
-            //    BackEnd.Instance.SendEmailBodyFetchHint(message.AccountId, message.Id);
-            //}, "NotificationActivity.SendEmailBodyFetchHint");
-
-            //// Create show message intent
-            //var thread = new McEmailMessageThread ();
-            //thread.FirstMessageId = message.Id;
-            //thread.MessageCount = 1;
-            //var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-            //intent.SetFlags (ActivityFlags.NoAnimation);
-
-            //if (NcTabBarActivity.TabBarWasCreated) {
-            //    StartActivity (intent);
-            //} else {
-            //    StartActivities (new Intent[] { NcTabBarActivity.InboxIntent (this), intent });
-            //}
+			if (message != null) {
+				NcTask.Run (() => {
+					BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+				}, "NotificationActivity.SendEmailBodyFetchHint");
+				var intent = MessageViewActivity.BuildIntent (this, message.Id);
+				intent.SetFlags (ActivityFlags.NoAnimation);
+                if (MainTabsActivity.IsStarted){
+                    StartActivity (intent);
+                }else{
+                    StartActivities (new Intent[] {
+                        MainTabsActivity.BuildIntent (this),
+                        intent
+                    });
+                }
+            }else{
+                if (!MainTabsActivity.IsStarted){
+                    var intent = MainTabsActivity.BuildIntent (this);
+                    StartActivity (intent);
+                }
+            }
             Finish ();
         }
 

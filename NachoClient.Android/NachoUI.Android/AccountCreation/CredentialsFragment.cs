@@ -141,6 +141,8 @@ namespace NachoClient.AndroidClient
             supportButton.Click += SupportButton_Click;
             advancedButton.Click += AdvancedButton_Click;
 
+            supportButton.Visibility = ViewStates.Gone;
+
             advancedImapSubview = view.FindViewById<View> (Resource.Id.advanced_imap_view);
             advancedImapSubview.Visibility = ViewStates.Gone;
 
@@ -293,7 +295,7 @@ namespace NachoClient.AndroidClient
         void SupportButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "SupportButton_Click");
-            // FIXME: NEWUI
+            // TODO: re-enable support once we have support abilities
             //StartActivity (SupportActivity.IntentWithoutToolbar(this.Activity));
         }
 
@@ -393,7 +395,7 @@ namespace NachoClient.AndroidClient
                     emailField.Enabled = true;
                 }
                 passwordField.Enabled = true;
-                supportButton.Visibility = ViewStates.Visible;
+                supportButton.Visibility = ViewStates.Gone;
                 advancedButton.Visibility = (HideAdvancedButton ? ViewStates.Gone : ViewStates.Visible);
                 UpdateSubmitEnabled ();
                 if (IsShowingAdvanced) {
