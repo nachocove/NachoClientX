@@ -338,6 +338,7 @@
     <Compile Include="NachoUI.Android\Contacts\ContactEditActvity.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactEditFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\FilePickerActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1811,6 +1812,8 @@
     <AndroidResource Include="Resources\layout\ContactEditDateItem.axml" />
     <AndroidResource Include="Resources\layout\ContactEditAddressItem.axml" />
     <AndroidResource Include="Resources\layout\ContactEditNotesItem.axml" />
+    <AndroidResource Include="Resources\layout\FilePickerActivity.axml" />
+    <AndroidResource Include="Resources\layout\FilePickerListItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

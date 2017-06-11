@@ -511,6 +511,9 @@ namespace NachoClient.AndroidClient
 
         public void OnPageFinished (Android.Webkit.WebView view, string url)
         {
+            if (IsWebViewLoaded){
+                return;
+            }
             IsWebViewLoaded = true;
             EnableEditingInWebView ();
             foreach (var args in JavaScriptQueue) {

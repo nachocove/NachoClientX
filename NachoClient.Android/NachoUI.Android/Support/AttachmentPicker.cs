@@ -11,16 +11,16 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    public class AttachmentPicker : FilePickerFragmentDelegate
+    public class AttachmentPicker
     {
 
         private const string FRAGMENT_ATTACHMENT_CHOOSER = "NachoClient.AndroidClient.AttachmentPicker.FRAGMENT_ATTACHMENT_CHOOSER";
-        private const string FRAGMENT_FILE_PICKER = "NachoClient.AndroidClient.AttachmentPicker.FRAGMENT_FILE_PICKER";
 
         private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
 
         private const int REQUEST_EXTERNAL_APP = 101;
         private const int REQUEST_TAKE_PHOTO = 102;
+        private const int REQUEST_NACHO_FILE = 103;
 
         Android.Net.Uri CameraOutputUri;
 
@@ -57,9 +57,8 @@ namespace NachoClient.AndroidClient
                     CameraOutputUri = Util.TakePhoto (fragment, REQUEST_TAKE_PHOTO);
                     break;
                 case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_NACHO_FILE:
-                    var filePicker = FilePickerFragment.newInstance (accountId);
-                    filePicker.Delegate = this;
-                    filePicker.Show (fragment.FragmentManager, FRAGMENT_FILE_PICKER); 
+                    var intent = FilePickerActivity.BuildIntent (fragment.Activity);
+                    fragment.StartActivityForResult (intent, REQUEST_NACHO_FILE);
                     break;
                 default:
                     InvokeApplication (fragment, attachmentChooser.SelectedSource.Identifier);
@@ -83,7 +82,7 @@ namespace NachoClient.AndroidClient
 
         public bool OnActivityResult (Fragment fragment, int accountId, int requestCode, Result resultCode, Intent data)
         {
-            if (REQUEST_TAKE_PHOTO == requestCode) {
+            if (requestCode == REQUEST_TAKE_PHOTO) {
                 if (resultCode == Result.Ok) {
                     var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
                     mediaScanIntent.SetData (CameraOutputUri);
@@ -101,25 +100,21 @@ namespace NachoClient.AndroidClient
                 }
                 return true;
             }
-            if (REQUEST_EXTERNAL_APP == requestCode) {
+            if (requestCode == REQUEST_EXTERNAL_APP) {
                 if (resultCode == Result.Ok){
                     try {
                         var clipData = data.ClipData;
                         if (null == clipData) {
                             var attachment = AttachmentHelper.UriToAttachment (accountId, fragment.Activity, data.Data, data.Type);
                             if (null != attachment) {
-                                if (AttachmentPicked != null) {
-                                    AttachmentPicked (this, attachment);
-                                }
+                                AttachmentPicked?.Invoke (this, attachment);
                             }
                         } else {
                             for (int i = 0; i < clipData.ItemCount; i++) {
                                 var uri = clipData.GetItemAt (i).Uri;
                                 var attachment = AttachmentHelper.UriToAttachment (accountId, fragment.Activity, uri, data.Type);
                                 if (null != attachment) {
-                                    if (AttachmentPicked != null) {
-                                        AttachmentPicked (this, attachment);
-                                    }
+                                    AttachmentPicked?.Invoke (this, attachment);
                                 }
                             }
                         }
@@ -129,18 +124,17 @@ namespace NachoClient.AndroidClient
                 }
                 return true;
             }
-            return false;
-        }
-
-        public void FilePickerDidPickFile (FilePickerFragment picker, McAbstrFileDesc file)
-        {
-            picker.Dismiss ();
-            var attachment = file as McAttachment;
-            if (attachment != null) {
-                if (AttachmentPicked != null) {
-                    AttachmentPicked (this, attachment);
+            if (requestCode == REQUEST_NACHO_FILE){
+                if (resultCode == Result.Ok){
+                    var attachmentId = data.GetIntExtra (FilePickerActivity.EXTRA_ATTACHMENT_ID, 0);
+                    var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
+                    if (attachment != null){
+                        AttachmentPicked?.Invoke (this, attachment);
+                    }
                 }
+                return true;
             }
+            return false;
         }
     }
 }

@@ -158,6 +158,10 @@
         <item name="calendarPickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
         <item name="textAppearanceContactGroupHeader">@style/TextAppearanceNachoContactGroupHeader</item>
         <item name="textAppearanceContactFieldLabel">@style/TextAppearanceNachoContactFieldLabel</item>
+        <item name="filePickerItemPaddingLeft">@dimen/nacho_item_padding_left</item>
+        <item name="filePickerItemPaddingTop">@dimen/nacho_item_padding_top</item>
+        <item name="filePickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
+        <item name="filePickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

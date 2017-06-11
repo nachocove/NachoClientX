@@ -81,6 +81,10 @@
     <attr name="calendarPickerItemPaddingBottom" format="dimension"/>
     <attr name="textAppearanceContactGroupHeader" format="reference"/>
     <attr name="textAppearanceContactFieldLabel" format="reference"/>
+    <attr name="filePickerItemPaddingLeft" format="dimension"/>
+    <attr name="filePickerItemPaddingTop" format="dimension"/>
+    <attr name="filePickerItemPaddingRight" format="dimension"/>
+    <attr name="filePickerItemPaddingBottom" format="dimension"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>
