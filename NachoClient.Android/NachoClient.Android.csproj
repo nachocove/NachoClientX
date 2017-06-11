@@ -234,27 +234,18 @@
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\Support\A.cs" />
     <Compile Include="NachoUI.Android\Support\Util.cs" />
-    <Compile Include="NachoUI.Android\Support\NcAlertView.cs" />
     <Compile Include="NachoUI.Android\Support\IntentHelper.cs" />
     <Compile Include="NachoPlatform.Android\DnsAndroid.cs" />
     <Compile Include="NachoUI.Android\Support\LifecycleSpy.cs" />
-    <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
     <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
     <Compile Include="NachoPlatform.Android\NcHttpClientAndroid.cs" />
     <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
     <Compile Include="NachoPlatform.Android\PushAssistAndroid.cs" />
     <Compile Include="NachoUI.Android\Support\AttachmentHelper.cs" />
-    <Compile Include="NachoUI.Android\Support\DatePicker.cs" />
-    <Compile Include="NachoUI.Android\Support\TimePicker.cs" />
-    <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\FilePickerFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
-    <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
-    <Compile Include="NachoUI.Android\Support\NcDialogFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\NotificationsPickerDialog.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\MessageComposeActivity.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\MessageComposeFragment.cs" />
     <Compile Include="NachoUI.Android\MessageCompose\MessageComposeHeaderField.cs" />
@@ -317,7 +308,6 @@
     <Compile Include="NachoUI.Android\Calendar\EventReminderPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Calendar\NoteEditDialog.cs" />
     <Compile Include="NachoUI.Android\Calendar\AddAttendeeDialog.cs" />
-    <Compile Include="NachoUI.Android\Support\AttachmentPicker.cs" />
     <Compile Include="NachoUI.Android\Calendar\CalendarPickerDialog.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactsFragment.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactsSearchFragment.cs" />
@@ -326,6 +316,16 @@
     <Compile Include="NachoUI.Android\Contacts\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Contacts\ContactEditFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\FilePickerActivity.cs" />
+    <Compile Include="NachoUI.Android\Settings\AdvancedExchangeView.cs" />
+    <Compile Include="NachoUI.Android\Settings\AdvancedImapView.cs" />
+    <Compile Include="NachoUI.Android\Settings\NotificationsPickerDialog.cs" />
+    <Compile Include="NachoUI.Android\Base\NcFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttachmentPicker.cs" />
+    <Compile Include="NachoUI.Android\Activities\DatePicker.cs" />
+    <Compile Include="NachoUI.Android\Activities\TimePicker.cs" />
+    <Compile Include="NachoUI.Android\Base\NcDialogFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcAlertView.cs" />
+    <Compile Include="NachoUI.Android\NotificationService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -341,17 +341,7 @@
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
-    <None Include="NachoUI.Android\Activities\ChatListActivity.cs" />
-    <None Include="NachoUI.Android\Activities\ChatListFragment.cs" />
     <None Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
-    <None Include="NachoUI.Android\Activities\SalesforceSignInFragment.cs" />
-    <None Include="NachoUI.Android\Activities\SalesforceSignInActivity.cs" />
-    <None Include="NachoUI.Android\Activities\SalesforceSettingsActivity.cs" />
-    <None Include="NachoUI.Android\Activities\SalesforceSettingsFragment.cs" />
-    <None Include="NachoUI.Android\Activities\ChatViewActivity.cs" />
-    <None Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
-    <None Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
-    <None Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
     <None Include="Resources\layout\SalesforceSignInFragment.axml" />
     <None Include="Resources\layout\SalesforceSignInActivity.axml" />
     <None Include="Resources\layout\SalesforceSettingsFragment.axml" />
@@ -365,6 +355,16 @@
     <None Include="Resources\layout\ChatParticipantListCell.axml" />
     <None Include="Resources\layout\ChatParticipantListActivity.axml" />
     <None Include="Resources\layout\ChatParticipantListFragment.axml" />
+    <None Include="NachoUI.Android\Chat\ChatListActivity.cs" />
+    <None Include="NachoUI.Android\Chat\ChatListFragment.cs" />
+    <None Include="NachoUI.Android\Chat\ChatParticipantListActivity.cs" />
+    <None Include="NachoUI.Android\Chat\ChatParticipantListFragment.cs" />
+    <None Include="NachoUI.Android\Chat\ChatViewActivity.cs" />
+    <None Include="NachoUI.Android\Chat\ChatViewFragment.cs" />
+    <None Include="NachoUI.Android\Settings\SalesforceSettingsActivity.cs" />
+    <None Include="NachoUI.Android\Settings\SalesforceSettingsFragment.cs" />
+    <None Include="NachoUI.Android\Settings\SalesforceSignInActivity.cs" />
+    <None Include="NachoUI.Android\Settings\SalesforceSignInFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\raw\" />
@@ -403,6 +403,7 @@
     <Folder Include="NachoUI.Android\FoldersList\" />
     <Folder Include="NachoUI.Android\Calendar\" />
     <Folder Include="NachoUI.Android\Contacts\" />
+    <Folder Include="NachoUI.Android\Chat\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
