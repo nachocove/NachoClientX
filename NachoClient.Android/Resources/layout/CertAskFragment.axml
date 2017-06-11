@@ -35,7 +35,7 @@
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
             android:layout_gravity="center"
-            android:background="@color/NachoBackgroundGray" />
+            android:background="#e1e5e6" />
     </LinearLayout>
     <ScrollView
         android:layout_width="fill_parent"

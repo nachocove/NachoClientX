@@ -132,7 +132,7 @@
         <item name="filterbarPaddingBottom">0dp</item>
         <item name="filterbarColor">#e6e7e8</item>
         <item name="filterbarSeparatorColor">#c3c4c5</item>
-        <item name="colorCalendarListHeader">@color/NachoLightGrayBackground</item>
+        <item name="colorCalendarListHeader">#f4f6f6</item>
         <item name="calendarItemPaddingLeft">@dimen/nacho_item_padding_left</item>
         <item name="calendarItemPaddingTop">@dimen/nacho_item_padding_top</item>
         <item name="calendarItemPaddingRight">@dimen/nacho_item_padding_right</item>
@@ -162,6 +162,7 @@
         <item name="filePickerItemPaddingTop">@dimen/nacho_item_padding_top</item>
         <item name="filePickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
         <item name="filePickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
+        <item name="colorCalendarDayBorder">#e1e5e6</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

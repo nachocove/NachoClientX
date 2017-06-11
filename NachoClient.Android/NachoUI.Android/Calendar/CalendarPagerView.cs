@@ -161,8 +161,8 @@ namespace NachoClient.AndroidClient
             MonthLabelB.Gravity = GravityFlags.Center;
             MonthLabelA.SetTextSize (Android.Util.ComplexUnitType.Dip, 11.0f);
             MonthLabelB.SetTextSize (Android.Util.ComplexUnitType.Dip, 11.0f);
-            MonthLabelA.SetTextColor (Resources.GetColor(Resource.Color.NachoTextGray));
-            MonthLabelB.SetTextColor (Resources.GetColor(Resource.Color.NachoTextGray));
+            MonthLabelA.SetTextColor (Resources.GetColor(Resource.Color.FixmeCalendarPagerText));
+            MonthLabelB.SetTextColor (Resources.GetColor(Resource.Color.FixmeCalendarPagerText));
 
             AddView (MonthLabelA);
             AddView (MonthLabelB);
@@ -726,7 +726,7 @@ namespace NachoClient.AndroidClient
                     label.TextAlignment = TextAlignment.Center;
                     label.Gravity = GravityFlags.Center;
                     label.SetTextSize (Android.Util.ComplexUnitType.Dip, 11.0f);
-                    label.SetTextColor (Resources.GetColor(Resource.Color.NachoTextGray));
+                    label.SetTextColor (Resources.GetColor(Resource.Color.FixmeCalendarPagerText));
                     WeekdayLabels.Add (label);
                     WeekdayLabelsContainer.AddView (label);
                 }
@@ -870,7 +870,7 @@ namespace NachoClient.AndroidClient
                 DateLabel.TextAlignment = TextAlignment.Center;
                 DateLabel.Gravity = GravityFlags.Center;
                 DateLabel.SetTypeface (null, Android.Graphics.TypefaceStyle.Bold);
-                DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoBlack));
+                DateLabel.SetTextColor (Resources.GetColor (Resource.Color.FixmeCalendarPagerBlack));
                 DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
                 EventIndicator = new ImageView (Context);
                 EventIndicator.SetBackgroundResource (Resource.Drawable.CalendarPagerEventIndicator);
@@ -894,16 +894,16 @@ namespace NachoClient.AndroidClient
                 DateLabel.Text = Date.Day.ToString ();
                 if (IsAlt) {
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundAlt);
-                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoTextGray));
+                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.FixmeCalendarPagerText));
                 } else if (IsHighlighted) {
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundHighlighted);
                     DateLabel.SetTextColor (Resources.GetColor (Android.Resource.Color.White));
                 } else if (IsToday) {
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundToday);
-                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoTextGray));
+                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.FixmeCalendarPagerText));
                 } else {
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
-                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoBlack));
+                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.FixmeCalendarPagerBlack));
                 }
                 if (this.WeekView.PageView.CalendarView.HasEvents != null) {
                     if (this.WeekView.PageView.CalendarView.HasEvents (Date)) {

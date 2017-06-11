@@ -85,6 +85,7 @@
     <attr name="filePickerItemPaddingTop" format="dimension"/>
     <attr name="filePickerItemPaddingRight" format="dimension"/>
     <attr name="filePickerItemPaddingBottom" format="dimension"/>
+    <attr name="colorCalendarDayBorder" format="color"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

@@ -3,7 +3,7 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/NachoGreen">
+    android:background="?attr/colorPrimary">
     <TextView
         android:id="@+id/textview"
         android:text="@string/choose_provider"
