@@ -8,6 +8,7 @@
     <string name="startup_welcome">Welcome to</string>
     <string name="startup_incompatible_version">Incompatible Version</string>
     <string name="startup_incompatible_message">"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app."</string>
+    <string name="startup_loading_compose">Loading Nacho Mail</string>
 
     <!-- Welcome -->
     <string name="welcome_company">company</string>

@@ -325,6 +325,7 @@
     <Compile Include="NachoUI.Android\Base\NcDialogFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\NcAlertView.cs" />
     <Compile Include="NachoUI.Android\NotificationService.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -340,7 +341,6 @@
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
-    <None Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
     <None Include="Resources\layout\SalesforceSignInFragment.axml" />
     <None Include="Resources\layout\SalesforceSignInActivity.axml" />
     <None Include="Resources\layout\SalesforceSettingsFragment.axml" />
@@ -1002,6 +1002,7 @@
     <AndroidResource Include="Resources\layout\FilePickerActivity.axml" />
     <AndroidResource Include="Resources\layout\FilePickerListItem.axml" />
     <AndroidResource Include="Resources\drawable\RoundedButton.xml" />
+    <AndroidResource Include="Resources\layout\MessageComposePublicListenerActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -19,7 +19,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "Nacho Mail")]
+    [Activity (Label = "@string/app_name")]
     [IntentFilter (new[] { Intent.ActionSend, Intent.ActionSendMultiple }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "*/*")]
     [IntentFilter (new[] { Intent.ActionSendto }, Categories = new[] { Intent.CategoryDefault }, DataScheme = "mailto", DataMimeType = "*/*")]
     public class MessageComposePublicListener : NcActivity
@@ -27,8 +27,7 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-            SetContentView (Resource.Layout.WaitingFragment);
-            FindViewById<TextView> (Resource.Id.textview).Text = "Loading Nacho Mail";
+            SetContentView (Resource.Layout.MessageComposePublicListenerActivity);
 
             // Use a C# task instead of an NcTask, because the app might not be initialized yet.
             System.Threading.Tasks.Task.Run (() => {
