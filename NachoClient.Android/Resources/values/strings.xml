@@ -135,6 +135,12 @@
     <!-- Attachment Picker -->
     <string name="attachment_chooser_take_photo">Take Photo</string>
     <string name="attachment_chooser_nacho_files">Browse Attachments</string>
+    <string name="attachment_chooser_camera_permission_request_title">Camera &amp; Storage Permission</string>
+    <string name="attachment_chooser_camera_permission_request_message">Nacho Mail needs access to your camera and to save files in order to take a photo.  You will be asked to grant these permissions next.</string>
+    <string name="attachment_chooser_camera_permission_request_ack">Proceed</string>
+    <string name="attachment_chooser_camera_permission_denied_title">Permission Denied</string>
+    <string name="attachment_chooser_camera_permission_denied_message">Please enable Camera &amp; Storage permission in your System Settings for Nacho Mail</string>
+    <string name="attachment_chooser_camera_permission_denied_settings">View Settings</string>
 
     <!-- File Picker -->
     <string name="file_picker_title">File Chooser</string>

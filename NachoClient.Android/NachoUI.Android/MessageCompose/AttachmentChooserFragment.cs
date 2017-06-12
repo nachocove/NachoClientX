@@ -11,14 +11,19 @@ using Android.Views;
 using Android.OS;
 using NachoPlatform;
 using Android.Graphics.Drawables;
+using Android.Support.V4.Content;
+using Android.Content.PM;
 
 namespace NachoClient.AndroidClient
 {
     public class AttachmentChooserFragment : NcDialogFragment
     {
 
+        private const int REQUEST_CAMERA_PERMISSION = 1;
+
         public AttachmentSource SelectedSource { get; private set; }
         private AttachmentSourceAdapter Adapter;
+        private AttachmentSource CameraSource;
 
         public AttachmentChooserFragment () : base ()
         {
@@ -37,11 +42,12 @@ namespace NachoClient.AndroidClient
             var sources = new List<AttachmentSource> ();
 
             if (Util.CanTakePhoto (Context)) {
-                sources.Add (new AttachmentSource () {
-                    Identifier=AttachmentSource.IDENTIFIER_TAKE_PHOTO,
-                    DisplayName=GetString (Resource.String.attachment_chooser_take_photo),
-                    Icon=Context.GetDrawable (Resource.Drawable.attachment_take_photo)
-                });
+                CameraSource = new AttachmentSource () {
+                    Identifier = AttachmentSource.IDENTIFIER_TAKE_PHOTO,
+                    DisplayName = GetString (Resource.String.attachment_chooser_take_photo),
+                    Icon = Context.GetDrawable (Resource.Drawable.attachment_take_photo)
+                };
+                sources.Add (CameraSource);
             }
 
             sources.Add (new AttachmentSource ()
@@ -70,15 +76,78 @@ namespace NachoClient.AndroidClient
             Adapter = new AttachmentSourceAdapter (sources);
 
             var builder = new AlertDialog.Builder (this.Activity);
-            builder.SetAdapter (Adapter, ItemClick);
+            var view = new ListView (Context);
+            view.Divider = null;
+            view.DividerHeight = 0;
+            view.Adapter = Adapter;
+            view.ItemClick += ItemClick;
+            builder.SetView (view);
             return builder.Create ();
         }
 
-        private void ItemClick (object sender, Android.Content.DialogClickEventArgs e)
+        private void ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
-            SelectedSource = Adapter [e.Which];
-            Adapter.NotifyDataSetChanged ();
-            Dismiss ();
+            var source = Adapter [e.Position];
+            if (source == CameraSource){
+	            bool hasCameraPermission = ContextCompat.CheckSelfPermission (Activity, Android.Manifest.Permission.Camera) == Permission.Granted;
+	            bool hasStorage = ContextCompat.CheckSelfPermission (Activity, Android.Manifest.Permission.WriteExternalStorage) == Permission.Granted;
+                if (hasCameraPermission && hasStorage) {
+                    SelectedSource = source;
+                }else{
+                    RequestCameraPermissions ();
+	            }
+            }else{
+                SelectedSource = source;
+            }
+			if (SelectedSource != null) {
+                Dismiss ();
+            }
+        }
+
+        void RequestCameraPermissions ()
+        {
+            if (ShouldShowRequestPermissionRationale (Android.Manifest.Permission.Camera) || ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteExternalStorage)) {
+                var builder = new AlertDialog.Builder (Context);
+                builder.SetTitle (Resource.String.attachment_chooser_camera_permission_request_title);
+                builder.SetMessage (Resource.String.attachment_chooser_camera_permission_request_message);
+                builder.SetPositiveButton (Resource.String.attachment_chooser_camera_permission_request_ack, (sender, e) => {
+                    RequestPermissions (new string [] {
+                        Android.Manifest.Permission.Camera,
+                        Android.Manifest.Permission.WriteExternalStorage
+                    }, REQUEST_CAMERA_PERMISSION);
+                });
+                builder.Show ();
+			} else {
+				RequestPermissions (new string [] {
+					Android.Manifest.Permission.Camera,
+					Android.Manifest.Permission.WriteExternalStorage
+				}, REQUEST_CAMERA_PERMISSION);
+            }
+        }
+
+        public override void OnRequestPermissionsResult (int requestCode, string [] permissions, Permission [] grantResults)
+        {
+            if (requestCode == REQUEST_CAMERA_PERMISSION){
+                if (grantResults.Length == 2 && grantResults[0] == Permission.Granted && grantResults[1] == Permission.Granted){
+                    SelectedSource = CameraSource;
+                    Dismiss ();
+                }else{
+                    if (ShouldShowRequestPermissionRationale (Android.Manifest.Permission.Camera) || ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteExternalStorage)){
+                        RequestCameraPermissions ();
+                    }else{
+						var builder = new AlertDialog.Builder (Context);
+						builder.SetTitle (Resource.String.attachment_chooser_camera_permission_denied_title);
+						builder.SetMessage (Resource.String.attachment_chooser_camera_permission_denied_message);
+						builder.SetPositiveButton (Resource.String.attachment_chooser_camera_permission_denied_settings, (sender, e) => {
+							var uri = Android.Net.Uri.FromParts ("package", Activity.PackageName, null);
+                            var intent = new Intent (Android.Provider.Settings.ActionApplicationDetailsSettings, uri);
+                            StartActivity (intent);
+                        });
+                        builder.Show ();
+                    }
+                }
+            }
+            base.OnRequestPermissionsResult (requestCode, permissions, grantResults);
         }
 
         public class AttachmentSource
