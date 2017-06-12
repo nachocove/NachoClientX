@@ -47,10 +47,13 @@ namespace NachoClient.AndroidClient
         {
             CanCreateContact = McAccount.GetCanAddContactAccounts ().Count > 0;
             UpdateActions (tabActivity);
+			StartListeningForStatusInd ();
+			SetNeedsReload ();
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
-        {
+		{
+			StopListeningForStatusInd ();
         }
 
         public void OnAccountSwitched (MainTabsActivity tabActivity)
@@ -71,12 +74,12 @@ namespace NachoClient.AndroidClient
 
         public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
         {
-        	switch (item.ItemId) {
-        	case Resource.Id.search:
-        		ShowSearch (tabActivity, item);
-        		return true;
-        	}
-        	return false;
+            switch (item.ItemId) {
+            case Resource.Id.search:
+                ShowSearch (tabActivity, item);
+                return true;
+            }
+            return false;
         }
 
         #endregion
@@ -112,7 +115,6 @@ namespace NachoClient.AndroidClient
             FindSubviews (view);
             Adapter = new ContactsAdapter (this);
             ListView.SetAdapter (Adapter);
-            Reload ();
             return view;
         }
 
@@ -127,33 +129,33 @@ namespace NachoClient.AndroidClient
 
         public override bool OnContextItemSelected (IMenuItem item)
         {
-        	var groupPosition = -1;
-        	var position = -1;
-        	var contactId = -1;
+            var groupPosition = -1;
+            var position = -1;
+            var contactId = -1;
             if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_GROUP_POSITION)) {
-        		groupPosition = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_GROUP_POSITION);
-        	}
-        	if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_POSITION)) {
-        		position = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_POSITION);
-        	}
-        	if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_CONTACT_ID)) {
+                groupPosition = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_GROUP_POSITION);
+            }
+            if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_POSITION)) {
+                position = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_POSITION);
+            }
+            if (item.Intent != null && item.Intent.HasExtra (ContactsAdapter.EXTRA_CONTACT_ID)) {
                 contactId = item.Intent.Extras.GetInt (ContactsAdapter.EXTRA_CONTACT_ID);
-        	}
+            }
             if (groupPosition >= 0 && position >= 0 && contactId >= 0) {
                 var contact = Adapter.GetContact (groupPosition, position);
                 if (contact.Id != contactId) {
                     contact = McContact.QueryById<McContact> (contactId);
-        		}
-        		switch (item.ItemId) {
+                }
+                switch (item.ItemId) {
                 case Resource.Id.call:
                     CallContact (contact);
-        			return true;
+                    return true;
                 case Resource.Id.email:
                     EmailContact (contact);
-        			return true;
-        		}
-        	}
-        	return base.OnContextItemSelected (item);
+                    return true;
+                }
+            }
+            return base.OnContextItemSelected (item);
         }
 
         #endregion
@@ -293,7 +295,7 @@ namespace NachoClient.AndroidClient
             var accounts = McAccount.GetCanAddContactAccounts ();
             var items = new string [accounts.Count];
             for (var i = 0; i < accounts.Count; ++i) {
-                items [i] = accounts [i].DisplayName + ": " + accounts[i].EmailAddr;
+                items [i] = accounts [i].DisplayName + ": " + accounts [i].EmailAddr;
             }
             builder.SetItems (items, (sender, e) => {
                 var account = accounts [e.Which];
@@ -305,7 +307,7 @@ namespace NachoClient.AndroidClient
         void ShowNewContact (McAccount account)
         {
             var intent = ContactEditActivity.BuildNewIntent (Activity, account);
-			StartActivity (intent);
+            StartActivity (intent);
         }
 
         void CallContact (McContact contact)
@@ -318,6 +320,36 @@ namespace NachoClient.AndroidClient
             var account = McAccount.EmailAccountForContact (contact);
             var intent = MessageComposeActivity.NewMessageIntent (Activity, account.Id, contact.GetPrimaryCanonicalEmailAddress ());
             StartActivity (intent);
+        }
+
+        #endregion
+
+        #region System Events
+
+        bool IsListeningForStatusInd;
+
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd){
+                NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
+                IsListeningForStatusInd = true;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd){
+                NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
+                IsListeningForStatusInd = false;
+            }
+        }
+
+        void StatusIndEventHandler (object sender, EventArgs e)
+        {
+			var s = (StatusIndEventArgs)e;
+			if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+				SetNeedsReload ();
+			}
         }
 
         #endregion
