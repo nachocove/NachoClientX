@@ -29,6 +29,7 @@ namespace NachoClient.AndroidClient
 
         INcEventProvider Events;
         CalendarAdapter Adapter;
+        bool HasShownOnce;
 
         #region Tab Interface
 
@@ -46,6 +47,10 @@ namespace NachoClient.AndroidClient
                 tabActivity.HideActionButton ();
             } else {
                 tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_event, ActionButtonClicked);
+            }
+            if (!HasShownOnce){
+				GoToToday (animated: false);
+                HasShownOnce = true;
             }
         }
 
@@ -111,7 +116,6 @@ namespace NachoClient.AndroidClient
             FindSubviews (view);
             Adapter = new CalendarAdapter (this, Events);
             ListView.SetAdapter (Adapter);
-            GoToToday (animated: false);
             return view;
         }
 
