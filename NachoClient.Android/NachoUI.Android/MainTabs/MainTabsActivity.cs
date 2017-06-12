@@ -31,6 +31,7 @@ namespace NachoClient.AndroidClient
 
         private MainTabsPagerAdapter TabsAdapter;
         private EventHandler ActionButtonClickHandler;
+        int OtherAccountUnreadCount = 0;
 
         public static bool IsStarted { get; private set; }
 
@@ -119,6 +120,7 @@ namespace NachoClient.AndroidClient
             TabLayout.SetupWithViewPager (ViewPager);
 
             NcAccountMonitor.Instance.AccountSwitched += AccountSwitched;
+            NcAccountMonitor.Instance.AccountSetChanged += AccountSetChanged;
 
             UpdateToolbarAccountInfo ();
         }
@@ -145,6 +147,7 @@ namespace NachoClient.AndroidClient
         protected override void OnDestroy ()
         {
             NcAccountMonitor.Instance.AccountSwitched -= AccountSwitched;
+            NcAccountMonitor.Instance.AccountSetChanged -= AccountSetChanged;
             ClearSubviews ();
             base.OnDestroy ();
         }
@@ -275,6 +278,42 @@ namespace NachoClient.AndroidClient
             if (tab != null) {
                 tab.OnAccountSwitched (this);
             }
+        }
+
+        void AccountSetChanged (object sender, EventArgs e)
+        {
+            UpdateUnreadIndicator ();
+        }
+
+        void UpdateUnreadIndicator ()
+		{
+			var unreadCount = 0;
+			var selectedAccount = NcApplication.Instance.Account;
+			var accountsWithChanges = new List<NcAccountMonitor.AccountInfo> ();
+			if (selectedAccount.AccountType != McAccount.AccountTypeEnum.Unified) {
+				foreach (var accountInfo in NcAccountMonitor.Instance.Accounts) {
+					if (accountInfo.Account.Id != selectedAccount.Id) {
+						if (accountInfo.RecentUnreadCount > 0) {
+							unreadCount += accountInfo.RecentUnreadCount;
+                            accountsWithChanges.Add (accountInfo);
+						}
+					}
+				}
+			}
+			if (unreadCount != OtherAccountUnreadCount) {
+				OtherAccountUnreadCount = unreadCount;
+                if (OtherAccountUnreadCount == 0){
+                    SupportActionBar.Subtitle = "";
+                }else{
+                    if (accountsWithChanges.Count == 1) {
+						var format = GetString (Resource.String.main_unread_format_single);
+                        SupportActionBar.Subtitle = String.Format (format, unreadCount, accountsWithChanges[0].Account.DisplayName);
+                    } else {
+                        var format = GetString (Resource.String.main_unread_format_multiple);
+                        SupportActionBar.Subtitle = String.Format (format, unreadCount, accountsWithChanges.Count);
+                    }
+                }
+			}
         }
 
         #endregion
@@ -499,6 +538,7 @@ namespace NachoClient.AndroidClient
             int size = (int)Math.Round(40.0 * Resources.DisplayMetrics.Density);
             var image = Util.GetSizedAndRoundedAccountImage (this, account, size);
             SupportActionBar.SetHomeAsUpIndicator (image);
+            UpdateUnreadIndicator ();
         }
 
     }
