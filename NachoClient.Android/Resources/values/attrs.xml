@@ -86,6 +86,11 @@
     <attr name="filePickerItemPaddingRight" format="dimension"/>
     <attr name="filePickerItemPaddingBottom" format="dimension"/>
     <attr name="colorCalendarDayBorder" format="color"/>
+    <attr name="textAppearanceAccountCreation" format="reference"/>
+    <attr name="textAppearanceAccountCreationTitle" format="reference"/>
+    <attr name="textAppearanceAccountCreationField" format="reference"/>
+    <attr name="textAppearanceAccountCreationButton" format="reference"/>
+    <attr name="textAppearanceAccountCreationLink" format="reference"/>
 	<declare-styleable name="MessageComposeHeaderField">
     	<attr name="labelTextAppearance"/>
         <attr name="valueTextAppearance"/>

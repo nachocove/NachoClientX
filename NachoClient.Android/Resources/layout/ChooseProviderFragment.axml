@@ -7,13 +7,12 @@
     <TextView
         android:id="@+id/textview"
         android:text="@string/choose_provider_title"
-        android:textSize="18dp"
+        android:textAppearance="?attr/textAppearanceAccountCreationTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0"
         android:padding="20dip"
-        android:gravity="center"
-        android:textColor="@android:color/white" />
+        android:gravity="center" />
     <GridView
         android:id="@+id/gridview"
         android:layout_width="match_parent"

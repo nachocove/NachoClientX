@@ -15,13 +15,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/exchange_server" />
             <EditText
                 android:id="@+id/exchange_server"
                 android:inputType="textUri"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/advanced_server"
@@ -44,13 +43,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/exchange_server" />
             <EditText
                 android:id="@+id/exchange_domain"
                 android:inputType="textEmailAddress"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/advanced_domain"
@@ -73,13 +71,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/exchange_server" />
             <EditText
                 android:id="@+id/exchange_username"
                 android:inputType="textEmailAddress"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/advanced_username"

@@ -83,6 +83,24 @@
         <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
+    <style name="TextAppearanceNachoAccountCreation" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">17dp</item>
+    </style>
+
+    <style name="TextAppearanceNachoAccountCreationTitle" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="TextAppearanceNachoAccountCreationField" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textSize">17dp</item>
+    </style>
+
+    <style name="TextAppearanceNachoAccountCreationLink" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">?attr/colorAccent</item>
+    </style>
+
     <style name="NachoTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/NachoMainGreen</item>
         <item name="colorPrimaryDark">@color/NachoDarkGreen</item>
@@ -163,6 +181,11 @@
         <item name="filePickerItemPaddingRight">@dimen/nacho_item_padding_right</item>
         <item name="filePickerItemPaddingBottom">@dimen/nacho_item_padding_bottom</item>
         <item name="colorCalendarDayBorder">#e1e5e6</item>
+        <item name="textAppearanceAccountCreation">@style/TextAppearanceNachoAccountCreation</item>
+        <item name="textAppearanceAccountCreationTitle">@style/TextAppearanceNachoAccountCreationTitle</item>
+        <item name="textAppearanceAccountCreationField">@style/TextAppearanceNachoAccountCreationField</item>
+        <item name="textAppearanceAccountCreationButton">@style/TextAppearanceNachoWelcomeButton</item>
+        <item name="textAppearanceAccountCreationLink">@style/TextAppearanceNachoAccountCreationLink</item>
     </style>
 
     <style name="NachoTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>

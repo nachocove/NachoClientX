@@ -13,8 +13,7 @@
             <EditText
                 android:id="@+id/imap_username"
                 android:inputType="textEmailAddress"
-                android:textSize="17dp"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/advanced_username"
@@ -29,12 +28,10 @@
             android:layout_height="20dp" />
         <TextView
             android:text="@string/advanced_incoming_mail_server"
-            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingBottom="4dip"
-            android:textColor="@android:color/white"
-            android:textSize="17dp" />
+            android:textAppearance="?attr/textAppearanceAccountCreation" />
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -45,14 +42,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/imap_server" />
             <EditText
                 android:id="@+id/imap_server"
                 android:inputType="textUri"
-                android:textSize="17dp"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/advanced_imap_server_example"
@@ -75,14 +70,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/imap_port" />
             <EditText
                 android:id="@+id/imap_port"
                 android:text="@string/advanced_default_imap_port"
-                android:textSize="17dp"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:inputType="number"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
@@ -98,12 +91,10 @@
             android:layout_height="20dp" />
         <TextView
             android:text="@string/advanced_outgoing_mail_server"
-            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingBottom="4dip"
-            android:textColor="@android:color/white"
-            android:textSize="17dp" />
+            android:textAppearance="?attr/textAppearanceAccountCreation" />
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -114,14 +105,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/smtp_server" />
             <EditText
                 android:id="@+id/smtp_server"
                 android:inputType="textUri"
-                android:textSize="17dp"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/advanced_smtp_server_example"
@@ -144,14 +133,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="4dip"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:layout_toLeftOf="@+id/smtp_port" />
             <EditText
                 android:id="@+id/smtp_port"
                 android:text="@string/advanced_default_smtp_port"
-                android:textColor="@android:color/black"
-                android:textSize="17dp"
+                android:textAppearance="?attr/textAppearanceAccountCreationField"
                 android:inputType="number"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
