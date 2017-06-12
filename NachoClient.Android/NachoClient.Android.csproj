@@ -1003,6 +1003,10 @@
     <AndroidResource Include="Resources\layout\FilePickerListItem.axml" />
     <AndroidResource Include="Resources\drawable\RoundedButton.xml" />
     <AndroidResource Include="Resources\layout\MessageComposePublicListenerActivity.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\action_alert.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\action_alert.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\action_alert.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\action_alert.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

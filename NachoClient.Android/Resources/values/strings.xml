@@ -66,6 +66,7 @@
     <string name="main_action_search">Search</string>
     <string name="main_unread_format_single">{0} new in {1}</string>
     <string name="main_unread_format_multiple">{0} new in {1} accounts</string>
+    <string name="main_item_settings_alert">Attention Required</string>
 
     <!-- Account Switcher -->
     <string name="switcher_action_add_account">Add Account</string>

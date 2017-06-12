@@ -7,4 +7,5 @@
     <item name="late" type="id"/>
     <item name="call" type="id"/>
     <item name="email" type="id"/>
+    <item name="settings_alert" type="id"/>
 </resources>

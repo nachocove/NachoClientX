@@ -23,7 +23,7 @@ using NachoCore.Model;
 namespace NachoClient.AndroidClient
 {
 
-    [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon", LaunchMode=Android.Content.PM.LaunchMode.SingleTop)]
+    [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon", LaunchMode = Android.Content.PM.LaunchMode.SingleTop)]
     public class MainTabsActivity : NcActivity
     {
         private const string ACTION_SHOW_SETUP = "NachocClient.AndroidClient.MainTabsActivity.ACTION_SHOW_SETUP";
@@ -32,6 +32,7 @@ namespace NachoClient.AndroidClient
         private MainTabsPagerAdapter TabsAdapter;
         private EventHandler ActionButtonClickHandler;
         int OtherAccountUnreadCount = 0;
+        bool ShowAlertItem = false;
 
         public static bool IsStarted { get; private set; }
 
@@ -98,6 +99,8 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle savedInstanceState)
         {
+            ShowAlertItem = LoginHelpers.ShouldAlertUser ();
+
             base.OnCreate (savedInstanceState);
 
             MainApplication.RegisterHockeyAppUpdateManager (this);
@@ -121,6 +124,7 @@ namespace NachoClient.AndroidClient
 
             NcAccountMonitor.Instance.AccountSwitched += AccountSwitched;
             NcAccountMonitor.Instance.AccountSetChanged += AccountSetChanged;
+            StartListeningForStatusInd ();
 
             UpdateToolbarAccountInfo ();
         }
@@ -140,12 +144,13 @@ namespace NachoClient.AndroidClient
 
         public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)
         {
-	        base.OnConfigurationChanged (newConfig);
+            base.OnConfigurationChanged (newConfig);
             UpdateToolbarAccountInfo ();
         }
 
         protected override void OnDestroy ()
         {
+            StopListeningForStatusInd ();
             NcAccountMonitor.Instance.AccountSwitched -= AccountSwitched;
             NcAccountMonitor.Instance.AccountSetChanged -= AccountSetChanged;
             ClearSubviews ();
@@ -156,13 +161,13 @@ namespace NachoClient.AndroidClient
         {
             base.OnStart ();
             MainTabsActivity.IsStarted = true;
-		}
+        }
 
-		protected override void OnResume ()
-		{
-			base.OnResume ();
-			UpdateToolbarAccountInfo ();
-		}
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            UpdateToolbarAccountInfo ();
+        }
 
         protected override void OnPause ()
         {
@@ -189,7 +194,7 @@ namespace NachoClient.AndroidClient
         {
             if (DrawerLayout.IsDrawerOpen (GravityCompat.Start)) {
                 DrawerLayout.CloseDrawers ();
-            }else{
+            } else {
                 base.OnBackPressed ();
             }
         }
@@ -212,6 +217,11 @@ namespace NachoClient.AndroidClient
 
         public override bool OnCreateOptionsMenu (IMenu menu)
         {
+            if (ShowAlertItem){
+                var item = menu.Add (0, Resource.Id.settings_alert, 1, Resource.String.main_item_settings_alert);
+                item.SetIcon (Resource.Drawable.action_alert);
+                item.SetShowAsAction (ShowAsAction.Always);
+            }
             var tab = TabsAdapter.SelectedTab;
             if (tab == null) {
                 return false;
@@ -227,7 +237,7 @@ namespace NachoClient.AndroidClient
             //if (DrawerToggle.OnOptionsItemSelected (item)) {
             //    return true;
             //}
-            if (item.ItemId == Resource.Id.action_settings) {
+            if (item.ItemId == Resource.Id.action_settings || item.ItemId == Resource.Id.settings_alert) {
                 ShowSettings ();
                 return true;
             } else if (item.ItemId == Android.Resource.Id.Home) {
@@ -235,7 +245,7 @@ namespace NachoClient.AndroidClient
                 return true;
             }
             var tab = TabsAdapter.SelectedTab;
-            if (tab != null){
+            if (tab != null) {
                 if (tab.OnOptionsItemSelected (this, item)) {
                     return true;
                 }
@@ -286,34 +296,34 @@ namespace NachoClient.AndroidClient
         }
 
         void UpdateUnreadIndicator ()
-		{
-			var unreadCount = 0;
-			var selectedAccount = NcApplication.Instance.Account;
-			var accountsWithChanges = new List<NcAccountMonitor.AccountInfo> ();
-			if (selectedAccount.AccountType != McAccount.AccountTypeEnum.Unified) {
-				foreach (var accountInfo in NcAccountMonitor.Instance.Accounts) {
-					if (accountInfo.Account.Id != selectedAccount.Id) {
-						if (accountInfo.RecentUnreadCount > 0) {
-							unreadCount += accountInfo.RecentUnreadCount;
+        {
+            var unreadCount = 0;
+            var selectedAccount = NcApplication.Instance.Account;
+            var accountsWithChanges = new List<NcAccountMonitor.AccountInfo> ();
+            if (selectedAccount.AccountType != McAccount.AccountTypeEnum.Unified) {
+                foreach (var accountInfo in NcAccountMonitor.Instance.Accounts) {
+                    if (accountInfo.Account.Id != selectedAccount.Id) {
+                        if (accountInfo.RecentUnreadCount > 0) {
+                            unreadCount += accountInfo.RecentUnreadCount;
                             accountsWithChanges.Add (accountInfo);
-						}
-					}
-				}
-			}
-			if (unreadCount != OtherAccountUnreadCount) {
-				OtherAccountUnreadCount = unreadCount;
-                if (OtherAccountUnreadCount == 0){
+                        }
+                    }
+                }
+            }
+            if (unreadCount != OtherAccountUnreadCount) {
+                OtherAccountUnreadCount = unreadCount;
+                if (OtherAccountUnreadCount == 0) {
                     SupportActionBar.Subtitle = "";
-                }else{
+                } else {
                     if (accountsWithChanges.Count == 1) {
-						var format = GetString (Resource.String.main_unread_format_single);
-                        SupportActionBar.Subtitle = String.Format (format, unreadCount, accountsWithChanges[0].Account.DisplayName);
+                        var format = GetString (Resource.String.main_unread_format_single);
+                        SupportActionBar.Subtitle = String.Format (format, unreadCount, accountsWithChanges [0].Account.DisplayName);
                     } else {
                         var format = GetString (Resource.String.main_unread_format_multiple);
                         SupportActionBar.Subtitle = String.Format (format, unreadCount, accountsWithChanges.Count);
                     }
                 }
-			}
+            }
         }
 
         #endregion
@@ -366,7 +376,7 @@ namespace NachoClient.AndroidClient
 
         public void ExitSearchMode ()
         {
-            if (ActionButtonVisibiltyBeforeSearchMode == ViewStates.Visible){
+            if (ActionButtonVisibiltyBeforeSearchMode == ViewStates.Visible) {
                 ActionButton.Show ();
             }
             TabLayout.Visibility = ViewStates.Visible;
@@ -383,7 +393,7 @@ namespace NachoClient.AndroidClient
             {
                 public int NameResource;
                 public Type FragmentType;
-                public WeakReference<Fragment> CachedFragmentInstance = new WeakReference<Fragment>(null);
+                public WeakReference<Fragment> CachedFragmentInstance = new WeakReference<Fragment> (null);
 
                 public Tab Tab {
                     get {
@@ -524,6 +534,42 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
+        #region System Events
+
+        bool IsListeningForStatusInd = false;
+
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
+                IsListeningForStatusInd = true;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd){
+                NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
+                IsListeningForStatusInd = false;
+            }
+        }
+
+        void StatusIndEventHandler (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+			if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
+				UpdateSettingsBadge ();
+			}
+			if (NcResult.SubKindEnum.Error_PasswordWillExpire == s.Status.SubKind) {
+				UpdateSettingsBadge ();
+			}
+			if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
+				UpdateSettingsBadge ();
+			}
+        }
+
+        #endregion
+
         void UpdateToolbarAccountInfo ()
         {
             if (Toolbar == null) {
@@ -539,6 +585,12 @@ namespace NachoClient.AndroidClient
             var image = Util.GetSizedAndRoundedAccountImage (this, account, size);
             SupportActionBar.SetHomeAsUpIndicator (image);
             UpdateUnreadIndicator ();
+        }
+
+        void UpdateSettingsBadge ()
+        {
+            ShowAlertItem = LoginHelpers.ShouldAlertUser ();
+            InvalidateOptionsMenu ();
         }
 
     }
