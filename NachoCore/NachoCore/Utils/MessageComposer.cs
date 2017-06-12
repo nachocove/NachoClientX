@@ -157,11 +157,11 @@ namespace NachoCore.Utils
 
         public void SetAccount(McAccount account)
         {
-            Account = account;
             if (Account.Id == account.Id) {
                 // same account. Nothing to do.
                 return;
             }
+            Account = account;
             if (Message != null) {
                 Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                     var message = record as McEmailMessage;
