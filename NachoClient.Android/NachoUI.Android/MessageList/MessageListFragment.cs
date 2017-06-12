@@ -712,10 +712,11 @@ namespace NachoClient.AndroidClient
             holder.ContentView.Click += (sender, e) => {
                 ItemClicked (holder.AdapterPosition);
             };
-            holder.ContentView.ContextClickable = true;
-            holder.ContentView.ContextMenuCreated += (sender, e) => {
-                ItemContextMenuCreated (holder.AdapterPosition, e.Menu);
-            };
+            // FIXME: API
+            //holder.ContentView.ContextClickable = true;
+            //holder.ContentView.ContextMenuCreated += (sender, e) => {
+            //    ItemContextMenuCreated (holder.AdapterPosition, e.Menu);
+            //};
             return holder;
         }
 
