@@ -32,7 +32,7 @@ namespace NachoClient.AndroidClient
         {
             if (account.DisplayPortraitId == 0) {
                 var resource = GetAccountServiceImageId (account.AccountService);
-                return context.GetDrawable (resource);
+                return ContextCompat.GetDrawable (context, resource);
             }
             var portrait = McPortrait.QueryById<McPortrait> (account.DisplayPortraitId);
             return Drawable.CreateFromPath (portrait.GetFilePath ());

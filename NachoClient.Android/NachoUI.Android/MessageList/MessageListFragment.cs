@@ -896,7 +896,7 @@ namespace NachoClient.AndroidClient
         {
             var typedVal = new Android.Util.TypedValue ();
             ItemView.Context.Theme.ResolveAttribute (attr, typedVal, true);
-            return (ItemView.Context.GetDrawable (typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
+            return (Android.Support.V4.Content.ContextCompat.GetDrawable (ItemView.Context, typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
         }
 
     }

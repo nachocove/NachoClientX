@@ -45,7 +45,7 @@ namespace NachoClient.AndroidClient
                 CameraSource = new AttachmentSource () {
                     Identifier = AttachmentSource.IDENTIFIER_TAKE_PHOTO,
                     DisplayName = GetString (Resource.String.attachment_chooser_take_photo),
-                    Icon = Activity.GetDrawable (Resource.Drawable.attachment_take_photo)
+                    Icon = ContextCompat.GetDrawable (Activity, Resource.Drawable.attachment_take_photo)
                 };
                 sources.Add (CameraSource);
             }
@@ -54,7 +54,7 @@ namespace NachoClient.AndroidClient
             {
                 Identifier = AttachmentSource.IDENTIFIER_NACHO_FILE,
                 DisplayName = GetString (Resource.String.attachment_chooser_nacho_files),
-                Icon=Activity.GetDrawable (Resource.Drawable.attachment_add_files)
+                Icon=ContextCompat.GetDrawable (Activity, Resource.Drawable.attachment_add_files)
             });
 
             foreach (var resolvedActivity in resolvedActivities) {
