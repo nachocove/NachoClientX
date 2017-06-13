@@ -67,6 +67,12 @@ namespace NachoClient.iOS
             StartListeningForStatusInd ();
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            PermissionManager.DealWithContactsPermission ();
+        }
+
         public override void ViewDidDisappear (bool animated)
         {
             StopListeningForStatusInd ();

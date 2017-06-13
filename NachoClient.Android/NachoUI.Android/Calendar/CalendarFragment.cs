@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
+﻿﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 
 using System;
@@ -14,6 +14,8 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Support.V7.Widget;
+using Android.Support.V4.Content;
+using Android.Content.PM;
 
 using NachoCore;
 using NachoCore.Model;
@@ -26,6 +28,7 @@ namespace NachoClient.AndroidClient
     {
 
         private const int REQUEST_SHOW_EVENT = 1;
+        private const int REQUEST_CALENDAR_PERMISSION = 1;
 
         INcEventProvider Events;
         CalendarAdapter Adapter;
@@ -48,10 +51,11 @@ namespace NachoClient.AndroidClient
             } else {
                 tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_event, ActionButtonClicked);
             }
-            if (!HasShownOnce){
-				GoToToday (animated: false);
+            if (!HasShownOnce) {
+                GoToToday (animated: false);
                 HasShownOnce = true;
             }
+            CheckForAndroidPermissions ();
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
@@ -195,7 +199,7 @@ namespace NachoClient.AndroidClient
 
         public void OnContextMenuClosed (IMenu menu)
         {
-        	IsContextMenuOpen = false;
+            IsContextMenuOpen = false;
         }
 
         public override bool OnContextItemSelected (IMenuItem item)
@@ -267,7 +271,7 @@ namespace NachoClient.AndroidClient
         {
             var account = NcApplication.Instance.DefaultCalendarAccount;
             var intent = EventEditActivity.BuildNewEventIntent (Activity, account.Id);
-			StartActivity (intent);
+            StartActivity (intent);
         }
 
         void ShowNewEvent (DateTime date)
@@ -305,8 +309,8 @@ namespace NachoClient.AndroidClient
 
         DateTime DateForPosition (int position)
         {
-        	int day;
-        	int item;
+            int day;
+            int item;
             Events.IndexToDayItem (position, out day, out item);
             return Events.GetDateUsingDayIndex (day);
         }
@@ -349,8 +353,71 @@ namespace NachoClient.AndroidClient
                 var subject = EmailHelper.CreateInitialSubjectLine (EmailHelper.Action.Forward, calendarItem.Subject);
                 var message = McEmailMessage.MessageWithSubject (account, subject);
                 var intent = MessageComposeActivity.ForwardCalendarIntent (Activity, calendarItem.Id, message);
-				StartActivity (intent);
+                StartActivity (intent);
             }
+        }
+
+        #endregion
+
+        #region Permissions
+
+        void CheckForAndroidPermissions()
+        {
+            // Check is always called when the calendar is selected.  The goal here is to ask only if we've never asked before
+            // On Android, "never asked before" means:
+            // 1. We don't have permission
+            // 2. ShouldShowRequestPermissionRationale returns false
+            //    (Android only instructs us to show a rationale if we've prompted once and the user has denied the request)
+            bool hasAndroidReadPermission = ContextCompat.CheckSelfPermission (Activity, Android.Manifest.Permission.ReadCalendar) == Permission.Granted;
+            bool hasAndroidWritePermission = ContextCompat.CheckSelfPermission (Activity, Android.Manifest.Permission.WriteCalendar) == Permission.Granted;
+            if (!hasAndroidReadPermission || !hasAndroidWritePermission) {
+                bool hasAskedRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadCalendar);
+                bool hasAskedWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteCalendar);
+                if (!hasAskedRead && !hasAskedWrite){
+                    RequestAndroidPermissions ();
+                }
+            }
+        }
+
+        void RequestAndroidPermissions()
+        {
+            bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadCalendar);
+            bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteCalendar);
+            if (shouldAskRead || shouldAskWrite) {
+                var builder = new Android.App.AlertDialog.Builder (Context);
+                builder.SetTitle (Resource.String.calendar_permission_request_title);
+                builder.SetMessage (Resource.String.calendar_permission_request_message);
+                builder.SetNegativeButton (Resource.String.calendar_permission_request_cancel,(sender, e) => {});
+                builder.SetPositiveButton (Resource.String.calendar_permission_request_ack, (sender, e) => {
+                    RequestPermissions (new string [] {
+                        Android.Manifest.Permission.ReadCalendar,
+                        Android.Manifest.Permission.WriteCalendar
+                    }, REQUEST_CALENDAR_PERMISSION);
+                });
+                builder.Show ();
+            } else {
+                RequestPermissions (new string [] {
+                    Android.Manifest.Permission.ReadCalendar,
+                    Android.Manifest.Permission.WriteCalendar
+                }, REQUEST_CALENDAR_PERMISSION);
+            }
+        }
+
+        public override void OnRequestPermissionsResult (int requestCode, string [] permissions, Permission [] grantResults)
+        {
+            if (requestCode == REQUEST_CALENDAR_PERMISSION){
+                if (grantResults.Length == 2 && grantResults[0] == Permission.Granted && grantResults[1] == Permission.Granted){
+                    NachoPlatform.Calendars.Instance.DeviceCalendarChanged ();
+                }else{
+                    // If the user denies one or both of the permissions, re-request, this time shownig our rationale.
+                    bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadCalendar);
+                    bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteCalendar);
+                    if (shouldAskRead || shouldAskWrite){
+                        RequestAndroidPermissions ();
+                    }
+                }
+            }
+            base.OnRequestPermissionsResult (requestCode, permissions, grantResults);
         }
 
         #endregion
@@ -398,16 +465,16 @@ namespace NachoClient.AndroidClient
 
         public bool IsSupportedDate (DateTime date)
         {
-        	//ExtendCalendarIfNecessary (date);
+            //ExtendCalendarIfNecessary (date);
             return Events.IndexOfDate (date) >= 0;
         }
 
         public DateTime DateForPosition (int position)
         {
-        	int day;
-        	int item;
-        	Events.IndexToDayItem (position, out day, out item);
-        	return Events.GetDateUsingDayIndex (day);
+            int day;
+            int item;
+            Events.IndexToDayItem (position, out day, out item);
+            return Events.GetDateUsingDayIndex (day);
         }
 
         public override int GroupCount {

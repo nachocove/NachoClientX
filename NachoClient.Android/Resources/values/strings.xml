@@ -164,6 +164,10 @@
     <string name="calendar_event_item_all_day">All Day</string>
     <string name="calendar_event_item_action_forward">Forward</string>
     <string name="calendar_event_item_action_late">I\'m Running Late</string>
+    <string name="calendar_permission_request_title">Device Calendar Permission</string>
+    <string name="calendar_permission_request_message">With read &amp; write access to your device calendar, Nacho Mail can include your device events in its calendar view.  You will have another opportunity to grant these permissions next.</string>
+    <string name="calendar_permission_request_cancel">Cancel</string>
+    <string name="calendar_permission_request_ack">Proceed</string>
 
     <!-- Calendar Event View -->
     <string name="event_action_forward">Forward</string>
