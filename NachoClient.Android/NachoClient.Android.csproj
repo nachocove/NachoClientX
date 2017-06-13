@@ -297,7 +297,6 @@
     <Compile Include="NachoUI.Android\MessageCompose\AttachmentChooserFragment.cs" />
     <Compile Include="NachoUI.Android\MessageList\MessageListFilterbar.cs" />
     <Compile Include="NachoUI.Android\MessageList\MessageSearchFragment.cs" />
-    <Compile Include="NachoUI.Android\Calendar\CalendarListView.cs" />
     <Compile Include="NachoUI.Android\Calendar\CalendarPagerView.cs" />
     <Compile Include="NachoUI.Android\Calendar\EventViewActivity.cs" />
     <Compile Include="NachoUI.Android\Calendar\EventEditActivity.cs" />
