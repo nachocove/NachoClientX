@@ -16,6 +16,8 @@ using Android.Views;
 using Android.Widget;
 using Android.Support.V7.Widget;
 using Android.Views.InputMethods;
+using Android.Support.V4.Content;
+using Android.Content.PM;
 
 using NachoCore;
 using NachoCore.Model;
@@ -26,6 +28,8 @@ namespace NachoClient.AndroidClient
 {
     public class ContactsFragment : Fragment, MainTabsActivity.Tab, ContactsAdapter.Listener, Android.Support.V4.View.MenuItemCompat.IOnActionExpandListener
     {
+
+        private const int REQUEST_CONTACTS_PERMISSIONS = 1;
 
         McAccount Account;
         ContactsAdapter Adapter;
@@ -49,6 +53,7 @@ namespace NachoClient.AndroidClient
             UpdateActions (tabActivity);
 			StartListeningForStatusInd ();
 			SetNeedsReload ();
+            CheckForAndroidPermissions ();
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
@@ -350,6 +355,69 @@ namespace NachoClient.AndroidClient
 			if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
 				SetNeedsReload ();
 			}
+        }
+
+        #endregion
+
+        #region Permissions
+
+        void CheckForAndroidPermissions()
+        {
+            // Check is always called when the calendar is selected.  The goal here is to ask only if we've never asked before
+            // On Android, "never asked before" means:
+            // 1. We don't have permission
+            // 2. ShouldShowRequestPermissionRationale returns false
+            //    (Android only instructs us to show a rationale if we've prompted once and the user has denied the request)
+            bool hasAndroidReadPermission = ContextCompat.CheckSelfPermission (Activity, Android.Manifest.Permission.ReadContacts) == Permission.Granted;
+            bool hasAndroidWritePermission = ContextCompat.CheckSelfPermission (Activity, Android.Manifest.Permission.WriteContacts) == Permission.Granted;
+            if (!hasAndroidReadPermission || !hasAndroidWritePermission) {
+                bool hasAskedRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadContacts);
+                bool hasAskedWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteContacts);
+                if (!hasAskedRead && !hasAskedWrite){
+                    RequestAndroidPermissions ();
+                }
+            }
+        }
+
+        void RequestAndroidPermissions()
+        {
+            bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadContacts);
+            bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteContacts);
+            if (shouldAskRead || shouldAskWrite) {
+                var builder = new Android.App.AlertDialog.Builder (Context);
+                builder.SetTitle (Resource.String.contacts_permission_request_title);
+                builder.SetMessage (Resource.String.contacts_permission_request_message);
+                builder.SetNegativeButton (Resource.String.contacts_permission_request_cancel,(sender, e) => {});
+                builder.SetPositiveButton (Resource.String.contacts_permission_request_ack, (sender, e) => {
+                    RequestPermissions (new string [] {
+                        Android.Manifest.Permission.ReadContacts,
+                        Android.Manifest.Permission.WriteContacts
+                    }, REQUEST_CONTACTS_PERMISSIONS);
+                });
+                builder.Show ();
+            } else {
+                RequestPermissions (new string [] {
+                    Android.Manifest.Permission.ReadContacts,
+                    Android.Manifest.Permission.WriteContacts
+                }, REQUEST_CONTACTS_PERMISSIONS);
+            }
+        }
+
+        public override void OnRequestPermissionsResult (int requestCode, string [] permissions, Permission [] grantResults)
+        {
+            if (requestCode == REQUEST_CONTACTS_PERMISSIONS){
+                if (grantResults.Length == 2 && grantResults[0] == Permission.Granted && grantResults[1] == Permission.Granted){
+                    BackEnd.Instance.Start (McAccount.GetDeviceAccount ().Id);
+                }else{
+                    // If the user denies one or both of the permissions, re-request, this time shownig our rationale.
+                    bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadContacts);
+                    bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteContacts);
+                    if (shouldAskRead || shouldAskWrite){
+                        RequestAndroidPermissions ();
+                    }
+                }
+            }
+            base.OnRequestPermissionsResult (requestCode, permissions, grantResults);
         }
 
         #endregion
