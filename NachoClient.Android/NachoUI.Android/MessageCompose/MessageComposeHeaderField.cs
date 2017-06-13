@@ -93,7 +93,7 @@ namespace NachoClient.AndroidClient
 
                 var textAppearance = values.GetResourceId (Resource.Attribute.labelTextAppearance, 0);
                 if (textAppearance != 0) {
-                    Label.SetTextAppearance (textAppearance);
+                    Label.SetTextAppearanceCompat (textAppearance);
                 }
 
                 Label.Text = values.GetString (Resource.Attribute.labelText);
@@ -137,7 +137,7 @@ namespace NachoClient.AndroidClient
             using (var values = new AttributeValues (Context, attrs, attrIds)) {
                 var textAppearance = values.GetResourceId (Resource.Attribute.valueTextAppearance, 0);
                 if (textAppearance != 0) {
-                    AddressField.SetTextAppearance (textAppearance);
+                    AddressField.SetTextAppearanceCompat (textAppearance);
                 }
             }
             AddressField.Background = null;
@@ -173,7 +173,7 @@ namespace NachoClient.AndroidClient
             using (var values = new AttributeValues (Context, attrs, attrIds)) {
                 var textAppearance = values.GetResourceId (Resource.Attribute.valueTextAppearance, 0);
                 if (textAppearance != 0) {
-                    TextField.SetTextAppearance (textAppearance);
+                    TextField.SetTextAppearanceCompat (textAppearance);
                 }
             }
             TextField.SetSingleLine (true);
@@ -203,7 +203,7 @@ namespace NachoClient.AndroidClient
             using (var values = new AttributeValues (Context, attrs, attrIds)) {
                 var textAppearance = values.GetResourceId (Resource.Attribute.valueTextAppearance, 0);
                 if (textAppearance != 0) {
-                    ValueLabel.SetTextAppearance (textAppearance);
+                    ValueLabel.SetTextAppearanceCompat (textAppearance);
                 }
             }
             ValueLabel.SetSingleLine (true);
@@ -394,9 +394,9 @@ namespace NachoClient.AndroidClient
             {
                 if (RemoveHandler != null) {
                     RemoveClicked -= RemoveHandler;
-            	}
-            	RemoveHandler = removeHandler;
-            	if (RemoveHandler != null) {
+                }
+                RemoveHandler = removeHandler;
+                if (RemoveHandler != null) {
                     RemoveClicked += RemoveHandler;
                 }
             }

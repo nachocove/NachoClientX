@@ -326,6 +326,7 @@
     <Compile Include="NachoUI.Android\Activities\NcAlertView.cs" />
     <Compile Include="NachoUI.Android\NotificationService.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
+    <Compile Include="NachoUI.Android\Support\Compat.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

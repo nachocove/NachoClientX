@@ -50,7 +50,7 @@ namespace NachoClient.AndroidClient
             FindSubviews (view);
 
             var context = RecyclerView.Context;
-            RecyclerView.SetLayoutManager (new LinearLayoutManager (Context));
+            RecyclerView.SetLayoutManager (new LinearLayoutManager (context));
             ItemsAdapter = new SettingsAdapter (this);
             RecyclerView.SetAdapter (ItemsAdapter);
 

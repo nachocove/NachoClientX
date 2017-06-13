@@ -38,9 +38,9 @@ namespace NachoClient.AndroidClient
             RequiredField = view.FindViewById (Resource.Id.required) as MessageComposeHeaderAddressField;
             OptionalField = view.FindViewById (Resource.Id.optional) as MessageComposeHeaderAddressField;
             RequiredField.AddressField.AllowDuplicates (false);
-            RequiredField.AddressField.Adapter = new ContactAddressAdapter (Context);
+            RequiredField.AddressField.Adapter = new ContactAddressAdapter (view.Context);
             OptionalField.AddressField.AllowDuplicates (false);
-            OptionalField.AddressField.Adapter = new ContactAddressAdapter (Context);
+            OptionalField.AddressField.Adapter = new ContactAddressAdapter (view.Context);
             builder.SetView (view);
             builder.SetNegativeButton (Resource.String.add_attendee_cancel, CancelClicked);
             builder.SetPositiveButton (Resource.String.add_attendee_done, SaveClicked);

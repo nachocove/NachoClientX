@@ -89,7 +89,8 @@ namespace NachoClient.AndroidClient
             PagerView = view.FindViewById (Resource.Id.pager) as CalendarPagerView;
             ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
             ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
-            ListView.ScrollChange += ListViewScrolled;
+
+            ListView.SetOnScrollChangeCompat (ListViewScrolled);
             PagerView.DateSelected = PagerSelectedDate;
             PagerView.HasEvents = PagerHasEvents;
             PagerView.IsSupportedDate = PagerIsSupportedDate;
@@ -174,7 +175,7 @@ namespace NachoClient.AndroidClient
             return Adapter.IsSupportedDate (date);
         }
 
-        void ListViewScrolled (object sender, View.ScrollChangeEventArgs e)
+        void ListViewScrolled ()
         {
             var layoutManager = ListView.GetLayoutManager () as LinearLayoutManager;
             var position = layoutManager.FindFirstVisibleItemPosition ();
@@ -421,6 +422,7 @@ namespace NachoClient.AndroidClient
         }
 
         #endregion
+
     }
 
     public class CalendarAdapter : GroupedListRecyclerViewAdapter

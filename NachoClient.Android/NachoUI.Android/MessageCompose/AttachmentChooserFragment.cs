@@ -37,15 +37,15 @@ namespace NachoClient.AndroidClient
             shareIntent.AddCategory (Intent.CategoryOpenable);
             shareIntent.SetType ("*/*");
             shareIntent.PutExtra (Intent.ExtraAllowMultiple, true);
-            var resolvedActivities = Context.PackageManager.QueryIntentActivities (shareIntent, 0);
+            var resolvedActivities = Activity.PackageManager.QueryIntentActivities (shareIntent, 0);
 
             var sources = new List<AttachmentSource> ();
 
-            if (Util.CanTakePhoto (Context)) {
+            if (Util.CanTakePhoto (Activity)) {
                 CameraSource = new AttachmentSource () {
                     Identifier = AttachmentSource.IDENTIFIER_TAKE_PHOTO,
                     DisplayName = GetString (Resource.String.attachment_chooser_take_photo),
-                    Icon = Context.GetDrawable (Resource.Drawable.attachment_take_photo)
+                    Icon = Activity.GetDrawable (Resource.Drawable.attachment_take_photo)
                 };
                 sources.Add (CameraSource);
             }
@@ -54,16 +54,16 @@ namespace NachoClient.AndroidClient
             {
                 Identifier = AttachmentSource.IDENTIFIER_NACHO_FILE,
                 DisplayName = GetString (Resource.String.attachment_chooser_nacho_files),
-                Icon=Context.GetDrawable (Resource.Drawable.attachment_add_files)
+                Icon=Activity.GetDrawable (Resource.Drawable.attachment_add_files)
             });
 
             foreach (var resolvedActivity in resolvedActivities) {
                 var packageName = resolvedActivity.ActivityInfo.PackageName;
-                var applicationInfo = Context.PackageManager.GetApplicationInfo (packageName, 0);
+                var applicationInfo = Activity.PackageManager.GetApplicationInfo (packageName, 0);
                 sources.Add (new AttachmentSource () {
                     Identifier = packageName,
-                    DisplayName = Context.PackageManager.GetApplicationLabel (applicationInfo),
-                    Icon = Context.PackageManager.GetApplicationIcon (applicationInfo)
+                    DisplayName = Activity.PackageManager.GetApplicationLabel (applicationInfo),
+                    Icon = Activity.PackageManager.GetApplicationIcon (applicationInfo)
                 });
             }
 
@@ -75,8 +75,8 @@ namespace NachoClient.AndroidClient
             var sources = GetSources ();
             Adapter = new AttachmentSourceAdapter (sources);
 
-            var builder = new AlertDialog.Builder (this.Activity);
-            var view = new ListView (Context);
+            var builder = new AlertDialog.Builder (Activity);
+            var view = new ListView (Activity);
             view.Divider = null;
             view.DividerHeight = 0;
             view.Adapter = Adapter;
@@ -107,7 +107,7 @@ namespace NachoClient.AndroidClient
         void RequestCameraPermissions ()
         {
             if (ShouldShowRequestPermissionRationale (Android.Manifest.Permission.Camera) || ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteExternalStorage)) {
-                var builder = new AlertDialog.Builder (Context);
+                var builder = new AlertDialog.Builder (Activity);
                 builder.SetTitle (Resource.String.attachment_chooser_camera_permission_request_title);
                 builder.SetMessage (Resource.String.attachment_chooser_camera_permission_request_message);
                 builder.SetPositiveButton (Resource.String.attachment_chooser_camera_permission_request_ack, (sender, e) => {
@@ -135,7 +135,7 @@ namespace NachoClient.AndroidClient
                     if (ShouldShowRequestPermissionRationale (Android.Manifest.Permission.Camera) || ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteExternalStorage)){
                         RequestCameraPermissions ();
                     }else{
-						var builder = new AlertDialog.Builder (Context);
+                        var builder = new AlertDialog.Builder (Activity);
 						builder.SetTitle (Resource.String.attachment_chooser_camera_permission_denied_title);
 						builder.SetMessage (Resource.String.attachment_chooser_camera_permission_denied_message);
 						builder.SetPositiveButton (Resource.String.attachment_chooser_camera_permission_denied_settings, (sender, e) => {
