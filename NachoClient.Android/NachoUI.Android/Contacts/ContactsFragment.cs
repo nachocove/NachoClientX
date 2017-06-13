@@ -501,14 +501,12 @@ namespace NachoClient.AndroidClient
                 return HeaderViewHolder.Create (parent);
             case ViewType.Contact:
                 var holder = ContactViewHolder.Create (parent);
-                // FIXME: API
-                //holder.ContentView.ContextClickable = true;
-                //holder.ContentView.ContextMenuCreated += (sender, e) => {
-                //    int groupPosition;
-                //    int itemPosition;
-                //    GetGroupPosition (holder.AdapterPosition, out groupPosition, out itemPosition);
-                //    ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
-                //};
+                holder.ContentView.ContextMenuCreated += (sender, e) => {
+                   int groupPosition;
+                   int itemPosition;
+                   GetGroupPosition (holder.AdapterPosition, out groupPosition, out itemPosition);
+                   ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
+                };
                 return holder;
             }
             throw new NotImplementedException ();

@@ -518,14 +518,12 @@ namespace NachoClient.AndroidClient
                 return DayHeaderViewHolder.Create (parent);
             case ViewType.Event:
                 var eventHolder = EventViewHolder.Create (parent);
-                // FIXME: API
-                //eventHolder.ItemView.ContextClickable = true;
-                //eventHolder.ItemView.ContextMenuCreated += (sender, e) => {
-                //    int groupPosition;
-                //    int itemPosition;
-                //    GetGroupPosition (eventHolder.AdapterPosition, out groupPosition, out itemPosition);
-                //    ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
-                //};
+                eventHolder.ItemView.ContextMenuCreated += (sender, e) => {
+                   int groupPosition;
+                   int itemPosition;
+                   GetGroupPosition (eventHolder.AdapterPosition, out groupPosition, out itemPosition);
+                   ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
+                };
                 return eventHolder;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("CalendarFragment.OnCreateGroupedViewHolder unexpected viewType: {0}", viewType));
