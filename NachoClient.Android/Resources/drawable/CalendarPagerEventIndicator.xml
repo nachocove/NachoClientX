@@ -3,5 +3,5 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
     <solid
-        android:color="?attr/colorCalendarDayBorder" />
+        android:color="#e1e5e6" />
 </shape>

@@ -874,7 +874,7 @@ namespace NachoClient.AndroidClient
                 }
             }
             var styledPreview = new SpannableString (previewText);
-            styledPreview.SetSpan (new ForegroundColorSpan (ThemeColor (Android.Resource.Attribute.ColorPrimary)), 0, subjectLength, 0);
+            styledPreview.SetSpan (new ForegroundColorSpan (ItemView.Context.ThemeColorCompat (Android.Resource.Attribute.ColorPrimary)), 0, subjectLength, 0);
             // TODO: insert hot icon
             if (attachmentIndex >= 0) {
                 var imageSpan = new ImageSpan (ItemView.Context, Resource.Drawable.subject_attach);
@@ -890,13 +890,6 @@ namespace NachoClient.AndroidClient
                 ThreadIndicator.Visibility = ViewStates.Gone;
             }
             UnreadIndicator.Visibility = message.IsRead ? ViewStates.Gone : ViewStates.Visible;
-        }
-
-        public Android.Graphics.Color ThemeColor (int attr)
-        {
-            var typedVal = new Android.Util.TypedValue ();
-            ItemView.Context.Theme.ResolveAttribute (attr, typedVal, true);
-            return (Android.Support.V4.Content.ContextCompat.GetDrawable (ItemView.Context, typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
         }
 
     }

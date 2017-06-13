@@ -29,6 +29,20 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public static Android.Graphics.Color ThemeColorCompat (this Android.Content.Context context, int attr)
+        {
+            if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Lollipop){
+                var typedVal = new Android.Util.TypedValue ();
+                context.Theme.ResolveAttribute (attr, typedVal, true);
+                return (Android.Support.V4.Content.ContextCompat.GetDrawable (context, typedVal.ResourceId) as Android.Graphics.Drawables.ColorDrawable).Color;
+            }else{
+                if (attr == Android.Resource.Attribute.ColorPrimary){
+                    return Android.Graphics.Color.Rgb (0x0C, 0x42, 0x4B);
+                }
+            }
+            throw new NachoCore.Utils.NcAssert.NachoDefaultCaseFailure ("ThemeColorCompat unknown attribute");
+        }
+
         class ScrollListener : Android.Support.V7.Widget.RecyclerView.OnScrollListener
         {
 

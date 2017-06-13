@@ -1008,6 +1008,15 @@
     <AndroidResource Include="Resources\drawable-mdpi\action_alert.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\action_alert.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\action_alert.png" />
+    <AndroidResource Include="Resources\drawable-v21\CalendarPagerDateBackground.xml" />
+    <AndroidResource Include="Resources\drawable-v21\CalendarPagerDateBackgroundAlt.xml" />
+    <AndroidResource Include="Resources\drawable-v21\CalendarPagerDateBackgroundHighlighted.xml" />
+    <AndroidResource Include="Resources\drawable-v21\CalendarPagerDateBackgroundToday.xml" />
+    <AndroidResource Include="Resources\drawable-v21\CalendarPagerEventIndicator.xml" />
+    <AndroidResource Include="Resources\drawable-v21\EmailAddressTokenBackground.xml" />
+    <AndroidResource Include="Resources\drawable-v21\RoundedButton.xml" />
+    <AndroidResource Include="Resources\drawable-v21\UnreadIndicator.xml" />
+    <AndroidResource Include="Resources\drawable-v21\UnreadIndicatorBackground.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
