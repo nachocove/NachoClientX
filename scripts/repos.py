@@ -1,13 +1,40 @@
 #!/usr/bin/env python
 
 import os
+import os.path
 import sys
 from argparse import ArgumentParser
 import git
-import repos_cfg
+import command
+
+REPO_NAMES = (
+    'Reachability',
+    'registered-domain-libs',
+    'ios-openssl',
+    'NachoPlatformBinding',
+    'NachoUIMonitorBinding',
+    'MailKit',
+    'DnDns',
+    'DDay-iCal-Xamarin',
+    'CSharp-Name-Parser',
+    'aws-sdk-xamarin',
+    'lucene.net-3.0.3',
+    'MobileHtmlAgilityPack',
+    'JetBlack.Caching',
+    'TokenAutoComplete',
+    'TokenAutoCompleteBinding',
+    'rtfparserkit',
+    'rtfparserkitBinding',
+    'OkHttp-Xamarin',
+    # # This is always the last one
+    'NachoClientX'
+)
+
+BRANCH_EXCEPTIONS = {
+}
 
 
-class Build:
+class Build(object):
     def __init__(self, version, build):
         self.version = version
         self.build = build
@@ -15,258 +42,240 @@ class Build:
     def tag(self):
         return 'v%s_%s' % (self.version, self.build)
 
-    def branch(self):
-        return 'branch_' + self.tag()
+
+class TablePrinter(object):
+
+    def __init__(self):
+        pass
+
+    def print_table(self, rows):
+        if len(rows) == 0:
+            return
+        colcount = len(rows[0])
+        minspacing = 2
+        colwidth = [minspacing] * colcount
+        for row in rows:
+            for col in range(colcount):
+                colwidth[col] = max(len(unicode(row[col]) if row[col] is not None else '') + minspacing, colwidth[col])
+        for row in rows:
+            cols = []
+            for col in range(colcount):
+                fmt = "%%-%ds" % colwidth[col]
+                cols.append(fmt % (unicode(row[col]) if row[col] is not None else ''))
+            print ''.join(cols)
 
 
-class RepoGroup:
-    def __init__(self, top=None):
-        self.top = top
+class Repo(object):
 
-    def repo_dir(self, repo):
-        return os.path.join(self.top, repo)
+    name = None
+    path = None
+    branches = None
+    branch = None
+    status = None
+    fixed_branch = None
 
-    def for_all_repos(self, action, exception_handler=None, *args):
-        ok = True
-        for repo in repos_cfg.repos:
-            try:
-                os.chdir(self.repo_dir(repo))
+    def __init__(self, name, path):
+        self.name = name
+        self.path = path
+        self.fixed_branch = BRANCH_EXCEPTIONS.get(self.name, dict()).get('fixed-branch', None)
+        if not os.path.exists(self.path):
+            self.clone()
+        (self.branches, self.branch) = git.list_branches(cwd=self.path)
 
-                if not action(repo, *args):
-                    ok = False
-            except OSError:
-                if callable(exception_handler):
-                    exception_handler(repo)
-                else:
-                    print '%s -> FAILED!' % repo
-                ok = False
-        return ok
+    def clone(self):
+        url = 'git@github.com:nachocove/%s.git' % self.name
+        print "Cloning %s..." % url
+        git.clone(url, self.path)
+        git.submodule_init(cwd=self.path)
 
-    @staticmethod
-    def may_push(cmd, repo, ref, err_msg):
-        """
-        If the given command successfully runs, issue a push command.
+    def checkout(self, branch):
+        if self.fixed_branch is not None:
+            return
+        git.checkout(branch, cwd=self.path)
+        git.submodule_update()
+        self.branch = branch
 
-        :param cmd: a GitCommand that is already executed.
-        :param repo: repository name
-        :param ref: a branch or tag name
-        :param err_msg: An error message if the command fails to run
-        :return: True if pushed; False otherwise.
-        """
-        if cmd.ran_ok():
-            push_cmd = git.Push(ref)
-            if push_cmd.ran_ok():
-                print '%s -> OK' % repo
-                return True
-            else:
-                print '%s -> push failed!' % repo
-                print push_cmd.stderr
-                return False
-        else:
-            print err_msg % repo
-            print cmd.stderr
-            return False
+    def pull(self):
+        git.update(cwd=self.path)
+        git.submodule_update()
 
-    def checkout_branch(self, branch):
-        def action(repo):
-            # Check for exception
-            real_branch = branch
-            if repo in repos_cfg.branch_exceptions:
-                fixed_branch = repos_cfg.branch_exceptions[repo].get('fixed-branch', None)
-                if fixed_branch is not None:
-                    real_branch = fixed_branch
-
-            checkout_cmd = git.Checkout(real_branch)
-            if not checkout_cmd.ran_ok():
-                print '%s: %s -> ERROR!' % (repo, checkout_cmd)
-                print checkout_cmd.stderr
-                return False
-
-            submodules_update_cmd = git.SubModuleUpdate()
-            if not submodules_update_cmd.ran_ok():
-                print '%s: %s -> ERROR!' % (repo, submodules_update_cmd)
-                print checkout_cmd.stderr
-                return False
-
-            print '%s -> %s' % (repo, real_branch)
-            return True
-
-        return self.for_all_repos(action=action, exception_handler=None)
-
-    def update(self):
-        def action(repo):
-            update_cmd = git.Update()
-            if not update_cmd.ran_ok():
-                print '%s: %s -> ERROR!' % (repo, update_cmd)
-                print update_cmd.stderr
-                return False
-
-        return self.for_all_repos(action=action, exception_handler=None)
+    def push(self):
+        git.push(self.branch, cwd=self.path)
 
     def create_tag(self, tag, message=None):
-        def action(repo):
-            tag_cmd = git.CreateTag(tag, message)
-            return RepoGroup.may_push(tag_cmd, repo, tag, '%s -> create tag failed!')
-
-        return self.for_all_repos(action=action, exception_handler=None)
-
-    def create_branch(self, branch):
-        def action(repo):
-            branch_cmd = git.CreateBranch(branch)
-            return RepoGroup.may_push(branch_cmd, repo, branch, '%s -> create branch failed!')
-
-        return self.for_all_repos(action=action, exception_handler=None)
-
-    def delete_branch(self, branch):
-        def action(repo):
-            branch_cmd = git.DeleteBranch(branch)
-            return RepoGroup.may_push(branch_cmd, repo, ':' + branch, '%s -> delete branch failed!')
-
-        return self.for_all_repos(action=action, exception_handler=None)
+        git.create_tag(tag, message, cwd=self.path)
 
     def delete_tag(self, tag):
-        def action(repo):
-            tag_cmd = git.DeleteTag(tag)
-            return RepoGroup.may_push(tag_cmd, repo, ':refs/tags/' + tag, '%s -> delete tag failed!')
+        git.delete_tag(tag, cwd=self.path)
 
-        return self.for_all_repos(action=action, exception_handler=None)
+    def create_branch(self, branch):
+        if self.fixed_branch is not None:
+            return
+        git.create_branch(branch, cwd=self.path)
+        git.submodule_update()
+        self.branch = branch
+        self.branches.append(branch)
+
+    def query_status(self):
+        self.status = git.status(cwd=self.path)
+
+    @property
+    def status_symbol(self):
+        if self.status is None:
+            self.query_status()
+        if self.status.has_changes:
+            if self.status.has_untracked:
+                return '?M'
+            else:
+                return 'M'
+        elif self.status.has_untracked:
+            return '?'
+        else:
+            return ''
+
+
+class RepoGroup(object):
+
+    repos = None
+    client_repo = None
+
+    def __init__(self, top=None):
+        self.top = top
+        self.repos = []
+        for name in REPO_NAMES:
+            self.repos.append(Repo(name, self.repo_dir(name)))
+        self.client_repo = self.repos[-1]
+
+    def repo_dir(self, name):
+        return os.path.join(self.top, name)
+
+    def print_status(self):
+        printer = TablePrinter()
+        printer.print_table([(repo.status_symbol, repo.name, repo.branch) for repo in self.repos])
+
+    def checkout_branch(self, branch):
+        for repo in self.repos:
+            print "Checking out %s..." % repo.name
+            repo.checkout(branch)
+        print ""
+        self.print_status()
+
+    def pull(self):
+        for repo in self.repos:
+            print "Pulling %s..." % repo.name
+            repo.pull()
+        print ""
+        self.print_status()
+
+    def push(self):
+        for repo in self.repos:
+            print "Pusing %s..." % repo.name
+            repo.push()
+        print "\nDone"
+
+    def create_tag(self, tag, message=None):
+        for repo in self.repos:
+            print "Creating tag %s with %s..." % (tag, repo.name)
+            repo.tag(tag, message)
+        print "\nDone"
+
+    def delete_tag(self, tag):
+        for repo in self.repos:
+            print "Deleting tag %s with %s..." % (tag, repo.name)
+            repo.tag(tag, message)
+        print "\nDone"
+
+    def create_branch(self, branch):
+        for repo in self.repos:
+            print "Creating branch %s with %s..." % (branch, repo.name)
+            repo.create_branch(branch)
+        print ""
+        self.print_status()
+
+    def delete_branch(self, branch):
+        for repo in self.repos:
+            print "Removing branch %s from %s..." % (branch, repo.name)
+            repo.delete_branch(branch)
+        print ""
+        self.print_status()
 
     def get_current_branch(self):
-        fmt = '%%-%ds %%s' % (max([len(x) for x in repos_cfg.repos])+3)
+        self.print_status()
 
-        def action(repo):
-            cmd = git.ListBranches()
-            if cmd.ran_ok():
-                print fmt % (repo, cmd.current_branch)
-            else:
-                print fmt % (repo, 'ERROR!')
-                print cmd.stderr
-                return False
-            return True
+    def get_status(self, details=False):
+        for repo in self.repos:
+            print "Querying status of %s..." % repo.name
+            repo.query_status()
+        print ""
+        self.print_status()
 
-        def exception_handler(repo):
-            print fmt % (repo, 'FAILED!')
-
-        return self.for_all_repos(action=action, exception_handler=exception_handler)
-
-    def get_status(self, is_brief=False):
-        repo_status = dict()
-
-        def action(repo):
-            repo_status[repo] = {'branch': '', 'status': ''}
-            branch_cmd = git.ListBranches()
-            if branch_cmd.ran_ok():
-                repo_status[repo]['branch'] = branch_cmd.current_branch
-            else:
-                repo_status[repo]['branch'] = 'ERROR!'
-                return False
-            status_cmd = git.Status()
-            if status_cmd.ran_ok():
-                if is_brief:
-                    repo_status[repo]['status'] = 'unindexed=%d, indexed=%d, untracked=%d' % \
-                                                  (len(status_cmd.files),
-                                                   len(status_cmd.index_files),
-                                                   len(status_cmd.untracked_files))
-                else:
-                    repo_status[repo]['status'] = status_cmd.stdout
-            else:
-                if is_brief:
-                    repo_status[repo]['status'] = 'ERROR!'
-                else:
-                    repo_status[repo]['status'] = status_cmd.stderr
-                return False
-            return True
-
-        def exception_handler(repo):
-            repo_status[repo] = {'branch': '', 'status': ''}
-            repo_status[repo]['branch'] = 'FAILED!'
-
-        ok = self.for_all_repos(action=action, exception_handler=exception_handler)
-
-        # Now format everything
-        for rep in repos_cfg.repos:
-            if is_brief:
-                fmt = '%%-%ds  %%-%ds %%s' % (max([len(r) for r in repos_cfg.repos])+3,
-                                              max([len(s['branch']) for s in repo_status.values()])+3)
-                print fmt % (rep, repo_status[rep]['branch'], repo_status[rep]['status'])
-            else:
-                print '[' + rep + '] ' + ('-' * (70 - len(rep)))
-                print repo_status[rep]['status']
-
-        return ok
+        if details:
+            for repo in self.repos:
+                if repo.status.has_untracked or repo.status.has_changes:
+                    print "\n%s" % repo.name
+                    repo.status.print_status()
 
 
-def main():
-    parser = ArgumentParser()
-    subparser = parser.add_subparsers(dest='command', help='commands')
+def setup_argparser():
+    main_parser = ArgumentParser()
+    cmd_parser = main_parser.add_subparsers(dest='command', help='commands')
 
-    subparser.add_parser('branch',
-                         help='List the current branch of all repositories',
-                         description='List the current branch of all repositories.')
+    parser = cmd_parser.add_parser('branch', help='List the current branch of all repositories', description='List the current branch of all repositories.')
+    parser.set_defaults(func=command_branch)
+    
+    # checkout branch
+    parser = cmd_parser.add_parser('checkout-branch', help='Switch to an existing branch', description='Switch to an existing branch')
+    parser.add_argument('--branch', type=str, help='Branch name')
+    parser.set_defaults(func=command_checkout_branch)
 
-    def add_label_or_build(parent, label, desc):
-        parent.add_argument(label, type=str, help=desc)
-        parent.add_argument('--build', type=str, default=None, help='Build number')
-        parent.add_argument('--version', type=str, default=None, help='Build version')
+    #checkout tag
+    parser = cmd_parser.add_parser('checkout-tag', help='Switch to a tagged snapshot',description='Switch to a tagged snapshot. Note that all local repos will be in a detached state.')
+    parser.add_argument('--tag', type=str, help='Tag name')
+    parser.add_argument('--build', type=str, default=None, help='Build number')
+    parser.add_argument('--version', type=str, default=None, help='Build version')
+    parser.set_defaults(func=command_checkout_tag)
 
-    checkout_branch_parser = subparser.add_parser('checkout-branch',
-                                                  help='Switch to an existing branch',
-                                                  description='Switch to an existing branch')
-    add_label_or_build(checkout_branch_parser, '--branch', 'Branch name')
+    #create branch
+    parser = cmd_parser.add_parser('create-branch', help='Create a branch from a given name', description='Create a branch from a given name. To create a branch with an arbitrary name, use --branch.')
+    parser.add_argument('--branch', type=str, help='Branch name')
+    parser.set_defaults(func=command_create_branch)
 
-    checkout_tag_parser = subparser.add_parser('checkout-tag',
-                                               help='Switch to a tagged snapshot',
-                                               description='Switch to a tagged snapshot. Note that all local'
-                                                           ' repos will be in a detached state.')
-    add_label_or_build(checkout_tag_parser, '--tag', 'Tag name')
+    #create tag
+    parser = cmd_parser.add_parser('create-tag', help='Create a tag from a given name, or build', description='Create a tag from a given name, or build. To create a tag with an arbitrary name, use --tag. To create a tag from a build, use --version and --build. The tag name is "v<VERSION>_<BUILD>".')
+    parser.add_argument('--tag', type=str, help='Tag name')
+    parser.add_argument('--build', type=str, default=None, help='Build number')
+    parser.add_argument('--version', type=str, default=None, help='Build version')
+    parser.set_defaults(func=command_create_tag)
 
-    create_branch_parser = subparser.add_parser('create-branch',
-                                                help='Create a branch from a given name, tag, or build',
-                                                description='Create a branch from a given name, tag, or build. '
-                                                            'To create a branch with an arbitrary name, use --branch. '
-                                                            'To create a branch from a tag, use --tag. The branch '
-                                                            'name will be the tag name prefixed by "branch_". To '
-                                                            'create a branch from a build, use --version and --build. '
-                                                            'The branch name is "branch_v<VERSION>_<BUILD>".')
-    add_label_or_build(create_branch_parser, '--branch', 'Branch name')
-    create_branch_parser.add_argument('--tag', type=str, default=None, help='Tag name')
+    #delete branch
+    parser = cmd_parser.add_parser('delete-branch', help='Delete a branch from a given name', description='Delete a branch from a given name.')
+    parser.add_argument('--branch', type=str, help='Branch name')
+    parser.set_defaults(func=command_delete_branch)
 
-    create_tag_parser = subparser.add_parser('create-tag',
-                                             help='Create a tag from a given name, or build',
-                                             description='Create a tag from a given name, or build. To create '
-                                                         'a tag with an arbitrary name, use --tag. To create '
-                                                         'a tag from a build, use --version and --build. The tag '
-                                                         'name is "v<VERSION>_<BUILD>".')
-    add_label_or_build(create_tag_parser, '--tag', 'Tag name')
+    #delete tag
+    parser = cmd_parser.add_parser('delete-tag', help='Delete a tag from a given name', description='Delete a tag from a given name.')
+    parser.add_argument('--tag', type=str, help='Tag name')
+    parser.set_defaults(func=command_delete_tag)
 
-    delete_branch_parser = subparser.add_parser('delete-branch',
-                                                help='Delete an existing branch from a given name, tag, or build',
-                                                description='Delete a branch from a given name, tag, or build. '
-                                                            'To delete a branch with an arbitrary name, use --branch. '
-                                                            'To delete a branch from a tag, use --')
-    add_label_or_build(delete_branch_parser, '--branch', 'Branch name')
+    #status
+    parser = cmd_parser.add_parser('status', help='Return git status for all repositories', description='Return git status for all repositories.')
+    parser.add_argument('--details', action='store_true', help='Show changed file lists for each repository with changes')
+    parser.set_defaults(func=command_status)
 
-    delete_tag_parser = subparser.add_parser('delete-tag',
-                                             help='Delete a tag from a given name, or build. To delete '
-                                                  'a tag with an arbitrary name, use --tag. To delete '
-                                                  'a tag from a build, use --version and --build. The tag '
-                                                  'name is "v<VERSION>_<BUILD>".')
-    add_label_or_build(delete_tag_parser, '--tag', 'Tag name')
+    #push
+    parser = cmd_parser.add_parser('push', help='push all repositories to remote origin', description='push all repositories.')
+    parser.set_defaults(func=command_push)
 
-    status_parser = subparser.add_parser('status',
-                                         help='Return git status for all repositories',
-                                         description='Return git status for all repositories. Use --brief to get '
-                                                     'a summary table. Without it, it returns the git status '
-                                                     'output for all repositories.')
-    status_parser.add_argument('--brief', action='store_true', help='One line per repo format')
+    #pull
+    parser = cmd_parser.add_parser('pull', help='pull all repositories from remote origin', description='update all repositories.')
+    parser.set_defaults(func=command_pull)
 
-    update_parser = subparser.add_parser('update',
-                                         help='update all repositories',
-                                         description='update all repositories.')
+    return main_parser
 
+
+def find_top():
     def is_top(d):
         return 'NachoClientX' in os.listdir(d)
-
     cur_dir = os.getcwd()
     top = None
     if is_top(cur_dir):
@@ -277,69 +286,83 @@ def main():
             if is_top(cur_dir):
                 top = cur_dir
                 break
+    return top
+
+
+def command_branch(args, repos):
+    repos.get_current_branch()
+
+
+def command_checkout_branch(args, repos):
+    repos.checkout_branch(args.branch)
+
+
+def command_checkout_tag(args, repos):
+    tag = None
+    if args.tag:
+        tag = args.tag
+    elif args.version and args.build:
+        tag = Build(version=args.version, build=args.build).tag()
+    else:
+        print 'ERROR: must have both --version and --build specified'
+        sys.exit(1)
+    repos.checkout_branch(tag)
+
+
+def command_create_branch(args, repos):
+    repos.create_branch(args.branch)
+
+
+def command_create_tag(args, repos):
+    tag = None
+    if args.tag:
+        tag = args.tag
+    elif args.version and args.build:
+        tag = Build(version=args.version, build=args.build).tag()
+    else:
+        print 'ERROR: must have both --version and --build specified'
+        sys.exit(1)
+    repos.create_branch(tag)
+
+
+def command_delete_branch(args, repos):
+    repos.delete_branch(args.branch)
+
+
+def command_delete_tag(args, repos):
+    repos.delete_tag(args.tag)
+
+
+def command_status(args, repos):
+    repos.get_status(details=args.details)
+
+
+def command_pull(args, repos):
+    repos.pull()
+
+
+def command_push(args, repos):
+    repos.push()
+
+
+def main():
+    top = find_top()
     if top is None:
         print 'ERROR: cannot find a suitable top-level directory'
         sys.exit(1)
 
+    parser = setup_argparser()
     repo_group = RepoGroup(top)
 
-    def check_build_params(opt):
-        if not opt.version or not opt.build:
-            print 'ERROR: must have both --version and --build specified'
-            sys.exit(1)
+    args = parser.parse_args()
 
-    def get_branch(opt):
-        if opt.branch:
-            return opt.branch
-        check_build_params(opt)
-        return Build(version=opt.version, build=opt.build).branch()
-
-    def get_tag(opt):
-        if opt.tag:
-            return opt.tag
-        check_build_params(opt)
-        return Build(version=opt.version, build=opt.build).tag()
-
-    options = parser.parse_args()
-    ok = False
-    if options.command == 'branch':
-        ok = repo_group.get_current_branch()
-    elif options.command == 'checkout-branch':
-        ok = repo_group.checkout_branch(get_branch(options))
-    elif options.command == 'checkout-tag':
-        ok = repo_group.checkout_branch(get_tag(options))
-    elif options.command == 'create-branch':
-        branch = options.branch
-        tag = None
-        if options.tag:
-            tag = options.tag
-            branch = 'branch_' + tag
-        elif options.build and options.version:
-            build = Build(version=options.version, build=options.build)
-            branch = build.branch()
-            tag = build.tag()
-        if tag is not None:
-            # Need to make a branch out of a tag
-            if not repo_group.checkout_branch(tag):
-                print 'ERROR: fail to check out the required tag for branch creation (%s)' % tag
-                sys.exit(1)
-        if branch is None:
-            print 'ERROR: no branch name specified'
-            create_branch_parser.print_usage()
-            sys.exit(1)
-        ok = repo_group.create_branch(branch)
-    elif options.command == 'create-tag':
-        ok = repo_group.create_tag(get_tag(options))
-    elif options.command == 'delete-branch':
-        ok = repo_group.delete_branch(get_branch(options))
-    elif options.command == 'delete-tag':
-        ok = repo_group.delete_tag(get_tag(options))
-    elif options.command == 'status':
-        ok = repo_group.get_status(options.brief)
-    elif options.command == 'update':
-        ok = repo_group.update()
-    if not ok:
+    try:
+        args.func(args, repo_group)
+    except command.CommandError as e:
+        print 'Error: '.join(e.cmd.cmd)
+        print e.cmd.stderr
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

@@ -7,10 +7,10 @@ class Command(threading.Thread):
     A command object takes in a shell command, executes it in its own thread and returns the status code,
     stdout and stderr output.
     """
-    def __init__(self, cmd, cwd=None):
+    def __init__(self, *cmd, **kwargs):
         super(Command, self).__init__()
         self.cmd = cmd
-        self.cwd = cwd
+        self.cwd = kwargs.get('cwd', None)
         self.proc = None
         # The return code of the command
         self.return_code = None
@@ -21,7 +21,7 @@ class Command(threading.Thread):
 
     def execute(self):
         self.start()
-        return self.wait()
+        self.wait()
 
     def start(self):
         # Create two string files for captureing stdout and stderr
@@ -31,7 +31,12 @@ class Command(threading.Thread):
 
     def wait(self):
         self.return_code = self.proc.wait()
-        return self.return_code
+        if self.return_code != 0:
+            raise CommandError(self)
 
-    def ran_ok(self):
-        return self.return_code == 0
+class CommandError(object):
+
+    cmd = None
+
+    def __init__(self, cmd):
+        self.cmd = cmd
