@@ -33,6 +33,7 @@ namespace NachoClient.AndroidClient
         INcEventProvider Events;
         CalendarAdapter Adapter;
         bool HasShownOnce;
+        bool HasWritableCalendar;
 
         #region Tab Interface
 
@@ -46,10 +47,11 @@ namespace NachoClient.AndroidClient
         public void OnTabSelected (MainTabsActivity tabActivity)
         {
             var account = NcApplication.Instance.DefaultCalendarAccount;
-            if (account == null || account.AccountType == McAccount.AccountTypeEnum.Device) {
-                tabActivity.HideActionButton ();
-            } else {
+            HasWritableCalendar = account != null && account.AccountType != McAccount.AccountTypeEnum.Device;
+            if (HasWritableCalendar) {
                 tabActivity.ShowActionButton (Resource.Drawable.floating_action_new_event, ActionButtonClicked);
+            } else {
+                tabActivity.HideActionButton ();
             }
             if (!HasShownOnce) {
                 GoToToday (animated: false);
@@ -258,6 +260,11 @@ namespace NachoClient.AndroidClient
             IsContextMenuOpen = true;
         }
 
+        public bool CanAddEvent ()
+        {
+            return HasWritableCalendar;
+        }
+
         #endregion
 
         #region Private Helpers
@@ -437,6 +444,7 @@ namespace NachoClient.AndroidClient
             void OnEventSelected (McEvent calendarEvent);
             void OnEventCreateRequested (DateTime day);
             void OnContextMenuCreated ();
+            bool CanAddEvent ();
         }
 
         enum ViewType
@@ -505,12 +513,16 @@ namespace NachoClient.AndroidClient
             var day = Events.GetDateUsingDayIndex (groupPosition);
             var headerHolder = (holder as DayHeaderViewHolder);
             headerHolder.SetDay (day);
-            headerHolder.SetAddHandler ((sender, e) => {
-                Listener listener;
-                if (WeakListener.TryGetTarget (out listener)) {
-                    listener.OnEventCreateRequested (day);
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                if (listener.CanAddEvent ()) {
+                    headerHolder.SetAddHandler ((sender, e) => {
+                        listener.OnEventCreateRequested (day);
+                    });
+                }else{
+                    headerHolder.SetAddHandler (null);
                 }
-            });
+            }
         }
 
         public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
@@ -657,6 +669,9 @@ namespace NachoClient.AndroidClient
                 AddHandler = addHandler;
                 if (AddHandler != null) {
                     AddView.Click += AddHandler;
+                    AddView.Visibility = ViewStates.Visible;
+                }else{
+                    AddView.Visibility = ViewStates.Gone;
                 }
             }
         }
