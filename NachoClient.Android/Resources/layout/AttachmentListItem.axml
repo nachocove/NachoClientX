@@ -66,9 +66,9 @@
                 android:id="@+id/download_progress"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                style="@android:style/Widget.ProgressBar.Small.Inverse"
-                android:progressTint="?attr/colorAccent"
-                android:indeterminateOnly="true" />
+                style="?android:attr/progressBarStyleSmall"
+                android:indeterminateOnly="true"
+                android:indeterminateTint="?attr/colorPrimary" />
         </FrameLayout>
     </LinearLayout>
     <View
