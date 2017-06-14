@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="32dp"
@@ -17,7 +18,7 @@
             android:layout_height="wrap_content"
             android:lines="1"
             android:textAppearance="?attr/textAppearanceContactGroupHeader"
-            android:text="@string/demo_contact_header" />
+            tools:text="A" />
     </LinearLayout>
     <View
         android:layout_width="match_parent"

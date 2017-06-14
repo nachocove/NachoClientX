@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -41,7 +42,7 @@
                 android:lines="1"
                 android:ellipsize="end"
                 android:textAppearance="?attr/textAppearanceCalendarItem"
-                android:text="@string/demo_calendar_event_title" />
+                tools:text="Important Meeting" />
             <TextView
                 android:id="@+id/event_duration"
                 android:layout_width="match_parent"
@@ -49,7 +50,7 @@
                 android:lines="1"
                 android:ellipsize="end"
                 android:textAppearance="?attr/textAppearanceListItemDetail"
-                android:text="@string/demo_calendar_event_duration" />
+                tools:text="10am, 1h" />
             <LinearLayout
                 android:id="@+id/event_location_group"
                 android:orientation="horizontal"
@@ -66,7 +67,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceListItemDetail"
-                    android:text="@string/demo_calendar_event_location" />
+                    tools:text="Conference Room" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

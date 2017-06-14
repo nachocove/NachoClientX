@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -16,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceEventSubject"
-            android:text="@string/demo_event_subject" />
+            tools:text="Important Meeting" />
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -33,7 +34,7 @@
                 android:layout_weight="1.0"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceEventItem"
-                android:text="@string/demo_event_time" />
+                tools:text="Tuesday May 23, 2017\nfrom 2pm to 3pm" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/location_group"
@@ -52,7 +53,7 @@
                 android:layout_weight="1.0"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceEventItem"
-                android:text="@string/demo_event_location" />
+                tools:text="Conference Room" />
         </LinearLayout>
     </LinearLayout>
     <View

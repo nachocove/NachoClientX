@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -19,7 +20,7 @@
             android:lines="1"
             android:ellipsize="end"
             android:drawableRight="@drawable/contact_dropdown"
-            android:text="@string/demo_contact_edit_field_name"
+            tools:text="Mobile"
             android:textAppearance="?attr/textAppearanceContactFieldLabel"
             android:clickable="true"
             android:background="?attr/selectableItemBackground" />
@@ -37,7 +38,7 @@
             android:paddingTop="?attr/contactItemPaddingTop"
             android:paddingBottom="?attr/contactItemPaddingBottom"
             android:paddingRight="?attr/contactItemPaddingRight"
-            android:hint="@string/demo_contact_edit_field_hint"
+            tools:hint="Email Address"
             android:textAppearance="?attr/textAppearanceListItem"
             android:background="@null" />
         <FrameLayout

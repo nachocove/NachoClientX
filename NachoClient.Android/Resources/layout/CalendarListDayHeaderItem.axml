@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -19,7 +20,7 @@
             android:textAppearance="?attr/textAppearanceCalendarHeaderNumber"
             android:gravity="center"
             android:lines="1"
-            android:text="@string/demo_calendar_day_number" />
+            tools:text="31" />
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="0dp"
@@ -27,13 +28,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical">
             <TextView
-                android:text="@string/demo_calendar_day_name"
+                tools:text="Monday"
                 android:id="@+id/weekday"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceListItemHeader" />
             <TextView
-                android:text="@string/demo_calendar_day_date"
+                tools:text="January 31, 2015"
                 android:id="@+id/date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

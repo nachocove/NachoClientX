@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:andrdoid="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     andrdoid:orientation="vertical"
     andrdoid:layout_width="match_parent"
@@ -20,7 +21,7 @@
             andrdoid:layout_weight="1.0"
             andrdoid:layout_height="wrap_content"
             andrdoid:textAppearance="?attr/textAppearanceListItem"
-            andrdoid:text="@string/demo_contact_edit_add_button" />
+            tools:text="Add Email" />
         <ImageView
             andrdoid:layout_marginLeft="?attr/contactItemPaddingRight"
             andrdoid:layout_width="wrap_content"

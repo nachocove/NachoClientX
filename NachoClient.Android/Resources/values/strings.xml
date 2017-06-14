@@ -2,7 +2,6 @@
 <resources>
     
     <string name="app_name">Nacho Mail</string>
-    <string name="search_hint">Search</string>
 
     <!-- Startup -->
     <string name="startup_welcome">Welcome to</string>
@@ -327,44 +326,4 @@
     <string name="password_notice_close">Close</string>
     <string name="password_notice_clear">Clear Warning</string>
     <string name="password_notice_rectify">Set New Password</string>
-
-
-    <!-- Demo strings are used for visual UI editors -->
-    <string name="demo_account">Work</string>
-    <string name="demo_email">demo@nachocove.com</string>
-    <string name="demo_setting_name">Unread Count</string>
-    <string name="demo_setting_detail">All Messages</string>
-    <string name="demo_section_name">General Settings</string>
-    <string name="demo_version">Nacho Mail version 3.5 (100)</string>
-    <string name="demo_unread">10</string>
-    <string name="demo_switch_action">Add Account</string>
-	<string name="demo_message_label">Sender Name</string>
-	<string name="demo_message_date">11:15 am</string>
-	<string name="demo_message_detail">Hi there, this is a message that just happens to wrap to multiple lines because it is too long for one line, and in fact is also too long for two lines or even three lines!</string>
-    <string name="demo_message_sender">Sender Name</string>
-    <string name="demo_message_subject">This is a test message</string>
-    <string name="demo_message_date_full">Monday, April 3 - 1:05 pm</string>
-    <string name="demo_folder_name">Inbox</string>
-    <string name="demo_folder_account">Gmail</string>
-    <string name="demo_attachments_header">Show 4 attachments</string>
-    <string name="demo_attachment_name">Some File Name</string>
-    <string name="demo_attachment_detail">100 kb</string>
-    <string name="demo_contact_name">Test Contact</string>
-    <string name="demo_contact_email">email@address.com</string>
-    <string name="demo_attachment_source">Take a Photo</string>
-    <string name="demo_calendar_day_number">31</string>
-    <string name="demo_calendar_day_name">Monday</string>
-    <string name="demo_calendar_day_date">January 31, 2015</string>
-    <string name="demo_calendar_event_title">Important Meeting</string>
-    <string name="demo_calendar_event_duration">10am, 1h</string>
-    <string name="demo_calendar_event_location">Conference Room</string>
-    <string name="demo_event_header_text">Attendees</string>
-    <string name="demo_event_property_value">Some Text Value</string>
-    <string name="demo_event_subject">Important Meeting</string>
-    <string name="demo_event_time">Tuesday May 23, 2017\nfrom 2pm to 3pm</string>
-    <string name="demo_event_location">Someplace nice</string>
-    <string name="demo_contact_header">A</string>
-    <string name="demo_contact_edit_add_button">Add Email</string>
-    <string name="demo_contact_edit_field_name">Mobile</string>
-    <string name="demo_contact_edit_field_hint">Email Address</string>
 </resources>

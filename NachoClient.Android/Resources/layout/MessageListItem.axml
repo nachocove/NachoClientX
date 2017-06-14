@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/background"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -54,7 +55,7 @@
                         android:paddingBottom="2dp">
                         <TextView
                             android:id="@+id/main_label"
-                            android:text="@string/demo_message_label"
+                            tools:text="Sender Name"
                             android:layout_width="0dp"
                             android:layout_weight="1.0"
                             android:layout_height="wrap_content"
@@ -64,7 +65,7 @@
                             android:textAppearance="?attr/textAppearanceMessageItem" />
                         <TextView
                             android:id="@+id/date_label"
-                            android:text="@string/demo_message_date"
+                            tools:text="11:15 am"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="right"
@@ -78,7 +79,7 @@
                         android:paddingBottom="?attr/messageItemPaddingBottom">
                         <TextView
                             android:id="@+id/detail_label"
-                            android:text="@string/demo_message_detail"
+                            tools:text="Hi there, this is a message that just happens to wrap to multiple lines because it is too long for one line, and in fact is also too long for two lines or even three lines!"
                             android:layout_width="0dp"
                             android:layout_weight="1.0"
                             android:layout_height="wrap_content"
@@ -96,7 +97,7 @@
                             android:layout_gravity="center_vertical">
                             <TextView
                                 android:id="@+id/thread_count"
-                                android:text="12"
+                                tools:text="12"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="center_vertical"

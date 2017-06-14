@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -39,7 +40,7 @@
                     android:id="@+id/attachment_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/demo_attachment_name"
+                    tools:text="Some File Name"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:textAppearance="?attr/textAppearanceListItemSmall" />
@@ -47,7 +48,7 @@
                     android:id="@+id/attachment_detail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/demo_attachment_detail"
+                    tools:text="100 kb"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:textAppearance="?attr/textAppearanceListItemDetail" />

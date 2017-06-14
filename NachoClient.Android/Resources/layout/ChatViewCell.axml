@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/NachoBackgroundGray"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -39,7 +40,7 @@
             android:background="@color/NachoBackgroundGray">
             <TextView
                 android:id="@+id/title"
-                android:text="@string/demo_contact_name"
+                tools:text="Test Contact"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="left"
