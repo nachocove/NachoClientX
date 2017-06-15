@@ -11,6 +11,8 @@ using Android.Content;
 using Android.Support.V7.App;
 using Android.Graphics;
 
+using NachoClient.Build;
+
 namespace NachoClient.AndroidClient
 {
 
@@ -120,7 +122,7 @@ namespace NachoClient.AndroidClient
                 subjectString += String.Format ("[{0:N1}s]", latency);
             }
 
-            var largeIcon = BitmapFactory.DecodeResource (Resources, Resource.Drawable.Icon);
+            var largeIcon = BitmapFactory.DecodeResource (Resources, BuildInfo.IconResource);
             largeIcon = Bitmap.CreateScaledBitmap (largeIcon, dp2px (32), dp2px (32), true);
 
             var builder = new NotificationCompat.Builder (this);

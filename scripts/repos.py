@@ -66,8 +66,8 @@ class Repo(object):
     status = None
     fixed_branch = None
 
-    def __init__(self, name, path):
-        self.name = name
+    def __init__(self, path):
+        self.name = os.path.basename(path)
         self.path = path
         self.fixed_branch = BRANCH_EXCEPTIONS.get(self.name, dict()).get('fixed-branch', None)
         if not os.path.exists(self.path):
@@ -194,6 +194,11 @@ def setup_argparser():
     parser = cmd_parser.add_parser('pull', help='pull all repositories from remote origin', description='update all repositories.')
     parser.set_defaults(func=command_pull)
 
+    #clone
+    #pull
+    parser = cmd_parser.add_parser('clone', help='ensure all repositories are present', description='ensure all repositories are present.')
+    parser.set_defaults(func=command_clone)
+
     return main_parser
 
 
@@ -272,7 +277,7 @@ def command_delete_tag(args):
 
 def command_status(args):
     repos = all_repos()
-    for repo in self.repos:
+    for repo in repos:
         print "Querying status of %s..." % repo.name
         repo.query_status()
     print ""
@@ -301,6 +306,16 @@ def command_push(args):
     print "\nDone"
 
 
+def command_clone(args):
+    top = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    repos = []
+    for name in REPO_NAMES:
+        print "Cloning %s..." % name
+        repos.append(Repo(os.path.join(top, name)))
+    print ""
+    print_status(repos)
+
+
 def print_status(repos):
     printer = TablePrinter()
     printer.print_table([(repo.status_symbol, repo.name, repo.branch) for repo in repos])
@@ -310,7 +325,7 @@ def all_repos():
     top = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     repos = []
     for name in REPO_NAMES:
-        repos.append(Repo(name, os.path.join(top, name)))
+        repos.append(Repo(os.path.join(top, name)))
     return repos
 
 

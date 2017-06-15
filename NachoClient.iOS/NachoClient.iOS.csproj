@@ -32,7 +32,7 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <command>${SolutionDir}/scripts/mk_build_info.py ios</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
@@ -41,19 +41,14 @@
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
           <type>BeforeBuild</type>
           <command>make</command>
           <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>AfterClean</type>
@@ -65,59 +60,6 @@
     <MtouchArch>i386, x86_64</MtouchArch>
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <MtouchLink>None</MtouchLink>
-    <ConsolePause>false</ConsolePause>
-    <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
-    <MtouchArch>i386, x86_64</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>make</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>make clean</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
-    <CodesignKey>iPhone Developer</CodesignKey>
-    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
     <DebugSymbols>true</DebugSymbols>
@@ -139,7 +81,7 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
+          <command>${SolutionDir}/scripts/mk_build_info.py ios</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
@@ -148,19 +90,14 @@
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
           <type>BeforeBuild</type>
           <command>make</command>
           <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>AfterClean</type>
@@ -188,33 +125,18 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>BeforeBuild</type>
           <command>make</command>
           <workingdir>${ProjectDir}/../native.iOS</workingdir>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>AfterClean</type>
@@ -225,122 +147,6 @@
     </CustomCommands>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <MtouchDebug>true</MtouchDebug>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodesignKey>iPhone Distribution</CodesignKey>
-    <BuildIpa>true</BuildIpa>
-    <ConsolePause>false</ConsolePause>
-    <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
-    <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <IpaPackageName>
-    </IpaPackageName>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>make</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>make clean</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
-    <DebugSymbols>true</DebugSymbols>
-    <DefineConstants>BETA_BUILD</DefineConstants>
-    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-    <CodesignProvision>Automatic:InHouse</CodesignProvision>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
-    <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\iPhone\AppStore</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodesignKey>iPhone Distribution</CodesignKey>
-    <ConsolePause>false</ConsolePause>
-    <CodesignProvision>Automatic:AppStore</CodesignProvision>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
-    <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/remove_itunesmetadata.sh</command>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>make</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>make clean</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
-    <IpaPackageName>
-    </IpaPackageName>
-    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -1667,11 +1473,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="GoogleService-Info.plist">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <ITunesArtwork Include="iTunesArtwork" />
     <ITunesArtwork Include="iTunesArtwork%402x" />
   </ItemGroup>
@@ -1723,6 +1524,36 @@
     <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\NachoMail-pad-app.png" />
     <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\NachoMail-pad-app%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\AppIcon.appiconset\NachoMail-padpro-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-settings%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-spotlight%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-phone-app%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-pad-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-pad-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-pad-spotlight.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-pad-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-pad-app.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-pad-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconAlpha.appiconset\NachoMail-padpro-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-settings%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-spotlight%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-phone-app%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-pad-settings.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-pad-settings%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-pad-spotlight.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-pad-spotlight%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-pad-app.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-pad-app%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\AppIconBeta.appiconset\NachoMail-padpro-app%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\AboutLogo.imageset\Contents.json" />
     <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\avatar-unknown%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\avatar-unknown.imageset\avatar-unknown%403x.png" />

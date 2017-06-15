@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="1.0" package="com.nachocove.nachomail.dev">
 	<uses-sdk android:minSdkVersion="19" android:targetSdkVersion="25" />
-	<application android:name="nachoclient.androidclient.MainApplication" android:label="Nacho Mail" android:theme="@style/NachoTheme" android:icon="@drawable/icon">
+	<application android:name="nachoclient.androidclient.MainApplication" android:label="@string/app_name" android:theme="@style/NachoTheme" android:icon="@drawable/icon">
 		<meta-data android:name="android.content.APP_RESTRICTIONS" android:resource="@xml/app_restrictions" />
 		<meta-data android:name="com.google.android.backup.api_key" android:value="AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw" />
 		<provider android:name="android.support.v4.content.FileProvider" android:authorities="com.nachocove.dev.fileprovider" android:exported="false" android:grantUriPermissions="true">

@@ -19,11 +19,12 @@ using Android.Graphics.Drawables;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoClient.Build;
 
 namespace NachoClient.AndroidClient
 {
 
-    [Android.App.Activity (MainLauncher = true, Label = "@string/app_name", Icon = "@drawable/icon", LaunchMode = Android.Content.PM.LaunchMode.SingleTop)]
+    [Android.App.Activity (MainLauncher = true, Label = BuildInfo.AppNameString, Icon = BuildInfo.IconDrawable, LaunchMode = Android.Content.PM.LaunchMode.SingleTop)]
     public class MainTabsActivity : NcActivity
     {
         private const string ACTION_SHOW_SETUP = "NachocClient.AndroidClient.MainTabsActivity.ACTION_SHOW_SETUP";

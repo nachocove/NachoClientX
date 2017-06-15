@@ -4,6 +4,8 @@
 
 from argparse import ArgumentParser
 import build
+import git
+import os.path
 
 
 def main():
@@ -12,20 +14,21 @@ def main():
     parser.add_argument('--config', help='Use this config file instead of the default dev config')
     args = parser.parse_args()
 
-    build = build.DevBuild()
-    build.source = git.source_line(cwd=nacho_path())
+    buildspec = build.DevBuild()
+    buildspec.source = git.source_line(cwd=nacho_path())
     config = load_config(config_file=args.config)
     
     if args.platform == 'ios':
-        build_ios(build, config)
-    elif args.platform == 'andriod':
-        build_android(build, config)
+        build_ios(buildspec, config)
+    elif args.platform == 'android':
+        build_android(buildspec, config)
 
 
 def load_config(config_file=None):
-    if config_file = None:
+    if config_file is None:
         config_file = nacho_path('buildconfig', 'dev.plist')
     config = build.BuildConfig(config_file)
+    return config
 
 
 def nacho_path(*components):
@@ -33,13 +36,13 @@ def nacho_path(*components):
     return os.path.join(root, *components)
 
 
-def build_ios(build, config):
-    builder = build.IOSBuilder(nacho_path("NachoClient.iOS/NachoClient.iOS.csproj", build, config))
+def build_ios(buildspec, config):
+    builder = build.IOSBuilder(nacho_path("NachoClient.iOS/NachoClient.iOS.csproj"), buildspec, config)
     builder.edit_buildinfo()
 
 
-def build_android(build, config):
-    builder = build.AndroidBuilder(nacho_path("NachoClient.Android/NachoClient.Android.csproj", build, config))
+def build_android(buildspec, config):
+    builder = build.AndroidBuilder(nacho_path("NachoClient.Android/NachoClient.Android.csproj"), buildspec, config)
     builder.edit_buildinfo()
 
 

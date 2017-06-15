@@ -34,9 +34,24 @@ class Command(threading.Thread):
         if self.return_code != 0:
             raise CommandError(self)
 
-class CommandError(object):
+    def __repr__(self):
+        if self.cwd is not None:
+            prompt = '%s$ ' % self.cwd
+        else:
+            prompt = '$ '
+        lines = [prompt + ' '.join(self.cmd)]
+        if self.stdout:
+            lines.append(self.stdout)
+        if self.stderr:
+            lines.append(self.stderr)
+        return "\n".join(lines)
+
+class CommandError(Exception):
 
     cmd = None
 
     def __init__(self, cmd):
         self.cmd = cmd
+
+    def __str__(self):
+        return repr(self.cmd)

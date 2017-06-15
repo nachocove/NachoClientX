@@ -2,6 +2,9 @@
 <resources>
     
     <string name="app_name">Nacho Mail</string>
+    <string name="app_name_dev">Nacho Dev</string>
+    <string name="app_name_beta">Nacho Beta</string>
+    <string name="app_name_alpha">Nacho Alpha</string>
 
     <!-- Startup -->
     <string name="startup_welcome">Welcome to</string>

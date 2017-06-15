@@ -12,6 +12,7 @@ using Android.Support.V7.App;
 using NachoClient.AndroidClient;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoClient.Build;
 
 namespace NachoPlatform
 {
@@ -154,7 +155,7 @@ namespace NachoClient.AndroidClient
         {
             var builder = new NotificationCompat.Builder (context);
 
-            var largeIcon = BitmapFactory.DecodeResource (context.Resources, Resource.Drawable.Icon);
+            var largeIcon = BitmapFactory.DecodeResource (context.Resources, BuildInfo.IconResource);
             largeIcon = Bitmap.CreateScaledBitmap (largeIcon, dp2px (context, 32), dp2px (context, 32), true);
             builder.SetLargeIcon (largeIcon);
 

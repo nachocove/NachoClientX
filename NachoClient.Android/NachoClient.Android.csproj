@@ -39,7 +39,7 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}</command>
+          <command>${SolutionDir}/scripts/mk_build_info.py android</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
@@ -48,20 +48,15 @@
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
           <type>BeforeBuild</type>
           <command>make</command>
           <workingdir>${ProjectDir}/../native.Android</workingdir>
           <externalConsole>True</externalConsole>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>AfterClean</type>
@@ -86,28 +81,19 @@
       <CustomCommands>
         <Command>
           <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
           <command>${SolutionDir}/scripts/mk_log_settings.py</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>BeforeBuild</type>
           <command>make</command>
           <workingdir>${ProjectDir}/../native.Android</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+        <Command>
+          <type>AfterClean</type>
+          <command>rm -f LogSettings.cs</command>
+          <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
           <type>AfterClean</type>
@@ -1016,6 +1002,14 @@
     <AndroidResource Include="Resources\drawable-v21\RoundedButton.xml" />
     <AndroidResource Include="Resources\drawable-v21\UnreadIndicator.xml" />
     <AndroidResource Include="Resources\drawable-v21\UnreadIndicatorBackground.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\IconAlpha.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\IconBeta.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\IconAlpha.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\IconBeta.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\IconAlpha.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\IconBeta.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\IconAlpha.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\IconBeta.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

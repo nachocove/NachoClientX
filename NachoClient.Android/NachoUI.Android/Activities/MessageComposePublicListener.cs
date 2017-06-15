@@ -16,10 +16,11 @@ using NachoCore.Model;
 using NachoCore;
 using Java.Net;
 using NachoCore.Utils;
+using NachoClient.Build;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "@string/app_name")]
+    [Activity (Label = BuildInfo.AppNameString)]
     [IntentFilter (new[] { Intent.ActionSend, Intent.ActionSendMultiple }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "*/*")]
     [IntentFilter (new[] { Intent.ActionSendto }, Categories = new[] { Intent.CategoryDefault }, DataScheme = "mailto", DataMimeType = "*/*")]
     public class MessageComposePublicListener : NcActivity

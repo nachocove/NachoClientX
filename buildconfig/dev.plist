@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IsDevelopment</key>
+	<true/>
+	<key>iOS</key>
+	<dict>
+		<key>DisplayName</key>
+		<string>Nacho Dev</string>
+		<key>BundleId</key>
+		<string>com.nachocove.nachomail</string>
+		<key>IconSet</key>
+		<string>Resources/Images.xcassets/AppIcon.appiconset</string>
+		<key>AppGroup</key>
+		<string>group.com.nachocove.nachomail</string>
+		<key>iCloudContainer</key>
+		<string>iCloud.com.nachocove.nachomail</string>
+		<key>ShareBundleId</key>
+		<string>com.nachocove.nachomail.share</string>
+		<key>HockeyAppId</key>
+		<string></string>
+		<key>FileSharingEnabled</key>
+		<true/>
+	</dict>
+	<key>Android</key>
+	<dict>
+		<key>PackageName</key>
+		<string>com.nachocove.nachomail.dev</string>
+		<key>IconDrawable</key>
+		<string>Icon</string>
+		<key>AppNameString</key>
+		<string>app_name_dev</string>
+		<key>BackupAPIKey</key>
+		<string></string>
+		<key>FileProvider</key>
+		<string>com.nachocove.dev.fileprovider</string>
+		<key>HockeyAppId</key>
+		<string></string>
+	</dict>
+	<key>AWS</key>
+	<dict>
+		<key>Prefix</key>
+		<string>dev</string>
+		<key>AccountId</key>
+		<string></string>
+		<key>IdentityPoolId</key>
+		<string></string>
+		<key>UnauthRoleArn</key>
+		<string></string>
+		<key>AuthRoleArn</key>
+		<string></string>
+		<key>S3Bucket</key>
+		<string></string>
+		<key>SupportS3Bucket</key>
+		<string></string>
+	</dict>
+	<key>Pinger</key>
+	<dict>
+		<key>Hostname</key>
+		<string>pinger.officetaco.com</string>
+		<key>RootCert</key>
+		<string>-----BEGIN CERTIFICATE-----
+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
+3WaO7R8wBlUKOTpN4gqwtTA=
+-----END CERTIFICATE-----</string>
+		<key>CrlSigningCerts</key>
+		<array>
+			<string>-----BEGIN CERTIFICATE-----
+MIIFsDCCA5igAwIBAgIBAjANBgkqhkiG9w0BAQsFADCBkDELMAkGA1UEBhMCVVMx
+CzAJBgNVBAgMAkNBMRUwEwYDVQQHDAxTb2xhbmEgQmVhY2gxGDAWBgNVBAoMD05h
+Y2hvIENvdmUsIEluYzEdMBsGA1UEAwwUTmFjaG8gQ292ZSBSb290IENBIDExJDAi
+BgkqhkiG9w0BCQEWFXN1cHBvcnRAbmFjaG9jb3ZlLmNvbTAeFw0xNTAzMTgxNzQx
+MzRaFw0zNTAzMTMxNzQxMzRaMEoxCzAJBgNVBAYTAlVTMRkwFwYDVQQKDBBOYWNo
+byBDb3ZlLCBJbmMuMSAwHgYDVQQDDBdOYWNobyBDb3ZlIENSTCBEZWxlZ2F0ZTCC
+AiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALIXb7vP3A9Q8R3c2/f3fylC
+Sj61TATI0dkJ1lbPAciCdH7nIaMVWxM73gt+xOi+wmoLc1NmeBxckZ3uz2r2tvDx
+vxsIKCawhQBREHfxQ5LI5Am7s+OHf6ZSY0L6rJDh5C6KAFth7IHRBZiljbdpEBxu
+jYdLxF2Dw/KtlOP0CU6v0ZMCc1AfL3bqx1rIThfxtM8FIsNT3OKed+JlK3sOG9Sx
+ibtmZmD4J9JLDqyOf3QUY40BfpzTweAQJRpD9KR6sYkcfueNCL3Mymvj1lmtCJqs
+BylsZEu1cR3Qq5lQNeNikOHpTwVPwXmcWS5FzQdILYp6lU08RqONNsNRuo650Tfp
+z8HFcOcuHh+fqrHyKWcy43B0sQbyp8AKoPAPyVXGrQoTocvKG1khpe81iZBjYCk/
+EcvP13Z7gzuWZoXyXC4Hvbs20e7eLyIqnudtOJLLmeNVziPvUdR7pSOtJGDA6VBj
+OjrEQ/xJ+MV6cMh/HnyPylt3RVv/xmqrpDEhVgQjqRTb0RXFWbzPdyJfW7DrNvMS
+y+cRBynaLhI1mgAoQ5Xi2sOzWLOinMPGbXNO3fOoPzh1JvZh2t95KnPddpk47yrt
+KujOllhLwi7BvpqD9loPiz4mEP44XImnGIgiZgBc7N2atrc06CoD1yZrv8dfZmrV
+WqEKkQK1YsqJsEJ8q5mZAgMBAAGjWjBYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgEC
+MB0GA1UdDgQWBBQk25SdCLd7FrkrBZoiOKq5Xj31jzAfBgNVHSMEGDAWgBThFLCv
+vfNAsfYBAcy63LKn3SvyQzANBgkqhkiG9w0BAQsFAAOCAgEAemmWIn0SKlwV3zZr
+7ipLS7pKK3lN4OkNAJ44DxPRF+sLSOClgU5bnvPoeytnK8ppdfRB+wkuDUB14V4v
+03GEVd+0WmVA/aEBQNxPRF5uXOITvuncbWahD++pEQVbGXMMj/kIr0u7sj7zF2yl
+bdMUUv4VCIw0o+8bdpJUWatLP5mlFbFYnRq6JldLlQZ/mdQyfo7X4l9rZvBddGNx
+REZptUF8ZAE0/Y8cVo3wbb/LX8NR0AFiUgaNprxhWtXduXUZwWtBabX04Wjw+cG0
+wyI0kIGTylOHIRRCpaXnH2k7dFIikR0ZBiTufQxa1JGeFwAFkVUZG+Oz2NRf4gUY
+U+hVr/PLqX71tunPmHJWD3fO5MAnO0TOg9V3F9kN/keEJhoP5x4MATdoY2Jx+vxk
+r8M+vgHJqfJziDcxLcgj3l6JwTHFTlBl8RAWogww1hilrKVPvK8LxA5nRX1OlkP0
+hQe8mrRuk/3/oXgvfFtSEsAz1MepX97ULzdP7ajqkHWiITfzUCCsf9tLAjaOB0Eg
+1eVfssBtuzxQkRzElDcryIzL2gFr07xZYD+anlj0AeCWoI9livQVvkdCnitcvD47
+YJo97btfI7gaobyfjJSH7fVehzXjA8qjvEx8kqdGeywUZ286j0ziie2OFsY8cZJr
+/clRp/TBoYj034oBjvcOFPg045c=
+-----END CERTIFICATE-----</string>
+			<string>-----BEGIN CERTIFICATE-----
+MIIFcTCCA1mgAwIBAgIBAzANBgkqhkiG9w0BAQsFADBSMQswCQYDVQQGEwJVUzEL
+MAkGA1UECAwCQ0ExGDAWBgNVBAoMD05hY2hvIENvdmUsIEluYzEcMBoGA1UEAwwT
+T2ZmaWNlVGFjbyBTdWIgQ0EgMTAeFw0xNTAzMTgxNzM5MjhaFw0zNTAzMTMxNzM5
+MjhaMEoxCzAJBgNVBAYTAlVTMRkwFwYDVQQKDBBOYWNobyBDb3ZlLCBJbmMuMSAw
+HgYDVQQDDBdPZmZpY2VUYWNvIENSTCBEZWxlZ2F0ZTCCAiIwDQYJKoZIhvcNAQEB
+BQADggIPADCCAgoCggIBAKX6g1Ds74wjLAbtBtMpT7xbM0zUog9dbM3mJmNw+EMZ
+YGYAMGDgO5MjRdpIj2gFA4ENOsYn1f4WD7DqCEczsfzlceufRDy5Kb0ie3Ahfz0O
+1W9xss8kQgDVB438JdUUVKJOap516vn3JobZdDaD0vWqw73Fa39sEFhuSwu7Qz5k
+iKroTd5zqe+rrmPDOY8mWvV905xGMYEFs20XIZVFleQ1dzjN9QSsiS4E7R1S53x8
+s2M0APpWUxKDzhAaK5VeVua9lk3wwJFaGz4XkGQtSfiI0t/KOvBJri8vxO0KfOmu
+bbGYN9HKJ8uMdfP3aP0XSuvQ6WCPyAZGucn1z3oX9z8wdk9MqQQkCnqPOkNza81g
+mXppXvxd9k5i1yzGwGk06bb+uz7XlpMhuUniiFlniLHWwXk8nVqGcqoUY7JS3Yba
+BDU0OQK3cq1xFNyC0MRo4mcrut97eBYwbPhXRSGqhFqd8fbTK1PUH9p2ApGJKx0A
+YJu9NDxx7O/SKyNpN1iP1oXZRKPP3j7/q/+qzBvYK1W/aeVYov8GQtBHGaBCU8dG
+MHZzAbva+nlS/VlpCac99xuObB3wViteKls1Kzpe7Kw6zvfmyqQdXkSnhiy7wvwD
+e+59GMkhzF4jJygEcFPwbcjYZoRI31QqOOH6OyINuyKoJMdhpMbbB+A4OreWor7H
+AgMBAAGjWjBYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgECMB0GA1UdDgQWBBQ8j2J6
++2WbVZXdEWXUcvD3KiMx2TAfBgNVHSMEGDAWgBSVurbljpm0vPUpNcpZokHg6z0x
+yTANBgkqhkiG9w0BAQsFAAOCAgEATHDhnh60MmzYvOGSM/YeWd0xRwfB7O0MeW+0
+12GbioYfTO3zjRscofdTCQXHBV5dCI+Ozh5eEQkC3X468RlQeZG/unzAy6l1cnTl
+o/xLlzlaDX1rOWBogFpDTodilSoDGQufkVOMms2GkOtzTD5b9wMJYpCA2IuZQ+pv
+zsn06B+XjQYfZ8deVVRg0qpWX7vdxg9+qp6C0i5K3GfF36PzvFd4sQPiQZodp7JQ
+vqFwlFR0ZL6P4qU72JPlTBtWq2JR9SbbuElGF9Qrg5uTpuFJwAXUwI7r2i7/oqPD
+m+Pj5oP3e2kcZ/uw+ZkFzAX0rt+QKDRe+kZUbhqb1PoV0+Tv1hWZzMZbtJhDEDxP
+zRx8yC8IJpdESvPoebJ2Qk6DabWMuqpv0iQdhkJuJn5Q3rJuaqvaITC3dS/ZtNgs
+58kzlRp9rZZnykUjD3YqNo9kjxr7dVF3W0PMxXC9hzqtIZTy5ssTgHAm/3ICM56v
+a8gbZXdub+OVaxKuuY6CKbqA1mhM7sbbe8ts0pJ3UbCa7fgmb8Jjccw4BuWgd/ZN
+4vIdcqIVqV6mKRI9gZ0OyOScATvCAqVy5wx+F0yEQFF4CK2zP1oE3pdAPgzcMyWc
+xBOCvxbuI/1WCu7QmSXzra7Mo9gkOMn3VuOhXmdu2CgKFN3WU4kZBGEljhY7SE7W
+bMG6aWc=
+-----END CERTIFICATE-----</string>
+		</array>
+	</dict>
+</dict>
+</plist>
