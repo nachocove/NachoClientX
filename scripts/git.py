@@ -84,6 +84,12 @@ def submodule_init(cwd=None):
     cmd.execute()
 
 
+def source_line(cwd=None):
+    cmd = Command('git', 'log', '-1', '--pretty=format:%H (%ai by %cn)')
+    cmd.execute()
+    return cmd.stdout
+
+
 class Status(object):
 
     index_files = None
