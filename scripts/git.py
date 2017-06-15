@@ -28,7 +28,7 @@ def checkout(branch, cwd=None):
 
 
 def list_branches(cwd=None):
-    cmd = Command('git', 'branch', cwd=cwd)
+    cmd = Command('git', 'branch', '-a', cwd=cwd)
     cmd.execute()
     lines = cmd.stdout.split("\n")
     branches = []

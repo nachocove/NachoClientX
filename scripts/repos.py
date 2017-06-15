@@ -3,9 +3,10 @@
 import os
 import os.path
 import sys
-from argparse import ArgumentParser
+import argparse
 import git
 import command
+import build
 
 REPO_NAMES = (
     'Reachability',
@@ -34,15 +35,6 @@ BRANCH_EXCEPTIONS = {
 }
 
 
-class Build(object):
-    def __init__(self, version, build):
-        self.version = version
-        self.build = build
-
-    def tag(self):
-        return 'v%s_%s' % (self.version, self.build)
-
-
 class TablePrinter(object):
 
     def __init__(self):
@@ -53,10 +45,10 @@ class TablePrinter(object):
             return
         colcount = len(rows[0])
         minspacing = 2
-        colwidth = [minspacing] * colcount
+        colwidth = [0] * colcount
         for row in rows:
             for col in range(colcount):
-                colwidth[col] = max(len(unicode(row[col]) if row[col] is not None else '') + minspacing, colwidth[col])
+                colwidth[col] = max((len(unicode(row[col])) + minspacing) if row[col] is not None else 0, colwidth[col])
         for row in rows:
             cols = []
             for col in range(colcount):
@@ -111,10 +103,20 @@ class Repo(object):
     def create_branch(self, branch):
         if self.fixed_branch is not None:
             return
+        if self.has_branch(branch):
+            return
         git.create_branch(branch, cwd=self.path)
         git.submodule_update()
         self.branch = branch
         self.branches.append(branch)
+
+    def delete_branch(self, branch):
+        if self.fixed_branch is not None:
+            return
+        if self.has_branch(branch):
+            return
+        git.delete_branch(branch, cwd=self.path)
+        self.branches.remove(branch)
 
     def query_status(self):
         self.status = git.status(cwd=self.path)
@@ -133,91 +135,12 @@ class Repo(object):
         else:
             return ''
 
-
-class RepoGroup(object):
-
-    repos = None
-    client_repo = None
-
-    def __init__(self, top=None):
-        self.top = top
-        self.repos = []
-        for name in REPO_NAMES:
-            self.repos.append(Repo(name, self.repo_dir(name)))
-        self.client_repo = self.repos[-1]
-
-    def repo_dir(self, name):
-        return os.path.join(self.top, name)
-
-    def print_status(self):
-        printer = TablePrinter()
-        printer.print_table([(repo.status_symbol, repo.name, repo.branch) for repo in self.repos])
-
-    def checkout_branch(self, branch):
-        for repo in self.repos:
-            print "Checking out %s..." % repo.name
-            repo.checkout(branch)
-        print ""
-        self.print_status()
-
-    def pull(self):
-        for repo in self.repos:
-            print "Pulling %s..." % repo.name
-            repo.pull()
-        print ""
-        self.print_status()
-
-    def push(self):
-        for repo in self.repos:
-            print "Pusing %s..." % repo.name
-            repo.push()
-        print "\nDone"
-
-    def create_tag(self, tag, message=None):
-        for repo in self.repos:
-            print "Creating tag %s with %s..." % (tag, repo.name)
-            repo.tag(tag, message)
-        print "\nDone"
-
-    def delete_tag(self, tag):
-        for repo in self.repos:
-            print "Deleting tag %s with %s..." % (tag, repo.name)
-            repo.tag(tag, message)
-        print "\nDone"
-
-    def create_branch(self, branch):
-        for repo in self.repos:
-            print "Creating branch %s with %s..." % (branch, repo.name)
-            repo.create_branch(branch)
-        print ""
-        self.print_status()
-
-    def delete_branch(self, branch):
-        for repo in self.repos:
-            print "Removing branch %s from %s..." % (branch, repo.name)
-            repo.delete_branch(branch)
-        print ""
-        self.print_status()
-
-    def get_current_branch(self):
-        self.print_status()
-
-    def get_status(self, details=False):
-        for repo in self.repos:
-            print "Querying status of %s..." % repo.name
-            repo.query_status()
-        print ""
-        self.print_status()
-
-        if details:
-            for repo in self.repos:
-                if repo.status.has_untracked or repo.status.has_changes:
-                    print "\n%s" % repo.name
-                    repo.status.print_status()
+    def has_branch(self, branch):
+        return (branch in self.branches) or (('origin/%s' % branch) in self.branches)
 
 
 def setup_argparser():
-    main_parser = ArgumentParser()
+    main_parser = argparse.ArgumentParser()
     cmd_parser = main_parser.add_subparsers(dest='command', help='commands')
 
     parser = cmd_parser.add_parser('branch', help='List the current branch of all repositories', description='List the current branch of all repositories.')
@@ -243,6 +166,7 @@ def setup_argparser():
     #create tag
     parser = cmd_parser.add_parser('create-tag', help='Create a tag from a given name, or build', description='Create a tag from a given name, or build. To create a tag with an arbitrary name, use --tag. To create a tag from a build, use --version and --build. The tag name is "v<VERSION>_<BUILD>".')
     parser.add_argument('--tag', type=str, help='Tag name')
+    parser.add_argument('--kind', type=str, default=None, help='What kind of build', choices=build.KINDS)
     parser.add_argument('--build', type=str, default=None, help='Build number')
     parser.add_argument('--version', type=str, default=None, help='Build version')
     parser.set_defaults(func=command_create_tag)
@@ -273,91 +197,128 @@ def setup_argparser():
     return main_parser
 
 
-def find_top():
-    def is_top(d):
-        return 'NachoClientX' in os.listdir(d)
-    cur_dir = os.getcwd()
-    top = None
-    if is_top(cur_dir):
-        top = cur_dir
-    else:
-        while '/' != cur_dir:
-            cur_dir = os.path.dirname(cur_dir)
-            if is_top(cur_dir):
-                top = cur_dir
-                break
-    return top
+def command_branch(args):
+    repos = all_repos()
+    print_status(repos)
 
 
-def command_branch(args, repos):
-    repos.get_current_branch()
+def command_checkout_branch(args):
+    repos = all_repos()
+    for repo in repos:
+        print "Checking out %s..." % repo.name
+        repo.checkout(branch)
+    print ""
+    print_status(repos)
 
 
-def command_checkout_branch(args, repos):
-    repos.checkout_branch(args.branch)
-
-
-def command_checkout_tag(args, repos):
+def command_checkout_tag(args):
     tag = None
     if args.tag:
         tag = args.tag
-    elif args.version and args.build:
-        tag = Build(version=args.version, build=args.build).tag()
+    elif args.version and args.build and args.kind:
+        tag = build.Build(args.kind, args.version, args.build).tag
     else:
-        print 'ERROR: must have both --version and --build specified'
+        print 'ERROR: must have --tag OR --kind, --version, and --build specified'
         sys.exit(1)
-    repos.checkout_branch(tag)
+    repos = all_repos()
+    for repo in repos:
+        print "Checking out %s..." % repo.name
+        repo.checkout(branch)
+    print ""
+    print_status(repos)
 
 
-def command_create_branch(args, repos):
-    repos.create_branch(args.branch)
+def command_create_branch(args):
+    repos = all_repos()
+    for repo in repos:
+        print "Creating branch %s with %s..." % (branch, repo.name)
+        repo.create_branch(branch)
+    print ""
+    print_status(repos)
 
 
-def command_create_tag(args, repos):
+def command_create_tag(args):
     tag = None
     if args.tag:
         tag = args.tag
-    elif args.version and args.build:
-        tag = Build(version=args.version, build=args.build).tag()
+    elif args.version and args.build and args.kind:
+        tag = build.Build(args.kind, args.version, args.build).tag
     else:
-        print 'ERROR: must have both --version and --build specified'
+        print 'ERROR: must have --tag OR --kind, --version, and --build specified'
         sys.exit(1)
-    repos.create_branch(tag)
+    repos = all_repos()
+    for repo in repos:
+        print "Creating tag %s on %s..." % (tag, repo.name)
+        repo.tag(tag, message)
+    print "\nDone"
 
 
-def command_delete_branch(args, repos):
-    repos.delete_branch(args.branch)
+def command_delete_branch(args):
+    repos = all_repos()
+    for repo in repos:
+        print "Removing branch %s from %s..." % (branch, repo.name)
+        repo.delete_branch(branch)
+    print ""
+    print_status(repos)
 
 
-def command_delete_tag(args, repos):
-    repos.delete_tag(args.tag)
+def command_delete_tag(args):
+    repos = all_repos()
+    for repo in repos:
+        print "Deleting tag %s with %s..." % (tag, repo.name)
+        repo.tag(tag, message)
+    print "\nDone"
 
 
-def command_status(args, repos):
-    repos.get_status(details=args.details)
+def command_status(args):
+    repos = all_repos()
+    for repo in self.repos:
+        print "Querying status of %s..." % repo.name
+        repo.query_status()
+    print ""
+    print_status(repos)
+    if args.details:
+        for repo in repos:
+            if repo.status.has_untracked or repo.status.has_changes:
+                print "\n%s" % repo.name
+                repo.status.print_status()
 
 
-def command_pull(args, repos):
-    repos.pull()
+def command_pull(args):
+    repos = all_repos()
+    for repo in repos:
+        print "Pulling %s..." % repo.name
+        repo.pull()
+    print ""
+    print_status(repos)
 
 
-def command_push(args, repos):
-    repos.push()
+def command_push(args):
+    repos = all_repos()
+    for repo in repos:
+        print "Pusing %s..." % repo.name
+        repo.push()
+    print "\nDone"
+
+
+def print_status(repos):
+    printer = TablePrinter()
+    printer.print_table([(repo.status_symbol, repo.name, repo.branch) for repo in repos])
+
+
+def all_repos():
+    top = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    repos = []
+    for name in REPO_NAMES:
+        repos.append(Repo(name, os.path.join(top, name)))
+    return repos
 
 
 def main():
-    top = find_top()
-    if top is None:
-        print 'ERROR: cannot find a suitable top-level directory'
-        sys.exit(1)
-
     parser = setup_argparser()
-    repo_group = RepoGroup(top)
-
     args = parser.parse_args()
-
     try:
-        args.func(args, repo_group)
+        args.func(args)
     except command.CommandError as e:
         print 'Error: '.join(e.cmd.cmd)
         print e.cmd.stderr
