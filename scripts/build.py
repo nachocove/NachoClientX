@@ -402,8 +402,23 @@ class IOSBuilder(object):
     def archive(self):
         cmd = command.Command('msbuild', '/t:%s' % self.project_name.replace('.', '_'), '/p:Configuration=Release', '/p:Platform=iPhone', '/p:ArchiveOnBuild=true', self.solution_path)
         cmd.execute()
-        # FIXME: need to get the output path and set self.archive_path
-        # search ~/Library/Developer/Archives/YYYY-MM-DD for latest 
+        self.archive_path = self.locate_archive_for_buildtime(datetime.datetime.now())
+
+    def locate_archive_for_buildtime(self, buildtime):
+        # An xarchive is named according to the build time, with a precision of 1 minute
+        # Since we don't know exactly which time msbuild used, we'll search for a few minutes.
+        # The risk of finding the wrong build is impossible as long as builds continue to take at least several minutes.
+        expected_xarchive_format = "%s %d-%d-%02d %d.%02d %s.xcarchive"
+        checked_xarchives = []
+        for i in range(3):
+            expected_xarchive = os.path.join(os.getenv('HOME'), 'Library', 'Developer', 'Xcode', 'Archives', buildtime.strftime("%Y-%m-%d"), expected_xarchive_format % (self.project_name, buildtime.date().month, buildtime.date().day, buildtime.date().year % 100, buildtime.time().hour % 12 if buildtime.time().hour > 0 else 12, buildtime.time().minute, "PM" if buildtime.time().hour >= 12 else "AM"))
+            if os.path.exists(expected_xarchive):
+                break
+            checked_xarchives.append(expected_xarchive)
+            buildtime = buildtime - datetime.timedelta(minutes=1)
+        if not os.path.exists(expected_xarchive):
+            raise Exception("Expected xarchive does not exist, checked:\n  %s" % "\n  ".join(checked_xarchives))
+        return expected_xarchive
 
     def export(self):
         # TODO: use xcodebuild
@@ -475,11 +490,15 @@ class AndroidBuilder(object):
         tree.write(manifest_path)
 
     def package(self):
+        expected_apk = self.unsigned_apk = self.project_path('obj', 'Release', 'android', 'bin', '%s.apk' % self.config.Android.PackageName)
+        if os.path.exists(expected_apk):
+            # remove any old apk to ensure that we pick up only a newly created one
+            os.unlink(expected_apk)
         cmd = command.Command('msbuild', '/t:%s:BuildApk' % self.project_name.replace('.', '_'), '/p:Configuration=Release', self.solution_path)
         cmd.execute()
-        self.unsigned_apk = self.project_path('obj', 'Release', 'android', 'bin', '%s.apk' % self.config.Android.PackageName)
-        if not os.path.exists(self.unsigned_apk):
-            raise Exception("Unsigned APK not found at expected location: %s" % self.unsigned_apk)
+        if not os.path.exists(expected_apk):
+            raise Exception("Unsigned APK not found at expected location: %s" % expected_apk)
+        self.unsigned_apk = expected_apk
 
     def sign(self):
         pass
