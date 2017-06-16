@@ -99,7 +99,7 @@ namespace NachoClient.iOS
                 if (_AboutFooter == null) {
                     _AboutFooter = new InsetLabelView ();
                     _AboutFooter.LabelInsets = new UIEdgeInsets (10.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-                    _AboutFooter.Label.Text = "Nacho Mail version " + Util.GetVersionNumber ();
+                    _AboutFooter.Label.Text = "Nacho Mail version " + NcApplication.GetVersionString ();
                     _AboutFooter.Label.TextAlignment = UITextAlignment.Center;
                     _AboutFooter.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }

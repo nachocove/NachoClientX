@@ -708,14 +708,6 @@ namespace NachoClient
             return(vc.IsViewLoaded && (null != vc.View.Window));
         }
 
-        public static string GetVersionNumber ()
-        {
-            var bundle = NSBundle.MainBundle;
-            var build = bundle.InfoDictionary ["CFBundleVersion"].ToString ();
-            var version = bundle.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-            return String.Format ("{0} ({1})", version, build);
-        }
-
         public static UITableView FindEnclosingTableView (UIView view)
         {
             while (null != view) {
