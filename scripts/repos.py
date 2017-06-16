@@ -48,7 +48,7 @@ class TablePrinter(object):
         colwidth = [0] * colcount
         for row in rows:
             for col in range(colcount):
-                colwidth[col] = max((len(unicode(row[col])) + minspacing) if row[col] is not None else 0, colwidth[col])
+                colwidth[col] = max((len(unicode(row[col])) + minspacing) if row[col] is not None and len(unicode(row[col])) > 0 else 0, colwidth[col])
         for row in rows:
             cols = []
             for col in range(colcount):
