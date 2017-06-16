@@ -14,7 +14,17 @@ namespace NachoClient.iOS
         protected UIColor originalBackgroundColor;
         protected UIColor highlightedColor;
 
-		public NcSimpleColorButton (IntPtr handle) : base (handle)
+        public NcSimpleColorButton () : base (UIButtonType.Custom)
+        {
+            Initialize ();
+        }
+
+        public NcSimpleColorButton (IntPtr handle) : base (handle)
+        {
+            Initialize ();
+        }
+
+        void Initialize()
         {
             TouchDown += (object sender, EventArgs e) => {
                 if (originalBackgroundColor == null){

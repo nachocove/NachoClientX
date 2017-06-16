@@ -24,7 +24,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class AccountTypeViewController : UICollectionViewController, ThemeAdopter
+    public partial class AccountTypeViewController : UICollectionViewController, ThemeAdopter, ExchangeEnableViewDelegate
     {
 
         #region Properties
@@ -95,6 +95,18 @@ namespace NachoClient.iOS
             AdoptTheme (Theme.Active);
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            BecomeFirstResponder ();
+        }
+
+        public override bool CanBecomeFirstResponder {
+            get {
+                return true;
+            }
+        }
+
         #endregion
 
         #region Collection View Delegate & Data Source
@@ -141,8 +153,45 @@ namespace NachoClient.iOS
         {
             if (AccountDelegate != null) {
                 var accountType = accountTypes [indexPath.Item];
-                Log.Info (Log.LOG_UI, "AccountTypeViewController selected {0}", accountType);
+                var generalAccountType = McAccount.GetAccountType (accountType);
+                if (generalAccountType == McAccount.AccountTypeEnum.Exchange && !NachoCore.Utils.PermissionManager.Instance.CanCreateExchange) {
+                    var viewController = new ExchangeEnableViewController (accountType);
+                    viewController.Delegate = this;
+                    PresentViewController (viewController, true, null);
+                } else {
+                    Log.Info (Log.LOG_UI, "AccountTypeViewController selected {0}", accountType);
+                    AccountDelegate.AccountTypeViewControllerDidSelectService (this, accountType);
+                }
+            }
+        }
+
+        public void ExchangeEnableViewDidComplete (ExchangeEnableViewController vc, bool exchangeEnabled)
+        {
+            if (exchangeEnabled){
+                var accountType = vc.Service;
+                Log.Info (Log.LOG_UI, "AccountTypeViewController selected after exchange enabled {0}", accountType);
                 AccountDelegate.AccountTypeViewControllerDidSelectService (this, accountType);
+            }
+            vc.DismissViewController (animated: true, completionHandler: null);
+        }
+
+        #endregion
+
+        #region Events
+
+        public override void MotionEnded (UIEventSubtype motion, UIEvent evt)
+        {
+            if (motion == UIEventSubtype.MotionShake) {
+                if (NachoClient.Build.BuildInfo.Version.StartsWith ("DEV[", StringComparison.Ordinal) && NachoCore.Utils.PermissionManager.Instance.CanCreateExchange){
+                    var alert = UIAlertController.Create ("Reset Exchange Access", "Disable exchange account creation", UIAlertControllerStyle.Alert);
+                    alert.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel,(obj) => {}));
+                    alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Destructive, (obj) => {
+                        NachoCore.Utils.PermissionManager.Instance.ResetCanCreateExchange ();
+                    }));
+                    PresentViewController (alert, animated: true, completionHandler: null);
+                }
+            } else {
+                base.MotionEnded (motion, evt);
             }
         }
 

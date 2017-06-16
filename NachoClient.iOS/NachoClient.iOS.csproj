@@ -479,6 +479,7 @@
     <Compile Include="UiMonitor.cs" />
     <Compile Include="CrashReporter.cs" />
     <Compile Include="BackgroundController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCreation\ExchangeEnableViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
