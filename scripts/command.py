@@ -43,6 +43,7 @@ class Command(threading.Thread):
         if self.stdout:
             lines.append(self.stdout)
         if self.stderr:
+            lines.append("============= STDERR ==============")
             lines.append(self.stderr)
         return "\n".join(lines)
 

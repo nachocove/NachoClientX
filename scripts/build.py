@@ -22,13 +22,14 @@ def main():
     parser.add_argument('--ios-only', action='store_true', help="Only build iOS and nothing else")
     parser.add_argument('--android-only', action='store_true', help="Only build Android and nothing else")
     parser.add_argument('--unsigned', action='store_true', help="Only build the unsigned Android .apk")
+    parser.add_argument('--no-git', action='store_true', help="Don't do any git branching or tagging (FOR TESTING ONLY)")
 
     args = parser.parse_args()
 
     build = Build(args.kind, args.version, args.build)
     platforms = platforms_from_args(args)
 
-    builder = Builder(build, platforms=platforms, config_file=args.config, unsigned_only=args.unsigned)
+    builder = Builder(build, platforms=platforms, config_file=args.config, unsigned_only=args.unsigned, skip_git=args.no_git)
     builder.execute()
 
 
@@ -241,13 +242,14 @@ class Builder(object):
     config_file = None
     config = None
     unsigned_only = False
-    source = None
+    skip_git = False
 
-    def __init__(self, build, platforms, config_file=None, unsigned_only=False):
+    def __init__(self, build, platforms, config_file=None, unsigned_only=False, skip_git=False):
         self.build = build
         self.platforms = platforms
         self.config_file = config_file
         self.unsigned_only = unsigned_only
+        self.skip_git = skip_git
         self.build.source = git.source_line(cwd=self.nacho_path())
         self.load_config()
         self.outputs = []
@@ -263,12 +265,14 @@ class Builder(object):
 
     def execute(self):
         import repos
-        self.checkout()
+        if not self.skip_git:
+            self.checkout()
         if 'ios' in self.platforms:
             self.build_ios()
         if 'android' in self.platforms:
             self.build_android()
-        self.tag()
+        if not self.skip_git:
+            self.tag()
         if len(self.outputs) > 0:
             print ""
             printer = repos.TablePrinter()
@@ -289,13 +293,13 @@ class Builder(object):
         branch = self.build.short_branch
         if client_repo.has_branch(self.build.full_branch):
             branch = self.build.full_branch
-        print "Getting branch %s...(not really)" % branch
+        print "Getting branch %s..." % branch
         if not client_repo.has_branch(branch):
-            print "Creating branch %s...(not really)" % branch
+            print "Creating branch %s..." % branch
             all_repos = repos.all_repos()
-            # for repo in all_repos:
-            #     repo.create_branch(branch)
-        # client_repo.checkout(branch)
+            for repo in all_repos:
+                repo.create_branch(branch)
+        client_repo.checkout(branch)
 
         # Next, reload supporting modules in case any have changed as a result of the checkout
         # The most likely change is repos.REPO_NAMES
@@ -305,27 +309,27 @@ class Builder(object):
 
         # Finally, checkout all other repos to the matching branch
         all_repos = repos.all_repos()
-        # for repo in all_repos:
-        #     repo.checkout(branch)
+        for repo in all_repos:
+            repo.checkout(branch)
 
     def tag(self):
         import repos
-        print "Tagging as %s... (not really)" % self.build.tag
+        print "Tagging as %s..." % self.build.tag
         all_repos = repos.all_repos()
-        # for repo in all_repos:
-        #     repo.create_tag(self.build.tag)
+        for repo in all_repos:
+            repo.create_tag(self.build.tag)
         self.outputs.append(('git tag:', self.build.tag))
 
     def build_ios(self):
         print "Building iOS..."
-        builder = IOSBuilder(self.nacho_path('NachoClient.iOS/NachoClient.iOS.csproj'), self.build, self.config)
+        builder = IOSBuilder(self.nacho_path('NachoClient.sln'), 'NachoClient.iOS', self.build, self.config)
         builder.execute()
         self.outputs.append(('iOS .xarchive:', builder.archive_path))
         self.outputs.append(('iOS .ipa:', builder.ipa_path))
 
     def build_android(self):
         print "Building Android..."
-        builder = AndroidBuilder(self.nacho_path('NachoClient.Android/NachoClient.Android.csproj'), self.build, self.config, self.unsigned_only)
+        builder = AndroidBuilder(self.nacho_path('NachoClient.sln'), 'NachoClient.Android', self.build, self.config, self.unsigned_only)
         builder.execute()
         self.outputs.append(('Android unsigned .apk:', builder.unsigned_apk))
         if not self.unsigned_only:
@@ -336,18 +340,20 @@ class IOSBuilder(object):
 
     build = None
     config = None
-    csproj_path = None
+    solution_path = None
+    project_name = None
     archive_path = None
     ipa_path = None
 
-    def __init__(self, csproj_path, build, config):
-        self.csproj_path = csproj_path
+    def __init__(self, solution_path, project_name, build, config):
+        self.solution_path = solution_path
+        self.project_name = project_name
         self.build = build
         self.config = config
 
     def project_path(self, *components):
-        root = os.path.dirname(self.csproj_path)
-        return os.path.join(root, *components)
+        root = os.path.dirname(self.solution_path)
+        return os.path.join(root, self.project_name, *components)
 
     def execute(self):
         self.configure()
@@ -394,11 +400,10 @@ class IOSBuilder(object):
         plistlib.writePlist(entitlements, entitlements_path)
 
     def archive(self):
-        # cwd = self.project_path()
-        # cmd = command.Command('msbuild', '/t:Build', '/p:Configuration=Release', '/p:Platform=iPhone', '/p:ArchiveOnBuild=true', self.csproj_path, cwd=cwd)
-        # cmd.execute()
+        cmd = command.Command('msbuild', '/t:%s' % self.project_name.replace('.', '_'), '/p:Configuration=Release', '/p:Platform=iPhone', '/p:ArchiveOnBuild=true', self.solution_path)
+        cmd.execute()
         # FIXME: need to get the output path and set self.archive_path
-        pass
+        # search ~/Library/Developer/Archives/YYYY-MM-DD for latest 
 
     def export(self):
         # TODO: use xcodebuild
@@ -409,20 +414,22 @@ class AndroidBuilder(object):
 
     build = None
     config = None
-    csproj_path = None
+    solution_path = None
+    project_name = None
     unsigned_apk = None
     signed_apk = None
     unsigned_only = None
 
-    def __init__(self, csproj_path, build, config, unsigned_only=False):
-        self.csproj_path = csproj_path
+    def __init__(self, solution_path, project_name, build, config, unsigned_only=False):
+        self.solution_path = solution_path
+        self.project_name = project_name
         self.build = build
         self.config = config
         self.unsigned_only = unsigned_only
 
     def project_path(self, *components):
-        root = os.path.dirname(self.csproj_path)
-        return os.path.join(root, *components)
+        root = os.path.dirname(self.solution_path)
+        return os.path.join(root, self.project_name, *components)
 
     def execute(self):
         self.configure()
@@ -468,10 +475,11 @@ class AndroidBuilder(object):
         tree.write(manifest_path)
 
     def package(self):
-        # cwd = os.path.dirname(self.csproj_path)
-        # cmd = command.Command('msbuild', '/t:Build', '/p:Configuration=Release', self.csproj_path, cwd=cwd)
-        # cmd.execute()
-        pass
+        cmd = command.Command('msbuild', '/t:%s:BuildApk' % self.project_name.replace('.', '_'), '/p:Configuration=Release', self.solution_path)
+        cmd.execute()
+        self.unsigned_apk = self.project_path('obj', 'Release', 'android', 'bin', '%s.apk' % self.config.Android.PackageName)
+        if not os.path.exists(self.unsigned_apk):
+            raise Exception("Unsigned APK not found at expected location: %s" % self.unsigned_apk)
 
     def sign(self):
         pass
