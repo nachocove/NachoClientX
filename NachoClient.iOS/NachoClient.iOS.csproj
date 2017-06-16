@@ -114,7 +114,7 @@
     <OutputPath>bin\iPhone\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Distribution</CodesignKey>
     <ConsolePause>false</ConsolePause>
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>

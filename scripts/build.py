@@ -7,6 +7,8 @@ import os
 import os.path
 import time
 import datetime
+import tempfile
+import getpass
 
 
 KINDS = ('store', 'alpha', 'beta')
@@ -243,6 +245,7 @@ class Builder(object):
     config = None
     unsigned_only = False
     skip_git = False
+    output_path = None
 
     def __init__(self, build, platforms, config_file=None, unsigned_only=False, skip_git=False):
         self.build = build
@@ -251,6 +254,8 @@ class Builder(object):
         self.unsigned_only = unsigned_only
         self.skip_git = skip_git
         self.build.source = git.source_line(cwd=self.nacho_path())
+        self.output_path = self.nacho_path('bin', 'Nacho-%s' % self.build.tag)
+        os.makedirs(self.output_path)
         self.load_config()
         self.outputs = []
 
@@ -322,14 +327,14 @@ class Builder(object):
 
     def build_ios(self):
         print "Building iOS..."
-        builder = IOSBuilder(self.nacho_path('NachoClient.sln'), 'NachoClient.iOS', self.build, self.config)
+        builder = IOSBuilder(self.nacho_path('NachoClient.sln'), 'NachoClient.iOS', self.build, self.config, output_path=self.output_path)
         builder.execute()
         self.outputs.append(('iOS .xarchive:', builder.archive_path))
         self.outputs.append(('iOS .ipa:', builder.ipa_path))
 
     def build_android(self):
         print "Building Android..."
-        builder = AndroidBuilder(self.nacho_path('NachoClient.sln'), 'NachoClient.Android', self.build, self.config, self.unsigned_only)
+        builder = AndroidBuilder(self.nacho_path('NachoClient.sln'), 'NachoClient.Android', self.build, self.config, self.unsigned_only, output_path=self.output_path)
         builder.execute()
         self.outputs.append(('Android unsigned .apk:', builder.unsigned_apk))
         if not self.unsigned_only:
@@ -344,12 +349,14 @@ class IOSBuilder(object):
     project_name = None
     archive_path = None
     ipa_path = None
+    output_path = None
 
-    def __init__(self, solution_path, project_name, build, config):
+    def __init__(self, solution_path, project_name, build, config, output_path):
         self.solution_path = solution_path
         self.project_name = project_name
         self.build = build
         self.config = config
+        self.output_path = output_path
 
     def project_path(self, *components):
         root = os.path.dirname(self.solution_path)
@@ -421,8 +428,30 @@ class IOSBuilder(object):
         return expected_xarchive
 
     def export(self):
-        # TODO: use xcodebuild
-        pass
+        expected_ipa_path = os.path.join(self.output_path, '%s.ipa' % self.config.iOS.DisplayName)
+        plist_path = self.create_export_plist()
+        cmd = command.Command('xcodebuild', '-exportArchive', '-archivePath', self.archive_path, '-exportPath', os.path.dirname(expected_ipa_path), '-exportOptionsPlist', plist_path)
+        cmd.execute()
+        if not os.path.exists(expected_ipa_path):
+            raise Exception("Export failed %s" % ' '.join(cmd.cmd))
+        final_ipa_path = os.path.join(self.output_path, 'NachoMail-%s' % self.build.tag)
+        os.rename(expected_ipa_path, final_ipa_path)
+        self.ipa_path = final_ipa_path
+
+    def create_export_plist(self):
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            if self.build.kind == 'store':
+                options = dict(
+                    method='app-store'
+                )
+            else:
+                options = dict(
+                    method='enterprise',
+                    compileBitcode=False,
+                    iCloudContainerEnvironment='Production'
+                )
+            plistlib.writePlist(options, temp_file)
+            return temp_file.name
 
 
 class AndroidBuilder(object):
@@ -434,13 +463,15 @@ class AndroidBuilder(object):
     unsigned_apk = None
     signed_apk = None
     unsigned_only = None
+    output_path = None
 
-    def __init__(self, solution_path, project_name, build, config, unsigned_only=False):
+    def __init__(self, solution_path, project_name, build, config, unsigned_only=False, output_path=None):
         self.solution_path = solution_path
         self.project_name = project_name
         self.build = build
         self.config = config
         self.unsigned_only = unsigned_only
+        self.output_path = output_path
 
     def project_path(self, *components):
         root = os.path.dirname(self.solution_path)
@@ -498,10 +529,75 @@ class AndroidBuilder(object):
         cmd.execute()
         if not os.path.exists(expected_apk):
             raise Exception("Unsigned APK not found at expected location: %s" % expected_apk)
-        self.unsigned_apk = expected_apk
+        final_apk_path = os.path.join(self.output_path, 'NachoMail-%s' % self.build.tag)
+        os.rename(expected_apk, final_apk_path)
+        self.unsigned_apk = final_apk_path
 
     def sign(self):
-        pass
+        keystore = self.config.Android.SigningKeystore
+        signed_apk = os.path.join(self.output_path, 'NachoMail-signed-%s' % self.build.tag)
+        with tempfile.NamedTemporaryFile(suffix=".apk") as temp_apk:
+            build_tools = self.get_build_tools_root()
+            cmd = command.Command(os.path.join(build_tools, 'zipalign'), '-p', '4', self.unsigned_apk, temp_apk.name)
+            cmd.execute()
+            cmd = command.Command(os.path.join(build_tools, 'apksigner'), 'sign', '--ks', self.config.Android.SigningKeystore, '--out', signed_apk, temp_apk.name)
+            password = self.get_keystore_password()
+            cmd.stdin = password
+            cmd.execute()
+            if not os.path.exists(signed_apk):
+                raise Exception("Signed APK not created")
+        self.signed_apk = signed_apk
+
+    def get_build_tools_root(self):
+        sdk_root = self.get_sdk_root()
+        build_tools_parent = os.path.join(sdk_root, 'build-tools')
+        available_tools = sorted(os.listdir(build_tools_parent), key=version_to_number, reverse=True)
+        for tools in available_tools:
+            if os.path.exists(os.path.join(build_tools_parent, tools, 'aapt')):
+                return os.path.join(build_tools_parent, tools)
+        return None
+
+    def get_sdk_root(self):
+        # FIXME: this is for xbuild, maybe a leftover from xamarin?...does msbuild have an equivalent?
+        config_path = os.path.join(os.getenv('HOME'), '.config', 'xbuild', 'monodroid-config.xml')
+        import xml.etree.ElementTree as ET
+        config_xml = ET.parse(config_path)
+        monodroid = config_xml.root()
+        sdk = monodroid.findall('android-sdk')[0]
+        return sdk.attrib['path']
+
+    def get_keystore_password(self):
+        has_keyring = False
+        try:
+            import keyring
+            has_keyring = True
+        except ImportError:
+            pass
+        password = None
+        key_name = "NachoBuild." + self.config.Android.SigningKeystore
+        if has_keyring:
+            password = keyring.get_password("system", key_name)
+        if password is None:
+            password = getpass.getpass("Keystore Password: ")
+            if has_keyring:
+                keyring.set_password("system", key_name, password)
+            else:
+                print "To avoid repeat entry, run $ pip install keyring"
+        return password
+
+
+def version_to_number(version_string):
+    parts = version_string.split('.')
+    n = 0
+    factor = 1000000
+    for part in parts:
+        try:
+            d = int(part)
+        except ValueError:
+            return 0
+        n += factor * d
+        factor /= 100
+    return n
 
 
 if __name__ == '__main__':

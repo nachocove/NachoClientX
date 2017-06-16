@@ -37,12 +37,12 @@ def nacho_path(*components):
 
 
 def build_ios(buildspec, config):
-    builder = build.IOSBuilder(nacho_path("NachoClient.iOS/NachoClient.iOS.csproj"), buildspec, config)
+    builder = build.IOSBuilder(nacho_path("NachoClient.sln"), "NachoClient.iOS", buildspec, config)
     builder.edit_buildinfo()
 
 
 def build_android(buildspec, config):
-    builder = build.AndroidBuilder(nacho_path("NachoClient.Android/NachoClient.Android.csproj"), buildspec, config)
+    builder = build.AndroidBuilder(nacho_path("NachoClient.sln"), "NachoClient.Android", buildspec, config)
     builder.edit_buildinfo()
 
 
