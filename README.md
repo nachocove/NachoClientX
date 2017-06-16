@@ -105,6 +105,17 @@ $ git clone git@github.com:nachocove/NachoClientX
 $ NachoClientX/scripts/build.py ...
 ````
 
+Build Output
+-------------
+
+When run with the default arguments, the `build.py` script will result in four outputs:
+
+1. `iOS .xarchive` - The Xcode-compatible archive, which can be used to re-export the exact build by hand using different signing options
+2. `iOS .ipa` - The iOS app bundle suitable for distribution
+3. `Android unsigned .apk` - The unsigned Android app bundle used by clients that want to re-sign the app
+4. `Android signed .apk` - The signed Android app bundle suitable for distribution
+
+
 Release Branching
 -----------------
 Each minor release (e.g., 3.5) gets is own branch, and bugfix releases (e.g., 3.5.0 and 3.5.1) are typically built off of that
