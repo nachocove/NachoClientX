@@ -88,7 +88,7 @@ class Repo(object):
         self.branch = branch
 
     def pull(self):
-        git.update(cwd=self.path)
+        git.pull(cwd=self.path)
         git.submodule_update()
 
     def push(self):
