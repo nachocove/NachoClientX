@@ -48,11 +48,6 @@
           <workingdir>${ProjectDir}</workingdir>
         </Command>
         <Command>
-          <type>AfterBuild</type>
-          <command>${SolutionDir}/scripts/update_build_number.sh</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
           <type>BeforeBuild</type>
           <command>make</command>
           <workingdir>${ProjectDir}/../native.Mac</workingdir>
