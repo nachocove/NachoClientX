@@ -26,7 +26,7 @@ class Command(threading.Thread):
 
     def start(self):
         # Create two string files for captureing stdout and stderr
-        self.proc = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.cwd)
+        self.proc = subprocess.Popen(self.cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.cwd)
         # TODO - need to catch exeception to make sure thread terminate nicely
         (self.stdout, self.stderr) = self.proc.communicate(self.stdin)
 

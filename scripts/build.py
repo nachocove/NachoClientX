@@ -9,6 +9,7 @@ import time
 import datetime
 import tempfile
 import getpass
+import shutil
 
 
 KINDS = ('store', 'alpha', 'beta')
@@ -255,6 +256,8 @@ class Builder(object):
         self.skip_git = skip_git
         self.build.source = git.source_line(cwd=self.nacho_path())
         self.output_path = self.nacho_path('bin', 'Nacho-%s' % self.build.tag)
+        if os.path.exists(self.output_path):
+            shutil.rmtree(self.output_path)
         os.makedirs(self.output_path)
         self.load_config()
         self.outputs = []
@@ -434,7 +437,7 @@ class IOSBuilder(object):
         cmd.execute()
         if not os.path.exists(expected_ipa_path):
             raise Exception("Export failed %s" % ' '.join(cmd.cmd))
-        final_ipa_path = os.path.join(self.output_path, 'NachoMail-%s' % self.build.tag)
+        final_ipa_path = os.path.join(self.output_path, 'NachoMail-%s.ipa' % self.build.tag)
         os.rename(expected_ipa_path, final_ipa_path)
         self.ipa_path = final_ipa_path
 
@@ -529,7 +532,7 @@ class AndroidBuilder(object):
         cmd.execute()
         if not os.path.exists(expected_apk):
             raise Exception("Unsigned APK not found at expected location: %s" % expected_apk)
-        final_apk_path = os.path.join(self.output_path, 'NachoMail-%s' % self.build.tag)
+        final_apk_path = os.path.join(self.output_path, 'NachoMail-%s.apk' % self.build.tag)
         os.rename(expected_apk, final_apk_path)
         self.unsigned_apk = final_apk_path
 
@@ -538,9 +541,10 @@ class AndroidBuilder(object):
         signed_apk = os.path.join(self.output_path, 'NachoMail-signed-%s' % self.build.tag)
         with tempfile.NamedTemporaryFile(suffix=".apk") as temp_apk:
             build_tools = self.get_build_tools_root()
-            cmd = command.Command(os.path.join(build_tools, 'zipalign'), '-p', '4', self.unsigned_apk, temp_apk.name)
+            cmd = command.Command(os.path.join(build_tools, 'zipalign'), '-f', '-p', '4', self.unsigned_apk, temp_apk.name)
             cmd.execute()
-            cmd = command.Command(os.path.join(build_tools, 'apksigner'), 'sign', '--ks', self.config.Android.SigningKeystore, '--out', signed_apk, temp_apk.name)
+            keystore = os.path.join(os.getenv('HOME'), 'Library', 'Developer', 'Xamarin', 'Keystore', self.config.Android.SigningKeystore, "%s.keystore" % self.config.Android.SigningKeystore)
+            cmd = command.Command(os.path.join(build_tools, 'apksigner'), 'sign', '--ks', keystore, '--out', signed_apk, temp_apk.name)
             password = self.get_keystore_password()
             cmd.stdin = password
             cmd.execute()
@@ -562,7 +566,7 @@ class AndroidBuilder(object):
         config_path = os.path.join(os.getenv('HOME'), '.config', 'xbuild', 'monodroid-config.xml')
         import xml.etree.ElementTree as ET
         config_xml = ET.parse(config_path)
-        monodroid = config_xml.root()
+        monodroid = config_xml.getroot()
         sdk = monodroid.findall('android-sdk')[0]
         return sdk.attrib['path']
 
