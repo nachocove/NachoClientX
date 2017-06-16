@@ -354,7 +354,7 @@ class IOSBuilder(object):
     ipa_path = None
     output_path = None
 
-    def __init__(self, solution_path, project_name, build, config, output_path):
+    def __init__(self, solution_path, project_name, build, config, output_path=None):
         self.solution_path = solution_path
         self.project_name = project_name
         self.build = build
