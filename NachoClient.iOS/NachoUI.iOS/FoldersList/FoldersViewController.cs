@@ -124,6 +124,9 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             ReloadFolders ();
             AdoptTheme (Theme.Active);
+            if (Account.Id != NcApplication.Instance.Account.Id){
+                SwitchToAccount (NcApplication.Instance.Account);
+            }
         }
 
         #endregion
