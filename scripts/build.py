@@ -12,7 +12,7 @@ import getpass
 import shutil
 
 
-KINDS = ('store', 'alpha', 'beta')
+KINDS = ('store', 'alpha', 'beta', 'bluecedar')
 PLATFORMS = ('ios', 'android')
 
 
@@ -32,7 +32,7 @@ def main():
     build = Build(args.kind, args.version, args.build)
     platforms = platforms_from_args(args)
 
-    builder = Builder(build, platforms=platforms, config_file=args.config, unsigned_only=args.unsigned, skip_git=args.no_git)
+    builder = Builder(build, platforms=platforms, config_file=args.config, unsigned_only=args.unsigned or args.kind == 'bluecedar', skip_git=args.no_git)
     builder.execute()
 
 
@@ -133,6 +133,7 @@ class BuildConfig(DictWrappedObject):
 
     DEFAULTS = dict(
         IsDevelopment=False,
+        Defines='',
         iOS=dict(
             DisplayName=None,
             BundleId=None,
@@ -410,7 +411,7 @@ class IOSBuilder(object):
         plistlib.writePlist(entitlements, entitlements_path)
 
     def archive(self):
-        cmd = command.Command('msbuild', '/t:%s' % self.project_name.replace('.', '_'), '/p:Configuration=Release', '/p:Platform=iPhone', '/p:ArchiveOnBuild=true', self.solution_path)
+        cmd = command.Command('msbuild', '/t:%s' % self.project_name.replace('.', '_'), '/p:Configuration=Release', '/p:Platform=iPhone', '/p:ArchiveOnBuild=true', '/p:CustomDefines=%s' % self.config.Defines, self.solution_path)
         cmd.execute()
         self.archive_path = self.locate_archive_for_buildtime(datetime.datetime.now())
 
@@ -443,7 +444,7 @@ class IOSBuilder(object):
 
     def create_export_plist(self):
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            if self.build.kind == 'store':
+            if self.build.kind in ('store', 'bluecedar'):
                 options = dict(
                     method='app-store'
                 )
@@ -528,7 +529,7 @@ class AndroidBuilder(object):
         if os.path.exists(expected_apk):
             # remove any old apk to ensure that we pick up only a newly created one
             os.unlink(expected_apk)
-        cmd = command.Command('msbuild', '/t:%s:BuildApk' % self.project_name.replace('.', '_'), '/p:Configuration=Release', self.solution_path)
+        cmd = command.Command('msbuild', '/t:%s:BuildApk' % self.project_name.replace('.', '_'), '/p:Configuration=Release', '/p:CustomDefines=%s' % self.config.Defines, self.solution_path)
         cmd.execute()
         if not os.path.exists(expected_apk):
             raise Exception("Unsigned APK not found at expected location: %s" % expected_apk)

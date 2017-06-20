@@ -1,8 +1,6 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 
-#define EXCHANGE_WALL_ENABLED
-
 using System;
 using NachoCore.Model;
 
