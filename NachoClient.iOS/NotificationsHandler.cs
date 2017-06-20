@@ -398,16 +398,38 @@ namespace NachoClient.iOS
 
         #region Application Icon Badge
 
+        bool IsRunningBadgeUpdate;
+        bool NeedsBadgeUpdate;
+        object BadgeUpdateLock = new object ();
+
         public void UpdateBadgeCount ()
         {
-            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
+            bool isTaskRunning = false;
+            lock (BadgeUpdateLock){
+                if (IsRunningBadgeUpdate){
+                    NeedsBadgeUpdate = true;
+                    isTaskRunning = true;
+                }else{
+                    IsRunningBadgeUpdate = true;
+                }
+            }
+            if (!isTaskRunning){
                 // Calculating the badge count requires database queries that are sometimes very slow.
                 // Slow enough that they should not be run on the UI thread.
                 NcTask.Run (() => {
-                    UpdateBadgeCountTask ();
+                    bool needsRun = true;
+                    while (needsRun) {
+                        UpdateBadgeCountTask ();
+                        lock (BadgeUpdateLock){
+                            if (NeedsBadgeUpdate){
+                                NeedsBadgeUpdate = false;
+                            }else{
+                                IsRunningBadgeUpdate = false;
+                                needsRun = false;
+                            }
+                        }
+                    }
                 }, "UpdateBadgeCount");
-            } else {
-                UpdateBadgeCountTask ();
             }
         }
 
@@ -428,21 +450,64 @@ namespace NachoClient.iOS
             });
         }
 
+        bool NeedsBadgeAndNotifications;
+        bool IsRunningBadgeAndNotifications;
+        object BadgeAndNotificationsLock = new object ();
+        List<Action> BadgeAndNotificationCallbacks = new List<Action> ();
+
         public void BadgeCountAndMessageNotifications (Action updateDone = null)
         {
-            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
-                // NotificationCanBadge must be called on the UI thread, so it must be called before starting
-                // the task.
+            if (Thread.CurrentThread.ManagedThreadId != NcApplication.Instance.UiThreadId) {
+				// We need to access NotificationCanBadge, which must be called on the UI thread, so if we're
+                // not already on the UI thread, dispatch a call to the UI thread.
+				InvokeOnUIThread.Instance.Invoke (() => {
+                    BadgeCountAndMessageNotifications (updateDone);
+                });
+                return;
+            }
+            // NotificationCanBadge must be called on the UI thread, so it must be called before starting the task.
+            bool isTaskRunning = false;
+            lock (BadgeAndNotificationsLock){
+                if (IsRunningBadgeAndNotifications){
+                    isTaskRunning = true;
+                    NeedsBadgeAndNotifications = true;
+                }else{
+                    IsRunningBadgeAndNotifications = true;
+                }
+                if (updateDone != null){
+                    BadgeAndNotificationCallbacks.Add (updateDone);
+                }
+            }
+            if (!isTaskRunning) {
                 bool canBadge = NotificationCanBadge;
                 NcTask.Run (() => {
-                    BadgeNotificationsTask (canBadge, updateDone);
+                    bool needsRun = true;
+                    List<Action> callbacks = new List<Action> ();
+					while (needsRun) {
+						BadgeNotificationsTask (canBadge);
+                        lock (BadgeAndNotificationsLock){
+                            if (NeedsBadgeAndNotifications){
+                                NeedsBadgeAndNotifications = false;
+                            }else{
+                                IsRunningBadgeAndNotifications = false;
+                                needsRun = false;
+                                callbacks = new List<Action> (BadgeAndNotificationCallbacks);
+                                BadgeAndNotificationCallbacks.Clear ();
+                            }
+                        }
+                    }
+                    if (callbacks.Count > 0){
+                        InvokeOnUIThread.Instance.Invoke (() => {
+                            foreach (var callback in callbacks){
+                                callback ();
+                            }
+                        });
+                    }
                 }, "BadgeCountAndMessageNotifications");
-            } else {
-                BadgeNotificationsTask (true, updateDone);
             }
         }
 
-        private void BadgeNotificationsTask (bool canBadge, Action updateDone)
+        private void BadgeNotificationsTask (bool canBadge)
         {
             if (canBadge) {
                 UpdateBadgeCountTask ();
@@ -453,9 +518,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Message notifications: called");
             if (!NotifyAllowed) {
                 Log.Info (Log.LOG_UI, "Message notifications: early exit");
-                if (null != updateDone) {
-                    InvokeOnUIThread.Instance.Invoke (updateDone);
-                }
                 return;
             }
 
@@ -557,9 +619,6 @@ namespace NachoClient.iOS
             }
 
             accountTable.Clear ();
-            if (null != updateDone) {
-                InvokeOnUIThread.Instance.Invoke (updateDone);
-            }
         }
 
         #endregion
