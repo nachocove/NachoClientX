@@ -89,6 +89,8 @@
     <!-- Message List -->
     <string name="messages_sync_time_latest">Up to date!</string>
     <string name="messages_sync_time_format">Last updated {0}</string>
+    <string name="message_item_action_hot">Hot</string>
+    <string name="message_item_action_unhot">Not Hot</string>
     <string name="message_item_action_reply">Reply</string>
     <string name="message_item_action_forward">Forward</string>
     <string name="message_item_action_delete">Delete</string>
@@ -103,6 +105,8 @@
     <string name="messages_filter_focus">Focus</string>
 
     <!-- Message View -->
+    <string name="message_action_hot">Hot</string>
+    <string name="message_action_unhot">Not Hot</string>
     <string name="message_action_forward">Forward</string>
     <string name="message_action_event">Create Event</string>
     <string name="message_action_move">Move</string>

@@ -13,6 +13,8 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Android.Text;
+using Android.Text.Style;
 
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -75,11 +77,21 @@ namespace NachoClient.AndroidClient
             DateLabel.Text = Pretty.FriendlyFullDateTime (message.DateReceived);
             // TODO: add styled intent to date label
             SenderLabel.Text = Pretty.SenderString (message.From);
+            string subjectText;
             if (String.IsNullOrEmpty (message.Subject)) {
-                SubjectLabel.Text = "(no subject)";
+                subjectText = "(no subject)";
             } else {
-                SubjectLabel.Text = Pretty.SubjectString (message.Subject);
+                subjectText = Pretty.SubjectString (message.Subject);
             }
+            if (message.isHot ()) {
+                subjectText = "  " + subjectText;
+            }
+            var styledSubject = new SpannableString (subjectText);
+            if (message.isHot ()) {
+                var imageSpan = new ImageSpan (Context, Resource.Drawable.subject_hot_large);
+                styledSubject.SetSpan (imageSpan, 0, 1, 0);
+            }
+            SubjectLabel.SetText (styledSubject, TextView.BufferType.Spannable);
         }
 
         #endregion

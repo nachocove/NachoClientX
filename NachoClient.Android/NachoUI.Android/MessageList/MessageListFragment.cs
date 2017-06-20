@@ -264,8 +264,8 @@ namespace NachoClient.AndroidClient
         #region Filtering
 
         protected bool ShouldShowFilterBar {
-        	get {
-        		return Messages.HasFilterSemantics () && Messages.PossibleFilterSettings.Length > 1;
+            get {
+                return Messages.HasFilterSemantics () && Messages.PossibleFilterSettings.Length > 1;
             }
         }
 
@@ -336,9 +336,9 @@ namespace NachoClient.AndroidClient
 
         void FilterFocus ()
         {
-        	//EndAllTableEdits ();
-        	Messages.FilterSetting = FolderFilterOptions.Focused;
-        	SetNeedsReload ();
+            //EndAllTableEdits ();
+            Messages.FilterSetting = FolderFilterOptions.Focused;
+            SetNeedsReload ();
         }
 
         #endregion
@@ -386,6 +386,12 @@ namespace NachoClient.AndroidClient
                     return true;
                 case Resource.Id.unread:
                     MarkAsUnreadThreadAtPosition (position);
+                    return true;
+                case Resource.Id.hot:
+                    MarkAsHotThreadAtPosition (position);
+                    return true;
+                case Resource.Id.unhot:
+                    MarkAsUnhotThreadAtPosition (position);
                     return true;
                 }
             }
@@ -465,6 +471,26 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void MarkAsHotThreadAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            var message = Messages.GetCachedMessage (position);
+            if (thread != null && message != null) {
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                MessagesAdapter.NotifyItemChanged (position);
+            }
+        }
+
+        void MarkAsUnhotThreadAtPosition (int position)
+        {
+            var thread = Messages.GetEmailThread (position);
+            var message = Messages.GetCachedMessage (position);
+            if (thread != null && message != null) {
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                MessagesAdapter.NotifyItemChanged (position);
+            }
+        }
+
         #endregion
 
         #region System Events
@@ -494,14 +520,14 @@ namespace NachoClient.AndroidClient
             if (s.Account == null || (Messages != null && Messages.IsCompatibleWithAccount (s.Account))) {
                 switch (s.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-					SetNeedsReload ();
+                    SetNeedsReload ();
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
                 case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                 case NcResult.SubKindEnum.Info_EmailMessageChanged:
                 case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-					UpdateVisibleRows ();
+                    UpdateVisibleRows ();
                     break;
                 case NcResult.SubKindEnum.Error_SyncFailed:
                 case NcResult.SubKindEnum.Info_SyncSucceeded:
@@ -540,13 +566,13 @@ namespace NachoClient.AndroidClient
         void ComposeDraft (McEmailMessage message)
         {
             var intent = MessageComposeActivity.DraftIntent (Activity, message);
-			StartActivity (intent);
+            StartActivity (intent);
         }
 
         void ComposeOutboxMessage (McEmailMessage message)
         {
-        	var copy = EmailHelper.MoveFromOutboxToDrafts (message);
-        	ComposeDraft (copy);
+            var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+            ComposeDraft (copy);
         }
 
         void ComposeForward (McEmailMessage message)
@@ -574,9 +600,9 @@ namespace NachoClient.AndroidClient
         {
             var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
             if (pending != null && pending.ResultKind == NcResult.KindEnum.Error) {
-				ShowOutboxError (message, pending);
+                ShowOutboxError (message, pending);
             } else {
-				ComposeOutboxMessage (message);
+                ComposeOutboxMessage (message);
             }
         }
 
@@ -631,16 +657,16 @@ namespace NachoClient.AndroidClient
 
         void ArchiveThread (McEmailMessageThread thread)
         {
-    		NcTask.Run (() => {
+            NcTask.Run (() => {
                 NcEmailArchiver.Archive (thread);
-    		}, "MessageListFragment_Archive");
-        	Messages.IgnoreMessage (thread.FirstMessageId);
+            }, "MessageListFragment_Archive");
+            Messages.IgnoreMessage (thread.FirstMessageId);
         }
 
         void ComposeReply (McEmailMessage message)
         {
             var intent = MessageComposeActivity.RespondIntent (Activity, EmailHelper.Action.ReplyAll, message);
-			StartActivity (intent);
+            StartActivity (intent);
         }
 
         void RemoveItemViewAtPosition (int position)
@@ -655,12 +681,12 @@ namespace NachoClient.AndroidClient
 
         void ShowOutboxError (McEmailMessage message, McPending pending)
         {
-        	string errorString;
-        	if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
-        		errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
-        	}
-        	var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
-        	var alertString = String.Format ("{0}\n{1}", messageString, errorString);
+            string errorString;
+            if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
+                errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
+            }
+            var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
+            var alertString = String.Format ("{0}\n{1}", messageString, errorString);
             var builder = new Android.App.AlertDialog.Builder (Activity);
             builder.SetMessage (alertString);
             builder.SetPositiveButton ("Edit Message", (dialog, which) => {
@@ -766,6 +792,11 @@ namespace NachoClient.AndroidClient
             intent.PutExtra (EXTRA_POSITION, position);
             int order = 0;
             List<IMenuItem> items = new List<IMenuItem> ();
+            if (message.isHot ()) {
+                items.Add (menu.Add (0, Resource.Id.unhot, order++, Resource.String.message_item_action_unhot));
+            } else {
+                items.Add (menu.Add (0, Resource.Id.hot, order++, Resource.String.message_item_action_hot));
+            }
             items.Add (menu.Add (0, Resource.Id.reply, order++, Resource.String.message_item_action_reply));
             items.Add (menu.Add (0, Resource.Id.forward, order++, Resource.String.message_item_action_forward));
             items.Add (menu.Add (0, Resource.Id.move, order++, Resource.String.message_item_action_move));
@@ -864,6 +895,10 @@ namespace NachoClient.AndroidClient
             int subjectLength;
             var previewText = Pretty.MessagePreview (message, out subjectLength);
             int attachmentIndex = -1;
+            if (message.isHot ()){
+                previewText = "  " + previewText;
+                subjectLength += 2;
+            }
             if (message.cachedHasAttachments) {
                 if (subjectLength > 0) {
                     previewText = previewText.Substring (0, subjectLength) + "  " + previewText.Substring (subjectLength);
@@ -875,7 +910,10 @@ namespace NachoClient.AndroidClient
             }
             var styledPreview = new SpannableString (previewText);
             styledPreview.SetSpan (new ForegroundColorSpan (ItemView.Context.ThemeColorCompat (Android.Resource.Attribute.ColorPrimary)), 0, subjectLength, 0);
-            // TODO: insert hot icon
+            if (message.isHot ()){
+                var imageSpan = new ImageSpan (ItemView.Context, Resource.Drawable.subject_hot);
+                styledPreview.SetSpan (imageSpan, 0, 1, 0);
+            }
             if (attachmentIndex >= 0) {
                 var imageSpan = new ImageSpan (ItemView.Context, Resource.Drawable.subject_attach);
                 styledPreview.SetSpan (imageSpan, attachmentIndex, attachmentIndex + 1, 0);

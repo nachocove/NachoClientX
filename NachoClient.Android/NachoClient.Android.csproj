@@ -1014,6 +1014,14 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\IconBeta.png" />
     <AndroidResource Include="Resources\layout\ExchangeEnableActivity.axml" />
     <AndroidResource Include="Resources\layout\ExchangeEnableFragment.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\subject_hot.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\subject_hot.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\subject_hot.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\subject_hot.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\subject_hot_large.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\subject_hot_large.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\subject_hot_large.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\subject_hot_large.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

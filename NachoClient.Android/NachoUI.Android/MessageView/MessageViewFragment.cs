@@ -176,7 +176,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void Update ()
+        public void Update ()
         {
             HeaderView.SetMessage (Message);
             AttachmentsView.Attachments = Attachments;

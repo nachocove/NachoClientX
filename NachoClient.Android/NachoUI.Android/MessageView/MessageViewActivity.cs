@@ -45,6 +45,7 @@ namespace NachoClient.AndroidClient
 
         Toolbar Toolbar;
         FloatingActionButton FloatingActionButton;
+        MessageViewFragment MessageViewFragment;
 
         void FindSubviews ()
         {
@@ -85,7 +86,8 @@ namespace NachoClient.AndroidClient
         {
             base.OnAttachFragment (fragment);
             if (fragment is MessageViewFragment) {
-                (fragment as MessageViewFragment).Message = Message;
+                MessageViewFragment = fragment as MessageViewFragment;
+                MessageViewFragment.Message = Message;
             }
         }
 
@@ -111,6 +113,11 @@ namespace NachoClient.AndroidClient
         public override bool OnCreateOptionsMenu (IMenu menu)
         {
             MenuInflater.Inflate (Resource.Menu.message_view, menu);
+            if (Message.isHot ()){
+                menu.FindItem (Resource.Id.hot).SetVisible (false);
+            }else{
+                menu.FindItem (Resource.Id.unhot).SetVisible (false);
+            }
             return base.OnCreateOptionsMenu (menu);
         }
 
@@ -133,6 +140,12 @@ namespace NachoClient.AndroidClient
                 return true;
             case Resource.Id.delete:
                 Delete ();
+                return true;
+            case Resource.Id.hot:
+                ToggleHot ();
+                return true;
+            case Resource.Id.unhot:
+                ToggleHot ();
                 return true;
             }
             return base.OnOptionsItemSelected (item);
@@ -160,7 +173,7 @@ namespace NachoClient.AndroidClient
         void Forward ()
         {
             var intent = MessageComposeActivity.RespondIntent (this, NachoCore.Utils.EmailHelper.Action.Forward, Message);
-			StartActivity (intent);
+            StartActivity (intent);
         }
 
         void CreateEvent ()
@@ -193,6 +206,13 @@ namespace NachoClient.AndroidClient
         {
             var folder = McFolder.QueryById<McFolder> (folderId);
             NcEmailArchiver.Move (Message, folder);
+        }
+
+        void ToggleHot ()
+        {
+            Message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (Message);
+            MessageViewFragment.Update ();
+            InvalidateOptionsMenu ();
         }
 
         #endregion
