@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorPrimary">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="40dp">
+        <NachoClient.AndroidClient.RoundedImageView
+            android:id="@+id/avatar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            tools:src="@drawable/avatar_outlook"
+            android:layout_marginBottom="40dp" />
+        <TextView
+            android:id="@+id/message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceWelcome"
+            android:text="@string/exchange_enable_message"
+            android:layout_marginBottom="40dp" />
+        <Button
+            android:id="@+id/request_code"
+            android:layout_height="40dp"
+            android:layout_width="match_parent"
+            android:text="@string/exchange_enable_request_code"
+            android:textAppearance="?attr/textAppearanceWelcomeButton"
+            android:background="@drawable/roundedbutton"
+            android:layout_marginBottom="20dp" />
+        <Button
+            android:id="@+id/enter_code"
+            android:layout_height="40dp"
+            android:layout_width="match_parent"
+            android:text="@string/exchange_enable_enter_code"
+            android:textAppearance="?attr/textAppearanceAccountCreationLink"
+            android:background="@null" />
+        <EditText
+            android:id="@+id/code_field"
+            android:inputType="text"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:hint="@string/exchange_enable_code"
+            android:textAppearance="?attr/textAppearanceAccountCreationField"
+            android:background="@android:color/white"
+            android:layout_marginBottom="20dp"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/submit"
+            android:layout_height="40dp"
+            android:layout_width="match_parent"
+            android:text="@string/exchange_enable_submit"
+            android:textAppearance="?attr/textAppearanceWelcomeButton"
+            android:background="@drawable/roundedbutton"
+            android:layout_marginBottom="20dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</android.support.v4.widget.NestedScrollView>

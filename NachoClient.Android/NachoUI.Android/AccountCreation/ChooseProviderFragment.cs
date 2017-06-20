@@ -24,6 +24,9 @@ namespace NachoClient.AndroidClient
 
     public class ChooseProviderFragment : Fragment
     {
+
+        private const int REQUEST_ENABLE_EXCHANGE = 1;
+
         ProviderAdapter providerAdapter;
 
         public static ChooseProviderFragment newInstance ()
@@ -52,8 +55,27 @@ namespace NachoClient.AndroidClient
         void Gridview_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             var s = providerAdapter.GetItemService (e.Position);
-            var parent = (ChooseProviderDelegate)Activity;
-            parent.ChooseProviderFinished (s);   
+            var generalType = McAccount.GetAccountType (s);
+            if (generalType == McAccount.AccountTypeEnum.Exchange && !NachoCore.Utils.PermissionManager.Instance.CanCreateExchange) {
+                var intent = ExchangeEnableActivity.BuildIntent (Activity, s);
+                StartActivityForResult (intent, REQUEST_ENABLE_EXCHANGE);
+            } else {
+	            var parent = (ChooseProviderDelegate)Activity;
+	            parent.ChooseProviderFinished (s);
+	        }
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            if (requestCode == REQUEST_ENABLE_EXCHANGE){
+                if (NachoCore.Utils.PermissionManager.Instance.CanCreateExchange){
+                    var service = (McAccount.AccountServiceEnum)data.GetIntExtra (ExchangeEnableActivity.EXTRA_SERVICE, 0);
+					var parent = (ChooseProviderDelegate)Activity;
+					parent.ChooseProviderFinished (service);
+                }
+                return;
+            }
+            base.OnActivityResult (requestCode, resultCode, data);
         }
     }
 

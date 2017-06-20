@@ -22,6 +22,19 @@
     <!-- Account Creation Choose Provider -->
     <string name="choose_provider_title">Choose Provider</string>
 
+    <!-- Account Creation Exchange Enable -->
+    <string name="exchange_enable_message">Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts</string>
+    <string name="exchange_enable_enter_code_message">Enter the access code to enable Exchange accounts</string>
+    <string name="exchange_enable_request_code">Request a Code</string>
+    <string name="exchange_enable_enter_code">Have a code?</string>
+    <string name="exchange_enable_submit">Submit</string>
+    <string name="exchange_enable_code">Code</string>
+    <string name="exchange_enable_invalid_code">Sorry, the entered code is invalid.  Please verify the code you received and try again.</string>
+    <string name="exchange_enable_invalid_code_ack">OK</string>
+    <string name="exchange_enable_send_request">Send a request using</string>
+    <string name="exchange_enable_request_issue">Please send an email to info@nachocove.com</string>
+    <string name="exchange_enable_request_issue_ack">OK</string>
+
     <!-- Credentials Fragment -->
     <string name="credentials_submit">Submit</string>
     <string name="credentials_prompt">Please provide your {0} information</string>

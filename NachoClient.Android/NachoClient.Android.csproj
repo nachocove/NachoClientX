@@ -312,6 +312,8 @@
     <Compile Include="NachoUI.Android\NotificationService.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
     <Compile Include="NachoUI.Android\Support\Compat.cs" />
+    <Compile Include="NachoUI.Android\AccountCreation\ExchangeEnableActivity.cs" />
+    <Compile Include="NachoUI.Android\AccountCreation\ExchangeEnableFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1010,6 +1012,8 @@
     <AndroidResource Include="Resources\drawable-xhdpi\IconBeta.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\IconAlpha.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\IconBeta.png" />
+    <AndroidResource Include="Resources\layout\ExchangeEnableActivity.axml" />
+    <AndroidResource Include="Resources\layout\ExchangeEnableFragment.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

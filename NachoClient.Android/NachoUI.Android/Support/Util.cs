@@ -277,6 +277,21 @@ namespace NachoClient.AndroidClient
 			Resource.Drawable.UserColor30,
 			Resource.Drawable.UserColor31,
 		};
+
+        public static List<Android.Content.PM.ResolveInfo> EmailActivities (Context context, Intent intent)
+        {
+            var resolvedActivities = new List<Android.Content.PM.ResolveInfo> (context.PackageManager.QueryIntentActivities (intent, Android.Content.PM.PackageInfoFlags.MatchDefaultOnly));
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            if (account == null){
+                // If there's no default nacho email account, remove nacho
+                for (var i = resolvedActivities.Count - 1; i >= 0; --i){
+                    if (resolvedActivities[i].ActivityInfo.ApplicationInfo.PackageName.Equals (context.PackageName, StringComparison.OrdinalIgnoreCase)){
+                        resolvedActivities.RemoveAt (i);
+                    }
+                }
+            }
+            return resolvedActivities;
+        }
     }
 
     /// <summary>

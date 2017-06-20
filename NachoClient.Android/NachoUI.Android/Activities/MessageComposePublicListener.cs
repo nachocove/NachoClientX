@@ -22,7 +22,7 @@ namespace NachoClient.AndroidClient
 {
     [Activity (Label = BuildInfo.AppNameString)]
     [IntentFilter (new[] { Intent.ActionSend, Intent.ActionSendMultiple }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "*/*")]
-    [IntentFilter (new[] { Intent.ActionSendto }, Categories = new[] { Intent.CategoryDefault }, DataScheme = "mailto", DataMimeType = "*/*")]
+    [IntentFilter (new[] { Intent.ActionSendto }, Categories = new[] { Intent.CategoryDefault }, DataScheme = "mailto")]
     public class MessageComposePublicListener : NcActivity
     {
         protected override void OnCreate (Bundle savedInstanceState)
@@ -35,13 +35,36 @@ namespace NachoClient.AndroidClient
 
                 MainApplication.OneTimeStartup ("MessageComposePublicListener");
 
+                var account = NcApplication.Instance.DefaultEmailAccount;
+                if (account == null){
+                    RunOnUiThread (() => {
+                        var intent = AddAccountActivity.BuildIntent (this);
+                        intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop);
+                        StartActivity (intent);
+                        Finish ();
+                    });
+                    return;
+                }
                 var message = new McEmailMessage ();
-                message.AccountId = NcApplication.Instance.DefaultEmailAccount.Id;
+                message.AccountId = account.Id;
 
                 string initialText = "";
 
                 if (Intent.HasExtra (Intent.ExtraEmail)) {
                     message.To = string.Join (", ", Intent.GetStringArrayExtra (Intent.ExtraEmail));
+                }else{
+                    var uri = Intent.Data;
+                    if (uri != null && uri.Scheme.Equals ("mailto", StringComparison.OrdinalIgnoreCase)){
+                        var ssp = uri.SchemeSpecificPart;
+                        if (ssp != null){
+                            var queryIndex = ssp.IndexOf ('?', 0, ssp.Length);
+                            if (queryIndex >= 0){
+                                message.To = ssp.Substring (0, queryIndex);
+                            }else{
+                                message.To = ssp;
+                            }
+                        }
+                    }
                 }
                 if (Intent.HasExtra (Intent.ExtraCc)) {
                     message.Cc = string.Join (", ", Intent.GetStringArrayExtra (Intent.ExtraCc));
