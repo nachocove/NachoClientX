@@ -4,7 +4,9 @@ using System;
 using Foundation;
 using UIKit;
 using CoreGraphics;
+using MessageUI;
 
+using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 
@@ -137,7 +139,35 @@ namespace NachoClient.iOS
 
         void RequestCode()
         {
-            
+            var to = "info@nachocove.com";
+            var subject = "Using Exchange with Nacho Mail";
+            var text = "Hello,\n\nI'm interested in using Nacho Mail with an Exchange account.  Please send me a code to enable Exchange accounts.\n\nThanks";
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            if (account == null){
+                if (MFMailComposeViewController.CanSendMail) {
+                    var controller = new MFMailComposeViewController ();
+                    controller.SetToRecipients (new string[] { to });
+                    controller.SetSubject (subject);
+                    controller.SetMessageBody (text, isHtml: false);
+                    controller.Finished += (sender, e) => {
+                        e.Controller.DismissViewController (animated: true, completionHandler: null);
+                    };
+                    PresentViewController (controller, animated: true, completionHandler: null);
+                } else {
+                    var alert = UIAlertController.Create ("Send Request", "Please send a request to info@nachocove.com", UIAlertControllerStyle.Alert);
+                    alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default,(obj) => {}));
+                    PresentViewController (alert, animated: true, completionHandler: null);
+                }
+            }else{
+                var message = new McEmailMessage ();
+                message.AccountId = account.Id;
+                message.To = to;
+                message.Subject = subject;
+                var controller = new MessageComposeViewController (account);
+                controller.Composer.Message = message;
+                controller.Composer.InitialText = text;
+                controller.Present ();
+            }
         }
 
         void CheckCode (string code)
