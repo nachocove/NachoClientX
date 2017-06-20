@@ -446,7 +446,6 @@
     <Compile Include="NachoUI.iOS\MessageList\MessageListFilterBar.cs" />
     <Compile Include="NachoUI.iOS\MessageView\MessageToolbar.cs" />
     <Compile Include="NachoUI.iOS\Calendar\NachoInlineImageTextAttachment.cs" />
-    <Compile Include="NachoUI.iOS\Home\NachoNavigationBar.cs" />
     <Compile Include="NachoUI.iOS\Base\NameValueCell.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\NcAccountTypeCollectionViewCell.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\NcAccountTypeCollectionViewCell.designer.cs">
@@ -481,6 +480,7 @@
     <Compile Include="CrashReporter.cs" />
     <Compile Include="BackgroundController.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\ExchangeEnableViewController.cs" />
+    <Compile Include="NachoUI.iOS\MainTabs\NachoNavigationBar.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
