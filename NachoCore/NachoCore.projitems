@@ -427,6 +427,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\NachoMailFolders.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\OauthHttpServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration57.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration58.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

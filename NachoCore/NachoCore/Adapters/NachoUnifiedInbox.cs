@@ -141,7 +141,7 @@ namespace NachoCore
         }
 
         private static FolderFilterOptions[] possibleFilters = new FolderFilterOptions[] {
-            FolderFilterOptions.All, FolderFilterOptions.Hot, FolderFilterOptions.Focused, FolderFilterOptions.Unread
+            FolderFilterOptions.All, FolderFilterOptions.Hot, FolderFilterOptions.Unread
         };
 
         public override FolderFilterOptions[] PossibleFilterSettings {
