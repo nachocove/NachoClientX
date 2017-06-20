@@ -432,6 +432,12 @@ namespace NachoCore.IMAP
                         if (emailMessage.IsAction){
                             McAction.RunCreateActionFromMessageTask (emailMessage.Id);
                         }
+                    } else {
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                            return true;
+                        });
                     }
                 });
             }
