@@ -15,10 +15,10 @@ namespace NachoCore.Utils
     {
         string LogPrefix;
         //ulong LogModule;
-        public NcDebugProtocolLogger (ulong logModule)
+        public NcDebugProtocolLogger (Log log)
         {
             //LogModule = logModule;
-            LogPrefix = Log.ModuleString (logModule);
+            LogPrefix = log.Subsystem;
         }
 
         #region IProtocolLogger implementation

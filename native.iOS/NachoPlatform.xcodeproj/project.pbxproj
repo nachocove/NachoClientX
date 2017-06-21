@@ -17,6 +17,7 @@
 		22CF3BF618B3F70200A1083E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 22CF3BF418B3F70200A1083E /* InfoPlist.strings */; };
 		22CF3BF818B3F70200A1083E /* NachoPlatformTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 22CF3BF718B3F70200A1083E /* NachoPlatformTests.m */; };
 		22D44C2718B6AF7A00B02F84 /* nacho-dkim-regdom.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D44C2618B6AF7A00B02F84 /* nacho-dkim-regdom.c */; };
+		316248D31EFA2867008ECF4B /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 316248D21EFA2867008ECF4B /* log.c */; };
 		950263241A4260A20037CC29 /* nacho-res-query.c in Sources */ = {isa = PBXBuildFile; fileRef = 950263231A4260A20037CC29 /* nacho-res-query.c */; };
 /* End PBXBuildFile section */
 
@@ -57,6 +58,7 @@
 		22CF3BF518B3F70200A1083E /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		22CF3BF718B3F70200A1083E /* NachoPlatformTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NachoPlatformTests.m; sourceTree = "<group>"; };
 		22D44C2618B6AF7A00B02F84 /* nacho-dkim-regdom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "nacho-dkim-regdom.c"; path = "src/nacho-dkim-regdom.c"; sourceTree = SOURCE_ROOT; };
+		316248D21EFA2867008ECF4B /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = log.c; path = src/log.c; sourceTree = SOURCE_ROOT; };
 		950263231A4260A20037CC29 /* nacho-res-query.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "nacho-res-query.c"; path = "src/nacho-res-query.c"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -122,6 +124,7 @@
 				224ACEDB18B4125700DA4554 /* regdom.h */,
 				22CF3BDE18B3F70100A1083E /* Supporting Files */,
 				950263231A4260A20037CC29 /* nacho-res-query.c */,
+				316248D21EFA2867008ECF4B /* log.c */,
 			);
 			path = NachoPlatform;
 			sourceTree = "<group>";
@@ -235,6 +238,7 @@
 			files = (
 				22340B6818B5B8D1000BB5AF /* nacho-sysctlbyname.c in Sources */,
 				950263241A4260A20037CC29 /* nacho-res-query.c in Sources */,
+				316248D31EFA2867008ECF4B /* log.c in Sources */,
 				22D44C2718B6AF7A00B02F84 /* nacho-dkim-regdom.c in Sources */,
 				224ACEDC18B4125700DA4554 /* regdom.c in Sources */,
 			);

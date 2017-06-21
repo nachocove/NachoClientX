@@ -399,4 +399,12 @@ namespace NachoPlatform
     }
 
     #endregion
+
+    public interface IConsoleLog
+    {
+        void Debug (string fmt, params object [] list);
+        void Info (string fmt, params object [] list);
+        void Warn (string fmt, params object [] list);
+        void Error (string fmt, params object [] list);
+    }
 }

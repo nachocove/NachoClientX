@@ -14,6 +14,8 @@
 **/*.so
 bin/*
 NachoClient.iOS/Info.plist.rewritten
+native.iOS/**/*.xcworkspace
+native.iOS/**/xcuserdata
 native.iOS/src/tld-canon.h
 native.iOS/build
 native.Mac/src/tld-canon.h

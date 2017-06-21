@@ -278,11 +278,7 @@ namespace Test.iOS
             };
             deviceAccount.Insert ();
             // turn off telemetry logging for tests
-            LogSettings settings = Log.SharedInstance.Settings;
-            settings.Error.DisableTelemetry ();
-            settings.Warn.DisableTelemetry ();
-            settings.Info.DisableTelemetry ();
-            settings.Debug.DisableTelemetry ();
+            Log.TelemetryDisabled = true;
             NcTask.StartService ();
         }
 

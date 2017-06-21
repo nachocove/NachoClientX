@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿﻿﻿// Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -377,37 +377,37 @@ namespace NachoCore.Model
             // TODO we can remove the checking to speed up launch.
             NcAssert.NotNull (db);
             var auto_vacuum = db.ExecuteScalar<int> ("PRAGMA auto_vacuum");
-            QueueLogInfo (string.Format ("PRAGMA auto_vacuum: {0}", auto_vacuum));
+            Log.LOG_DB.Info ("PRAGMA auto_vacuum: {0}", auto_vacuum);
             if ((int)AutoVacuum != auto_vacuum) {
                 var cmd = String.Format ("PRAGMA auto_vacuum = {0}", (int)AutoVacuum);
                 db.Execute (cmd);
                 auto_vacuum = db.ExecuteScalar<int> ("PRAGMA auto_vacuum");
                 NcAssert.Equals (auto_vacuum, (int)AutoVacuum);
-                QueueLogInfo (string.Format ("PRAGMA auto_vacuum set to {0}", (int)AutoVacuum));
+                Log.LOG_DB.Info ("PRAGMA auto_vacuum set to {0}", (int)AutoVacuum);
             }
             var cache_size = db.ExecuteScalar<int> ("PRAGMA cache_size");
-            QueueLogInfo (string.Format ("PRAGMA cache_size: {0}", cache_size));
+            Log.LOG_DB.Info ("PRAGMA cache_size: {0}", cache_size);
             var journal_mode = db.ExecuteScalar<string> ("PRAGMA journal_mode");
-            QueueLogInfo (string.Format ("PRAGMA journal_mode: {0}", journal_mode));
+            Log.LOG_DB.Info ("PRAGMA journal_mode: {0}", journal_mode);
             if ("wal" != journal_mode.ToLower ()) {
                 journal_mode = db.ExecuteScalar<string> ("PRAGMA journal_mode = WAL");
                 NcAssert.Equals ("wal", journal_mode.ToLower ());
-                QueueLogInfo (string.Format ("PRAGMA journal_mode set to {0}", journal_mode));
+                Log.LOG_DB.Info ("PRAGMA journal_mode set to {0}", journal_mode);
             }
             var wal_autocheckpoint = db.ExecuteScalar<int> ("PRAGMA wal_autocheckpoint");
-            QueueLogInfo (string.Format ("PRAGMA wal_autocheckpoint: {0}", wal_autocheckpoint));
+            Log.LOG_DB.Info ("PRAGMA wal_autocheckpoint: {0}", wal_autocheckpoint);
             if (1000 != wal_autocheckpoint) {
                 journal_mode = db.ExecuteScalar<string> ("PRAGMA wal_autocheckpoint = 1000");
                 NcAssert.Equals (1000, wal_autocheckpoint);
-                QueueLogInfo (string.Format ("PRAGMA wal_autocheckpoint set to {0}", wal_autocheckpoint));
+                Log.LOG_DB.Info ("PRAGMA wal_autocheckpoint set to {0}", wal_autocheckpoint);
             }
             var synchronous = db.ExecuteScalar<int> ("PRAGMA synchronous");
-            QueueLogInfo (string.Format ("PRAGMA synchronous: {0}", synchronous));
+            Log.LOG_DB.Info ("PRAGMA synchronous: {0}", synchronous);
             if (1 != synchronous) {
                 db.Execute ("PRAGMA synchronous = 1");
                 synchronous = db.ExecuteScalar<int> ("PRAGMA synchronous");
                 NcAssert.Equals (synchronous, 1);
-                QueueLogInfo (string.Format ("PRAGMA synchronous set to: {0}", synchronous));
+                Log.LOG_DB.Info ("PRAGMA synchronous set to: {0}", synchronous);
             }
         }
 
@@ -451,19 +451,8 @@ namespace NachoCore.Model
                 NcAssert.AreEqual (1, Db.InsertOrReplace (current));
             }
             watch.Stop ();
-            QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
+            Log.LOG_DB.Info ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds);
             ConfigureDb (Db);
-        }
-
-        private void QueueLogInfo (string message)
-        {
-            Log.IndirectQ.Enqueue (new LogElement () {
-                Level = LogElement.LevelEnum.Info,
-                Subsystem = Log.LOG_DB,
-                Message = message,
-                Occurred = DateTime.UtcNow,
-                ThreadId = Thread.CurrentThread.ManagedThreadId,
-            });
         }
 
         private NcModel ()
@@ -480,13 +469,7 @@ namespace NachoCore.Model
                     foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
                         messageWithStack += "\n" + frame;
                     }
-                    Log.IndirectQ.Enqueue (new LogElement () {
-                        Level = LogElement.LevelEnum.Error,
-                        Subsystem = Log.LOG_DB,
-                        Message = messageWithStack,
-                        Occurred = DateTime.UtcNow,
-                        ThreadId = Thread.CurrentThread.ManagedThreadId,
-                    });
+                    Log.LOG_DB.Info (messageWithStack);
                 }), (IntPtr)null);
             }
             DbFileName = Path.Combine (GetDataDirPath (), "db");

@@ -481,6 +481,7 @@
     <Compile Include="BackgroundController.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\ExchangeEnableViewController.cs" />
     <Compile Include="NachoUI.iOS\MainTabs\NachoNavigationBar.cs" />
+    <Compile Include="NachoPlatform.iOS\ConsoleLog.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

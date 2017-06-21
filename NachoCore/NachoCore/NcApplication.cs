@@ -1127,13 +1127,11 @@ namespace NachoCore
                     Console.WriteLine ("!!!!! EXIT MARKHOT TEST MODE !!!!!");
                 });
                 TestMode.Instance.Add ("searchon", (parameters) => {
-                    Log.SharedInstance.Settings.Debug.EnableConsole (Log.LOG_SEARCH);
-                    Log.SharedInstance.Settings.Debug.EnableTelemetry (Log.LOG_SEARCH);
+                    Log.LOG_SEARCH.SetEnabled (true);
                     Console.WriteLine ("!!!!! START SEARCH DEBUG LOGGING  !!!!!");
                 });
                 TestMode.Instance.Add ("searchoff", (parameters) => {
-                    Log.SharedInstance.Settings.Debug.DisableConsole (Log.LOG_SEARCH);
-                    Log.SharedInstance.Settings.Debug.DisableTelemetry (Log.LOG_SEARCH);
+                    Log.LOG_SEARCH.SetEnabled (false);
                     Console.WriteLine ("!!!!! STOP SEARCH DEBUG LOGGING !!!!!");
                 });
             }

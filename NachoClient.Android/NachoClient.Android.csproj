@@ -314,6 +314,7 @@
     <Compile Include="NachoUI.Android\Support\Compat.cs" />
     <Compile Include="NachoUI.Android\AccountCreation\ExchangeEnableActivity.cs" />
     <Compile Include="NachoUI.Android\AccountCreation\ExchangeEnableFragment.cs" />
+    <Compile Include="NachoPlatform.Android\ConsoleLog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

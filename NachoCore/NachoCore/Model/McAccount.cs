@@ -586,7 +586,7 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public void LogHashedPassword (ulong service, string logComment, string password)
+        public void LogHashedPassword (Log log, string logComment, string password)
         {
             string salt = null;
             try {
@@ -605,10 +605,10 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not hash password for account {0}", Id);
                 return;
             }
-            Log.Info (service, "LoggablePasswordSaltedHash({0}): {1} passwordHash={2}", Id, logComment, hashed);
+            Log.Info (log, "LoggablePasswordSaltedHash({0}): {1} passwordHash={2}", Id, logComment, hashed);
         }
 
-        public void LogHashedPassword (ulong service, string logComment, McCred cred)
+        public void LogHashedPassword (Log log, string logComment, McCred cred)
         {
             string credstring = null;
             try {
@@ -630,7 +630,7 @@ namespace NachoCore.Model
             }
             if (null != credstring) {
                 try {
-                    LogHashedPassword (service, logComment, credstring);
+                    LogHashedPassword (log, logComment, credstring);
                 } catch (KeychainItemNotFoundException ex) {
                     Log.Error (Log.LOG_UI, "LogHashedPassword({0}: {1}", logComment, ex.Message);
                 }

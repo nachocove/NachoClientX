@@ -112,12 +112,28 @@ namespace NachoCore.Utils
             DbUpdated.Set ();
         }
 
-        public void RecordLogEvent (int threadId, TelemetryEventType type, ulong subsystem, string fmt, params object[] list)
+        public void RecordLogEvent (Log log, Log.Level level, string fmt, params object[] list)
         {
-            NcAssert.True (TelemetryEvent.IsLogEvent (type));
+            TelemetryEventType type;
+            switch (level){
+            case Log.Level.Debug:
+                type = TelemetryEventType.DEBUG;
+                break;
+            case Log.Level.Info:
+                type = TelemetryEventType.INFO;
+                break;
+            case Log.Level.Warn:
+                type = TelemetryEventType.WARN;
+                break;
+            case Log.Level.Error:
+                type = TelemetryEventType.ERROR;
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (string.Format ("RecordLogEvent: Unknown log level: {0}", level));
+            }
             var jsonEvent = new TelemetryLogEvent (type) {
-                thread_id = threadId,
-                module = Log.ModuleString (subsystem),
+                thread_id = Thread.CurrentThread.ManagedThreadId,
+                module = log.Subsystem,
                 message = String.Format (fmt, list)
             };
             if (MAX_AWS_LEN < jsonEvent.message.Length) {

@@ -18,7 +18,7 @@ namespace NachoCore.Utils
         public void FinalizeAll ()
         {
         }
-        public void RecordLogEvent (int threadId, TelemetryEventType type, ulong subsystem, string fmt, params object[] list)
+        public void RecordLogEvent (Log log, Log.Level level, string fmt, params object[] list)
         {
         }
         public void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
