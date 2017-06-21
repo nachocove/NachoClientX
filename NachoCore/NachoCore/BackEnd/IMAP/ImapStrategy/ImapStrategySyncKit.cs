@@ -42,7 +42,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
         /// </summary>
-        const int KFolderExamineInterval = 60 * 30;
+        const int KFolderExamineInterval = 60;
 
         /// <summary>
         /// The default interval in seconds for QuickSync after which we'll re-examine the folder.

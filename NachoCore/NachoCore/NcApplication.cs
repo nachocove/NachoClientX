@@ -23,7 +23,7 @@ namespace NachoCore
 
     public sealed class NcApplication : IBackEndOwner, IStatusIndEvent
     {
-        private const int KClass4LateShowSeconds = 15;
+        private const int KClass4LateShowSeconds = 5;
         private const int KSafeModeMaxSeconds = 120;
         private const string KDataPathSegment = "Data";
 
