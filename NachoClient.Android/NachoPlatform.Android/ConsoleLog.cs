@@ -15,7 +15,7 @@ namespace NachoPlatform
 
         public ConsoleLog (string subsystem)
         {
-            Tag = "com.nachocove.mail." + subsystem;
+            Tag = NachoClient.Build.BuildInfo.PackageName + "." + subsystem;
         }
 
         public void Debug (string message, params object [] args)

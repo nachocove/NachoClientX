@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using Foundation;
 using UIKit;
 using NachoCore.Utils;
 using System.Threading;
@@ -43,7 +44,7 @@ namespace NachoPlatform
 
         public OSConsoleLog (string subsystem)
         {
-            NativeLog = nacho_os_log_create ("com.nachocove.mail", subsystem);
+            NativeLog = nacho_os_log_create (NSBundle.MainBundle.BundleIdentifier, subsystem);
         }
 
         public void Info (string message, params object [] args)

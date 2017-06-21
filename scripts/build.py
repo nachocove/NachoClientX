@@ -495,6 +495,7 @@ class AndroidBuilder(object):
         path = self.project_path('BuildInfo.cs')
         infofile = BuildInfoFile()
         infofile.populate_with_config(self.build, self.config)
+        infofile.add('PackageName', self.config.Android.PackageName)
         infofile.add('FileProvider', self.config.Android.FileProvider)
         infofile.add('AppNameString', "@string/%s" % self.config.Android.AppNameString)
         infofile.add('IconDrawable', "@drawable/%s" % self.config.Android.IconDrawable)
