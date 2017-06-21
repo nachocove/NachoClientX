@@ -160,11 +160,15 @@ namespace NachoClient.iOS
                 AttributedDateText.AddAttribute (UIStringAttributeKey.Font, theme.DefaultFont.WithSize (11.0f), IntentRange);
                 AttributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, theme.MessageIntentTextColor, IntentRange);
             }
+            DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DateLabel.TextColor = theme.TableViewCellDateLabelTextColor;
             DateLabel.AttributedText = AttributedDateText;
             if (SubjectRange.Length > 0) {
                 AttributedPreview.AddAttribute (UIStringAttributeKey.Font, theme.MediumDefaultFont.WithSize (14.0f), SubjectRange);
                 AttributedPreview.AddAttribute (UIStringAttributeKey.ForegroundColor, theme.TableViewCellMainLabelTextColor, SubjectRange);
             }
+            DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
             DetailTextLabel.AttributedText = AttributedPreview;
         }
 
