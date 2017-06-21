@@ -22,14 +22,16 @@ namespace NachoClient.AndroidClient
         private int TitleResource;
         private int HintResource;
         private string Value;
+        private Android.Text.InputTypes InputType;
         private Action<string> SaveAction;
         private EditText TextField;
 
-        public SimpleTextDialog (int titleResource, int hintResource, string value, Action<string> saveAction) : base ()
+        public SimpleTextDialog (int titleResource, int hintResource, string value, Android.Text.InputTypes inputType, Action<string> saveAction) : base ()
         {
             TitleResource = titleResource;
             HintResource = hintResource;
             Value = value;
+            InputType = inputType;
             SaveAction = saveAction;
             RetainInstance = true;
         }
@@ -42,6 +44,7 @@ namespace NachoClient.AndroidClient
             TextField = view.FindViewById (Resource.Id.text_entry) as EditText;
             TextField.SetHint (HintResource);
             TextField.Text = Value;
+            TextField.InputType = InputType;
             builder.SetView (view);
             builder.SetNegativeButton (Resource.String.text_dialog_cancel, CancelClicked);
             builder.SetPositiveButton (Resource.String.text_dialog_save, SaveClicked);

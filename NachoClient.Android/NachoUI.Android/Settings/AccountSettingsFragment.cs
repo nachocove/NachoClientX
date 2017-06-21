@@ -146,7 +146,7 @@ namespace NachoClient.AndroidClient
 
         private void ShowNameEditor ()
         {
-            var dialog = new SimpleTextDialog (Resource.String.account_name, Resource.String.account_name_hint, Account.DisplayName, (text) => {
+            var dialog = new SimpleTextDialog (Resource.String.account_name, Resource.String.account_name_hint, Account.DisplayName, Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextFlagCapWords, (text) => {
                 Account.DisplayName = text;
                 Account.Update ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
@@ -161,7 +161,7 @@ namespace NachoClient.AndroidClient
 
         private void ShowSignatureEditor ()
         {
-            var dialog = new SimpleTextDialog (Resource.String.account_signature, Resource.String.account_signature_hint, ItemsAdapter.SignatureText (), (text) => {
+            var dialog = new SimpleTextDialog (Resource.String.account_signature, Resource.String.account_signature_hint, ItemsAdapter.SignatureText (), Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextFlagCapSentences, (text) => {
                 Account.HtmlSignature = null;
                 Account.Signature = text;
                 Account.Update ();
