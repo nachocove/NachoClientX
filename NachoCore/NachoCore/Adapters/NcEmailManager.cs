@@ -25,12 +25,7 @@ namespace NachoCore
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
                 return new NachoUnifiedInbox ();
             }
-            var inboxFolder = InboxFolder (accountId);
-            if (null == inboxFolder) {
-                return new MissingFolder ("Inbox");
-            } else {
-                return new NachoFolderMessages (inboxFolder);
-            }
+            return new NachoFolderMessages (() => { return InboxFolder (accountId); });
         }
 
         public static NachoEmailMessages PriorityInbox (int accountId, bool includeActions = true)

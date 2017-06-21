@@ -15,16 +15,27 @@ namespace NachoCore
         List<McEmailMessageThread> threadList;
         List<McEmailMessageThread> updatedThreadList;
         McFolder folder;
+        FolderFilterOptions MissingFolderFilterSetting = FolderFilterOptions.All;
+        public delegate McFolder FolderQuery();
+        FolderQuery _FolderQuery;
 
         public NachoFolderMessages (McFolder folder)
         {
             this.folder = folder;
             threadList = new List<McEmailMessageThread> ();
         }
+
+        public NachoFolderMessages (FolderQuery folderQuery){
+            _FolderQuery = folderQuery;
+            threadList = new List<McEmailMessageThread> ();
+        }
         
         private List<McEmailMessageThread> QueryMessagesByConversation ()
         {
             List<McEmailMessageThread> list;
+            if (folder == null){
+                return new List<McEmailMessageThread> ();
+            }
             switch (folder.FilterSetting) {
             case FolderFilterOptions.Hot:
                 list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, McEmailMessage.minHotScore);
@@ -52,6 +63,15 @@ namespace NachoCore
 
         public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
+            if (folder == null && _FolderQuery != null){
+                folder = _FolderQuery ();
+                if (folder != null){
+                    if (folder.FilterSetting != MissingFolderFilterSetting){
+                        FilterSetting = MissingFolderFilterSetting;
+                    }
+                    _FolderQuery = null;
+                }
+            }
             updatedThreadList = QueryMessagesByConversation ();
             return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
         }
@@ -116,6 +136,9 @@ namespace NachoCore
 
         public override string DisplayName ()
         {
+            if (folder == null){
+                return "";
+            }
             return folder.DisplayName;
         }
 
@@ -134,9 +157,16 @@ namespace NachoCore
 
         public override FolderFilterOptions FilterSetting {
             get {
+                if (folder == null){
+                    return MissingFolderFilterSetting;
+                }
                 return folder.FilterSetting;
             }
             set {
+                if (folder == null){
+                    MissingFolderFilterSetting = value;
+                    return;
+                }
                 // Update the in-memory object in case the background task takes a while to run.
                 folder.FilterSetting = value;
                 NcTask.Run (() => {
@@ -180,6 +210,9 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
+            if (folder == null){
+                return true;
+            }
             return account.ContainsAccount (folder.AccountId);
         }
 
@@ -196,7 +229,9 @@ namespace NachoCore
 
         public override void RefetchSyncTime ()
         {
-            folder = McFolder.QueryById<McFolder> (folder.Id);
+            if (folder != null){
+				folder = McFolder.QueryById<McFolder> (folder.Id);
+			}
         }
 
     }
