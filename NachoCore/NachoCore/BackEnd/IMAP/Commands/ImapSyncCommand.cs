@@ -653,8 +653,8 @@ namespace NachoCore.IMAP
                         emailMessage.cachedFromColor = cachedFromColor;
                         emailMessage.FromEmailAddressId = fromEmailAddressId;
                     }
+                    changed = true;
                 }
-                changed = true;
             }
             return emailMessage;
         }
