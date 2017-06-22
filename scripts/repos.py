@@ -91,8 +91,8 @@ class Repo(object):
         git.pull(cwd=self.path)
         git.submodule_update()
 
-    def push(self):
-        git.push(self.branch, cwd=self.path)
+    def push(self, branch_or_tag=None):
+        git.push(self.branch if branch_or_tag is None else branch_or_tag, cwd=self.path)
 
     def create_tag(self, tag, message=None):
         git.create_tag(tag, message, cwd=self.path)
@@ -188,6 +188,7 @@ def setup_argparser():
 
     #push
     parser = cmd_parser.add_parser('push', help='push all repositories to remote origin', description='push all repositories.')
+    parser.add_argument('--tag')
     parser.set_defaults(func=command_push)
 
     #pull
@@ -195,7 +196,6 @@ def setup_argparser():
     parser.set_defaults(func=command_pull)
 
     #clone
-    #pull
     parser = cmd_parser.add_parser('clone', help='ensure all repositories are present', description='ensure all repositories are present.')
     parser.set_defaults(func=command_clone)
 
@@ -211,7 +211,7 @@ def command_checkout_branch(args):
     repos = all_repos()
     for repo in repos:
         print "Checking out %s..." % repo.name
-        repo.checkout(branch)
+        repo.checkout(args.branch)
     print ""
     print_status(repos)
 
@@ -301,8 +301,8 @@ def command_pull(args):
 def command_push(args):
     repos = all_repos()
     for repo in repos:
-        print "Pusing %s..." % repo.name
-        repo.push()
+        print "Pushing %s..." % repo.name
+        repo.push(args.tag)
     print "\nDone"
 
 
