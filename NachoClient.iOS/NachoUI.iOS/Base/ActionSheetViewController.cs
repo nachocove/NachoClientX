@@ -22,22 +22,22 @@ namespace NachoClient.iOS
         {
             ModalPresentationStyle = UIModalPresentationStyle.Custom;
             TransitioningDelegate = new _TransitioningDelegate (this);
-		}
+        }
 
-		public override UIStatusBarStyle PreferredStatusBarStyle ()
-		{
-			return ParentViewController.PreferredStatusBarStyle ();
-		}
-
-		#region Presentation
-
-		[Export ("animateTransition:")]
-		public void AnimateTransition (IUIViewControllerContextTransitioning transitionContext)
+        public override UIStatusBarStyle PreferredStatusBarStyle ()
         {
-			if (IsBeingPresented) {
+            return ParentViewController.PreferredStatusBarStyle ();
+        }
+
+        #region Presentation
+
+        [Export ("animateTransition:")]
+        public void AnimateTransition (IUIViewControllerContextTransitioning transitionContext)
+        {
+            if (IsBeingPresented) {
                 View.Frame = transitionContext.ContainerView.Bounds;
-				transitionContext.ContainerView.AddSubview (View);
-				ActionView.ConfigureForDismissed ();
+                transitionContext.ContainerView.AddSubview (View);
+                ActionView.ConfigureForDismissed ();
                 ActionView.LayoutIfNeeded ();
             }
             UIView.AnimateNotify (TransitionDuration(transitionContext), 0.0f, UIViewAnimationOptions.CurveEaseInOut, () => {
@@ -47,16 +47,16 @@ namespace NachoClient.iOS
                     ActionView.ConfigureForDismissed ();
                 }
                 ActionView.LayoutIfNeeded ();
-			}, (completed) => {
-				if (IsBeingDismissed) {
-					View.RemoveFromSuperview ();
-				}
-				transitionContext.CompleteTransition (completed);
-			});
+            }, (completed) => {
+                if (IsBeingDismissed) {
+                    View.RemoveFromSuperview ();
+                }
+                transitionContext.CompleteTransition (completed);
+            });
         }
 
-		[Export ("transitionDuration:")]
-		public double TransitionDuration (IUIViewControllerContextTransitioning transitionContext)
+        [Export ("transitionDuration:")]
+        public double TransitionDuration (IUIViewControllerContextTransitioning transitionContext)
         {
             return 0.3;
         }
@@ -245,10 +245,10 @@ namespace NachoClient.iOS
         }
 
         [Export ("tableView:numberOfRowsInSection:")]
-		public nint RowsInSection (UITableView tableView, nint section)
-		{
-			return Items.Count;
-		}
+        public nint RowsInSection (UITableView tableView, nint section)
+        {
+            return Items.Count;
+        }
 
         [Export ("tableView:cellForRowAtIndexPath:")]
         public UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -256,15 +256,17 @@ namespace NachoClient.iOS
             var cell = tableView.DequeueReusableCell (ActionCellReuseIdentifier, indexPath);
             var item = Items [indexPath.Row];
             if (item.AccessoryImageName != null){
-                cell.AccessoryView = new ImageAccessoryView (item.AccessoryImageName);
+                var accessoryView = new ImageAccessoryView (item.AccessoryImageName);
                 if (item.AccessoryAction != null){
-                    cell.AccessoryView.AddGestureRecognizer (new UITapGestureRecognizer (() => {
+                    accessoryView.ImageView.UserInteractionEnabled = true;
+                    accessoryView.ImageView.AddGestureRecognizer (new UITapGestureRecognizer((recognizer) => {
                         item.AccessoryAction ();
-                        if (item.DismissesSheet){
+                        if (item.DismissesSheet) {
                             Dismiss ();
                         }
                     }));
                 }
+                cell.AccessoryView = accessoryView;
             }else{
                 cell.AccessoryView = null;
             }
@@ -372,10 +374,10 @@ namespace NachoClient.iOS
             }
 
             public void ConfigureForPresented ()
-			{
-				BackgroundView.Alpha = 1.0f;
+            {
+                BackgroundView.Alpha = 1.0f;
                 IsDismissed = false;
-				SetNeedsLayout ();
+                SetNeedsLayout ();
             }
         }
 
@@ -395,8 +397,8 @@ namespace NachoClient.iOS
     public class ActionSheetItem
     {
         public string Title { get; private set; }
-		public Action Action { get; private set; }
-		public String AccessoryImageName { get; private set; }
+        public Action Action { get; private set; }
+        public String AccessoryImageName { get; private set; }
         public Action AccessoryAction { get; private set; }
         public bool DismissesSheet { get; private set; }
 

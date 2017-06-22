@@ -40,7 +40,6 @@ namespace NachoClient.iOS
         IUIWebViewDelegate,
         IUIScrollViewDelegate,
         MessageComposeHeaderViewDelegate,
-        QuickResponseViewControllerDelegate,
         INachoIntentChooserParent,
         INachoDateControllerParent,
         INachoFileChooserParent,
@@ -66,6 +65,7 @@ namespace NachoClient.iOS
         NcUIBarButtonItem AddAttachmentButton;
         List<McAccount> EmailAccounts;
         bool HasShownOnce;
+        bool IsSendPending;
 
         NSObject ContentSizeCategoryChangedNotification;
         string ContentHtml;
@@ -353,6 +353,13 @@ namespace NachoClient.iOS
             Send ();
         }
 
+        void SaveAndSend ()
+        {
+            ContentHtml = GetHtmlContent ();
+            Composer.Save (ContentHtml);
+            Send ();
+        }
+
         void Send ()
         {
             Composer.Send ();
@@ -360,6 +367,16 @@ namespace NachoClient.iOS
                 ComposeDelegate.MessageComposeViewDidBeginSend (this);
             }
             DismissViewController (true, null);
+        }
+
+        void SendWhenReady ()
+        {
+            if (Composer.IsMessagePrepared) {
+                SaveAndSend ();
+            }else{
+                IsSendPending = true;
+            }
+            UpdateSendEnabled ();
         }
 
         // User hitting the quick reply button
@@ -408,7 +425,7 @@ namespace NachoClient.iOS
         }
 
         // User selecting a quick response
-        public void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QuickResponse response)
+        public void ComposeQuickResponse (NcQuickResponse.QuickResponse response)
         {
             if (response.subject != null) {
                 Composer.Message.Subject = response.subject;
@@ -454,7 +471,7 @@ namespace NachoClient.iOS
             var address = new NcEmailAddress (PickingKind);
             address.contact = contact;
             address.address = contact.GetEmailAddress ();
-			AddEmailAddresss (address);
+            AddEmailAddresss (address);
             CloseContactPicker();
         }
 
@@ -742,6 +759,9 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "MessageComposeViewController MessageComposerDidCompletePreparation()");
             UpdateSendEnabled ();
             DisplayMessageBody ();
+            if (IsSendPending){
+                SaveAndSend ();
+            }
         }
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
@@ -921,7 +941,7 @@ namespace NachoClient.iOS
 
         private void UpdateSendEnabled ()
         {
-            SendButton.Enabled = Composer.HasRecipient && Composer.IsMessagePrepared;
+            SendButton.Enabled = Composer.HasRecipient && Composer.IsMessagePrepared && !IsSendPending;
         }
 
         private void ShowAddAttachment (bool inline = false)
@@ -930,36 +950,64 @@ namespace NachoClient.iOS
             PresentViewController (helper.MenuViewController, true, null);
         }
 
-        QuickResponseViewController FakeQuickResponseController;
+        ActionSheetViewController FakeQuickResponseController;
+
+        private ActionSheetViewController QuickResponseViewController ()
+        {
+            var sheet = new ActionSheetViewController ();
+            var responseGenerator = new NcQuickResponse (QuickResponseType);
+            var responses = responseGenerator.GetResponseList ();
+            for (var i = 0; i < responses.Count; ++i) {
+                var index = i;
+                if (Composer.HasRecipient) {
+                    sheet.AddItem (new ActionSheetItem (responses [index].body, () => {
+                        var response = responses [index];
+                        ComposeQuickResponse (response);
+                        DismissViewController (animated: true, completionHandler: null);
+                    }, accessoryImageName: "send-accessory", accessoryAction: () => {
+                        var response = responses [index];
+                        ComposeQuickResponse (response);
+                        DismissViewController (animated: true, completionHandler: () => {
+                            SendWhenReady ();
+                        });
+                    }, dismissesSheet: false));
+                } else {
+                    sheet.AddItem (new ActionSheetItem (responses [index].body, () => {
+                        var response = responses [index];
+                        ComposeQuickResponse (response);
+                    }));
+                }
+            }
+            return sheet;
+        }
 
         private void ShowFakeQuickResponses ()
         {
-            FakeQuickResponseController = new QuickResponseViewController (QuickResponseType);
+            FakeQuickResponseController = QuickResponseViewController ();
             FakeQuickResponseController.View.Frame = NavigationController.View.Bounds;
             NavigationController.View.AddSubview (FakeQuickResponseController.View);
         }
 
         private void ShowQuickResponses (bool animated = true)
         {
-            QuickResponseViewController vc;
+            ActionSheetViewController sheet;
             if (FakeQuickResponseController != null) {
-                vc = FakeQuickResponseController;
+                sheet = FakeQuickResponseController;
                 FakeQuickResponseController = null;
             } else {
-                vc = new QuickResponseViewController (QuickResponseType);
+                sheet = QuickResponseViewController ();
             }
-            vc.ResponseDelegate = this;
-            PresentViewController (vc, animated: animated, completionHandler: null);
+            PresentViewController (sheet, animated: animated, completionHandler: null);
         }
 
         private NcQuickResponse.QRTypeEnum QuickResponseType {
             get{
-	            NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
-	            if (EmailHelper.IsReplyAction (Composer.Kind)) {
-	                responseType = NcQuickResponse.QRTypeEnum.Reply;
-	            } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
-	                responseType = NcQuickResponse.QRTypeEnum.Forward;
-	            }
+                NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
+                if (EmailHelper.IsReplyAction (Composer.Kind)) {
+                    responseType = NcQuickResponse.QRTypeEnum.Reply;
+                } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
+                    responseType = NcQuickResponse.QRTypeEnum.Forward;
+                }
                 return responseType;
             }
         }

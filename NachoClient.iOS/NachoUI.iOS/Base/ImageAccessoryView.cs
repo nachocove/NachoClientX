@@ -8,9 +8,9 @@ namespace NachoClient.iOS
 {
     public class ImageAccessoryView : UIView
     {
-        protected UIImageView ImageView;
+        public UIImageView ImageView { get; private set; }
 
-        public ImageAccessoryView (string imageName, float width = 30.0f) : base (new CGRect(0.0f, 0.0f, (nfloat)width, 0.0f))
+        public ImageAccessoryView (string imageName, float width = 30.0f) : base (new CGRect(0.0f, 0.0f, (nfloat)width, (nfloat)width))
         {
             BackgroundColor = UIColor.White;
             using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)){

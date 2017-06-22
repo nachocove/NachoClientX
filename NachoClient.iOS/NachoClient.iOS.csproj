@@ -231,6 +231,7 @@
     <Folder Include="NachoUI.iOS\Home\" />
     <Folder Include="NachoUI.iOS\Base\" />
     <Folder Include="NachoUI.iOS\Views\" />
+    <Folder Include="Resources\Images.xcassets\send-accessory.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -366,7 +367,6 @@
     <Compile Include="NachoUI.iOS\Home\NachoNowViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\NotesViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\NotesViewerViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageCompose\QuickResponseViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\SalesforceSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\SettingsLegalViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\SettingsTextPropertyViewController.cs" />
@@ -1596,5 +1596,9 @@
     <ImageAsset Include="Resources\Images.xcassets\ChatErrorIndicator.imageset\Contents.json" />
     <ImageAsset Include="Resources\Images.xcassets\ChatErrorIndicator.imageset\ChatErrorIndicator.png" />
     <ImageAsset Include="Resources\Images.xcassets\ChatErrorIndicator.imageset\ChatErrorIndicator%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\send-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\send-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\send-accessory%403x.png" />
   </ItemGroup>
 </Project>
