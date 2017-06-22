@@ -25,8 +25,9 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    
-    public interface MessageComposeViewDelegate {
+
+    public interface MessageComposeViewDelegate
+    {
 
         void MessageComposeViewDidBeginSend (MessageComposeViewController vc);
         void MessageComposeViewDidSaveDraft (MessageComposeViewController vc);
@@ -83,7 +84,7 @@ namespace NachoClient.iOS
             Composer = new MessageComposer (account);
             Composer.Delegate = this;
             JavaScriptQueue = new List<string> ();
-            EmailAccounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
+            EmailAccounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where ((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
             HasShownOnce = false;
@@ -151,7 +152,7 @@ namespace NachoClient.iOS
             AddAttachmentButton.Clicked += AddAttachment;
 
             NavigationItem.LeftBarButtonItem = CloseButton;
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                 SendButton,
                 QuickResponseButton,
                 AddAttachmentButton,
@@ -187,7 +188,7 @@ namespace NachoClient.iOS
             ScrollView.AddCompoundView (WebView);
             View.AddSubview (ScrollView);
 
-            UIMenuController.SharedMenuController.MenuItems = new UIMenuItem[] {
+            UIMenuController.SharedMenuController.MenuItems = new UIMenuItem [] {
                 new UIMenuItem("Attach", new ObjCRuntime.Selector("attach:"))
             };
         }
@@ -223,7 +224,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (StartWithQuickResponse){
+            if (StartWithQuickResponse) {
                 ShowQuickResponses (animated: false);
             }
         }
@@ -373,7 +374,7 @@ namespace NachoClient.iOS
         {
             if (Composer.IsMessagePrepared) {
                 SaveAndSend ();
-            }else{
+            } else {
                 IsSendPending = true;
             }
             UpdateSendEnabled ();
@@ -397,7 +398,7 @@ namespace NachoClient.iOS
         public void Close (object sender, EventArgs e)
         {
             View.EndEditing (true);
-            NcActionSheet.Show (CloseButton, this, null, null, 
+            NcActionSheet.Show (CloseButton, this, null, null,
                 new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, DiscardDraft),
                 new NcAlertAction ("Save Draft", NcAlertActionStyle.Default, SaveDraft),
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
@@ -472,12 +473,12 @@ namespace NachoClient.iOS
             address.contact = contact;
             address.address = contact.GetEmailAddress ();
             AddEmailAddresss (address);
-            CloseContactPicker();
+            CloseContactPicker ();
         }
 
         public void ContactPickerDidPickCancel (ContactPickerViewController vc)
         {
-            CloseContactPicker();
+            CloseContactPicker ();
         }
 
         void CloseContactPicker ()
@@ -497,9 +498,9 @@ namespace NachoClient.iOS
         }
 
         bool SalesforceBccAdded = false;
-        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool> ();
 
-        void MaybeAddSalesforceBcc()
+        void MaybeAddSalesforceBcc ()
         {
             if (!SalesforceBccAdded) {
                 string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
@@ -543,7 +544,7 @@ namespace NachoClient.iOS
 
         public void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address)
         {
-            
+
             if (address.kind == NcEmailAddress.Kind.To) {
                 Composer.Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
             } else if (address.kind == NcEmailAddress.Kind.Cc) {
@@ -614,7 +615,7 @@ namespace NachoClient.iOS
             Composer.Message.IntentDate = selectedDate;
             UpdateHeaderIntentView ();
         }
-            
+
         // User tapping on add attachment
         public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
         {
@@ -631,7 +632,7 @@ namespace NachoClient.iOS
         public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
         {
             var attachment = obj as McAttachment;
-            if (attachment == null){
+            if (attachment == null) {
                 var file = obj as McDocument;
                 if (file != null) {
                     attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
@@ -713,11 +714,10 @@ namespace NachoClient.iOS
             ShowAddAttachment (true);
         }
 
-        public void WebViewDidPasteImages (UIImage[] images, bool[] isPNG)
+        public void WebViewDidPasteImages (UIImage [] images, bool [] isPNG)
         {
             var i = 0;
-            foreach (var image in images)
-            {
+            foreach (var image in images) {
                 bool png = isPNG [i];
                 string ext;
                 string contentType;
@@ -759,7 +759,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "MessageComposeViewController MessageComposerDidCompletePreparation()");
             UpdateSendEnabled ();
             DisplayMessageBody ();
-            if (IsSendPending){
+            if (IsSendPending) {
                 SaveAndSend ();
             }
         }
@@ -888,7 +888,7 @@ namespace NachoClient.iOS
         public void HandleWebViewMessage (NcWebViewMessage message)
         {
             NSDictionary body = message.Body as NSDictionary;
-            string kind = body.ObjectForKey (new NSString("kind")).ToString ();
+            string kind = body.ObjectForKey (new NSString ("kind")).ToString ();
             if (message.Name == "nachoCompose") {
                 if (kind == "editor-height-changed") {
                     UpdateScrollViewSize ();
@@ -907,7 +907,7 @@ namespace NachoClient.iOS
             EvaluateJavaScript ("Editor.defaultEditor.focus()");
         }
 
-        private void EvaluateJavaScript(string javascript, WKJavascriptEvaluationResult callback = null)
+        private void EvaluateJavaScript (string javascript, WKJavascriptEvaluationResult callback = null)
         {
             if (IsWebViewLoaded) {
                 // Here's how WKWebView would work
@@ -925,12 +925,12 @@ namespace NachoClient.iOS
             }
         }
 
-        [Foundation.Export("scrollViewWillBeginDragging:")]
+        [Foundation.Export ("scrollViewWillBeginDragging:")]
         public void DraggingStarted (UIScrollView scrollView)
         {
         }
 
-        [Foundation.Export("scrollViewDidScroll:")]
+        [Foundation.Export ("scrollViewDidScroll:")]
         public void Scrolled (UIScrollView scrollView)
         {
         }
@@ -1001,7 +1001,7 @@ namespace NachoClient.iOS
         }
 
         private NcQuickResponse.QRTypeEnum QuickResponseType {
-            get{
+            get {
                 NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
                 if (EmailHelper.IsReplyAction (Composer.Kind)) {
                     responseType = NcQuickResponse.QRTypeEnum.Reply;
@@ -1114,9 +1114,10 @@ namespace NachoClient.iOS
         }
 
     }
-        
 
-    public static class MessageComposeViewControllerWebViewHijacker {
+
+    public static class MessageComposeViewControllerWebViewHijacker
+    {
 
         [DllImport ("/usr/lib/libobjc.dylib")]
         extern static IntPtr objc_allocateClassPair (IntPtr superclass, string name, IntPtr extraBytes);
@@ -1193,7 +1194,7 @@ namespace NachoClient.iOS
             HijackBrowserViewPaste (browserViewClass, hijackedClassHandle);
             AddBrowserViewAttach (browserViewClass, hijackedClassHandle);
 
-            objc_registerClassPair(hijackedClassHandle);
+            objc_registerClassPair (hijackedClassHandle);
             HijackedBrowserViewClass = new ObjCRuntime.Class (hijackedClassHandle);
         }
 
@@ -1208,7 +1209,7 @@ namespace NachoClient.iOS
             var baseMethod = class_getInstanceMethod (browserViewClass.Handle, selector.Handle);
             var types = method_getTypeEncoding (baseMethod);
             InputAccessoryViewDelegate d = BrowserView_InputAccessoryView;
-            var imp = Marshal.GetFunctionPointerForDelegate(d);
+            var imp = Marshal.GetFunctionPointerForDelegate (d);
             class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
         }
 
@@ -1236,7 +1237,7 @@ namespace NachoClient.iOS
         [ObjCRuntime.MonoPInvokeCallback (typeof (InputAccessoryViewDelegate))]
         static IntPtr BrowserView_InputAccessoryView (IntPtr self, IntPtr selector)
         {
-            return new IntPtr(0);
+            return new IntPtr (0);
         }
 
         #endregion
@@ -1253,7 +1254,7 @@ namespace NachoClient.iOS
             var types = method_getTypeEncoding (baseMethod);
             BrowserView_OriginalCanPerformAction = method_getImplementation (baseMethod);
             CanPerformActionDelegate d = BrowserView_CanPerformAction;
-            var imp = Marshal.GetFunctionPointerForDelegate(d);
+            var imp = Marshal.GetFunctionPointerForDelegate (d);
             class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
         }
 
@@ -1272,7 +1273,7 @@ namespace NachoClient.iOS
                 // return true;
                 return false;
             }
-            var d = (CanPerformActionDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalCanPerformAction, typeof(CanPerformActionDelegate));
+            var d = (CanPerformActionDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalCanPerformAction, typeof (CanPerformActionDelegate));
             bool canPerform = d (selfHandle, selectorHandle, actionHandle, senderHandle);
             return canPerform;
         }
@@ -1291,7 +1292,7 @@ namespace NachoClient.iOS
             var types = method_getTypeEncoding (baseMethod);
             BrowserView_OriginalPaste = method_getImplementation (baseMethod);
             PasteDelegate d = BrowserView_Paste;
-            var imp = Marshal.GetFunctionPointerForDelegate(d);
+            var imp = Marshal.GetFunctionPointerForDelegate (d);
             class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
         }
 
@@ -1312,19 +1313,19 @@ namespace NachoClient.iOS
             var pasteboard = UIPasteboard.General;
 
             if (pasteboard.Images.Length > 0) {
-                var pngIndexes = pasteboard.ItemSetWithPasteboardTypes (new string[] { MobileCoreServices.UTType.PNG });
+                var pngIndexes = pasteboard.ItemSetWithPasteboardTypes (new string [] { MobileCoreServices.UTType.PNG });
                 // FIXME: should be using UIPasteboard.TypeListImage, but I think there's a xamarin bug with that property
                 // becaue anytime I try to access it, I get a crash.  For now we'll just recreate the list.
-                var allImageIndexes = pasteboard.ItemSetWithPasteboardTypes (new string[] {
+                var allImageIndexes = pasteboard.ItemSetWithPasteboardTypes (new string [] {
                     MobileCoreServices.UTType.PNG,
                     MobileCoreServices.UTType.JPEG,
                     MobileCoreServices.UTType.GIF,
                     MobileCoreServices.UTType.TIFF
                 });
-                var isPNG = new bool[pasteboard.Images.Length];
+                var isPNG = new bool [pasteboard.Images.Length];
                 int i = 0;
                 allImageIndexes.EnumerateIndexes ((nuint idx, ref bool stop) => {
-                    isPNG[i] = pngIndexes.Contains (idx);
+                    isPNG [i] = pngIndexes.Contains (idx);
                     ++i;
                 });
                 composeViewController.WebViewDidPasteImages (pasteboard.Images, isPNG);
@@ -1375,7 +1376,7 @@ namespace NachoClient.iOS
                                             try {
                                                 string src = node.GetAttributeValue ("src", "");
                                                 string srcUrl = null;
-                                                if (Uri.IsWellFormedUriString (src, UriKind.Absolute) && Uri.UriSchemeFile == new Uri(src).Scheme) {
+                                                if (Uri.IsWellFormedUriString (src, UriKind.Absolute) && Uri.UriSchemeFile == new Uri (src).Scheme) {
                                                     srcUrl = src;
                                                 } else if (Uri.IsWellFormedUriString (src, UriKind.Relative)) {
                                                     // The "src" attribute is a relative URL.  Calculate the absolute URL.
@@ -1462,7 +1463,7 @@ namespace NachoClient.iOS
                     }
                 }
 
-                var d = (PasteDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalPaste, typeof(PasteDelegate));
+                var d = (PasteDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalPaste, typeof (PasteDelegate));
                 d (selfHandle, selector, sender);
             }
         }
