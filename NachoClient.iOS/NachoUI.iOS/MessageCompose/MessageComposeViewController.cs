@@ -203,7 +203,7 @@ namespace NachoClient.iOS
                 HeaderView.UpdateCcCollapsed ();
                 UpdateSendEnabled ();
                 if (StartWithQuickResponse) {
-                    ShowQuickResponses ();
+                    ShowFakeQuickResponses ();
                 } else {
                     if (!Composer.HasRecipient) {
                         HeaderView.ToView.SetEditFieldAsFirstResponder ();
@@ -223,6 +223,9 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            if (StartWithQuickResponse){
+                ShowQuickResponses (animated: false);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -405,9 +408,9 @@ namespace NachoClient.iOS
         }
 
         // User selecting a quick response
-        public void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QRTypeEnum whatType, NcQuickResponse.QuickResponse response, McEmailMessage.IntentType intentType)
+        public void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QuickResponse response)
         {
-            if (whatType == NcQuickResponse.QRTypeEnum.Compose) {
+            if (response.subject != null) {
                 Composer.Message.Subject = response.subject;
                 UpdateHeaderSubjectView ();
             }
@@ -417,11 +420,10 @@ namespace NachoClient.iOS
             } else {
                 Composer.InitialText = response.body;
             }
-            Composer.Message.Intent = intentType;
+            Composer.Message.Intent = response.intent.type;
             Composer.Message.IntentDate = DateTime.MinValue;
             Composer.Message.IntentDateType = MessageDeferralType.None;
             UpdateHeaderIntentView ();
-            HeaderView.ShowIntentField ();
         }
 
         #endregion
@@ -928,20 +930,38 @@ namespace NachoClient.iOS
             PresentViewController (helper.MenuViewController, true, null);
         }
 
+        QuickResponseViewController FakeQuickResponseController;
+
+        private void ShowFakeQuickResponses ()
+        {
+            FakeQuickResponseController = new QuickResponseViewController (QuickResponseType);
+            FakeQuickResponseController.View.Frame = NavigationController.View.Bounds;
+            NavigationController.View.AddSubview (FakeQuickResponseController.View);
+        }
+
         private void ShowQuickResponses (bool animated = true)
         {
-            NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
-
-            if (EmailHelper.IsReplyAction (Composer.Kind)) {
-                responseType = NcQuickResponse.QRTypeEnum.Reply;
-            } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
-                responseType = NcQuickResponse.QRTypeEnum.Forward;
+            QuickResponseViewController vc;
+            if (FakeQuickResponseController != null) {
+                vc = FakeQuickResponseController;
+                FakeQuickResponseController = null;
+            } else {
+                vc = new QuickResponseViewController (QuickResponseType);
             }
+            vc.ResponseDelegate = this;
+            PresentViewController (vc, animated: animated, completionHandler: null);
+        }
 
-            var quickViewController = new QuickResponseViewController ();
-            quickViewController.ResponseDelegate = this;
-            quickViewController.SetProperties (responseType);
-            PresentViewController (quickViewController, animated, null);
+        private NcQuickResponse.QRTypeEnum QuickResponseType {
+            get{
+	            NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
+	            if (EmailHelper.IsReplyAction (Composer.Kind)) {
+	                responseType = NcQuickResponse.QRTypeEnum.Reply;
+	            } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
+	                responseType = NcQuickResponse.QRTypeEnum.Forward;
+	            }
+                return responseType;
+            }
         }
 
         private string GetHtmlContent ()

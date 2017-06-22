@@ -110,6 +110,14 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Nacho Action Sheet
+
+        public UIColor ActionSheetBackgroundColor { get; protected set; }
+        public UIColor ActionSheetItemBackgroundColor { get; protected set; }
+        public UIColor ActionSheetItemTextColor { get; protected set; }
+
+        #endregion
+
         public Theme ()
         {
             DefaultFontSize = UIFont.SystemFontSize;
@@ -249,6 +257,11 @@ namespace NachoClient.iOS
 
     		// Action
     		ActionCheckboxColorHot = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+
+            // Action Sheet
+            ActionSheetBackgroundColor = UIColor.Black.ColorWithAlpha (0.5f);
+            ActionSheetItemBackgroundColor = UIColor.White;
+            ActionSheetItemTextColor = MainColor;
     	}
 
     	public override void DefineAppearance ()

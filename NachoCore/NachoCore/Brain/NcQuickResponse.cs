@@ -10,24 +10,24 @@ namespace NachoCore.Brain
     public class NcQuickResponse
     {
         protected List <QuickResponse> QuickComposeList = new List<QuickResponse> () {
-            new QuickResponse ("Hey!", "Hey, haven't seen you in a while..."),
-            new QuickResponse ("Catch up?", "You want to catch up over coffee soon?"),
-            new QuickResponse ("How are you?", "How are you doing?"),
+            new QuickResponse ("Hey!", "Hey, haven't seen you in a while...", NcMessageIntent.NONE_INTENT),
+            new QuickResponse ("Catch up?", "You want to catch up over coffee soon?", NcMessageIntent.NONE_INTENT),
+            new QuickResponse ("How are you?", "How are you doing?", NcMessageIntent.NONE_INTENT),
             new QuickResponse ("Call me.", "Hey, Can you call me asap?", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
             new QuickResponse ("Expense reports", "Can you approve my expense report?", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
         };
 
         protected List <QuickResponse> QuickReplyList = new List<QuickResponse> () {
-            new QuickResponse (null, "Nice job!"),
-            new QuickResponse (null, "Thanks."),
-            new QuickResponse (null, "Approved."),
+            new QuickResponse (null, "Nice job!", NcMessageIntent.NONE_INTENT),
+            new QuickResponse (null, "Thanks.", NcMessageIntent.NONE_INTENT),
+            new QuickResponse (null, "Approved.", NcMessageIntent.NONE_INTENT),
             new QuickResponse (null, "Please call me to discuss.", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
-            new QuickResponse (null, "Ok."),
-            new QuickResponse (null, "Not at this time."),
+            new QuickResponse (null, "Ok.", NcMessageIntent.NONE_INTENT),
+            new QuickResponse (null, "Not at this time.", NcMessageIntent.NONE_INTENT),
         };
 
         protected List <QuickResponse> QuickForwardList = new List<QuickResponse> () {
-            new QuickResponse (null, "FYI"),
+            new QuickResponse (null, "FYI", NcMessageIntent.NONE_INTENT),
             new QuickResponse (null, "Please Read and Respond by ... ", NcMessageIntent.PLEASE_READ_INTENT),
             new QuickResponse (null, "Please call me ASAP to discuss.", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
         };
