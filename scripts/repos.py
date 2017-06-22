@@ -211,7 +211,7 @@ def command_checkout_branch(args):
     repos = all_repos()
     for repo in repos:
         print "Checking out %s..." % repo.name
-        repo.checkout(branch)
+        repo.checkout(args.branch)
     print ""
     print_status(repos)
 
