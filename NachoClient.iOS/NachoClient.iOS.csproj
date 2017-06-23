@@ -299,7 +299,6 @@
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
     <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
     <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
