@@ -28,7 +28,7 @@ namespace NachoClient.iOS
         ThreadIndicatorView ThreadIndicator {
             get {
                 if (_ThreadIndicator == null) {
-                    _ThreadIndicator = new ThreadIndicatorView (new CGRect(0.0f, 0.0f, 20.0f, Bounds.Height));
+                    _ThreadIndicator = new ThreadIndicatorView (new CGRect (0.0f, 0.0f, 20.0f, Bounds.Height));
                     if (adoptedTheme != null) {
                         _ThreadIndicator.AdoptTheme (adoptedTheme);
                     }
@@ -79,7 +79,7 @@ namespace NachoClient.iOS
         static NSAttributedString HotAttachmentString {
             get {
                 if (_HotAttachmentString == null) {
-                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment(Theme.Active.DefaultFont.WithSize(14.0f)));
+                    _HotAttachmentString = NSAttributedString.CreateFrom (new HotAttachment (Theme.Active.DefaultFont.WithSize (14.0f)));
                 }
                 return _HotAttachmentString;
             }
@@ -89,7 +89,7 @@ namespace NachoClient.iOS
         static NSAttributedString AttachAttachmentString {
             get {
                 if (_AttachAttachmentString == null) {
-                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment(Theme.Active.DefaultFont.WithSize (14.0f)));
+                    _AttachAttachmentString = NSAttributedString.CreateFrom (new AttachAttachment (Theme.Active.DefaultFont.WithSize (14.0f)));
                 }
                 return _AttachAttachmentString;
             }
@@ -150,8 +150,8 @@ namespace NachoClient.iOS
 
         NSMutableAttributedString AttributedDateText;
         NSMutableAttributedString AttributedPreview;
-        NSRange IntentRange = new NSRange(0, 0);
-        NSRange SubjectRange = new NSRange(0, 0);
+        NSRange IntentRange = new NSRange (0, 0);
+        NSRange SubjectRange = new NSRange (0, 0);
 
         void UpdateAttributedText ()
         {
@@ -174,11 +174,11 @@ namespace NachoClient.iOS
 
         public void SetMessage (McEmailMessage message, int threadCount = 0)
         {
-            if (message.IntentDate != default(DateTime)) {
+            if (message.IntentDate != default (DateTime)) {
                 if (message.IntentDate < DateTime.UtcNow) {
-                    AttributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                    AttributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (message.IntentDateType)));
                 } else {
-                    AttributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday(message.IntentDateType)));
+                    AttributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (message.IntentDateType)));
                 }
             } else {
                 AttributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));
@@ -247,7 +247,7 @@ namespace NachoClient.iOS
 
             frame = DateLabel.Frame;
             frame.X = ContentView.Bounds.Width - dateSize.Width - rightPadding;
-            var baseDateLabelFont = Theme.Active.DefaultFont.WithSize(14.0f);
+            var baseDateLabelFont = Theme.Active.DefaultFont.WithSize (14.0f);
             frame.Y = textTop + (TextLabel.Font.Ascender + (textHeight - TextLabel.Font.LineHeight) / 2.0f - baseDateLabelFont.Ascender - (dateSize.Height - baseDateLabelFont.LineHeight) / 2.0f);
             frame.Width = dateSize.Width;
             frame.Height = dateSize.Height;
@@ -276,7 +276,7 @@ namespace NachoClient.iOS
 
             if (_ThreadIndicator != null) {
                 var x = ContentView.Bounds.Width - rightPadding - threadWidth;
-                if (x < 100){
+                if (x < 100) {
                     Log.LOG_UI.Warn ("MessageCell thread indicator layout on far left: content width = {0}, rightPadding = {1}, threadWidth = {2}", ContentView.Bounds.Width, rightPadding, threadWidth);
                 }
                 _ThreadIndicator.Frame = new CGRect (x, DetailTextLabel.Frame.Y, threadWidth, detailTextHeight);
@@ -298,11 +298,11 @@ namespace NachoClient.iOS
             UILabel CountLabel;
             UIImageView ArrowView;
 
-            public ThreadIndicatorView(CGRect frame) : base (frame)
+            public ThreadIndicatorView (CGRect frame) : base (frame)
             {
                 CountLabel = new UILabel ();
 
-                ArrowView = new UIImageView(UIImage.FromBundle("thread-arrows").ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate));
+                ArrowView = new UIImageView (UIImage.FromBundle ("thread-arrows").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate));
 
                 AddSubview (CountLabel);
                 AddSubview (ArrowView);
