@@ -23,7 +23,7 @@ namespace NachoClient.iOS
 
     public partial class MessageViewController : NcUIViewController, FoldersViewControllerDelegate, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate, ThemeAdopter
     {
-        
+
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
 
         #region Properties
@@ -126,7 +126,7 @@ namespace NachoClient.iOS
 
         #region Constructors
 
-        public MessageViewController() : base  ()
+        public MessageViewController () : base ()
         {
             CreateEventButton = new NcUIBarButtonItem (UIImage.FromBundle ("cal-add"), UIBarButtonItemStyle.Plain, CreateEventButtonClicked);
             CreateEventButton.AccessibilityLabel = "Create Event";
@@ -177,14 +177,14 @@ namespace NachoClient.iOS
             ScrollView.AlwaysBounceVertical = true;
             ScrollView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
 
-            HeaderView = new MessageHeaderView (new CGRect(0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
+            HeaderView = new MessageHeaderView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
             HeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             HeaderPressRecognizer = new PressGestureRecognizer (HeaderPressed);
             HeaderPressRecognizer.IsCanceledByPanning = true;
             HeaderPressRecognizer.DelaysStart = true;
             HeaderView.AddGestureRecognizer (HeaderPressRecognizer);
 
-            AttachmentsView = new AttachmentsView (new CGRect(0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
+            AttachmentsView = new AttachmentsView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
             AttachmentsView.Delegate = this;
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
@@ -241,7 +241,7 @@ namespace NachoClient.iOS
                 NcTask.Run (() => {
                     Action.IsNew = false;
                     Action.Update ();
-                    NcApplication.Instance.InvokeStatusIndEventInfo(McAccount.QueryById<McAccount>(Action.AccountId), NcResult.SubKindEnum.Info_ActionMarkedNotNew);
+                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.QueryById<McAccount> (Action.AccountId), NcResult.SubKindEnum.Info_ActionMarkedNotNew);
                 }, "MessageViewController_MakeActionNotNew");
             }
             UpdateNavigationItem ();
@@ -376,7 +376,7 @@ namespace NachoClient.iOS
 
         public void AttachmentsViewDidChangeSize (AttachmentsView view)
         {
-            UIView.Animate(0.25f, () => {
+            UIView.Animate (0.25f, () => {
                 view.SizeToFit ();
                 LayoutScrollView ();
             });
@@ -393,7 +393,7 @@ namespace NachoClient.iOS
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Ended) {
                 HeaderView.SetSelected (true, animated: false);
                 ShowHeaderDetails ();
-            }else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Changed) {
+            } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Changed) {
                 HeaderView.SetSelected (HeaderPressRecognizer.IsInsideView, animated: false);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Failed) {
                 HeaderView.SetSelected (false, animated: true);
@@ -409,7 +409,7 @@ namespace NachoClient.iOS
             } else if (ActionPressRecognizer.State == UIGestureRecognizerState.Ended) {
                 ActionView.SetSelected (true, animated: false);
                 ShowAction ();
-            }else if (ActionPressRecognizer.State == UIGestureRecognizerState.Changed) {
+            } else if (ActionPressRecognizer.State == UIGestureRecognizerState.Changed) {
                 ActionView.SetSelected (ActionPressRecognizer.IsInsideView, animated: false);
             } else if (ActionPressRecognizer.State == UIGestureRecognizerState.Failed) {
                 ActionView.SetSelected (false, animated: true);
@@ -440,7 +440,7 @@ namespace NachoClient.iOS
                 onReplyButtonClicked (EmailHelper.Action.Forward);
                 break;
             case MessageToolbar.ActionType.MOVE:
-                ShowMove();
+                ShowMove ();
                 break;
             case MessageToolbar.ActionType.ARCHIVE:
                 onArchiveButtonClicked ();
@@ -550,7 +550,7 @@ namespace NachoClient.iOS
                 return;
             }
             if (ActivityIndicator == null) {
-                ActivityIndicator = new NcActivityIndicatorView (new CGRect(0.0f, 0.0f, ActivityIndicatorSize, ActivityIndicatorSize));
+                ActivityIndicator = new NcActivityIndicatorView (new CGRect (0.0f, 0.0f, ActivityIndicatorSize, ActivityIndicatorSize));
                 ActivityIndicator.Speed = 1.5f;
                 ActivityIndicator.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
             }
@@ -651,7 +651,7 @@ namespace NachoClient.iOS
             } else {
                 Log.Error (Log.LOG_UI, "MessageViewController called without a valid bundle");
                 var alert = UIAlertController.Create ("Could not load message", "Sorry, the message could not be loaded. Please try again", UIAlertControllerStyle.Alert);
-                alert.AddAction (UIAlertAction.Create("OK", UIAlertActionStyle.Default, null));
+                alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default, null));
                 PresentViewController (alert, true, null);
             }
         }
@@ -775,7 +775,7 @@ namespace NachoClient.iOS
 
         private void ComposeResponse (EmailHelper.Action action, bool startWithQuickResponse = false)
         {
-            if (Message.StillExists ()){
+            if (Message.StillExists ()) {
                 var account = McAccount.EmailAccountForMessage (Message);
                 var thread = new McEmailMessageThread ();
                 thread.FirstMessageId = Message.Id;
@@ -863,14 +863,14 @@ namespace NachoClient.iOS
         {
 
             if (Action == null) {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                     CreateEventButton,
                     // Temporarily disabling actions until we have a new place for them
                     //ActionButton,
                     HotButton
                 };
             } else {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                     CreateEventButton,
                     HotButton
                 };
