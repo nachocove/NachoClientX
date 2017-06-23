@@ -232,6 +232,12 @@
     <Folder Include="NachoUI.iOS\Base\" />
     <Folder Include="NachoUI.iOS\Views\" />
     <Folder Include="Resources\Images.xcassets\send-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\date-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\later-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\next-month-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\next-week-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\pick-date-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\tomorrow-accessory.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -268,12 +274,9 @@
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAttendeeListChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttachmentTableViewSourceDelegate.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoIntentChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\UIBlockMenu.cs" />
     <Compile Include="NachoUI.iOS\Support\ExpandButton.cs" />
     <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
@@ -356,7 +359,6 @@
       <DependentUpon>ImapAdvancedFieldsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\MainTabs\InboxViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageCompose\IntentSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageCompose\MessageComposeViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageView\MessageHeaderDetailViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageView\MessageMimePartViewController.cs" />
@@ -420,10 +422,8 @@
     <Compile Include="NachoUI.iOS\Base\NcUITableViewController.cs" />
     <Compile Include="NachoUI.iOS\Base\NcUIViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\AlertChooserViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageCompose\DatePickerViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\FileListViewController.cs" />
     <Compile Include="NachoUI.iOS\MainTabs\ManageItemsViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageCompose\MessagePriorityViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\NotificationChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\CertificateView.cs" />
     <Compile Include="NachoUI.iOS\Base\CompoundScrollView.cs" />
@@ -1600,5 +1600,30 @@
     <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\send-accessory.png" />
     <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\send-accessory%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\send-accessory.imageset\send-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\date-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\date-accessory.imageset\date-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\date-accessory.imageset\date-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\date-accessory.imageset\date-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\later-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\later-accessory.imageset\later-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\later-accessory.imageset\later-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\later-accessory.imageset\later-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-month-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\next-month-accessory.imageset\next-month-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-month-accessory.imageset\next-month-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-month-accessory.imageset\later-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-month-accessory.imageset\next-month-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-week-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\next-week-accessory.imageset\next-week-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-week-accessory.imageset\next-week-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\next-week-accessory.imageset\next-week-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\pick-date-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\pick-date-accessory.imageset\pick-date-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\pick-date-accessory.imageset\pick-date-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\pick-date-accessory.imageset\pick-date-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\tomorrow-accessory.png" />
+    <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\tomorrow-accessory%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\tomorrow-accessory%403x.png" />
   </ItemGroup>
 </Project>

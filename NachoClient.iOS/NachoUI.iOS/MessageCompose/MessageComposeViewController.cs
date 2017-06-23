@@ -41,8 +41,6 @@ namespace NachoClient.iOS
         IUIWebViewDelegate,
         IUIScrollViewDelegate,
         MessageComposeHeaderViewDelegate,
-        INachoIntentChooserParent,
-        INachoDateControllerParent,
         INachoFileChooserParent,
         INachoContactChooserDelegate,
         MessageComposerDelegate,
@@ -226,6 +224,7 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
             if (StartWithQuickResponse) {
                 ShowQuickResponses (animated: false);
+                StartWithQuickResponse = false;
             }
         }
 
@@ -592,27 +591,20 @@ namespace NachoClient.iOS
         // User tapping the intent field 
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
         {
-            var intentController = new IntentSelectionViewController ();
-            intentController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
-            intentController.SetOwner (this);
-            intentController.SetDateControllerOwner (this);
-            PresentViewController (intentController, true, null);
+            ShowIntents ();
         }
 
         // User selecting an intent
         public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
         {
-            Composer.Message.Intent = intent.type;
-            Composer.Message.IntentDateType = MessageDeferralType.None;
-            Composer.Message.IntentDate = DateTime.MinValue;
-            UpdateHeaderIntentView ();
+            SelectMessageIntent (intent, MessageDeferralType.None);
         }
 
         // User selecting a date for the intent
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        public void SelectMessageIntent (NcMessageIntent.MessageIntent intent, MessageDeferralType deferral)
         {
-            Composer.Message.IntentDateType = request;
-            Composer.Message.IntentDate = selectedDate;
+            Composer.Message.Intent = intent.type;
+            Composer.Message.IntentDateType = deferral;
             UpdateHeaderIntentView ();
         }
 
@@ -676,13 +668,6 @@ namespace NachoClient.iOS
         public void AttachmentUpdated (McAttachment attachment)
         {
             HeaderView.AttachmentsView.UpdateAttachment (attachment);
-        }
-
-        // Not really a direct user action, but caused by the user selecting a date for the intent
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            // Basically, once the intent date view controller is dismissed, we need to dismiss the intent controller
-            DismissViewController (false, null);
         }
 
         // Not really a direct user action, but caused by the user selecting a date for the intent
@@ -1010,6 +995,50 @@ namespace NachoClient.iOS
                 }
                 return responseType;
             }
+        }
+
+        void ShowIntents ()
+        {
+            var sheet = new ActionSheetViewController ();
+            var intents = NcMessageIntent.GetIntentList ();
+            for (var i = 0; i < intents.Count; ++i) {
+                int index = i;
+                if (intents [index].dueDateAllowed) {
+                    sheet.AddItem (new ActionSheetItem (intents [index].text, () => {
+                        ShowIntentDeadline (sheet, intents [index]);
+                    }, accessoryImageName: "date-accessory", dismissesSheet: false));
+                } else {
+                    sheet.AddItem (new ActionSheetItem (intents [index].text, () => {
+                        SelectMessageIntent (intents [index]);
+                    }));
+                }
+            }
+            PresentViewController (sheet, animated: true, completionHandler: null);
+        }
+
+        void ShowIntentDeadline (ActionSheetViewController sheet, NcMessageIntent.MessageIntent intent)
+        {
+            sheet.BeginReplacingItems ();
+            sheet.AddItem (new ActionSheetItem ("No Due Date", () => { SelectMessageIntent (intent, MessageDeferralType.None); }));
+            sheet.AddItem (new ActionSheetItem ("One Hour", () => { SelectMessageIntent (intent, MessageDeferralType.OneHour); }, accessoryImageName: "later-accessory"));
+            sheet.AddItem (new ActionSheetItem ("Today", () => { SelectMessageIntent (intent, MessageDeferralType.EndOfDay); }, accessoryImageName: "later-accessory"));
+            sheet.AddItem (new ActionSheetItem ("Tomorrow", () => { SelectMessageIntent (intent, MessageDeferralType.Tomorrow); }, accessoryImageName: "tomorrow-accessory"));
+            sheet.AddItem (new ActionSheetItem ("Next Week", () => { SelectMessageIntent (intent, MessageDeferralType.NextWeek); }, accessoryImageName: "next-week-accessory"));
+            sheet.AddItem (new ActionSheetItem ("Next Month", () => { SelectMessageIntent (intent, MessageDeferralType.NextMonth); }, accessoryImageName: "next-month-accessory"));
+            sheet.AddItem (new ActionSheetItem ("Pick Date", () => {
+                ShowIntentDatePicker (sheet, intent);
+            }, accessoryImageName: "pick-date-accessory", dismissesSheet: false));
+            sheet.EndReplacingItems ();
+        }
+
+        void ShowIntentDatePicker (ActionSheetViewController sheet, NcMessageIntent.MessageIntent intent)
+        {
+            var datePicker = new ActionSheetDatePicker ((date) => {
+                Composer.Message.IntentDate = date;
+                SelectMessageIntent (intent, MessageDeferralType.Custom);
+                sheet.DismissViewController (animated: true, completionHandler: null);
+            });
+            sheet.SetContentView (datePicker, animated: true);
         }
 
         private string GetHtmlContent ()

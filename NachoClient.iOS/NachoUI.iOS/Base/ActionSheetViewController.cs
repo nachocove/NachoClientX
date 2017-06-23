@@ -1,4 +1,4 @@
-﻿﻿﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
+﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Foundation;
 using UIKit;
 using CoreGraphics;
+using CoreAnimation;
 
 namespace NachoClient.iOS
 {
@@ -13,8 +14,8 @@ namespace NachoClient.iOS
     {
 
         private ActionSheetView ActionView;
+        private SizedTableView TableView;
         private List<ActionSheetItem> Items = new List<ActionSheetItem> ();
-        private List<ActionSheetItem> ReplacementItems = new List<ActionSheetItem> ();
         private nfloat AnimationDuration = 0.3f;
         private const string ActionCellReuseIdentifier = "ActionCell";
 
@@ -40,10 +41,10 @@ namespace NachoClient.iOS
                 ActionView.ConfigureForDismissed ();
                 ActionView.LayoutIfNeeded ();
             }
-            UIView.AnimateNotify (TransitionDuration(transitionContext), 0.0f, UIViewAnimationOptions.CurveEaseInOut, () => {
-                if (IsBeingPresented){
+            UIView.AnimateNotify (TransitionDuration (transitionContext), 0.0f, UIViewAnimationOptions.CurveEaseInOut, () => {
+                if (IsBeingPresented) {
                     ActionView.ConfigureForPresented ();
-                }else{
+                } else {
                     ActionView.ConfigureForDismissed ();
                 }
                 ActionView.LayoutIfNeeded ();
@@ -92,7 +93,7 @@ namespace NachoClient.iOS
 
             public _PresentationController (UIViewController presented, UIViewController presenting) : base (presented, presenting)
             {
-                if (presented.View.Superview != null){
+                if (presented.View.Superview != null) {
                     presented.View.RemoveFromSuperview ();
                 }
             }
@@ -125,42 +126,31 @@ namespace NachoClient.iOS
 
         #region Managing Items
 
-        bool IsReplacingItems;
-
         public void AddItem (ActionSheetItem item)
         {
-            if (IsReplacingItems) {
-                ReplacementItems.Add (item);
-            }else{
-                Items.Add (item);
-            }
+            Items.Add (item);
         }
 
         public void BeginReplacingItems ()
         {
-            IsReplacingItems = true;
-            ReplacementItems.Clear ();
+            Items.Clear ();
+            CreateTableView ();
         }
 
-        public void EndReplacingItems ()
+        public void EndReplacingItems (bool animated = true)
         {
-            IsReplacingItems = false;
-            var originalIndexPaths = new List<NSIndexPath> ();
-            var replacementIndexPaths = new List<NSIndexPath> ();
-            for (var i = 0; i < Items.Count; ++i){
-                originalIndexPaths.Add (NSIndexPath.FromRowSection (i, 0));
-            }
-            for (var i = 0; i < ReplacementItems.Count; ++i){
-                replacementIndexPaths.Add (NSIndexPath.FromRowSection (i, 0));
-            }
-            ActionView.TableView.BeginUpdates ();
-            ActionView.TableView.DeleteRows (originalIndexPaths.ToArray (), UITableViewRowAnimation.Left);
-            ActionView.TableView.InsertRows (replacementIndexPaths.ToArray (), UITableViewRowAnimation.Right);
-            Items = ReplacementItems;
-            ReplacementItems = new List<ActionSheetItem> ();
-            ActionView.TableView.EndUpdates ();
-            // TODO: animate new layout?
-            ActionView.SetNeedsLayout ();
+            TableView.ReloadData ();
+            TableView.LayoutIfNeeded ();
+            ActionView.SetContentView (TableView, animated: animated);
+        }
+
+        public void SetContentView (UIView contentView, bool animated = false)
+        {
+            Items.Clear ();
+            CleanupTableView ();
+            TableView = null;
+            (contentView as ThemeAdopter)?.AdoptTheme (AdoptedTheme ?? Theme.Active);
+            ActionView.SetContentView (contentView, animated: animated);
         }
 
         #endregion
@@ -170,14 +160,13 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             View = ActionView = new ActionSheetView ();
+            CreateTableView ();
+            ActionView.SetContentView (TableView, animated: false);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            ActionView.TableView.Delegate = this;
-            ActionView.TableView.DataSource = this;
-            ActionView.TableView.RegisterClassForCellReuse (typeof(ActionCell), ActionCellReuseIdentifier);
             ActionView.CancelButton.TouchUpInside += Cancel;
             ActionView.BackgroundView.AddGestureRecognizer (new UITapGestureRecognizer (() => { Dismiss (); }));
         }
@@ -191,17 +180,16 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             base.ViewDidDisappear (animated);
-            if (ShouldCleanupDuringDidDisappear){
+            if (ShouldCleanupDuringDidDisappear) {
                 Cleanup ();
             }
         }
 
         private void Cleanup ()
         {
-            ActionView.TableView.Delegate = null;
-            ActionView.TableView.DataSource = null;
+            CleanupTableView ();
             ActionView.CancelButton.TouchUpInside -= Cancel;
-            ActionView.BackgroundView.RemoveGestureRecognizer (ActionView.BackgroundView.GestureRecognizers[0]);
+            ActionView.BackgroundView.RemoveGestureRecognizer (ActionView.BackgroundView.GestureRecognizers [0]);
             TransitioningDelegate = null;
         }
 
@@ -213,7 +201,7 @@ namespace NachoClient.iOS
 
         public void AdoptTheme (Theme theme)
         {
-            if (theme != AdoptedTheme){
+            if (theme != AdoptedTheme) {
                 AdoptedTheme = theme;
                 ActionView.AdoptTheme (theme);
             }
@@ -237,6 +225,28 @@ namespace NachoClient.iOS
 
         #region Table DataSource & Delegate
 
+        private void CreateTableView ()
+        {
+            CleanupTableView ();
+            TableView = new SizedTableView (ActionView.Bounds, UITableViewStyle.Plain);
+            TableView.ClipsToBounds = true;
+            TableView.Layer.CornerRadius = ActionView.CornerRadius;
+            TableView.RowHeight = ActionView.ButtonHeight;
+            TableView.AlwaysBounceVertical = false;
+            TableView.SeparatorInset = UIEdgeInsets.Zero;
+            TableView.Delegate = this;
+            TableView.DataSource = this;
+            TableView.RegisterClassForCellReuse (typeof (ActionCell), ActionCellReuseIdentifier);
+            TableView.AdoptTheme (AdoptedTheme ?? Theme.Active);
+        }
+
+        private void CleanupTableView ()
+        {
+            if (TableView != null) {
+                TableView.Delegate = null;
+                TableView.DataSource = null;
+            }
+        }
 
         [Export ("numberOfSectionsInTableView:")]
         public nint NumberOfSections (UITableView tableView)
@@ -255,11 +265,11 @@ namespace NachoClient.iOS
         {
             var cell = tableView.DequeueReusableCell (ActionCellReuseIdentifier, indexPath);
             var item = Items [indexPath.Row];
-            if (item.AccessoryImageName != null){
+            if (item.AccessoryImageName != null) {
                 var accessoryView = new ImageAccessoryView (item.AccessoryImageName);
-                if (item.AccessoryAction != null){
+                if (item.AccessoryAction != null) {
                     accessoryView.ImageView.UserInteractionEnabled = true;
-                    accessoryView.ImageView.AddGestureRecognizer (new UITapGestureRecognizer((recognizer) => {
+                    accessoryView.ImageView.AddGestureRecognizer (new UITapGestureRecognizer ((recognizer) => {
                         item.AccessoryAction ();
                         if (item.DismissesSheet) {
                             Dismiss ();
@@ -267,7 +277,7 @@ namespace NachoClient.iOS
                     }));
                 }
                 cell.AccessoryView = accessoryView;
-            }else{
+            } else {
                 cell.AccessoryView = null;
             }
             cell.TextLabel.Text = item.Title;
@@ -300,7 +310,7 @@ namespace NachoClient.iOS
         {
             var item = Items [indexPath.Row];
             item.Action ();
-            if (item.DismissesSheet){
+            if (item.DismissesSheet) {
                 Dismiss ();
             }
         }
@@ -311,25 +321,20 @@ namespace NachoClient.iOS
         {
 
             public UIView BackgroundView { get; private set; }
-            public UITableView TableView { get; private set; }
+            public UIView ContentView { get; private set; }
+            public UIView ReplacedContentView { get; private set; }
             public UIButton CancelButton { get; private set; }
-            nfloat CancelTableSpacing = 8.0f;
+            nfloat CancelContentSpacing = 8.0f;
             nfloat BackgroundPadding = 10.0f;
-            nfloat CornerRadius = 13.0f;
+            public nfloat CornerRadius { get; private set; } = 13.0f;
+            public nfloat ButtonHeight { get; private set; } = 57.0f;
             bool IsDismissed;
 
-            public ActionSheetView () : base(new CGRect (0, 0, 100, 100))
+            public ActionSheetView () : base (new CGRect (0, 0, 100, 100))
             {
                 BackgroundColor = UIColor.Clear;
                 BackgroundView = new UIView ();
                 AddSubview (BackgroundView);
-                TableView = new UITableView (Bounds, UITableViewStyle.Plain);
-                TableView.ClipsToBounds = true;
-                TableView.Layer.CornerRadius = CornerRadius;
-                TableView.RowHeight = 57.0f;
-                TableView.AlwaysBounceVertical = false;
-                TableView.SeparatorInset = UIEdgeInsets.Zero;
-                AddSubview (TableView);
                 CancelButton = new UIButton (UIButtonType.Custom);
                 CancelButton.SetTitle ("Cancel", UIControlState.Normal);
                 CancelButton.ClipsToBounds = true;
@@ -339,30 +344,63 @@ namespace NachoClient.iOS
                 SetNeedsLayout ();
             }
 
+            public void SetContentView (UIView contentView, bool animated)
+            {
+                if (animated && ContentView != null) {
+                    ReplacedContentView = ContentView;
+                    ContentView = contentView;
+                    InsertSubviewAbove (ContentView, ReplacedContentView);
+                    var contentHeight = ContentHeight;
+                    ContentView.Frame = new CGRect (BackgroundPadding + Bounds.Width, CancelButton.Frame.Y - contentHeight - CancelContentSpacing, Bounds.Width - BackgroundPadding - BackgroundPadding, contentHeight);
+                    UIView.Animate (0.3f, 0.0f, UIViewAnimationOptions.CurveEaseInOut, () => {
+                        ContentView.Center = new CGPoint (ContentView.Center.X - Bounds.Width, ContentView.Center.Y);
+                        ReplacedContentView.Center = new CGPoint (ReplacedContentView.Center.X - Bounds.Width, ReplacedContentView.Center.Y);
+                    }, () => {
+                        ReplacedContentView.RemoveFromSuperview ();
+                    });
+                } else {
+                    if (ContentView != null) {
+                        ContentView.RemoveFromSuperview ();
+                    }
+                    ContentView = contentView;
+                    InsertSubviewBelow (ContentView, CancelButton);
+                    SetNeedsLayout ();
+                }
+            }
+
             public void AdoptTheme (Theme theme)
             {
                 BackgroundView.BackgroundColor = theme.ActionSheetBackgroundColor;
-                TableView.AdoptTheme (theme);
+                if (ContentView is ThemeAdopter) {
+                    (ContentView as ThemeAdopter).AdoptTheme (theme);
+                }
                 CancelButton.BackgroundColor = theme.ActionSheetItemBackgroundColor;
                 CancelButton.SetTitleColor (theme.ActionSheetItemTextColor, UIControlState.Normal);
-                CancelButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
+                CancelButton.TitleLabel.Font = theme.MediumDefaultFont.WithSize (17.0f);
             }
 
             public override void LayoutSubviews ()
             {
                 BackgroundView.Frame = Bounds;
-                var cancelHeight = TableView.RowHeight;
+                var cancelHeight = ButtonHeight;
                 CancelButton.Frame = new CGRect (BackgroundPadding, Bounds.Height - cancelHeight - BackgroundPadding, Bounds.Width - BackgroundPadding - BackgroundPadding, cancelHeight);
-                var tableHeight = TableView.ContentSize.Height;
-                var availbleHeight = CancelButton.Frame.Y - CancelTableSpacing - BackgroundPadding;
-                if (tableHeight > availbleHeight){
-                    tableHeight = availbleHeight;
-                }
-                TableView.Frame = new CGRect (BackgroundPadding, CancelButton.Frame.Y - tableHeight - CancelTableSpacing, Bounds.Width - BackgroundPadding - BackgroundPadding, tableHeight);
-                if (IsDismissed){
-                    var offsetY = Bounds.Height - TableView.Frame.Y;
-                    TableView.Center = new CGPoint(TableView.Center.X, TableView.Center.Y + offsetY);
+                var contentHeight = ContentHeight;
+                ContentView.Frame = new CGRect (BackgroundPadding, CancelButton.Frame.Y - contentHeight - CancelContentSpacing, Bounds.Width - BackgroundPadding - BackgroundPadding, contentHeight);
+                if (IsDismissed) {
+                    var offsetY = Bounds.Height - ContentView.Frame.Y;
+                    ContentView.Center = new CGPoint (ContentView.Center.X, ContentView.Center.Y + offsetY);
                     CancelButton.Center = new CGPoint (CancelButton.Center.X, CancelButton.Center.Y + offsetY);
+                }
+            }
+
+            private nfloat ContentHeight {
+                get {
+                    var contentHeight = ContentView.IntrinsicContentSize.Height;
+                    var availbleHeight = CancelButton.Frame.Y - CancelContentSpacing - BackgroundPadding;
+                    if (contentHeight > availbleHeight) {
+                        contentHeight = availbleHeight;
+                    }
+                    return contentHeight;
                 }
             }
 
@@ -383,14 +421,38 @@ namespace NachoClient.iOS
 
         class ActionCell : UITableViewCell, ThemeAdopter
         {
-            public ActionCell(IntPtr handle) : base(handle)
+            public ActionCell (IntPtr handle) : base (handle)
             {
             }
 
-            public void AdoptTheme (Theme theme){
+            public void AdoptTheme (Theme theme)
+            {
                 TextLabel.Font = theme.DefaultFont.WithSize (17.0f);
                 TextLabel.TextColor = theme.ActionSheetItemTextColor;
             }
+        }
+    }
+
+    public class SizedTableView : UITableView
+    {
+        public override CGSize ContentSize {
+            get {
+                return base.ContentSize;
+            }
+            set {
+                base.ContentSize = value;
+                InvalidateIntrinsicContentSize ();
+            }
+        }
+
+        public override CGSize IntrinsicContentSize {
+            get {
+                return ContentSize;
+            }
+        }
+
+        public SizedTableView (CGRect frame, UITableViewStyle style) : base (frame, style)
+        {
         }
     }
 
@@ -402,7 +464,8 @@ namespace NachoClient.iOS
         public Action AccessoryAction { get; private set; }
         public bool DismissesSheet { get; private set; }
 
-        public ActionSheetItem (string title, Action action, string accessoryImageName = null, Action accessoryAction = null, bool dismissesSheet = true){
+        public ActionSheetItem (string title, Action action, string accessoryImageName = null, Action accessoryAction = null, bool dismissesSheet = true)
+        {
             Title = title;
             Action = action;
             AccessoryImageName = accessoryImageName;
@@ -410,4 +473,58 @@ namespace NachoClient.iOS
             DismissesSheet = dismissesSheet;
         }
     }
+
+    public class ActionSheetDatePicker : UIView, ThemeAdopter
+    {
+        UIDatePicker DatePicker;
+        UIView DividerView;
+        UIButton SelectButton;
+        public nfloat CornerRadius { get; private set; } = 13.0f;
+        public nfloat ButtonHeight { get; private set; } = 57.0f;
+
+        public ActionSheetDatePicker (Action<DateTime> dateSelected) : base (new CGRect (0, 0, 100, 0))
+        {
+            ClipsToBounds = true;
+            Layer.CornerRadius = CornerRadius;
+
+            DatePicker = new UIDatePicker ();
+            DatePicker.Frame = new CGRect (0, 0, Bounds.Width, DatePicker.IntrinsicContentSize.Height);
+            DatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            DatePicker.Mode = UIDatePickerMode.Date;
+            DatePicker.MinimumDate = NSCalendar.CurrentCalendar.DateByAddingUnit (NSCalendarUnit.Day, 1, NSDate.Now, NSCalendarOptions.None);
+            DatePicker.Date = DatePicker.MinimumDate;
+            AddSubview (DatePicker);
+
+            DividerView = new UIView (new CGRect (0, DatePicker.Frame.Y + DatePicker.Frame.Height, Bounds.Width, 1.0f));
+            DividerView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            AddSubview (DividerView);
+
+            SelectButton = new UIButton (UIButtonType.Custom);
+            SelectButton.Frame = new CGRect (0, DividerView.Frame.Y + DividerView.Frame.Height, Bounds.Width, ButtonHeight);
+            SelectButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            SelectButton.SetTitle ("Use Date", UIControlState.Normal);
+            SelectButton.TouchUpInside += (sender, e) => {
+                var date = DateTime.SpecifyKind (DatePicker.Date.ToDateTime (), DateTimeKind.Utc);
+                dateSelected (date);
+            };
+            AddSubview (SelectButton);
+        }
+
+        public void AdoptTheme (Theme theme)
+        {
+            TintColor = theme.TableViewTintColor;
+            BackgroundColor = theme.ActionSheetItemBackgroundColor;
+            DividerView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+            SelectButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
+            SelectButton.SetTitleColor (theme.ActionSheetItemTextColor, UIControlState.Normal);
+        }
+
+        public override CGSize IntrinsicContentSize {
+            get {
+                var height = DatePicker.Frame.Height + DividerView.Frame.Height + SelectButton.Frame.Height;
+                return new CGSize (Bounds.Width, height);
+            }
+        }
+    }
+
 }

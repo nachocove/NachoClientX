@@ -10,12 +10,12 @@ namespace NachoCore.Brain
 {
     public class NcMessageIntent
     {
-        public const string NONE = "NONE";
+        public const string NONE = "None";
         public const string FYI = "FYI";
-        public const string PLEASE_READ = "PLEASE READ";
-        public const string RESPONSE_REQUIRED = "RESPONSE REQUIRED";
-        public const string URGENT = "URGENT";
-        public const string IMPORTANT = "IMPORTANT";
+        public const string PLEASE_READ = "Please Read";
+        public const string RESPONSE_REQUIRED = "Response Required";
+        public const string URGENT = "Urgent";
+        public const string IMPORTANT = "Important";
 
         public static MessageIntent NONE_INTENT = new MessageIntent (McEmailMessage.IntentType.None, NONE, false);
         public static MessageIntent FYI_INTENT = new MessageIntent (McEmailMessage.IntentType.FYI, FYI, false);
@@ -126,7 +126,7 @@ namespace NachoCore.Brain
                 break;
             case MessageDeferralType.Custom:
                 if (customDate.HasValue) {
-                    deferralString = "By " + customDate.Value.ToString ("M/d/yyyy", new System.Globalization.CultureInfo("en-US"));
+                    deferralString = "By " + customDate.Value.ToLocalTime ().ToString ("M/d/yyyy", new System.Globalization.CultureInfo ("en-US"));
                 } else {
                     NcAssert.CaseError ("custom deferral type requires custom date");
                 }

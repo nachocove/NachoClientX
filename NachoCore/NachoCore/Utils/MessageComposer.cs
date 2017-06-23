@@ -22,7 +22,7 @@ namespace NachoCore.Utils
 
     public class MessageComposer : MessageDownloadDelegate
     {
-        
+
         protected static readonly long DEFAULT_MAX_SIZE = 2000000;
 
         #region Properties
@@ -65,7 +65,7 @@ namespace NachoCore.Utils
         }
 
         public long MaxSize = DEFAULT_MAX_SIZE;
-        public Tuple <float, float> ImageLengths = null;
+        public Tuple<float, float> ImageLengths = null;
 
         private McEmailMessage RelatedMessage;
         McBody Body;
@@ -132,8 +132,8 @@ namespace NachoCore.Utils
         List<BinaryReader> OpenReaders;
         protected MimeMessage Mime;
         protected MultipartAlternative AlternativePart;
-        Dictionary <string, McAttachment> AttachmentsBySrc;
-        Dictionary <int, bool> AttachmentsInHtml;
+        Dictionary<string, McAttachment> AttachmentsBySrc;
+        Dictionary<int, bool> AttachmentsInHtml;
 
         #endregion
 
@@ -155,7 +155,7 @@ namespace NachoCore.Utils
 
         #region Switching Account
 
-        public void SetAccount(McAccount account)
+        public void SetAccount (McAccount account)
         {
             if (Account.Id == account.Id) {
                 // same account. Nothing to do.
@@ -225,7 +225,7 @@ namespace NachoCore.Utils
                 if (String.IsNullOrEmpty (Message.Subject)) {
                     Message.Subject = EmailHelper.CreateInitialSubjectLine (Kind, RelatedMessage.Subject);
                 }
-                if (EmailHelper.IsReplyAction (Kind) && String.IsNullOrEmpty(Message.To)) {
+                if (EmailHelper.IsReplyAction (Kind) && String.IsNullOrEmpty (Message.To)) {
                     EmailHelper.PopulateMessageRecipients (Account, Message, Kind, RelatedMessage);
                 }
             }
@@ -494,7 +494,7 @@ namespace NachoCore.Utils
             NcTask.Run (() => {
                 var htmlDoc = Bundle.TemplateHtmlDocument ();
                 InsertInitialHtml (htmlDoc);
-                Bundle.SetFullHtml(htmlDoc, Bundle);
+                Bundle.SetFullHtml (htmlDoc, Bundle);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     FinishPreparingMessage ();
                 });
@@ -536,6 +536,10 @@ namespace NachoCore.Utils
             ClearReaders ();
             var text = Mime.GetTextBody (MimeKit.Text.TextFormat.Text);
             var preview = text.Substring (0, Math.Min (text.Length, 256));
+            var dateComputeResult = NcMessageDeferral.ComputeDeferral (DateTime.UtcNow, Message.IntentDateType, Message.IntentDate);
+            if (dateComputeResult.isOK ()) {
+                Message.IntentDate = dateComputeResult.GetValue<DateTime> ();
+            }
             Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                 var message = record as McEmailMessage;
                 message.Subject = Message.Subject;
@@ -724,18 +728,18 @@ namespace NachoCore.Utils
                             Uri url = null;
                             try {
                                 url = new Uri (node.GetAttributeValue ("src", ""));
-                            }catch{
+                            } catch {
                             }
                             if (url != null && url.Scheme == "data") {
-                                var parts = url.AbsolutePath.Split (new char[] { ';' }, 2);
+                                var parts = url.AbsolutePath.Split (new char [] { ';' }, 2);
                                 var contentType = parts [0];
-                                parts = parts [1].Split (new char[] { ',' }, 2);
-                                var data = Convert.FromBase64String (parts[1]);
+                                parts = parts [1].Split (new char [] { ',' }, 2);
+                                var data = Convert.FromBase64String (parts [1]);
                                 hasRelatedParts = true;
                                 var attachment = new MimePart (contentType);
                                 attachment.IsAttachment = false;
                                 attachment.ContentTransferEncoding = ContentEncoding.Base64;
-                                attachment.ContentObject = new ContentObject (new MemoryStream(data));
+                                attachment.ContentObject = new ContentObject (new MemoryStream (data));
                                 attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
                                 related.Add (attachment);
                                 var src = "cid:" + attachment.ContentId;
@@ -780,7 +784,7 @@ namespace NachoCore.Utils
                 Mime = MimeMessage.Load (stream);
             }
             var openStreams = new List<FileStream> ();
-            foreach (var entity in Mime.BodyParts.Where(p => p.ContentType.IsMimeType ("image", "*"))) {
+            foreach (var entity in Mime.BodyParts.Where (p => p.ContentType.IsMimeType ("image", "*"))) {
                 var part = entity as MimePart;
                 if (part != null) {
                     var tmpFilePath = Path.GetTempFileName ();
