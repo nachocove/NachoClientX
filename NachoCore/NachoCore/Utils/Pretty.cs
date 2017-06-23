@@ -90,7 +90,7 @@ namespace NachoCore.Utils
                 var reader = new System.IO.StringReader (message.BodyPreview);
                 var line = reader.ReadLine ();
                 while (line != null) {
-                    if (EmailHelper.IsQuoteLine (line) || line.StartsWith(">")) {
+                    if (EmailHelper.IsQuoteLine (line) || line.StartsWith (">")) {
                         line = null;
                     } else {
                         bodyPreview += line + " ";
@@ -343,7 +343,7 @@ namespace NachoCore.Utils
             var timeString = Time (dateTime);
             if (diff < now.TimeOfDay) {
                 return String.Format ("Today - {0}", timeString);
-            }else if (diff < (now.TimeOfDay + TimeSpan.FromDays (1))){
+            } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (1))) {
                 return String.Format ("Yesterday - {0}", timeString);
             } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (6))) {
                 return String.Format ("{0} - {1}", local.ToString ("dddd"), timeString);
@@ -426,7 +426,7 @@ namespace NachoCore.Utils
 
             if (diff < TimeSpan.FromMinutes (15)) {
                 var minutes = (int)Math.Ceiling (diff.TotalMinutes);
-                validSpan = (local - TimeSpan.FromMinutes(minutes - 1)) - now;
+                validSpan = (local - TimeSpan.FromMinutes (minutes - 1)) - now;
                 return String.Format ("in {0} minutes", minutes);
             }
 
@@ -437,12 +437,12 @@ namespace NachoCore.Utils
                 var roundedMinutes = (int)Math.Floor (fiveMinuteBlocks) * 5;
                 if (roundedMinutes == 15) {
                     validSpan = TimeSpan.FromMinutes (remainderMinutes + 1);
-                }else{
+                } else {
                     validSpan = TimeSpan.FromMinutes (remainderMinutes + 2.5);
                 }
                 if (remainderMinutes > 2.5) {
                     roundedMinutes = (int)Math.Ceiling (fiveMinuteBlocks) * 5;
-                    validSpan = TimeSpan.FromMinutes(remainderMinutes - 2.5);
+                    validSpan = TimeSpan.FromMinutes (remainderMinutes - 2.5);
                 }
                 return String.Format ("in {0} minutes", roundedMinutes);
             }
@@ -568,16 +568,16 @@ namespace NachoCore.Utils
                 start = new DateTime (start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Local);
                 end = new DateTime (end.Year, end.Month, end.Day, end.Hour, end.Minute, end.Second, DateTimeKind.Local);
             }
-            var lines = new List<string>();
-            var day = LongFullDate(start);
+            var lines = new List<string> ();
+            var day = LongFullDate (start);
             lines.Add (day);
-            if (calendarEvent.AllDayEvent){
+            if (calendarEvent.AllDayEvent) {
                 var span = (end - start);
                 if (span > TimeSpan.FromDays (1)) {
-                    var endDay = LongFullDate(end);
+                    var endDay = LongFullDate (end);
                     lines.Add (String.Format ("through {0}", endDay));
                 }
-            }else{
+            } else {
                 if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
                     lines.Add (string.Format ("{0} to {1}", Pretty.ShortTime (start), Pretty.ShortTime (end)));
                 } else {
@@ -651,7 +651,7 @@ namespace NachoCore.Utils
                 return Recipient;
             }
             var names = new List<string> ();
-            foreach (var mailbox in addresses.Mailboxes){
+            foreach (var mailbox in addresses.Mailboxes) {
                 if (String.IsNullOrEmpty (mailbox.Name)) {
                     names.Add (mailbox.Address);
                 } else {
@@ -752,11 +752,11 @@ namespace NachoCore.Utils
         static public string ReminderText (McEmailMessage message)
         {
             if (message.IsDeferred ()) {
-                return  String.Format ("Hidden until {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
+                return String.Format ("Hidden until {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
             } else if (message.IsOverdue ()) {
                 return String.Format ("Response was due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
             } else {
-                return  String.Format ("Response is due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
+                return String.Format ("Response is due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
             }
         }
 
@@ -854,25 +854,25 @@ namespace NachoCore.Utils
 
             case NcDayOfWeek.Sunday:
                 return fullNames [(int)DayOfWeek.Sunday];
-            
+
             case NcDayOfWeek.Monday:
                 return fullNames [(int)DayOfWeek.Monday];
-            
+
             case NcDayOfWeek.Tuesday:
                 return fullNames [(int)DayOfWeek.Tuesday];
-            
+
             case NcDayOfWeek.Wednesday:
                 return fullNames [(int)DayOfWeek.Wednesday];
-            
+
             case NcDayOfWeek.Thursday:
                 return fullNames [(int)DayOfWeek.Thursday];
-            
+
             case NcDayOfWeek.Friday:
                 return fullNames [(int)DayOfWeek.Friday];
-            
+
             case NcDayOfWeek.Saturday:
                 return fullNames [(int)DayOfWeek.Saturday];
-            
+
             default:
                 // A combination of days.
                 var shortNames = DTFormat.AbbreviatedDayNames;
@@ -1054,7 +1054,7 @@ namespace NachoCore.Utils
             detailText += "file";
             if (0 != attachment.FileSize) {
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-            } 
+            }
             return detailText;
         }
 
@@ -1088,9 +1088,9 @@ namespace NachoCore.Utils
         public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
         {
             var list = new List<string> ();
-//            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
-//                list.Add ("All");
-//            }
+            //            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
+            //                list.Add ("All");
+            //            }
             if (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 == (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 & code)) {
                 list.Add ("Hot");
             }
@@ -1100,12 +1100,12 @@ namespace NachoCore.Utils
             if (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 == (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 & code)) {
                 list.Add ("Inbox");
             }
-//            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
-//                list.Add ("Invitations");
-//            }
-//            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
-//                list.Add ("Reminders");
-//            }
+            //            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
+            //                list.Add ("Invitations");
+            //            }
+            //            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
+            //                list.Add ("Reminders");
+            //            }
             if (0 == list.Count) {
                 return "None";
             } else {
@@ -1133,7 +1133,7 @@ namespace NachoCore.Utils
             if (1 < extension.Length) {
                 detailText += extension.Substring (1) + " ";
             } else if (!String.IsNullOrEmpty (attachment.ContentType)) {
-                var mimeInfo = attachment.ContentType.Split (new char[] { '/' });
+                var mimeInfo = attachment.ContentType.Split (new char [] { '/' });
                 if (2 == mimeInfo.Length) {
                     detailText += mimeInfo [1].ToUpper () + " ";
                 }
@@ -1143,7 +1143,7 @@ namespace NachoCore.Utils
             detailText += "file";
             if (0 != attachment.FileSize) {
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-            } 
+            }
             return detailText;
         }
 
