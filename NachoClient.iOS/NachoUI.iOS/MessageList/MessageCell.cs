@@ -33,6 +33,7 @@ namespace NachoClient.iOS
                         _ThreadIndicator.AdoptTheme (adoptedTheme);
                     }
                     ContentView.AddSubview (_ThreadIndicator);
+                    SetNeedsLayout ();
                 }
                 return _ThreadIndicator;
             }
@@ -275,11 +276,7 @@ namespace NachoClient.iOS
             }
 
             if (_ThreadIndicator != null) {
-                var x = ContentView.Bounds.Width - rightPadding - threadWidth;
-                if (x < 100) {
-                    Log.LOG_UI.Warn ("MessageCell thread indicator layout on far left: content width = {0}, rightPadding = {1}, threadWidth = {2}", ContentView.Bounds.Width, rightPadding, threadWidth);
-                }
-                _ThreadIndicator.Frame = new CGRect (x, DetailTextLabel.Frame.Y, threadWidth, detailTextHeight);
+                _ThreadIndicator.Frame = new CGRect (ContentView.Bounds.Width - rightPadding - threadWidth, DetailTextLabel.Frame.Y, threadWidth, detailTextHeight);
             }
         }
 
