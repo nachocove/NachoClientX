@@ -107,8 +107,8 @@ namespace NachoClient.AndroidClient
         MailboxAddress ReplyToAddress;
 
         MailboxAddress [] ToAddresses;
-        MailboxAddress[] CcAddresses;
-        MailboxAddress[] BccAddresses;
+        MailboxAddress [] CcAddresses;
+        MailboxAddress [] BccAddresses;
 
         Dictionary<string, NcContactPortraitEmailIndex> PortraitCache;
 
@@ -130,80 +130,80 @@ namespace NachoClient.AndroidClient
 
         void ParseHeaders ()
         {
-        	FromAddress = null;
-        	ReplyToAddress = null;
-        	ToAddresses = null;
-        	CcAddresses = null;
-        	BccAddresses = null;
-        	MailboxAddress.TryParse (Message.From, out FromAddress);
-        	if (!String.IsNullOrWhiteSpace (Message.ReplyTo)) {
-        		if (MailboxAddress.TryParse (Message.ReplyTo, out ReplyToAddress)) {
-        			if (FromAddress != null && FromAddress.Address.ToLowerInvariant () == ReplyToAddress.Address.ToLowerInvariant ()) {
-        				ReplyToAddress = null;
-        			}
-        		}
-        	}
+            FromAddress = null;
+            ReplyToAddress = null;
+            ToAddresses = null;
+            CcAddresses = null;
+            BccAddresses = null;
+            MailboxAddress.TryParse (Message.From, out FromAddress);
+            if (!String.IsNullOrWhiteSpace (Message.ReplyTo)) {
+                if (MailboxAddress.TryParse (Message.ReplyTo, out ReplyToAddress)) {
+                    if (FromAddress != null && FromAddress.Address.ToLowerInvariant () == ReplyToAddress.Address.ToLowerInvariant ()) {
+                        ReplyToAddress = null;
+                    }
+                }
+            }
 
-        	InternetAddressList iList;
-        	if (!String.IsNullOrWhiteSpace (Message.To) && InternetAddressList.TryParse (Message.To, out iList)) {
-        		ToAddresses = iList.Mailboxes.ToArray ();
-        	}
-        	if (!String.IsNullOrWhiteSpace (Message.Cc) && InternetAddressList.TryParse (Message.Cc, out iList)) {
-        		CcAddresses = iList.Mailboxes.ToArray ();
-        	}
-        	if (!String.IsNullOrWhiteSpace (Message.Bcc) && InternetAddressList.TryParse (Message.Bcc, out iList)) {
+            InternetAddressList iList;
+            if (!String.IsNullOrWhiteSpace (Message.To) && InternetAddressList.TryParse (Message.To, out iList)) {
+                ToAddresses = iList.Mailboxes.ToArray ();
+            }
+            if (!String.IsNullOrWhiteSpace (Message.Cc) && InternetAddressList.TryParse (Message.Cc, out iList)) {
+                CcAddresses = iList.Mailboxes.ToArray ();
+            }
+            if (!String.IsNullOrWhiteSpace (Message.Bcc) && InternetAddressList.TryParse (Message.Bcc, out iList)) {
                 BccAddresses = iList.Mailboxes.ToArray ();
             }
         }
 
         void CachePortraits ()
         {
-        	var entries = McContact.QueryForMessagePortraitEmails (Message.Id);
-        	PortraitCache = new Dictionary<string, NcContactPortraitEmailIndex> (entries.Count);
-        	foreach (var entry in entries) {
+            var entries = McContact.QueryForMessagePortraitEmails (Message.Id);
+            PortraitCache = new Dictionary<string, NcContactPortraitEmailIndex> (entries.Count);
+            foreach (var entry in entries) {
                 if (!PortraitCache.ContainsKey (entry.EmailAddress.ToLowerInvariant ())) {
                     PortraitCache.Add (entry.EmailAddress.ToLowerInvariant (), entry);
                 }
-             }
+            }
         }
 
         void DetermineTableSections ()
         {
-        	int section = 0;
-        	int row = 0;
-        	if (FromAddress != null) {
-        		FromRow = row;
-        		FromSection = section;
-        		section += 1;
-        		row += 1;
-        	}
-        	if (ReplyToAddress != null) {
-        		if (FromSection == -1) {
-        			FromSection = 1;
-        			section += 1;
-        		}
-        		ReplyToRow = row;
-        		row += 1;
-        	}
-        	if (ToAddresses != null) {
-        		ToSection = section;
-        		section += 1;
-        	} else {
-        		ToSection = -1;
-        	}
-        	if (CcAddresses != null) {
-        		CcSection = section;
-        		section += 1;
-        	} else {
-        		CcSection = -1;
-        	}
-        	if (BccAddresses != null) {
-        		BccSection = section;
-        		section += 1;
-        	} else {
-        		BccSection = -1;
-        	}
-        	SectionCount = section;
+            int section = 0;
+            int row = 0;
+            if (FromAddress != null) {
+                FromRow = row;
+                FromSection = section;
+                section += 1;
+                row += 1;
+            }
+            if (ReplyToAddress != null) {
+                if (FromSection == -1) {
+                    FromSection = 1;
+                    section += 1;
+                }
+                ReplyToRow = row;
+                row += 1;
+            }
+            if (ToAddresses != null) {
+                ToSection = section;
+                section += 1;
+            } else {
+                ToSection = -1;
+            }
+            if (CcAddresses != null) {
+                CcSection = section;
+                section += 1;
+            } else {
+                CcSection = -1;
+            }
+            if (BccAddresses != null) {
+                BccSection = section;
+                section += 1;
+            } else {
+                BccSection = -1;
+            }
+            SectionCount = section;
         }
 
         #endregion
@@ -287,21 +287,21 @@ namespace NachoClient.AndroidClient
 
         MailboxAddress MailboxForPosition (int groupPosition, int position)
         {
-        	MailboxAddress address = null;
+            MailboxAddress address = null;
             if (groupPosition == FromSection) {
                 if (position == FromRow) {
-        			address = FromAddress;
+                    address = FromAddress;
                 } else if (position == ReplyToRow) {
-        			address = ReplyToAddress;
-        		}
+                    address = ReplyToAddress;
+                }
             } else if (groupPosition == ToSection) {
                 address = ToAddresses [position];
             } else if (groupPosition == CcSection) {
                 address = CcAddresses [position];
             } else if (groupPosition == BccSection) {
                 address = BccAddresses [position];
-        	}
-        	return address;
+            }
+            return address;
         }
 
         class MessageContactViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
