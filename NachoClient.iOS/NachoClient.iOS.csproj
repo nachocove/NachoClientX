@@ -238,6 +238,9 @@
     <Folder Include="Resources\Images.xcassets\next-week-accessory.imageset\" />
     <Folder Include="Resources\Images.xcassets\pick-date-accessory.imageset\" />
     <Folder Include="Resources\Images.xcassets\tomorrow-accessory.imageset\" />
+    <Folder Include="Resources\Images.xcassets\calendar-invite-request.imageset\" />
+    <Folder Include="Resources\Images.xcassets\calendar-invite-response.imageset\" />
+    <Folder Include="Resources\Images.xcassets\calendar-invite-cancel.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -482,6 +485,7 @@
     <Compile Include="NachoUI.iOS\MainTabs\NachoNavigationBar.cs" />
     <Compile Include="NachoPlatform.iOS\ConsoleLog.cs" />
     <Compile Include="NachoUI.iOS\Base\ActionSheetViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageView\CalendarInviteView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1624,5 +1628,17 @@
     <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\tomorrow-accessory.png" />
     <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\tomorrow-accessory%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\tomorrow-accessory.imageset\tomorrow-accessory%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-response.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-cancel.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-cancel.imageset\calendar-invite-cancel.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-cancel.imageset\calendar-invite-cancel%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-cancel.imageset\calendar-invite-cancel%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-response.imageset\calendar-invite-response.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-response.imageset\calendar-invite-response%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-response.imageset\calendar-invite-response%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\calendar-invite-request.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\calendar-invite-request%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\calendar-invite-request%403x.png" />
   </ItemGroup>
 </Project>

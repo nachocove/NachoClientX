@@ -326,6 +326,15 @@ namespace NachoCore.Utils
             return timeString;
         }
 
+        static public string MicroTime (DateTime time)
+        {
+            var timeString = ShortTime (time);
+            if (timeString.EndsWith (" am") || timeString.EndsWith (" pm")) {
+                return timeString.Substring (0, timeString.Length - 3);
+            }
+            return timeString;
+        }
+
         /// <summary>
         /// "Wed, Oct 21 - 4:28 pm" or "Wed, Oct 21, 2015 - 4:28 pm"
         /// </summary>
@@ -589,6 +598,39 @@ namespace NachoCore.Utils
                 lines.Add (MakeRecurrenceString (recurrences));
             }
             return String.Join ("\n", lines);
+        }
+
+        static public string MeetingRequestTime (McMeetingRequest meetingRequest)
+        {
+            var start = meetingRequest.StartTime;
+            var end = meetingRequest.EndTime;
+            if (meetingRequest.AllDayEvent) {
+                start = new DateTime (start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Local);
+                end = new DateTime (end.Year, end.Month, end.Day, end.Hour, end.Minute, end.Second, DateTimeKind.Local);
+            }
+            var line = LongFullDate (start);
+            if (meetingRequest.AllDayEvent) {
+                var span = (end - start);
+                if (span > TimeSpan.FromDays (1)) {
+                    var endDay = LongFullDate (end);
+                    line += String.Format (" through {0}", endDay);
+                }
+            } else {
+                if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
+                    if (start.Hour < 12 && end.Hour < 12 || start.Hour >= 12 && end.Hour >= 12) {
+                        line += string.Format (" from {0} to {1}", Pretty.MicroTime (start), Pretty.ShortTime (end));
+                    } else {
+                        line += string.Format (", {0} to {1}", Pretty.ShortTime (start), Pretty.ShortTime (end));
+                    }
+                } else {
+                    line += string.Format (" at {0} to {1}", Pretty.ShortTime (start), Pretty.MediumFullDateTime (end));
+                }
+            }
+            var recurrences = meetingRequest.recurrences;
+            if (recurrences.Count > 0) {
+                line += "\n" + MakeRecurrenceString (recurrences);
+            }
+            return line;
         }
 
         static public string EventEditTime (DateTime date, bool isAllDay, bool isEnd)
@@ -1228,6 +1270,38 @@ namespace NachoCore.Utils
                 }
             }
             return String.Join (", ", tokens);
+        }
+
+        public static string MeetingResponse (McEmailMessage message)
+        {
+            string messageFormat;
+            switch (message.MeetingResponseValue) {
+            case NcResponseType.Accepted:
+                messageFormat = "{0} has accepted the meeting.";
+                break;
+            case NcResponseType.Tentative:
+                messageFormat = "{0} has tentatively accepted the meeting.";
+                break;
+            case NcResponseType.Declined:
+                messageFormat = "{0} has declined the meeting.";
+                break;
+            default:
+                Log.Warn (Log.LOG_CALENDAR, "Unkown meeting response status: {0}", message.MessageClass);
+                messageFormat = "The status of {0} is unknown.";
+                break;
+            }
+
+            string displayName;
+            var responder = NcEmailAddress.ParseMailboxAddressString (message.From);
+            if (null == responder) {
+                displayName = message.From;
+            } else if (!string.IsNullOrEmpty (responder.Name)) {
+                displayName = responder.Name;
+            } else {
+                displayName = responder.Address;
+            }
+
+            return String.Format (messageFormat, displayName);
         }
     }
 }

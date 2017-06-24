@@ -21,7 +21,17 @@ using SafariServices;
 namespace NachoClient.iOS
 {
 
-    public partial class MessageViewController : NcUIViewController, FoldersViewControllerDelegate, IUIWebViewDelegate, MessageDownloadDelegate, IUIScrollViewDelegate, AttachmentsViewDelegate, ISFSafariViewControllerDelegate, ActionEditViewDelegate, IUIGestureRecognizerDelegate, ThemeAdopter
+    public partial class MessageViewController : NcUIViewController,
+    FoldersViewControllerDelegate,
+    IUIWebViewDelegate,
+    MessageDownloadDelegate,
+    IUIScrollViewDelegate,
+    AttachmentsViewDelegate,
+    CalendarInviteViewDelegate,
+    ISFSafariViewControllerDelegate,
+    ActionEditViewDelegate,
+    IUIGestureRecognizerDelegate,
+    ThemeAdopter
     {
 
         private static ConcurrentStack<UIWebView> ReusableWebViews = new ConcurrentStack<UIWebView> ();
@@ -54,7 +64,7 @@ namespace NachoClient.iOS
         CompoundScrollView ScrollView;
         MessageHeaderView HeaderView;
         AttachmentsView AttachmentsView;
-        BodyCalendarView CalendarView;
+        CalendarInviteView CalendarInviteView;
         UIWebView BodyView;
         MessageToolbar MessageToolbar;
         NcActivityIndicatorView ActivityIndicator;
@@ -155,6 +165,9 @@ namespace NachoClient.iOS
                 adoptedTheme = theme;
                 HeaderView.AdoptTheme (theme);
                 AttachmentsView.AdoptTheme (theme);
+                if (CalendarInviteView != null) {
+                    CalendarInviteView.AdoptTheme (theme);
+                }
             }
         }
 
@@ -189,7 +202,9 @@ namespace NachoClient.iOS
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
             if (Message.MeetingRequest != null) {
-                CalendarView = new BodyCalendarView (0.0f, ScrollView.Bounds.Width, Message, false, RemoveCalendarView, OpenUrl, new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f), UIColor.White.ColorDarkenedByAmount (0.15f));
+                CalendarInviteView = new CalendarInviteView (new CGRect (0.0f, 0.0f, ScrollView.Bounds.Width, 100.0f));
+                CalendarInviteView.SeparatorInsets = new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f);
+                CalendarInviteView.InviteDelegate = this;
             }
 
             if (!ReusableWebViews.TryPop (out BodyView)) {
@@ -204,8 +219,8 @@ namespace NachoClient.iOS
             if (Action != null) {
                 ScrollView.AddCompoundView (ActionView);
             }
-            if (CalendarView != null) {
-                ScrollView.AddCompoundView (CalendarView);
+            if (CalendarInviteView != null) {
+                ScrollView.AddCompoundView (CalendarInviteView);
             }
             ScrollView.AddCompoundView (BodyView);
 
@@ -226,6 +241,11 @@ namespace NachoClient.iOS
                 AttachmentsView.SizeToFit ();
             } else {
                 AttachmentsView.Hidden = true;
+            }
+
+            if (CalendarInviteView != null) {
+                CalendarInviteView.Message = Message;
+                CalendarInviteView.MeetingRequest = Message.MeetingRequest;
             }
 
             LayoutScrollView ();
@@ -340,8 +360,8 @@ namespace NachoClient.iOS
             }
 
             // clean up the calendar
-            if (CalendarView != null) {
-                CalendarView.Cleanup ();
+            if (CalendarInviteView != null) {
+                CalendarInviteView.Cleanup ();
             }
 
             // clean up toolbar
@@ -380,6 +400,19 @@ namespace NachoClient.iOS
                 view.SizeToFit ();
                 LayoutScrollView ();
             });
+        }
+
+        public void CalendarInviteViewDidChangeSize (CalendarInviteView view)
+        {
+            UIView.Animate (0.25f, () => {
+                view.SizeToFit ();
+                LayoutScrollView ();
+            });
+        }
+
+        public void CalendarInviteViewDidSelectCalendar (CalendarInviteView view)
+        {
+            // TODO: show an event (gotta figure out which one)
         }
 
         #endregion
@@ -522,6 +555,11 @@ namespace NachoClient.iOS
                 view = view.Superview;
             }
             return true;
+        }
+
+        public void CalendarInviteViewDidRespond (CalendarInviteView view, NcResponseType repsonse)
+        {
+            // TODO: issue response to server
         }
 
         #endregion
@@ -723,7 +761,7 @@ namespace NachoClient.iOS
 
         void RemoveCalendarView ()
         {
-            ScrollView.RemoveCompoundView (CalendarView);
+            ScrollView.RemoveCompoundView (CalendarInviteView);
             LayoutScrollView ();
         }
 

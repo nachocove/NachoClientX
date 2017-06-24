@@ -69,6 +69,18 @@ namespace NachoCore.Model
 
         public NcMeetingMessageType MeetingMessageType { get; set; }
 
+
+        private McCalendar _Calendar;
+        [Ignore]
+        public McCalendar Calendar {
+            get {
+                if (_Calendar == null) {
+                    _Calendar = McCalendar.QueryByUID (AccountId, GetUID ());
+                }
+                return _Calendar;
+            }
+        }
+
         // Recurrences that are stored in the database.
         private List<McRecurrence> dbRecurrences = null;
         // Recurrences that were set by the app, either the UI or sync.  They don't get saved to the database
@@ -126,7 +138,7 @@ namespace NachoCore.Model
             if (string.IsNullOrEmpty (GlobalObjId)) {
                 return "";
             }
-            byte[] bytes = Convert.FromBase64String (GlobalObjId);
+            byte [] bytes = Convert.FromBase64String (GlobalObjId);
             if (48 <= bytes.Length && Encoding.ASCII.GetString (bytes, 40, 8) == "vCal-Uid") {
                 // It's a vCal ID.  The ID starts at index 52.  The length of the ID is 13 less than the
                 // little-endian number in bytes[36..39].  (See the documentation linked to above.)
@@ -149,11 +161,11 @@ namespace NachoCore.Model
             }
         }
 
-        private static char[] HexDigits = {
+        private static char [] HexDigits = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
         };
 
-        private static string HexString (byte[] bytes, int start, int length)
+        private static string HexString (byte [] bytes, int start, int length)
         {
             var builder = new StringBuilder (length * 2);
             for (int i = start; i < start + length; ++i) {
