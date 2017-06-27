@@ -125,7 +125,7 @@ namespace NachoClient.AndroidClient
                     downloader.Delegate = this;
                     downloader.Download (attachment);
                 }
-                ReplaceAttachment (McAttachment.QueryById<McAttachment>(attachment.Id));
+                ReplaceAttachment (McAttachment.QueryById<McAttachment> (attachment.Id));
             }
         }
 
@@ -162,20 +162,20 @@ namespace NachoClient.AndroidClient
 
         public void AttachmentDownloadDidFail (AttachmentDownloader downloader, NcResult result)
         {
-        	DownloadersByAttachmentId.Remove (downloader.Attachment.Id);
-        	ReplaceAttachment (downloader.Attachment);
+            DownloadersByAttachmentId.Remove (downloader.Attachment.Id);
+            ReplaceAttachment (downloader.Attachment);
         }
 
         void ReplaceAttachment (McAttachment attachment)
         {
-        	for (int i = 0; i < Attachments.Count; ++i) {
+            for (int i = 0; i < Attachments.Count; ++i) {
                 if (Attachments [i].Id == attachment.Id) {
                     Attachments.RemoveAt (i);
                     Attachments.Insert (i, attachment);
                     AttachmentsAdapter.NotifyItemChanged (i);
                     break;
                 }
-             }
+            }
         }
     }
 
@@ -193,32 +193,32 @@ namespace NachoClient.AndroidClient
             }
         }
 
-    	public interface Listener
-    	{
+        public interface Listener
+        {
             void OnAttachmentSelected (McAttachment attachment);
-    	}
+        }
 
-    	WeakReference<Listener> WeakListener;
+        WeakReference<Listener> WeakListener;
 
-    	public MessageAttachmentsAdapter (Listener listener)
-    	{
-    		WeakListener = new WeakReference<Listener> (listener);
+        public MessageAttachmentsAdapter (Listener listener)
+        {
+            WeakListener = new WeakReference<Listener> (listener);
             Attachments = new List<McAttachment> ();
-    	}
+        }
 
-    	public override int ItemCount {
-    		get {
-    			return Attachments.Count;
-    		}
-    	}
+        public override int ItemCount {
+            get {
+                return Attachments.Count;
+            }
+        }
 
-    	public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
-    	{
+        public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
+        {
             return MessageAttachmentViewHolder.Create (parent);
-    	}
+        }
 
-    	public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
-    	{
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
+        {
             var attachmentHolder = (holder as MessageAttachmentViewHolder);
             attachmentHolder.SetAttachment (Attachments [position]);
             attachmentHolder.SetClickHandler ((sender, e) => {
@@ -227,7 +227,7 @@ namespace NachoClient.AndroidClient
                     listener.OnAttachmentSelected (Attachments [position]);
                 }
             });
-    	}
+        }
 
     }
 
@@ -249,8 +249,8 @@ namespace NachoClient.AndroidClient
             return new MessageAttachmentViewHolder (view);
         }
 
-    	public MessageAttachmentViewHolder (View view) : base (view)
-    	{
+        public MessageAttachmentViewHolder (View view) : base (view)
+        {
             IconView = view.FindViewById (Resource.Id.icon) as ImageView;
             NameLabel = view.FindViewById (Resource.Id.attachment_name) as TextView;
             DetailLabel = view.FindViewById (Resource.Id.attachment_detail) as TextView;
@@ -258,9 +258,9 @@ namespace NachoClient.AndroidClient
             ErrorIndicator = DownloadFrame.FindViewById (Resource.Id.error_indicator) as ImageView;
             DownloadIndicator = DownloadFrame.FindViewById (Resource.Id.download_indicator) as ImageView;
             DownloadProgress = DownloadFrame.FindViewById (Resource.Id.download_progress) as ProgressBar;
-    	}
+        }
 
-    	public void SetAttachment (McAttachment attachment)
+        public void SetAttachment (McAttachment attachment)
         {
             var name = Path.GetFileNameWithoutExtension (attachment.DisplayName);
             if (String.IsNullOrEmpty (name)) {
@@ -293,7 +293,7 @@ namespace NachoClient.AndroidClient
             } else {
                 DownloadFrame.Visibility = ViewStates.Gone;
             }
-	    }
+        }
 
         public void SetClickHandler (EventHandler handler)
         {
