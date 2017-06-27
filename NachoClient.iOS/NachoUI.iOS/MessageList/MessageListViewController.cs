@@ -398,6 +398,7 @@ namespace NachoClient.iOS
             SelectedThread = thread;
             var vc = new FoldersViewController ();
             vc.Account = McAccount.QueryById<McAccount> (selectedMessage.AccountId);
+            vc.FoldersViewDelegate = this;
             vc.PresentAsChooserOverViewController (this, null);
         }
 
