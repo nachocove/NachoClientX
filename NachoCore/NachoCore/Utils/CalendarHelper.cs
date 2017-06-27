@@ -310,6 +310,21 @@ namespace NachoCore.Utils
             }
         }
 
+        public static void SendMeetingResponse (McEmailMessage message, McMeetingRequest request, NcResponseType response)
+        {
+            BackEnd.Instance.RespondEmailCmd (message.AccountId, message.Id, response);
+
+            McAccount account = McAccount.QueryById<McAccount> (message.AccountId);
+
+            if (request.ResponseRequestedIsSet && request.ResponseRequested) {
+                var mailbox = NcEmailAddress.ParseMailboxAddressString (request.Organizer);
+                var iCalPart = CalendarHelper.MimeResponseFromEmail (request, response, message.Subject, request.RecurrenceId);
+                // TODO Give the user a chance to enter some text. For now, the message body is empty.
+                var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                CalendarHelper.SendMeetingResponse (account, mailbox, message.Subject, null, mimeBody, response);
+            }
+        }
+
         public static void MarkEventAsCancelled (McMeetingRequest eventInfo)
         {
             var cal = McCalendar.QueryByUID (eventInfo.AccountId, eventInfo.GetUID ());
@@ -622,6 +637,9 @@ namespace NachoCore.Utils
 
         public static void SendMeetingResponse (McAccount account, MailboxAddress to, string subject, string token, MimeEntity mimeBody, NcResponseType response)
         {
+            if (to == null || to.Address == null) {
+                return;
+            }
             var mimeMessage = new MimeMessage ();
             mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (to);

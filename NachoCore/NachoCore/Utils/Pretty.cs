@@ -617,7 +617,7 @@ namespace NachoCore.Utils
                 }
             } else {
                 if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
-                    if (start.Hour < 12 && end.Hour < 12 || start.Hour >= 12 && end.Hour >= 12) {
+                    if ((start.ToLocalTime ().Hour < 12 && end.ToLocalTime ().Hour < 12) || (start.ToLocalTime ().Hour >= 12 && end.ToLocalTime ().Hour >= 12)) {
                         line += string.Format (" from {0} to {1}", Pretty.MicroTime (start), Pretty.ShortTime (end));
                     } else {
                         line += string.Format (", {0} to {1}", Pretty.ShortTime (start), Pretty.ShortTime (end));

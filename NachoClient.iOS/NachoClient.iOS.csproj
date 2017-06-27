@@ -241,6 +241,9 @@
     <Folder Include="Resources\Images.xcassets\calendar-invite-request.imageset\" />
     <Folder Include="Resources\Images.xcassets\calendar-invite-response.imageset\" />
     <Folder Include="Resources\Images.xcassets\calendar-invite-cancel.imageset\" />
+    <Folder Include="Resources\Images.xcassets\calendar-invite-action-accept.imageset\" />
+    <Folder Include="Resources\Images.xcassets\calendar-invite-action-maybe.imageset\" />
+    <Folder Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1640,5 +1643,17 @@
     <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\calendar-invite-request.png" />
     <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\calendar-invite-request%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\calendar-invite-request.imageset\calendar-invite-request%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-accept.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-accept.imageset\calendar-invite-action-accept.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-accept.imageset\calendar-invite-action-accept%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-accept.imageset\calendar-invite-action-accept%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-maybe.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-maybe.imageset\calendar-invite-action-maybe.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-maybe.imageset\calendar-invite-action-maybe%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-maybe.imageset\calendar-invite-action-maybe%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\calendar-invite-action-decline.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\calendar-invite-action-decline%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\calendar-invite-action-decline%403x.png" />
   </ItemGroup>
 </Project>

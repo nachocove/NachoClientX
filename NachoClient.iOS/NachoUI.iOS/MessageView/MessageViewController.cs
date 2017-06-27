@@ -246,6 +246,7 @@ namespace NachoClient.iOS
             if (CalendarInviteView != null) {
                 CalendarInviteView.Message = Message;
                 CalendarInviteView.MeetingRequest = Message.MeetingRequest;
+                CalendarInviteView.SizeToFit ();
             }
 
             LayoutScrollView ();
@@ -410,11 +411,6 @@ namespace NachoClient.iOS
             });
         }
 
-        public void CalendarInviteViewDidSelectCalendar (CalendarInviteView view)
-        {
-            // TODO: show an event (gotta figure out which one)
-        }
-
         #endregion
 
         #region User Actions
@@ -557,9 +553,11 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public void CalendarInviteViewDidRespond (CalendarInviteView view, NcResponseType repsonse)
+        public void CalendarInviteViewDidRespond (CalendarInviteView view, NcResponseType response)
         {
-            // TODO: issue response to server
+            CalendarHelper.SendMeetingResponse (Message, view.MeetingRequest, response);
+            ArchiveThisMessage ();
+            NavigationController.PopViewController (animated: true);
         }
 
         #endregion

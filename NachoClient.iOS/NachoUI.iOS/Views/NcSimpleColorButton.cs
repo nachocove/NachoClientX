@@ -7,12 +7,27 @@ using UIKit;
 
 namespace NachoClient.iOS
 {
-	[Register ("NcSimpleColorButton")]
+    [Register ("NcSimpleColorButton")]
     public partial class NcSimpleColorButton : UIButton
-	{
+    {
 
-        protected UIColor originalBackgroundColor;
-        protected UIColor highlightedColor;
+        public override UIColor BackgroundColor {
+            get {
+                return base.BackgroundColor;
+            }
+            set {
+                base.BackgroundColor = value;
+                _BackgroundColor = value;
+                if (BackgroundColor != null) {
+                    HighlightedColor = BackgroundColor.ColorWithAlpha (0.5f);
+                } else {
+                    HighlightedColor = null;
+                }
+            }
+        }
+
+        private UIColor _BackgroundColor;
+        public UIColor HighlightedColor;
 
         public NcSimpleColorButton () : base (UIButtonType.Custom)
         {
@@ -24,33 +39,31 @@ namespace NachoClient.iOS
             Initialize ();
         }
 
-        void Initialize()
+        void Initialize ()
         {
             TouchDown += (object sender, EventArgs e) => {
-                if (originalBackgroundColor == null){
-                    originalBackgroundColor = BackgroundColor;
-                    highlightedColor = originalBackgroundColor.ColorWithAlpha(0.5f);
+                if (HighlightedColor != null) {
+                    base.BackgroundColor = HighlightedColor;
                 }
-                BackgroundColor = highlightedColor;
             };
 
             TouchUpInside += (object sender, EventArgs e) => {
-                BackgroundColor = originalBackgroundColor;
+                base.BackgroundColor = _BackgroundColor;
             };
 
             TouchDragExit += (object sender, EventArgs e) => {
-                BackgroundColor = originalBackgroundColor;
+                base.BackgroundColor = _BackgroundColor;
             };
 
             TouchDragEnter += (object sender, EventArgs e) => {
-                if (TouchInside){
-                    BackgroundColor = highlightedColor;
+                if (TouchInside && HighlightedColor != null) {
+                    base.BackgroundColor = HighlightedColor;
                 }
             };
 
             TouchCancel += (object sender, EventArgs e) => {
-                BackgroundColor = originalBackgroundColor;
+                base.BackgroundColor = _BackgroundColor;
             };
         }
-	}
+    }
 }

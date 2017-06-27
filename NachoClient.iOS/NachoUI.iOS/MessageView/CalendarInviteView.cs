@@ -15,8 +15,7 @@ namespace NachoClient.iOS
     public interface CalendarInviteViewDelegate
     {
         void CalendarInviteViewDidChangeSize (CalendarInviteView view);
-        void CalendarInviteViewDidRespond (CalendarInviteView view, NcResponseType repsonse);
-        void CalendarInviteViewDidSelectCalendar (CalendarInviteView view);
+        void CalendarInviteViewDidRespond (CalendarInviteView view, NcResponseType response);
     }
 
     public class CalendarInviteView : UIView, ThemeAdopter
@@ -58,13 +57,14 @@ namespace NachoClient.iOS
         UILabel TextLabel;
         UILabel DetailTextLabel;
         UIView SeparatorView;
-        UIButton AcceptButton;
-        UIButton TentativeButton;
-        UIButton DeclineButton;
+        NcSimpleColorButton AcceptButton;
+        NcSimpleColorButton TentativeButton;
+        NcSimpleColorButton DeclineButton;
         UIEdgeInsets ContentInsets = new UIEdgeInsets (10.0f, 0.0f, 10.0f, 14.0f);
         PressGestureRecognizer HeaderPressRecognizer;
         nfloat BorderWidth = 0.5f;
         nfloat IconMargin = 5.0f;
+        nfloat ButtonHeight = 44.0f;
         CGSize IconSize = new CGSize (24.0f, 24.0f);
 
         public CalendarInviteView (CGRect frame) : base (frame)
@@ -73,7 +73,7 @@ namespace NachoClient.iOS
             HeaderView = new UIView ();
             AddSubview (HeaderView);
 
-            ActionsView = new UIView ();
+            ActionsView = new UIView (Bounds);
             AddSubview (ActionsView);
 
             IconView = new UIImageView ();
@@ -89,12 +89,40 @@ namespace NachoClient.iOS
             DetailTextLabel.Lines = 1;
             HeaderView.AddSubview (DetailTextLabel);
 
-            AcceptButton = new UIButton (UIButtonType.Custom);
-            TentativeButton = new UIButton (UIButtonType.Custom);
-            DeclineButton = new UIButton (UIButtonType.Custom);
+            AcceptButton = new NcSimpleColorButton ();
+            AcceptButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            AcceptButton.SetTitle ("Accept and add to calendar", UIControlState.Normal);
+            using (var image = UIImage.FromBundle ("calendar-invite-action-accept")) {
+                AcceptButton.SetImage (image, UIControlState.Normal);
+            }
+            AcceptButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
+            AcceptButton.Frame = new CGRect (0.0f, 0.0f, ActionsView.Bounds.Width, ButtonHeight);
+            AcceptButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             ActionsView.AddSubview (AcceptButton);
+
+            TentativeButton = new NcSimpleColorButton ();
+            TentativeButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            TentativeButton.SetTitle ("Tentatively accept", UIControlState.Normal);
+            using (var image = UIImage.FromBundle ("calendar-invite-action-maybe")) {
+                TentativeButton.SetImage (image, UIControlState.Normal);
+            }
+            TentativeButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
+            TentativeButton.Frame = new CGRect (0.0f, AcceptButton.Frame.Y + AcceptButton.Frame.Height, ActionsView.Bounds.Width, ButtonHeight);
+            TentativeButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             ActionsView.AddSubview (TentativeButton);
+
+            DeclineButton = new NcSimpleColorButton ();
+            DeclineButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            DeclineButton.SetTitle ("Decline", UIControlState.Normal);
+            using (var image = UIImage.FromBundle ("calendar-invite-action-decline")) {
+                DeclineButton.SetImage (image, UIControlState.Normal);
+            }
+            DeclineButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
+            DeclineButton.Frame = new CGRect (0.0f, TentativeButton.Frame.Y + TentativeButton.Frame.Height, ActionsView.Bounds.Width, ButtonHeight);
+            DeclineButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             ActionsView.AddSubview (DeclineButton);
+
+            ActionsView.Frame = new CGRect (0.0f, 0.0f, Bounds.Width, DeclineButton.Frame.Y + DeclineButton.Frame.Height);
 
             AcceptButton.TouchUpInside += Accept;
             TentativeButton.TouchUpInside += Tentative;
@@ -103,9 +131,9 @@ namespace NachoClient.iOS
             SeparatorView = new UIView ();
             AddSubview (SeparatorView);
 
-            HeaderPressRecognizer = new PressGestureRecognizer (HeaderPressed);
-            HeaderPressRecognizer.IsCanceledByPanning = true;
-            HeaderView.AddGestureRecognizer (HeaderPressRecognizer);
+            //HeaderPressRecognizer = new PressGestureRecognizer (HeaderPressed);
+            //HeaderPressRecognizer.IsCanceledByPanning = true;
+            //HeaderView.AddGestureRecognizer (HeaderPressRecognizer);
         }
 
         public void Cleanup ()
@@ -122,6 +150,22 @@ namespace NachoClient.iOS
             TextLabel.TextColor = theme.DefaultTextColor;
             DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
             DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+            TintColor = theme.TableViewTintColor;
+
+            AcceptButton.BackgroundColor = UIColor.White;
+            AcceptButton.HighlightedColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+            TentativeButton.BackgroundColor = UIColor.White;
+            TentativeButton.HighlightedColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+            DeclineButton.BackgroundColor = UIColor.White;
+            DeclineButton.HighlightedColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+
+            AcceptButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
+            TentativeButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
+            DeclineButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
+
+            AcceptButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
+            TentativeButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
+            DeclineButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
         }
 
         void Update ()
@@ -149,9 +193,7 @@ namespace NachoClient.iOS
                 } else {
                     DetailTextLabel.Text = "";
                 }
-                // TODO: show response buttons
             }
-            HeaderPressRecognizer.Enabled = MeetingRequest.Calendar != null;
             SetNeedsLayout ();
         }
 
@@ -179,8 +221,11 @@ namespace NachoClient.iOS
             if (!ActionsView.Hidden) {
                 ActionsView.Frame = new CGRect (origin, new CGSize (Bounds.Width, ActionsView.Frame.Height));
                 origin.Y += ActionsView.Frame.Height;
+                AcceptButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
+                TentativeButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
+                DeclineButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
             }
-            SeparatorView.Frame = new CGRect (SeparatorInsets.Left, headerSubviewOrigin.Y, Bounds.Width - SeparatorInsets.Left, BorderWidth);
+            SeparatorView.Frame = new CGRect (SeparatorInsets.Left, origin.Y, Bounds.Width - SeparatorInsets.Left, BorderWidth);
         }
 
         public override void SizeToFit ()
@@ -212,7 +257,7 @@ namespace NachoClient.iOS
             if (HeaderPressRecognizer.State == UIGestureRecognizerState.Began) {
                 SetHeaderSelected (true, animated: false);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Ended) {
-                InviteDelegate?.CalendarInviteViewDidSelectCalendar (this);
+                //InviteDelegate?.CalendarInviteViewDidSelectCalendar (this);
                 SetHeaderSelected (false, animated: false);
             } else if (HeaderPressRecognizer.State == UIGestureRecognizerState.Failed) {
                 SetHeaderSelected (false, animated: true);
