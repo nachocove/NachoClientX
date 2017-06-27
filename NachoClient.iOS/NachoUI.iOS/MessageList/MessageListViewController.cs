@@ -17,7 +17,7 @@ using NachoCore.Index;
 
 namespace NachoClient.iOS
 {
-    
+
     public class MessageListViewController : NachoWrappedTableViewController, FoldersViewControllerDelegate, NachoSearchControllerDelegate, MessagesSyncManagerDelegate, ThemeAdopter
     {
         #region Constants
@@ -114,14 +114,14 @@ namespace NachoClient.iOS
         #endregion
 
         #region View Lifecycle
-            
+
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize (17.0f), Theme.Active.DefaultFont.WithSize (14.0f));
             TableView.AllowsMultipleSelectionDuringEditing = true;
-            TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof(SwipeTableViewCell), UnavailableCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (SwipeTableViewCell), UnavailableCellIdentifier);
             TableView.AccessibilityLabel = "Message list";
             TableView.BackgroundColor = UIColor.White;
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
@@ -195,7 +195,7 @@ namespace NachoClient.iOS
                 SearchResultsViewController.Cleanup ();
                 SearchResultsViewController = null;
             }
-            
+
             base.Cleanup ();
         }
 
@@ -347,7 +347,7 @@ namespace NachoClient.iOS
                 Messages.IgnoreMessage (thread.FirstMessageId);
                 if (!IsReloading) {
                     Messages.RemoveIgnoredMessages ();
-                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                    TableView.DeleteRows (new NSIndexPath [] { indexPath }, UITableViewRowAnimation.Automatic);
                 } else {
                     SetNeedsReload ();
                 }
@@ -367,7 +367,7 @@ namespace NachoClient.iOS
                 Messages.IgnoreMessage (thread.FirstMessageId);
                 if (!IsReloading) {
                     Messages.RemoveIgnoredMessages ();
-                    TableView.DeleteRows (new NSIndexPath[] { indexPath }, UITableViewRowAnimation.Automatic);
+                    TableView.DeleteRows (new NSIndexPath [] { indexPath }, UITableViewRowAnimation.Automatic);
                 } else {
                     SetNeedsReload ();
                 }
@@ -380,12 +380,12 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 var alertView = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
-                alertView.AddAction(UIAlertAction.Create("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove(thread, message); }));
-                alertView.AddAction (UIAlertAction.Create ("Create Event", UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent(message); }));
-                alertView.AddAction (UIAlertAction.Create ("Forward", UIAlertActionStyle.Default, (UIAlertAction action) => { Forward(message); }));
-                alertView.AddAction (UIAlertAction.Create ("Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { Reply(message); }));
-                alertView.AddAction (UIAlertAction.Create ("Reply All", UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll(message); }));
-                alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply(message); }));
+                alertView.AddAction (UIAlertAction.Create ("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove (thread, message); }));
+                alertView.AddAction (UIAlertAction.Create ("Create Event", UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent (message); }));
+                alertView.AddAction (UIAlertAction.Create ("Forward", UIAlertActionStyle.Default, (UIAlertAction action) => { Forward (message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { Reply (message); }));
+                alertView.AddAction (UIAlertAction.Create ("Reply All", UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll (message); }));
+                alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply (message); }));
                 alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
                 PresentViewController (alertView, true, null);
             }
@@ -566,7 +566,7 @@ namespace NachoClient.iOS
         bool NeedsReload;
         bool IsReloading;
 
-        object MessagesLock = new object();
+        object MessagesLock = new object ();
 
         protected void SetNeedsReload ()
         {
@@ -590,13 +590,13 @@ namespace NachoClient.iOS
                         List<int> adds;
                         List<int> deletes;
                         NachoEmailMessages messages;
-                        lock (MessagesLock){
+                        lock (MessagesLock) {
                             messages = Messages;
                         }
                         bool changed = messages.BeginRefresh (out adds, out deletes);
                         BeginInvokeOnMainThread (() => {
                             bool handledResults = false;
-                            lock (MessagesLock){
+                            lock (MessagesLock) {
                                 if (messages == Messages) {
                                     Messages.CommitRefresh ();
                                     HandleReloadResults (changed, adds, deletes);
@@ -625,7 +625,7 @@ namespace NachoClient.iOS
             }
             if (PopsWhenEmpty && Messages.Count () == 0 && this == NavigationController.TopViewController) {
                 NavigationController.PopViewController (true);
-            }else{
+            } else {
                 if (!HasLoadedOnce) {
                     // If this is the first time we're showing messages, don't bother with any add/delete animations
                     HasLoadedOnce = true;
@@ -707,7 +707,7 @@ namespace NachoClient.iOS
                 } else {
                     cell.AccessoryView = null;
                 }
-            }else{
+            } else {
                 cell.AccessoryView = null;
             }
 
@@ -1026,15 +1026,15 @@ namespace NachoClient.iOS
         {
             NavigationItem.LeftBarButtonItem = SearchButton;
             if (SwipingIndexPath != null) {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                     DoneSwipingButton
                 };
             } else if (IsViewLoaded && TableView.Editing) {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                     CancelEditingButton
                 };
             } else {
-                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                     NewMessageButton,
                     EditTableButton
                 };
@@ -1080,20 +1080,20 @@ namespace NachoClient.iOS
         void StartEditingTable ()
         {
             SelectedAccounts = new Dictionary<int, int> ();
-            TableView.SetEditing(true, true);
+            TableView.SetEditing (true, true);
             UpdateNavigationItem ();
             MoveButton = new UIBarButtonItem ("Move", UIBarButtonItemStyle.Plain, ShowFoldersForMovingSelectedMessages);
             ArchiveButton = new UIBarButtonItem ("Archive", UIBarButtonItemStyle.Plain, ArchiveSelectedMessages);
             DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedMessages);
             MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
             if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
-                ToolbarItems = new UIBarButtonItem[] {
+                ToolbarItems = new UIBarButtonItem [] {
                     new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
                     DeleteButton,
                     new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace)
                 };
             } else {
-                ToolbarItems = new UIBarButtonItem[] {
+                ToolbarItems = new UIBarButtonItem [] {
                     new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
                     // Mark multi select functionality not yet enabled
                     // MarkButton,
@@ -1202,8 +1202,8 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
-            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize(17.0f), Theme.Active.DefaultFont.WithSize(14.0f));
+            TableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
+            TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize (17.0f), Theme.Active.DefaultFont.WithSize (14.0f));
         }
 
         public void PrepareForSearching ()

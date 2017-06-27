@@ -124,7 +124,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             ReloadFolders ();
             AdoptTheme (Theme.Active);
-            if (Account.Id != NcApplication.Instance.Account.Id){
+            if (Account.Id != NcApplication.Instance.Account.Id) {
                 SwitchToAccount (NcApplication.Instance.Account);
             }
         }
@@ -364,7 +364,7 @@ namespace NachoClient.iOS
                 name = "folder-icon-archive";
             } else {
                 switch (folder.Type) {
-                    case Xml.FolderHierarchy.TypeCode.DefaultInbox_2:
+                case Xml.FolderHierarchy.TypeCode.DefaultInbox_2:
                     name = "folder-icon-inbox";
                     break;
                 case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
@@ -384,7 +384,7 @@ namespace NachoClient.iOS
                     break;
                 }
             }
-            return UIImage.FromBundle (name).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate);
+            return UIImage.FromBundle (name).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
         }
 
         #endregion
@@ -447,7 +447,7 @@ namespace NachoClient.iOS
             ReloadFolders ();
         }
 
-        private void ComposeMessageClicked(object sender, EventArgs e)
+        private void ComposeMessageClicked (object sender, EventArgs e)
         {
             ComposeMessage ();
         }
@@ -498,7 +498,7 @@ namespace NachoClient.iOS
                 DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
                 if (CanSelect) {
                     TextLabel.TextColor = theme.DefaultTextColor;
-                }else{
+                } else {
                     TextLabel.TextColor = theme.DisabledTextColor;
                 }
             }
