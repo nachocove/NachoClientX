@@ -323,7 +323,7 @@ namespace NachoClient.iOS
             public UIView BackgroundView { get; private set; }
             public UIView ContentView { get; private set; }
             public UIView ReplacedContentView { get; private set; }
-            public UIButton CancelButton { get; private set; }
+            public NcSimpleColorButton CancelButton { get; private set; }
             nfloat CancelContentSpacing = 8.0f;
             nfloat BackgroundPadding = 10.0f;
             public nfloat CornerRadius { get; private set; } = 13.0f;
@@ -335,7 +335,7 @@ namespace NachoClient.iOS
                 BackgroundColor = UIColor.Clear;
                 BackgroundView = new UIView ();
                 AddSubview (BackgroundView);
-                CancelButton = new UIButton (UIButtonType.Custom);
+                CancelButton = new NcSimpleColorButton ();
                 CancelButton.SetTitle ("Cancel", UIControlState.Normal);
                 CancelButton.ClipsToBounds = true;
                 CancelButton.Layer.CornerRadius = CornerRadius;
@@ -375,6 +375,7 @@ namespace NachoClient.iOS
                     (ContentView as ThemeAdopter).AdoptTheme (theme);
                 }
                 CancelButton.BackgroundColor = theme.ActionSheetItemBackgroundColor;
+                CancelButton.HighlightedColor = theme.ActionSheetItemBackgroundColor.ColorDarkenedByAmount (0.15f);
                 CancelButton.SetTitleColor (theme.ActionSheetItemTextColor, UIControlState.Normal);
                 CancelButton.TitleLabel.Font = theme.MediumDefaultFont.WithSize (17.0f);
             }
@@ -478,7 +479,7 @@ namespace NachoClient.iOS
     {
         UIDatePicker DatePicker;
         UIView DividerView;
-        UIButton SelectButton;
+        NcSimpleColorButton SelectButton;
         public nfloat CornerRadius { get; private set; } = 13.0f;
         public nfloat ButtonHeight { get; private set; } = 57.0f;
 
@@ -499,7 +500,7 @@ namespace NachoClient.iOS
             DividerView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             AddSubview (DividerView);
 
-            SelectButton = new UIButton (UIButtonType.Custom);
+            SelectButton = new NcSimpleColorButton ();
             SelectButton.Frame = new CGRect (0, DividerView.Frame.Y + DividerView.Frame.Height, Bounds.Width, ButtonHeight);
             SelectButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             SelectButton.SetTitle ("Use Date", UIControlState.Normal);
@@ -517,6 +518,8 @@ namespace NachoClient.iOS
             DividerView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
             SelectButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
             SelectButton.SetTitleColor (theme.ActionSheetItemTextColor, UIControlState.Normal);
+            SelectButton.BackgroundColor = theme.ActionSheetItemBackgroundColor;
+            SelectButton.HighlightedColor = theme.ActionSheetItemBackgroundColor.ColorDarkenedByAmount (0.15f);
         }
 
         public override CGSize IntrinsicContentSize {
