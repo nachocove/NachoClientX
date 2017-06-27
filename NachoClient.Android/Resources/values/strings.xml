@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     
     <string name="app_name">Nacho Mail</string>
@@ -112,6 +112,13 @@
     <string name="message_action_move">Move</string>
     <string name="message_action_archive">Archive</string>
     <string name="message_action_delete">Delete</string>
+
+    <!-- Calendar Invite View -->
+    <string name="calendar_invite_canceled">This event has been canceled</string>
+    <string name="calendar_invite_accept">Accept and add to calendar</string>
+    <string name="calendar_invite_tentative">Tentatively accept</string>
+    <string name="calendar_invite_decline">Decline</string>
+    <string name="calendar_invite_remove">Remove from calendar</string>
 
     <!-- Attachments View -->
     <string name="attachments_header_show_format">Show {0} attachments</string>

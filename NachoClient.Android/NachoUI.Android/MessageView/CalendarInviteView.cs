@@ -30,7 +30,7 @@ namespace NachoClient.AndroidClient
         }
 
         public event EventHandler<NcResponseType> Respond;
-        public event EventHandler<NcResponseType> Remove;
+        public event EventHandler Remove;
 
         ViewGroup ActionsView;
         ImageView IconView;
@@ -63,7 +63,7 @@ namespace NachoClient.AndroidClient
 
         void Initialize ()
         {
-            var view = LayoutInflater.From (Context).Inflate (Resource.Id.calendar_invite_view, this);
+            var view = LayoutInflater.From (Context).Inflate (Resource.Layout.CalendarInviteView, this);
             FindSubviews ();
         }
 
@@ -141,6 +141,11 @@ namespace NachoClient.AndroidClient
                     DetailTextLabel.Text = "";
                 }
             }
+            if (string.IsNullOrEmpty (DetailTextLabel.Text)) {
+                DetailTextLabel.Visibility = ViewStates.Gone;
+            } else {
+                DetailTextLabel.Visibility = ViewStates.Visible;
+            }
         }
 
         #endregion
@@ -164,7 +169,7 @@ namespace NachoClient.AndroidClient
 
         void _Remove (object sender, EventArgs e)
         {
-            Remove?.Invoke (this, NcResponseType.Accepted);
+            Remove?.Invoke (this, null);
         }
 
         #endregion

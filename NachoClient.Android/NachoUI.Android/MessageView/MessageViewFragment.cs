@@ -76,6 +76,7 @@ namespace NachoClient.AndroidClient
             ErrorLabel.Click += ErrorLabelClicked;
             AttachmentsView.SelectAttachment += AttachmentSelected;
             CalendarInviteView.Respond += CalendarResponded;
+            CalendarInviteView.Remove += CalendarRemoved;
         }
 
         void ClearSubviews ()
@@ -84,6 +85,7 @@ namespace NachoClient.AndroidClient
             ErrorLabel.Click -= ErrorLabelClicked;
             AttachmentsView.SelectAttachment -= AttachmentSelected;
             CalendarInviteView.Respond -= CalendarResponded;
+            CalendarInviteView.Remove -= CalendarRemoved;
             AttachmentsView.Cleanup ();
             HeaderView = null;
             BodyView = null;
@@ -249,6 +251,13 @@ namespace NachoClient.AndroidClient
         {
             var view = sender as CalendarInviteView;
             CalendarHelper.SendMeetingResponse (Message, view.MeetingRequest, response);
+            Archive ();
+        }
+
+        void CalendarRemoved (object sender, EventArgs e)
+        {
+            var view = sender as CalendarInviteView;
+            CalendarHelper.Remove (view.MeetingRequest);
             Archive ();
         }
 

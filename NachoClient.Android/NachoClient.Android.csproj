@@ -1024,6 +1024,31 @@
     <AndroidResource Include="Resources\drawable-mdpi\subject_hot_large.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\subject_hot_large.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\subject_hot_large.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_invite_action_accept.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_invite_action_decline.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_invite_action_maybe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_invite_cancel.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_invite_request.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_invite_response.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_invite_action_accept.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_invite_action_decline.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_invite_action_maybe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_invite_cancel.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_invite_request.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_invite_response.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_invite_action_accept.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_invite_action_decline.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_invite_action_maybe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_invite_cancel.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_invite_request.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_invite_response.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_action_accept.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_action_decline.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_action_maybe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_cancel.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_request.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_response.png" />
+    <AndroidResource Include="Resources\layout\CalendarInviteView.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
