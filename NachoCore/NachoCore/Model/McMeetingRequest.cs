@@ -81,6 +81,25 @@ namespace NachoCore.Model
             }
         }
 
+        public bool IsOnCalendar ()
+        {
+            if (Calendar != null) {
+                if (IsRecurring) {
+                    var exceptions = McException.QueryForExceptionId (Calendar.Id, RecurrenceId);
+                    return exceptions.Count == 0 || exceptions [0].Deleted == 0;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        [Ignore]
+        public bool IsRecurring {
+            get {
+                return RecurrenceId != DateTime.MinValue;
+            }
+        }
+
         // Recurrences that are stored in the database.
         private List<McRecurrence> dbRecurrences = null;
         // Recurrences that were set by the app, either the UI or sync.  They don't get saved to the database

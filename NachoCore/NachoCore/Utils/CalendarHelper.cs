@@ -325,6 +325,17 @@ namespace NachoCore.Utils
             }
         }
 
+        public static void Remove (McMeetingRequest request)
+        {
+            // Remove the item from the calendar.
+            if (DateTime.MinValue == request.RecurrenceId) {
+                BackEnd.Instance.DeleteCalCmd (request.Calendar.AccountId, request.Calendar.Id);
+            } else {
+                CalendarHelper.CancelOccurrence (request.Calendar, request.RecurrenceId);
+                BackEnd.Instance.UpdateCalCmd (request.Calendar.AccountId, request.Calendar.Id, sendBody: false);
+            }
+        }
+
         public static void MarkEventAsCancelled (McMeetingRequest eventInfo)
         {
             var cal = McCalendar.QueryByUID (eventInfo.AccountId, eventInfo.GetUID ());

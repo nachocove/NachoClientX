@@ -560,6 +560,13 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (animated: true);
         }
 
+        public void CalendarInviteViewDidRemove (CalendarInviteView view)
+        {
+            CalendarHelper.Remove (view.MeetingRequest);
+            ArchiveThisMessage ();
+            NavigationController.PopViewController (animated: true);
+        }
+
         #endregion
 
         #region Body Download

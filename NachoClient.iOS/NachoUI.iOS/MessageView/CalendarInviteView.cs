@@ -16,6 +16,7 @@ namespace NachoClient.iOS
     {
         void CalendarInviteViewDidChangeSize (CalendarInviteView view);
         void CalendarInviteViewDidRespond (CalendarInviteView view, NcResponseType response);
+        void CalendarInviteViewDidRemove (CalendarInviteView view);
     }
 
     public class CalendarInviteView : UIView, ThemeAdopter
@@ -60,6 +61,7 @@ namespace NachoClient.iOS
         NcSimpleColorButton AcceptButton;
         NcSimpleColorButton TentativeButton;
         NcSimpleColorButton DeclineButton;
+        NcSimpleColorButton RemoveButton;
         UIEdgeInsets ContentInsets = new UIEdgeInsets (10.0f, 0.0f, 10.0f, 14.0f);
         PressGestureRecognizer HeaderPressRecognizer;
         nfloat BorderWidth = 0.5f;
@@ -96,8 +98,6 @@ namespace NachoClient.iOS
                 AcceptButton.SetImage (image, UIControlState.Normal);
             }
             AcceptButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
-            AcceptButton.Frame = new CGRect (0.0f, 0.0f, ActionsView.Bounds.Width, ButtonHeight);
-            AcceptButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             ActionsView.AddSubview (AcceptButton);
 
             TentativeButton = new NcSimpleColorButton ();
@@ -107,8 +107,6 @@ namespace NachoClient.iOS
                 TentativeButton.SetImage (image, UIControlState.Normal);
             }
             TentativeButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
-            TentativeButton.Frame = new CGRect (0.0f, AcceptButton.Frame.Y + AcceptButton.Frame.Height, ActionsView.Bounds.Width, ButtonHeight);
-            TentativeButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             ActionsView.AddSubview (TentativeButton);
 
             DeclineButton = new NcSimpleColorButton ();
@@ -118,15 +116,21 @@ namespace NachoClient.iOS
                 DeclineButton.SetImage (image, UIControlState.Normal);
             }
             DeclineButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
-            DeclineButton.Frame = new CGRect (0.0f, TentativeButton.Frame.Y + TentativeButton.Frame.Height, ActionsView.Bounds.Width, ButtonHeight);
-            DeclineButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             ActionsView.AddSubview (DeclineButton);
 
-            ActionsView.Frame = new CGRect (0.0f, 0.0f, Bounds.Width, DeclineButton.Frame.Y + DeclineButton.Frame.Height);
+            RemoveButton = new NcSimpleColorButton ();
+            RemoveButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            RemoveButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+            using (var image = UIImage.FromBundle ("calendar-invite-action-decline")) {
+                RemoveButton.SetImage (image, UIControlState.Normal);
+            }
+            RemoveButton.TitleEdgeInsets = new UIEdgeInsets (0, 4.0f + IconMargin, 0, 0);
+            ActionsView.AddSubview (RemoveButton);
 
             AcceptButton.TouchUpInside += Accept;
             TentativeButton.TouchUpInside += Tentative;
             DeclineButton.TouchUpInside += Decline;
+            RemoveButton.TouchUpInside += Remove;
 
             SeparatorView = new UIView ();
             AddSubview (SeparatorView);
@@ -141,6 +145,7 @@ namespace NachoClient.iOS
             AcceptButton.TouchUpInside -= Accept;
             TentativeButton.TouchUpInside -= Tentative;
             DeclineButton.TouchUpInside -= Decline;
+            RemoveButton.TouchUpInside -= Remove;
         }
 
         public void AdoptTheme (Theme theme)
@@ -158,14 +163,18 @@ namespace NachoClient.iOS
             TentativeButton.HighlightedColor = UIColor.White.ColorDarkenedByAmount (0.15f);
             DeclineButton.BackgroundColor = UIColor.White;
             DeclineButton.HighlightedColor = UIColor.White.ColorDarkenedByAmount (0.15f);
+            RemoveButton.BackgroundColor = UIColor.White;
+            RemoveButton.HighlightedColor = UIColor.White.ColorDarkenedByAmount (0.15f);
 
             AcceptButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
             TentativeButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
             DeclineButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
+            RemoveButton.SetTitleColor (theme.TableViewTintColor, UIControlState.Normal);
 
             AcceptButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
             TentativeButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
             DeclineButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
+            RemoveButton.TitleLabel.Font = theme.DefaultFont.WithSize (17.0f);
         }
 
         void Update ()
@@ -178,13 +187,21 @@ namespace NachoClient.iOS
                 }
                 DetailTextLabel.Text = Pretty.MeetingResponse (Message);
             } else if (Message.IsMeetingCancelation) {
-                ActionsView.Hidden = true;
+                ActionsView.Hidden = !MeetingRequest.IsOnCalendar ();
+                AcceptButton.Hidden = true;
+                TentativeButton.Hidden = true;
+                DeclineButton.Hidden = true;
+                RemoveButton.Hidden = false;
                 using (var image = UIImage.FromBundle ("calendar-invite-cancel")) {
                     IconView.Image = image;
                 }
                 DetailTextLabel.Text = "This event has been canceled";
             } else {
                 ActionsView.Hidden = false;
+                AcceptButton.Hidden = false;
+                TentativeButton.Hidden = false;
+                DeclineButton.Hidden = false;
+                RemoveButton.Hidden = true;
                 using (var image = UIImage.FromBundle ("calendar-invite-request")) {
                     IconView.Image = image;
                 }
@@ -219,11 +236,19 @@ namespace NachoClient.iOS
             HeaderView.Frame = new CGRect (origin, new CGSize (Bounds.Width, headerSubviewOrigin.Y));
             origin.Y += HeaderView.Frame.Height;
             if (!ActionsView.Hidden) {
-                ActionsView.Frame = new CGRect (origin, new CGSize (Bounds.Width, ActionsView.Frame.Height));
+                var actionOrigin = new CGPoint (0.0f, 0.0f);
+                foreach (var button in ActionsView.Subviews) {
+                    if (!button.Hidden) {
+                        button.Frame = new CGRect (actionOrigin, new CGSize (Bounds.Width, ButtonHeight));
+                        actionOrigin.Y += button.Frame.Height;
+                    }
+                }
+                ActionsView.Frame = new CGRect (origin, new CGSize (Bounds.Width, actionOrigin.Y));
                 origin.Y += ActionsView.Frame.Height;
                 AcceptButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
                 TentativeButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
                 DeclineButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
+                RemoveButton.ContentEdgeInsets = new UIEdgeInsets (0, SeparatorInsets.Left, 0, 0);
             }
             SeparatorView.Frame = new CGRect (SeparatorInsets.Left, origin.Y, Bounds.Width - SeparatorInsets.Left, BorderWidth);
         }
@@ -279,6 +304,11 @@ namespace NachoClient.iOS
         void Decline (object sender, EventArgs e)
         {
             InviteDelegate?.CalendarInviteViewDidRespond (this, NcResponseType.Declined);
+        }
+
+        void Remove (object sender, EventArgs e)
+        {
+            InviteDelegate?.CalendarInviteViewDidRemove (this);
         }
     }
 }
