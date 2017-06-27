@@ -227,7 +227,7 @@ namespace NachoCore.Utils
 
             calendar = McCalendar.QueryById<McCalendar> (calendar.Id);
 
-            if (calendar.attendees.Count > 0){
+            if (calendar.attendees.Count > 0) {
                 var iCalPart = MimeRequestFromCalendar (calendar);
                 var mimeBody = CreateMime (calendar.PlainDescription, iCalPart, calendar.attachments);
                 SendInvites (account, calendar, null, null, mimeBody, null);
@@ -460,7 +460,7 @@ namespace NachoCore.Utils
         {
             //            Calendar c = CultureInfo.CurrentCulture.Calendar;
 
-            RecurrencePattern recurrence = new RecurrencePattern (FrequencyType.Yearly, 1);           
+            RecurrencePattern recurrence = new RecurrencePattern (FrequencyType.Yearly, 1);
             recurrence.Frequency = FrequencyType.Yearly;
             recurrence.ByMonth.Add (transition.Month);
             recurrence.ByHour.Add (transition.TimeOfDay.Hour);
@@ -538,7 +538,7 @@ namespace NachoCore.Utils
 
                     // Add the "daylight" time rule to the time zone
                     dday_tz.AddChild (dday_tzinfo_daylight);
-                }                
+                }
             }
 
             // If no time zone information was recorded, at least
@@ -548,7 +548,7 @@ namespace NachoCore.Utils
                 var dday_tzinfo_standard = new DDay.iCal.iCalTimeZoneInfo ();
                 dday_tzinfo_standard.Name = "STANDARD";
                 dday_tzinfo_standard.TimeZoneName = tzinfo.StandardName;
-                dday_tzinfo_standard.Start = earliest;                
+                dday_tzinfo_standard.Start = earliest;
                 dday_tzinfo_standard.OffsetFrom = new UTCOffset (utcOffset);
                 dday_tzinfo_standard.OffsetTo = new UTCOffset (utcOffset);
 
@@ -918,13 +918,13 @@ namespace NachoCore.Utils
             return attendeeList;
         }
 
-        public static McCalendar CreateMeeting (McEmailMessage message, DateTime startDate = default(DateTime))
+        public static McCalendar CreateMeeting (McEmailMessage message, DateTime startDate = default (DateTime))
         {
             var c = DefaultMeeting (startDate);
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
-//            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
-//            c.BodyId = dupBody.Id;
+            //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
+            //            c.BodyId = dupBody.Id;
 
             // Instead of grabbing the whole body from the email message, only the
             // text part (if there exists one) is added to the event description.
@@ -1059,8 +1059,8 @@ namespace NachoCore.Utils
                 }
                 return true;
             } catch (RecurrenceValidationException e) {
-                Log.Error (Log.LOG_CALENDAR, 
-                    "Invalid or unsupported recurrence for event {0}. Recurrences will not be generated for this event.: {1}", 
+                Log.Error (Log.LOG_CALENDAR,
+                    "Invalid or unsupported recurrence for event {0}. Recurrences will not be generated for this event.: {1}",
                     c.Subject, e.Message);
                 return false;
             }
@@ -1254,7 +1254,7 @@ namespace NachoCore.Utils
             var duration = eventEnd - eventStart;
 
             int maxOccurrences = r.OccurrencesIsSet ? r.Occurrences : int.MaxValue;
-            DateTime lastOccurrence = r.Until == default(DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
+            DateTime lastOccurrence = r.Until == default (DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
 
             int occurrence = 0;
 
@@ -1396,7 +1396,7 @@ namespace NachoCore.Utils
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
                     Account = ConstMcAccount.NotAccountSpecific,
-                    Tokens = new string[] { DateTime.Now.ToString () },
+                    Tokens = new string [] { DateTime.Now.ToString () },
                 });
             }, "ExpandRecurrences");
         }
@@ -1674,7 +1674,7 @@ namespace NachoCore.Utils
             // Find the DST adjustment for right now.
             DateTime now = DateTime.Now;
             TimeZoneInfo.AdjustmentRule currentAdjustment = null;
-            foreach (var adjustment in local.GetAdjustmentRules()) {
+            foreach (var adjustment in local.GetAdjustmentRules ()) {
                 if (adjustment.DateStart <= now && now < adjustment.DateEnd) {
                     currentAdjustment = adjustment;
                     break;
@@ -1705,7 +1705,7 @@ namespace NachoCore.Utils
             }
             return TimeZoneInfo.CreateCustomTimeZone (
                 local.Id, local.BaseUtcOffset, local.DisplayName, local.StandardName, local.DaylightName,
-                new TimeZoneInfo.AdjustmentRule[] { TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
+                new TimeZoneInfo.AdjustmentRule [] { TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
                         DateTime.MinValue.Date, DateTime.MaxValue.Date, currentAdjustment.DaylightDelta, dstStart, dstEnd)
                 });
         }
@@ -1767,7 +1767,7 @@ namespace NachoCore.Utils
                                  transitionToDaylight, transitionToStandard);
             var timeZone = TimeZoneInfo.CreateCustomTimeZone (
                                "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
-                               new TimeZoneInfo.AdjustmentRule[] { adjustment });
+                               new TimeZoneInfo.AdjustmentRule [] { adjustment });
             // See if March 7, 2014 is listed as being during daylight saving time.
             // If it is DST, then the runtime has the bug that we are looking for.
             return !timeZone.IsDaylightSavingTime (new DateTime (2014, 3, 7, 12, 0, 0, DateTimeKind.Unspecified));
@@ -1808,8 +1808,7 @@ namespace NachoCore.Utils
                 TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
                 if (null == adjustment ||
                     (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
-                        !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd)))
-                {
+                        !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
                     return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
                 }
                 DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
@@ -1835,7 +1834,7 @@ namespace NachoCore.Utils
         /// </summary>
         private static TimeZoneInfo.AdjustmentRule FindAdjustmentRule (TimeZoneInfo timeZone, DateTime local)
         {
-            foreach (var adjustment in timeZone.GetAdjustmentRules()) {
+            foreach (var adjustment in timeZone.GetAdjustmentRules ()) {
                 if (adjustment.DateStart < local && local <= adjustment.DateEnd) {
                     return adjustment;
                 }
@@ -1880,7 +1879,7 @@ namespace NachoCore.Utils
 
         public static string GetFirstName (string displayName)
         {
-            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string [] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (0 == names.Length || names [0] == null) {
                 return "";
             }
