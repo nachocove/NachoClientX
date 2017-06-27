@@ -52,9 +52,10 @@ namespace NachoCore.Utils
             }
         }
 
-        public bool VerifyExchangeCode (string code) {
+        public bool VerifyExchangeCode (string code)
+        {
             bool verified = CanCreateExchange || code.Equals (EnableExchangeCode, StringComparison.OrdinalIgnoreCase);
-            if (verified){
+            if (verified) {
                 McMutables.SetBool (McAccount.GetDeviceAccount ().Id, MutablesModule, CanCreateExchangeKey, true);
                 _CanCreateExchange = true;
             }
