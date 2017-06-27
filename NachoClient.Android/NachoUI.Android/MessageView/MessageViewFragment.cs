@@ -28,6 +28,11 @@ namespace NachoClient.AndroidClient
     public class MessageViewFragment : Fragment, MessageDownloadDelegate
     {
 
+        public interface Listener
+        {
+            void OnMessageViewFragmentArchive ();
+        }
+
         McEmailMessage _Message;
         public McEmailMessage Message {
             get {
@@ -50,11 +55,13 @@ namespace NachoClient.AndroidClient
         List<McAttachment> Attachments;
         NcEmailMessageBundle Bundle;
         MessageDownloader BodyDownloader;
+        WeakReference<Listener> WeakListener = new WeakReference<Listener> (null);
 
         #region Subviews
 
         MessageHeaderView HeaderView;
         AttachmentsView AttachmentsView;
+        CalendarInviteView CalendarInviteView;
         WebView BodyView;
         TextView ErrorLabel;
 
@@ -64,9 +71,11 @@ namespace NachoClient.AndroidClient
             BodyView = view.FindViewById (Resource.Id.webview) as WebView;
             ErrorLabel = view.FindViewById (Resource.Id.error_label) as TextView;
             AttachmentsView = view.FindViewById (Resource.Id.attachments_view) as AttachmentsView;
+            CalendarInviteView = view.FindViewById (Resource.Id.calendar_invite) as CalendarInviteView;
             HeaderView.Click += HeaderViewClicked;
             ErrorLabel.Click += ErrorLabelClicked;
             AttachmentsView.SelectAttachment += AttachmentSelected;
+            CalendarInviteView.Respond += CalendarResponded;
         }
 
         void ClearSubviews ()
@@ -74,6 +83,7 @@ namespace NachoClient.AndroidClient
             HeaderView.Click -= HeaderViewClicked;
             ErrorLabel.Click -= ErrorLabelClicked;
             AttachmentsView.SelectAttachment -= AttachmentSelected;
+            CalendarInviteView.Respond -= CalendarResponded;
             AttachmentsView.Cleanup ();
             HeaderView = null;
             BodyView = null;
@@ -102,6 +112,14 @@ namespace NachoClient.AndroidClient
             }
 
             return view;
+        }
+
+        public override void OnAttach (Context context)
+        {
+            base.OnAttach (context);
+            if (context is Listener) {
+                WeakListener.SetTarget (context as Listener);
+            }
         }
 
         public override void OnDestroyView ()
@@ -180,6 +198,18 @@ namespace NachoClient.AndroidClient
         {
             HeaderView.SetMessage (Message);
             AttachmentsView.Attachments = Attachments;
+            if (Attachments.Count == 0) {
+                AttachmentsView.Visibility = ViewStates.Gone;
+            } else {
+                AttachmentsView.Visibility = ViewStates.Visible;
+            }
+            CalendarInviteView.Message = Message;
+            CalendarInviteView.MeetingRequest = Message.MeetingRequest;
+            if (Message.MeetingRequest != null) {
+                CalendarInviteView.Visibility = ViewStates.Visible;
+            } else {
+                CalendarInviteView.Visibility = ViewStates.Gone;
+            }
         }
 
         void ShowDownloadErrorForResult (NcResult result)
@@ -215,6 +245,13 @@ namespace NachoClient.AndroidClient
             AttachmentHelper.OpenAttachment (Activity, e);
         }
 
+        void CalendarResponded (object sender, NcResponseType response)
+        {
+            var view = sender as CalendarInviteView;
+            CalendarHelper.SendMeetingResponse (Message, view.MeetingRequest, response);
+            Archive ();
+        }
+
         #endregion
 
         #region Private Helpers
@@ -223,6 +260,13 @@ namespace NachoClient.AndroidClient
         {
             var intent = MessageHeaderDetailActivity.BuildIntent (Activity, Message.Id);
             StartActivity (intent);
+        }
+
+        void Archive ()
+        {
+            if (WeakListener.TryGetTarget (out var listener)) {
+                listener.OnMessageViewFragmentArchive ();
+            }
         }
 
         #endregion

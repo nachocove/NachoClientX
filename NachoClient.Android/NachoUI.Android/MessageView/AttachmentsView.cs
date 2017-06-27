@@ -33,18 +33,13 @@ namespace NachoClient.AndroidClient
             set {
                 AttachmentsAdapter.Attachments = value;
                 IsExpanded = false;
-                if (value.Count == 0) {
-                    Visibility = ViewStates.Gone;
+                if (value.Count < NumberOfItemsToCollapse) {
+                    HeaderView.Visibility = ViewStates.Gone;
+                    AttachmentsListView.Visibility = ViewStates.Visible;
+                    IsExpanded = true;
                 } else {
-                    Visibility = ViewStates.Visible;
-                    if (value.Count < NumberOfItemsToCollapse) {
-                        HeaderView.Visibility = ViewStates.Gone;
-                        AttachmentsListView.Visibility = ViewStates.Visible;
-                        IsExpanded = true;
-                    } else {
-                        HeaderView.Visibility = ViewStates.Visible;
-                        AttachmentsListView.Visibility = ViewStates.Gone;
-                    }
+                    HeaderView.Visibility = ViewStates.Visible;
+                    AttachmentsListView.Visibility = ViewStates.Gone;
                 }
                 UpdateHeader ();
             }

@@ -22,7 +22,7 @@ namespace NachoClient.AndroidClient
 {
 
     [Activity ()]
-    public class MessageViewActivity : NcActivity
+    public class MessageViewActivity : NcActivity, MessageViewFragment.Listener
     {
 
         public const string EXTRA_MESSAGE_ID = "NachoClient.AndroidClient.MessageViewActivity.EXTRA_MESSAGE_ID";
@@ -113,9 +113,9 @@ namespace NachoClient.AndroidClient
         public override bool OnCreateOptionsMenu (IMenu menu)
         {
             MenuInflater.Inflate (Resource.Menu.message_view, menu);
-            if (Message.isHot ()){
+            if (Message.isHot ()) {
                 menu.FindItem (Resource.Id.hot).SetVisible (false);
-            }else{
+            } else {
                 menu.FindItem (Resource.Id.unhot).SetVisible (false);
             }
             return base.OnCreateOptionsMenu (menu);
@@ -213,6 +213,15 @@ namespace NachoClient.AndroidClient
             Message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (Message);
             MessageViewFragment.Update ();
             InvalidateOptionsMenu ();
+        }
+
+        #endregion
+
+        #region Fragment Listener
+
+        public void OnMessageViewFragmentArchive ()
+        {
+            Archive ();
         }
 
         #endregion
