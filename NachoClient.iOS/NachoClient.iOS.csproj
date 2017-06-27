@@ -411,9 +411,6 @@
     <Compile Include="NachoUI.iOS\AccountCreation\AccountAdvancedFieldsViewController.cs" />
     <Compile Include="NachoUI.iOS\Actions\ActionCell.cs" />
     <Compile Include="NachoUI.iOS\Actions\ActionCheckboxView.cs" />
-    <Compile Include="NachoUI.iOS\MessageView\BodyCalendarView.cs" />
-    <Compile Include="NachoUI.iOS\MessageView\BodyView.cs" />
-    <Compile Include="NachoUI.iOS\MessageView\BodyWebView.cs" />
     <Compile Include="NachoUI.iOS\Calendar\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Calendar\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactCellOld.cs" />
@@ -441,7 +438,6 @@
     <Compile Include="NachoUI.iOS\Settings\ExchangeFields.cs" />
     <Compile Include="NachoUI.iOS\Base\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Calendar\ICalendarTableViewSourceDelegate.cs" />
-    <Compile Include="NachoUI.iOS\MessageView\IBodyRender.cs" />
     <Compile Include="NachoUI.iOS\Calendar\iAttendeeTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Base\ImageAccessoryView.cs" />
     <Compile Include="NachoUI.iOS\Settings\IMapFields.cs" />
@@ -489,6 +485,10 @@
     <Compile Include="NachoPlatform.iOS\ConsoleLog.cs" />
     <Compile Include="NachoUI.iOS\Base\ActionSheetViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageView\CalendarInviteView.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\BodyCalendarView.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\BodyView.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\BodyWebView.cs" />
+    <Compile Include="NachoUI.iOS\Calendar\IBodyRender.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
