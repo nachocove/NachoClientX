@@ -17,7 +17,7 @@ namespace NachoCore.Utils
 
         private const string MutablesModule = "PermissionManager";
         private const string CanCreateExchangeKey = "CanCreateExchange";
-        private const string EnableExchangeCode = "CHANGEME";
+        private const string EnableExchangeCode = "NachoSupreme";
 
         private static PermissionManager _Instance;
         private static object Lock = new object ();
@@ -54,6 +54,7 @@ namespace NachoCore.Utils
 
         public bool VerifyExchangeCode (string code)
         {
+            code = code.Replace (" ", "");
             bool verified = CanCreateExchange || code.Equals (EnableExchangeCode, StringComparison.OrdinalIgnoreCase);
             if (verified) {
                 McMutables.SetBool (McAccount.GetDeviceAccount ().Id, MutablesModule, CanCreateExchangeKey, true);
