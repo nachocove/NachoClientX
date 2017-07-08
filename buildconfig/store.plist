@@ -26,7 +26,7 @@
 	<key>Android</key>
 	<dict>
 		<key>PackageName</key>
-		<string>com.nachocove.nachomail</string>
+		<string>com.nachocove.mail</string>
 		<key>IconDrawable</key>
 		<string>Icon</string>
 		<key>AppNameString</key>
@@ -38,7 +38,7 @@
 		<key>HockeyAppId</key>
 		<string></string>
 		<key>SigningKeystore</key>
-		<string>com.nachocove.nachomail</string>
+		<string>com.nachocove.mail.upload</string>
 	</dict>
 	<key>AWS</key>
 	<dict>

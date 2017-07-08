@@ -151,8 +151,7 @@ class BuildConfig(DictWrappedObject):
             FileProvider=None,
             BackupAPIKey=None,
             HockeyAppAppId=None,
-            SigningKeystore=None,
-            SigningKeystoreAlias=None
+            SigningKeystore=None
         ),
         AWS=dict(
             Prefix=None,
