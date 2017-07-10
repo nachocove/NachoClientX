@@ -28,35 +28,6 @@
     <MtouchDebug>true</MtouchDebug>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py ios</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>make</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>make clean</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
     <MtouchArch>i386, x86_64</MtouchArch>
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
@@ -77,35 +48,6 @@
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_build_info.py ios</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>make</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>make clean</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
     <MtouchProfiling>true</MtouchProfiling>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
@@ -122,33 +64,24 @@
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>${SolutionDir}/scripts/mk_log_settings.py </command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>BeforeBuild</type>
-          <command>make</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>rm -f LogSettings.cs</command>
-          <workingdir>${ProjectDir}</workingdir>
-        </Command>
-        <Command>
-          <type>AfterClean</type>
-          <command>make clean</command>
-          <workingdir>${ProjectDir}/../native.iOS</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
+  <Target Name="BuildDevBuildSettings">
+    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py ios" WorkingDirectory="$(ProjectDir)"/>
+  </Target>
+  <Target Name="BuildNachoLogSettings">
+    <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)"/>
+  </Target>
+  <Target Name="BuildNachoNative">
+    <Exec Command="make" WorkingDirectory="$(ProjectDir)/../native.iOS"/>
+  </Target>
+  <Target Name="CleanNachoLogSettings">
+    <Exec Command="rm -rf LogSettings.cs" WorkingDirectory="$(ProjectDir)"/>
+  </Target>
+  <Target Name="CleanNachoNative">
+    <Exec Command="make clean" WorkingDirectory="$(ProjectDir)/../native.iOS"/>
+  </Target>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -1656,4 +1589,22 @@
     <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\calendar-invite-action-decline%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\calendar-invite-action-decline.imageset\calendar-invite-action-decline%403x.png" />
   </ItemGroup>
+  <PropertyGroup>
+    <BuildDependsOn>
+      BuildNachoLogSettings;
+      BuildNachoNative;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+    <CleanDependsOn>
+      $(CleanDependsOn);
+      CleanNachoLogSettings;
+      CleanNachoNative;
+    </CleanDependsOn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' ">
+    <BuildDependsOn>
+      BuildDevBuildSettings;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+  </PropertyGroup>
 </Project>
