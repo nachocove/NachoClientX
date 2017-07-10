@@ -541,7 +541,7 @@ class AndroidBuilder(object):
 
     def sign(self):
         keystore = self.config.Android.SigningKeystore
-        signed_apk = os.path.join(self.output_path, 'NachoMail-signed-%s' % self.build.tag)
+        signed_apk = os.path.join(self.output_path, 'NachoMail-%s-signed.apk' % self.build.tag)
         with tempfile.NamedTemporaryFile(suffix=".apk") as temp_apk:
             build_tools = self.get_build_tools_root()
             cmd = command.Command(os.path.join(build_tools, 'zipalign'), '-f', '-p', '4', self.unsigned_apk, temp_apk.name)
