@@ -548,9 +548,16 @@ class AndroidBuilder(object):
             cmd.execute()
             keystore = os.path.join(os.getenv('HOME'), 'Library', 'Developer', 'Xamarin', 'Keystore', self.config.Android.SigningKeystore, "%s.keystore" % self.config.Android.SigningKeystore)
             cmd = command.Command(os.path.join(build_tools, 'apksigner'), 'sign', '--ks', keystore, '--out', signed_apk, temp_apk.name)
-            password = self.get_keystore_password()
-            cmd.stdin = password
-            cmd.execute()
+            attempts = 0
+            password_success = False
+            while attempts < 3 and not password_success:
+                password = self.get_keystore_password()
+                cmd.stdin = password
+                try:
+                    cmd.execute()
+                    password_success = True
+                except command.CommandError:
+                    attempts += 1
             if not os.path.exists(signed_apk):
                 raise Exception("Signed APK not created")
         self.signed_apk = signed_apk
@@ -589,7 +596,7 @@ class AndroidBuilder(object):
             if has_keyring:
                 keyring.set_password("system", key_name, password)
             else:
-                print "To avoid repeat entry, run $ pip install keyring"
+                print "To avoid password entry each time you build, run $ pip install keyring"
         return password
 
 
