@@ -327,7 +327,7 @@ class Builder(object):
         all_repos = repos.all_repos()
         for repo in all_repos:
             repo.create_tag(self.build.tag)
-            repo.push(self.build_tag)
+            repo.push(self.build.tag)
         self.outputs.append(('git tag:', self.build.tag))
 
     def build_ios(self):

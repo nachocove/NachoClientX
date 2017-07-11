@@ -254,7 +254,7 @@ def command_create_tag(args):
     repos = all_repos()
     for repo in repos:
         print "Creating tag %s on %s..." % (tag, repo.name)
-        repo.tag(tag, message)
+        repo.create_tag(tag)
     print "\nDone"
 
 
@@ -271,7 +271,7 @@ def command_delete_tag(args):
     repos = all_repos()
     for repo in repos:
         print "Deleting tag %s with %s..." % (tag, repo.name)
-        repo.tag(tag, message)
+        repo.delete_tag(tag, message)
     print "\nDone"
 
 
