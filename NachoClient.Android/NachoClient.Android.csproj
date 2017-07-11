@@ -40,32 +40,32 @@
     <AndroidEnableMultiDex>true</AndroidEnableMultiDex>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
+    <DebugType></DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
     <ConsolePause>false</ConsolePause>
-    <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
+    <AndroidSupportedAbis>armeabi-v7a;arm64-v8a</AndroidSupportedAbis>
     <MandroidI18n>cjk;mideast;other;rare;west</MandroidI18n>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <AotAssemblies>true</AotAssemblies>
   </PropertyGroup>
   <Target Name="BuildDevBuildSettings">
-    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py android" WorkingDirectory="$(ProjectDir)"/>
+    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py android" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="BuildNachoNative">
-    <Exec Command="bash -cl make" WorkingDirectory="$(ProjectDir)/../native.Android"/>
+    <Exec Command="bash -cl make" WorkingDirectory="$(ProjectDir)/../native.Android" />
   </Target>
   <Target Name="BuildNachoLogSettings">
-    <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)"/>
+    <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="CleanNachoNative">
-    <Exec Command="make clean" WorkingDirectory="$(ProjectDir)/../native.Android"/>
+    <Exec Command="make clean" WorkingDirectory="$(ProjectDir)/../native.Android" />
   </Target>
   <Target Name="CleanNachoLogSettings">
-    <Exec Command="rm -f LogSettings.cs" WorkingDirectory="$(ProjectDir)"/>
+    <Exec Command="rm -f LogSettings.cs" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <ItemGroup>
     <Reference Include="System" />
