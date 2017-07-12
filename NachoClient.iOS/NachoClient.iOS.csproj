@@ -65,22 +65,22 @@
     <IpaPackageName>
     </IpaPackageName>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-    <MtouchDebug>true</MtouchDebug>
+    <MtouchDebug>false</MtouchDebug>
   </PropertyGroup>
   <Target Name="BuildDevBuildSettings">
-    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py ios" WorkingDirectory="$(ProjectDir)"/>
+    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py ios" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="BuildNachoLogSettings">
-    <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)"/>
+    <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="BuildNachoNative">
-    <Exec Command="make" WorkingDirectory="$(ProjectDir)/../native.iOS"/>
+    <Exec Command="make" WorkingDirectory="$(ProjectDir)/../native.iOS" />
   </Target>
   <Target Name="CleanNachoLogSettings">
-    <Exec Command="rm -rf LogSettings.cs" WorkingDirectory="$(ProjectDir)"/>
+    <Exec Command="rm -rf LogSettings.cs" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="CleanNachoNative">
-    <Exec Command="make clean" WorkingDirectory="$(ProjectDir)/../native.iOS"/>
+    <Exec Command="make clean" WorkingDirectory="$(ProjectDir)/../native.iOS" />
   </Target>
   <ItemGroup>
     <Reference Include="System" />
