@@ -51,10 +51,10 @@ namespace NachoClient.iOS
             new SwipeActionDescriptor (RESEND_INVITE_TAG, 0.25f, UIImage.FromBundle ("files-forward-swipe"),
                 "Send Invite", A.Color_NachoeSwipeForward);
         private static SwipeActionDescriptor MAKE_REQUIRED_BUTTON =
-            new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("calendar-calendar-attendee-required-swipe"),
+            new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("calendar-attendee-required-swipe"),
                 "Required", A.Color_NachoSwipeDialIn);
         private static SwipeActionDescriptor MAKE_OPTIONAL_BUTTON =
-            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("calendar-calendar-attendee-optional-swipe"),
+            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("calendar-attendee-optional-swipe"),
                 "Optional", A.Color_NachoSwipeEmailMove);
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),

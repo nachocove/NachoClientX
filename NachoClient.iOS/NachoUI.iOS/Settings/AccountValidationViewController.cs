@@ -28,7 +28,6 @@ namespace NachoClient.iOS
         UITextField serviceField;
         UITextField passwordField;
         UIButton submitButton;
-        UIImageView loginTriangles;
 
         UIView contentView;
         UIScrollView scrollView;
@@ -178,14 +177,6 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (contentView).Height (yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
-
-            // Anchor loginTriangles on the bottom
-            loginTriangles = new UIImageView ();
-            using (var bootImage = UIImage.FromBundle (Util.GetImage ("Bootscreen-5"))) {
-                loginTriangles.Image = bootImage;
-            }
-            loginTriangles.Frame = new CGRect (0, View.Frame.Height - loginTriangles.Image.Size.Height, loginTriangles.Image.Size.Width, loginTriangles.Image.Size.Height);
-            View.AddSubview (loginTriangles);
 
         }
 
