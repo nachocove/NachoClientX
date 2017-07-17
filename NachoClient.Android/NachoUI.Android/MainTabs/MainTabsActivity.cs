@@ -24,7 +24,7 @@ using NachoClient.Build;
 namespace NachoClient.AndroidClient
 {
 
-    [Android.App.Activity (MainLauncher = true, Label = BuildInfo.AppNameString, Icon = BuildInfo.IconDrawable, LaunchMode = Android.Content.PM.LaunchMode.SingleTop)]
+    [Android.App.Activity (MainLauncher = true, Label = BuildInfo.AppNameString, Icon = BuildInfo.IconDrawable, RoundIcon = BuildInfo.RoundIconDrawable, LaunchMode = Android.Content.PM.LaunchMode.SingleTop)]
     public class MainTabsActivity : NcActivity
     {
         private const string ACTION_SHOW_SETUP = "NachocClient.AndroidClient.MainTabsActivity.ACTION_SHOW_SETUP";
@@ -218,7 +218,7 @@ namespace NachoClient.AndroidClient
 
         public override bool OnCreateOptionsMenu (IMenu menu)
         {
-            if (ShowAlertItem){
+            if (ShowAlertItem) {
                 var item = menu.Add (0, Resource.Id.settings_alert, 1, Resource.String.main_item_settings_alert);
                 item.SetIcon (Resource.Drawable.action_alert);
                 item.SetShowAsAction (ShowAsAction.Always);
@@ -549,7 +549,7 @@ namespace NachoClient.AndroidClient
 
         void StopListeningForStatusInd ()
         {
-            if (IsListeningForStatusInd){
+            if (IsListeningForStatusInd) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
                 IsListeningForStatusInd = false;
             }
@@ -558,15 +558,15 @@ namespace NachoClient.AndroidClient
         void StatusIndEventHandler (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-			if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
-				UpdateSettingsBadge ();
-			}
-			if (NcResult.SubKindEnum.Error_PasswordWillExpire == s.Status.SubKind) {
-				UpdateSettingsBadge ();
-			}
-			if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
-				UpdateSettingsBadge ();
-			}
+            if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
+                UpdateSettingsBadge ();
+            }
+            if (NcResult.SubKindEnum.Error_PasswordWillExpire == s.Status.SubKind) {
+                UpdateSettingsBadge ();
+            }
+            if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
+                UpdateSettingsBadge ();
+            }
         }
 
         #endregion
@@ -582,7 +582,7 @@ namespace NachoClient.AndroidClient
             } else {
                 Toolbar.Title = account.DisplayName;
             }
-            int size = (int)Math.Round(40.0 * Resources.DisplayMetrics.Density);
+            int size = (int)Math.Round (40.0 * Resources.DisplayMetrics.Density);
             var image = Util.GetSizedAndRoundedAccountImage (this, account, size);
             SupportActionBar.SetHomeAsUpIndicator (image);
             UpdateUnreadIndicator ();

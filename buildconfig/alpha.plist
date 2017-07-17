@@ -27,6 +27,8 @@
 		<string>com.nachocove.nachomail.alpha</string>
 		<key>IconDrawable</key>
 		<string>IconAlpha</string>
+		<key>RoundIconDrawable</key>
+		<string>IconAlphaRounded</string>
 		<key>AppNameString</key>
 		<string>app_name_alpha</string>
 		<key>BackupAPIKey</key>

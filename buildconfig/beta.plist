@@ -27,6 +27,8 @@
 		<string>com.nachocove.nachomail.beta</string>
 		<key>IconDrawable</key>
 		<string>IconBeta</string>
+		<key>RoundIconDrawable</key>
+		<string>IconBetaRounded</string>
 		<key>AppNameString</key>
 		<string>app_name_beta</string>
 		<key>BackupAPIKey</key>

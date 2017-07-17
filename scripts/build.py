@@ -147,6 +147,7 @@ class BuildConfig(DictWrappedObject):
         Android=dict(
             PackageName=None,
             IconDrawable='Icon',
+            RoundIconDrawable='IconRounded',
             AppNameString='app_name',
             FileProvider=None,
             BackupAPIKey=None,
@@ -500,7 +501,9 @@ class AndroidBuilder(object):
         infofile.add('FileProvider', self.config.Android.FileProvider)
         infofile.add('AppNameString', "@string/%s" % self.config.Android.AppNameString)
         infofile.add('IconDrawable', "@drawable/%s" % self.config.Android.IconDrawable)
+        infofile.add('RoundIconDrawable', "@drawable/%s" % self.config.Android.RoundIconDrawable)
         infofile.add_code("public static int IconResource { get { return NachoClient.AndroidClient.Resource.Drawable.%s; } }" % self.config.Android.IconDrawable)
+        infofile.add_code("public static int RoundIconResource { get { return NachoClient.AndroidClient.Resource.Drawable.%s; } }" % self.config.Android.RoundIconDrawable)
         infofile.add_code("public static int AppNameResource { get { return NachoClient.AndroidClient.Resource.String.%s; } }" % self.config.Android.AppNameString)
         infofile.write(path)
 

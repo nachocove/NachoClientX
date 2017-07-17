@@ -1013,6 +1013,18 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_request.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\calendar_invite_response.png" />
     <AndroidResource Include="Resources\layout\CalendarInviteView.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\IconRounded.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\IconRounded.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\IconRounded.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\IconRounded.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\IconAlphaRounded.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\IconBetaRounded.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\IconAlphaRounded.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\IconBetaRounded.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\IconAlphaRounded.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\IconBetaRounded.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\IconAlphaRounded.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\IconBetaRounded.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

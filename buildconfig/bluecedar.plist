@@ -27,6 +27,8 @@
 		<string>com.nachocove.mail</string>
 		<key>IconDrawable</key>
 		<string>Icon</string>
+		<key>RoundIconDrawable</key>
+		<string>IconRounded</string>
 		<key>AppNameString</key>
 		<string>app_name</string>
 		<key>BackupAPIKey</key>
