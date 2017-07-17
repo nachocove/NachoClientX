@@ -89,5 +89,11 @@
 	<string>This allows you to choose contacts from your address book in addition to your connected email accounts.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This allows you to attach photos from your photo library</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>de</string>
+	</array>
 </dict>
 </plist>

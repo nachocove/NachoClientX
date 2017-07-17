@@ -1,0 +1,23 @@
+﻿/* A welcome message for the user when their account creation is in progress */
+"Welcome Back!  We need to finish setting up your account." = "Welcome Back!  We need to finish setting up your account.";
+
+/* Action button to continue when account creation is in progress */
+"Continue" = "Continue";
+
+/* action button to start account creation */
+"Get Started" = "Get Started";
+
+/* A welcome message to the user on first launch */
+"Start by choosing your email service provider" = "Start by choosing your email service provider";
+
+/* Welcome message with generic company name */
+"Start by setting up your company account." = "Start by setting up your company account.";
+
+/* Welcome message with specific company name */
+"Start by setting up your {0} account." = "Start by setting up your {0} account.";
+
+/* MDM error message with generic company name */
+"Please contact the administrator for your company account.  We received an invalid configuration." = "Please contact the administrator for your company account.  We received an invalid configuration.";
+
+/* MDM error message with specific company name */
+"Please contact the administrator for your {0} account.  We received an invalid configuration." = "Please contact the administrator for your {0} account.  We received an invalid configuration.";

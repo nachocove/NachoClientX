@@ -426,6 +426,8 @@
 
     <Folder Include="Resources\Images.xcassets\Loginscreen-2.imageset\" />
     <Folder Include="Resources\Images.xcassets\Loginscreen-3.imageset\" />
+    <Folder Include="Resources\Base.lproj\" />
+    <Folder Include="Resources\de.lproj\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -687,6 +689,8 @@
     <BundleResource Include="Resources\chat-email.html" />
     <BundleResource Include="Resources\LegalInfo.html" />
     <BundleResource Include="Resources\ReleaseNotes.html" />
+    <BundleResource Include="Resources\Base.lproj\Localizable.strings" />
+    <BundleResource Include="Resources\de.lproj\Localizable.strings" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">

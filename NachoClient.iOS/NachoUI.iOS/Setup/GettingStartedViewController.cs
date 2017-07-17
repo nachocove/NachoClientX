@@ -34,7 +34,7 @@ namespace NachoClient.iOS
         private UIStoryboard _accountStoryboard;
 
         private UIStoryboard accountStoryboard {
-            get { 
+            get {
                 if (_accountStoryboard == null) {
                     _accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
                 }
@@ -44,7 +44,7 @@ namespace NachoClient.iOS
 
         AccountSyncingViewController syncingViewController;
         EventHandler StartEventHandler;
-        byte[] prefetchedImageBytes = null;
+        byte [] prefetchedImageBytes = null;
 
         #endregion
 
@@ -95,8 +95,8 @@ namespace NachoClient.iOS
             EventHandler startEventHandler = null;
             if (accountBeingConfigured != null) {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with account being configured (or just tutorial left)");
-                introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
-                getStartedButton.SetTitle ("Continue", UIControlState.Normal);
+                introLabel.Text = NSBundle.MainBundle.LocalizedString ("Welcome Back!  We need to finish setting up your account.", "A welcome message for the user when their account creation is in progress");
+                getStartedButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Continue", "Action button to continue when account creation is in progress"), UIControlState.Normal);
                 if (accountBeingConfigured != null) {
                     startEventHandler = ShowAccountBeingConfigured;
                 } else {
@@ -107,13 +107,16 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with mdm account");
                     var companyName = NcMdmConfig.Instance.BrandingName;
                     if (String.IsNullOrEmpty (companyName)) {
-                        companyName = "company";
+                        introLabel.Text = NSBundle.MainBundle.LocalizedString ("Start by setting up your company account.", "Welcome message with generic company name");
+                    } else {
+                        var format = NSBundle.MainBundle.LocalizedString ("Start by setting up your {0} account.", "Welcome message with specific company name");
+                        introLabel.Text = String.Format (format, companyName);
                     }
                     if (!String.IsNullOrEmpty (NcMdmConfig.Instance.BrandingLogoUrl)) {
                         PrefetchAccountImageUrl (new NSUrl (NcMdmConfig.Instance.BrandingLogoUrl));
                     }
                     introLabel.Text = String.Format ("Start by setting up your {0} account.", companyName);
-                    getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
+                    getStartedButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Get Started", "action button to start account creation"), UIControlState.Normal);
                     startEventHandler = ShowMDMAccount;
                 } else {
                     // The user is stuck here at a dead end until their MDM profile is fixed.  Will we be relaunched, or do we need to
@@ -121,15 +124,18 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with invalid mdm account");
                     var companyName = NcMdmConfig.Instance.BrandingName;
                     if (String.IsNullOrEmpty (companyName)) {
-                        companyName = "company";
+                        introLabel.Text = NSBundle.MainBundle.LocalizedString ("Please contact the administrator for your company account.  We received an invalid configuration.", "MDM error message with generic company name");
+                    }else{
+                        var format = NSBundle.MainBundle.LocalizedString ("Please contact the administrator for your {0} account.  We received an invalid configuration.", "MDM error message with specific company name");
+                        introLabel.Text = String.Format (format, companyName);
                     }
-                    introLabel.Text = String.Format ("Please contact the administrator for your {0} account.  We received an invalid configuration.", companyName);
+                    
                     getStartedButton.Hidden = true;
                 }
             } else {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with no account");
-                introLabel.Text = "Start by choosing your email service provider";
-                getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
+                introLabel.Text = NSBundle.MainBundle.LocalizedString ("Start by choosing your email service provider", "A welcome message to the user on first launch");
+                getStartedButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Get Started", "action button to start account creation"), UIControlState.Normal);
                 startEventHandler = ShowAccountTypeChooser;
             }
             if (StartEventHandler != null) {
@@ -230,7 +236,7 @@ namespace NachoClient.iOS
         {
             try {
                 var httpClient = new System.Net.Http.HttpClient ();
-                byte[] imageBytes = await httpClient.GetByteArrayAsync (url);
+                byte [] imageBytes = await httpClient.GetByteArrayAsync (url);
                 // this line will throw an exception if the native UIImage can't be constructed
                 new UIImage (NSData.FromArray (imageBytes));
                 // so if we get here, we know the bytes are a valid image
