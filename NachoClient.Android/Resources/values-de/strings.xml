@@ -7,20 +7,20 @@
     <string name="app_name_alpha">Nacho Alpha</string>
 
     <!-- Startup -->
-    <string name="startup_welcome">Welcome to</string>
-    <string name="startup_incompatible_version">Incompatible Version</string>
-    <string name="startup_incompatible_message">Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.</string>
+    <string name="startup_welcome">Willkommen bei</string>
+    <string name="startup_incompatible_version">Inkompatible Version</string>
+    <string name="startup_incompatible_message">Das Ausführen dieser älteren Version führt zu einem inkompatiblen Downgrade von der zuvor installierten Version. Bitte installieren Sie eine neuere Version der App.</string>
     <string name="startup_loading_compose">Loading Nacho Mail</string>
 
     <!-- Welcome -->
-    <string name="welcome_get_started">Start by choosing your email service provider</string>
-    <string name="welcome_mdm_format">Start by setting up your {0} account.</string>
-    <string name="welcome_mdm_generic">Start by setting up your company account.</string>
-    <string name="welcome_continue">Welcome Back!  We need to finish setting up your account.</string>
-    <string name="welcome_continue_action">Continue</string>
+    <string name="welcome_get_started">Beginnen Sie mit der Auswahl Ihres E-Mail-Dienstanbieters</string>
+    <string name="welcome_mdm_format">Beginnen Sie mit der Einrichtung Ihres {0}-Kontos</string>
+    <string name="welcome_mdm_generic">Beginnen Sie mit der Einrichtung Ihres Firmenkontos.</string>
+    <string name="welcome_continue">Willkommen zurück! Wir müssen die Einrichtung Ihres Kontos beenden.</string>
+    <string name="welcome_continue_action">Fortsetzen</string>
 
     <!-- Account Creation Choose Provider -->
-    <string name="choose_provider_title">Choose Provider</string>
+    <string name="choose_provider_title">Wählen Sie Anbieter</string>
 
     <!-- Account Creation Exchange Enable -->
     <string name="exchange_enable_message">Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts</string>

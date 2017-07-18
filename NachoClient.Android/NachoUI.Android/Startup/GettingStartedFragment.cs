@@ -93,9 +93,13 @@ namespace NachoClient.AndroidClient
         void UpdateTextView ()
         {
             if (NcMdmConfig.Instance.IsPopulated && null == McAccount.GetMDMAccount ()) {
-                var messageFormat = GetString (Resource.String.welcome_mdm_format);
-                var name = String.IsNullOrEmpty (NcMdmConfig.Instance.BrandingName) ? GetString (Resource.String.welcome_company) : NcMdmConfig.Instance.BrandingName;
-                TextView.Text = String.Format (messageFormat, name);
+                var name = NcMdmConfig.Instance.BrandingName;
+                if (String.IsNullOrEmpty (name)){
+                    TextView.SetText (Resource.String.welcome_mdm_generic);
+                }else{
+                    var messageFormat = GetString (Resource.String.welcome_mdm_format);
+                    TextView.Text = String.Format (messageFormat, name);
+                }
             } else {
                 var account = McAccount.GetAccountBeingConfigured ();
                 var welcomeResource = (account == null ? Resource.String.welcome_get_started : Resource.String.welcome_continue);
