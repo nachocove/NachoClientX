@@ -46,7 +46,7 @@
     <WarningLevel>4</WarningLevel>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
     <ConsolePause>false</ConsolePause>
-    <AndroidSupportedAbis>armeabi-v7a;arm64-v8a;armeabi</AndroidSupportedAbis>
+    <AndroidSupportedAbis>armeabi-v7a;arm64-v8a</AndroidSupportedAbis>
     <MandroidI18n>cjk;mideast;other;rare;west</MandroidI18n>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <AotAssemblies>true</AotAssemblies>
