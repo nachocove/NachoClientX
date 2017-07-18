@@ -81,7 +81,7 @@ namespace NachoCore.Utils
             if (sendResult != null) {
                 // Send status ind because the message is in the outbox
                 var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Status = result,
                     Account = McAccount.QueryById<McAccount> (messageToSend.AccountId),
                 });
@@ -141,7 +141,7 @@ namespace NachoCore.Utils
             }
             // Send status ind after the message is deleted (and unlinked).
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = McAccount.QueryById<McAccount> (accountId),
             });
@@ -160,7 +160,7 @@ namespace NachoCore.Utils
             draftsFolder.Link (message);
             // Send status ind after the message is moved
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
@@ -182,7 +182,7 @@ namespace NachoCore.Utils
             message.Delete ();
             // Send status ind after the message is deleted (and unlinked).
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
@@ -205,7 +205,7 @@ namespace NachoCore.Utils
             }
             // Send status ind because the drafts folder has changed
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
@@ -216,7 +216,7 @@ namespace NachoCore.Utils
             message.Delete ();
             // Send status ind after the message is deleted (and unlinked).
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
@@ -232,7 +232,7 @@ namespace NachoCore.Utils
             }
             // Send status ind after the message is deleted (and unlinked).
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
@@ -377,7 +377,8 @@ namespace NachoCore.Utils
             FailBadPort,
             FailBadHost,
             FailBadScheme,
-            FailHadUsername}
+            FailHadUsername
+        }
 
         ;
 
@@ -553,7 +554,7 @@ namespace NachoCore.Utils
                 return true;
             }
 
-            var parameters = urlString.Substring (queryIndex + 1).Split (new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+            var parameters = urlString.Substring (queryIndex + 1).Split (new char [] { '&' }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var parameter in parameters) {
                 if (parameter.StartsWith ("to=", StringComparison.OrdinalIgnoreCase)) {
@@ -706,7 +707,7 @@ namespace NachoCore.Utils
             return AddressList (NcEmailAddress.Kind.Cc, exclusions, toString, ccString);
         }
 
-        public static List<NcEmailAddress> AddressList (NcEmailAddress.Kind kind, List<string> exclusions, params string[] addressStrings)
+        public static List<NcEmailAddress> AddressList (NcEmailAddress.Kind kind, List<string> exclusions, params string [] addressStrings)
         {
             if (exclusions == null) {
                 exclusions = new List<string> ();
@@ -787,7 +788,7 @@ namespace NachoCore.Utils
             if (String.IsNullOrEmpty (s)) {
                 return s;
             }
-            string[] lines = s.Split (new Char[] { '\n' });
+            string [] lines = s.Split (new Char [] { '\n' });
             StringBuilder builder = new StringBuilder ();
 
             // If the split pattern matches the tail of s,
@@ -865,7 +866,7 @@ namespace NachoCore.Utils
             return subject;
         }
 
-        static MessageDeferralType[] SubjectDeferralTypes = new MessageDeferralType[] {
+        static MessageDeferralType [] SubjectDeferralTypes = new MessageDeferralType [] {
             MessageDeferralType.OneHour,
             MessageDeferralType.EndOfDay,
             MessageDeferralType.Tomorrow,
@@ -888,7 +889,7 @@ namespace NachoCore.Utils
                 }
             }
             if (intent != McEmailMessage.IntentType.None) {
-                var parts = remainingSubject.Split (new char[] { '-' }, 2);
+                var parts = remainingSubject.Split (new char [] { '-' }, 2);
                 string possibleDate = "";
                 if (parts.Length == 2) {
                     possibleDate = parts [0].Trim ();
@@ -936,12 +937,12 @@ namespace NachoCore.Utils
             if (null != referencedMessage) {
                 mimeMessage.InReplyTo = referencedMessage.MessageID;
                 if (null != referencedMessage.References) {
-                    foreach (var reference in referencedMessage.References.Split('\n')) {
+                    foreach (var reference in referencedMessage.References.Split ('\n')) {
                         mimeMessage.References.Add (reference);
                     }
                 }
                 if (null != referencedMessage.InReplyTo) {
-                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences(referencedMessage.InReplyTo)) {
+                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences (referencedMessage.InReplyTo)) {
                         if (!mimeMessage.References.Contains (reference)) {
                             mimeMessage.References.Add (reference);
                         }
@@ -954,14 +955,14 @@ namespace NachoCore.Utils
         {
             switch (showUnread) {
             case ShowUnreadEnum.AllMessages:
-                return DateTime.MinValue.AddDays(2);  // Some code will subtract a day from this value
+                return DateTime.MinValue.AddDays (2);  // Some code will subtract a day from this value
             case ShowUnreadEnum.TodaysMessages:
                 return DateTime.Now.Date.ToUniversalTime ();  // midnight
             case ShowUnreadEnum.RecentMessages:
                 // Get the last 'switch away' time.
                 // If the account 'switch away' time is not set, return the last background time.
                 var switchAwayTime = LoginHelpers.GetSwitchAwayTime (accountId);
-                if (default(DateTime) == switchAwayTime) {
+                if (default (DateTime) == switchAwayTime) {
                     return LoginHelpers.GetBackgroundTime ();
                 } else {
                     return switchAwayTime;
@@ -1013,9 +1014,9 @@ namespace NachoCore.Utils
         {
             var account = McAccount.GetUnifiedAccount ();
             var unreadPref = HowToDisplayUnreadCount ();
-            DateTime since = default(DateTime);
+            DateTime since = default (DateTime);
             if (unreadPref == ShowUnreadEnum.AllMessages) {
-                since = default(DateTime).AddDays (2);
+                since = default (DateTime).AddDays (2);
             } else if (unreadPref == ShowUnreadEnum.TodaysMessages) {
                 since = DateTime.Now.Date.ToUniversalTime ();
             } else if (unreadPref == ShowUnreadEnum.RecentMessages) {
@@ -1065,7 +1066,7 @@ namespace NachoCore.Utils
         {
             CachedHowToDisplayUnread = showUnreader;
             var accountId = McAccount.GetDeviceAccount ().Id;
-            McMutables.SetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) showUnreader);
+            McMutables.SetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int)showUnreader);
         }
 
         public static bool IsSalesForceContact (int accountId, string emailAddress)
@@ -1096,7 +1097,7 @@ namespace NachoCore.Utils
                 // right now.  If this is not done, then "<p>Call me Ishmael.</p><p>Some years ago" will
                 // display as "Call me Ishmael.Some years ago" instead of "Call me Ishmael. Some years ago".
                 html.LoadHtml (Regex.Replace (raw, @"<(/?[Pp]|/?[Ll][Ii]|[Bb][Rr]\s*/?)>", " "));
-                foreach (var bodyNode in html.DocumentNode.Descendants("body")) {
+                foreach (var bodyNode in html.DocumentNode.Descendants ("body")) {
                     adjusted = Regex.Replace (Regex.Replace (bodyNode.InnerText, @"\s+", " "), @"^\s", "");
                     break;
                 }
@@ -1168,7 +1169,7 @@ namespace NachoCore.Utils
 
         public static void MarkAsUnread (McEmailMessageThread thread, bool force = false)
         {
-        	var message = thread.SingleMessageSpecialCase ();
+            var message = thread.SingleMessageSpecialCase ();
             MarkAsUnread (message, force);
         }
 
@@ -1210,12 +1211,12 @@ namespace NachoCore.Utils
             }
             return set;
         }
-            
+
         // Quoted text in an email often comes inside a blockquote (Apple) or after an HR (Outlook).
         // Therefore, those elements can easily be used to identify the start of quoted text.
         // Howver, there are a few other scenarios that it helps to check for...
 
-        static Regex[] QuoteLinePatterns = new Regex[] {
+        static Regex [] QuoteLinePatterns = new Regex [] {
             // Typical attribution line from gmail, comes before the blockquote    
             new Regex ("^On .+ wrote:$"),
             // Typical start of quoted message from Outlook(?), comes after an empty DIV with border-top, not an HR
@@ -1243,7 +1244,7 @@ namespace NachoCore.Utils
             return false;
         }
 
-        static bool CheckForSalesforceContacts (int accountId, Dictionary <string, bool> cache, string addresses)
+        static bool CheckForSalesforceContacts (int accountId, Dictionary<string, bool> cache, string addresses)
         {
             var list = NcEmailAddress.ParseToAddressListString (addresses);
             foreach (var address in list) {
@@ -1310,7 +1311,7 @@ namespace NachoCore.Utils
             }
             return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
         }
-       
+
     }
 }
 
