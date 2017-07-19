@@ -245,18 +245,6 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// "October 21" or "October 21, 2015"
-        /// </summary>
-        static public string LongDate (DateTime date)
-        {
-            if (date.ToLocalTime ().Year == DateTime.Now.Year) {
-                return LongMonthDay (date);
-            } else {
-                return LongMonthDayYear (date);
-            }
-        }
-
-        /// <summary>
         /// "Wed, Oct 21" or "Wed, Oct 21, 2015"
         /// </summary>
         // TODO: l10n
@@ -290,18 +278,6 @@ namespace NachoCore.Utils
         static public string MediumMonthDayYear (DateTime date)
         {
             return date.ToLocalTime ().ToString (CollapseSpaces (DTFormat.LongDatePattern.Replace ("MMMM dd", "MMMM d").Replace ("dddd", "").Replace ("MMMM", "MMM")));
-        }
-
-        /// <summary>
-        /// "Oct 21" or "Oct 21, 2015"
-        /// </summary>
-        static public string MediumDate (DateTime date)
-        {
-            if (date.ToLocalTime ().Year == DateTime.Now.Year) {
-                return MediumMonthDay (date);
-            } else {
-                return MediumMonthDayYear (date);
-            }
         }
 
         /// <summary>
@@ -548,50 +524,6 @@ namespace NachoCore.Utils
             return result;
         }
 
-        /// <summary>
-        /// Compact version of event duration
-        /// </summary>
-        // TODO: i18n
-        static public string PrettyEventDuration (DateTime startTime, DateTime endTime)
-        {
-            var d = endTime.Subtract (startTime);
-
-            if (0 == d.TotalMinutes) {
-                return ""; // no duration
-            }
-
-            // Even number of days?
-            if (0 == (d.TotalMinutes % (24 * 60))) {
-                if (1 == d.Days) {
-                    return "1 day";
-                } else {
-                    return String.Format ("{0} days", d.Days);
-                }
-            }
-            // Even number of hours?
-            if (0 == (d.TotalMinutes % 60)) {
-                if (1 == d.Hours) {
-                    return "1 hour";
-                } else {
-                    return String.Format ("{0} hours", d.Hours);
-                }
-            }
-            // Less than one hour?
-            if (60 > d.Minutes) {
-                if (1 == d.Minutes) {
-                    return "1 minute";
-                } else {
-                    return String.Format ("{0} minutes", d.Minutes);
-                }
-            }
-            // Less than one day?
-            if ((24 * 60) > d.Minutes) {
-                return String.Format ("{0}:{1} hours", d.Hours, d.Minutes % 60);
-            } else {
-                return String.Format ("{0}d{1}h{2}m", d.Days, d.Hours % 24, d.Minutes % 60);
-            }
-        }
-
         // TODO: i18n
         static public string EventDetailTime (McEvent calendarEvent)
         {
@@ -767,30 +699,6 @@ namespace NachoCore.Utils
             }
         }
 
-        /// <summary>
-        /// Converts a date to a string worthy
-        /// of being displayed in the message list.
-        /// </summary>
-        // TODO: i18n
-        static public string CompactDateString (DateTime Date)
-        {
-            var local = Date.ToLocalTime ();
-            var diff = DateTime.Now - local;
-            if (diff < TimeSpan.FromMinutes (60)) {
-                return String.Format ("{0:n0}m", diff.TotalMinutes);
-            }
-            if (diff < TimeSpan.FromHours (24)) {
-                return String.Format ("{0:n0}h", diff.TotalHours);
-            }
-            if (diff <= TimeSpan.FromHours (24)) {
-                return "Yesterday";
-            }
-            if (diff < TimeSpan.FromDays (6)) {
-                return local.ToString ("dddd");
-            }
-            return local.ToShortDateString ();
-        }
-
         // The display name of the account is a nickname for
         // the account, like Exchange or My Work Account, etc.
         // We do not support this yet, so null is the right value.
@@ -820,55 +728,6 @@ namespace NachoCore.Utils
             } else {
                 return string.Format ("{0} - {1}", MediumMonthDay (utcDueDate), Time (utcDueDate));
             }
-        }
-
-        // TODO: i18n
-        static public string ReminderText (McEmailMessage message)
-        {
-            if (message.IsDeferred ()) {
-                return String.Format ("Hidden until {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
-            } else if (message.IsOverdue ()) {
-                return String.Format ("Response was due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
-            } else {
-                return String.Format ("Response is due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
-            }
-        }
-
-        // TODO: i18n
-        public static string ReminderTime (TimeSpan startsIn)
-        {
-            int minutes = Convert.ToInt32 (startsIn.TotalMinutes);
-            if (0 > minutes) {
-                return "already started";
-            }
-            if (0 == minutes) {
-                return "now";
-            }
-            if (1 == minutes) {
-                return "in a minute";
-            }
-            if (60 == minutes) {
-                return "in an hour";
-            }
-            if ((60 * 24) == minutes) {
-                return "in a day";
-            }
-            if ((60 * 24 * 7) == minutes) {
-                return "in a week";
-            }
-            if (60 > minutes) {
-                return string.Format ("in {0} minutes", minutes);
-            }
-            if (120 > minutes) {
-                return string.Format ("in an hour and {0} minutes", minutes - 60);
-            }
-            if (0 == minutes % (60 * 24)) {
-                return string.Format ("in {0} days", minutes / (60 * 24));
-            }
-            if (0 == minutes % 60) {
-                return string.Format ("in {0} hours", minutes / 60);
-            }
-            return string.Format ("in {0}:{1:D2}", minutes / 60, minutes % 60);
         }
 
         // TODO: i18n
@@ -1135,7 +994,16 @@ namespace NachoCore.Utils
             if (attachment.IsInline) {
                 detailText += "Inline ";
             }
-            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+            if (1 < extension.Length) {
+                detailText += extension.Substring (1) + " ";
+            } else if (!String.IsNullOrEmpty (attachment.ContentType)) {
+                var mimeInfo = attachment.ContentType.Split (new char [] { '/' });
+                if (2 == mimeInfo.Length) {
+                    detailText += mimeInfo [1].ToUpper () + " ";
+                }
+            } else {
+                detailText += "Unrecognized ";
+            }
             detailText += "file";
             if (0 != attachment.FileSize) {
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
@@ -1198,82 +1066,6 @@ namespace NachoCore.Utils
             } else {
                 return String.Join (", ", list);
             }
-        }
-
-        // TODO: i18n
-        public static string MessageCount (string label, int count)
-        {
-            if (0 == count) {
-                return String.Format ("No {0}s", label);
-            } else {
-                return String.Format ("{0} {1}{2}", count, label, (1 == count) ? "" : "s");
-            }
-        }
-
-        // TODO: Refactor to share in iOS code
-        // TODO: i18n
-        public static string AttachmentDescription (McAttachment attachment)
-        {
-            var detailText = "";
-            if (attachment.IsInline) {
-                detailText += "Inline ";
-            }
-            string extension = Pretty.GetExtension (attachment.DisplayName);
-            if (1 < extension.Length) {
-                detailText += extension.Substring (1) + " ";
-            } else if (!String.IsNullOrEmpty (attachment.ContentType)) {
-                var mimeInfo = attachment.ContentType.Split (new char [] { '/' });
-                if (2 == mimeInfo.Length) {
-                    detailText += mimeInfo [1].ToUpper () + " ";
-                }
-            } else {
-                detailText += "Unrecognized ";
-            }
-            detailText += "file";
-            if (0 != attachment.FileSize) {
-                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-            }
-            return detailText;
-        }
-
-        // TODO: i18n
-        public static string NoteTitle (string title)
-        {
-            if (null == title) {
-                return "Note";
-            } else {
-                return string.Format ("Note: {0}", title);
-            }
-        }
-
-        public static string MessageAddressString (string rawAddressString, NcEmailAddress.Kind kind)
-        {
-            List<string> cooked = new List<string> ();
-
-            if (String.IsNullOrEmpty (rawAddressString)) {
-                return "";
-            }
-
-            var addressList = NcEmailAddress.ParseAddressListString (rawAddressString, kind);
-            foreach (var address in addressList) {
-                if (null == address.contact) {
-                    string text;
-                    InternetAddress parsedAddress;
-                    if (!InternetAddress.TryParse (address.address, out parsedAddress)) {
-                        text = address.address; // can't parse the string. just display verbatim
-                    } else {
-                        if (parsedAddress is MailboxAddress) {
-                            text = (parsedAddress as MailboxAddress).Address;
-                        } else {
-                            text = parsedAddress.ToString ();
-                        }
-                    }
-                    cooked.Add (text);
-                } else {
-                    cooked.Add (address.contact.GetPrimaryCanonicalEmailAddress ());
-                }
-            }
-            return String.Join (" ", cooked);
         }
 
         // TODO: i18n

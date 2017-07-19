@@ -83,7 +83,7 @@ namespace NachoClient.iOS
 
             detailView = new UILabel (new CGRect (leftMargin, TOP_MARGIN + LINE_HEIGHT, lineLength, LINE_HEIGHT));
             detailView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            detailView.Text = Pretty.AttachmentDescription (attachment);
+            detailView.Text = Pretty.GetAttachmentDetail (attachment);
             detailView.TextColor = A.Color_NachoTextGray;
             detailView.Font = A.Font_AvenirNextRegular14;
             detailView.Tag = (int)TagType.ATTACHMENT_SIZE_TAG;
