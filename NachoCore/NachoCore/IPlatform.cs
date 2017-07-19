@@ -16,7 +16,7 @@ namespace NachoPlatform
 
         bool Exists (string relPath);
 
-        string[] List (string relPath);
+        string [] List (string relPath);
     }
 
     public interface IPlatformRegDom
@@ -329,21 +329,24 @@ namespace NachoPlatform
         void ExtractValues ();
     }
 
-    public interface IPlatformRtfConverter {
+    public interface IPlatformRtfConverter
+    {
 
         string ToHtml (string rtf);
         string ToTxt (string rtf);
 
     }
 
-    public interface IPlatformImage : IDisposable {
-        
+    public interface IPlatformImage : IDisposable
+    {
+
         Tuple<float, float> Size { get; }
         Stream ResizedData (float width, float height);
 
     }
 
-    public interface IPlatformImageFactory {
+    public interface IPlatformImageFactory
+    {
         IPlatformImage FromStream (Stream stream);
         IPlatformImage FromPath (string path);
     }
@@ -406,5 +409,13 @@ namespace NachoPlatform
         void Info (string fmt, params object [] list);
         void Warn (string fmt, params object [] list);
         void Error (string fmt, params object [] list);
+    }
+
+    public interface IStrings
+    {
+        string CompactMinutesFormat { get; }
+        string CompactHoursFormat { get; }
+        string CompactHourMinutesFormat { get; }
+        string CompactDayPlus { get; }
     }
 }

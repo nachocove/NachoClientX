@@ -42,6 +42,7 @@ namespace NachoClient.AndroidClient
             //                .Build());
 
             _instance = this;
+            Strings.Init (Context);
             Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
             LifecycleSpy.SharedInstance.Init (this);
             MdmConfig.Instance.ExtractValues ();

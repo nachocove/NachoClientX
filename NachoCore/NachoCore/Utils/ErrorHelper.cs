@@ -11,6 +11,7 @@ namespace NachoCore.Utils
             return ErrorStringForSubkind (nr.SubKind, out errorString);
         }
 
+        // TODO: i18n
         public static bool ErrorStringForSubkind (NcResult.SubKindEnum SubKind, out string errorString)
         {
             string message = null;

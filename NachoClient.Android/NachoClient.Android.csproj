@@ -275,6 +275,7 @@
     <Compile Include="NachoUI.Android\AccountCreation\ExchangeEnableFragment.cs" />
     <Compile Include="NachoPlatform.Android\ConsoleLog.cs" />
     <Compile Include="NachoUI.Android\MessageView\CalendarInviteView.cs" />
+    <Compile Include="NachoPlatform.Android\Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

@@ -298,6 +298,7 @@ namespace NachoCore.Utils
             return Action.Forward == action;
         }
 
+        // TODO: i18n?
         static int LengthOfPrefix (string subject)
         {
             if (subject.StartsWith ("RE:", StringComparison.OrdinalIgnoreCase)) {
@@ -319,6 +320,7 @@ namespace NachoCore.Utils
             return subject;
         }
 
+        // TODO: i18n?
         public static string CreateInitialSubjectLine (Action action, string referencedSubject)
         {
             if (IsSendAction (action)) {
@@ -335,6 +337,7 @@ namespace NachoCore.Utils
             return Pretty.Join ("Re:", referencedSubject, " ");
         }
 
+        // TODO: i18n
         public static string AttributionLineForMessage (McEmailMessage message)
         {
             var attribution = "";
@@ -461,6 +464,7 @@ namespace NachoCore.Utils
             return ParseServerWhyEnum.Success_0;
         }
 
+        // TODO: i18n
         public static string ParseServerWhyEnumToString (ParseServerWhyEnum why)
         {
             switch (why) {
@@ -752,6 +756,7 @@ namespace NachoCore.Utils
         }
 
         // Build up the text for the header part of the message being forwarded or replied to.
+        // TODO: i18n?
         public static string FormatBasicHeaders (McEmailMessage message)
         {
             StringBuilder result = new StringBuilder ();
@@ -770,6 +775,7 @@ namespace NachoCore.Utils
         }
 
         // Build up the text for the header part of the message being forwarded or replied to.
+        // TODO: i18n?
         public static string FormatBasicHeadersForCalendarForward (McCalendar calendar, string recipient)
         {
             StringBuilder result = new StringBuilder ();
@@ -874,6 +880,7 @@ namespace NachoCore.Utils
             MessageDeferralType.NextMonth
         };
 
+        // TODO: i18n?
         public static void ParseSubject (string rawSubject, DateTime fromDate, out string subject, out McEmailMessage.IntentType intent, out MessageDeferralType deferralType, out DateTime intentDate)
         {
             intent = McEmailMessage.IntentType.None;
@@ -1229,6 +1236,7 @@ namespace NachoCore.Utils
             // two or three words like "See you soon,"  Athough need to be careful not to match "Hi so-and-so," at the start of a message.
         };
 
+        // TODO: i18n?
         public static bool IsQuoteLine (string line)
         {
             var trimmedLine = line.Trim ();

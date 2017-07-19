@@ -7,6 +7,7 @@ using MimeKit;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
@@ -115,18 +116,18 @@ namespace NachoCore.Utils
         /// Calendar event duration, 0h0m style.
         /// Returns an empty string for a zero length time span.
         /// </summary>
-        static public string CompactDuration (DateTime StartTime, DateTime EndTime)
+        static public string CompactDuration (IStrings strings, DateTime StartTime, DateTime EndTime)
         {
             if (StartTime == EndTime) {
                 return "";
             }
             TimeSpan s = EndTime - StartTime;
             if (s.TotalMinutes < 60) {
-                return String.Format ("{0}m", s.Minutes);
+                return String.Format (strings.CompactMinutesFormat, s.Minutes);
             }
             if (s.TotalHours < 24) {
                 if (0 == s.Minutes) {
-                    return String.Format ("{0}h", s.Hours);
+                    return String.Format (strings.CompactHoursFormat, s.Hours);
                 } else {
                     return String.Format ("{0}h{1}m", s.Hours, s.Minutes);
                 }
@@ -137,6 +138,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// String for a reminder, in minutes.
         /// </summary>
+        // TODO: i18n
         static public string ReminderString (bool reminderIsSet, uint reminder)
         {
             if (!reminderIsSet) {
@@ -175,6 +177,7 @@ namespace NachoCore.Utils
         /// iOS uses a date in 1604 when the year doesn't matter, so leave off the year when the
         /// date is earlier than 1700.
         /// </summary>
+        // TODO: l10n?
         static public string BirthdayOrAnniversary (DateTime d)
         {
             if (d.Year < 1700) {
@@ -187,6 +190,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "October" or "October 2015"
         /// </summary>
+        // TODO: l10n
         static public string LongMonthYear (DateTime date)
         {
             date = date.ToLocalTime ();
@@ -200,6 +204,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "October 2015"
         /// </summary>
+        // TODO: l10n
         static public string LongMonthForceYear (DateTime date)
         {
             return date.ToLocalTime ().ToString ("Y");
@@ -208,6 +213,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "Wednesday, October 21" or "Wednesday, October 21, 2015"
         /// </summary>
+        // TODO: l10n
         static public string LongFullDate (DateTime date)
         {
             date = date.ToLocalTime ();
@@ -224,6 +230,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "October 21"
         /// </summary>
+        // TODO: l10n
         static public string LongMonthDay (DateTime date)
         {
             return date.ToLocalTime ().ToString (DTFormat.MonthDayPattern.Replace ("MMMM dd", "MMMM d"));
@@ -232,6 +239,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "October 21, 2015"
         /// </summary>
+        // TODO: l10n
         static public string LongMonthDayYear (DateTime date)
         {
             return date.ToLocalTime ().ToString (CollapseSpaces (DTFormat.LongDatePattern.Replace ("MMMM dd", "MMMM d").Replace ("dddd", "")));
@@ -252,6 +260,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "Wed, Oct 21" or "Wed, Oct 21, 2015"
         /// </summary>
+        // TODO: l10n
         static public string MediumFullDate (DateTime date)
         {
             date = date.ToLocalTime ();
@@ -269,6 +278,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "Oct 21"
         /// </summary>
+        // TODO: l10n
         static public string MediumMonthDay (DateTime date)
         {
             return date.ToLocalTime ().ToString (DTFormat.MonthDayPattern.Replace ("MMMM dd", "MMMM d").Replace ("MMMM", "MMM"));
@@ -277,6 +287,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "Oct 21, 2015"
         /// </summary>
+        // TODO: l10n
         static public string MediumMonthDayYear (DateTime date)
         {
             return date.ToLocalTime ().ToString (CollapseSpaces (DTFormat.LongDatePattern.Replace ("MMMM dd", "MMMM d").Replace ("dddd", "").Replace ("MMMM", "MMM")));
@@ -297,6 +308,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "10/21/15"
         /// </summary>
+        // TODO: l10n
         static public string ShortDate (DateTime date)
         {
             return date.ToLocalTime ().ToString (DTFormat.ShortDatePattern.Replace ("yyyy", "yy"));
@@ -305,6 +317,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// "4:28 pm" or "16:28"
         /// </summary>
+        // TODO: l10n
         static public string Time (DateTime time)
         {
             time = time.ToLocalTime ();
@@ -315,6 +328,7 @@ namespace NachoCore.Utils
             return result;
         }
 
+        // TODO: l10n
         static public string ShortTime (DateTime time)
         {
             var timeString = Time (time);
@@ -326,6 +340,7 @@ namespace NachoCore.Utils
             return timeString;
         }
 
+        // TODO: l10n
         static public string MicroTime (DateTime time)
         {
             var timeString = ShortTime (time);
@@ -338,11 +353,13 @@ namespace NachoCore.Utils
         /// <summary>
         /// "Wed, Oct 21 - 4:28 pm" or "Wed, Oct 21, 2015 - 4:28 pm"
         /// </summary>
+        // TODO: i18n
         static public string MediumFullDateTime (DateTime dateTime)
         {
             return string.Format ("{0} - {1}", MediumFullDate (dateTime), Time (dateTime));
         }
 
+        // TODO: i18n
         static public string FriendlyFullDateTime (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
@@ -363,11 +380,13 @@ namespace NachoCore.Utils
         /// <summary>
         /// "Wednesday 4:28 pm"
         /// </summary>
+        // TODO: i18n
         static public string LongDayTime (DateTime dateTime)
         {
             return string.Format ("{0} {1}", dateTime.ToLocalTime ().ToString ("dddd"), Time (dateTime));
         }
 
+        // TODO: i18n
         static public string TimeWithDecreasingPrecision (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
@@ -391,6 +410,7 @@ namespace NachoCore.Utils
             return ShortDate (dateTime);
         }
 
+        // TODO: i18n
         static public string FutureDate (DateTime dateTime, bool timeMatters)
         {
             var local = dateTime.ToLocalTime ();
@@ -417,6 +437,7 @@ namespace NachoCore.Utils
             return ShortDate (dateTime);
         }
 
+        // TODO: i18n
         static public string EventTime (DateTime dateTime, out TimeSpan validSpan)
         {
             var local = dateTime.ToLocalTime ();
@@ -469,6 +490,7 @@ namespace NachoCore.Utils
             return LongDayTime (dateTime);
         }
 
+        // TODO: i18n
         static public string EventDay (DateTime dateTime, out TimeSpan validSpan)
         {
             var local = dateTime.ToLocalTime ();
@@ -486,6 +508,7 @@ namespace NachoCore.Utils
             return local.ToString ("dddd");
         }
 
+        // TODO: i18n
         static public string VariableDayTime (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
@@ -529,6 +552,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Compact version of event duration
         /// </summary>
+        // TODO: i18n
         static public string PrettyEventDuration (DateTime startTime, DateTime endTime)
         {
             var d = endTime.Subtract (startTime);
@@ -569,6 +593,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         static public string EventDetailTime (McEvent calendarEvent)
         {
             var start = calendarEvent.StartTime;
@@ -600,6 +625,7 @@ namespace NachoCore.Utils
             return String.Join ("\n", lines);
         }
 
+        // TODO: i18n
         static public string MeetingRequestTime (McMeetingRequest meetingRequest)
         {
             var start = meetingRequest.StartTime;
@@ -633,6 +659,7 @@ namespace NachoCore.Utils
             return line;
         }
 
+        // TODO: i18n
         static public string EventEditTime (DateTime date, bool isAllDay, bool isEnd)
         {
             if (isAllDay) {
@@ -683,6 +710,7 @@ namespace NachoCore.Utils
             return longSenderString;
         }
 
+        // TODO: i18n
         static public string RecipientString (string Recipient)
         {
             if (String.IsNullOrWhiteSpace (Recipient)) {
@@ -710,6 +738,7 @@ namespace NachoCore.Utils
         /// Given an organizer name, return a string
         /// worthy of being displayed in the files list.
         /// </summary>
+        // TODO: i18n
         static public string OrganizerString (string organizer)
         {
             if (null == organizer) {
@@ -743,6 +772,7 @@ namespace NachoCore.Utils
         /// Converts a date to a string worthy
         /// of being displayed in the message list.
         /// </summary>
+        // TODO: i18n
         static public string CompactDateString (DateTime Date)
         {
             var local = Date.ToLocalTime ();
@@ -772,6 +802,7 @@ namespace NachoCore.Utils
         }
 
         // "Exchange" predates always setting the display name
+        // TODO: i18n
         static public string AccountName (McAccount account)
         {
             if (null == account.DisplayName) {
@@ -781,6 +812,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         static public string ReminderDate (DateTime utcDueDate)
         {
             var duration = System.DateTime.UtcNow - utcDueDate;
@@ -791,6 +823,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         static public string ReminderText (McEmailMessage message)
         {
             if (message.IsDeferred ()) {
@@ -802,6 +835,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         public static string ReminderTime (TimeSpan startsIn)
         {
             int minutes = Convert.ToInt32 (startsIn.TotalMinutes);
@@ -838,6 +872,7 @@ namespace NachoCore.Utils
             return string.Format ("in {0}:{1:D2}", minutes / 60, minutes % 60);
         }
 
+        // TODO: i18n
         public static void EventNotification (McEvent ev, out string title, out string body)
         {
             var calendarItem = ev.CalendarItem;
@@ -859,6 +894,8 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
+        // TODO: l10n
         public static string PrettyFileSize (long fileSize)
         {
             NcAssert.True (0 <= fileSize);
@@ -888,6 +925,7 @@ namespace NachoCore.Utils
             return one + separator + two;
         }
 
+        // TODO: l10n
         protected static string DayOfWeekAsString (NcDayOfWeek dow)
         {
             var fullNames = DTFormat.DayNames;
@@ -944,6 +982,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         protected static string DayOfWeekMonthly (NcDayOfWeek dow)
         {
             switch (dow) {
@@ -958,6 +997,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         protected static string WeekOfMonth (int week)
         {
             if (5 == week) {
@@ -966,6 +1006,7 @@ namespace NachoCore.Utils
             return AddOrdinalSuffix (week);
         }
 
+        // TODO: i18n
         public static string MakeRecurrenceString (IList<McRecurrence> recurrences)
         {
             if (0 == recurrences.Count) {
@@ -1043,6 +1084,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         public static string MakeCommaSeparatedList (List<string> stringList)
         {
 
@@ -1053,6 +1095,7 @@ namespace NachoCore.Utils
             return commaSeparatedString + endString;
         }
 
+        // TODO: i18n
         public static string AddOrdinalSuffix (int num)
         {
             if (num <= 0)
@@ -1085,6 +1128,7 @@ namespace NachoCore.Utils
             return System.IO.Path.GetExtension (path).ToUpper ();
         }
 
+        // TODO: i18n
         public static string GetAttachmentDetail (McAttachment attachment)
         {
             string extension = Pretty.GetExtension (attachment.DisplayName);
@@ -1100,6 +1144,7 @@ namespace NachoCore.Utils
             return detailText;
         }
 
+        // TODO: i18n
         public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             switch (code) {
@@ -1126,6 +1171,7 @@ namespace NachoCore.Utils
             return "";
         }
 
+        // TODO: i18n
         // Some of these are hidden on purpose, see notification code
         public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
         {
@@ -1155,6 +1201,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         public static string MessageCount (string label, int count)
         {
             if (0 == count) {
@@ -1165,6 +1212,7 @@ namespace NachoCore.Utils
         }
 
         // TODO: Refactor to share in iOS code
+        // TODO: i18n
         public static string AttachmentDescription (McAttachment attachment)
         {
             var detailText = "";
@@ -1189,6 +1237,7 @@ namespace NachoCore.Utils
             return detailText;
         }
 
+        // TODO: i18n
         public static string NoteTitle (string title)
         {
             if (null == title) {
@@ -1228,6 +1277,7 @@ namespace NachoCore.Utils
             return String.Join (" ", cooked);
         }
 
+        // TODO: i18n
         public static string LimitedBadgeCount (int count)
         {
             if (count < 100000) {
@@ -1237,6 +1287,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // TODO: i18n
         public static string AttendeeStatus (McAttendee attendee)
         {
             var tokens = new List<string> ();
@@ -1272,6 +1323,7 @@ namespace NachoCore.Utils
             return String.Join (", ", tokens);
         }
 
+        // TODO: i18n
         public static string MeetingResponse (McEmailMessage message)
         {
             string messageFormat;

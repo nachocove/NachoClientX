@@ -21,3 +21,15 @@
 
 /* MDM error message with specific company name */
 "Please contact the administrator for your {0} account.  We received an invalid configuration." = "Please contact the administrator for your {0} account.  We received an invalid configuration.";
+
+/* compact duration in minutes */
+"{0}m" = "{0}m";
+
+/* compact duration in hours */
+"{0}h" = "{0}h";
+
+/* compact duration in hours and minutes */
+"{0}h{1}m" = "{0}h{1}m";
+
+/* compact duration, greater than one day */
+"1d+" = "1d+";

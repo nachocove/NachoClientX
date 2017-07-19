@@ -288,7 +288,7 @@ namespace NachoClient.iOS
             } else {
                 var start = Pretty.Time (e.GetStartTimeUtc ());
                 if (e.EndTime > e.StartTime) {
-                    var duration = Pretty.CompactDuration (e.GetStartTimeUtc (), e.GetEndTimeUtc ());
+                    var duration = Pretty.CompactDuration (NachoPlatform.Strings.Instance, e.GetStartTimeUtc (), e.GetEndTimeUtc ());
                     startAndDuration = String.Join (" - ", new string [] { start, duration });
                 } else {
                     startAndDuration = start;

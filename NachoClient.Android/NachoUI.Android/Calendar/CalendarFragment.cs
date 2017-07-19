@@ -621,7 +621,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     var duration = Pretty.Time (calendarEvent.StartTime);
                     if (calendarEvent.EndTime > calendarEvent.StartTime) {
-                        duration += ", " + Pretty.CompactDuration (calendarEvent.StartTime, calendarEvent.EndTime);
+                        duration += ", " + Pretty.CompactDuration (Strings.Instance, calendarEvent.StartTime, calendarEvent.EndTime);
                     }
                     DurationLabel.Text = duration;
                 }

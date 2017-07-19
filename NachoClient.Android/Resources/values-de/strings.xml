@@ -353,4 +353,10 @@
     <string name="password_notice_close">Close</string>
     <string name="password_notice_clear">Clear Warning</string>
     <string name="password_notice_rectify">Set New Password</string>
+
+    <!-- Pretty Formatting -->
+    <string name="pretty_compact_minutes_format">{0}m</string>
+    <string name="pretty_compact_hours_format">{0}h</string>
+    <string name="pretty_compact_hours_minutes_format">{0}h{1}m</string>
+    <string name="pretty_compact_day_plus">1d+</string>
 </resources>

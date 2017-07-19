@@ -672,6 +672,7 @@
     <Compile Include="NachoUI.iOS\Calendar\BodyView.cs" />
     <Compile Include="NachoUI.iOS\Calendar\BodyWebView.cs" />
     <Compile Include="NachoUI.iOS\Calendar\IBodyRender.cs" />
+    <Compile Include="NachoPlatform.iOS\Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
