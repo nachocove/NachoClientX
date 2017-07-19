@@ -1,4 +1,4 @@
-﻿﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
+﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 
 using System;
@@ -369,7 +369,7 @@ namespace NachoClient.AndroidClient
 
         #region Permissions
 
-        void CheckForAndroidPermissions()
+        void CheckForAndroidPermissions ()
         {
             // Check is always called when the calendar is selected.  The goal here is to ask only if we've never asked before
             // On Android, "never asked before" means:
@@ -381,13 +381,13 @@ namespace NachoClient.AndroidClient
             if (!hasAndroidReadPermission || !hasAndroidWritePermission) {
                 bool hasAskedRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadCalendar);
                 bool hasAskedWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteCalendar);
-                if (!hasAskedRead && !hasAskedWrite){
+                if (!hasAskedRead && !hasAskedWrite) {
                     RequestAndroidPermissions ();
                 }
             }
         }
 
-        void RequestAndroidPermissions()
+        void RequestAndroidPermissions ()
         {
             bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadCalendar);
             bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteCalendar);
@@ -395,7 +395,7 @@ namespace NachoClient.AndroidClient
                 var builder = new Android.App.AlertDialog.Builder (Context);
                 builder.SetTitle (Resource.String.calendar_permission_request_title);
                 builder.SetMessage (Resource.String.calendar_permission_request_message);
-                builder.SetNegativeButton (Resource.String.calendar_permission_request_cancel,(sender, e) => {});
+                builder.SetNegativeButton (Resource.String.calendar_permission_request_cancel, (sender, e) => { });
                 builder.SetPositiveButton (Resource.String.calendar_permission_request_ack, (sender, e) => {
                     RequestPermissions (new string [] {
                         Android.Manifest.Permission.ReadCalendar,
@@ -413,14 +413,14 @@ namespace NachoClient.AndroidClient
 
         public override void OnRequestPermissionsResult (int requestCode, string [] permissions, Permission [] grantResults)
         {
-            if (requestCode == REQUEST_CALENDAR_PERMISSION){
-                if (grantResults.Length == 2 && grantResults[0] == Permission.Granted && grantResults[1] == Permission.Granted){
+            if (requestCode == REQUEST_CALENDAR_PERMISSION) {
+                if (grantResults.Length == 2 && grantResults [0] == Permission.Granted && grantResults [1] == Permission.Granted) {
                     NachoPlatform.Calendars.Instance.DeviceCalendarChanged ();
-                }else{
+                } else {
                     // If the user denies one or both of the permissions, re-request, this time shownig our rationale.
                     bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadCalendar);
                     bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteCalendar);
-                    if (shouldAskRead || shouldAskWrite){
+                    if (shouldAskRead || shouldAskWrite) {
                         RequestAndroidPermissions ();
                     }
                 }
@@ -519,7 +519,7 @@ namespace NachoClient.AndroidClient
                     headerHolder.SetAddHandler ((sender, e) => {
                         listener.OnEventCreateRequested (day);
                     });
-                }else{
+                } else {
                     headerHolder.SetAddHandler (null);
                 }
             }
@@ -533,10 +533,10 @@ namespace NachoClient.AndroidClient
             case ViewType.Event:
                 var eventHolder = EventViewHolder.Create (parent);
                 eventHolder.ItemView.ContextMenuCreated += (sender, e) => {
-                   int groupPosition;
-                   int itemPosition;
-                   GetGroupPosition (eventHolder.AdapterPosition, out groupPosition, out itemPosition);
-                   ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
+                    int groupPosition;
+                    int itemPosition;
+                    GetGroupPosition (eventHolder.AdapterPosition, out groupPosition, out itemPosition);
+                    ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
                 };
                 return eventHolder;
             }
@@ -597,7 +597,7 @@ namespace NachoClient.AndroidClient
                 var view = inflater.Inflate (Resource.Layout.CalendarListEventItem, parent, false);
                 return new EventViewHolder (view);
             }
-                                                  
+
             public EventViewHolder (View view) : base (view)
             {
                 DotView = view.FindViewById (Resource.Id.dot);
@@ -670,7 +670,7 @@ namespace NachoClient.AndroidClient
                 if (AddHandler != null) {
                     AddView.Click += AddHandler;
                     AddView.Visibility = ViewStates.Visible;
-                }else{
+                } else {
                     AddView.Visibility = ViewStates.Gone;
                 }
             }
