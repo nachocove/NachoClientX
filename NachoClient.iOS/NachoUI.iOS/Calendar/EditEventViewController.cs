@@ -282,7 +282,8 @@ namespace NachoClient.iOS
             }
         }
 
-        private void ChangeToAccount (int newAccountId) {
+        private void ChangeToAccount (int newAccountId)
+        {
             account = McAccount.QueryById<McAccount> (newAccountId);
             isSimpleEvent = McAccount.AccountTypeEnum.Device == account.AccountType;
             if (isSimpleEvent) {
@@ -381,7 +382,7 @@ namespace NachoClient.iOS
 
         void ShowCalendarChooser ()
         {
-            var dc = new ChooseCalendarViewController();
+            var dc = new ChooseCalendarViewController ();
             ExtractValues ();
             dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
             dc.ViewDisappearing += (object s, EventArgs e) => {
@@ -653,7 +654,7 @@ namespace NachoClient.iOS
             contentView.Frame = new CGRect (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 11));
             contentView.AutoresizingMask = UIViewAutoresizing.None;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
-            contentView.AddSubviews (new UIView[] {
+            contentView.AddSubviews (new UIView [] {
                 titleView,
                 descriptionView,
                 allDayView,
@@ -666,7 +667,7 @@ namespace NachoClient.iOS
                 alertsView,
                 calendarView,
                 deleteView
-            }); 
+            });
             //LO
             line1 = Util.AddHorizontalLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
             line2 = Util.AddHorizontalLine (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
@@ -698,7 +699,7 @@ namespace NachoClient.iOS
             separator4 = new UIView (new CGRect (0, line12.Frame.Bottom, SCREEN_WIDTH, line13.Frame.Top - line12.Frame.Bottom));
             separator4.BackgroundColor = contentView.BackgroundColor;
 
-            contentView.AddSubviews (new UIView[] {
+            contentView.AddSubviews (new UIView [] {
                 separator3, separator4,
                 line1,
                 line2,
@@ -715,7 +716,7 @@ namespace NachoClient.iOS
                 line14,
                 line15,
                 line16,
-            }); 
+            });
 
             //Scroll View
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
@@ -828,7 +829,7 @@ namespace NachoClient.iOS
                 // the selected account.
                 var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
                 calendarFolder = accountCalendars.GetFolder (0);
-                for (int f = 0; f < accountCalendars.Count(); ++f) {
+                for (int f = 0; f < accountCalendars.Count (); ++f) {
                     var calendar = accountCalendars.GetFolder (f);
                     if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == calendar.Type) {
                         calendarFolder = calendar;
@@ -1004,10 +1005,10 @@ namespace NachoClient.iOS
             if (CalendarItemEditorAction.create == action && 0 == attachmentView.AttachmentCount) {
                 candidateAccounts = McAccount.GetAllAccounts ();
             } else {
-                candidateAccounts = new McAccount[] { account };
+                candidateAccounts = new McAccount [] { account };
             }
             foreach (var account in candidateAccounts) {
-                if (account.HasCapability(McAccount.AccountCapabilityEnum.CalWriter)) {
+                if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                     var calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
                     if (0 < calendars.Count ()) {
                         result.Add (new Tuple<McAccount, NachoFolders> (account, calendars));
@@ -1051,7 +1052,7 @@ namespace NachoClient.iOS
 
             yOffset += 74;
             //descriptionView.Frame = new CGRect (0, yOffset, SCREEN_WIDTH, /*CELL_HEIGHT +*/ DESCRIPTION_OFFSET);
-            ViewFramer.Create(descriptionView).Height(descriptionTextView.Frame.Bottom);
+            ViewFramer.Create (descriptionView).Height (descriptionTextView.Frame.Bottom);
             yOffset += descriptionView.Frame.Height;
 
             AdjustY (line3, yOffset);
@@ -1173,7 +1174,7 @@ namespace NachoClient.iOS
             // c.attendees is already set via PullAttendees
             c.Location = locationField.Text;
             c.attachments = attachmentView.AttachmentList;
-                
+
             // Extras
             // The app does not keep track of the account owner's name.  Use the e-mail address instead.
             c.OrganizerName = account.EmailAddr; //Pretty.UserNameForAccount (account);
@@ -1563,7 +1564,7 @@ namespace NachoClient.iOS
             } else {
                 if (!timesAreSet) {
                     // Special case in which the user changes an all day event to an event with a start and end time
-                    var tempC = CalendarHelper.DefaultMeeting(startDate, endDate);
+                    var tempC = CalendarHelper.DefaultMeeting (startDate, endDate);
                     startDate = tempC.StartTime;
                     endDate = tempC.EndTime;
                     timesAreSet = true;

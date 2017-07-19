@@ -167,7 +167,7 @@ namespace NachoClient.AndroidClient
         void ShowReminderPicker ()
         {
             var dialog = new EventReminderPickerDialog (CalendarItem.ReminderIsSet, CalendarItem.Reminder);
-                dialog.Show (FragmentManager, FRAGMENT_REMINDER_DIALOG, (isSet, reminder) => {
+            dialog.Show (FragmentManager, FRAGMENT_REMINDER_DIALOG, (isSet, reminder) => {
                 if (CalendarItem.ReminderIsSet != isSet || reminder != CalendarItem.Reminder) {
                     CalendarItem.ReminderIsSet = isSet;
                     CalendarItem.Reminder = reminder;
@@ -202,7 +202,7 @@ namespace NachoClient.AndroidClient
 
         void AttachmentPicked (object sender, McAttachment attachment)
         {
-        	Adapter.AddAttachment (attachment);
+            Adapter.AddAttachment (attachment);
         }
 
         void ShowDatePicker (DateTime initialValue, Action<DateTime> completion)
@@ -479,7 +479,7 @@ namespace NachoClient.AndroidClient
                     return (int)ViewType.Attendee;
                 } else {
                     var extraPosition = position - Attendees.Count;
-                    if (extraPosition == AttendeesAddExtraPosition){
+                    if (extraPosition == AttendeesAddExtraPosition) {
                         return (int)ViewType.NameValue;
                     }
                 }
@@ -581,7 +581,7 @@ namespace NachoClient.AndroidClient
                     return;
                 } else {
                     var extraPosition = position - Attendees.Count;
-                    if (extraPosition == AttendeesAddExtraPosition){
+                    if (extraPosition == AttendeesAddExtraPosition) {
                         (holder as SettingsBasicItemViewHolder).SetLabels (Resource.String.event_edit_add_attendees);
                         return;
                     }
@@ -602,7 +602,7 @@ namespace NachoClient.AndroidClient
                     } else if (position == InfoCalendarPosition) {
                         listener.OnCalendarSelected ();
                     }
-                } else if (groupPosition == DetailsGroupPosition){
+                } else if (groupPosition == DetailsGroupPosition) {
                     if (position == DetailsReminderPosition) {
                         listener.OnReminderSelected ();
                     }
@@ -639,7 +639,7 @@ namespace NachoClient.AndroidClient
                 var view = inflater.Inflate (Resource.Layout.EventEditInlineTextItem, parent, false);
                 return new InlineTextEditViewHolder (view);
             }
-            
+
             public InlineTextEditViewHolder (View view) : base (view)
             {
                 Input = view.FindViewById (Resource.Id.input) as EditText;
@@ -675,7 +675,7 @@ namespace NachoClient.AndroidClient
             EventHandler RemoveHandler;
 
             public event EventHandler RemoveClicked;
-            
+
             public static AttachmentViewHolder Create (ViewGroup parent)
             {
                 var view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.EventEditAttachmentItem, parent, false);
@@ -776,7 +776,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     StatusLabel.Visibility = ViewStates.Visible;
                     StatusLabel.Text = status;
-            
+
                 }
             }
 

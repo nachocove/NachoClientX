@@ -395,7 +395,7 @@ namespace NachoClient.AndroidClient
                 }
             } else if (groupPosition == AttachmentsGroupPosition) {
                 if (position < Attachments.Count) {
-                    var attachment = Attachments[position];
+                    var attachment = Attachments [position];
                     (holder as AttachmentViewHolder).SetAttachment (attachment);
                     return;
                 }
@@ -432,7 +432,7 @@ namespace NachoClient.AndroidClient
                 }
             } else if (groupPosition == AttendeesGroupPosition) {
                 if (position < Attendees.Count) {
-                    var attendee = Attendees[position];
+                    var attendee = Attendees [position];
                     (holder as AttendeeViewHolder).SetAttendee (attendee);
                     return;
                 }

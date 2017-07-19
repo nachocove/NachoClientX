@@ -19,17 +19,17 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-	public class EventReminderPickerDialog : NcDialogFragment
-	{
+    public class EventReminderPickerDialog : NcDialogFragment
+    {
 
-		class Option
-		{
-			public uint Value;
-		}
+        class Option
+        {
+            public uint Value;
+        }
 
-		Option [] Options = new Option [] {
-			new Option () { Value = 0 },
-			new Option () { Value = 1 },
+        Option [] Options = new Option [] {
+            new Option () { Value = 0 },
+            new Option () { Value = 1 },
             new Option () { Value = 5 },
             new Option () { Value = 15 },
             new Option () { Value = 30 },
@@ -37,42 +37,42 @@ namespace NachoClient.AndroidClient
             new Option () { Value = 60 * 24 },
             new Option () { Value = 60 * 24 * 2 },
             new Option () { Value = 60 * 24 * 7 }
-		};
+        };
 
         bool IsReminderSet;
         uint Reminder;
         Action<bool, uint> DismissAction;
 
         public EventReminderPickerDialog (bool isReminderSet, uint reminder) : base ()
-		{
+        {
             IsReminderSet = isReminderSet;
             Reminder = reminder;
-			RetainInstance = true;
-		}
+            RetainInstance = true;
+        }
 
-		public override Dialog OnCreateDialog (Bundle savedInstanceState)
-		{
-			var builder = new AlertDialog.Builder (Activity);
+        public override Dialog OnCreateDialog (Bundle savedInstanceState)
+        {
+            var builder = new AlertDialog.Builder (Activity);
             builder.SetTitle (GetString (Resource.String.event_reminder));
-            var names = new List<string>();
+            var names = new List<string> ();
             var selectedIndex = IsReminderSet ? -1 : 0;
             names.Add (Pretty.ReminderString (false, 0));
-			for (var i = 0; i < Options.Length; ++i) {
+            for (var i = 0; i < Options.Length; ++i) {
                 names.Add (Pretty.ReminderString (true, Options [i].Value));
                 if (IsReminderSet && Options [i].Value == Reminder) {
-					selectedIndex = i + 1;
-				}
-			}
+                    selectedIndex = i + 1;
+                }
+            }
             if (selectedIndex == -1) {
                 selectedIndex = names.Count;
                 names.Add (Pretty.ReminderString (true, Reminder));
             }
             builder.SetSingleChoiceItems (names.ToArray (), selectedIndex, OptionSelected);
-			return builder.Create ();
-		}
+            return builder.Create ();
+        }
 
-		void OptionSelected (object sender, DialogClickEventArgs e)
-		{
+        void OptionSelected (object sender, DialogClickEventArgs e)
+        {
             var index = e.Which;
             if (index == 0) {
                 IsReminderSet = false;
@@ -83,8 +83,8 @@ namespace NachoClient.AndroidClient
                     Reminder = Options [index].Value;
                 }
             }
-			Dismiss ();
-		}
+            Dismiss ();
+        }
 
 
         public void Show (FragmentManager manager, string tag, Action<bool, uint> dismissAction)
@@ -95,12 +95,12 @@ namespace NachoClient.AndroidClient
 
         public override void OnDismiss (IDialogInterface dialog)
         {
-        	var action = DismissAction;
-        	DismissAction = null;
-        	if (action != null) {
+            var action = DismissAction;
+            DismissAction = null;
+            if (action != null) {
                 action (IsReminderSet, Reminder);
-        	}
-        	base.OnDismiss (dialog);
+            }
+            base.OnDismiss (dialog);
         }
-	}
+    }
 }

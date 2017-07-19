@@ -96,7 +96,7 @@ namespace NachoClient.iOS
         {
             AlertChooserViewController owner;
 
-            List<uint> choices = new List<uint> (new uint[] { 0, 0, 1, 5, 15, 30, 60, 1440, 2880, 10080 });
+            List<uint> choices = new List<uint> (new uint [] { 0, 0, 1, 5, 15, 30, 60, 1440, 2880, 10080 });
 
             public AlertChoicesSource (AlertChooserViewController owner)
             {
