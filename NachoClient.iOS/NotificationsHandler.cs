@@ -30,13 +30,13 @@ namespace NachoClient.iOS
         private const string NotificationActionIdentifierArchive = "archive";
         private const string NotificationCategoryIdentifierMessage = "message";
         private const string NotificationCategoryIdentifierChat = "chat";
-        
+
         static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
         static public NSString ChatNotificationKey = new NSString ("McChat.Id,McChatMessage.MessageId");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
         static public NSString LocalNotificationReceivedNotificationName = new NSString ("NachoClient.iOS.NotificationHandler.LocalNotificationReceivedNotificationName");
-        
+
         private const UIUserNotificationType KNotificationSettings = UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound;
 
         public BackgroundController BackgroundController;
@@ -118,8 +118,8 @@ namespace NachoClient.iOS
                 deleteAction.Identifier = NotificationActionIdentifierDelete;
                 deleteAction.Title = "Delete";
                 deleteAction.Destructive = true;
-                var defaultActions = new UIUserNotificationAction[] { replyAction, markAction, archiveAction, deleteAction };
-                var minimalActions = new UIUserNotificationAction[] { replyAction, markAction };
+                var defaultActions = new UIUserNotificationAction [] { replyAction, markAction, archiveAction, deleteAction };
+                var minimalActions = new UIUserNotificationAction [] { replyAction, markAction };
                 var messageCategory = new UIMutableUserNotificationCategory ();
                 messageCategory.Identifier = NotificationCategoryIdentifierMessage;
                 messageCategory.SetActions (defaultActions, UIUserNotificationActionContext.Default);
@@ -162,13 +162,13 @@ namespace NachoClient.iOS
             if (emailNotificationDictionary != null) {
                 var emailMessageId = ((NSNumber)emailNotificationDictionary).NIntValue;
                 SaveNotification ("FinishedLaunching", EmailNotificationKey, emailMessageId);
-            }else if (eventNotificationDictionary != null) {
+            } else if (eventNotificationDictionary != null) {
                 var eventId = ((NSNumber)eventNotificationDictionary).NIntValue;
                 SaveNotification ("FinishedLaunching", EventNotificationKey, eventId);
-            }else if (chatNotificationDictionary != null) {
+            } else if (chatNotificationDictionary != null) {
                 var chatId = (chatNotificationDictionary.GetItem<NSNumber> (0)).NIntValue;
                 var messageId = (chatNotificationDictionary.GetItem<NSNumber> (1)).NIntValue;
-                SaveNotification ("FinishedLaunching", ChatNotificationKey, new nint[] {chatId, messageId});
+                SaveNotification ("FinishedLaunching", ChatNotificationKey, new nint [] { chatId, messageId });
             }
         }
 
@@ -280,7 +280,7 @@ namespace NachoClient.iOS
                 if (NcApplication.Instance.IsForeground) {
                     completionHandler (UIBackgroundFetchResult.NewData);
                 } else {
-                    if (BackgroundController.IsFetching){
+                    if (BackgroundController.IsFetching) {
                         Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
                         completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
@@ -405,25 +405,25 @@ namespace NachoClient.iOS
         public void UpdateBadgeCount ()
         {
             bool isTaskRunning = false;
-            lock (BadgeUpdateLock){
-                if (IsRunningBadgeUpdate){
+            lock (BadgeUpdateLock) {
+                if (IsRunningBadgeUpdate) {
                     NeedsBadgeUpdate = true;
                     isTaskRunning = true;
-                }else{
+                } else {
                     IsRunningBadgeUpdate = true;
                 }
             }
-            if (!isTaskRunning){
+            if (!isTaskRunning) {
                 // Calculating the badge count requires database queries that are sometimes very slow.
                 // Slow enough that they should not be run on the UI thread.
                 NcTask.Run (() => {
                     bool needsRun = true;
                     while (needsRun) {
                         UpdateBadgeCountTask ();
-                        lock (BadgeUpdateLock){
-                            if (NeedsBadgeUpdate){
+                        lock (BadgeUpdateLock) {
+                            if (NeedsBadgeUpdate) {
                                 NeedsBadgeUpdate = false;
-                            }else{
+                            } else {
                                 IsRunningBadgeUpdate = false;
                                 needsRun = false;
                             }
@@ -440,7 +440,7 @@ namespace NachoClient.iOS
             if (shouldClearBadge) {
                 badgeCount = 0;
             } else {
-                badgeCount = EmailHelper.GetUnreadMessageCountForBadge();
+                badgeCount = EmailHelper.GetUnreadMessageCountForBadge ();
                 badgeCount += McChat.UnreadMessageCountForBadge ();
                 badgeCount += McAction.CountOfNewActionsForBadge ();
                 Log.Info (Log.LOG_UI, "UpdateBadgeCount: badge count = {0}", badgeCount);
@@ -458,23 +458,23 @@ namespace NachoClient.iOS
         public void BadgeCountAndMessageNotifications (Action updateDone = null)
         {
             if (Thread.CurrentThread.ManagedThreadId != NcApplication.Instance.UiThreadId) {
-				// We need to access NotificationCanBadge, which must be called on the UI thread, so if we're
+                // We need to access NotificationCanBadge, which must be called on the UI thread, so if we're
                 // not already on the UI thread, dispatch a call to the UI thread.
-				InvokeOnUIThread.Instance.Invoke (() => {
+                InvokeOnUIThread.Instance.Invoke (() => {
                     BadgeCountAndMessageNotifications (updateDone);
                 });
                 return;
             }
             // NotificationCanBadge must be called on the UI thread, so it must be called before starting the task.
             bool isTaskRunning = false;
-            lock (BadgeAndNotificationsLock){
-                if (IsRunningBadgeAndNotifications){
+            lock (BadgeAndNotificationsLock) {
+                if (IsRunningBadgeAndNotifications) {
                     isTaskRunning = true;
                     NeedsBadgeAndNotifications = true;
-                }else{
+                } else {
                     IsRunningBadgeAndNotifications = true;
                 }
-                if (updateDone != null){
+                if (updateDone != null) {
                     BadgeAndNotificationCallbacks.Add (updateDone);
                 }
             }
@@ -483,12 +483,12 @@ namespace NachoClient.iOS
                 NcTask.Run (() => {
                     bool needsRun = true;
                     List<Action> callbacks = new List<Action> ();
-					while (needsRun) {
-						BadgeNotificationsTask (canBadge);
-                        lock (BadgeAndNotificationsLock){
-                            if (NeedsBadgeAndNotifications){
+                    while (needsRun) {
+                        BadgeNotificationsTask (canBadge);
+                        lock (BadgeAndNotificationsLock) {
+                            if (NeedsBadgeAndNotifications) {
                                 NeedsBadgeAndNotifications = false;
-                            }else{
+                            } else {
                                 IsRunningBadgeAndNotifications = false;
                                 needsRun = false;
                                 callbacks = new List<Action> (BadgeAndNotificationCallbacks);
@@ -496,9 +496,9 @@ namespace NachoClient.iOS
                             }
                         }
                     }
-                    if (callbacks.Count > 0){
+                    if (callbacks.Count > 0) {
                         InvokeOnUIThread.Instance.Invoke (() => {
-                            foreach (var callback in callbacks){
+                            foreach (var callback in callbacks) {
                                 callback ();
                             }
                         });
@@ -578,7 +578,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (remainingVisibleSlots > 0){
+            if (remainingVisibleSlots > 0) {
                 foreach (var message in unreadChatMessages) {
                     if (!accountTable.TryGetValue (message.AccountId, out account)) {
                         account = McAccount.QueryById<McAccount> (message.AccountId);
@@ -599,7 +599,7 @@ namespace NachoClient.iOS
                     }
                     if ((null == account) || (null == chat) || !NotificationHelper.ShouldNotifyChatMessage (message)) {
                         // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
-                        McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (false);
+                        McEmailMessage.QueryById<McEmailMessage> (message.Id).MarkHasBeenNotified (false);
                         continue;
                     }
                     if (!NotifyChatMessage (message, chat, account, !soundExpressed)) {
@@ -609,7 +609,7 @@ namespace NachoClient.iOS
                         soundExpressed = true;
                     }
                     // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
-                    McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (true);
+                    McEmailMessage.QueryById<McEmailMessage> (message.Id).MarkHasBeenNotified (true);
                     Log.Info (Log.LOG_UI, "Message notifications: Notification for message {0}", message.Id);
                     --remainingVisibleSlots;
                     if (0 >= remainingVisibleSlots) {
@@ -652,13 +652,13 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void SaveNotification (string traceMessage, string key, nint[] id)
+        protected void SaveNotification (string traceMessage, string key, nint [] id)
         {
             Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
 
             var devAccount = McAccount.GetDeviceAccount ();
             if (null != devAccount) {
-                McMutables.Set (devAccount.Id, key, key, String.Join<nint>(",", id));
+                McMutables.Set (devAccount.Id, key, key, String.Join<nint> (",", id));
             }
         }
 
