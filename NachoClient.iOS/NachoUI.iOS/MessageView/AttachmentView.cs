@@ -115,7 +115,7 @@ namespace NachoClient.iOS
             singleTapGestureHandlerToken = singleTapGesture.AddTarget (SingleTapHandler);
             singleTapGesture.Enabled = true;
             AddGestureRecognizer (singleTapGesture);
-           
+
             switch (attachment.FilePresence) {
             case McAbstrFileDesc.FilePresenceEnum.None:
                 downloadImageView.Hidden = false;
@@ -229,7 +229,7 @@ namespace NachoClient.iOS
                     var localAccountId = attachment.AccountId;
                     var localDownloadToken = downloadToken;
                     NcTask.Run (delegate {
-                        foreach (var request in McPending.QueryByToken(localAccountId, localDownloadToken)) {
+                        foreach (var request in McPending.QueryByToken (localAccountId, localDownloadToken)) {
                             if (McPending.StateEnum.Failed == request.State) {
                                 request.Delete ();
                             }
@@ -297,8 +297,8 @@ namespace NachoClient.iOS
 
             CGPoint center = line.Center;
             UIView.Animate (
-                duration: 0.4, 
-                delay: 0, 
+                duration: 0.4,
+                delay: 0,
                 options: UIViewAnimationOptions.CurveEaseIn,
                 animation: () => {
                     line.Center = new CGPoint (center.X, iv.Image.Size.Height * 3 / 4);
@@ -331,7 +331,7 @@ namespace NachoClient.iOS
             UIView.Animate (0.4, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
                 arrow.Center = new CGPoint (center.X, iv.Frame.Size.Height * 3 / 4);
                 arrow.Alpha = 0.4f;
-            }, (() => { 
+            }, (() => {
             }));
         }
 
