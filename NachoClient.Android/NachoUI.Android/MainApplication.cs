@@ -32,14 +32,14 @@ namespace NachoClient.AndroidClient
 
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
-//           StrictMode.SetThreadPolicy(new StrictMode.ThreadPolicy.Builder()
-//                .DetectAll()
-//                .PenaltyLog()
-//                .PenaltyDialog()
-//                .Build());
-//            StrictMode.SetVmPolicy(new StrictMode.VmPolicy.Builder().DetectAll()
-//                .PenaltyLog()
-//                .Build());
+            //           StrictMode.SetThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+            //                .DetectAll()
+            //                .PenaltyLog()
+            //                .PenaltyDialog()
+            //                .Build());
+            //            StrictMode.SetVmPolicy(new StrictMode.VmPolicy.Builder().DetectAll()
+            //                .PenaltyLog()
+            //                .Build());
 
             _instance = this;
             Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
@@ -86,7 +86,7 @@ namespace NachoClient.AndroidClient
                 Calendars.Instance.DeviceCalendarChanged ();
             };
 
-            MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));
+            MainApplication.Instance.StartService (new Intent (MainApplication.Instance, typeof (NotificationService)));
 
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
 
@@ -112,7 +112,7 @@ namespace NachoClient.AndroidClient
         void CopyAssetsToDocuments ()
         {
             var documentsPath = NcApplication.GetDocumentsPath ();
-            string[] assets = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
+            string [] assets = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var assetName in assets) {
                 var destinationPath = Path.Combine (documentsPath, assetName);
                 // TODO: only copy if newer...how to check the modified time of an asset (don't think it's possible)
@@ -128,7 +128,7 @@ namespace NachoClient.AndroidClient
 
         public static void RegisterHockeyAppUpdateManager (Activity activity)
         {
-            #if HOCKEY_APP
+#if HOCKEY_APP
             if (BuildInfoHelper.IsDev) {
                 return;
             }
@@ -138,22 +138,22 @@ namespace NachoClient.AndroidClient
                 //Register to with the Update Manager
                 HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
             }
-            #endif
+#endif
         }
 
         public static void UnregisterHockeyAppUpdateManager ()
         {
-            #if HOCKEY_APP
+#if HOCKEY_APP
             if (updateRegistered) {
                 HockeyApp.UpdateManager.Unregister ();
                 updateRegistered = false;
             }
-            #endif
+#endif
         }
 
         public static void SetupHockeyAppCrashManager (Activity activity)
         {
-            #if HOCKEY_APP
+#if HOCKEY_APP
             if (BuildInfoHelper.IsDev) {
                 return;
             }
@@ -190,10 +190,10 @@ namespace NachoClient.AndroidClient
             };
 
             Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
-            #endif
+#endif
         }
 
-        #if HOCKEY_APP
+#if HOCKEY_APP
 
         static bool updateRegistered = false;
 
@@ -273,7 +273,7 @@ namespace NachoClient.AndroidClient
 
         static bool IsHockeyInitialized;
 
-        #endif
+#endif
 
         #endregion
     }
