@@ -540,7 +540,7 @@ namespace NachoClient.AndroidClient
                     return;
                 }
                 if (position == DetailsReminderPosition) {
-                    var text = Pretty.ReminderString (CalendarItem.ReminderIsSet, CalendarItem.Reminder);
+                    var text = Pretty.ReminderString (NachoPlatform.Strings.Instance, CalendarItem.ReminderIsSet, CalendarItem.Reminder);
                     (holder as SettingsBasicItemViewHolder).SetLabels (Resource.String.event_edit_section_reminder, text);
                     return;
                 }

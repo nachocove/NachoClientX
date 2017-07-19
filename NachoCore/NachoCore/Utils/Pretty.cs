@@ -138,37 +138,36 @@ namespace NachoCore.Utils
         /// <summary>
         /// String for a reminder, in minutes.
         /// </summary>
-        // TODO: i18n
-        static public string ReminderString (bool reminderIsSet, uint reminder)
+        static public string ReminderString (NachoPlatform.IStrings strings, bool reminderIsSet, uint reminder)
         {
             if (!reminderIsSet) {
-                return "None";
+                return strings.ReminderNone;
             }
             if (0 == reminder) {
-                return "At time of event";
+                return strings.ReminderAtEvent;
             }
             if (1 == reminder) {
-                return "1 minute before";
+                return strings.ReminderOneMinute;
             }
             if (60 == reminder) {
-                return "1 hour before";
+                return strings.ReminderOneHour;
             }
             if ((24 * 60) == reminder) {
-                return "1 day before";
+                return strings.ReminderOneDay;
             }
             if ((7 * 24 * 60) == reminder) {
-                return "1 week before";
+                return strings.ReminderOneWeek;
             }
             if (0 == (reminder % (7 * 24 * 60))) {
-                return String.Format ("{0} weeks before", reminder / (7 * 24 * 60));
+                return String.Format (strings.ReminderWeeksFormat, reminder / (7 * 24 * 60));
             }
             if (0 == (reminder % (24 * 60))) {
-                return String.Format ("{0} days before", reminder / (24 * 60));
+                return String.Format (strings.ReminderDaysFormat, reminder / (24 * 60));
             }
             if (0 == (reminder % 60)) {
-                return String.Format ("{0} hours before", reminder / 60);
+                return String.Format (strings.ReminderHoursFormat, reminder / 60);
             }
-            return String.Format ("{0} minutes before", reminder);
+            return String.Format (strings.ReminderMinutesFormat, reminder);
         }
 
         /// <summary>

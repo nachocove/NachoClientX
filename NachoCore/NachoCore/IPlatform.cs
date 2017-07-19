@@ -417,5 +417,16 @@ namespace NachoPlatform
         string CompactHoursFormat { get; }
         string CompactHourMinutesFormat { get; }
         string CompactDayPlus { get; }
+
+        string ReminderNone { get; }
+        string ReminderAtEvent { get; }
+        string ReminderOneMinute { get; }
+        string ReminderOneHour { get; }
+        string ReminderOneDay { get; }
+        string ReminderOneWeek { get; }
+        string ReminderWeeksFormat { get; }
+        string ReminderDaysFormat { get; }
+        string ReminderHoursFormat { get; }
+        string ReminderMinutesFormat { get; }
     }
 }

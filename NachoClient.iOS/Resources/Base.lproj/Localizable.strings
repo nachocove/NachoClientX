@@ -33,3 +33,34 @@
 
 /* compact duration, greater than one day */
 "1d+" = "1d+";
+
+/* no reminder is set */
+"None (Reminder)" = "None";
+
+/* reminder when the event starts */
+"At time of event" = "At time of event";
+
+/* reminder 1 minute before the event starts */
+"1 minute before" = "1 minute before";
+
+/* reminder 1 hour before the event starts */
+"1 hour before" = "1 hour before";
+
+/* reminder 1 day before the event starts */
+"1 day before" = "1 day before";
+
+/* reminder 1 week before the event starts */
+"1 week before" = "1 week before";
+
+/* reminder X weeks before the event starts */
+"{0} weeks before" = "{0} weeks before";
+
+/* reminder X days before the event starts */
+"{0} days before" = "{0} days before";
+
+/* reminder X hours before the event starts */
+"{0} hours before" = "{0} hours before";
+
+/* reminder X minutes the event starts */
+"{0} minutes" = "{0} minutes";
+

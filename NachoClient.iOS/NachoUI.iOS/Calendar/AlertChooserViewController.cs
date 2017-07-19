@@ -154,7 +154,7 @@ namespace NachoClient.iOS
                     cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                     cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 }
-                cell.TextLabel.Text = Pretty.ReminderString (0 != indexPath.Row, choices [indexPath.Row]);
+                cell.TextLabel.Text = Pretty.ReminderString (NachoPlatform.Strings.Instance, 0 != indexPath.Row, choices [indexPath.Row]);
                 return cell;
             }
 

@@ -819,7 +819,7 @@ namespace NachoClient.iOS
 
             //alert view
             var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabelView.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
+            alertDetailLabelView.Text = Pretty.ReminderString (NachoPlatform.Strings.Instance, c.ReminderIsSet, c.Reminder);
             alertDetailLabelView.SizeToFit ();
             alertDetailLabelView.Frame = new CGRect (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 

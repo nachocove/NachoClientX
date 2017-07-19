@@ -56,16 +56,16 @@ namespace NachoClient.AndroidClient
             builder.SetTitle (GetString (Resource.String.event_reminder));
             var names = new List<string> ();
             var selectedIndex = IsReminderSet ? -1 : 0;
-            names.Add (Pretty.ReminderString (false, 0));
+            names.Add (Pretty.ReminderString (NachoPlatform.Strings.Instance, false, 0));
             for (var i = 0; i < Options.Length; ++i) {
-                names.Add (Pretty.ReminderString (true, Options [i].Value));
+                names.Add (Pretty.ReminderString (NachoPlatform.Strings.Instance, true, Options [i].Value));
                 if (IsReminderSet && Options [i].Value == Reminder) {
                     selectedIndex = i + 1;
                 }
             }
             if (selectedIndex == -1) {
                 selectedIndex = names.Count;
-                names.Add (Pretty.ReminderString (true, Reminder));
+                names.Add (Pretty.ReminderString (NachoPlatform.Strings.Instance, true, Reminder));
             }
             builder.SetSingleChoiceItems (names.ToArray (), selectedIndex, OptionSelected);
             return builder.Create ();

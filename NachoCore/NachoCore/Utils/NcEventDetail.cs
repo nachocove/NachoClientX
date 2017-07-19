@@ -216,7 +216,7 @@ namespace NachoCore.Utils
 
         public string ReminderString {
             get {
-                return Pretty.ReminderString (specific.HasReminder (), specific.GetReminder ());
+                return Pretty.ReminderString (NachoPlatform.Strings.Instance, specific.HasReminder (), specific.GetReminder ());
             }
         }
 

@@ -359,4 +359,15 @@
     <string name="pretty_compact_hours_format">{0}h</string>
     <string name="pretty_compact_hours_minutes_format">{0}h{1}m</string>
     <string name="pretty_compact_day_plus">1d+</string>
+
+    <string name="reminder_none">None</string>
+    <string name="reminder_at_event">At time of event</string>
+    <string name="reminder_one_minute">1 minute before</string>
+    <string name="reminder_one_hour">1 hour before</string>
+    <string name="reminder_one_day">1 day before</string>
+    <string name="reminder_one_week">1 week before</string>
+    <string name="reminder_weeks_format">{0} weeks before</string>
+    <string name="reminder_days_format">{0} days before</string>
+    <string name="reminder_hours_format">{0} hours before</string>
+    <string name="reminder_minutes_format">{0} minutes before</string>
 </resources>

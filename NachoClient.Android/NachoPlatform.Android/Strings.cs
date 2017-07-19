@@ -22,6 +22,8 @@ namespace NachoPlatform
             Context = context;
         }
 
+        #region Compact Durations
+
         public string CompactMinutesFormat {
             get {
                 return Context.GetString (Resource.String.pretty_compact_minutes_format);
@@ -45,5 +47,71 @@ namespace NachoPlatform
                 return Context.GetString (Resource.String.pretty_compact_day_plus);
             }
         }
+
+        #endregion
+
+        #region Reminders
+
+        public string ReminderNone { 
+            get {
+                return Context.GetString (Resource.String.reminder_none);
+            }
+        }
+
+        public string ReminderAtEvent { 
+            get {
+                return Context.GetString (Resource.String.reminder_at_event);
+            }
+        }
+
+        public string ReminderOneMinute { 
+            get {
+                return Context.GetString (Resource.String.reminder_one_minute);
+            }
+        }
+
+        public string ReminderOneHour { 
+            get {
+                return Context.GetString (Resource.String.reminder_one_hour);
+            }
+        }
+
+        public string ReminderOneDay { 
+            get {
+                return Context.GetString (Resource.String.reminder_one_day);
+            }
+        }
+
+        public string ReminderOneWeek { 
+            get {
+                return Context.GetString (Resource.String.reminder_one_week);
+            }
+        }
+
+        public string ReminderWeeksFormat { 
+            get {
+                return Context.GetString (Resource.String.reminder_weeks_format);
+            }
+        }
+
+        public string ReminderDaysFormat { 
+            get {
+                return Context.GetString (Resource.String.reminder_days_format);
+            }
+        }
+
+        public string ReminderHoursFormat { 
+            get {
+                return Context.GetString (Resource.String.reminder_hours_format);
+            }
+        }
+
+        public string ReminderMinutesFormat { 
+            get {
+                return Context.GetString (Resource.String.reminder_minutes_format);
+            }
+        }
+
+        #endregion
     }
 }

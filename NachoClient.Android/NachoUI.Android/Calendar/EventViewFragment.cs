@@ -403,7 +403,7 @@ namespace NachoClient.AndroidClient
                 if (position == 0) {
                     string text;
                     if (Event.IsReminderSet) {
-                        text = Pretty.ReminderString (true, Event.Reminder);
+                        text = Pretty.ReminderString (NachoPlatform.Strings.Instance, true, Event.Reminder);
                     } else {
                         text = holder.ItemView.Context.GetString (Resource.String.event_remider_set);
                     }
