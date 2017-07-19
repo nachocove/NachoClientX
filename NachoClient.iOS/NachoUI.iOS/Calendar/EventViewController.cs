@@ -188,7 +188,7 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
-            scrollView.Frame = new CGRect(0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             scrollView.BackgroundColor = contentViewBGColor;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
@@ -379,7 +379,7 @@ namespace NachoClient.iOS
 
             // Phone label, image, and detail.  The phone field has been removed from the UI
             // until we figure out how to make it useful.
-            #if PHONE_UI
+#if PHONE_UI
             AddTextLabelWithImageView (45, yOffset, "Phone", "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
             yOffset += 20 + 5;
             UIButton phoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
@@ -390,7 +390,7 @@ namespace NachoClient.iOS
             phoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             contentView.AddSubview (phoneDetailButton);
             yOffset += 20 + 20;
-            #endif
+#endif
 
             // Organizer
             eventOrganizerView = new UIView (new CGRect (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT + 16 + 16));
@@ -553,11 +553,11 @@ namespace NachoClient.iOS
             }
 
             // Phone disabled for now.
-            #if PHONE_UI
+#if PHONE_UI
             var phoneButton = View.ViewWithTag ((int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
             phoneButton.SetTitle ("Not available", UIControlState.Normal);
             phoneButton.Enabled = false;
-            #endif
+#endif
             descriptionView.Configure (detail.SpecificItem, false);
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
@@ -878,10 +878,10 @@ namespace NachoClient.iOS
             // descriptionView should already be layed out correctly. There is no need to call Layout() again.
             internalYOffset += NMath.Max (descriptionView.Frame.Height, 20);
 
-            #if PHONE_UI
+#if PHONE_UI
             AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
             AdjustViewLayout (TagType.EVENT_PHONE_DETAIL_BUTTON_TAG, 45, ref yOffset, 5);
-            #endif
+#endif
 
             AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref internalYOffset, 18);
 
@@ -1304,7 +1304,7 @@ namespace NachoClient.iOS
 
         void ShowNotes ()
         {
-            var dc = new NotesViewController();
+            var dc = new NotesViewController ();
             dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
             NavigationController.PushViewController (dc, true);
         }
