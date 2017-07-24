@@ -12,7 +12,8 @@ using Foundation;
 namespace NachoClient.iOS
 {
 
-    public interface ActionEditViewDelegate {
+    public interface ActionEditViewDelegate
+    {
         void ActionEditViewDidSave (ActionEditViewController viewController);
         void ActionEditViewDidDismiss (ActionEditViewController viewController);
     }
@@ -682,7 +683,7 @@ namespace NachoClient.iOS
 
             public ActionTitleCell () : base ()
             {
-                CheckboxView = new ActionCheckboxView(44.0f, checkboxSize: 20.0f);
+                CheckboxView = new ActionCheckboxView (44.0f, checkboxSize: 20.0f);
                 ContentView.AddSubview (CheckboxView);
 
                 AllowsNewlines = false;

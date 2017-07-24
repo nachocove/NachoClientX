@@ -21,12 +21,12 @@ namespace NachoClient.iOS
 
         protected List<NcFileIndex> items;
         protected List<NcFileIndex> searchResults;
-        protected Dictionary<NSIndexPath,NcFileIndex> multiSelect = null;
+        protected Dictionary<NSIndexPath, NcFileIndex> multiSelect = null;
         protected List<string> contactList;
         protected nint segmentedIndex;
         protected List<List<NcFileIndex>> nestedContactList;
-        int[] sectionLength;
-        string[] sectionTitle;
+        int [] sectionLength;
+        string [] sectionTitle;
         protected bool isMultiSelecting;
 
         protected UITapGestureRecognizer multiSelectTapGestureRecognizer;
@@ -107,7 +107,7 @@ namespace NachoClient.iOS
         {
             this.vc = vc;
             this.account = account;
-            this.multiSelect = new Dictionary<NSIndexPath,NcFileIndex> ();
+            this.multiSelect = new Dictionary<NSIndexPath, NcFileIndex> ();
             Items = new List<NcFileIndex> ();
             SearchResults = new List<NcFileIndex> ();
             segmentedIndex = 0;
@@ -117,8 +117,8 @@ namespace NachoClient.iOS
         {
             this.Items = items;
             contactList = ConfigureContactList (items);
-            sectionLength = new int[contactList.Count];
-            sectionTitle = new string[contactList.Count];
+            sectionLength = new int [contactList.Count];
+            sectionTitle = new string [contactList.Count];
 
             int index = 0;
 
@@ -184,7 +184,7 @@ namespace NachoClient.iOS
                 cell = CreateCell (tableView, FileCell);
             }
             NcAssert.True (null != cell);
-        
+
             ConfigureCell (tableView, cell, indexPath);
 
             return cell;
@@ -220,14 +220,14 @@ namespace NachoClient.iOS
             view.AddSubview (multiSelectImageView);
 
             //Cell icon
-            var cellIconImageView = new UIImageView (); 
+            var cellIconImageView = new UIImageView ();
             cellIconImageView.Tag = ICON_TAG;
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             cellIconImageView.Frame = new CGRect (18, 28, 24, 24);
             view.AddSubview (cellIconImageView);
 
             //Text label
-            var textLabel = new UILabel (); 
+            var textLabel = new UILabel ();
             textLabel.Tag = TEXT_LABEL_TAG;
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
@@ -236,7 +236,7 @@ namespace NachoClient.iOS
             view.AddSubview (textLabel);
 
             //Detail text label
-            var detailTextlabel = new UILabel (); 
+            var detailTextlabel = new UILabel ();
             detailTextlabel.Tag = DETAIL_TEXT_LABEL_TAG;
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
@@ -245,7 +245,7 @@ namespace NachoClient.iOS
             view.AddSubview (detailTextlabel);
 
             //Date text label
-            var dateTextlabel = new UILabel (); 
+            var dateTextlabel = new UILabel ();
             dateTextlabel.Tag = DATE_TEXT_LABEL_TAG;
             dateTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             dateTextlabel.Font = A.Font_AvenirNextRegular14;
@@ -254,7 +254,7 @@ namespace NachoClient.iOS
             view.AddSubview (dateTextlabel);
 
             //Download image view
-            var dowloadImageView = new UIImageView (new CGRect (cellWidth - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16)); 
+            var dowloadImageView = new UIImageView (new CGRect (cellWidth - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16));
             dowloadImageView.Tag = DOWNLOAD_IMAGEVIEW_TAG;
             view.AddSubview (dowloadImageView);
 
@@ -279,7 +279,7 @@ namespace NachoClient.iOS
             item = FileFromIndexPath (tableView, indexPath);
 
             //Swipe view
-            var view = (SwipeActionView) cell.ViewWithTag (SWIPE_TAG);
+            var view = (SwipeActionView)cell.ViewWithTag (SWIPE_TAG);
             view.ClearActions (SwipeSide.LEFT);
             view.ClearActions (SwipeSide.RIGHT);
             view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
@@ -307,7 +307,7 @@ namespace NachoClient.iOS
             } else {
                 view.EnableSwipe ();
             }
-                
+
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
@@ -328,23 +328,23 @@ namespace NachoClient.iOS
             var multiSelectImageView = view.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
             multiSelectImageView.Hidden = isMultiSelecting ? false : true;
             SetMultiSelectIcon (multiSelectImageView, indexPath);
-             
+
             //Cell icon
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
             cellIconImageView.Frame = new CGRect (18 + xOffset, 28, 24, 24);
 
             //Text label
-            var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
+            var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel;
             textLabel.Frame = new CGRect (60 + xOffset, 11, cellWidth - xOffset - 112, 19.5f);
             yOffset += textLabel.Frame.Height;
 
             //Detail text label
-            var detailTextlabel = view.ViewWithTag (DETAIL_TEXT_LABEL_TAG) as UILabel;  
+            var detailTextlabel = view.ViewWithTag (DETAIL_TEXT_LABEL_TAG) as UILabel;
             detailTextlabel.Frame = new CGRect (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
             yOffset += detailTextlabel.Frame.Height;
 
             //Date text label
-            var dateTextlabel = view.ViewWithTag (DATE_TEXT_LABEL_TAG) as UILabel; 
+            var dateTextlabel = view.ViewWithTag (DATE_TEXT_LABEL_TAG) as UILabel;
             dateTextlabel.Frame = new CGRect (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
 
             //Download image view
@@ -473,7 +473,7 @@ namespace NachoClient.iOS
                 detailText += "file";
                 if (0 != attachment.FileSize) {
                     detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-                } 
+                }
                 if (downloaded) {
                     detailText += " - Downloaded";
                     detailTextLabel.Frame = new CGRect (detailTextLabel.Frame.X, detailTextLabel.Frame.Y, detailTextLabel.Superview.Frame.Width - 78 - xOffset, detailTextLabel.Frame.Height);
@@ -482,7 +482,7 @@ namespace NachoClient.iOS
                 dateTextLabel.Text = DateToString (item.CreatedAt);
                 iconView.Image = FileIconFromExtension (attachment);
             } else {
-                textLabel.Text = "File no longer exists"; 
+                textLabel.Text = "File no longer exists";
             }
 
         }
@@ -511,7 +511,7 @@ namespace NachoClient.iOS
             case ".PNG":
                 return UIImage.FromBundle ("icn-files-png");
             default:
-                if (attachment.IsImageFile()) {
+                if (attachment.IsImageFile ()) {
                     return UIImage.FromBundle ("icn-files-img");
                 } else {
                     return UIImage.FromBundle ("email-att-files");
@@ -735,7 +735,7 @@ namespace NachoClient.iOS
         {
             if (multiSelect.ContainsKey (indexPath)) {
                 iv.Image = UIImage.FromBundle ("gen-checkbox-checked");
-                iv.UserInteractionEnabled = true;        
+                iv.UserInteractionEnabled = true;
             } else {
                 iv.Image = UIImage.FromBundle ("gen-checkbox");
                 iv.UserInteractionEnabled = false;
@@ -774,8 +774,8 @@ namespace NachoClient.iOS
 
             CGPoint center = line.Center;
             UIView.Animate (
-                duration: 0.4, 
-                delay: 0, 
+                duration: 0.4,
+                delay: 0,
                 options: UIViewAnimationOptions.CurveEaseIn,
                 animation: () => {
                     line.Center = new CGPoint (center.X, iv.Image.Size.Height * 3 / 4);
@@ -808,7 +808,7 @@ namespace NachoClient.iOS
             UIView.Animate (0.4, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
                 arrow.Center = new CGPoint (center.X, iv.Frame.Size.Height * 3 / 4);
                 arrow.Alpha = 0.4f;
-            }, (() => { 
+            }, (() => {
             }));
         }
 

@@ -13,10 +13,10 @@ namespace NachoClient.iOS
 {
 
     [Register ("DateBarView")]
-    public class DateBarView: UIView
+    public class DateBarView : UIView
     {
 
-        protected static List<string> Days = new List<string> (new string[] {
+        protected static List<string> Days = new List<string> (new string [] {
             "Sunday",
             "Monday",
             "Tuesday",
@@ -63,7 +63,7 @@ namespace NachoClient.iOS
 
         public static int IndexOfDayOfWeek (string dayOfWeek)
         {
-            int theIndex = 0; 
+            int theIndex = 0;
             int i = 0;
             foreach (var day in Days) {
                 if (day == dayOfWeek) {
@@ -148,7 +148,7 @@ namespace NachoClient.iOS
         public bool todayMonthTagSet = false;
 
         public void UpdateButtons ()
-        {   
+        {
             UpdateMonthLabel ();
             int dayOffset = -(IndexOfDayOfWeek (this.ViewDate.DayOfWeek.ToString ()));
             int selectedIndex = IndexOfDayOfWeek (owner.selectedDate.DayOfWeek.ToString ());
@@ -196,7 +196,7 @@ namespace NachoClient.iOS
         public DateTime GetFirstDay (DateTime date)
         {
             var day = date.Day;
-            var firstDay = this.ViewDate.AddDays (-day + 1); 
+            var firstDay = this.ViewDate.AddDays (-day + 1);
             return firstDay;
         }
 
@@ -314,7 +314,7 @@ namespace NachoClient.iOS
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
                         SetButtonState (false, button, true);
-                    } 
+                    }
                     if (i == selectedButtonTag - 100) {
                         SetButtonState (true, button, true);
                     }
@@ -325,7 +325,7 @@ namespace NachoClient.iOS
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
                         SetButtonState (false, button, false);
-                    } 
+                    }
                     if (i == selectedButtonTag - 100) {
                         SetButtonState (true, button, false);
                     }
@@ -336,7 +336,7 @@ namespace NachoClient.iOS
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
                         SetButtonState (false, button, true);
-                    } 
+                    }
                     if (i == selectedButtonTag - 100) {
                         SetButtonState (true, button, true);
                     }
@@ -350,7 +350,7 @@ namespace NachoClient.iOS
                         SetButtonState (true, button, false);
                     } else {
                         SetButtonState (false, button, false);
-                    } 
+                    }
                     i++;
                 }
             }
@@ -373,7 +373,7 @@ namespace NachoClient.iOS
                 date.Month.ToString () == "8" || date.Month.ToString () == "10" ||
                 date.Month.ToString () == "12") {
                 var day = date.Day;
-                var firstDate = date.AddDays (-day + 1); 
+                var firstDate = date.AddDays (-day + 1);
                 if ("Saturday" == firstDate.DayOfWeek.ToString () || "Friday" == firstDate.DayOfWeek.ToString ()) {
                     return 6;
                 }
@@ -381,14 +381,14 @@ namespace NachoClient.iOS
             } else if (date.Month.ToString () == "4" || date.Month.ToString () == "6" ||
                        date.Month.ToString () == "9" || date.Month.ToString () == "11") {
                 var day = date.Day;
-                var firstDate = date.AddDays (-day + 1); 
+                var firstDate = date.AddDays (-day + 1);
                 if ("Saturday" == firstDate.DayOfWeek.ToString ()) {
                     return 6;
                 }
                 return 5;
             } else {
                 var day = date.Day;
-                var firstDate = date.AddDays (-day + 1); 
+                var firstDate = date.AddDays (-day + 1);
                 if (0 != date.Year % 4 && "Sunday" == firstDate.DayOfWeek.ToString ()) {
                     return 4;
                 }
@@ -406,7 +406,7 @@ namespace NachoClient.iOS
             }
             if (107 <= tempTag) {
                 return 1;
-            } 
+            }
             return 0;
         }
 
@@ -417,7 +417,7 @@ namespace NachoClient.iOS
             int rows = RowsInAMonth (baseButtonDate);
             if (99 >= tempTag) {
                 return -1;
-            } 
+            }
             if (4 == rows) {
                 if (128 <= tempTag) {
                     return 1;

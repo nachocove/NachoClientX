@@ -183,18 +183,18 @@ namespace NachoClient.iOS
             }
             var text = ComposeView.GetMessage ();
             var previousMessages = new List<McEmailMessage> ();
-            for (int i = Messages.Count - 1; i >= Messages.Count - 5 && i >= 0; --i){
+            for (int i = Messages.Count - 1; i >= Messages.Count - 5 && i >= 0; --i) {
                 previousMessages.Add (Messages [i]);
             }
             ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message, NcResult result) => {
-                if (IsViewLoaded){
-                    ComposeView.SetEnabled(true);
-                    if (result.isOK()){
+                if (IsViewLoaded) {
+                    ComposeView.SetEnabled (true);
+                    if (result.isOK ()) {
                         Chat.AddMessage (message);
                         ComposeView.Clear ();
                         ChatView.ScrollToBottom ();
-                        PendingSendMap.Add(result.Value as string, message.Id);
-                    }else{
+                        PendingSendMap.Add (result.Value as string, message.Id);
+                    } else {
                         NcAlertView.ShowMessage (this, "Could not send messasge", "Sorry, there was a problem sending the message.  Please try again.");
                     }
                 }
@@ -216,7 +216,7 @@ namespace NachoClient.iOS
         public void ShowParticipantDetails ()
         {
             if (ParticipantsByEmailId.Count == 1) {
-                var participant = ParticipantsByEmailId.Values.First();
+                var participant = ParticipantsByEmailId.Values.First ();
                 var contactDetailViewController = new ContactDetailViewController ();
                 contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
                 NavigationController.PushViewController (contactDetailViewController, true);
@@ -244,7 +244,7 @@ namespace NachoClient.iOS
         public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
         {
             var attachment = obj as McAttachment;
-            if (attachment == null){
+            if (attachment == null) {
                 var file = obj as McDocument;
                 if (file != null) {
                     attachment = McAttachment.InsertSaveStart (Account.Id);
@@ -322,7 +322,7 @@ namespace NachoClient.iOS
         {
             var picker = new AccountPickerViewController ();
             picker.PickerDelegate = this;
-            picker.Accounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
+            picker.Accounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where ((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
             picker.SelectedAccount = Account;
             NavigationController.PushViewController (picker, true);
         }
@@ -517,9 +517,9 @@ namespace NachoClient.iOS
             var indexInArray = index - MessageCount + Messages.Count;
             if (indexInArray >= 0) {
                 var message = Messages [indexInArray];
-                NcAlertView.Show (this, "Could not send message", "Sorry, there was an issue sending the message.", new NcAlertAction[] {
+                NcAlertView.Show (this, "Could not send message", "Sorry, there was an issue sending the message.", new NcAlertAction [] {
                     new NcAlertAction("OK", null),
-                    new NcAlertAction("Try Again", () => { 
+                    new NcAlertAction("Try Again", () => {
                         Resend (message);
                         if (messageView != null){
                             messageView.Update ();
@@ -578,7 +578,7 @@ namespace NachoClient.iOS
         {
             if (String.IsNullOrEmpty (address.address)) {
                 NcAlertView.ShowMessage (NavigationController.TopViewController, "No Email Address", String.Format ("Sorry, the contact you chose does not have an email address, which is required for chat."));
-            }else if (String.Equals (address.address, Account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+            } else if (String.Equals (address.address, Account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
                 NcAlertView.ShowMessage (NavigationController.TopViewController, "Cannot Add Self", String.Format ("Sorry, but it's not possible to setup a chat with yourself ({0})", Account.EmailAddr));
             } else {
                 MimeKit.MailboxAddress mailbox;
@@ -662,7 +662,7 @@ namespace NachoClient.iOS
             DisclosureIndicator.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
             DisclosureIndicator.UserInteractionEnabled = true;
             var x = Bounds.Width - DisclosureIndicator.Frame.X;
-            ParticipantsLabel = new UILabel (new CGRect(x, 0.0f, Bounds.Width - 2.0f * x, Bounds.Height));
+            ParticipantsLabel = new UILabel (new CGRect (x, 0.0f, Bounds.Width - 2.0f * x, Bounds.Height));
             ParticipantsLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             ParticipantsLabel.Font = A.Font_AvenirNextDemiBold17;
             ParticipantsLabel.TextAlignment = UITextAlignment.Center;
@@ -698,7 +698,7 @@ namespace NachoClient.iOS
 
         void TapPartcipantLabel ()
         {
-            if (!EditingEnabled){
+            if (!EditingEnabled) {
                 ChatViewController.ShowParticipantDetails ();
             }
         }
@@ -729,13 +729,13 @@ namespace NachoClient.iOS
         {
         }
 
-        public void AddressBlockAutoCompleteContactClicked(UcAddressBlock view, string prefix)
+        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
         {
             var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, prefix);
             ChatViewController.ShowContactChooser (address);
         }
 
-        public void AddressBlockContactPickerRequested(UcAddressBlock view)
+        public void AddressBlockContactPickerRequested (UcAddressBlock view)
         {
             var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, null);
             ChatViewController.ShowContactSearch (address);
@@ -821,7 +821,7 @@ namespace NachoClient.iOS
             SendButton.SetTitleColor (A.Color_NachoTextGray, UIControlState.Disabled);
             SendButton.TitleEdgeInsets = new UIEdgeInsets (0.0f, 7.0f, 0.5f, 7.0f);
             SendButton.Font = A.Font_AvenirNextMedium17;
-            AttachmentsScrollView = new UIScrollView (new CGRect(0.0f, Bounds.Height, Bounds.Width, 0.0f));
+            AttachmentsScrollView = new UIScrollView (new CGRect (0.0f, Bounds.Height, Bounds.Width, 0.0f));
             AddSubview (TopBorderView);
             AddSubview (AttachButton);
             AddSubview (MessageField);
@@ -992,13 +992,15 @@ namespace NachoClient.iOS
     }
 
 
-    public interface ChatViewDataSource {
+    public interface ChatViewDataSource
+    {
         int NumberOfMessagesInChatView (ChatView chatView);
         ChatMessageView ChatMessageViewAtIndex (ChatView chatView, int index);
         void UpdateMessageViewBlockProperties (ChatView chatView, int index, ChatMessageView messageView);
     }
 
-    public interface ChatViewDelegate {
+    public interface ChatViewDelegate
+    {
         void ChatMessageViewDidSelectError (ChatView chatView, int index);
     }
 
@@ -1114,7 +1116,7 @@ namespace NachoClient.iOS
             } else {
                 EnqueueReusableChatMessageView (messageView);
             }
-            foreach (var visibleView in VisibleMessageViews){
+            foreach (var visibleView in VisibleMessageViews) {
                 DataSource.UpdateMessageViewBlockProperties (this, visibleView.Index, visibleView);
             }
         }
@@ -1134,7 +1136,7 @@ namespace NachoClient.iOS
             ScrollView.SetContentOffset (new CGPoint (0.0f, Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height)), animated);
         }
 
-        [Foundation.Export("scrollViewDidScroll:")]
+        [Foundation.Export ("scrollViewDidScroll:")]
         public void Scrolled (UIScrollView scrollView)
         {
             if (MessageCount == 0) {
@@ -1169,7 +1171,7 @@ namespace NachoClient.iOS
             }
             var topY = scrollView.ContentOffset.Y;
             var bottomY = topY + scrollView.Bounds.Height;
-            for (int i = VisibleMessageViews.Count - 1; i >= 0; --i){
+            for (int i = VisibleMessageViews.Count - 1; i >= 0; --i) {
                 var messageView = VisibleMessageViews [i];
                 if ((messageView.Frame.Y >= scrollView.ContentOffset.Y + scrollView.Bounds.Height) || (messageView.Frame.Y + messageView.Frame.Height <= scrollView.ContentOffset.Y)) {
                     messageView.RemoveFromSuperview ();
@@ -1190,7 +1192,7 @@ namespace NachoClient.iOS
             var y = firstVisibleView.Frame.Y - MessageSpacing;
             while (topY < y && firstVisibleView.Index > 0) {
                 index = firstVisibleView.Index - 1;
-                firstVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
+                firstVisibleView = DataSource.ChatMessageViewAtIndex (this, index);
                 firstVisibleView.Index = index;
                 VisibleMessageViews.Insert (0, firstVisibleView);
                 firstVisibleView.SizeToFit ();
@@ -1201,7 +1203,7 @@ namespace NachoClient.iOS
             y = lastVisibleView.Frame.Y + lastVisibleView.Frame.Height + MessageSpacing;
             while (bottomY > y && lastVisibleView.Index < MessageCount - 1) {
                 index = lastVisibleView.Index + 1;
-                lastVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
+                lastVisibleView = DataSource.ChatMessageViewAtIndex (this, index);
                 lastVisibleView.Index = index;
                 VisibleMessageViews.Add (lastVisibleView);
                 lastVisibleView.SizeToFit ();
@@ -1219,7 +1221,7 @@ namespace NachoClient.iOS
             LastOffsetX = scrollView.ContentOffset.X;
         }
 
-        [Export("scrollViewWillEndDragging:withVelocity:targetContentOffset:")]
+        [Export ("scrollViewWillEndDragging:withVelocity:targetContentOffset:")]
         public virtual void WillEndDragging (UIScrollView scrollView, CGPoint velocity, ref CGPoint targetContentOffset)
         {
             targetContentOffset.X = 0.0f;
@@ -1301,12 +1303,12 @@ namespace NachoClient.iOS
         {
             AttachmentViews = new List<UIView> ();
             MessageInsets = new UIEdgeInsets (6.0f, 9.0f, 6.0f, 9.0f);
-            BubbleView = new UIView (new CGRect(0.0f, 0.0f, Bounds.Width * 0.75f, Bounds.Height));
+            BubbleView = new UIView (new CGRect (0.0f, 0.0f, Bounds.Width * 0.75f, Bounds.Height));
             BubbleView.BackgroundColor = UIColor.White;
             BubbleView.Layer.MasksToBounds = true;
             BubbleView.Layer.BorderWidth = 1.0f;
             BubbleView.Layer.CornerRadius = 8.0f;
-            MessageLabel = new UITextView (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
+            MessageLabel = new UITextView (new CGRect (MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
             MessageLabel.Editable = false;
             MessageLabel.DataDetectorTypes = UIDataDetectorType.All;
             MessageLabel.Font = A.Font_AvenirNextRegular17;
@@ -1334,7 +1336,7 @@ namespace NachoClient.iOS
             AddSubview (BubbleView);
         }
 
-        public void SetMessage(McEmailMessage message, McChatParticipant participant, List<McAttachment> attachments)
+        public void SetMessage (McEmailMessage message, McChatParticipant participant, List<McAttachment> attachments)
         {
             Message = message;
             Participant = participant;
@@ -1366,16 +1368,16 @@ namespace NachoClient.iOS
             bool hasError = false;
             if (Message == null) {
                 MessageLabel.Text = "";
-            }else{
+            } else {
                 var bundle = new NcEmailMessageBundle (Message);
                 if (bundle.NeedsUpdate) {
-                    MessageLabel.Text = Message.BodyPreview;  
+                    MessageLabel.Text = Message.BodyPreview;
                 } else {
                     MessageLabel.Text = bundle.TopText;
                 }
                 TimestampDividerLabel.Text = Pretty.VariableDayTime (Message.DateReceived);
                 TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
-                if (Participant == null){
+                if (Participant == null) {
                     var pending = McPending.QueryByEmailMessageId (Message.AccountId, Message.Id);
                     hasError = forceHasError || (pending != null && pending.ResultKind == NcResult.KindEnum.Error);
                 }
@@ -1560,20 +1562,20 @@ namespace NachoClient.iOS
 
     }
 
-    public class ChatMessageAttachmentView : AttachmentView 
+    public class ChatMessageAttachmentView : AttachmentView
     {
 
-        public ChatMessageAttachmentView (CGRect frame, McAttachment attachment) : base(frame, attachment)
+        public ChatMessageAttachmentView (CGRect frame, McAttachment attachment) : base (frame, attachment)
         {
             AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             HideSeparator ();
             if (attachment.IsInline && detailView.Text.StartsWith ("Inline ")) {
                 detailView.Text = detailView.Text.Substring ("Inline ".Length);
             }
-//            imageView.BackgroundColor = UIColor.White;
-//            imageView.ContentMode = UIViewContentMode.Center;
-//            imageView.ClipsToBounds = true;
-//            imageView.Layer.CornerRadius = imageView.Frame.Size.Width / 2.0f;
+            //            imageView.BackgroundColor = UIColor.White;
+            //            imageView.ContentMode = UIViewContentMode.Center;
+            //            imageView.ClipsToBounds = true;
+            //            imageView.Layer.CornerRadius = imageView.Frame.Size.Width / 2.0f;
         }
 
         public void SetColors (UIColor backgroundColor, UIColor foregroundColor)

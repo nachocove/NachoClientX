@@ -88,8 +88,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public McAbstrCalendarRoot CalendarItem
-        {
+        public McAbstrCalendarRoot CalendarItem {
             get {
                 return Exception != null ? Exception as McAbstrCalendarRoot : Calendar as McAbstrCalendarRoot;
             }
@@ -155,21 +154,21 @@ namespace NachoCore.Model
 
         [Ignore]
         public virtual string PlainDescription {
-        	get {
+            get {
                 return CalendarItem.PlainDescription;
             }
         }
 
         [Ignore]
         public virtual bool IsReminderSet {
-        	get {
+            get {
                 return CalendarItem.ReminderIsSet;
             }
         }
 
         [Ignore]
         public virtual bool SupportsReminder {
-        	get {
+            get {
                 return true;
             }
         }
@@ -243,7 +242,7 @@ namespace NachoCore.Model
             return colorIndex;
         }
 
-        public virtual string GetCalendarName()
+        public virtual string GetCalendarName ()
         {
             return Calendar.GetCalendarName ();
         }

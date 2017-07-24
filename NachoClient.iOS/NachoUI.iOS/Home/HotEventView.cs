@@ -143,7 +143,7 @@ namespace NachoClient.iOS
             } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Ended) {
                 SetSelected (true, animated: false);
                 Action ();
-            }else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Changed) {
+            } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Changed) {
                 SetSelected (EventPressGestureRecognizer.IsInsideView, animated: false);
             } else if (EventPressGestureRecognizer.State == UIGestureRecognizerState.Failed) {
                 SetSelected (false, animated: true);
@@ -203,7 +203,7 @@ namespace NachoClient.iOS
                     iconColor = Util.CalendarColor (colorIndex);
                 }
                 IconView.TintColor = iconColor;
-                TimeSpan labelValidSpan = TimeSpan.FromSeconds(-2);
+                TimeSpan labelValidSpan = TimeSpan.FromSeconds (-2);
                 var start = Event.GetStartTimeUtc ();
                 if (Event.AllDayEvent) {
                     DateLabel.Text = Pretty.EventDay (start, out labelValidSpan);
