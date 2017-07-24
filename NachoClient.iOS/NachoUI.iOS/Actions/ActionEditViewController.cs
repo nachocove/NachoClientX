@@ -8,6 +8,7 @@ using NachoCore;
 using UIKit;
 using CoreGraphics;
 using Foundation;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -339,12 +340,12 @@ namespace NachoClient.iOS
                 cell.TextLabel.Text = deferModel.Name;
                 if (deferModel.Type == MessageDeferralType.Custom) {
                     if (Action.DeferralType == MessageDeferralType.Custom && Action.DeferUntilDate != default (DateTime)) {
-                        cell.ValueLabel.Text = Pretty.MediumFullDate (Action.DeferUntilDate);
+                        cell.ValueLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (Action.DeferUntilDate);
                     } else {
                         cell.ValueLabel.Text = "";
                     }
                 } else if (deferModel.Type == MessageDeferralType.DueDate) {
-                    cell.ValueLabel.Text = Pretty.MediumFullDate (Action.DueDate);
+                    cell.ValueLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (Action.DueDate);
                 } else {
                     cell.ValueLabel.Text = "";
                 }
@@ -603,7 +604,7 @@ namespace NachoClient.iOS
                 DueDateCell.TextLabel.Text = "Set a Due Date";
                 DueDateCell.TextLabel.TextColor = DueDateCell.ContentView.BackgroundColor.ColorDarkenedByAmount (0.15f);
             } else {
-                DueDateCell.TextLabel.Text = String.Format ("Due on {0}", Pretty.MediumFullDate (Action.DueDate));
+                DueDateCell.TextLabel.Text = String.Format ("Due on {0}", DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (Action.DueDate));
                 DueDateCell.TextLabel.TextColor = adoptedTheme.TableViewCellDetailLabelTextColor;
             }
         }

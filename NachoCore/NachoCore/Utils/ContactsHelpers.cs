@@ -10,7 +10,7 @@ namespace NachoCore.Utils
 {
     public static class ContactsHelper
     {
- 
+
         //The order of these names also determines their priority when sorting.
         public static readonly List<string> PhoneNames = new List<string> () {
             Xml.Contacts.MobilePhoneNumber,
@@ -443,7 +443,7 @@ namespace NachoCore.Utils
             case Xml.Contacts.JobTitle:
                 return contact.JobTitle;
             case Xml.Contacts.OfficeLocation:
-                return  contact.OfficeLocation;
+                return contact.OfficeLocation;
             case Xml.Contacts.Title:
                 return contact.Title;
             case Xml.Contacts.WebPage:
@@ -512,13 +512,13 @@ namespace NachoCore.Utils
             return MiscNames.Except (takenNames).ToList ();
         }
 
-        public static List<string> GetAvailableMiscNames(McContact contact)
+        public static List<string> GetAvailableMiscNames (McContact contact)
         {
             var takenNames = GetTakenMiscNames (contact);
             return GetAvailableMiscNames (takenNames);
         }
 
-        public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
+        public class PhoneAttributeComparer : IComparer<McContactStringAttribute>
         {
             public int Compare (McContactStringAttribute x, McContactStringAttribute y)
             {
@@ -535,7 +535,7 @@ namespace NachoCore.Utils
                 return "";
             }
             var Initials = "";
-            string[] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string [] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (1 == names.Length) {
                 Initials = (names [0].Substring (0, 1)).ToCapitalized ();
             }
@@ -593,13 +593,13 @@ namespace NachoCore.Utils
     {
         McContact Contact;
 
-        public ContactOtherAttribute (McContact contact, string name) : base()
+        public ContactOtherAttribute (McContact contact, string name) : base ()
         {
             Contact = contact;
             Name = name;
             Label = ContactsHelper.ExchangeNameToLabel (Name);
         }
-        
+
         public string Value {
             get {
                 return ContactsHelper.MiscContactAttributeNameToValue (Name, Contact);
@@ -608,7 +608,7 @@ namespace NachoCore.Utils
                 ContactsHelper.AssignMiscContactAttribute (Contact, Name, value);
             }
         }
-        
+
         public override void ChangeName (string name)
         {
             // Since Value really comes from a Contact property, we need to move the value
@@ -767,7 +767,7 @@ namespace NachoCore.Utils
             var dates = contact.Dates;
             foreach (var date in dates) {
                 if (date.Value != DateTime.MinValue) {
-                    fields.Add (new ContactField (date.GetDisplayLabel (), Pretty.BirthdayOrAnniversary (date.Value)));
+                    fields.Add (new ContactField (date.GetDisplayLabel (), Pretty.BirthdayOrAnniversary (NachoPlatform.DateTimeFormatter.Instance, date.Value)));
                 }
             }
 

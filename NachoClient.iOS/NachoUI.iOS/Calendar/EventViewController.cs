@@ -1238,7 +1238,7 @@ namespace NachoClient.iOS
             if (null == Note) {
                 Note = new McNote ();
                 Note.AccountId = detail.Account.Id;
-                Note.DisplayName = (detail.SpecificItem.GetSubject () + " - " + Pretty.ShortDate (DateTime.UtcNow));
+                Note.DisplayName = (detail.SpecificItem.GetSubject () + " - " + DateTimeFormatter.Instance.ShortNumericDateWithShortYear (DateTime.UtcNow));
                 Note.TypeId = detail.SeriesItem.Id;
                 Note.noteType = McNote.NoteType.Event;
                 Note.noteContent = noteText;

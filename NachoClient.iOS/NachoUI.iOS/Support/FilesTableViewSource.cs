@@ -11,6 +11,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using CoreAnimation;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -552,7 +553,7 @@ namespace NachoClient.iOS
         {
             string dateText = "Date unknown";
             if (date != DateTime.MinValue) {
-                dateText = Pretty.MediumFullDateTime (date);
+                dateText = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (date);
             }
             return dateText;
         }

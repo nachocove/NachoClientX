@@ -475,7 +475,7 @@ namespace NachoPlatform
             return weekdayName.Substring (0, 1);
         }
 
-        public static string MonthNameWithWithYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
+        public static string MonthNameWithYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
         {
             if (dateTime.IsPresentYear ()) {
                 return formatter.MonthName (dateTime);
@@ -529,6 +529,21 @@ namespace NachoPlatform
                 return formatter.HourPrecisionTimeWithoutAmPm (dateTime);
             }
             return formatter.MinutePrecisionTimeWithoutAmPm (dateTime);
+        }
+
+        public static string AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime, string separator = " - ")
+        {
+            return string.Format ("{0}{1}{2}", formatter.AbbreviatedDateWithWeekdayAndYearExceptPresent (dateTime), separator, formatter.MinutePrecisionTime (dateTime));
+        }
+
+        public static string DateTimeWithWeekdayAndYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime, string separator = " - ")
+        {
+            return string.Format ("{0}{1}{2}", formatter.DateWithWeekdayAndYearExceptPresent (dateTime), separator, formatter.MinutePrecisionTime (dateTime));
+        }
+
+        public static string AbbreviatedDateTime (this IDateTimeFormatter formatter, DateTime dateTime, string separator = " - ")
+        {
+            return string.Format ("{0}{1}{2}", formatter.AbbreviatedDate (dateTime), separator, formatter.MinutePrecisionTime (dateTime));
         }
     }
 }

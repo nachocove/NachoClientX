@@ -418,7 +418,7 @@ namespace NachoCore.Model
             } else {
                 note = new McNote ();
                 note.AccountId = AccountId;
-                note.DisplayName = (Subject + " - " + Pretty.ShortDate (DateTime.UtcNow));
+                note.DisplayName = (Subject + " - " + NachoPlatform.DateTimeFormatter.Instance.ShortNumericDateWithShortYear (DateTime.UtcNow));
                 note.TypeId = CalendarId;
                 note.noteType = McNote.NoteType.Event;
                 note.noteContent = noteContent;

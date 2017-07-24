@@ -780,9 +780,9 @@ namespace NachoClient.iOS
 
             //start date
             if (c.AllDayEvent) {
-                startDateLabel.Text = Pretty.MediumFullDate (c.StartTime);
+                startDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (c.StartTime);
             } else {
-                startDateLabel.Text = Pretty.MediumFullDateTime (c.StartTime);
+                startDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (c.StartTime);
             }
             startDate = c.StartTime;
             startDateLabel.SizeToFit ();
@@ -791,10 +791,10 @@ namespace NachoClient.iOS
             //end date
             if (c.AllDayEvent) {
                 var endDay = CalendarHelper.ReturnAllDayEventEndTime (c.EndTime);
-                endDateLabel.Text = Pretty.MediumFullDate (endDay);
+                endDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (endDay);
                 endDate = endDay;
             } else {
-                endDateLabel.Text = Pretty.MediumFullDateTime (c.EndTime);
+                endDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (c.EndTime);
                 endDate = c.EndTime;
             }
             endDateLabel.SizeToFit ();
@@ -1484,9 +1484,9 @@ namespace NachoClient.iOS
             eventEditStarted = true;
             DateTime date = startDatePicker.Date.ToDateTime ();
             if (allDaySwitch.On) {
-                startDateLabel.Text = Pretty.MediumFullDate (date);
+                startDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (date);
             } else {
-                startDateLabel.Text = Pretty.MediumFullDateTime (date);
+                startDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (date);
             }
             startDate = date;
             if (!endChanged && !allDaySwitch.On) {
@@ -1494,7 +1494,7 @@ namespace NachoClient.iOS
                 if (null != endDatePicker) {
                     endDatePicker.Date = endDate.ToNSDate ();
                 }
-                endDateLabel.Text = Pretty.Time (endDate);
+                endDateLabel.Text = DateTimeFormatter.Instance.MinutePrecisionTime (endDate);
                 endDateLabel.SizeToFit ();
                 endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
                 endDateLabel.TextColor = A.Color_NachoTeal;
@@ -1518,9 +1518,9 @@ namespace NachoClient.iOS
             endChanged = true;
             DateTime date = endDatePicker.Date.ToDateTime ();
             if (allDaySwitch.On) {
-                endDateLabel.Text = Pretty.MediumFullDate (date);
+                endDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (date);
             } else {
-                endDateLabel.Text = Pretty.MediumFullDateTime (date);
+                endDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (date);
             }
             endDate = date;
             endDateLabel.SizeToFit ();
@@ -1548,10 +1548,10 @@ namespace NachoClient.iOS
                     // before saving the event.
                     endDate = startDate;
                 }
-                startDateLabel.Text = Pretty.MediumFullDate (startDate);
+                startDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (startDate);
                 startDateLabel.SizeToFit ();
                 startDateLabel.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                endDateLabel.Text = Pretty.MediumFullDate (endDate);
+                endDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (endDate);
                 endDateLabel.SizeToFit ();
                 endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
                 strikethrough.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
@@ -1574,7 +1574,7 @@ namespace NachoClient.iOS
                     startDatePicker.Mode = UIDatePickerMode.DateAndTime;
                     startDatePicker.MinuteInterval = 5;
                 }
-                startDateLabel.Text = Pretty.MediumFullDateTime (startDate);
+                startDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (startDate);
                 startDateLabel.SizeToFit ();
                 startDateLabel.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
                 if (null != endDatePicker) {
@@ -1582,7 +1582,7 @@ namespace NachoClient.iOS
                     endDatePicker.Mode = UIDatePickerMode.DateAndTime;
                     endDatePicker.MinuteInterval = 5;
                 }
-                endDateLabel.Text = Pretty.MediumFullDateTime (endDate);
+                endDateLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (endDate);
                 endDateLabel.SizeToFit ();
                 endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 

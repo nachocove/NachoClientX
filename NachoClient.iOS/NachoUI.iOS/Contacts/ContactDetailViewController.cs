@@ -208,7 +208,7 @@ namespace NachoClient.iOS
             editContact.Image = UIImage.FromBundle ("gen-edit");
             editContact.AccessibilityLabel = "Edit";
             editContact.Clicked += EditButtonClicked;
-            NavigationItem.SetRightBarButtonItem (editContact, true); 
+            NavigationItem.SetRightBarButtonItem (editContact, true);
 
             //CONTACT HEADER SECTION
             UIView headerView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 147));
@@ -363,7 +363,7 @@ namespace NachoClient.iOS
             InteractionsTableView.BackgroundColor = UIColor.White;
             InteractionsTableView.RowHeight = MessageCell.PreferredHeight (3, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
             InteractionsTableView.AccessibilityLabel = "Contact interaction";
-            InteractionsTableView.RegisterClassForCellReuse (typeof(MessageCell), MessageCellIdentifier);
+            InteractionsTableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
             segmentedViewHolder.AddSubview (InteractionsTableView);
 
             //NOTES
@@ -443,7 +443,7 @@ namespace NachoClient.iOS
             headerPortraitImageView.Hidden = true;
 
             if (0 == contact.PortraitId) {
-                headerInitialsLabel.BackgroundColor = userBackgroundColor; 
+                headerInitialsLabel.BackgroundColor = userBackgroundColor;
                 headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
                 headerInitialsLabel.Hidden = false;
 
@@ -465,7 +465,7 @@ namespace NachoClient.iOS
             }
 
             if (tapGestures.Count > 0) {
-                foreach (var v in tapGestures.ToList()) {
+                foreach (var v in tapGestures.ToList ()) {
                     UIView view;
                     if (null == (view = View.ViewWithTag (v.viewTag))) {
                         break;
@@ -495,7 +495,7 @@ namespace NachoClient.iOS
             }
 
             contact.PhoneNumbers.Sort (new ContactsHelper.PhoneAttributeComparer ());
-           
+
             if (contact.PhoneNumbers.Count > 0) {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
@@ -558,7 +558,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            foreach (var t in ContactsHelper.GetTakenMiscNames(contact)) {
+            foreach (var t in ContactsHelper.GetTakenMiscNames (contact)) {
                 contactInfoHeight += AddMiscInfo (t, contactInfoHeight, contactInfoScrollView);
             }
 
@@ -652,7 +652,7 @@ namespace NachoClient.iOS
             headerCallViewGestureTapGesture.RemoveTarget (headerEmailViewTapGestureHandlerToken);
             emailView.RemoveGestureRecognizer (headerEmailViewTapGesture);
 
-            foreach (var v in tapGestures.ToList()) {
+            foreach (var v in tapGestures.ToList ()) {
                 UIView view;
                 if (null == (view = View.ViewWithTag (v.viewTag))) {
                     break;
@@ -696,10 +696,10 @@ namespace NachoClient.iOS
         protected void DefaultCallTapHandler ()
         {
             Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
-                SelectDefault(contact, type);
+                SelectDefault (contact, type);
             });
         }
-            
+
         void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
         {
             var destinationController = new ContactDefaultSelectionViewController ();
@@ -733,7 +733,7 @@ namespace NachoClient.iOS
             emailView.UserInteractionEnabled = true;
             emailView.AddSubview (emailComposeIcon);
 
-            var emailAddress = McEmailAddress.QueryById <McEmailAddress> (email.EmailAddress);
+            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
             string canonicalEmail = "";
             if (null != emailAddress) {
                 canonicalEmail = emailAddress.CanonicalEmailAddress;
@@ -918,7 +918,7 @@ namespace NachoClient.iOS
             copyMenu.ArrowDirection = UIMenuControllerArrowDirection.Down;
 
             UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new ObjCRuntime.Selector ("DoCopy"));
-            copyMenu.MenuItems = new UIMenuItem[] { copyMenuItem };
+            copyMenu.MenuItems = new UIMenuItem [] { copyMenuItem };
             copyMenu.SetMenuVisible (true, true);
         }
 
@@ -945,7 +945,7 @@ namespace NachoClient.iOS
                 break;
             case Xml.Contacts.Birthday:
             case Xml.Contacts.Anniversary:
-                value = Pretty.BirthdayOrAnniversary (contact.GetDateAttribute (whatType));
+                value = Pretty.BirthdayOrAnniversary (NachoPlatform.DateTimeFormatter.Instance, contact.GetDateAttribute (whatType));
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Spouse:
@@ -1103,13 +1103,13 @@ namespace NachoClient.iOS
             return 1;
         }
 
-        [Foundation.Export("tableView:numberOfRowsInSection:")]
+        [Foundation.Export ("tableView:numberOfRowsInSection:")]
         public nint RowsInSection (UITableView tableView, nint section)
         {
             return InteractionMessages.Count ();
         }
 
-        [Foundation.Export("tableView:cellForRowAtIndexPath:")]
+        [Foundation.Export ("tableView:cellForRowAtIndexPath:")]
         public UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             var message = InteractionMessages.GetCachedMessage (indexPath.Row);
@@ -1118,7 +1118,7 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        [Foundation.Export("tableView:didSelectRowAtIndexPath:")]
+        [Foundation.Export ("tableView:didSelectRowAtIndexPath:")]
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             var message = InteractionMessages.GetCachedMessage (indexPath.Row);
@@ -1148,7 +1148,7 @@ namespace NachoClient.iOS
             }
 
             InteractionMessages.BackgroundRefresh ((bool changed, List<int> adds, List<int> deletes) => {
-                InteractionsTableView.ReloadData();
+                InteractionsTableView.ReloadData ();
             });
 
         }

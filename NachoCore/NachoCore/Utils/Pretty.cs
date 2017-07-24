@@ -17,6 +17,8 @@ namespace NachoCore.Utils
         {
         }
 
+        #region Message Subject & Preview
+
         /// <summary>
         /// Subject of a message or calendar event.
         /// </summary>
@@ -112,6 +114,10 @@ namespace NachoCore.Utils
             return bodyPreview;
         }
 
+        #endregion
+
+        #region Durations
+
         /// <summary>
         /// Calendar event duration, 0h0m style.
         /// Returns an empty string for a zero length time span.
@@ -129,11 +135,15 @@ namespace NachoCore.Utils
                 if (0 == s.Minutes) {
                     return String.Format (strings.CompactHoursFormat, s.Hours);
                 } else {
-                    return String.Format ("{0}h{1}m", s.Hours, s.Minutes);
+                    return String.Format (strings.CompactHourMinutesFormat, s.Hours, s.Minutes);
                 }
             }
-            return "1d+";
+            return strings.CompactDayPlus;
         }
+
+        #endregion
+
+        #region Reminders
 
         /// <summary>
         /// String for a reminder, in minutes.
@@ -170,159 +180,34 @@ namespace NachoCore.Utils
             return String.Format (strings.ReminderMinutesFormat, reminder);
         }
 
+        // TODO: i18n
+        static public string ReminderDate (DateTime utcDueDate)
+        {
+            var duration = System.DateTime.UtcNow - utcDueDate;
+            if (180 < Math.Abs (duration.Days)) {
+                return DateTimeFormatter.Instance.AbbreviatedDateWithYear (utcDueDate);
+            } else {
+                return DateTimeFormatter.Instance.AbbreviatedDateTime (utcDueDate);
+            }
+        }
+
+        #endregion
+
+        #region Special Dates
+
         /// <summary>
         /// Display a date that may or may not have a year associated with it, and for which the
         /// day of the week is not important. For example, "August 27" or "August 27, 2000".
         /// iOS uses a date in 1604 when the year doesn't matter, so leave off the year when the
         /// date is earlier than 1700.
         /// </summary>
-        // TODO: l10n?
-        static public string BirthdayOrAnniversary (DateTime d)
+        static public string BirthdayOrAnniversary (IDateTimeFormatter formatter, DateTime d)
         {
             if (d.Year < 1700) {
-                return d.ToString ("M");
+                return formatter.Date (d);
             } else {
-                return d.ToString (CollapseSpaces (DTFormat.LongDatePattern.Replace ("dddd", "")));
+                return formatter.DateWithYear (d);
             }
-        }
-
-        /// <summary>
-        /// "October" or "October 2015"
-        /// </summary>
-        // TODO: l10n
-        static public string LongMonthYear (DateTime date)
-        {
-            date = date.ToLocalTime ();
-            if (date.Year == DateTime.Now.Year) {
-                return date.ToString ("MMMM");
-            } else {
-                return date.ToString ("Y");
-            }
-        }
-
-        /// <summary>
-        /// "Wednesday, October 21" or "Wednesday, October 21, 2015"
-        /// </summary>
-        // TODO: l10n
-        static public string LongFullDate (DateTime date)
-        {
-            date = date.ToLocalTime ();
-            string format = DTFormat.LongDatePattern;
-            // We want "October 7" instead of "October 07".
-            format = format.Replace ("MMMM dd", "MMMM d");
-            if (date.Year == DateTime.Now.Year) {
-                // Remove the year
-                format = CollapseSpaces (format.Replace ("yyyy", ""));
-            }
-            return date.ToString (format);
-        }
-
-        /// <summary>
-        /// "October 21"
-        /// </summary>
-        // TODO: l10n
-        static public string LongMonthDay (DateTime date)
-        {
-            return date.ToLocalTime ().ToString (DTFormat.MonthDayPattern.Replace ("MMMM dd", "MMMM d"));
-        }
-
-        /// <summary>
-        /// "October 21, 2015"
-        /// </summary>
-        // TODO: l10n
-        static public string LongMonthDayYear (DateTime date)
-        {
-            return date.ToLocalTime ().ToString (CollapseSpaces (DTFormat.LongDatePattern.Replace ("MMMM dd", "MMMM d").Replace ("dddd", "")));
-        }
-
-        /// <summary>
-        /// "Wed, Oct 21" or "Wed, Oct 21, 2015"
-        /// </summary>
-        // TODO: l10n
-        static public string MediumFullDate (DateTime date)
-        {
-            date = date.ToLocalTime ();
-            string format = DTFormat.LongDatePattern;
-            // We want "October 7" instead of "October 07".
-            format = format.Replace ("MMMM dd", "MMMM d");
-            if (date.Year == DateTime.Now.Year) {
-                // Remove the year
-                format = CollapseSpaces (format.Replace ("yyyy", ""));
-            }
-            format = format.Replace ("dddd", "ddd").Replace ("MMMM", "MMM");
-            return date.ToString (format);
-        }
-
-        /// <summary>
-        /// "Oct 21"
-        /// </summary>
-        // TODO: l10n
-        static public string MediumMonthDay (DateTime date)
-        {
-            return date.ToLocalTime ().ToString (DTFormat.MonthDayPattern.Replace ("MMMM dd", "MMMM d").Replace ("MMMM", "MMM"));
-        }
-
-        /// <summary>
-        /// "Oct 21, 2015"
-        /// </summary>
-        // TODO: l10n
-        static public string MediumMonthDayYear (DateTime date)
-        {
-            return date.ToLocalTime ().ToString (CollapseSpaces (DTFormat.LongDatePattern.Replace ("MMMM dd", "MMMM d").Replace ("dddd", "").Replace ("MMMM", "MMM")));
-        }
-
-        /// <summary>
-        /// "10/21/15"
-        /// </summary>
-        // TODO: l10n
-        static public string ShortDate (DateTime date)
-        {
-            return date.ToLocalTime ().ToString (DTFormat.ShortDatePattern.Replace ("yyyy", "yy"));
-        }
-
-        /// <summary>
-        /// "4:28 pm" or "16:28"
-        /// </summary>
-        // TODO: l10n
-        static public string Time (DateTime time)
-        {
-            time = time.ToLocalTime ();
-            string result = time.ToString ("t");
-            if ("AM" == DTFormat.AMDesignator && "PM" == DTFormat.PMDesignator) {
-                result = result.Replace ("AM", "am").Replace ("PM", "pm");
-            }
-            return result;
-        }
-
-        // TODO: l10n
-        static public string ShortTime (DateTime time)
-        {
-            var timeString = Time (time);
-            if (timeString.EndsWith (":00 pm")) {
-                timeString = timeString.Substring (0, timeString.Length - 6) + " pm";
-            } else if (timeString.EndsWith (":00 am")) {
-                timeString = timeString.Substring (0, timeString.Length - 6) + " am";
-            }
-            return timeString;
-        }
-
-        // TODO: l10n
-        static public string MicroTime (DateTime time)
-        {
-            var timeString = ShortTime (time);
-            if (timeString.EndsWith (" am") || timeString.EndsWith (" pm")) {
-                return timeString.Substring (0, timeString.Length - 3);
-            }
-            return timeString;
-        }
-
-        /// <summary>
-        /// "Wed, Oct 21 - 4:28 pm" or "Wed, Oct 21, 2015 - 4:28 pm"
-        /// </summary>
-        // TODO: i18n
-        static public string MediumFullDateTime (DateTime dateTime)
-        {
-            return string.Format ("{0} - {1}", MediumFullDate (dateTime), Time (dateTime));
         }
 
         // TODO: i18n
@@ -332,7 +217,7 @@ namespace NachoCore.Utils
             var now = DateTime.Now;
             var diff = now - local;
             var dayString = "";
-            var timeString = Time (dateTime);
+            var timeString = DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
             if (diff < now.TimeOfDay) {
                 return String.Format ("Today - {0}", timeString);
             } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (1))) {
@@ -340,16 +225,7 @@ namespace NachoCore.Utils
             } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (6))) {
                 return String.Format ("{0} - {1}", local.ToString ("dddd"), timeString);
             }
-            return String.Format ("{0} - {1}", LongFullDate (dateTime), timeString);
-        }
-
-        /// <summary>
-        /// "Wednesday 4:28 pm"
-        /// </summary>
-        // TODO: i18n
-        static public string LongDayTime (DateTime dateTime)
-        {
-            return string.Format ("{0} {1}", dateTime.ToLocalTime ().ToString ("dddd"), Time (dateTime));
+            return String.Format ("{0} - {1}", DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (dateTime), timeString);
         }
 
         // TODO: i18n
@@ -365,7 +241,7 @@ namespace NachoCore.Utils
                 cutoff = now.TimeOfDay;
             }
             if (diff < cutoff) {
-                return Time (dateTime);
+                return DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
             }
             if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
                 return "Yesterday";
@@ -373,7 +249,7 @@ namespace NachoCore.Utils
             if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
                 return local.ToString ("dddd");
             }
-            return ShortDate (dateTime);
+            return DateTimeFormatter.Instance.ShortNumericDateWithShortYear (dateTime);
         }
 
         // TODO: i18n
@@ -384,7 +260,7 @@ namespace NachoCore.Utils
             var now = DateTime.Now;
             if (now.Year == local.Year && now.Month == local.Month && now.Day == local.Day) {
                 if (timeMatters) {
-                    return ShortTime (local);
+                    return DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (local);
                 }
                 return "Today";
             }
@@ -400,8 +276,35 @@ namespace NachoCore.Utils
                     return "Yesterday";
                 }
             }
-            return ShortDate (dateTime);
+            return DateTimeFormatter.Instance.ShortNumericDateWithShortYear (dateTime);
         }
+
+        // TODO: i18n
+        static public string VariableDayTime (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var now = DateTime.Now;
+            var diff = now - local;
+            if (diff < now.TimeOfDay) {
+                return DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
+            }
+            if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
+                return String.Format ("Yesterday {0}", DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
+            }
+            if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
+                return string.Format ("{0} {1}", DateTimeFormatter.Instance.WeekdayName (dateTime), DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
+            }
+            return DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (dateTime);
+        }
+
+        static public string UniversalFullDateTime (DateTime d)
+        {
+            return d.ToLocalTime ().ToString ("U");
+        }
+
+        #endregion
+
+        #region Events
 
         // TODO: i18n
         static public string EventTime (DateTime dateTime, out TimeSpan validSpan)
@@ -451,9 +354,9 @@ namespace NachoCore.Utils
                 cutoff = now.TimeOfDay;
             }
             if (diff < cutoff) {
-                return "at " + Time (dateTime);
+                return "at " + DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
             }
-            return LongDayTime (dateTime);
+            return string.Format ("{0} {1}", DateTimeFormatter.Instance.WeekdayName (dateTime), DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
         }
 
         // TODO: i18n
@@ -471,48 +374,7 @@ namespace NachoCore.Utils
             if (local < reference) {
                 return "Tomorrow";
             }
-            return local.ToString ("dddd");
-        }
-
-        // TODO: i18n
-        static public string VariableDayTime (DateTime dateTime)
-        {
-            var local = dateTime.ToLocalTime ();
-            var now = DateTime.Now;
-            var diff = now - local;
-            if (diff < now.TimeOfDay) {
-                return Time (dateTime);
-            }
-            if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
-                return String.Format ("Yesterday {0}", Time (dateTime));
-            }
-            if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
-                return LongDayTime (dateTime);
-            }
-            return MediumFullDateTime (dateTime);
-        }
-
-        static public string UniversalFullDateTime (DateTime d)
-        {
-            return d.ToLocalTime ().ToString ("U");
-        }
-
-        static private DateTimeFormatInfo DTFormat {
-            get {
-                return CultureInfo.CurrentCulture.DateTimeFormat;
-            }
-        }
-
-        static private string CollapseSpaces (string format)
-        {
-            string result = Regex.Replace (format.Trim (), @"\s+", " ");
-            if (result.EndsWith (",")) {
-                result = result.Substring (0, result.Length - 1).Trim ();
-            }
-            if (result.StartsWith (",")) {
-                result = result.Substring (1).Trim ();
-            }
-            return result;
+            return DateTimeFormatter.Instance.WeekdayName (local);
         }
 
         // TODO: i18n
@@ -525,19 +387,19 @@ namespace NachoCore.Utils
                 end = new DateTime (end.Year, end.Month, end.Day, end.Hour, end.Minute, end.Second, DateTimeKind.Local);
             }
             var lines = new List<string> ();
-            var day = LongFullDate (start);
+            var day = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (start);
             lines.Add (day);
             if (calendarEvent.AllDayEvent) {
                 var span = (end - start);
                 if (span > TimeSpan.FromDays (1)) {
-                    var endDay = LongFullDate (end);
+                    var endDay = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (end);
                     lines.Add (String.Format ("through {0}", endDay));
                 }
             } else {
                 if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
-                    lines.Add (string.Format ("{0} to {1}", Pretty.ShortTime (start), Pretty.ShortTime (end)));
+                    lines.Add (string.Format ("{0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (end)));
                 } else {
-                    lines.Add (string.Format ("{0} to {1}", Pretty.ShortTime (start), Pretty.MediumFullDateTime (end)));
+                    lines.Add (string.Format ("{0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (end)));
                 }
             }
             var recurrences = calendarEvent.QueryRecurrences ();
@@ -552,26 +414,27 @@ namespace NachoCore.Utils
         {
             var start = meetingRequest.StartTime;
             var end = meetingRequest.EndTime;
+            var formatter = DateTimeFormatter.Instance;
             if (meetingRequest.AllDayEvent) {
                 start = new DateTime (start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Local);
                 end = new DateTime (end.Year, end.Month, end.Day, end.Hour, end.Minute, end.Second, DateTimeKind.Local);
             }
-            var line = LongFullDate (start);
+            var line = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (start);
             if (meetingRequest.AllDayEvent) {
                 var span = (end - start);
                 if (span > TimeSpan.FromDays (1)) {
-                    var endDay = LongFullDate (end);
+                    var endDay = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (end);
                     line += String.Format (" through {0}", endDay);
                 }
             } else {
                 if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
                     if ((start.ToLocalTime ().Hour < 12 && end.ToLocalTime ().Hour < 12) || (start.ToLocalTime ().Hour >= 12 && end.ToLocalTime ().Hour >= 12)) {
-                        line += string.Format (" from {0} to {1}", Pretty.MicroTime (start), Pretty.ShortTime (end));
+                        line += string.Format (" from {0} to {1}", formatter.MinutePrecisionTimeExceptZeroWithoutAmPm (start), formatter.MinutePrecisionTimeExceptZero (end));
                     } else {
-                        line += string.Format (", {0} to {1}", Pretty.ShortTime (start), Pretty.ShortTime (end));
+                        line += string.Format (", {0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (end));
                     }
                 } else {
-                    line += string.Format (" at {0} to {1}", Pretty.ShortTime (start), Pretty.MediumFullDateTime (end));
+                    line += string.Format (" at {0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (end));
                 }
             }
             var recurrences = meetingRequest.recurrences;
@@ -589,10 +452,119 @@ namespace NachoCore.Utils
                 if (isEnd) {
                     date = date.AddDays (-1.0);
                 }
-                return Pretty.LongFullDate (date);
+                return DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (date);
             }
-            return Pretty.LongFullDate (date) + " " + Pretty.Time (date);
+            return DateTimeFormatter.Instance.DateTimeWithWeekdayAndYearExceptPresent (date);
         }
+
+        /// <summary>
+        /// Given an organizer name, return a string
+        /// worthy of being displayed in the files list.
+        /// </summary>
+        // TODO: i18n
+        static public string OrganizerString (string organizer)
+        {
+            if (null == organizer) {
+                return "Organizer unavailable";
+            } else {
+                return organizer;
+            }
+        }
+
+        // TODO: i18n
+        public static void EventNotification (McEvent ev, out string title, out string body)
+        {
+            var calendarItem = ev.CalendarItem;
+            if (null == calendarItem) {
+                title = "Event";
+            } else {
+                title = Pretty.SubjectString (calendarItem.GetSubject ());
+            }
+            if (ev.AllDayEvent) {
+                body = string.Format ("{0} all day", DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (ev.GetStartTimeLocal ()));
+            } else {
+                body = string.Format ("{0} - {1}", DateTimeFormatter.Instance.MinutePrecisionTime (ev.GetStartTimeLocal ()), DateTimeFormatter.Instance.MinutePrecisionTime (ev.GetEndTimeLocal ()));
+            }
+            if (null != calendarItem) {
+                var location = calendarItem.GetLocation ();
+                if (!string.IsNullOrEmpty (location)) {
+                    body += ": " + location;
+                }
+            }
+        }
+
+        // TODO: i18n
+        public static string AttendeeStatus (McAttendee attendee)
+        {
+            var tokens = new List<string> ();
+            if (attendee.AttendeeTypeIsSet) {
+                switch (attendee.AttendeeType) {
+                case NcAttendeeType.Optional:
+                    tokens.Add ("Optional");
+                    break;
+                case NcAttendeeType.Required:
+                    tokens.Add ("Required");
+                    break;
+                case NcAttendeeType.Resource:
+                    tokens.Add ("Resource");
+                    break;
+                }
+            }
+            if (attendee.AttendeeStatusIsSet) {
+                switch (attendee.AttendeeStatus) {
+                case NcAttendeeStatus.Accept:
+                    tokens.Add ("Accepted");
+                    break;
+                case NcAttendeeStatus.Decline:
+                    tokens.Add ("Declined");
+                    break;
+                case NcAttendeeStatus.Tentative:
+                    tokens.Add ("Tentative");
+                    break;
+                case NcAttendeeStatus.NotResponded:
+                    tokens.Add ("No Response");
+                    break;
+                }
+            }
+            return String.Join (", ", tokens);
+        }
+
+        // TODO: i18n
+        public static string MeetingResponse (McEmailMessage message)
+        {
+            string messageFormat;
+            switch (message.MeetingResponseValue) {
+            case NcResponseType.Accepted:
+                messageFormat = "{0} has accepted the meeting.";
+                break;
+            case NcResponseType.Tentative:
+                messageFormat = "{0} has tentatively accepted the meeting.";
+                break;
+            case NcResponseType.Declined:
+                messageFormat = "{0} has declined the meeting.";
+                break;
+            default:
+                Log.Warn (Log.LOG_CALENDAR, "Unkown meeting response status: {0}", message.MessageClass);
+                messageFormat = "The status of {0} is unknown.";
+                break;
+            }
+
+            string displayName;
+            var responder = NcEmailAddress.ParseMailboxAddressString (message.From);
+            if (null == responder) {
+                displayName = message.From;
+            } else if (!string.IsNullOrEmpty (responder.Name)) {
+                displayName = responder.Name;
+            } else {
+                displayName = responder.Address;
+            }
+
+            return String.Format (messageFormat, displayName);
+        }
+
+        #endregion
+
+        #region Messages
 
         /// <summary>
         /// Given an email address, return a string
@@ -657,20 +629,6 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Given an organizer name, return a string
-        /// worthy of being displayed in the files list.
-        /// </summary>
-        // TODO: i18n
-        static public string OrganizerString (string organizer)
-        {
-            if (null == organizer) {
-                return "Organizer unavailable";
-            } else {
-                return organizer;
-            }
-        }
-
-        /// <summary>
         /// Given "From" (ex: "Steve Scalpone" <steves@nachocove.com>), 
         /// return a string containing just the address.
         /// </summary>
@@ -690,94 +648,14 @@ namespace NachoCore.Utils
             }
         }
 
-        // The display name of the account is a nickname for
-        // the account, like Exchange or My Work Account, etc.
-        // We do not support this yet, so null is the right value.
-        static public string UserNameForAccount (McAccount account)
-        {
-            NcAssert.True (null == account.DisplayUserName);
-            return null;
-        }
+        #endregion
 
-        // "Exchange" predates always setting the display name
-        // TODO: i18n
-        static public string AccountName (McAccount account)
-        {
-            if (null == account.DisplayName) {
-                return "Exchange";
-            } else {
-                return account.DisplayName;
-            }
-        }
-
-        // TODO: i18n
-        static public string ReminderDate (DateTime utcDueDate)
-        {
-            var duration = System.DateTime.UtcNow - utcDueDate;
-            if (180 < Math.Abs (duration.Days)) {
-                return MediumMonthDayYear (utcDueDate);
-            } else {
-                return string.Format ("{0} - {1}", MediumMonthDay (utcDueDate), Time (utcDueDate));
-            }
-        }
-
-        // TODO: i18n
-        public static void EventNotification (McEvent ev, out string title, out string body)
-        {
-            var calendarItem = ev.CalendarItem;
-            if (null == calendarItem) {
-                title = "Event";
-            } else {
-                title = Pretty.SubjectString (calendarItem.GetSubject ());
-            }
-            if (ev.AllDayEvent) {
-                body = string.Format ("{0} all day", Pretty.MediumFullDate (ev.GetStartTimeLocal ()));
-            } else {
-                body = string.Format ("{0} - {1}", Pretty.Time (ev.GetStartTimeLocal ()), Pretty.Time (ev.GetEndTimeLocal ()));
-            }
-            if (null != calendarItem) {
-                var location = calendarItem.GetLocation ();
-                if (!string.IsNullOrEmpty (location)) {
-                    body += ": " + location;
-                }
-            }
-        }
-
-        // TODO: i18n
-        // TODO: l10n
-        public static string PrettyFileSize (long fileSize)
-        {
-            NcAssert.True (0 <= fileSize);
-            if (1000 > fileSize) {
-                return String.Format ("{0} B", fileSize);
-            }
-            if (1000000 > fileSize) {
-                return String.Format ("{0:F1} KB", (double)fileSize / 1.0e3);
-            }
-            if ((1000 * 1000 * 1000) > fileSize) {
-                return String.Format ("{0:F1} MB", (double)fileSize / 1.0e6);
-            }
-            if ((1000L * 1000L * 1000L * 1000L) > fileSize) {
-                return String.Format ("{0:F1} GB", (double)fileSize / 1.0e9);
-            }
-            return String.Format ("{0:F1}TB", (double)fileSize / 1.0e12);
-        }
-
-        public static string Join (String one, String two, String separator = " ")
-        {
-            if (String.IsNullOrEmpty (one)) {
-                return two;
-            }
-            if (String.IsNullOrEmpty (two)) {
-                return one;
-            }
-            return one + separator + two;
-        }
+        #region Recurrences
 
         // TODO: l10n
         protected static string DayOfWeekAsString (NcDayOfWeek dow)
         {
-            var fullNames = DTFormat.DayNames;
+            var fullNames = CultureInfo.CurrentCulture.DateTimeFormat.DayNames;
 
             switch (dow) {
 
@@ -804,7 +682,7 @@ namespace NachoCore.Utils
 
             default:
                 // A combination of days.
-                var shortNames = DTFormat.AbbreviatedDayNames;
+                var shortNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
                 var dayList = new List<string> ();
                 if (0 != (dow & NcDayOfWeek.Sunday)) {
                     dayList.Add (shortNames [(int)DayOfWeek.Sunday]);
@@ -901,7 +779,7 @@ namespace NachoCore.Utils
             case NcRecurrenceType.Yearly:
                 string dateString;
                 try {
-                    dateString = LongMonthDay (new DateTime (2004, r.MonthOfYear, r.DayOfMonth, 0, 0, 0, DateTimeKind.Local));
+                    dateString = NachoPlatform.DateTimeFormatter.Instance.Date (new DateTime (2004, r.MonthOfYear, r.DayOfMonth, 0, 0, 0, DateTimeKind.Local));
                 } catch (ArgumentOutOfRangeException) {
                     dateString = string.Format ("{0}/{1}", r.MonthOfYear, r.DayOfMonth);
                 }
@@ -969,6 +847,30 @@ namespace NachoCore.Utils
             }
         }
 
+        #endregion
+
+        #region Attachments
+
+        // TODO: i18n
+        // TODO: l10n
+        public static string PrettyFileSize (long fileSize)
+        {
+            NcAssert.True (0 <= fileSize);
+            if (1000 > fileSize) {
+                return String.Format ("{0} B", fileSize);
+            }
+            if (1000000 > fileSize) {
+                return String.Format ("{0:F1} KB", (double)fileSize / 1.0e3);
+            }
+            if ((1000 * 1000 * 1000) > fileSize) {
+                return String.Format ("{0:F1} MB", (double)fileSize / 1.0e6);
+            }
+            if ((1000L * 1000L * 1000L * 1000L) > fileSize) {
+                return String.Format ("{0:F1} GB", (double)fileSize / 1.0e9);
+            }
+            return String.Format ("{0:F1}TB", (double)fileSize / 1.0e12);
+        }
+
         public static string GetExtension (string path)
         {
             if (null == path) {
@@ -1000,6 +902,28 @@ namespace NachoCore.Utils
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
             }
             return detailText;
+        }
+
+        #endregion
+
+        // The display name of the account is a nickname for
+        // the account, like Exchange or My Work Account, etc.
+        // We do not support this yet, so null is the right value.
+        static public string UserNameForAccount (McAccount account)
+        {
+            NcAssert.True (null == account.DisplayUserName);
+            return null;
+        }
+
+        public static string Join (String one, String two, String separator = " ")
+        {
+            if (String.IsNullOrEmpty (one)) {
+                return two;
+            }
+            if (String.IsNullOrEmpty (two)) {
+                return one;
+            }
+            return one + separator + two;
         }
 
         // TODO: i18n
@@ -1067,75 +991,6 @@ namespace NachoCore.Utils
             } else {
                 return "100K+";
             }
-        }
-
-        // TODO: i18n
-        public static string AttendeeStatus (McAttendee attendee)
-        {
-            var tokens = new List<string> ();
-            if (attendee.AttendeeTypeIsSet) {
-                switch (attendee.AttendeeType) {
-                case NcAttendeeType.Optional:
-                    tokens.Add ("Optional");
-                    break;
-                case NcAttendeeType.Required:
-                    tokens.Add ("Required");
-                    break;
-                case NcAttendeeType.Resource:
-                    tokens.Add ("Resource");
-                    break;
-                }
-            }
-            if (attendee.AttendeeStatusIsSet) {
-                switch (attendee.AttendeeStatus) {
-                case NcAttendeeStatus.Accept:
-                    tokens.Add ("Accepted");
-                    break;
-                case NcAttendeeStatus.Decline:
-                    tokens.Add ("Declined");
-                    break;
-                case NcAttendeeStatus.Tentative:
-                    tokens.Add ("Tentative");
-                    break;
-                case NcAttendeeStatus.NotResponded:
-                    tokens.Add ("No Response");
-                    break;
-                }
-            }
-            return String.Join (", ", tokens);
-        }
-
-        // TODO: i18n
-        public static string MeetingResponse (McEmailMessage message)
-        {
-            string messageFormat;
-            switch (message.MeetingResponseValue) {
-            case NcResponseType.Accepted:
-                messageFormat = "{0} has accepted the meeting.";
-                break;
-            case NcResponseType.Tentative:
-                messageFormat = "{0} has tentatively accepted the meeting.";
-                break;
-            case NcResponseType.Declined:
-                messageFormat = "{0} has declined the meeting.";
-                break;
-            default:
-                Log.Warn (Log.LOG_CALENDAR, "Unkown meeting response status: {0}", message.MessageClass);
-                messageFormat = "The status of {0} is unknown.";
-                break;
-            }
-
-            string displayName;
-            var responder = NcEmailAddress.ParseMailboxAddressString (message.From);
-            if (null == responder) {
-                displayName = message.From;
-            } else if (!string.IsNullOrEmpty (responder.Name)) {
-                displayName = responder.Name;
-            } else {
-                displayName = responder.Address;
-            }
-
-            return String.Format (messageFormat, displayName);
         }
     }
 }

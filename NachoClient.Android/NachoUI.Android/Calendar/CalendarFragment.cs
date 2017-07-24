@@ -619,7 +619,7 @@ namespace NachoClient.AndroidClient
                 if (calendarEvent.AllDayEvent) {
                     DurationLabel.SetText (Resource.String.calendar_event_item_all_day);
                 } else {
-                    var duration = Pretty.Time (calendarEvent.StartTime);
+                    var duration = DateTimeFormatter.Instance.MinutePrecisionTime (calendarEvent.StartTime);
                     if (calendarEvent.EndTime > calendarEvent.StartTime) {
                         duration += ", " + Pretty.CompactDuration (Strings.Instance, calendarEvent.StartTime, calendarEvent.EndTime);
                     }
@@ -658,7 +658,7 @@ namespace NachoClient.AndroidClient
             {
                 NumberLabel.Text = String.Format ("{0}", date.Day);
                 WeekdayLabel.Text = date.ToString ("dddd");
-                DateLabel.Text = NachoCore.Utils.Pretty.LongMonthDayYear (date);
+                DateLabel.Text = DateTimeFormatter.Instance.DateWithYear (date);
             }
 
             public void SetAddHandler (EventHandler addHandler)

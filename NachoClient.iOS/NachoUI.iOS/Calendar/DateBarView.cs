@@ -7,6 +7,7 @@ using Foundation;
 using UIKit;
 using NachoCore.Utils;
 using NachoCore;
+using NachoPlatform;
 
 
 namespace NachoClient.iOS
@@ -190,7 +191,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = Pretty.LongMonthYear (this.ViewDate);
+            monthLabelView.Text = DateTimeFormatter.Instance.MonthNameWithYearExceptPresent (this.ViewDate);
         }
 
         public DateTime GetFirstDay (DateTime date)

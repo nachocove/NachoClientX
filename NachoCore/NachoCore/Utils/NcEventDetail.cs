@@ -4,6 +4,7 @@ using System;
 using NachoCore.Model;
 using System.Linq;
 using NachoCore.ActiveSync;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
@@ -198,7 +199,7 @@ namespace NachoCore.Utils
 
         public string DateString {
             get {
-                return Pretty.LongFullDate (StartTime);
+                return NachoPlatform.DateTimeFormatter.Instance.DateWithWeekdayAndYear (StartTime);
             }
         }
 
@@ -241,18 +242,18 @@ namespace NachoCore.Utils
             if (cal.AllDayEvent) {
                 if ((cal.EndTime - cal.StartTime) > TimeSpan.FromDays (1)) {
                     return string.Format ("All day from {0} through {1}",
-                        Pretty.MediumFullDate (GetStartTime (cal)),
-                        Pretty.MediumFullDate (CalendarHelper.ReturnAllDayEventEndTime (GetEndTime (cal))));
+                        DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (GetStartTime (cal)),
+                        DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (CalendarHelper.ReturnAllDayEventEndTime (GetEndTime (cal))));
                 } else {
                     return "All day event";
                 }
             } else {
                 if (startTime.ToLocalTime ().Date == endTime.ToLocalTime ().Date) {
                     return string.Format ("from {0} until {1}",
-                        Pretty.Time (startTime), Pretty.Time (endTime));
+                        DateTimeFormatter.Instance.MinutePrecisionTime (startTime), DateTimeFormatter.Instance.MinutePrecisionTime (endTime));
                 } else {
                     return string.Format ("from {0} until {1}",
-                        Pretty.Time (startTime), Pretty.MediumFullDateTime (endTime));
+                        DateTimeFormatter.Instance.MinutePrecisionTime (startTime), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (endTime));
                 }
             }
         }
@@ -279,7 +280,7 @@ namespace NachoCore.Utils
 
         public static string GetDateString (McAbstrCalendarRoot cal)
         {
-            return Pretty.LongFullDate (GetStartTime (cal));
+            return NachoPlatform.DateTimeFormatter.Instance.DateWithWeekdayAndYear (GetStartTime (cal));
         }
 
         public static string GetDurationString (McAbstrCalendarRoot cal)

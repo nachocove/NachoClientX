@@ -9,6 +9,7 @@ using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using System.Linq;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -286,7 +287,7 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.Time (e.GetStartTimeUtc ());
+                var start = DateTimeFormatter.Instance.MinutePrecisionTime (e.GetStartTimeUtc ());
                 if (e.EndTime > e.StartTime) {
                     var duration = Pretty.CompactDuration (NachoPlatform.Strings.Instance, e.GetStartTimeUtc (), e.GetEndTimeUtc ());
                     startAndDuration = String.Join (" - ", new string [] { start, duration });
@@ -437,7 +438,7 @@ namespace NachoClient.iOS
             view.AddSubview (addButton);
 
             dayLabelView.Text = date.ToString ("dddd");
-            dateLabelView.Text = Pretty.LongMonthDayYear (date);
+            dateLabelView.Text = DateTimeFormatter.Instance.DateWithYear (date);
             bigNumberView.Text = date.Day.ToString ();
 
             return view;

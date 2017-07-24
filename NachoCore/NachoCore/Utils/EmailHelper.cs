@@ -341,7 +341,7 @@ namespace NachoCore.Utils
         public static string AttributionLineForMessage (McEmailMessage message)
         {
             var attribution = "";
-            attribution += string.Format ("On {0} at {1}", Pretty.MediumMonthDayYear (message.DateReceived), Pretty.Time (message.DateReceived));
+            attribution += string.Format ("On {0} at {1}", NachoPlatform.DateTimeFormatter.Instance.AbbreviatedDateWithYear (message.DateReceived), NachoPlatform.DateTimeFormatter.Instance.MinutePrecisionTime (message.DateReceived));
             if (!String.IsNullOrWhiteSpace (message.From)) {
                 if (attribution.Length > 0) {
                     attribution += ", ";

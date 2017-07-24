@@ -23,82 +23,82 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-	public class ContactEditFragment : Fragment, ContactEditAdapter.Listener
-	{
+    public class ContactEditFragment : Fragment, ContactEditAdapter.Listener
+    {
 
-		public McContact Contact;
-		ContactEditAdapter Adapter;
+        public McContact Contact;
+        ContactEditAdapter Adapter;
 
-		#region Subviews
+        #region Subviews
 
-		RecyclerView ListView;
+        RecyclerView ListView;
 
-		void FindSubviews (View view)
-		{
-			ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
-			ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
-		}
+        void FindSubviews (View view)
+        {
+            ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+            ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
+        }
 
-		void ClearSubviews ()
-		{
-			ListView = null;
-		}
+        void ClearSubviews ()
+        {
+            ListView = null;
+        }
 
-		#endregion
+        #endregion
 
-		#region Fragment Lifecycle
+        #region Fragment Lifecycle
 
-		public override void OnCreate (Bundle savedInstanceState)
-		{
-			base.OnCreate (savedInstanceState);
-		}
+        public override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
+        }
 
-		public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-		{
-			var view = inflater.Inflate (Resource.Layout.ContactEditFragment, container, false);
-			FindSubviews (view);
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.ContactEditFragment, container, false);
+            FindSubviews (view);
             Adapter = new ContactEditAdapter (this, Contact);
-			ListView.SetAdapter (Adapter);
-			return view;
-		}
+            ListView.SetAdapter (Adapter);
+            return view;
+        }
 
-		public override void OnDestroyView ()
-		{
-			ClearSubviews ();
-			base.OnDestroyView ();
-		}
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
 
-		#endregion
+        #endregion
 
-		public void EndEditing ()
-		{
+        public void EndEditing ()
+        {
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
             imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
-		}
+        }
 
         public void Save ()
         {
             ContactsHelper.SaveContact (Contact, Adapter.Notes);
         }
 
-	}
+    }
 
-	public class ContactEditAdapter : GroupedListRecyclerViewAdapter
-	{
+    public class ContactEditAdapter : GroupedListRecyclerViewAdapter
+    {
 
-		public interface Listener
-		{
-		}
+        public interface Listener
+        {
+        }
 
-		enum ViewType
-		{
+        enum ViewType
+        {
             NameFields,
             AddButton,
             StringField,
             DateField,
             AddressField,
             NotesField
-		}
+        }
 
         public McContact Contact { get; private set; }
         public string Notes { get; private set; }
@@ -147,8 +147,8 @@ namespace NachoClient.AndroidClient
         }
 
         public ContactEditAdapter (Listener listener, McContact contact) : base ()
-		{
-			WeakListener = new WeakReference<Listener> (listener);
+        {
+            WeakListener = new WeakReference<Listener> (listener);
             Contact = contact;
             EmailAddresses = Contact.EmailAddresses;
             PhoneNumbers = Contact.PhoneNumbers;
@@ -158,9 +158,9 @@ namespace NachoClient.AndroidClient
             Relationships = Contact.Relationships;
             Others = Contact.Others;
             ConfigureGroups ();
-		}
+        }
 
-		int _GroupCount = 0;
+        int _GroupCount = 0;
         int NamesGroupPosition = -1;
         int EmailsGroupPosition = -1;
         int PhonesGroupPosition = -1;
@@ -243,11 +243,11 @@ namespace NachoClient.AndroidClient
             }
         }
 
-		public override int GroupCount {
-			get {
-				return _GroupCount;
-			}
-		}
+        public override int GroupCount {
+            get {
+                return _GroupCount;
+            }
+        }
 
         public override int GroupItemCount (int groupPosition)
         {
@@ -260,29 +260,29 @@ namespace NachoClient.AndroidClient
             if (groupPosition == EmailsGroupPosition) {
                 return EmailAddresses.Count + EmailsExtraItemCount;
             }
-            if (groupPosition == DatesGroupPosition){
-                return Dates.Count + DatesExtraItemCount;                
+            if (groupPosition == DatesGroupPosition) {
+                return Dates.Count + DatesExtraItemCount;
             }
-            if (groupPosition == ImsGroupPosition){
+            if (groupPosition == ImsGroupPosition) {
                 return ImHandles.Count + ImsExtraItemCount;
             }
-            if (groupPosition == AddressesGroupPosition){
+            if (groupPosition == AddressesGroupPosition) {
                 return Addresses.Count + AddressesExtraItemCount;
             }
-            if (groupPosition == RelationshipsGroupPosition){
+            if (groupPosition == RelationshipsGroupPosition) {
                 return Relationships.Count + RelationshipsExtraItemCount;
             }
-            if (groupPosition == OthersGroupPosition){
+            if (groupPosition == OthersGroupPosition) {
                 return Others.Count + OthersExtraItemCount;
             }
-            if (groupPosition == NotesGroupPosition){
+            if (groupPosition == NotesGroupPosition) {
                 return 1;
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("ContactEditFragment.GroupItemCount unknown groupPosition: {0}", groupPosition));
-		}
+        }
 
-		public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
-		{
+        public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
+        {
             switch ((ViewType)viewType) {
             case ViewType.NameFields:
                 return NameFieldsViewHolder.Create (parent);
@@ -298,7 +298,7 @@ namespace NachoClient.AndroidClient
                 return NotesFieldViewHolder.Create (parent);
             }
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("ContactEditFragment.OnCreateGroupedViewHolder unknown viewType: {0}", viewType));
-		}
+        }
 
         public override int GetItemViewType (int groupPosition, int position)
         {
@@ -385,8 +385,8 @@ namespace NachoClient.AndroidClient
             throw new NcAssert.NachoDefaultCaseFailure (String.Format ("ContactEditFragment.GetItemViewType unknown position: {0}.{1}", groupPosition, position));
         }
 
-		public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
-		{
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
             if (groupPosition == NamesGroupPosition) {
                 if (position == 0) {
                     var namesHolder = holder as NameFieldsViewHolder;
@@ -421,9 +421,9 @@ namespace NachoClient.AndroidClient
                     stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_email, InputTypes.ClassText | InputTypes.TextVariationEmailAddress, () => AvailableEmailNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = EmailAddresses.IndexOf (attr);
-						EmailAddresses.RemoveAt (index);
-						ConfigureGroups ();
-						NotifyDataSetChanged ();
+                        EmailAddresses.RemoveAt (index);
+                        ConfigureGroups ();
+                        NotifyDataSetChanged ();
                     });
                     return;
                 } else {
@@ -441,9 +441,9 @@ namespace NachoClient.AndroidClient
                     dateHolder.SetAttribute (attr, () => AvailableDateNames);
                     dateHolder.SetRemoveHandler ((sender, e) => {
                         var index = Dates.IndexOf (attr);
-						Dates.RemoveAt (index);
-						ConfigureGroups ();
-						NotifyDataSetChanged ();
+                        Dates.RemoveAt (index);
+                        ConfigureGroups ();
+                        NotifyDataSetChanged ();
                     });
                     return;
                 } else {
@@ -461,9 +461,9 @@ namespace NachoClient.AndroidClient
                     stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_im, InputTypes.ClassText, () => AvailableImNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = ImHandles.IndexOf (attr);
-						ImHandles.RemoveAt (index);
-						ConfigureGroups ();
-						NotifyDataSetChanged ();
+                        ImHandles.RemoveAt (index);
+                        ConfigureGroups ();
+                        NotifyDataSetChanged ();
                     });
                     return;
                 } else {
@@ -481,9 +481,9 @@ namespace NachoClient.AndroidClient
                     addressHolder.SetAttribute (attr, () => AvailableAddressNames);
                     addressHolder.SetRemoveHandler ((sender, e) => {
                         var index = Addresses.IndexOf (attr);
-						Addresses.RemoveAt (index);
-						ConfigureGroups ();
-						NotifyDataSetChanged ();
+                        Addresses.RemoveAt (index);
+                        ConfigureGroups ();
+                        NotifyDataSetChanged ();
                     });
                     return;
                 } else {
@@ -501,9 +501,9 @@ namespace NachoClient.AndroidClient
                     stringHolder.SetAttribute (attr, Resource.String.contact_edit_hint_relationship, InputTypes.ClassText | InputTypes.TextFlagCapWords, () => AvailableRelationshipNames);
                     stringHolder.SetRemoveHandler ((sender, e) => {
                         var index = Relationships.IndexOf (attr);
-						Relationships.RemoveAt (index);
-						ConfigureGroups ();
-						NotifyDataSetChanged ();
+                        Relationships.RemoveAt (index);
+                        ConfigureGroups ();
+                        NotifyDataSetChanged ();
                     });
                     return;
                 } else {
@@ -525,9 +525,9 @@ namespace NachoClient.AndroidClient
                         // so removing from the list alone won't update the model like it does for the other lists.
                         // We have to clear the value to update the relevant McContact property
                         attr.Value = null;
-						Others.RemoveAt (index);
-						ConfigureGroups ();
-						NotifyDataSetChanged ();
+                        Others.RemoveAt (index);
+                        ConfigureGroups ();
+                        NotifyDataSetChanged ();
                     });
                     return;
                 } else {
@@ -548,9 +548,9 @@ namespace NachoClient.AndroidClient
                     return;
                 }
             }
-			throw new NcAssert.NachoDefaultCaseFailure (String.Format ("ContactEditFragment.GetItemViewType unknown position: {0}.{1}", groupPosition, position));
-		}
-        
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("ContactEditFragment.GetItemViewType unknown position: {0}.{1}", groupPosition, position));
+        }
+
         public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
         {
             if (groupPosition == PhonesGroupPosition) {
@@ -581,7 +581,7 @@ namespace NachoClient.AndroidClient
             } else if (groupPosition == RelationshipsGroupPosition) {
                 position -= Relationships.Count;
                 if (position == RelationshipsAddExtraPosition) {
-                    AddRelationship();
+                    AddRelationship ();
                 }
             } else if (groupPosition == OthersGroupPosition) {
                 position -= Others.Count;
@@ -617,7 +617,7 @@ namespace NachoClient.AndroidClient
         void AddImHandle ()
         {
             var names = AvailableImNames;
-            var attr = new McContactStringAttribute();
+            var attr = new McContactStringAttribute ();
             attr.Type = McContactStringType.IMAddress;
             attr.AccountId = Contact.AccountId;
             attr.ChangeName (names [0]);
@@ -664,7 +664,7 @@ namespace NachoClient.AndroidClient
         void AddOther ()
         {
             var names = AvailableOtherNames;
-            var attr = new ContactOtherAttribute (Contact, names[0]);
+            var attr = new ContactOtherAttribute (Contact, names [0]);
             Others.Add (attr);
             ConfigureGroups ();
             NotifyDataSetChanged ();
@@ -696,7 +696,7 @@ namespace NachoClient.AndroidClient
                 LastNameField = view.FindViewById (Resource.Id.last_name) as EditText;
                 SuffixField = view.FindViewById (Resource.Id.suffix) as EditText;
                 CompanyField = view.FindViewById (Resource.Id.company) as EditText;
-                
+
                 FirstNameField.TextChanged += FirstNameChanged;
                 MiddleNameField.TextChanged += MiddleNameChanged;
                 LastNameField.TextChanged += LastNameChanged;
@@ -747,9 +747,9 @@ namespace NachoClient.AndroidClient
 
             void UpdatePortrait ()
             {
-                PortraitView.SetPortrait(Contact.PortraitId, Contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (Contact));
+                PortraitView.SetPortrait (Contact.PortraitId, Contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (Contact));
             }
-            
+
         }
 
         class AddButtonViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
@@ -812,11 +812,11 @@ namespace NachoClient.AndroidClient
                     RemoveButton.Click -= RemoveHandler;
                 }
                 RemoveHandler = removeHandler;
-                if (RemoveHandler != null){
+                if (RemoveHandler != null) {
                     RemoveButton.Click += RemoveHandler;
                 }
             }
-            
+
             void NameLabelClicked (object sender, EventArgs e)
             {
                 var availableNames = AvailableNames ();
@@ -829,16 +829,16 @@ namespace NachoClient.AndroidClient
                 var builder = new AlertDialog.Builder (ItemView.Context);
                 builder.SetSingleChoiceItems (items, selectedItem, (sender_, e_) => {
                     var name = availableNames [e_.Which - 1];
-	                Attribute.ChangeName (name);
+                    Attribute.ChangeName (name);
                     NameLabel.Text = Attribute.GetDisplayLabel ();
-	                NamePicker.Dismiss ();
+                    NamePicker.Dismiss ();
                 });
                 NamePicker = builder.Show ();
                 NamePicker.DismissEvent += (sender_, e_) => {
                     NamePicker = null;
                 };
             }
-            
+
         }
 
         class StringFieldViewHolder : FieldViewHolder
@@ -878,9 +878,9 @@ namespace NachoClient.AndroidClient
                 base.SetAttribute (attr, availableNames);
                 EmailAttribute = attr;
                 StringAttribute = null;
-				OtherAttibute = null;
+                OtherAttibute = null;
                 ValueField.InputType = inputType;
-				ValueField.SetHint (hintResource);
+                ValueField.SetHint (hintResource);
                 ValueField.Text = EmailAttribute.Value;
             }
 
@@ -889,12 +889,12 @@ namespace NachoClient.AndroidClient
                 base.SetAttribute (attr, availableNames);
                 OtherAttibute = attr;
                 StringAttribute = null;
-				EmailAttribute = null;
+                EmailAttribute = null;
                 ValueField.InputType = inputType;
-				ValueField.SetHint (hintResource);
+                ValueField.SetHint (hintResource);
                 ValueField.Text = OtherAttibute.Value;
             }
-            
+
             protected virtual void ValueChanged (object sender, TextChangedEventArgs e)
             {
                 if (EmailAttribute != null) {
@@ -930,7 +930,7 @@ namespace NachoClient.AndroidClient
             {
                 base.SetAttribute (attr, availableNames);
                 DateAttribute = attr;
-                ValueLabel.Text = Pretty.BirthdayOrAnniversary (DateAttribute.Value);
+                ValueLabel.Text = Pretty.BirthdayOrAnniversary (NachoPlatform.DateTimeFormatter.Instance, DateAttribute.Value);
             }
 
             void ValueClicked (object sender, EventArgs e)
@@ -938,7 +938,7 @@ namespace NachoClient.AndroidClient
                 var localInitialValue = DateAttribute.Value.ToLocalTime ();
                 DatePicker.Show (ItemView.Context, localInitialValue, DateTime.MinValue, DateTime.MaxValue, (DateTime date) => {
                     DateAttribute.Value = date.ToUniversalTime ();
-                    ValueLabel.Text = Pretty.BirthdayOrAnniversary (DateAttribute.Value);
+                    ValueLabel.Text = Pretty.BirthdayOrAnniversary (NachoPlatform.DateTimeFormatter.Instance, DateAttribute.Value);
                 });
             }
 
@@ -968,7 +968,7 @@ namespace NachoClient.AndroidClient
                 StateField = view.FindViewById (Resource.Id.state) as EditText;
                 PostcodeField = view.FindViewById (Resource.Id.postcode) as EditText;
                 CountryField = view.FindViewById (Resource.Id.country) as EditText;
-                
+
                 StreetField.TextChanged += StreetChanged;
                 CityField.TextChanged += CityChanged;
                 StateField.TextChanged += StateChanged;
@@ -1011,7 +1011,7 @@ namespace NachoClient.AndroidClient
             {
                 AddressAttribute.Country = CountryField.Text;
             }
-            
+
         }
 
         class NotesFieldViewHolder : GroupedListRecyclerViewAdapter.ViewHolder
@@ -1050,5 +1050,5 @@ namespace NachoClient.AndroidClient
 
         }
 
-	}
+    }
 }

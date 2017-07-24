@@ -1376,7 +1376,7 @@ namespace NachoClient.iOS
                     MessageLabel.Text = bundle.TopText;
                 }
                 TimestampDividerLabel.Text = Pretty.VariableDayTime (Message.DateReceived);
-                TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
+                TimestampRevealLabel.Text = NachoPlatform.DateTimeFormatter.Instance.MinutePrecisionTime (Message.DateReceived);
                 if (Participant == null) {
                     var pending = McPending.QueryByEmailMessageId (Message.AccountId, Message.Id);
                     hasError = forceHasError || (pending != null && pending.ResultKind == NcResult.KindEnum.Error);
