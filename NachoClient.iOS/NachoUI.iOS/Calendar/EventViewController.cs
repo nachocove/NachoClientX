@@ -515,7 +515,7 @@ namespace NachoClient.iOS
 
             ConfigureRsvpBar ();
 
-            NavigationItem.Title = Pretty.LongMonthForceYear (detail.StartTime);
+            NavigationItem.Title = "";
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabel.Text = detail.SpecificItem.GetSubject ();

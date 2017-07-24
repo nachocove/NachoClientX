@@ -201,15 +201,6 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// "October 2015"
-        /// </summary>
-        // TODO: l10n
-        static public string LongMonthForceYear (DateTime date)
-        {
-            return date.ToLocalTime ().ToString ("Y");
-        }
-
-        /// <summary>
         /// "Wednesday, October 21" or "Wednesday, October 21, 2015"
         /// </summary>
         // TODO: l10n

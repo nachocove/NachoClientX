@@ -429,4 +429,106 @@ namespace NachoPlatform
         string ReminderHoursFormat { get; }
         string ReminderMinutesFormat { get; }
     }
+
+    public interface IDateTimeFormatter
+    {
+        string WeekdayName (DateTime dateTime);
+        string AbbreviatedWeekdayName (DateTime dateTime);
+
+        string MonthName (DateTime dateTime);
+        string MonthNameWithYear (DateTime dateTime);
+
+        string ShortNumericDate (DateTime dateTime);
+        string ShortNumericDateWithYear (DateTime dateTime);
+        string ShortNumericDateWithShortYear (DateTime dateTime);
+
+        string AbbreviatedDate (DateTime dateTime);
+        string Date (DateTime dateTime);
+
+        string AbbreviatedDateWithYear (DateTime dateTime);
+        string DateWithYear (DateTime dateTime);
+
+        string AbbreviatedDateWithWeekday (DateTime dateTime);
+        string DateWithWeekday (DateTime dateTime);
+
+        string AbbreviatedDateWithWeekdayAndYear (DateTime dateTime);
+        string DateWithWeekdayAndYear (DateTime dateTime);
+
+        string MinutePrecisionTime (DateTime dateTime);
+        string HourPrecisionTime (DateTime dateTime);
+        string MinutePrecisionTimeWithoutAmPm (DateTime dateTime);
+        string HourPrecisionTimeWithoutAmPm (DateTime dateTime);
+    }
+
+    public static class DateTimeFormatterExtensions
+    {
+
+        public static bool IsPresentYear (this DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            return local.Year == DateTime.Now.Year;
+        }
+
+        public static string WeekdayLetter (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            var weekdayName = formatter.WeekdayName (dateTime);
+            return weekdayName.Substring (0, 1);
+        }
+
+        public static string MonthNameWithWithYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.IsPresentYear ()) {
+                return formatter.MonthName (dateTime);
+            }
+            return formatter.MonthNameWithYear (dateTime);
+        }
+
+        public static string AbbreviatedDateWithYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.IsPresentYear ()) {
+                return formatter.AbbreviatedDate (dateTime);
+            }
+            return formatter.AbbreviatedDateWithYear (dateTime);
+        }
+
+        public static string DateWithYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.IsPresentYear ()) {
+                return formatter.Date (dateTime);
+            }
+            return formatter.DateWithYear (dateTime);
+        }
+
+        public static string AbbreviatedDateWithWeekdayAndYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.IsPresentYear ()) {
+                return formatter.AbbreviatedDateWithWeekday (dateTime);
+            }
+            return formatter.AbbreviatedDateWithWeekdayAndYear (dateTime);
+        }
+
+        public static string DateWithWeekdayAndYearExceptPresent (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.IsPresentYear ()) {
+                return formatter.DateWithWeekday (dateTime);
+            }
+            return formatter.DateWithWeekdayAndYear (dateTime);
+        }
+
+        public static string MinutePrecisionTimeExceptZero (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.Minute == 0) {
+                return formatter.HourPrecisionTime (dateTime);
+            }
+            return formatter.MinutePrecisionTime (dateTime);
+        }
+
+        public static string MinutePrecisionTimeExceptZeroWithoutAmPm (this IDateTimeFormatter formatter, DateTime dateTime)
+        {
+            if (dateTime.Minute == 0) {
+                return formatter.HourPrecisionTimeWithoutAmPm (dateTime);
+            }
+            return formatter.MinutePrecisionTimeWithoutAmPm (dateTime);
+        }
+    }
 }

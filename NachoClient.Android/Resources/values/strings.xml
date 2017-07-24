@@ -370,4 +370,24 @@
     <string name="reminder_days_format">{0} days before</string>
     <string name="reminder_hours_format">{0} hours before</string>
     <string name="reminder_minutes_format">{0} minutes before</string>
+
+    <!-- Date/Time Formatting, see https://developer.android.com/reference/java/text/SimpleDateFormat.html -->
+    <string name="datetime_month_with_year_pattern">MMMM yyyy</string>
+    <string name="datetime_short_numeric_date_pattern">M/d</string>
+    <string name="datetime_short_numeric_date_with_year_pattern">M/d/yyyy</string>
+    <string name="datetime_short_numeric_date_with_short_year_pattern">M/d/yy</string>
+    <string name="datetime_date_pattern">MMMM d</string>
+    <string name="datetime_abbr_date_pattern">MMM d</string>
+    <string name="datetime_date_with_year_pattern">MMMM d, yyyy</string>
+    <string name="datetime_abbr_date_with_year_pattern">MMM d, yyyy</string>
+    <string name="datetime_abbr_date_with_weekday_pattern">EEE, MMM d</string>
+    <string name="datetime_abbr_date_with_weekday_and_year_pattern">EEE, MMM d, yyyy</string>
+    <string name="datetime_date_with_weekday_pattern">EEEE, MMMM d</string>
+    <string name="datetime_date_with_weekday_and_year_pattern">EEEE, MMMM d, yyyy</string>
+    <string name="datetime_minute_precision_time_24_pattern">H:mm</string>
+    <string name="datetime_minute_precision_time_pattern">h:mm a</string>
+    <string name="datetime_hour_precision_time_24_pattern">H:mm</string>
+    <string name="datetime_hour_precision_time_pattern">h a</string>
+    <string name="datetime_minute_precision_time_noampm_pattern">h:mm</string>
+    <string name="datetime_hour_precision_time_noampm_pattern">h</string>
 </resources>

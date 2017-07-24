@@ -276,6 +276,7 @@
     <Compile Include="NachoPlatform.Android\ConsoleLog.cs" />
     <Compile Include="NachoUI.Android\MessageView\CalendarInviteView.cs" />
     <Compile Include="NachoPlatform.Android\Strings.cs" />
+    <Compile Include="NachoPlatform.Android\DateTimeFormatter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
