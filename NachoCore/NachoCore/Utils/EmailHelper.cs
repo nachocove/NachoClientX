@@ -337,7 +337,7 @@ namespace NachoCore.Utils
             return Pretty.Join ("Re:", referencedSubject, " ");
         }
 
-        // TODO: i18n
+        // TODO: i18n?
         public static string AttributionLineForMessage (McEmailMessage message)
         {
             var attribution = "";

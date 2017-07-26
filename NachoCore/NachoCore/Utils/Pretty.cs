@@ -31,11 +31,6 @@ namespace NachoCore.Utils
             }
         }
 
-        static public string NoSubjectString ()
-        {
-            return "No subject";
-        }
-
         static public string PreviewString (String preview)
         {
             if (null == preview) {
@@ -180,7 +175,6 @@ namespace NachoCore.Utils
             return String.Format (strings.ReminderMinutesFormat, reminder);
         }
 
-        // TODO: i18n
         static public string ReminderDate (DateTime utcDueDate)
         {
             var duration = System.DateTime.UtcNow - utcDueDate;
@@ -953,7 +947,6 @@ namespace NachoCore.Utils
             return one + separator + two;
         }
 
-        // TODO: i18n
         public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             switch (code) {

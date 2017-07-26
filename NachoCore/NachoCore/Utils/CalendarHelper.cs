@@ -98,7 +98,7 @@ namespace NachoCore.Utils
             return McCalendar.QueryById<McCalendar> (e.CalendarId);
         }
 
-        // TODO: i18n
+        // TODO: i18n?
         public static void CancelOccurrence (McEvent calendarEvent)
         {
             DateTime occurrenceStartTime;
@@ -145,7 +145,7 @@ namespace NachoCore.Utils
             });
         }
 
-        // TODO: i18n
+        // TODO: i18n?
         public static string CalendarName (McAccount account, McFolder folder)
         {
             var accountName = account.DisplayName ?? account.EmailAddr;
@@ -338,7 +338,7 @@ namespace NachoCore.Utils
             }
         }
 
-        // TODO: i18n
+        // TODO: i18n?
         public static void MarkEventAsCancelled (McMeetingRequest eventInfo)
         {
             var cal = McCalendar.QueryByUID (eventInfo.AccountId, eventInfo.GetUID ());
@@ -665,7 +665,7 @@ namespace NachoCore.Utils
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
         }
 
-        // TODO: i18n
+        // TODO: i18n?
         public static void SendMeetingCancelations (McAccount account, McCalendar c, string subjectOverride, MimeEntity mimeBody)
         {
             var mimeMessage = new MimeMessage ();
@@ -796,7 +796,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Create an iCalendar meeting cancelation notice for a McCalendar object.
         /// </summary>
-        // TODO: i18n
+        // TODO: i18n?
         private static IICalendar iCalendarCancelFromMcCalendar (McCalendar cal)
         {
             var iCal = iCalendarCommonFromAbstrCal (cal);
@@ -811,7 +811,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Create an iCalendar meeting cancelation notice for an occurrence of an event.
         /// </summary>
-        // TODO: i18n
+        // TODO: i18n?
         private static IICalendar iCalendarCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent mcEvent, DateTime occurrence)
         {
             var iCal = iCalendarAddStartEndTimes (iCalendarCommon (cal), mcEvent, occurrence);
