@@ -611,5 +611,109 @@ namespace NachoPlatform
 
         #endregion
 
+        #region Attachments
+
+        public string AttachmentInlineUnknownFile { 
+            get {
+                return NSBundle.MainBundle.LocalizedString("Inline Unknown file", "detail label for inline attachment of unknown type");
+            }
+        }
+
+        public string AttachmentInlineTypedFileFormat { 
+            get {
+                return NSBundle.MainBundle.LocalizedString("Inline {0} file", "detail label for inline attachment of known type");
+            }
+        }
+
+        public string AttachmentUnknownFile { 
+            get {
+                return NSBundle.MainBundle.LocalizedString("Unknown file", "detail label for attachment of unknown type");
+            }
+        }
+
+        public string AttachmentTypedFileFormat { 
+            get {
+                return NSBundle.MainBundle.LocalizedString("{0} file", "detail label for attachment of known type");
+            }
+        }
+
+        #endregion
+
+        #region Settings
+
+        public string MaxAgeFilterAllMessages {
+            get {
+                return NSBundle.MainBundle.LocalizedString("All messages (max age filter)", "label for max age filter setting for all messages")
+            }
+        }
+
+        public string MaxAgeFilterOneDay {
+            get {
+                return NSBundle.MainBundle.LocalizedString("One day (max age filter)", "label for max age filter setting for one day")
+            }
+        }
+
+        public string MaxAgeFilterThreeDays {
+            get {
+                return NSBundle.MainBundle.LocalizedString("Three days (max age filter)", "label for max age filter setting for three days")
+            }
+        }
+
+        public string MaxAgeFilterOneWeek {
+            get {
+                return NSBundle.MainBundle.LocalizedString("One week (max age filter)", "label for max age filter setting for one week")
+            }
+        }
+
+        public string MaxAgeFilterTwoWeeks {
+            get {
+                return NSBundle.MainBundle.LocalizedString("Two weeks (max age filter)", "label for max age filter setting for two weeks")
+            }
+        }
+
+        public string MaxAgeFilterOneMonth {
+            get {
+                return NSBundle.MainBundle.LocalizedString("One month (max age filter)", "label for max age filter setting for one month")
+            }
+        }
+
+        public string MaxAgeFilterThreeMonths {
+            get {
+                return NSBundle.MainBundle.LocalizedString("Three months (max age filter)", "label for max age filter setting for three months")
+            }
+        }
+
+        public string MaxAgeFilterSixMonths {
+            get {
+                return NSBundle.MainBundle.LocalizedString("Six months (max age filter)", "label for max age filter setting for six months")
+            }
+        }
+
+        public string NotificationConfigurationHot {
+            get {
+                return NSBundle.MainBundle.LocalizedString("Hot (notification config)", "Notification configuration setting label for hot");
+            }
+        }
+
+        public string NotificationConfigurationVIPs {
+            get {
+                return NSBundle.MainBundle.LocalizedString("VIPs (notification config)", "Notification configuration setting label for VIPs");
+            }
+        }
+
+        public string NotificationConfigirationInbox {
+            get {
+                return NSBundle.MainBundle.LocalizedString("Inbox (notification config)", "Notification configuration setting label for inbox");
+            }
+        }
+
+        public string NotificationConfigirationNone {
+            get {
+                return NSBundle.MainBundle.LocalizedString("None (notification config)", "Notification configuration setting label for none");
+            }
+        }
+
+        #endregion
+
     }
 }

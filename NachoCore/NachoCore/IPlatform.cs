@@ -516,6 +516,25 @@ namespace NachoPlatform
         string RecurrenceListJoiner { get; }
         string RecurrenceListFinalJoiner { get; }
 
+        string AttachmentInlineUnknownFile { get; }
+        string AttachmentInlineTypedFileFormat { get; }
+        string AttachmentUnknownFile { get; }
+        string AttachmentTypedFileFormat { get; }
+
+        string MaxAgeFilterAllMessages { get; }
+        string MaxAgeFilterOneDay { get; }
+        string MaxAgeFilterThreeDays { get; }
+        string MaxAgeFilterOneWeek { get; }
+        string MaxAgeFilterTwoWeeks { get; }
+        string MaxAgeFilterOneMonth { get; }
+        string MaxAgeFilterThreeMonths { get; }
+        string MaxAgeFilterSixMonths { get; }
+
+        string NotificationConfigurationHot { get; }
+        string NotificationConfigurationVIPs { get; }
+        string NotificationConfigirationInbox { get; }
+        string NotificationConfigirationNone { get; }
+
     }
 
     public interface IDateTimeFormatter

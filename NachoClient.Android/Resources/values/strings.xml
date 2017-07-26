@@ -477,4 +477,25 @@
     <string name="recurrence_unknown">repeats with an unknown frequency</string>
     <string name="recurrence_list_joiner">, </string>
     <string name="recurrence_list_final_joiner"> and </string>
+
+    <!-- Attachments -->
+    <string name="attachment_inline_unknown_file">Inline Unknown file</string>
+    <string name="attachment_inline_typed_file_format">Inline {0} file</string>
+    <string name="attachment_unknown_file">Unknown file</string>
+    <string name="attachment_typed_file_format">{0} file</string>
+
+    <!-- Settings -->
+    <string name="max_age_filter_all_messages">All messages</string>
+    <string name="max_age_filter_one_day">One day</string>
+    <string name="max_age_filter_three_days">Three days</string>
+    <string name="max_age_filter_one_week">One week</string>
+    <string name="max_age_filter_two_weeks">Two weeks</string>
+    <string name="max_age_filter_one_month">One month</string>
+    <string name="max_age_filter_three_months">Three months</string>
+    <string name="max_age_filter_six_months">Six months</string>
+    <string name="notification_configuration_hot">Hot</string>
+    <string name="notification_configuration_vips">VIPs</string>
+    <string name="notification_configuration_inbox">Inbox</string>
+    <string name="notification_configuration_none">None</string>
+
 </resources>

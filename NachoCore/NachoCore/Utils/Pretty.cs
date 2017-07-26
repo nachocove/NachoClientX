@@ -899,29 +899,36 @@ namespace NachoCore.Utils
             return System.IO.Path.GetExtension (path).ToUpper ();
         }
 
-        // TODO: i18n
         public static string GetAttachmentDetail (McAttachment attachment)
         {
             string extension = Pretty.GetExtension (attachment.DisplayName);
-            var detailText = "";
-            if (attachment.IsInline) {
-                detailText += "Inline ";
-            }
-            if (1 < extension.Length) {
-                detailText += extension.Substring (1) + " ";
+            string typeString = null;
+            if (extension.Length > 1) {
+                typeString = extension.Substring (1) + " ";
             } else if (!String.IsNullOrEmpty (attachment.ContentType)) {
                 var mimeInfo = attachment.ContentType.Split (new char [] { '/' });
-                if (2 == mimeInfo.Length) {
-                    detailText += mimeInfo [1].ToUpper () + " ";
+                if (mimeInfo.Length == 2) {
+                    typeString = mimeInfo [1].ToUpper () + " ";
+                }
+            }
+            string description;
+            if (attachment.IsInline) {
+                if (typeString == null) {
+                    description = Strings.Instance.AttachmentInlineUnknownFile;
+                } else {
+                    description = string.Format (Strings.Instance.AttachmentInlineTypedFileFormat, typeString);
                 }
             } else {
-                detailText += "Unrecognized ";
+                if (typeString == null) {
+                    description = Strings.Instance.AttachmentUnknownFile;
+                } else {
+                    description = string.Format (Strings.Instance.AttachmentTypedFileFormat, typeString);
+                }
             }
-            detailText += "file";
             if (0 != attachment.FileSize) {
-                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
+                return string.Format ("{0} - {1}", description, Pretty.PrettyFileSize (attachment.FileSize));
             }
-            return detailText;
+            return description;
         }
 
         #endregion
@@ -951,21 +958,21 @@ namespace NachoCore.Utils
         {
             switch (code) {
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
-                return "All messages";
+                return Strings.Instance.MaxAgeFilterAllMessages;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
-                return "One day";
+                return Strings.Instance.MaxAgeFilterOneDay;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeDays_2:
-                return "Three days";
+                return Strings.Instance.MaxAgeFilterThreeDays;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneWeek_3:
-                return "One week";
+                return Strings.Instance.MaxAgeFilterOneWeek;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
-                return "Two weeks";
+                return Strings.Instance.MaxAgeFilterTwoWeeks;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
-                return "One month";
+                return Strings.Instance.MaxAgeFilterOneMonth;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
-                return "Three months";
+                return Strings.Instance.MaxAgeFilterThreeMonths;
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
-                return "Six months";
+                return Strings.Instance.MaxAgeFilterSixMonths;
             default:
                 NcAssert.CaseError ();
                 break;
@@ -973,7 +980,6 @@ namespace NachoCore.Utils
             return "";
         }
 
-        // TODO: i18n
         // Some of these are hidden on purpose, see notification code
         public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
         {
@@ -982,13 +988,13 @@ namespace NachoCore.Utils
             //                list.Add ("All");
             //            }
             if (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 == (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 & code)) {
-                list.Add ("Hot");
+                list.Add (Strings.Instance.NotificationConfigurationHot);
             }
             if (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 == (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 & code)) {
-                list.Add ("VIPs");
+                list.Add (Strings.Instance.NotificationConfigurationVIPs);
             }
             if (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 == (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 & code)) {
-                list.Add ("Inbox");
+                list.Add (Strings.Instance.NotificationConfigirationInbox);
             }
             //            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
             //                list.Add ("Invitations");
@@ -997,7 +1003,7 @@ namespace NachoCore.Utils
             //                list.Add ("Reminders");
             //            }
             if (0 == list.Count) {
-                return "None";
+                return Strings.Instance.NotificationConfigirationNone;
             } else {
                 return String.Join (", ", list);
             }

@@ -611,5 +611,109 @@ namespace NachoPlatform
         }
 
         #endregion
+
+        #region Attachments
+
+        public string AttachmentInlineUnknownFile { 
+            get {
+                return Context.GetString (Resource.String.attachment_inline_unknown_file);
+            }
+        }
+
+        public string AttachmentInlineTypedFileFormat { 
+            get {
+                return Context.GetString (Resource.String.attachment_inline_typed_file_format);
+            }
+        }
+
+        public string AttachmentUnknownFile { 
+            get {
+                return Context.GetString (Resource.String.attachment_unknown_file);
+            }
+        }
+
+        public string AttachmentTypedFileFormat { 
+            get {
+                return Context.GetString (Resource.String.attachment_typed_file_format);
+            }
+        }
+
+        #endregion
+
+        #region Settings
+
+        public string MaxAgeFilterAllMessages {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_all_messages);
+            }
+        }
+
+        public string MaxAgeFilterOneDay {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_one_day);
+            }
+        }
+
+        public string MaxAgeFilterThreeDays {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_three_days);
+            }
+        }
+
+        public string MaxAgeFilterOneWeek {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_one_week);
+            }
+        }
+
+        public string MaxAgeFilterTwoWeeks {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_two_weeks);
+            }
+        }
+
+        public string MaxAgeFilterOneMonth {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_one_month);
+            }
+        }
+
+        public string MaxAgeFilterThreeMonths {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_three_months);
+            }
+        }
+
+        public string MaxAgeFilterSixMonths {
+            get {
+                return Context.GetString (Resource.String.max_age_filter_six_months);
+            }
+        }
+
+        public string NotificationConfigurationHot {
+            get {
+                return Context.GetString (Resource.String.notification_configuration_hot);
+            }
+        }
+
+        public string NotificationConfigurationVIPs {
+            get {
+                return Context.GetString (Resource.String.notification_configuration_vips);
+            }
+        }
+
+        public string NotificationConfigirationInbox {
+            get {
+                return Context.GetString (Resource.String.notification_configuration_inbox);
+            }
+        }
+
+        public string NotificationConfigirationNone {
+            get {
+                return Context.GetString (Resource.String.notification_configuration_none);
+            }
+        }
+
+        #endregion
     }
 }

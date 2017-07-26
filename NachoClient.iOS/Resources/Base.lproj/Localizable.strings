@@ -220,10 +220,53 @@
 ", (recurrence)" = ", ";
 " and (recurrence)" = " and ";
 
+/* detail label for inline attachment of unknown type */
+"Inline Unknown file" = "Inline Unknown file";
 
+/* detail label for inline attachment of known type */
+"Inline {0} file" = "Inline {0} file";
 
+/* detail label for attachment of unknown type */
+"Unknown file" = "Unknown file";
 
+/* detail label for attachment of known type */
+"{0} file" = "{0} file";
 
+/* label for max age filter setting for all messages */
+"All messages (max age filter)" = "All messages";
+
+/* label for max age filter setting for one day */
+"One day (max age filter)" = "One day";
+
+/* label for max age filter setting for three days */
+"Three days (max age filter)" = "Three days";
+
+/* label for max age filter setting for one week */
+"One week (max age filter)" = "One week";
+
+/* label for max age filter setting for two weeks */
+"Two weeks (max age filter)" = "Two weeks";
+
+/* label for max age filter setting for one month */
+"One month (max age filter)" = "One month";
+
+/* label for max age filter setting for three months */
+"Three months (max age filter)" = "Three months";
+
+/* label for max age filter setting for six months */
+"Six months (max age filter)" = "Six months";
+
+/* Notification configuration setting label for hot */
+"Hot (notification config)" = "Hot";
+
+/* Notification configuration setting label for VIPs */
+"VIPs (notification config)" = "VIPs";
+
+/* Notification configuration setting label for inbox */
+"Inbox (notification config)" = "Inbox";
+
+/* Notification configuration setting label for none */
+"None (notification config)" = "None";
 
 
 
