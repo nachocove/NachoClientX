@@ -61,21 +61,21 @@ namespace NachoPlatform
         public string ShortNumericDate (DateTime dateTime)
         {
             var formatter = new NSDateFormatter ();
-            formatter.SetLocalizedDateFormatFromTemplate ("MMd");
+            formatter.SetLocalizedDateFormatFromTemplate ("Md");
             return formatter.ToString (dateTime.ToLocalNSDate ());
         }
 
         public string ShortNumericDateWithYear (DateTime dateTime)
         {
             var formatter = new NSDateFormatter ();
-            formatter.SetLocalizedDateFormatFromTemplate ("MMdyyyy");
+            formatter.SetLocalizedDateFormatFromTemplate ("Mdyyyy");
             return formatter.ToString (dateTime.ToLocalNSDate ());
         }
 
         public string ShortNumericDateWithShortYear (DateTime dateTime)
         {
             var formatter = new NSDateFormatter ();
-            formatter.SetLocalizedDateFormatFromTemplate ("MMdyy");
+            formatter.SetLocalizedDateFormatFromTemplate ("Mdyy");
             return formatter.ToString (dateTime.ToLocalNSDate ());
         }
 

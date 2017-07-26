@@ -64,3 +64,166 @@
 /* reminder X minutes the event starts */
 "{0} minutes" = "{0} minutes";
 
+/* friendly date/time format for today */
+"Today - {0} (friendly datetime)" = "Today - {0}";
+
+/* friendly date/time format for yesterday */
+"Yesterday - {0} (friendly datetime)" = "Yesterday - {0}";
+
+/* friendly date/time format for any other date */
+"{0} - {1} (friendly datetime)" = "{0} - {1}";
+
+/* Name for yesterday when showing dates in the message list */
+"Yesterday (decreasing precision)" = "Yesterday";
+
+/* Name for today when showing due dates */
+"Today (future date)" = "Today";
+
+/* Name for tomorrow when showing due dates */
+"Tomorrow (future date)" = "Tomorrow";
+
+/* Name for yesterday when showing due dates */
+"Yesterday (future date)" = "Yesterday";
+
+/* Format for yesterday when showing chat timestamps */
+"Yesterday {0} (variable datetime)" = "Yesterday {0}";
+
+/* Format for other days when showing chat timestamps */
+"{0} {1} (variable datetime)" = "{0} {1}";
+
+/* Name for right now when showing event time */
+"now (event time)" = "now";
+
+/* Name for one minute from now when showing event time */
+"in 1 minute (event time)" = "in 1 minute";
+
+/* Format for x minutes from now when showing event time */
+"in {0} minutes (event time)" = "in {0} minutes";
+
+/* Format for a specific time today when showing event time */
+"at {0} (event time)" = "at {0}";
+
+/* Format for a specific daty/time when showing event time */
+"{0} {1} (event time)" = "{0} {1}";
+
+/* Name for today when showing an event's day */
+"Today (event day)" = "Today";
+
+/* Name for tomorrow when showing an event's day */
+"Tomorrow (event day)" = "Tomorrow";
+
+/* "Second line of an all day event's span */
+"through {0}" = "through {0}";
+
+/* Time span for an event, as shown in the detail screen */
+"{0} to {1} (event detail)" = "{0} to {1}";
+
+/* Time span for an all day meeting request */
+"{0} through {1} (meeting request)" =  "{0} through {1}";
+
+/* Time span for a meeting request on the same day with the same am/pm */
+"{0} from {1} to {2} (meeting request)" = "{0} from {1} to {2}";
+
+/* Time span for a meeting request on the same day */
+"{0}, {1} to {2} (meeting request)" = "{0}, {1} to {2}";
+
+/* Time span for a meeting request on different days */
+"{0} at {1} to {2} (meeting request)" = "{0} at {1} to {2}";
+
+/* The fallback title for an event notification */
+"Event (event notification)" = "Event";
+
+/* The time of an all day event notification */
+"{0} all day (event notification)" = "{0} all day";
+
+/* The time of an event notification */
+"{0} - {1} (event notification)" = "{0} - {1}";
+
+/* The name for the optional attendee status */
+"Optional (attendee status)" = "Optional";
+
+/* The name for the required attendee status */
+"Required (attendee status)" = "Required";
+
+/* The name for the resource attendee status */
+"Resource (attendee status)" = "Resource";
+
+/* The name for the accepted attendee status */
+"Accepted (attendee status)" = "Accepted";
+
+/* The name for the declined attendee status */
+"Declined (attendee status)" = "Declined";
+
+/* The name for the tentative attendee status */
+"Tentative (attendee status)" = "Tentative";
+
+/* The name for the no response attendee status */
+"No Response (attendee status)" = "No Response";
+
+/* The status line indicating meeting request was accepted */
+"{0} has accepted the meeting." = "{0} has accepted the meeting.";
+
+/* The status line indicating meeting request was declined */
+"{0} has declined the meeting." = "{0} has declined the meeting.";
+
+/* The status line indicating meeting request was tentatively accepted */
+"{0} has tentatively accepted the meeting." = "{0} has tentatively accepted the meeting.";
+
+/* The status line indicating an unknown meeting response */
+"The status of {0} is unknown." = "The status of {0} is unknown.";
+
+/* Fallback text to use in a mesasge list when there are no recipients, like for a draft */
+"(No Recipients)" = "(No Recipients)";
+
+"does not repeat" = "does not repeat";
+"repeats daily" = "repeats daily";
+"repeats every {0} days" = "repeats every {0} days";
+"repeats on weekdays" = "repeats on weekdays";
+"repeats on weekends" = "repeats on weekends";
+"repeats weekly on {0}" = "repeats weekly on {0}";
+"repeats every {0} weeks on weekdays" = "repeats every {0} weeks on weekdays";
+"repeats every {0} weeks on {1}" = "repeats every {0} weeks on {1}";
+"repeats monthly on day {0}" = "repeats monthly on day {0}";
+"repeats every {0} months on day {1}" = "repeats every {0} months on day {1}";
+"repeats monthly on the last day of the month" = "repeats monthly on the last day of the month";
+"repeats monthly on the last weekday of the month" = "repeats monthly on the last weekday of the month";
+"repeats monthly on the last weekend day of the month" = "repeats monthly on the last weekend day of the month";
+"repeats monthly on weekdays during week {0} of the month" = "repeats monthly on weekdays during week {0} of the month";
+"repeats monthly on weekend days during week {0} of the month" = "repeats monthly on weekend days during week {0} of the month";
+"repeats monthly on {0} in week {1} of the month" = "repeats monthly on {0} in week {1} of the month";
+"repeats monthly on the last {0} of the month" = "repeats monthly on the last {0} of the month";
+"repeats every {0} months on the last day of the month" = "repeats every {0} months on the last day of the month";
+"repeats every {0} months on the last weekday of the month" = "repeats every {0} months on the last weekday of the month";
+"repeats every {0} months on the last weekend day of the month" = "repeats every {0} months on the last weekend day of the month";
+"repeats every {0} months on the last {1} of the month" = "repeats every {0} months on the last {1} of the month";
+"repeats every {0} months on the weekdays in week {1} of the month" = "repeats every {0} months on the weekdays in week {1} of the month";
+"repeats every {0} months on the weekend days in week {1} of the month" = "repeats every {0} months on the weekend days in week {1} of the month";
+"repeats every {0} months on {1} in week {2} of the month" = "repeats every {0} months on {1} in week {2} of the month";
+"repeats yearly on the last day of {0}" = "repeats yearly on the last day of {0}";
+"repeats yearly on the last weekday of {0}" = "repeats yearly on the last weekday of {0}";
+"repeats yearly on the last weekend day of {0}" = "repeats yearly on the last weekend day of {0}";
+"repeats yearly on the last {0} of {1}" = "repeats yearly on the last {0} of {1}";
+"repeats yearly on the weekdays in week {0} of {1}" = "repeats yearly on the weekdays in week {0} of {1}";
+"repeats yearly on the weekend days in week {0} of {1}" = "repeats yearly on the weekend days in week {0} of {1}";
+"repeats yearly on the {0} in week {1} of {2}" = "repeats yearly on the {0} in week {1} of {2}";
+"repeats every {0} years on the last day of {1}" = "repeats every {0} years on the last day of {1}";
+"repeats every {0} years on the last weekday of {1}" = "repeats every {0} years on the last weekday of {1}";
+"repeats every {0} years on the last weekend day of {1}" = "repeats every {0} years on the last weekend day of {1}";
+"repeats every {0} years on the last {1} of {2}" = "repeats every {0} years on the last {1} of {2}";
+"repeats every {0} years on the weekdays in week {1} of {2}" = "repeats every {0} years on the weekdays in week {1} of {2}";
+"repeats every {0} years on the weekend days in week {1} of {2}" = "repeats every {0} years on the weekend days in week {1} of {2}";
+"repeats every {0} years on the {1} in week {2} of {3}" = "repeats every {0} years on the {1} in week {2} of {3}";
+"repeats every year on {0}" = "repeats every year on {0}";
+"repeats every {0} years on {1}" = "repeats every {0} years on {1}";
+"month {0} (recurrence)" = "month {0}";
+"repeats with an unknown frequency" = "repeats with an unknown frequency";
+", (recurrence)" = ", ";
+" and (recurrence)" = " and ";
+
+
+
+
+
+
+
+

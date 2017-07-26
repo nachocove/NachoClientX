@@ -210,25 +210,22 @@ namespace NachoCore.Utils
             }
         }
 
-        // TODO: i18n
         static public string FriendlyFullDateTime (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
             var now = DateTime.Now;
             var diff = now - local;
-            var dayString = "";
             var timeString = DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
             if (diff < now.TimeOfDay) {
-                return String.Format ("Today - {0}", timeString);
+                return String.Format (Strings.Instance.FriendlyDateTimeTodayFormat, timeString);
             } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (1))) {
-                return String.Format ("Yesterday - {0}", timeString);
+                return String.Format (Strings.Instance.FriendlyDateTimeYesterdayFormat, timeString);
             } else if (diff < (now.TimeOfDay + TimeSpan.FromDays (6))) {
-                return String.Format ("{0} - {1}", local.ToString ("dddd"), timeString);
+                return String.Format (Strings.Instance.FriendlyDateTimeOtherFormat, DateTimeFormatter.Instance.WeekdayName (dateTime), timeString);
             }
-            return String.Format ("{0} - {1}", DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (dateTime), timeString);
+            return String.Format (Strings.Instance.FriendlyDateTimeOtherFormat, DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (dateTime), timeString);
         }
 
-        // TODO: i18n
         static public string TimeWithDecreasingPrecision (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
@@ -244,15 +241,14 @@ namespace NachoCore.Utils
                 return DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
             }
             if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
-                return "Yesterday";
+                return Strings.Instance.DecreasingPrecisionTimeYesterday;
             }
             if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
-                return local.ToString ("dddd");
+                return DateTimeFormatter.Instance.WeekdayName (dateTime);
             }
             return DateTimeFormatter.Instance.ShortNumericDateWithShortYear (dateTime);
         }
 
-        // TODO: i18n
         static public string FutureDate (DateTime dateTime, bool timeMatters)
         {
             var local = dateTime.ToLocalTime ();
@@ -262,24 +258,23 @@ namespace NachoCore.Utils
                 if (timeMatters) {
                     return DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (local);
                 }
-                return "Today";
+                return Strings.Instance.FutureDateToday;
             }
             if (now < localStartOfDay) {
                 if (now + TimeSpan.FromDays (1) > localStartOfDay) {
-                    return "Tomorrow";
+                    return Strings.Instance.FutureDateTomorrow;
                 }
                 if (now + TimeSpan.FromDays (6) > localStartOfDay) {
-                    return local.ToString ("dddd");
+                    return DateTimeFormatter.Instance.WeekdayName (dateTime);
                 }
             } else {
                 if (local + TimeSpan.FromDays (1) > now - now.TimeOfDay) {
-                    return "Yesterday";
+                    return Strings.Instance.FutureDateYesterday;
                 }
             }
             return DateTimeFormatter.Instance.ShortNumericDateWithShortYear (dateTime);
         }
 
-        // TODO: i18n
         static public string VariableDayTime (DateTime dateTime)
         {
             var local = dateTime.ToLocalTime ();
@@ -289,10 +284,10 @@ namespace NachoCore.Utils
                 return DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
             }
             if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
-                return String.Format ("Yesterday {0}", DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
+                return String.Format (Strings.Instance.VariableDateTimeYesterdayFormat, DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
             }
             if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
-                return string.Format ("{0} {1}", DateTimeFormatter.Instance.WeekdayName (dateTime), DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
+                return string.Format (Strings.Instance.VariableDateTimeOtherFormat, DateTimeFormatter.Instance.WeekdayName (dateTime), DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
             }
             return DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (dateTime);
         }
@@ -306,7 +301,6 @@ namespace NachoCore.Utils
 
         #region Events
 
-        // TODO: i18n
         static public string EventTime (DateTime dateTime, out TimeSpan validSpan)
         {
             var local = dateTime.ToLocalTime ();
@@ -315,18 +309,18 @@ namespace NachoCore.Utils
 
             if (diff < TimeSpan.FromSeconds (30)) {
                 validSpan = TimeSpan.FromSeconds (-2);
-                return "now";
+                return Strings.Instance.EventTimeNow;
             }
 
             if (diff < TimeSpan.FromMinutes (1)) {
                 validSpan = TimeSpan.FromSeconds (30);
-                return "in 1 minute";
+                return Strings.Instance.EventTimeOneMinute;
             }
 
             if (diff < TimeSpan.FromMinutes (15)) {
                 var minutes = (int)Math.Ceiling (diff.TotalMinutes);
                 validSpan = (local - TimeSpan.FromMinutes (minutes - 1)) - now;
-                return String.Format ("in {0} minutes", minutes);
+                return String.Format (Strings.Instance.EventTimeMinutesFormat, minutes);
             }
 
             if (diff <= TimeSpan.FromMinutes (60)) {
@@ -343,7 +337,7 @@ namespace NachoCore.Utils
                     roundedMinutes = (int)Math.Ceiling (fiveMinuteBlocks) * 5;
                     validSpan = TimeSpan.FromMinutes (remainderMinutes - 2.5);
                 }
-                return String.Format ("in {0} minutes", roundedMinutes);
+                return String.Format (Strings.Instance.EventTimeMinutesFormat, roundedMinutes);
             }
 
             validSpan = (local - TimeSpan.FromHours (1)) - now;
@@ -354,12 +348,11 @@ namespace NachoCore.Utils
                 cutoff = now.TimeOfDay;
             }
             if (diff < cutoff) {
-                return "at " + DateTimeFormatter.Instance.MinutePrecisionTime (dateTime);
+                return string.Format (Strings.Instance.EventTimeAtFormat, DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
             }
-            return string.Format ("{0} {1}", DateTimeFormatter.Instance.WeekdayName (dateTime), DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
+            return string.Format (Strings.Instance.EventTimeDateFormat, DateTimeFormatter.Instance.WeekdayName (dateTime), DateTimeFormatter.Instance.MinutePrecisionTime (dateTime));
         }
 
-        // TODO: i18n
         static public string EventDay (DateTime dateTime, out TimeSpan validSpan)
         {
             var local = dateTime.ToLocalTime ();
@@ -368,16 +361,15 @@ namespace NachoCore.Utils
             tomorrow = tomorrow - tomorrow.TimeOfDay;
             validSpan = tomorrow - reference;
             if (local < reference) {
-                return "Today";
+                return Strings.Instance.EventDayToday;
             }
             reference = reference.AddDays (1);
             if (local < reference) {
-                return "Tomorrow";
+                return Strings.Instance.EventDayTomorrow;
             }
             return DateTimeFormatter.Instance.WeekdayName (local);
         }
 
-        // TODO: i18n
         static public string EventDetailTime (McEvent calendarEvent)
         {
             var start = calendarEvent.StartTime;
@@ -393,13 +385,13 @@ namespace NachoCore.Utils
                 var span = (end - start);
                 if (span > TimeSpan.FromDays (1)) {
                     var endDay = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (end);
-                    lines.Add (String.Format ("through {0}", endDay));
+                    lines.Add (String.Format (Strings.Instance.EventDetailTimeThroughFormat, endDay));
                 }
             } else {
                 if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
-                    lines.Add (string.Format ("{0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (end)));
+                    lines.Add (string.Format (Strings.Instance.EventDetailTimeToFormat, DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (end)));
                 } else {
-                    lines.Add (string.Format ("{0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (end)));
+                    lines.Add (string.Format (Strings.Instance.EventDetailTimeToFormat, DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (end)));
                 }
             }
             var recurrences = calendarEvent.QueryRecurrences ();
@@ -409,7 +401,6 @@ namespace NachoCore.Utils
             return String.Join ("\n", lines);
         }
 
-        // TODO: i18n
         static public string MeetingRequestTime (McMeetingRequest meetingRequest)
         {
             var start = meetingRequest.StartTime;
@@ -419,22 +410,25 @@ namespace NachoCore.Utils
                 start = new DateTime (start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Local);
                 end = new DateTime (end.Year, end.Month, end.Day, end.Hour, end.Minute, end.Second, DateTimeKind.Local);
             }
-            var line = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (start);
+            var startString = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (start);
+            string line;
             if (meetingRequest.AllDayEvent) {
                 var span = (end - start);
                 if (span > TimeSpan.FromDays (1)) {
-                    var endDay = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (end);
-                    line += String.Format (" through {0}", endDay);
+                    var endString = DateTimeFormatter.Instance.DateWithWeekdayAndYearExceptPresent (end);
+                    line = String.Format (Strings.Instance.MeetingRequestTimeAllDayFormat, startString, endString);
+                } else {
+                    line = startString;
                 }
             } else {
                 if (start.ToLocalTime ().Date == end.ToLocalTime ().Date) {
                     if ((start.ToLocalTime ().Hour < 12 && end.ToLocalTime ().Hour < 12) || (start.ToLocalTime ().Hour >= 12 && end.ToLocalTime ().Hour >= 12)) {
-                        line += string.Format (" from {0} to {1}", formatter.MinutePrecisionTimeExceptZeroWithoutAmPm (start), formatter.MinutePrecisionTimeExceptZero (end));
+                        line = string.Format (Strings.Instance.MeetingRequestTimeSameHalfDayFormat, startString, formatter.MinutePrecisionTimeExceptZeroWithoutAmPm (start), formatter.MinutePrecisionTimeExceptZero (end));
                     } else {
-                        line += string.Format (", {0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (end));
+                        line = string.Format (Strings.Instance.MeetingRequestTimeSameDayFormat, startString, DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (end));
                     }
                 } else {
-                    line += string.Format (" at {0} to {1}", DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (end));
+                    line = string.Format (Strings.Instance.MeetingRequestTimeMultiDayFormat, startString, DateTimeFormatter.Instance.MinutePrecisionTimeExceptZero (start), DateTimeFormatter.Instance.AbbreviatedDateTimeWithWeekdayAndYearExceptPresent (end));
                 }
             }
             var recurrences = meetingRequest.recurrences;
@@ -444,7 +438,6 @@ namespace NachoCore.Utils
             return line;
         }
 
-        // TODO: i18n
         static public string EventEditTime (DateTime date, bool isAllDay, bool isEnd)
         {
             if (isAllDay) {
@@ -457,33 +450,18 @@ namespace NachoCore.Utils
             return DateTimeFormatter.Instance.DateTimeWithWeekdayAndYearExceptPresent (date);
         }
 
-        /// <summary>
-        /// Given an organizer name, return a string
-        /// worthy of being displayed in the files list.
-        /// </summary>
-        // TODO: i18n
-        static public string OrganizerString (string organizer)
-        {
-            if (null == organizer) {
-                return "Organizer unavailable";
-            } else {
-                return organizer;
-            }
-        }
-
-        // TODO: i18n
         public static void EventNotification (McEvent ev, out string title, out string body)
         {
             var calendarItem = ev.CalendarItem;
             if (null == calendarItem) {
-                title = "Event";
+                title = Strings.Instance.EventNotificationDefaultTitle;
             } else {
                 title = Pretty.SubjectString (calendarItem.GetSubject ());
             }
             if (ev.AllDayEvent) {
-                body = string.Format ("{0} all day", DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (ev.GetStartTimeLocal ()));
+                body = string.Format (Strings.Instance.EventNotificationAllDayTimeFormat, DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (ev.GetStartTimeLocal ()));
             } else {
-                body = string.Format ("{0} - {1}", DateTimeFormatter.Instance.MinutePrecisionTime (ev.GetStartTimeLocal ()), DateTimeFormatter.Instance.MinutePrecisionTime (ev.GetEndTimeLocal ()));
+                body = string.Format (Strings.Instance.EventNotificationTimeFormat, DateTimeFormatter.Instance.MinutePrecisionTime (ev.GetStartTimeLocal ()), DateTimeFormatter.Instance.MinutePrecisionTime (ev.GetEndTimeLocal ()));
             }
             if (null != calendarItem) {
                 var location = calendarItem.GetLocation ();
@@ -493,59 +471,57 @@ namespace NachoCore.Utils
             }
         }
 
-        // TODO: i18n
         public static string AttendeeStatus (McAttendee attendee)
         {
             var tokens = new List<string> ();
             if (attendee.AttendeeTypeIsSet) {
                 switch (attendee.AttendeeType) {
                 case NcAttendeeType.Optional:
-                    tokens.Add ("Optional");
+                    tokens.Add (Strings.Instance.AttendeeStatusOptional);
                     break;
                 case NcAttendeeType.Required:
-                    tokens.Add ("Required");
+                    tokens.Add (Strings.Instance.AttendeeStatusRequired);
                     break;
                 case NcAttendeeType.Resource:
-                    tokens.Add ("Resource");
+                    tokens.Add (Strings.Instance.AttendeeStatusResource);
                     break;
                 }
             }
             if (attendee.AttendeeStatusIsSet) {
                 switch (attendee.AttendeeStatus) {
                 case NcAttendeeStatus.Accept:
-                    tokens.Add ("Accepted");
+                    tokens.Add (Strings.Instance.AttendeeStatusAccepted);
                     break;
                 case NcAttendeeStatus.Decline:
-                    tokens.Add ("Declined");
+                    tokens.Add (Strings.Instance.AttendeeStatusDeclined);
                     break;
                 case NcAttendeeStatus.Tentative:
-                    tokens.Add ("Tentative");
+                    tokens.Add (Strings.Instance.AttendeeStatusTentative);
                     break;
                 case NcAttendeeStatus.NotResponded:
-                    tokens.Add ("No Response");
+                    tokens.Add (Strings.Instance.AttendeeStatusNoResponse);
                     break;
                 }
             }
             return String.Join (", ", tokens);
         }
 
-        // TODO: i18n
         public static string MeetingResponse (McEmailMessage message)
         {
             string messageFormat;
             switch (message.MeetingResponseValue) {
             case NcResponseType.Accepted:
-                messageFormat = "{0} has accepted the meeting.";
+                messageFormat = Strings.Instance.MeetingResponseAcceptedFormat;
                 break;
             case NcResponseType.Tentative:
-                messageFormat = "{0} has tentatively accepted the meeting.";
+                messageFormat = Strings.Instance.MeetingResponseTentativeFormat;
                 break;
             case NcResponseType.Declined:
-                messageFormat = "{0} has declined the meeting.";
+                messageFormat = Strings.Instance.MeetingResponseDeclinedFormat;
                 break;
             default:
-                Log.Warn (Log.LOG_CALENDAR, "Unkown meeting response status: {0}", message.MessageClass);
-                messageFormat = "The status of {0} is unknown.";
+                Log.Warn (Log.LOG_CALENDAR, "Unknown meeting response status: {0}", message.MessageClass);
+                messageFormat = Strings.Instance.MeetingResponseUnknownFormat;
                 break;
             }
 
@@ -604,11 +580,10 @@ namespace NachoCore.Utils
             return longSenderString;
         }
 
-        // TODO: i18n
         static public string RecipientString (string Recipient)
         {
             if (String.IsNullOrWhiteSpace (Recipient)) {
-                return "(No Recipients)";
+                return Strings.Instance.NoRecipientsFallback;
             }
             InternetAddressList addresses;
             if (false == InternetAddressList.TryParse (Recipient, out addresses)) {
@@ -653,6 +628,7 @@ namespace NachoCore.Utils
         #region Recurrences
 
         // TODO: l10n
+        // Use DateTimeFormatter rather than C# l10n for consistency
         protected static string DayOfWeekAsString (NcDayOfWeek dow)
         {
             var fullNames = CultureInfo.CurrentCulture.DateTimeFormat.DayNames;
@@ -709,35 +685,10 @@ namespace NachoCore.Utils
             }
         }
 
-        // TODO: i18n
-        protected static string DayOfWeekMonthly (NcDayOfWeek dow)
-        {
-            switch (dow) {
-            case NcDayOfWeek.LastDayOfTheMonth:
-                return "day";
-            case NcDayOfWeek.Weekdays:
-                return "weekday";
-            case NcDayOfWeek.WeekendDays:
-                return "weekend day";
-            default:
-                return DayOfWeekAsString (dow);
-            }
-        }
-
-        // TODO: i18n
-        protected static string WeekOfMonth (int week)
-        {
-            if (5 == week) {
-                return "last";
-            }
-            return AddOrdinalSuffix (week);
-        }
-
-        // TODO: i18n
         public static string MakeRecurrenceString (IList<McRecurrence> recurrences)
         {
             if (0 == recurrences.Count) {
-                return "does not repeat";
+                return Strings.Instance.RecurrenceDoesNotRepeat;
             }
             McRecurrence r = recurrences [0];
 
@@ -747,34 +698,34 @@ namespace NachoCore.Utils
 
             case NcRecurrenceType.Daily:
                 if (1 == interval) {
-                    return "repeats daily";
+                    return Strings.Instance.RecurrenceDaily;
                 }
-                return string.Format ("repeats every {0} days", interval);
+                return string.Format (Strings.Instance.RecurrenceEveryXDaysFormat, interval);
 
             case NcRecurrenceType.Weekly:
                 if (1 == interval) {
                     if (NcDayOfWeek.LastDayOfTheMonth == r.DayOfWeek) {
                         // Repeats weekly on every day of the week, which is the same as daily.
-                        return "repeats daily";
+                        return Strings.Instance.RecurrenceDaily;
                     }
                     if (NcDayOfWeek.Weekdays == r.DayOfWeek) {
-                        return "repeats weekly on weekdays";
+                        return Strings.Instance.RecurrenceWeekdays;
                     }
                     if (NcDayOfWeek.WeekendDays == r.DayOfWeek) {
-                        return "repeats weekly on weekends";
+                        return Strings.Instance.RecurrenceWeekends;
                     }
-                    return string.Format ("repeats weekly on {0}", DayOfWeekAsString (r.DayOfWeek));
+                    return string.Format (Strings.Instance.RecurrenceWeeklyFormat, DayOfWeekAsString (r.DayOfWeek));
                 }
                 if (NcDayOfWeek.Weekdays == r.DayOfWeek) {
-                    return string.Format ("repeats every {0} weeks on weekdays", interval);
+                    return string.Format (Strings.Instance.RecurrenceEveryXWeekdaysFormat, interval);
                 }
-                return string.Format ("repeats every {0} weeks on {1}", interval, DayOfWeekAsString (r.DayOfWeek));
+                return string.Format (Strings.Instance.RecurrenceEveryXWeeksFormat, interval, DayOfWeekAsString (r.DayOfWeek));
 
             case NcRecurrenceType.Monthly:
                 if (1 == interval) {
-                    return string.Format ("repeats monthly on the {0}", AddOrdinalSuffix (r.DayOfMonth));
+                    return string.Format (Strings.Instance.RecurrenceMonthlyFormat, r.DayOfMonth);
                 }
-                return string.Format ("repeats every {0} months on the {1}", interval, AddOrdinalSuffix (r.DayOfMonth));
+                return string.Format (Strings.Instance.RecurrenceEveryXMonthsFormat, interval, r.DayOfMonth);
 
             case NcRecurrenceType.Yearly:
                 string dateString;
@@ -784,67 +735,136 @@ namespace NachoCore.Utils
                     dateString = string.Format ("{0}/{1}", r.MonthOfYear, r.DayOfMonth);
                 }
                 if (1 == interval) {
-                    return string.Format ("repeats yearly on {0}", dateString);
+                    return string.Format (Strings.Instance.RecurrenceYearlyFormat, dateString);
                 }
-                return string.Format ("repeats every {0} years on {1}", dateString);
+                return string.Format (Strings.Instance.RecurrenceEveryXYearsFormat, dateString);
 
             case NcRecurrenceType.MonthlyOnDay:
                 if (1 == interval) {
-                    return string.Format ("repeats monthly on the {0} {1} of the month", WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
+                    switch (r.DayOfWeek) {
+                    case NcDayOfWeek.LastDayOfTheMonth:
+                        return string.Format (Strings.Instance.RecurrenceLastDayOfMonth);
+                    case NcDayOfWeek.Weekdays:
+                        switch (r.WeekOfMonth) {
+                        case 5:
+                            return string.Format (Strings.Instance.RecurrenceLastWeekdayOfMonth);
+                        default:
+                            return string.Format (Strings.Instance.RecurrenceWeekdaysInWeekOfMonthFormat, r.WeekOfMonth);
+                        }
+                    case NcDayOfWeek.WeekendDays:
+                        switch (r.WeekOfMonth) {
+                        case 5:
+                            return string.Format (Strings.Instance.RecurrenceLastWeekendDayOfMonth);
+                        default:
+                            return string.Format (Strings.Instance.RecurrenceWeekendDaysInWeekOfMonthFormat, r.WeekOfMonth);
+                        }
+                    default:
+                        switch (r.WeekOfMonth) {
+                        case 5:
+                            return string.Format (Strings.Instance.RecurrenceLastNamedDayOfMonthFormat, DayOfWeekAsString (r.DayOfWeek));
+                        default:
+                            return string.Format (Strings.Instance.RecurrenceNamedDayInWeekOfMonthFormat, DayOfWeekAsString (r.DayOfWeek), r.WeekOfMonth);
+                        }
+                    }
                 }
-                return string.Format ("repeats every {0} months on the {1} {2} of the month", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
+                switch (r.DayOfWeek) {
+                case NcDayOfWeek.LastDayOfTheMonth:
+                    return string.Format (Strings.Instance.RecurrenceLastDayOfEveryXMonthsFormat, interval);
+                case NcDayOfWeek.Weekdays:
+                    switch (r.WeekOfMonth) {
+                    case 5:
+                        return string.Format (Strings.Instance.RecurrenceLastWeekdayOfEveryXMonthsFormat, interval);
+                    default:
+                        return string.Format (Strings.Instance.RecurrenceWeekdaysInWeekOfEveryXMonthFormat, interval, r.WeekOfMonth);
+                    }
+                case NcDayOfWeek.WeekendDays:
+                    switch (r.WeekOfMonth) {
+                    case 5:
+                        return string.Format (Strings.Instance.RecurrenceLastWeekendDayOfEveryXMonthsFormat, interval);
+                    default:
+                        return string.Format (Strings.Instance.RecurrenceWeekendDaysInWeekOfEveryXMonthFormat, interval, r.WeekOfMonth);
+                    }
+                default:
+                    switch (r.WeekOfMonth) {
+                    case 5:
+                        return string.Format (Strings.Instance.RecurrenceLastNamedDayOfEveryXMonthsFormat, interval, DayOfWeekAsString (r.DayOfWeek));
+                    default:
+                        return string.Format (Strings.Instance.RecurrenceNamedDayInWeekOfEveryXMonthFormat, interval, DayOfWeekAsString (r.DayOfWeek), r.WeekOfMonth);
+                    }
+                }
 
             case NcRecurrenceType.YearlyOnDay:
                 string monthName;
                 try {
-                    monthName = new DateTime (2000, r.MonthOfYear, 1).ToString ("MMMM");
+                    monthName = DateTimeFormatter.Instance.MonthName (new DateTime (2000, r.MonthOfYear, 1));
                 } catch (ArgumentOutOfRangeException) {
-                    monthName = string.Format ("the {0} month", AddOrdinalSuffix (r.MonthOfYear));
+                    monthName = string.Format (Strings.Instance.RecurrenceUnknownMonthFormat, r.MonthOfYear);
                 }
                 if (1 == interval) {
-                    return string.Format ("repeats yearly on the {0} {1} of {2}", WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
+                    switch (r.DayOfWeek) {
+                    case NcDayOfWeek.LastDayOfTheMonth:
+                        return string.Format (Strings.Instance.RecurrenceLastDayOfNamedMonthFormat, monthName);
+                    case NcDayOfWeek.Weekdays:
+                        switch (r.WeekOfMonth) {
+                        case 5:
+                            return string.Format (Strings.Instance.RecurrenceLastWeekdayOfNamedMonthFormat, monthName);
+                        default:
+                            return string.Format (Strings.Instance.RecurrenceWeekdaysInWeekOfNamedMonthFormat, r.WeekOfMonth, monthName);
+                        }
+                    case NcDayOfWeek.WeekendDays:
+                        switch (r.WeekOfMonth) {
+                        case 5:
+                            return string.Format (Strings.Instance.RecurrenceLastWeekendDayOfNamedMonthFormat, monthName);
+                        default:
+                            return string.Format (Strings.Instance.RecurrenceWeekendDaysInWeekOfNamedMonthFormat, r.WeekOfMonth, monthName);
+                        }
+                    default:
+                        switch (r.WeekOfMonth) {
+                        case 5:
+                            return string.Format (Strings.Instance.RecurrenceLastNamedDayOfNamedMonthFormat, DayOfWeekAsString (r.DayOfWeek), monthName);
+                        default:
+                            return string.Format (Strings.Instance.RecurrenceNamedDayInWeekOfNamedMonthFormat, DayOfWeekAsString (r.DayOfWeek), r.WeekOfMonth, monthName);
+                        }
+                    }
                 }
-                return string.Format ("repeats every {0} years on the {1} {2} of {3}", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
+                switch (r.DayOfWeek) {
+                case NcDayOfWeek.LastDayOfTheMonth:
+                    return string.Format (Strings.Instance.RecurrenceLastDayOfNamedMonthEveryXYearsFormat, monthName);
+                case NcDayOfWeek.Weekdays:
+                    switch (r.WeekOfMonth) {
+                    case 5:
+                        return string.Format (Strings.Instance.RecurrenceLastWeekdayOfNamedMonthEveryXYearsFormat, monthName);
+                    default:
+                        return string.Format (Strings.Instance.RecurrenceWeekdaysInWeekOfNamedMonthEveryXYearsFormat, r.WeekOfMonth, monthName);
+                    }
+                case NcDayOfWeek.WeekendDays:
+                    switch (r.WeekOfMonth) {
+                    case 5:
+                        return string.Format (Strings.Instance.RecurrenceLastWeekendDayOfNamedMonthEveryXYearsFormat, monthName);
+                    default:
+                        return string.Format (Strings.Instance.RecurrenceWeekendDaysInWeekOfNamedMonthEveryXYearsFormat, r.WeekOfMonth, monthName);
+                    }
+                default:
+                    switch (r.WeekOfMonth) {
+                    case 5:
+                        return string.Format (Strings.Instance.RecurrenceLastNamedDayOfNamedMonthEveryXYearsFormat, DayOfWeekAsString (r.DayOfWeek), monthName);
+                    default:
+                        return string.Format (Strings.Instance.RecurrenceNamedDayInWeekOfNamedMonthEveryXYearsFormat, DayOfWeekAsString (r.DayOfWeek), r.WeekOfMonth, monthName);
+                    }
+                }
 
             default:
-                return "repeats with an unknown frequency";
+                return Strings.Instance.RecurrenceUnknown;
             }
         }
 
-        // TODO: i18n
         public static string MakeCommaSeparatedList (List<string> stringList)
         {
-
-            var endString = " and " + stringList [stringList.Count - 1];
+            var endString = Strings.Instance.RecurrenceListFinalJoiner + stringList [stringList.Count - 1];
             stringList.RemoveAt (stringList.Count - 1);
             var stringArray = stringList.ToArray ();
-            var commaSeparatedString = String.Join (", ", stringArray);
+            var commaSeparatedString = String.Join (Strings.Instance.RecurrenceListJoiner, stringArray);
             return commaSeparatedString + endString;
-        }
-
-        // TODO: i18n
-        public static string AddOrdinalSuffix (int num)
-        {
-            if (num <= 0)
-                return num.ToString ();
-
-            switch (num % 100) {
-            case 11:
-            case 12:
-            case 13:
-                return num + "th";
-            }
-
-            switch (num % 10) {
-            case 1:
-                return num + "st";
-            case 2:
-                return num + "nd";
-            case 3:
-                return num + "rd";
-            default:
-                return num + "th";
-            }
         }
 
         #endregion

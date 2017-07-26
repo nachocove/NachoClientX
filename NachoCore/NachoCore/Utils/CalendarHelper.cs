@@ -598,7 +598,7 @@ namespace NachoCore.Utils
             }
             var mimeMessage = new MimeMessage ();
 
-            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), c.OrganizerEmail));
+            mimeMessage.From.Add (new MailboxAddress (c.OrganizerName ?? "Organizer unavailable", c.OrganizerEmail));
 
             if (null != mailListOverride) {
                 foreach (var m in mailListOverride) {
@@ -669,7 +669,7 @@ namespace NachoCore.Utils
         public static void SendMeetingCancelations (McAccount account, McCalendar c, string subjectOverride, MimeEntity mimeBody)
         {
             var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (c.OrganizerName ?? "Organizer unavailable", account.EmailAddr));
             foreach (var a in c.attendees) {
                 mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
             }

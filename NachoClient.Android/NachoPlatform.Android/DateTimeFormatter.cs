@@ -14,7 +14,7 @@ namespace NachoPlatform
         {
             var local = dateTime.ToLocalTime ();
             var calendar = Calendar.Instance;
-            calendar.Set (local.Year, local.Month, local.Day, local.Hour, local.Minute, local.Second);
+            calendar.Set (local.Year, local.Month - 1, local.Day, local.Hour, local.Minute, local.Second);
             calendar.Set (CalendarField.Millisecond, local.Millisecond);
             return calendar.Time;
         }

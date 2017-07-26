@@ -428,6 +428,94 @@ namespace NachoPlatform
         string ReminderDaysFormat { get; }
         string ReminderHoursFormat { get; }
         string ReminderMinutesFormat { get; }
+
+        string FriendlyDateTimeTodayFormat { get; }
+        string FriendlyDateTimeYesterdayFormat { get; }
+        string FriendlyDateTimeOtherFormat { get; }
+        string DecreasingPrecisionTimeYesterday { get; }
+        string FutureDateYesterday { get; }
+        string FutureDateToday { get; }
+        string FutureDateTomorrow { get; }
+        string VariableDateTimeYesterdayFormat { get; }
+        string VariableDateTimeOtherFormat { get; }
+
+        string EventTimeNow { get; }
+        string EventTimeOneMinute { get; }
+        string EventTimeMinutesFormat { get; }
+        string EventTimeAtFormat { get; }
+        string EventTimeDateFormat { get; }
+        string EventDayToday { get; }
+        string EventDayTomorrow { get; }
+        string EventDetailTimeThroughFormat { get; }
+        string EventDetailTimeToFormat { get; }
+        string MeetingRequestTimeAllDayFormat { get; }
+        string MeetingRequestTimeSameHalfDayFormat { get; }
+        string MeetingRequestTimeSameDayFormat { get; }
+        string MeetingRequestTimeMultiDayFormat { get; }
+        string EventNotificationDefaultTitle { get; }
+        string EventNotificationAllDayTimeFormat { get; }
+        string EventNotificationTimeFormat { get; }
+
+        string AttendeeStatusOptional { get; }
+        string AttendeeStatusRequired { get; }
+        string AttendeeStatusResource { get; }
+        string AttendeeStatusAccepted { get; }
+        string AttendeeStatusDeclined { get; }
+        string AttendeeStatusTentative { get; }
+        string AttendeeStatusNoResponse { get; }
+
+        string MeetingResponseAcceptedFormat { get; }
+        string MeetingResponseDeclinedFormat { get; }
+        string MeetingResponseTentativeFormat { get; }
+        string MeetingResponseUnknownFormat { get; }
+
+        string NoRecipientsFallback { get; }
+
+        string RecurrenceDoesNotRepeat { get; }
+        string RecurrenceDaily { get; }
+        string RecurrenceEveryXDaysFormat { get; }
+        string RecurrenceWeekdays { get; }
+        string RecurrenceWeekends { get; }
+        string RecurrenceWeeklyFormat { get; }
+        string RecurrenceEveryXWeekdaysFormat { get; }
+        string RecurrenceEveryXWeeksFormat { get; }
+        string RecurrenceMonthlyFormat { get; }
+        string RecurrenceEveryXMonthsFormat { get; }
+        string RecurrenceLastDayOfMonth { get; }
+        string RecurrenceLastWeekdayOfMonth { get; }
+        string RecurrenceLastWeekendDayOfMonth { get; }
+        string RecurrenceWeekdaysInWeekOfMonthFormat { get; }
+        string RecurrenceWeekendDaysInWeekOfMonthFormat { get; }
+        string RecurrenceNamedDayInWeekOfMonthFormat { get; }
+        string RecurrenceWeekdaysInWeekOfEveryXMonthFormat { get; }
+        string RecurrenceWeekendDaysInWeekOfEveryXMonthFormat { get; }
+        string RecurrenceNamedDayInWeekOfEveryXMonthFormat { get; }
+        string RecurrenceLastNamedDayOfMonthFormat { get; }
+        string RecurrenceLastDayOfEveryXMonthsFormat { get; }
+        string RecurrenceLastWeekdayOfEveryXMonthsFormat { get; }
+        string RecurrenceLastWeekendDayOfEveryXMonthsFormat { get; }
+        string RecurrenceLastNamedDayOfEveryXMonthsFormat { get; }
+        string RecurrenceLastDayOfNamedMonthFormat { get; }
+        string RecurrenceLastWeekdayOfNamedMonthFormat { get; }
+        string RecurrenceLastWeekendDayOfNamedMonthFormat { get; }
+        string RecurrenceLastNamedDayOfNamedMonthFormat { get; }
+        string RecurrenceWeekdaysInWeekOfNamedMonthFormat { get; }
+        string RecurrenceWeekendDaysInWeekOfNamedMonthFormat { get; }
+        string RecurrenceNamedDayInWeekOfNamedMonthFormat { get; }
+        string RecurrenceLastDayOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceLastWeekdayOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceLastWeekendDayOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceLastNamedDayOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceWeekdaysInWeekOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceWeekendDaysInWeekOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceNamedDayInWeekOfNamedMonthEveryXYearsFormat { get; }
+        string RecurrenceYearlyFormat { get; }
+        string RecurrenceEveryXYearsFormat { get; }
+        string RecurrenceUnknownMonthFormat { get; }
+        string RecurrenceUnknown { get; }
+        string RecurrenceListJoiner { get; }
+        string RecurrenceListFinalJoiner { get; }
+
     }
 
     public interface IDateTimeFormatter
