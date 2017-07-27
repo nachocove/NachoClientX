@@ -22,6 +22,19 @@
 /* MDM error message with specific company name */
 "Please contact the administrator for your {0} account.  We received an invalid configuration." = "Please contact the administrator for your {0} account.  We received an invalid configuration.";
 
+/* Titles shown on Account Syncing screen */
+"Syncing... (syncing view)" = "Syncing...";
+"Account Created (syncing view)" = "Account Created";
+
+/* Detail messages shown on Account Syncing screen */
+"Syncing your inbox..." = "Syncing your inbox...";
+"Your account is ready!" = "Your account is ready!";
+"Sorry, we could not fully sync your inbox.  Please see Settings for more information" = "Sorry, we could not fully sync your inbox.  Please see Settings for more information";
+"Syncing will complete when network connectivity is restored" = "Syncing will complete when network connectivity is restored";
+
+/* --------------------------------------------------------------------- */
+/* BEGIN common strings from NachoCore */
+
 /* compact duration in minutes */
 "{0}m" = "{0}m";
 

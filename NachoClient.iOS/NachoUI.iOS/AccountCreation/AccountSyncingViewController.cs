@@ -28,14 +28,14 @@ namespace NachoClient.iOS
 
         private class AccountSyncingStatusMessage
         {
-            public string Title;
-            public string Details;
+            public string TitleKey;
+            public string DetailsKey;
             public bool IsWorking;
 
             public AccountSyncingStatusMessage (string title, string details, bool isWorking)
             {
-                Title = title;
-                Details = details;
+                TitleKey = title;
+                DetailsKey = details;
                 IsWorking = isWorking;
             }
         }
@@ -46,10 +46,10 @@ namespace NachoClient.iOS
         private bool DismissOnVisible;
         private NcTimer DismissTimer;
 
-        private static AccountSyncingStatusMessage SyncingMessage = new AccountSyncingStatusMessage ("Syncing...", "Syncing your inbox...", true);
-        private static AccountSyncingStatusMessage SuccessMessage = new AccountSyncingStatusMessage ("Account Created", "Your account is ready!", false);
-        private static AccountSyncingStatusMessage ErrorMessage = new AccountSyncingStatusMessage ("Account Created", "Sorry, we could not fully sync your inbox.  Please see Settings for more information", false);
-        private static AccountSyncingStatusMessage NetworkMessage = new AccountSyncingStatusMessage ("Account Created", "Syncing will complete when network connectivity is restored", false);
+        private static AccountSyncingStatusMessage SyncingMessage = new AccountSyncingStatusMessage ("Syncing... (syncing view)", "Syncing your inbox...", true);
+        private static AccountSyncingStatusMessage SuccessMessage = new AccountSyncingStatusMessage ("Account Created (syncing view)", "Your account is ready!", false);
+        private static AccountSyncingStatusMessage ErrorMessage = new AccountSyncingStatusMessage ("Account Created (syncing view)", "Sorry, we could not fully sync your inbox.  Please see Settings for more information", false);
+        private static AccountSyncingStatusMessage NetworkMessage = new AccountSyncingStatusMessage ("Account Created (syncing view)", "Syncing will complete when network connectivity is restored", false);
 
         private AccountSyncingStatusMessage Message = SyncingMessage;
 
@@ -140,8 +140,8 @@ namespace NachoClient.iOS
         void Update ()
         {
             if (IsViewLoaded) {
-                NavigationItem.Title = Message.Title;
-                statusLabel.Text = Message.Details;
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString (Message.TitleKey, "");
+                statusLabel.Text = NSBundle.MainBundle.LocalizedString (Message.DetailsKey, "");
                 if (IsVisible) {
                     if (Message.IsWorking) {
                         activityIndicatorView.StartAnimating ();
@@ -232,7 +232,7 @@ namespace NachoClient.iOS
             LoginEvents.Owner = null;
             CompleteWithMessage (SuccessMessage);
         }
-            
+
         public void ServerIndTooManyDevices (int acccountId)
         {
             LoginEvents.Owner = null;
