@@ -1,4 +1,13 @@
 ﻿/* --------------------------------------------------------------------- */
+/* MARK: - Common Strings */
+
+"Username" = "Username";
+"Domain" = "Domain";
+"Server" = "Server";
+"OK" = "OK";
+
+
+/* --------------------------------------------------------------------- */
 /* MARK: - Welcome Screen */
 
 /* A welcome message for the user when their account creation is in progress */
@@ -61,6 +70,39 @@
 /* Error message for cert prompt */
 "Unable to find certificate to be examined." = "Unable to find certificate to be examined.";
 
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Exchange Wall */
+
+/* Title for exchange wall alert */
+"Send Request (exchange wall)" = "Send Request";
+
+/* Message for exchange wall alert */
+"Please send a request to {0}" = "Please send a request to {0}";
+
+/* Title for exchange wall error */
+"Incorrect Code" = "Incorrect Code";
+
+/* Message for exchange wall error */
+"The code you provided is not valid.  Please verify what was entered and try again." = "The code you provided is not valid.  Please verify what was entered and try again.";
+
+/* Code entry instructions on exchange wall */
+"Enter the access code to enable Exchange accounts" = "Enter the access code to enable Exchange accounts";
+
+/* Instructions on exchange wall */
+"Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts" = "Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts";
+
+/* Exchange wall contact action title */
+"Contact Nacho Cove" = "Contact Nacho Cove";
+
+/* Exchange wall code entry action title */
+"Have a code?" = "Have a code?";
+
+/* Exchange wall code entry field placeholder */
+"Code (exchange wall)" = "Code";
+
+/* Exchange wall code submit button title */
+"Enable Exchange" = "Enable Exchange";
 
 
 /* --------------------------------------------------------------------- */

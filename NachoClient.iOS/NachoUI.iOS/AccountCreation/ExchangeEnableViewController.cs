@@ -34,7 +34,7 @@ namespace NachoClient.iOS
         public override UIStatusBarStyle PreferredStatusBarStyle ()
         {
             return UIStatusBarStyle.LightContent;
-		}
+        }
 
         #region View Lifecycle
 
@@ -71,12 +71,12 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             base.ViewDidDisappear (animated);
-            if (ShouldCleanupDuringDidDisappear){
+            if (ShouldCleanupDuringDidDisappear) {
                 Cleanup ();
             }
         }
 
-        void Cleanup()
+        void Cleanup ()
         {
             _ExchangeEnableView.CloseButton.TouchUpInside -= Close;
             _ExchangeEnableView.EnterCodeButton.TouchUpInside -= ShowCodeEntry;
@@ -95,9 +95,9 @@ namespace NachoClient.iOS
 
         Theme AdoptedTheme;
 
-        public void AdoptTheme(Theme theme)
+        public void AdoptTheme (Theme theme)
         {
-            if (theme != AdoptedTheme){
+            if (theme != AdoptedTheme) {
                 AdoptedTheme = theme;
                 _ExchangeEnableView.AdoptTheme (theme);
             }
@@ -115,12 +115,12 @@ namespace NachoClient.iOS
         void SubmitCode (object sender, EventArgs e)
         {
             CheckCode (_ExchangeEnableView.CodeField.Text);
-		}
+        }
 
-		void RequestCode (object sender, EventArgs e)
-		{
+        void RequestCode (object sender, EventArgs e)
+        {
             RequestCode ();
-		}
+        }
 
         void Close (object sender, EventArgs e)
         {
@@ -131,22 +131,22 @@ namespace NachoClient.iOS
 
         #region Private Helpers
 
-        void ShowCodeEntry()
+        void ShowCodeEntry ()
         {
             _ExchangeEnableView.IsShowingEntry = true;
             _ExchangeEnableView.CodeField.BecomeFirstResponder ();
         }
 
-        void RequestCode()
+        void RequestCode ()
         {
             var to = "info@nachocove.com";
             var subject = "Using Exchange with Nacho Mail";
             var text = "Hello,\n\nI'm interested in using Nacho Mail with an Exchange account.  Please send me a code to enable Exchange accounts.\n\nThanks";
             var account = NcApplication.Instance.DefaultEmailAccount;
-            if (account == null){
+            if (account == null) {
                 if (MFMailComposeViewController.CanSendMail) {
                     var controller = new MFMailComposeViewController ();
-                    controller.SetToRecipients (new string[] { to });
+                    controller.SetToRecipients (new string [] { to });
                     controller.SetSubject (subject);
                     controller.SetMessageBody (text, isHtml: false);
                     controller.Finished += (sender, e) => {
@@ -154,11 +154,13 @@ namespace NachoClient.iOS
                     };
                     PresentViewController (controller, animated: true, completionHandler: null);
                 } else {
-                    var alert = UIAlertController.Create ("Send Request", "Please send a request to info@nachocove.com", UIAlertControllerStyle.Alert);
-                    alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default,(obj) => {}));
+                    var title = NSBundle.MainBundle.LocalizedString ("Send Request (exchange wall)", "Title for exchange wall alert");
+                    var message = NSBundle.MainBundle.LocalizedString ("Please send a request to {0}", "Message for exchange wall alert");
+                    var alert = UIAlertController.Create (title, string.Format (message, to), UIAlertControllerStyle.Alert);
+                    alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("OK", ""), UIAlertActionStyle.Default, (obj) => { }));
                     PresentViewController (alert, animated: true, completionHandler: null);
                 }
-            }else{
+            } else {
                 var message = new McEmailMessage ();
                 message.AccountId = account.Id;
                 message.To = to;
@@ -173,16 +175,18 @@ namespace NachoClient.iOS
         void CheckCode (string code)
         {
             bool verified = NachoCore.Utils.PermissionManager.Instance.VerifyExchangeCode (code);
-            if (!verified){
-                var alert = UIAlertController.Create ("Incorrect Code", "The code you provided is not valid.  Please verify what was entered and try again.", UIAlertControllerStyle.Alert);
-                alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default,(obj) => {}));
+            if (!verified) {
+                var title = NSBundle.MainBundle.LocalizedString ("Incorrect Code", "Title for exchange wall error");
+                var message = NSBundle.MainBundle.LocalizedString ("The code you provided is not valid.  Please verify what was entered and try again.", "Message for exchange wall error");
+                var alert = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
+                alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("OK", ""), UIAlertActionStyle.Default, (obj) => { }));
                 PresentViewController (alert, animated: true, completionHandler: null);
-            }else{
+            } else {
                 Delegate?.ExchangeEnableViewDidComplete (this, true);
             }
         }
 
-        void Close()
+        void Close ()
         {
             Delegate?.ExchangeEnableViewDidComplete (this, false);
         }
@@ -190,50 +194,50 @@ namespace NachoClient.iOS
         #endregion
 
         class ExchangeEnableView : UIView, ThemeAdopter
-		{
-            public UIView StatusBarBackground { get; private set;  }
-			public UIButton CloseButton { get; private set; }
-			public UIScrollView ScrollView { get; private set; }
+        {
+            public UIView StatusBarBackground { get; private set; }
+            public UIButton CloseButton { get; private set; }
+            public UIScrollView ScrollView { get; private set; }
             UIView ContainerView;
-			public UIImageView AccountAvatarView { get; private set; }
-			public UILabel MessageLabel { get; private set; }
-			public UIButton RequestCodeButton { get; private set; }
-			public UIButton EnterCodeButton { get; private set; }
-			public UITextField CodeField { get; private set; }
-			public UIButton SubmitButton { get; private set; }
+            public UIImageView AccountAvatarView { get; private set; }
+            public UILabel MessageLabel { get; private set; }
+            public UIButton RequestCodeButton { get; private set; }
+            public UIButton EnterCodeButton { get; private set; }
+            public UITextField CodeField { get; private set; }
+            public UIButton SubmitButton { get; private set; }
 
             bool _IsShowingEntry;
             public bool IsShowingEntry {
-                get{
+                get {
                     return _IsShowingEntry;
                 }
                 set {
                     _IsShowingEntry = value;
-                    if (_IsShowingEntry){
-                        MessageLabel.Text = "Enter the access code to enable Exchange accounts";
-                    }else{
-                        MessageLabel.Text = "Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts";
+                    if (_IsShowingEntry) {
+                        MessageLabel.Text = NSBundle.MainBundle.LocalizedString ("Enter the access code to enable Exchange accounts", "Code entry instructions on exchange wall");
+                    } else {
+                        MessageLabel.Text = NSBundle.MainBundle.LocalizedString ("Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts", "Instructions on exchange wall");
                     }
                     SetNeedsLayout ();
                 }
             }
 
-            public ExchangeEnableView () : base(new CGRect(0, 0, 100, 100))
-			{
+            public ExchangeEnableView () : base (new CGRect (0, 0, 100, 100))
+            {
                 StatusBarBackground = new UIView ();
                 AddSubview (StatusBarBackground);
 
-				ScrollView = new UIScrollView (Bounds);
-				AddSubview (ScrollView);
+                ScrollView = new UIScrollView (Bounds);
+                AddSubview (ScrollView);
 
-				CloseButton = new UIButton (UIButtonType.Custom);
+                CloseButton = new UIButton (UIButtonType.Custom);
                 CloseButton.SetImage (UIImage.FromBundle ("gen-close"), UIControlState.Normal);
-				AddSubview (CloseButton);
+                AddSubview (CloseButton);
 
                 ContainerView = new UIView ();
                 ScrollView.AddSubview (ContainerView);
 
-                AccountAvatarView = new UIImageView (new CGRect(0.0f, 0.0f, 80.0f, 80.0f));
+                AccountAvatarView = new UIImageView (new CGRect (0.0f, 0.0f, 80.0f, 80.0f));
                 AccountAvatarView.Layer.CornerRadius = AccountAvatarView.Frame.Width / 2.0f;
                 AccountAvatarView.ClipsToBounds = true;
                 ContainerView.AddSubview (AccountAvatarView);
@@ -246,23 +250,23 @@ namespace NachoClient.iOS
 
                 RequestCodeButton = new NcSimpleColorButton ();
                 RequestCodeButton.Layer.CornerRadius = 6.0f;
-                RequestCodeButton.SetTitle ("Contact Nacho Cove", UIControlState.Normal);
+                RequestCodeButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Contact Nacho Cove", "Exchange wall contact action title"), UIControlState.Normal);
                 ContainerView.AddSubview (RequestCodeButton);
 
                 EnterCodeButton = new UIButton (UIButtonType.Custom);
-                EnterCodeButton.SetTitle ("Have a code?", UIControlState.Normal);
+                EnterCodeButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Have a code?", "Exchange wall code entry action title"), UIControlState.Normal);
                 ContainerView.AddSubview (EnterCodeButton);
 
                 CodeField = new UITextField ();
-                CodeField.Placeholder = "Code";
+                CodeField.Placeholder = NSBundle.MainBundle.LocalizedString ("Code (exchange wall)", "Exchange wall code entry field placeholder");
                 CodeField.BackgroundColor = UIColor.White;
                 CodeField.BorderStyle = UITextBorderStyle.RoundedRect;
-				ContainerView.AddSubview (CodeField);
+                ContainerView.AddSubview (CodeField);
 
                 SubmitButton = new NcSimpleColorButton ();
                 SubmitButton.Layer.CornerRadius = 6.0f;
-				SubmitButton.SetTitle ("Enable Exchange", UIControlState.Normal);
-				ContainerView.AddSubview (SubmitButton);
+                SubmitButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Enable Exchange", "Exchange wall code submit button title"), UIControlState.Normal);
+                ContainerView.AddSubview (SubmitButton);
 
                 IsShowingEntry = false;
             }
@@ -270,7 +274,7 @@ namespace NachoClient.iOS
             public override void LayoutSubviews ()
             {
                 var statusFrame = ConvertRectFromView (UIApplication.SharedApplication.StatusBarFrame, Window);
-                if (statusFrame.Width == 0){
+                if (statusFrame.Width == 0) {
                     statusFrame.Width = Bounds.Width;
                 }
                 StatusBarBackground.Frame = statusFrame;
@@ -287,7 +291,7 @@ namespace NachoClient.iOS
                 MessageLabel.Frame = new CGRect (textPadding, AccountAvatarView.Frame.Y + AccountAvatarView.Frame.Height + 30.0f, textWidth, size.Height);
 
                 UIView lastView;
-                if (_IsShowingEntry){
+                if (_IsShowingEntry) {
                     RequestCodeButton.Hidden = true;
                     EnterCodeButton.Hidden = true;
                     CodeField.Hidden = false;
@@ -295,11 +299,11 @@ namespace NachoClient.iOS
                     CodeField.Frame = new CGRect (textPadding, MessageLabel.Frame.Y + MessageLabel.Frame.Height + 30.0f, textWidth, 46.0f);
                     SubmitButton.Frame = new CGRect (textPadding, CodeField.Frame.Y + CodeField.Frame.Height + 10.0f, textWidth, 46.0f);
                     lastView = SubmitButton;
-                }else{
+                } else {
                     RequestCodeButton.Hidden = false;
                     EnterCodeButton.Hidden = false;
                     CodeField.Hidden = true;
-					SubmitButton.Hidden = true;
+                    SubmitButton.Hidden = true;
                     RequestCodeButton.Frame = new CGRect (textPadding, MessageLabel.Frame.Y + MessageLabel.Frame.Height + 30.0f, textWidth, 46.0f);
                     EnterCodeButton.Frame = new CGRect (textPadding, RequestCodeButton.Frame.Y + RequestCodeButton.Frame.Height + 10.0f, textWidth, EnterCodeButton.IntrinsicContentSize.Height);
                     lastView = EnterCodeButton;
@@ -307,7 +311,7 @@ namespace NachoClient.iOS
 
                 var height = lastView.Frame.Y + lastView.Frame.Height;
                 var padding = (ScrollView.Bounds.Height - height) / 2.0f;
-                if (padding < 40.0f){
+                if (padding < 40.0f) {
                     padding = 40.0f;
                 }
                 ContainerView.Frame = new CGRect (0.0f, padding, ScrollView.Bounds.Width, height);

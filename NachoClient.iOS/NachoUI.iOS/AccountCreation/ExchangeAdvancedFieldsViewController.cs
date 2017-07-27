@@ -14,7 +14,7 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
     public partial class ExchangeAdvancedFieldsViewController : AccountAdvancedFieldsViewController, ThemeAdopter
-	{
+    {
 
         private bool LockServerField = false;
         private bool LockDomainField = false;
@@ -28,22 +28,22 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            var label = FieldLabel ("Username");
+            var label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Username", ""));
             usernameField.LeftViewMode = UITextFieldViewMode.Always;
             usernameField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            usernameField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            usernameField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             usernameField.LeftView = label;
 
-            label = FieldLabel ("Domain");
+            label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Domain", ""));
             domainField.LeftViewMode = UITextFieldViewMode.Always;
             domainField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            domainField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            domainField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             domainField.LeftView = label;
 
-            label = FieldLabel ("Server");
+            label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Server", ""));
             serverField.LeftViewMode = UITextFieldViewMode.Always;
             serverField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            serverField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            serverField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             serverField.LeftView = label;
         }
 
@@ -65,7 +65,7 @@ namespace NachoClient.iOS
 
         private UILabel FieldLabel (String text)
         {
-            var label = new UILabel(new CGRect(0, 0, 80, 20));
+            var label = new UILabel (new CGRect (0, 0, 80, 20));
             label.BackgroundColor = UIColor.Clear;
             label.TextColor = A.Color_NachoGreen;
             label.Font = A.Font_AvenirNextMedium14;
@@ -78,7 +78,7 @@ namespace NachoClient.iOS
             if (!String.IsNullOrEmpty (domainField.Text)) {
                 return !String.IsNullOrEmpty (usernameField.Text);
             }
-            return true;    
+            return true;
         }
 
         public override string IssueWithFields ()
@@ -99,7 +99,7 @@ namespace NachoClient.iOS
             var domain = domainField.Text.Trim ();
             var serverString = serverField.Text.Trim ();
             if (!String.IsNullOrEmpty (username)) {
-                cred.UserSpecifiedUsername = !LockUsernameField || (!LockDomainField && !string.IsNullOrEmpty(domain));
+                cred.UserSpecifiedUsername = !LockUsernameField || (!LockDomainField && !string.IsNullOrEmpty (domain));
                 cred.Username = McCred.Join (domain, username);
                 cred.Update ();
             } else if (!String.IsNullOrEmpty (domain)) {
@@ -119,7 +119,7 @@ namespace NachoClient.iOS
                 }
             } else {
                 if (!String.IsNullOrEmpty (serverString)) {
-                    server = new McServer () { 
+                    server = new McServer () {
                         AccountId = account.Id,
                         Capabilities = McAccount.ActiveSyncCapabilities,
                     };
@@ -226,5 +226,5 @@ namespace NachoClient.iOS
         {
             AccountDelegate.AdvancedFieldsControllerDidChange (this);
         }
-	}
+    }
 }
