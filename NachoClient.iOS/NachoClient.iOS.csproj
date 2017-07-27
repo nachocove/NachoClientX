@@ -677,9 +677,9 @@
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
-    <InterfaceDefinition Include="NachoUI.iOS\AccountCreation\AccountCreation.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Setup\Startup.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Setup\Welcome.storyboard" />
+    <InterfaceDefinition Include="Resources\Base.lproj\AccountCreation.storyboard" />
   </ItemGroup>
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
@@ -693,6 +693,7 @@
     <BundleResource Include="Resources\ReleaseNotes.html" />
     <BundleResource Include="Resources\Base.lproj\Localizable.strings" />
     <BundleResource Include="Resources\de.lproj\Localizable.strings" />
+    <BundleResource Include="Resources\de.lproj\AccountCreation.strings" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">
