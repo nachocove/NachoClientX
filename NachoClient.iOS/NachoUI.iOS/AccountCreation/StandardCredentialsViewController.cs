@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         private bool IsShowingAdvanced;
         private bool IsSubmitting;
         private UIView advancedSubview;
-        private NSLayoutConstraint[] advancedConstraints;
+        private NSLayoutConstraint [] advancedConstraints;
         AccountAdvancedFieldsViewController advancedFieldsViewController;
         private bool HideAdvancedButton = false;
         private bool LockEmailField = false;
@@ -96,7 +96,7 @@ namespace NachoClient.iOS
             if (Account != null) {
                 accountName = Account.DisplayName;
             }
-            statusLabel.Text = String.Format ("Please provide your {0} information", accountName);
+            statusLabel.Text = String.Format (NSBundle.MainBundle.LocalizedString ("Please provide your {0} information", "Account creation instructions"), accountName);
             submitButton.Layer.CornerRadius = 6.0f;
             UpdateSubmitEnabled ();
             HideAdvancedButton = Service != McAccount.AccountServiceEnum.Exchange;
@@ -191,7 +191,7 @@ namespace NachoClient.iOS
             var issue = IssueWithCredentials (email, password);
             if (issue == null) {
                 View.EndEditing (false);
-                statusLabel.Text = "Verifying your information...";
+                statusLabel.Text = NSBundle.MainBundle.LocalizedString ("Verifying your information...", "Account credentials status message for verification");
                 IsSubmitting = true;
                 AcceptCertOnNextReq = false;
                 UpdateForSubmitting ();
@@ -220,7 +220,7 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Start (Account.Id);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
-                NcAlertView.ShowMessage (this, "Nacho Mail", issue);
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Nacho Mail", ""), issue);
             }
         }
 
@@ -279,7 +279,7 @@ namespace NachoClient.iOS
                             advancedFieldsViewController.AdoptTheme (adoptedTheme);
                         }
                         IsShowingAdvanced = true;
-                        advancedButton.SetTitle ("Hide Advanced", UIControlState.Normal);
+                        advancedButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Hide Advanced", "Account credentials action to hide advanced fields"), UIControlState.Normal);
                         advancedFieldsViewController.PopulateFieldsWithAccount (Account);
                         advancedSubview.Frame = new CGRect (0, 0, advancedView.Frame.Width, advancedSubview.Frame.Height);
                         advancedView.AddSubview (advancedSubview);
@@ -293,7 +293,7 @@ namespace NachoClient.iOS
             } else {
                 if (Service == McAccount.AccountServiceEnum.Exchange) {
                     IsShowingAdvanced = false;
-                    advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
+                    advancedButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Advanced Sign In", "Account credentials button to show advanced fields"), UIControlState.Normal);
                     advancedHeightConstraint.Constant = 0.0f;
                     if (advancedSubview != null && advancedSubview.Superview != null) {
                         advancedView.RemoveConstraints (advancedConstraints);
@@ -319,7 +319,7 @@ namespace NachoClient.iOS
                 passwordField.Enabled = false;
                 submitButton.Enabled = false;
                 submitButton.Alpha = 0.5f;
-//                supportButton.Hidden = true;
+                //                supportButton.Hidden = true;
                 advancedButton.Hidden = true;
                 if (IsShowingAdvanced) {
                     advancedFieldsViewController.SetFieldsEnabled (false);
@@ -332,7 +332,7 @@ namespace NachoClient.iOS
                     emailField.Enabled = true;
                 }
                 passwordField.Enabled = true;
-//                supportButton.Hidden = false;
+                //                supportButton.Hidden = false;
                 advancedButton.Hidden = HideAdvancedButton;
                 UpdateSubmitEnabled ();
                 if (IsShowingAdvanced) {
@@ -365,23 +365,23 @@ namespace NachoClient.iOS
         String IssueWithCredentials (String email, String password)
         {
             if (!email.Contains ("@")) {
-                return "Your email address must include an @.  For Example, username@company.com";
+                return NSBundle.MainBundle.LocalizedString ("Your email address must include an @.  For Example, username@company.com", "Account creation error for invalid email missing @");
             }
             if (!EmailHelper.IsValidEmail (email)) {
-                return "Your email address is not valid.\nFor example, username@company.com";
+                return NSBundle.MainBundle.LocalizedString ("Your email address is not valid.\nFor example, username@company.com", "Account creation error for invalid email");
             }
             String serviceName = null;
             if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
-                return String.Format ("Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (Service));
+                return String.Format (NSBundle.MainBundle.LocalizedString ("Please use your {0} email address instead.", "Account creation error for wrong email"), NcServiceHelper.AccountServiceName (Service));
             }
             if (!NcServiceHelper.DoesAddressMatchService (email, Service)) {
-                return String.Format ("The email address does not match the service. Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (Service));
+                return String.Format (NSBundle.MainBundle.LocalizedString ("The email address does not match the service. Please use your {0} email address instead.", "Account creation error for wrong email"), NcServiceHelper.AccountServiceName (Service));
             }
             if (LoginHelpers.ConfiguredAccountExists (email)) {
-                return "An account with that email address already exists. Duplicate accounts are not supported.";
+                return NSBundle.MainBundle.LocalizedString ("An account with that email address already exists. Duplicate accounts are not supported.", "");
             }
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                return "No network connection. Please check that you have internet access.";
+                return NSBundle.MainBundle.LocalizedString ("No network connection. Please check that you have internet access.", "Account creation error for no network");
             }
             if (IsShowingAdvanced) {
                 return advancedFieldsViewController.IssueWithFields ();
@@ -436,7 +436,7 @@ namespace NachoClient.iOS
                 HandleCertificateAsk (capabilities);
             }
         }
-            
+
         public void NetworkDown ()
         {
             StopRecevingLoginEvents ();
@@ -460,7 +460,7 @@ namespace NachoClient.iOS
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got too many devices while verifying");
-            ShowCredentialsError ("You are already using the maximum number of devices for this account.  Please contact your system administrator.");
+            ShowCredentialsError (NSBundle.MainBundle.LocalizedString ("You are already using the maximum number of devices for this account.  Please contact your system administrator.", "Account creation error for device limit"));
         }
 
         public void ServerIndServerErrorRetryLater (int acccountId)
@@ -469,7 +469,7 @@ namespace NachoClient.iOS
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got server error while verifying");
-            ShowCredentialsError ("The server is currently unavailable. Please try again later.");
+            ShowCredentialsError (NSBundle.MainBundle.LocalizedString ("The server is currently unavailable. Please try again later.", "Account creation error for server issue"));
         }
 
         private void HandleNetworkUnavailableError ()
@@ -477,7 +477,7 @@ namespace NachoClient.iOS
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got network unavailable while verifying");
-            ShowCredentialsError ("We were unable to verify your information because your device is offline.  Please try again when your device is online");
+            ShowCredentialsError (NSBundle.MainBundle.LocalizedString ("We were unable to verify your information because your device is offline.  Please try again when your device is online", "Account creation error because offline"));
         }
 
         private void HandleServerError ()
@@ -490,15 +490,15 @@ namespace NachoClient.iOS
                 foreach (var server in certErrors.Keys) {
                     certErrorStrings.Add (String.Format ("{0}: {1}", server, certErrors [server].SslPolicyError));
                 }
-                string errorText = String.Format ("We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}", String.Join("; ", certErrorStrings));
+                string errorText = String.Format (NSBundle.MainBundle.LocalizedString ("We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}", "Account creation cert error"), String.Join ("; ", certErrorStrings));
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait with cert errors for {0}", Service);
                 ShowCredentialsError (errorText);
             } else if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
-                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
+                string errorText = NSBundle.MainBundle.LocalizedString ("We were unable to verify your information.  Please confirm it is correct and try again.", "Account creation error general");
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
                 ShowCredentialsError (errorText);
             } else {
-                string errorText = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                string errorText = NSBundle.MainBundle.LocalizedString ("We were unable to verify your information.  Please confirm or enter advanced configuration information.", "Account creation error, see advanced");
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
@@ -515,7 +515,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CredWait for service {0}", Service);
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
-            ShowCredentialsError ("Invalid username or password.  Please adjust and try again.");
+            ShowCredentialsError (NSBundle.MainBundle.LocalizedString ("Invalid username or password.  Please adjust and try again.", "Acccount creation error credentials"));
         }
 
         private void HandleCertificateAsk (McAccount.AccountCapabilityEnum capability)
@@ -551,7 +551,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             LoginHelpers.UserInterventionStateChanged (accountId);
             UpdateForSubmitting ();
-            statusLabel.Text = "Account not created because the certificate was not accepted";
+            statusLabel.Text = NSBundle.MainBundle.LocalizedString ("Account not created because the certificate was not accepted", "Account creation cert rejected");
             DismissViewController (true, null);
         }
 
@@ -578,6 +578,6 @@ namespace NachoClient.iOS
         }
 
         #endregion
-           
+
     }
 }

@@ -1,9 +1,12 @@
 ﻿/* --------------------------------------------------------------------- */
 /* MARK: - Common Strings */
 
+"Nacho Mail" = "Nacho Mail";
 "Username" = "Username";
 "Domain" = "Domain";
 "Server" = "Server";
+"Host" = "Host";
+"Port" = "Port";
 "OK" = "OK";
 
 
@@ -33,6 +36,94 @@
 
 /* MDM error message with specific company name */
 "Please contact the administrator for your {0} account.  We received an invalid configuration." = "Please contact the administrator for your {0} account.  We received an invalid configuration.";
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Account Credentials */
+
+/* Account creation instructions */
+"Please provide your {0} information" = "Please provide your {0} information";
+
+/* Account credentials status message for verification */
+"Verifying your information..." = "Verifying your information...";
+
+/* Account credentials action to hide advanced fields */
+"Hide Advanced" = "Hide Advanced";
+
+/* Account credentials button to show advanced fields */
+"Advanced Sign In" = "Advanced Sign In";
+
+/* Account creation error for invalid email missing @ */
+"Your email address must include an @.  For Example, username@company.com" = "Your email address must include an @.  For Example, username@company.com";
+
+/* Account creation error for invalid email */
+"Your email address is not valid.\nFor example, username@company.com" = "Your email address is not valid.\nFor example, username@company.com";
+
+/* Account creation error for wrong email */
+"Please use your {0} email address instead." = "Please use your {0} email address instead.";
+
+/* Account creation error for wrong email */
+"The email address does not match the service. Please use your {0} email address instead." = "The email address does not match the service. Please use your {0} email address instead.";
+
+/* Account creation error for no network */
+"No network connection. Please check that you have internet access." = "No network connection. Please check that you have internet access.";
+
+/* Account creation error for device limit */
+"You are already using the maximum number of devices for this account.  Please contact your system administrator." = "You are already using the maximum number of devices for this account.  Please contact your system administrator.";
+
+/* Account creation error for server issue */
+"The server is currently unavailable. Please try again later." = "The server is currently unavailable. Please try again later.";
+
+/* Account creation error because offline */
+"We were unable to verify your information because your device is offline.  Please try again when your device is online" = "We were unable to verify your information because your device is offline.  Please try again when your device is online";
+
+/* Account creation cert error */
+"We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}" = "We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}";
+
+/* Account creation error general */
+"We were unable to verify your information.  Please confirm it is correct and try again." = "We were unable to verify your information.  Please confirm it is correct and try again.";
+
+/* Account creation error, see advanced */
+"We were unable to verify your information.  Please confirm or enter advanced configuration information." = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+
+/* Acccount creation error credentials */
+"Invalid username or password.  Please adjust and try again." = "Invalid username or password.  Please adjust and try again.";
+
+/* Account creation cert rejected */
+"Account not created because the certificate was not accepted" = "Account not created because the certificate was not accepted";
+
+/* Error message when authenticating user */
+"We could not complete your account authentication.  Please try again." = "We could not complete your account authentication.  Please try again.";
+
+/* Error title for duplicate account */
+"Account Exists" = "Account Exists";
+
+/* Error message for a duplicate account */
+"An account with that email address already exists. Duplicate accounts are not supported." = "An account with that email address already exists. Duplicate accounts are not supported.";
+
+/* Error for bad incoming server */
+"Invalid incoming server name. Please check that you typed it in correctly." = "Invalid incoming server name. Please check that you typed it in correctly.";
+
+/* Error for bad outgoing server */
+"Invalid outgoing server name. Please check that you typed it in correctly." = "Invalid outgoing server name. Please check that you typed it in correctly.";
+
+/* Error for incoming server including port */
+"Invalid incoming server name. Scheme or port number is not allowed." = "Invalid incoming server name. Scheme or port number is not allowed.";
+
+/* Error for outgoing server including port */
+"Invalid outgoing server name. Scheme or port number is not allowed." = "Invalid outgoing server name. Scheme or port number is not allowed.";
+
+/* Error for incoming port */
+"Invalid incoming port number. it must be > 0 and < 65536." = "Invalid incoming port number. it must be > 0 and < 65536.";
+
+/* Error for incoming port string */
+"Invalid incoming port number. It must be a number." = "Invalid incoming port number. It must be a number.";
+
+/* Error for outgoing port */
+"Invalid outgoing port number. it must be > 0 and < 65536." = "Invalid outgoing port number. it must be > 0 and < 65536.";
+
+/* Error for outgoing port string */
+"Invalid outgoing port number. It must be a number." = "Invalid outgoing port number. It must be a number.";
 
 
 /* --------------------------------------------------------------------- */

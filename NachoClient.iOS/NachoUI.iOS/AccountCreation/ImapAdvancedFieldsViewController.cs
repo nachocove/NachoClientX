@@ -13,38 +13,38 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
     public partial class ImapAdvancedFieldsViewController : AccountAdvancedFieldsViewController, ThemeAdopter
-	{
-		public ImapAdvancedFieldsViewController (IntPtr handle) : base (handle)
-		{
-		}
+    {
+        public ImapAdvancedFieldsViewController (IntPtr handle) : base (handle)
+        {
+        }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
             usernameField.AdjustedEditingInsets = new UIEdgeInsets (0, 45, 0, 15);
 
-            var label = FieldLabel ("Host");
+            var label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Host", ""));
             incomingServerField.LeftViewMode = UITextFieldViewMode.Always;
             incomingServerField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            incomingServerField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            incomingServerField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             incomingServerField.LeftView = label;
 
-            label = FieldLabel ("Port");
+            label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Port", ""));
             incomingPortField.LeftViewMode = UITextFieldViewMode.Always;
             incomingPortField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            incomingPortField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            incomingPortField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             incomingPortField.LeftView = label;
 
-            label = FieldLabel ("Host");
+            label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Host", ""));
             outgoingServerField.LeftViewMode = UITextFieldViewMode.Always;
             outgoingServerField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            outgoingServerField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            outgoingServerField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             outgoingServerField.LeftView = label;
 
-            label = FieldLabel ("Port");
+            label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Port", ""));
             outgoingPortField.LeftViewMode = UITextFieldViewMode.Always;
             outgoingPortField.AdjustedEditingInsets = new UIEdgeInsets (0, label.Frame.Width + 30, 0, 15);
-            outgoingPortField.AdjustedLeftViewRect = new CGRect(15, 13, label.Frame.Width, label.Frame.Height);
+            outgoingPortField.AdjustedLeftViewRect = new CGRect (15, 13, label.Frame.Width, label.Frame.Height);
             outgoingPortField.LeftView = label;
         }
 
@@ -71,7 +71,7 @@ namespace NachoClient.iOS
 
         private UILabel FieldLabel (String text)
         {
-            var label = new UILabel(new CGRect(0, 0, 60, 20));
+            var label = new UILabel (new CGRect (0, 0, 60, 20));
             label.BackgroundColor = UIColor.White;
             label.TextColor = A.Color_NachoGreen;
             label.Font = A.Font_AvenirNextMedium14;
@@ -81,16 +81,16 @@ namespace NachoClient.iOS
 
         public override bool CanSubmitFields ()
         {
-            if (incomingServerField.Text.Trim().Length == 0) {
+            if (incomingServerField.Text.Trim ().Length == 0) {
                 return false;
             }
-            if (incomingPortField.Text.Trim().Length == 0) {
+            if (incomingPortField.Text.Trim ().Length == 0) {
                 return false;
             }
-            if (outgoingServerField.Text.Trim().Length == 0) {
+            if (outgoingServerField.Text.Trim ().Length == 0) {
                 return false;
             }
-            if (outgoingPortField.Text.Trim().Length == 0) {
+            if (outgoingPortField.Text.Trim ().Length == 0) {
                 return false;
             }
             return true;
@@ -99,24 +99,30 @@ namespace NachoClient.iOS
         public override string IssueWithFields ()
         {
             if (!EmailHelper.IsValidHost (incomingServerField.Text.Trim ())) {
-                return "Invalid incoming server name. Please check that you typed it in correctly.";
+                return NSBundle.MainBundle.LocalizedString ("Invalid incoming server name. Please check that you typed it in correctly.", "Error for bad incoming server");
             }
             if (!EmailHelper.IsValidHost (outgoingServerField.Text.Trim ())) {
-                return "Invalid outgoing server name. Please check that you typed it in correctly.";
+                return NSBundle.MainBundle.LocalizedString ("Invalid outgoing server name. Please check that you typed it in correctly.", "Error for bad outgoing server");
             }
             if (incomingServerField.Text.Contains (":")) {
-                return "Invalid incoming server name. Scheme or port number is not allowed.";
+                return NSBundle.MainBundle.LocalizedString ("Invalid incoming server name. Scheme or port number is not allowed.", "Error for incoming server including port");
             }
             if (outgoingServerField.Text.Contains (":")) {
-                return "Invalid outgoing server name. Scheme or port number is not allowed.";
+                return NSBundle.MainBundle.LocalizedString ("Invalid outgoing server name. Scheme or port number is not allowed.", "Error for outgoing server including port");
             }
-            string err = PortNumber_Helpers.CheckPortValidity (incomingPortField.Text, "incoming");
-            if (!string.IsNullOrEmpty (err)) {
-                return err;
+            if (int.TryParse (incomingPortField.Text, out var port)) {
+                if (!PortNumber_Helpers.IsValidPort (port)) {
+                    return NSBundle.MainBundle.LocalizedString ("Invalid incoming port number. it must be > 0 and < 65536.", "Error for incoming port");
+                }
+            } else {
+                return NSBundle.MainBundle.LocalizedString ("Invalid incoming port number. It must be a number.", "Error for incoming port string");
             }
-            err = PortNumber_Helpers.CheckPortValidity (outgoingPortField.Text, "outgoing");
-            if (!string.IsNullOrEmpty (err)) {
-                return err;
+            if (int.TryParse (outgoingPortField.Text, out port)) {
+                if (!PortNumber_Helpers.IsValidPort (port)) {
+                    return NSBundle.MainBundle.LocalizedString ("Invalid outgoing port number. it must be > 0 and < 65536.", "Error for outgoing port");
+                }
+            } else {
+                return NSBundle.MainBundle.LocalizedString ("Invalid outgoing port number. It must be a number.", "Error for outgoing port string");
             }
             return null;
         }
@@ -218,5 +224,5 @@ namespace NachoClient.iOS
         {
             AccountDelegate.AdvancedFieldsControllerDidChange (this);
         }
-	}
+    }
 }

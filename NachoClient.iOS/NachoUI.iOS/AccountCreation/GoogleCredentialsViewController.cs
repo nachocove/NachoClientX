@@ -134,13 +134,13 @@ namespace NachoClient.iOS
                     userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_HTTP, "OAUTH2: Could not download user info from {0}: {1}", source, ex);
-                    NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                    NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Nacho Mail", ""), NSBundle.MainBundle.LocalizedString ("We could not complete your account authentication.  Please try again.", "Error message when authenticating user"));
                     return;
                 }
 
                 if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"])) {
                     Log.Info (Log.LOG_UI, "GoogleCredentialsViewController existing account: {0}", userInfo.Property ("email"));
-                    NcAlertView.ShowMessage (this, "Account Exists", "An account with that email address already exists. Duplicate accounts are not supported.");
+                    NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Account Exists", "Error title for duplicate account"), NSBundle.MainBundle.LocalizedString ("An account with that email address already exists. Duplicate accounts are not supported.", "Error message for a duplicate account"));
                     RestartAuthenticator ();
                 } else {
                     if (Account != null) {
@@ -166,14 +166,14 @@ namespace NachoClient.iOS
                 }
             } else {
                 Log.Info (Log.LOG_UI, "GoogleCredentialsViewController completed unauthenticated");
-                NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Nacho Mail", ""), NSBundle.MainBundle.LocalizedString ("We could not complete your account authentication.  Please try again.", "Error message when authenticating user"));
             }
         }
 
         public void AuthError (object sender, AuthenticatorErrorEventArgs e)
         {
             Log.Info (Log.LOG_UI, "GoogleCredentialsViewController auth error");
-            NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+            NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Nacho Mail", ""), NSBundle.MainBundle.LocalizedString ("We could not complete your account authentication.  Please try again.", "Error message when authenticating user"));
         }
 
         #endregion
@@ -182,7 +182,7 @@ namespace NachoClient.iOS
         [Foundation.Export ("safariViewControllerDidFinish:")]
         public virtual void DidFinish (SFSafariViewController controller)
         {
-        	Authenticator.Stop ();
+            Authenticator.Stop ();
         }
 
         public override void PresentInNavigationController (UINavigationController navController)
