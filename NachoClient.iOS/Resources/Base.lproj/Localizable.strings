@@ -1,4 +1,7 @@
-﻿/* A welcome message for the user when their account creation is in progress */
+﻿/* --------------------------------------------------------------------- */
+/* MARK: - Welcome Screen */
+
+/* A welcome message for the user when their account creation is in progress */
 "Welcome Back!  We need to finish setting up your account." = "Welcome Back!  We need to finish setting up your account.";
 
 /* Action button to continue when account creation is in progress */
@@ -22,6 +25,10 @@
 /* MDM error message with specific company name */
 "Please contact the administrator for your {0} account.  We received an invalid configuration." = "Please contact the administrator for your {0} account.  We received an invalid configuration.";
 
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Account Syncing Screen */
+
 /* Titles shown on Account Syncing screen */
 "Syncing... (syncing view)" = "Syncing...";
 "Account Created (syncing view)" = "Account Created";
@@ -32,8 +39,32 @@
 "Sorry, we could not fully sync your inbox.  Please see Settings for more information" = "Sorry, we could not fully sync your inbox.  Please see Settings for more information";
 "Syncing will complete when network connectivity is restored" = "Syncing will complete when network connectivity is restored";
 
+
 /* --------------------------------------------------------------------- */
-/* BEGIN common strings from NachoCore */
+/* MARK: - Cert Ask Screen */
+
+/* Title for certificate accept/reject prompt */
+"Certificate (cert ask)" = "Certificate";
+
+/* Title for certificate accept/reject view */
+"Security Warning (cert ask)" = "Security Warning";
+
+/* Action for accepting certificate */
+"Allow (cert ask)" = "Allow";
+
+/* Action for rejecting certificate */
+"Cancel (cert ask)" = "Cancel";
+
+/* Prompt for accepting certificate */
+"Do you want to allow {0} from {1} ..." = "Do you want to allow {0} from {1} to provide information about your account?\n\nYou should only allow sources you know and trust to configure your account.";
+
+/* Error message for cert prompt */
+"Unable to find certificate to be examined." = "Unable to find certificate to be examined.";
+
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Common strings from NachoCore */
 
 /* compact duration in minutes */
 "{0}m" = "{0}m";

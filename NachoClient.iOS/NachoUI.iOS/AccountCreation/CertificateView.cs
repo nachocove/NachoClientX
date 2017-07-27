@@ -11,7 +11,7 @@ namespace NachoClient.iOS
 {
     [Register ("CertificateView")]
 
-    public class CertificateView: UIView
+    public class CertificateView : UIView
     {
         INachoCertificateResponderParent owner;
 
@@ -46,7 +46,7 @@ namespace NachoClient.iOS
             certificateView.BackgroundColor = UIColor.White;
             certificateView.Layer.CornerRadius = 7.0f;
             certificateView.Alpha = 1.0f;
-            certificateView.AccessibilityLabel = "Security Warning";
+            certificateView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Security Warning (cert ask)", "Title for certificate accept/reject view");
             certificateView.AccessibilityIdentifier = "SecurityWarning";
 
             certificateViewTitle = new UITextView (new CGRect (8, 2, certificateView.Bounds.Width - 16, 40));
@@ -55,7 +55,7 @@ namespace NachoClient.iOS
             certificateViewTitle.Alpha = 1.0f;
             certificateViewTitle.Font = UIFont.SystemFontOfSize (17);
             certificateViewTitle.TextColor = A.Color_SystemBlue;
-            certificateViewTitle.Text = "Security Warning";
+            certificateViewTitle.Text = NSBundle.MainBundle.LocalizedString ("Security Warning (cert ask)", "Title for certificate accept/reject view");
             certificateViewTitle.TextAlignment = UITextAlignment.Center;
             certificateViewTitle.Editable = false;
             certificateView.Add (certificateViewTitle);
@@ -87,9 +87,9 @@ namespace NachoClient.iOS
             trustCertificateButton.Layer.CornerRadius = 10.0f;
             trustCertificateButton.BackgroundColor = UIColor.White;
             trustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            trustCertificateButton.SetTitle ("Allow", UIControlState.Normal);
-            trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal); 
-            trustCertificateButton.AccessibilityLabel = "Allow";
+            trustCertificateButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Allow (cert ask)", "Action for accepting certificate"), UIControlState.Normal);
+            trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
+            trustCertificateButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Allow (cert ask)", "Action for accepting certificate");
             trustCertificateButton.AccessibilityIdentifier = "Allow";
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
@@ -103,8 +103,8 @@ namespace NachoClient.iOS
             dontTrustCertificateButton.Layer.CornerRadius = 10.0f;
             dontTrustCertificateButton.BackgroundColor = UIColor.White;
             dontTrustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            dontTrustCertificateButton.SetTitle ("Cancel", UIControlState.Normal);
-            dontTrustCertificateButton.AccessibilityLabel = "Cancel";
+            dontTrustCertificateButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Cancel (cert ask)", "Action for rejecting certificate"), UIControlState.Normal);
+            dontTrustCertificateButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel (cert ask)", "Action for rejecting certificate");
             dontTrustCertificateButton.AccessibilityIdentifier = "Cancel";
             dontTrustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -132,11 +132,10 @@ namespace NachoClient.iOS
             this.Alpha = 0.0f;
         }
 
-        private const string problemFormat = "Do you want to allow {0} from {1} to provide information about your account?\n\nYou should only allow sources you know and trust to configure your account.";
-
         public void ConfigureView ()
         {
-            descriptionOfProblem.Text = String.Format (problemFormat, certCommonName, certOrganization);
+            var format = NSBundle.MainBundle.LocalizedString ("Do you want to allow {0} from {1} ...", "Prompt for accepting certificate");
+            descriptionOfProblem.Text = String.Format (format, certCommonName, certOrganization);
             certificateInformation.Text = certInfo;
             SetNeedsLayout ();
         }
@@ -165,7 +164,7 @@ namespace NachoClient.iOS
             callbackAccountId = accountId;
             var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId, capability);
             if (null == certToBeExamined) {
-                certInfo = "Unable to find certificate to be examined.";
+                certInfo = NSBundle.MainBundle.LocalizedString ("Unable to find certificate to be examined.", "Error message for cert prompt");
                 certCommonName = "error";
                 certOrganization = "error";
             } else {

@@ -35,7 +35,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationItem.Title = "Certificate";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Certificate (cert ask)", "Title for certificate accept/reject prompt");
             NavigationItem.HidesBackButton = true;
 
             View.BackgroundColor = A.Color_NachoGreen;
