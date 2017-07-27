@@ -1,0 +1,12 @@
+
+/* Class = "UILabel"; text = "Welcome to"; ObjectID = "JkY-Bm-Eac"; */
+"JkY-Bm-Eac.text" = "Willkommen bei";
+
+/* Class = "UILabel"; text = "Sorry for the crash! It may take a minute or two to recover."; ObjectID = "Okr-I2-CGo"; */
+"Okr-I2-CGo.text" = "Tut mir leid für den Absturz! Es kann eine Minute oder zwei dauern, um sich zu erholen.";
+
+/* Class = "UILabel"; text = "Nacho Mail"; ObjectID = "UbM-ff-anh"; */
+"UbM-ff-anh.text" = "Nacho Mail";
+
+/* Class = "UILabel"; text = "Updating your app with the latest features..."; ObjectID = "Yuq-VI-N9P"; */
+"Yuq-VI-N9P.text" = "Aktualisieren Sie Ihre App mit den neuesten Funktionen...";
