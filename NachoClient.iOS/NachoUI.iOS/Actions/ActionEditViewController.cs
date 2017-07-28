@@ -52,28 +52,28 @@ namespace NachoClient.iOS
         class StateModel
         {
             public McAction.ActionState State;
-            public string Name;
+            public string NameKey;
         }
 
         class DeferModel
         {
             public MessageDeferralType Type;
-            public string Name;
+            public string NameKey;
         }
 
         static StateModel [] States = new StateModel [] {
-            new StateModel(){ State = McAction.ActionState.Hot, Name = "Hot" },
-            new StateModel(){ State = McAction.ActionState.Open, Name = "Normal" },
-            new StateModel(){ State = McAction.ActionState.Deferred, Name = "Deferred" },
+            new StateModel(){ State = McAction.ActionState.Hot, NameKey = "Hot (action state)" },
+            new StateModel(){ State = McAction.ActionState.Open, NameKey = "Normal (action state)" },
+            new StateModel(){ State = McAction.ActionState.Deferred, NameKey = "Deferred (action state)" },
         };
 
         static DeferModel [] DeferralsIfNoDueDate = new DeferModel [] {
-            new DeferModel(){ Type = MessageDeferralType.OneHour, Name = "An Hour From Now"},
-            new DeferModel(){ Type = MessageDeferralType.Tonight, Name = "Tonight" },
-            new DeferModel(){ Type = MessageDeferralType.Tomorrow, Name = "Tomorrow Morning" },
-            new DeferModel(){ Type = MessageDeferralType.NextWeek, Name = "Monday Morning" },
-            new DeferModel(){ Type = MessageDeferralType.Weekend, Name = "Saturday Morning" },
-            new DeferModel(){ Type = MessageDeferralType.Custom, Name = "Pick a Date" }
+            new DeferModel(){ Type = MessageDeferralType.OneHour, NameKey = "An Hour From Now (action defer)"},
+            new DeferModel(){ Type = MessageDeferralType.Tonight, NameKey = "Tonight (action defer)" },
+            new DeferModel(){ Type = MessageDeferralType.Tomorrow, NameKey = "Tomorrow Morning (action defer)" },
+            new DeferModel(){ Type = MessageDeferralType.NextWeek, NameKey = "Monday Morning (action defer)" },
+            new DeferModel(){ Type = MessageDeferralType.Weekend, NameKey = "Saturday Morning (action defer)" },
+            new DeferModel(){ Type = MessageDeferralType.Custom, NameKey = "Pick a Date (action defer)" }
         };
 
         static DeferModel [] DeferralsIfDueDate = new DeferModel [] {
@@ -82,7 +82,7 @@ namespace NachoClient.iOS
             DeferralsIfNoDueDate[2],
             DeferralsIfNoDueDate[3],
             DeferralsIfNoDueDate[4],
-            new DeferModel(){ Type = MessageDeferralType.DueDate, Name = "Due Date" },
+            new DeferModel(){ Type = MessageDeferralType.DueDate, NameKey = "Due Date (action defer)" },
             DeferralsIfNoDueDate[5]
         };
 
@@ -95,10 +95,10 @@ namespace NachoClient.iOS
         public ActionEditViewController () : base (UITableViewStyle.Grouped)
         {
             AutomaticallyAdjustsScrollViewInsets = false;
-            SaveButton = new UIBarButtonItem ("Save", UIBarButtonItemStyle.Plain, SaveButtonPressed);
-            SaveButton.AccessibilityLabel = "Save";
+            SaveButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Save", ""), UIBarButtonItemStyle.Plain, SaveButtonPressed);
+            SaveButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Save", "");
             CloseButton = new NcUIBarButtonItem (UIImage.FromBundle ("icn-close"), UIBarButtonItemStyle.Plain, Close);
-            CloseButton.AccessibilityLabel = "Close";
+            CloseButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             NavigationItem.RightBarButtonItem = SaveButton;
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
@@ -141,12 +141,12 @@ namespace NachoClient.iOS
         {
             base.LoadView ();
             TitleCell = new ActionTitleCell ();
-            TitleCell.Placeholder = "Summary";
+            TitleCell.Placeholder = NSBundle.MainBundle.LocalizedString ("Summary", ""); ;
             TitleCell.Delegate = this;
             TitleCell.SeparatorInset = new UIEdgeInsets (0.0f, 44.0f, 0.0f, 0.0f);
             TitleCell.CheckboxView.Changed = CheckboxChanged;
             DescriptionCell = new EditableTextCell ();
-            DescriptionCell.Placeholder = "Notes";
+            DescriptionCell.Placeholder = NSBundle.MainBundle.LocalizedString ("Notes", "");
             DescriptionCell.Delegate = this;
             DescriptionCell.SeparatorInset = TitleCell.SeparatorInset;
 
@@ -171,9 +171,9 @@ namespace NachoClient.iOS
             DescriptionCell.TextView.Text = Action.Description;
             DescriptionCell.UpdatePlaceholderVisible ();
             if (Action.Id == 0) {
-                NavigationItem.Title = "Create Action";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Create Action", "Title for action edit view when creating");
             } else {
-                NavigationItem.Title = "Edit Action";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Edit Action", "Title for action edit view when modifying");
             }
             UpdateSaveEnabled ();
         }
@@ -323,7 +323,7 @@ namespace NachoClient.iOS
             } else if (indexPath.Section == StateSection) {
                 var cell = tableView.DequeueReusableCell (StateCellIdentifier) as StateCell;
                 var stateModel = States [indexPath.Row];
-                cell.TextLabel.Text = stateModel.Name;
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString (stateModel.NameKey, "");
                 if (Action.State == stateModel.State) {
                     if (!(cell.AccessoryView is CheckmarkAccessoryView)) {
                         cell.AccessoryView = new CheckmarkAccessoryView ();
@@ -337,7 +337,7 @@ namespace NachoClient.iOS
             } else if (indexPath.Section == DeferSection) {
                 var cell = tableView.DequeueReusableCell (DeferCellIdentifier) as NameValueCell;
                 var deferModel = Deferrals [indexPath.Row];
-                cell.TextLabel.Text = deferModel.Name;
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString (deferModel.NameKey, "");
                 if (deferModel.Type == MessageDeferralType.Custom) {
                     if (Action.DeferralType == MessageDeferralType.Custom && Action.DeferUntilDate != default (DateTime)) {
                         cell.ValueLabel.Text = DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (Action.DeferUntilDate);
@@ -601,10 +601,10 @@ namespace NachoClient.iOS
         void UpdateDueDateCell ()
         {
             if (Action.DueDate == default (DateTime)) {
-                DueDateCell.TextLabel.Text = "Set a Due Date";
+                DueDateCell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Set a Due Date (action edit)", "Detail text for action due date when nothing is set");
                 DueDateCell.TextLabel.TextColor = DueDateCell.ContentView.BackgroundColor.ColorDarkenedByAmount (0.15f);
             } else {
-                DueDateCell.TextLabel.Text = String.Format ("Due on {0}", DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (Action.DueDate));
+                DueDateCell.TextLabel.Text = String.Format (NSBundle.MainBundle.LocalizedString ("Due on {0} (action edit)", "Detail text for action due date when a date is set"), DateTimeFormatter.Instance.AbbreviatedDateWithWeekdayAndYearExceptPresent (Action.DueDate));
                 DueDateCell.TextLabel.TextColor = adoptedTheme.TableViewCellDetailLabelTextColor;
             }
         }
@@ -640,7 +640,7 @@ namespace NachoClient.iOS
                 if (_StateHeader == null) {
                     _StateHeader = new InsetLabelView ();
                     _StateHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-                    _StateHeader.Label.Text = "Priority";
+                    _StateHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("Priority (action edit)", "");
                     _StateHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                     if (adoptedTheme != null) {
                         ApplyThemeToHeader (_StateHeader);
@@ -656,7 +656,7 @@ namespace NachoClient.iOS
                 if (_DeferHeader == null) {
                     _DeferHeader = new InsetLabelView ();
                     _DeferHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-                    _DeferHeader.Label.Text = "Defer Until";
+                    _DeferHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("Defer Until (action edit)", "");
                     _DeferHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                     if (adoptedTheme != null) {
                         ApplyThemeToHeader (_DeferHeader);

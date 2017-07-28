@@ -8,6 +8,19 @@
 "Host" = "Host";
 "Port" = "Port";
 "OK" = "OK";
+"Save" = "Save";
+"Close" = "Close";
+"Edit" = "Edit";
+"Cancel" = "Cancel";
+"Cancel Editing" = "Cancel Editing";
+"Done" = "Done";
+"Done Editing" = "Done Editing";
+"Not Hot (verb)" = "Not Hot";
+"Hot (verb)" = "Hot";
+"Defer" = "Defer";
+"Delete" = "Delete";
+"Clear" = "Clear";
+"Set" = "Set";
 
 
 /* --------------------------------------------------------------------- */
@@ -194,6 +207,59 @@
 
 /* Exchange wall code submit button title */
 "Enable Exchange" = "Enable Exchange";
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Action Views */
+
+/* Action state labels when editing */
+"Hot (action state)" = "Hot";
+"Normal (action state)" = "Normal";
+"Deferred (action state)" = "Deferred";
+"Open (action state)" = "Open";
+"Completed (action state)" = "Completed";
+
+/* Action defer labels when editing */
+"An Hour From Now (action defer)" = "An Hour From Now";
+"Tonight (action defer)" = "Tonight";
+"Tomorrow Morning (action defer)" = "Tomorrow Morning";
+"Monday Morning (action defer)" = "Monday Morning";
+"Saturday Morning (action defer)" = "Saturday Morning";
+"Pick a Date (action defer)" = "Pick a Date";
+"Due Date (action defer)" = "Due Date";
+
+/* Action edit view sections */
+"Summary (action edit)" = "Summary";
+"Notes (action edit)" = "Notes";
+"Priority (action edit)" = "Priority";
+"Defer Until (action edit)" = "Defer Until";
+
+/* Title for action edit view when creating */
+"Create Action" = "Create Action";
+
+/* Title for action edit view when modifying */
+"Edit Action" = "Edit Action";
+
+/* Detail text for action due date when nothing is set */
+"Set a Due Date (action edit)" = "Set a Due Date";
+
+/* Detail text for action due date when a date is set */
+"Due on {0} (action edit)" = "Due on {0}";
+
+/* Action item defer menu heading */
+"Defer until... (action list)" = "Defer until...";
+"An Hour From Now (action list)" = "An Hour From Now";
+"Tonight (action list)" = "Tonight";
+"Tomorrow Morning (action list)" = "Tomorrow Morning";
+"Monday Morning (action list)" = "Monday Morning";
+"Saturday Morning (action list)" = "Saturday Morning";
+"Other... (action list)" = "Other...";
+
+/* Action list indicator */
+"{0} Actions" = "{0} Actions";
+
+/* Button title to make an action back into a regular email */
+"Not Action" = "Not Action";
 
 
 /* --------------------------------------------------------------------- */

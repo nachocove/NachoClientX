@@ -59,14 +59,14 @@ namespace NachoClient.iOS
             Actions = new NachoActions (Account.Id, State);
             AutomaticallyAdjustsScrollViewInsets = false;
 
-            EditTableButton = new UIBarButtonItem ("Edit", UIBarButtonItemStyle.Plain, EditTable);
-            EditTableButton.AccessibilityLabel = "Edit";
-            CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
-            CancelEditingButton.AccessibilityLabel = "Cancel Editing";
-            DoneEditingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, CancelEditingTable);
-            DoneEditingButton.AccessibilityLabel = "Done Editing";
-            DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
-            EditTableButton.AccessibilityLabel = "Done";
+            EditTableButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Edit", ""), UIBarButtonItemStyle.Plain, EditTable);
+            EditTableButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Edit", "");
+            CancelEditingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIBarButtonItemStyle.Plain, CancelEditingTable);
+            CancelEditingButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel Editing", "");
+            DoneEditingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Done", ""), UIBarButtonItemStyle.Plain, CancelEditingTable);
+            DoneEditingButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Done Editing", "");
+            DoneSwipingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Done", ""), UIBarButtonItemStyle.Plain, EndSwiping);
+            EditTableButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Done", "");
 
             UpdateNavigationItem ();
         }
@@ -214,14 +214,14 @@ namespace NachoClient.iOS
         void DeferAction (NSIndexPath indexPath)
         {
             var action = Actions.ActionAt (indexPath.Row);
-            var alertController = UIAlertController.Create ("", "Defer until...", UIAlertControllerStyle.ActionSheet);
-            alertController.AddAction (UIAlertAction.Create ("An Hour From Now", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.OneHour); }));
-            alertController.AddAction (UIAlertAction.Create ("Tonight", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tonight); }));
-            alertController.AddAction (UIAlertAction.Create ("Tomorrow Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tomorrow); }));
-            alertController.AddAction (UIAlertAction.Create ("Monday Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.NextWeek); }));
-            alertController.AddAction (UIAlertAction.Create ("Saturday Morning", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Weekend); }));
-            alertController.AddAction (UIAlertAction.Create ("Other...", UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferActionByEditing(action); }));
-            alertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, null));
+            var alertController = UIAlertController.Create ("", NSBundle.MainBundle.LocalizedString ("Defer until... (action list)", "Action item defer menu heading"), UIAlertControllerStyle.ActionSheet);
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("An Hour From Now (action list)", ""), UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.OneHour); }));
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Tonight (action list)", ""), UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tonight); }));
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Tomorrow Morning (action list)", ""), UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Tomorrow); }));
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Monday Morning (action list)", ""), UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.NextWeek); }));
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Saturday Morning (action list)", ""), UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferAction(action, MessageDeferralType.Weekend); }));
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Other... (action list)", ""), UIAlertActionStyle.Default, (UIAlertAction alertAction) => { DeferActionByEditing(action); }));
+            alertController.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIAlertActionStyle.Cancel, null));
             PresentViewController (alertController, true, null);
         }
 
@@ -345,7 +345,7 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (SubStateCellIdentifier) as SwipeTableViewCell;
                 var index = indexPath.Row - Actions.Count ();
                 var state = SubStates [index];
-                cell.TextLabel.Text = String.Format ("{0} Actions", NameForState (state));
+                cell.TextLabel.Text = String.Format (NSBundle.MainBundle.LocalizedString ("{0} Actions", "Action list indicator"), NameForState (state));
                 cell.TextLabel.Font = adoptedTheme.DefaultFont.WithSize (17.0f);
                 cell.TextLabel.TextColor = adoptedTheme.DisabledTextColor;
                 if (!(cell.AccessoryView is DisclosureAccessoryView)) {
@@ -437,14 +437,14 @@ namespace NachoClient.iOS
                 var actions = new List<SwipeTableRowAction> ();
                 if (!action.IsCompleted) {
                     if (action.IsHot) {
-                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsUnhot));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Not Hot (verb)", ""), UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsUnhot));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsHot));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Hot (verb)", ""), UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkActionAsHot));
                     }
                     if (action.IsDeferred) {
-                        actions.Add (new SwipeTableRowAction ("Edit", UIImage.FromBundle ("gen-edit"), UIColor.FromRGB (0x01, 0xB2, 0xCD), EditAction));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Edit", ""), UIImage.FromBundle ("gen-edit"), UIColor.FromRGB (0x01, 0xB2, 0xCD), EditAction));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Defer", UIImage.FromBundle ("email-defer-swipe"), UIColor.FromRGB (0x01, 0xB2, 0xCD), DeferAction));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Defer", ""), UIImage.FromBundle ("email-defer-swipe"), UIColor.FromRGB (0x01, 0xB2, 0xCD), DeferAction));
                     }
                 }
                 return actions;
@@ -457,9 +457,9 @@ namespace NachoClient.iOS
             if (indexPath.Row < Actions.Count ()) {
                 var action = Actions.ActionAt (indexPath.Row);
                 var actions = new List<SwipeTableRowAction> ();
-                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAction));
+                actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Delete", ""), UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAction));
                 if (!action.IsCompleted) {
-                    actions.Add (new SwipeTableRowAction ("Not Action", UIImage.FromBundle ("email-not-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), DemoteAction));
+                    actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Not Action", "Button title to make an action back into a regular email"), UIImage.FromBundle ("email-not-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), DemoteAction));
                 }
                 return actions;
             }
@@ -535,16 +535,16 @@ namespace NachoClient.iOS
         string NameForState (McAction.ActionState state)
         {
             if (state == McAction.ActionState.Hot) {
-                return "Hot";
+                return NSBundle.MainBundle.LocalizedString ("Hot (action state)", "");
             }
             if (state == McAction.ActionState.Open) {
-                return "Open";
+                return NSBundle.MainBundle.LocalizedString ("Open (action state)", "");
             }
             if (state == McAction.ActionState.Deferred) {
-                return "Deferred";
+                return NSBundle.MainBundle.LocalizedString ("Deferred (action state)", "");
             }
             if (state == McAction.ActionState.Completed) {
-                return "Completed";
+                return NSBundle.MainBundle.LocalizedString ("Completed (action state)", "");
             }
             NcAssert.CaseError ();
             return null;
@@ -595,7 +595,7 @@ namespace NachoClient.iOS
             HasMadeEdits = false;
             TableView.SetEditing(true, true);
             UpdateNavigationItem ();
-            DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedActions);
+            DeleteButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Delete", ""), UIBarButtonItemStyle.Plain, DeleteSelectedActions);
             ToolbarItems = new UIBarButtonItem[] {
                 new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
                 DeleteButton,

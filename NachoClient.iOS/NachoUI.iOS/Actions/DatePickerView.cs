@@ -66,20 +66,20 @@ namespace NachoClient.iOS
             CancelButton = new UIButton (UIButtonType.Custom);
             CancelButton.Frame = new CGRect (0.0f, BorderWidth, PanelView.Bounds.Width / 2.0f, ButtonHeight);
             CancelButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin;
-            CancelButton.SetTitle ("Cancel", UIControlState.Normal);
+            CancelButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIControlState.Normal);
             CancelButton.TouchUpInside += Cancel;
 
             ClearButton = new UIButton (UIButtonType.Custom);
             ClearButton.Frame = new CGRect (CancelButton.Frame.Width, BorderWidth, PanelView.Bounds.Width / 2.0f, ButtonHeight);
             ClearButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
-            ClearButton.SetTitle ("Clear", UIControlState.Normal);
+            ClearButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Clear", ""), UIControlState.Normal);
             ClearButton.TouchUpInside += Clear;
             ClearButton.Hidden = true;
 
             SetButton = new UIButton (UIButtonType.Custom);
             SetButton.Frame = new CGRect (CancelButton.Frame.Width, BorderWidth, PanelView.Bounds.Width / 2.0f, ButtonHeight);
             SetButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
-            SetButton.SetTitle ("Set", UIControlState.Normal);
+            SetButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Set", ""), UIControlState.Normal);
             SetButton.TouchUpInside += Set;
 
             PickerBorder = new UIView (new CGRect (0.0f, CancelButton.Frame.Y + CancelButton.Frame.Height, PanelView.Bounds.Width, BorderWidth));
