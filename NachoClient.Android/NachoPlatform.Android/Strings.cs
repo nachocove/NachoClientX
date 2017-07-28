@@ -715,5 +715,63 @@ namespace NachoPlatform
         }
 
         #endregion
+
+        #region Common Errors
+
+        public string ErrorNetworkUnavailable {
+            get {
+                return Context.GetString (Resource.String.error_network_unavailable);
+            }
+        }
+
+        public string ErrorOutOfSpace {
+            get {
+                return Context.GetString (Resource.String.error_out_of_space);
+            }
+        }
+
+        public string ErrorMessageDownloadFailed {
+            get {
+                return Context.GetString (Resource.String.error_message_download_failed);
+            }
+        }
+
+        public string ErrorCalendarDownloadFailed {
+            get {
+                return Context.GetString (Resource.String.error_calendar_download_failed);
+            }
+        }
+
+        public string ErrorAttachmentDownloadFailed {
+            get {
+                return Context.GetString (Resource.String.error_attachment_download_failed);
+            }
+        }
+
+        public string ErrorAuthFail {
+            get {
+                return Context.GetString (Resource.String.error_auth_fail);
+            }
+        }
+
+        public string ErrorPasswordExpired {
+            get {
+                return Context.GetString (Resource.String.error_password_expired);
+            }
+        }
+
+        public string ErrorPasswordUpdate {
+            get {
+                return Context.GetString (Resource.String.error_password_update);
+            }
+        }
+
+        public string ErrorServiceUnavailable {
+            get {
+                return Context.GetString (Resource.String.error_service_unavailable);
+            }
+        }
+
+        #endregion
     }
 }

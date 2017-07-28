@@ -52,20 +52,20 @@ namespace NachoClient.iOS
                 "Send Invite", A.Color_NachoeSwipeForward);
         private static SwipeActionDescriptor MAKE_REQUIRED_BUTTON =
             new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("calendar-attendee-required-swipe"),
-                "Required", A.Color_NachoSwipeDialIn);
+                "Required (calendar attendee)", A.Color_NachoSwipeDialIn);
         private static SwipeActionDescriptor MAKE_OPTIONAL_BUTTON =
             new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("calendar-attendee-optional-swipe"),
-                "Optional", A.Color_NachoSwipeEmailMove);
+                "Optional (calendar attendee)", A.Color_NachoSwipeEmailMove);
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
                 "Remove", A.Color_NachoSwipeActionRed);
 
         private static SwipeActionDescriptor CALL_BUTTON =
             new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.25f, UIImage.FromBundle ("contacts-call-swipe"),
-                "Dial", A.Color_NachoSwipeActionOrange);
+                "Dial (verb)", A.Color_NachoSwipeActionOrange);
         private static SwipeActionDescriptor EMAIL_BUTTON =
             new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.25f, UIImage.FromBundle ("contacts-email-swipe"),
-                "Email", A.Color_NachoSwipeActionMatteBlack);
+                "Email (verb)", A.Color_NachoSwipeActionMatteBlack);
 
         public Dictionary<NSIndexPath, McAttendee> MultiSelect {
             get { return multiSelect; }
@@ -403,7 +403,7 @@ namespace NachoClient.iOS
 
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
-                textLabel.Text = "Contact has no name or email address";
+                textLabel.Text = NSBundle.MainBundle.LocalizedString ("Contact has no name or email address", "fallback text for calendar attendee");
                 textLabel.TextColor = UIColor.LightGray;
                 textLabel.Font = A.Font_AvenirNextRegular14;
                 labelView.Hidden = true;
@@ -424,7 +424,7 @@ namespace NachoClient.iOS
             // Email empty
             if (String.IsNullOrEmpty (displayEmailAddress)) {
                 textLabel.Text = displayName;
-                detailTextLabel.Text = "Contact has no email address";
+                detailTextLabel.Text = NSBundle.MainBundle.LocalizedString ("Contact has no email address", "fallback text for calendar attendee without email");
                 textLabel.TextColor = A.Color_0B3239;
                 textLabel.Font = A.Font_AvenirNextDemiBold17;
                 detailTextLabel.TextColor = UIColor.LightGray;
@@ -510,10 +510,10 @@ namespace NachoClient.iOS
         public void ResendInvite (McAttendee attendee)
         {
             UIAlertView alert = new UIAlertView ();
-            alert.Title = "Resend invite?";
+            alert.Title = NSBundle.MainBundle.LocalizedString ("Resend invite?", "Title for resend invite confirmation");
             alert.Message = attendee.Email;
-            alert.AddButton ("Cancel");
-            alert.AddButton ("Yes");
+            alert.AddButton (NSBundle.MainBundle.LocalizedString ("Cancel", ""));
+            alert.AddButton (NSBundle.MainBundle.LocalizedString ("Yes", ""));
             alert.CancelButtonIndex = 0;
             alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                 if (1 == alertEvent.ButtonIndex) {

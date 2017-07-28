@@ -535,6 +535,16 @@ namespace NachoPlatform
         string NotificationConfigirationInbox { get; }
         string NotificationConfigirationNone { get; }
 
+        string ErrorNetworkUnavailable { get; }
+        string ErrorOutOfSpace { get; }
+        string ErrorMessageDownloadFailed { get; }
+        string ErrorCalendarDownloadFailed { get; }
+        string ErrorAttachmentDownloadFailed { get; }
+        string ErrorAuthFail { get; }
+        string ErrorPasswordExpired { get; }
+        string ErrorPasswordUpdate { get; }
+        string ErrorServiceUnavailable { get; }
+
     }
 
     public interface IDateTimeFormatter

@@ -21,6 +21,18 @@
 "Delete" = "Delete";
 "Clear" = "Clear";
 "Set" = "Set";
+"Remove" = "Remove";
+"Yes" = "Yes";
+"More" = "More";
+"Forward (verb)" = "Forward";
+"Send" = "Send";
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Base Views */
+
+/* Setter button title for the date picker */
+"Use Date" = "Use Date";
 
 
 /* --------------------------------------------------------------------- */
@@ -261,6 +273,295 @@
 /* Button title to make an action back into a regular email */
 "Not Action" = "Not Action";
 
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Calendar */
+
+/* Title for reminder picker in Calendar */
+"Reminder (calendar picker)" = "Remainder";
+
+/* Swipe actions */
+"Send Invite" = "Send Invite";
+"Required (calendar attendee)" = "Required";
+"Dial (verb)" = "Dial";
+"Email (verb)" = "Email";
+"I'm Late" = "I'm Late";
+
+/* fallback text for calendar attendee */
+"Contact has no name or email address" = "Contact has no name or email address";
+
+/* fallback text for calendar attendee without email */
+"Contact has no email address" = "Contact has no email address";
+
+/* Title for resend invite confirmation */
+"Resend invite?" = "Resend invite?";
+
+/* Calendar body header for time section */
+"WHEN (calendar body)" = "WHEN";
+
+/* Calendar body header for location section */
+"LOCATION (calendar body)" = "LOCATION";
+
+/* Calendar body header for attendees section */
+"ATTENDEES (calendar body)" = "ATTENDEES";
+
+/* Calendar body header for organizer section */
+"ORGANIZER (calendar body)" = "ORGANIZER";
+
+/* Calendar body header for description section */
+"DESCRIPTION (calendar body)" = "DESCRIPTION";
+
+/* Calendar body header for reminder section */
+"REMINDER (calendar body)" = "REMINDER";
+
+/* Calendar body header for attachments section */
+"ATTACHMENTS (calendar body)" = "ATTACHMENTS";
+
+/* Calendar body header for attachments section */
+"NOTES (calendar body)" = "NOTES";
+
+/* Calendar body header for attachments section */
+"CALENDAR (calendar body)" = "CALENDAR";
+
+/* Calendar Invite response */
+"Attend" = "Attend";
+
+/* Calendar Invite response */
+"Maybe" = "Maybe";
+
+/* Calendar Invite response */
+"Decline" = "Decline";
+
+/* Calenar invite response */
+"Remove from calendar" = "Remove from calendar";
+
+/* Calendar invitation status */
+"You have not responded to this invitation." = "You have not responded to this invitation.";
+
+/* Caledar invitation status when accepted */
+"You accepted the meeting." = "You accepted the meeting.";
+
+/* Calendar invite status when tentative */
+"You might attend the meeting." = "You might attend the meeting.";
+
+/* Calendar invite status when declined */
+"You declined the meeting." = "You declined the meeting.";
+
+/* Calendar attendee status when accepted */
+"{0} has accepted the meeting." = "{0} has accepted the meeting.";
+
+/* Calendar attendee status when tentative */
+"{0} has tentatively accepted the meeting." = "{0} has tentatively accepted the meeting.";
+
+/* Calendar attendee status when declined */
+"{0} has declined the meeting." = "{0} has declined the meeting.";
+
+/* Calendar attendee status when unknown */
+"The status of {0} is unknown." = "The status of {0} is unknown.";
+
+/* Calendar event cancelation status */
+"The meeting has been canceled." = "The meeting has been canceled.";
+
+/* Empty calendar view message */
+"No messages (calendar list)" = "No messages";
+
+/* Calendar list delete event message */
+"This event has been deleted." = "This event has been deleted.";
+
+/* All day indicator */
+"ALL DAY (calendar list)" = "ALL DAY";
+
+/* Button title for adding a calendar event */
+"Add event" = "Add event";
+
+/* Button title for go to today action */
+"Today (go to)" = "Today";
+
+/* Button title for creating a new meeting */
+"New meeting (verb)" = "New meeting";
+
+/* Title for calendar view */
+"Calendar (calendar list)" = "Calendar";
+
+/* Title for calendar picker */
+"Calendars (calendar picker)" = "Calendars";
+
+/* Event edit alert title when deleted */
+"Event Deleted" = "Event Deleted";
+
+/* Event edit alert message when deleted */
+"The event can't be edited because it was deleted." = "The event can't be edited because it was deleted.";
+
+/* Event edit alert title when premissions revoked */
+"No Calendar Access" = "No Calendar Access";
+
+/* Event edit alert message when premissions revoked */
+"The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar." = "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.";
+
+/* Event edit alert title when no device calendar */
+"No device calendars" = "No device calendars";
+
+/* Event edit alert message when no device calendar */
+"The Calendar app does not have any accessible calendars." = "The Calendar app does not have any accessible calendars.";
+
+/* Event edit sections */
+"Title (event edit)" = "Title";
+"Description (event edit)" = "Description";
+"All Day (event edit)" = "All Day";
+"Starts (event edit)" = "Starts";
+"Until (event edit)" = "Until";
+"Location (event edit)" = "Location";
+"Attendees (event edit)" = "Attendees";
+"Attendees ({0}) (event edit)" = "Attendees {0}";
+"Reminder (event edit)" = "Reminder";
+"Calendar (event edit)" = "Calendar";
+
+/* Event reminders */
+"None (event reminder)" = "None";
+"At time of event (event reminder)" = "At time of event";
+"5 min before (event reminder)" = "5 min before";
+"15 min before (event reminder)" = "15 min before";
+"30 min before (event reminder)" = "30 min before";
+"1 hour before (event reminder)" = "1 hour before";
+"2 hours before (event reminder)" = "2 hours before";
+"1 day before (event reminder)" = "1 day before";
+"2 days before (event reminder)" = "2 days before";
+"1 week before (event reminder)" = "1 week before";
+
+/* Button title for deleting an event */
+"Delete Event" = "Delete Event";
+
+/* View title when creating a new event */
+"New Event (noun)" = "New Event";
+
+/* View title when editing an existing event */
+"Edit Event (noun)" = "Edit Event";
+
+/* Title for alert when error saving event */
+"Cannot Save Event" = "Cannot Save Event";
+
+/* Message for alert when error saving event */
+"The title of the event must not be empty." = "The title of the event must not be empty.";
+
+/* Message for alert when error saving event because of invalid time */
+"The starting time must be no later than the ending time." = "The starting time must be no later than the ending time.";
+
+/* Event edit discard confirmation message */
+"This event will not be saved." = "This event will not be saved.";
+
+/* Event edit discard confirmation title */
+"Are you sure?" = "Are you sure?";
+
+/* Alert title when saving deleted event */
+"Deleted Event (alert)" = "Deleted Event";
+
+/* Alert message when saving deleted event */
+"The changes to the event cannot be saved because the event has been deleted." = "The changes to the event cannot be saved because the event has been deleted.";
+
+/* Event edit delete confirmation button title */
+"Delete Event (verb)" = "Delete Event";
+
+/* Title for event attendees view */
+"Attendees (event attendees)" = "Attendees";
+
+/* Button title for adding an event attendee */
+"Add attendee" = "Add attendee";
+
+/* Attendee list segment */
+"All (attendee list)" = "All";
+
+/* Attendee list segment */
+"Required (attendee list)" = "Required";
+
+/* Attendee list segment */
+"Optional (attendee list)" = "Optional";
+
+/* fallback text when no attendees are in the list */
+"No attendees" = "No attendees";
+
+/* Fallback message for when there are no attendees when editing */
+"There are currently no attendees.\n\nStart adding attendees to your event by tapping on the add icon above" = "There are currently no attendees.\n\nStart adding attendees to your event by tapping on the add icon above";
+
+/* Fallback text for when there are no required attendees */
+"No required attendees" = "No required attendees";
+
+/* Fallback text for when there are no optional attendees */
+"No optional attendees" = "No optional attendees";
+
+/* Alert title when the attendee cannot be emailed */
+"No Email Address" = "No Email Address";
+
+/* Alert message when the attendee cannot be emailed */
+"This contact does not have an email address." = "This contact does not have an email address.";
+
+/* Alert message when the attendee cannot be emailed and we can't add an address */
+"This contact does not have an email address, and we are unable to modify the contact." = "This contact does not have an email address, and we are unable to modify the contact.";
+
+/* Event field label */
+"Phone (event field)" = "Phone";
+
+/* Button title to cancel a meeting */
+"Cancel this meeting" = "Cancel this meeting";
+
+/* Label when phone isn't avaiable for an event */
+"Not available (event phone)" = "Not available";
+
+/* Label for calendar event when data is gone */
+"Information is unavailable" = "Information is unavailable";
+
+/* Label indicating user is the event's organizer */
+"You are the organizer" = "You are the organizer";
+
+/* Alert message to confirm meeting decline */
+"Declining the meeting will also delete the meeting from your calendar." = "Declining the meeting will also delete the meeting from your calendar.";
+
+/* Option when declining a recurring event to decline all */
+"Decline the entire series" = "Decline the entire series";
+
+/* Option when declining a recurring event to decline just this ocurrence */
+"Decline just this occurrence" = "Decline just this occurrence";
+
+/* Option when responding to a recurring event to respond for all occurrences */
+"Respond for the entire series" = "Respond for the entire series";
+
+/* Option when responding to a recurring event to respond to just one occurrence */
+"Respond to just this occurrence" = "Respond to just this occurrence";
+
+/* button title when confirming meeeting decline */
+"Decline the meeting" = "Decline the meeting";
+
+/* Alert title when user can't change their event response */
+"Can't Change Response" = "Can't Change Response";
+
+/* Alert message when user can't change their event response */
+"Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. Use the Calendar app or some other client to change your response." = "Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. Use the Calendar app or some other client to change your response.";
+
+/* Alert message when user can't change their event response */
+"Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. Use a different client to change your response." = "Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. Use a different client to change your response.";
+
+/* Alert message when confirming meeting cancelation */
+"Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees." = "Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees.";
+
+/* Option when canceling a recurring meeting */
+"Cancel this occurrence" = "Cancel this occurrence";
+
+/* Option when canceling a meeting */
+"Don't cancel the meeting" = "Don't cancel the meeting";
+
+/* Title for alert when there's an attachment error */
+"Attachment error" = "Attachment error";
+
+/* Generic error for an attachment issue */
+"Download failed. (event)" = "Download failed.";
+
+/* Title for notes view */
+"Note (notes view)" = "Note";
+
+/* Title for notes view with note name */
+"Note: {0} (notes view)" = "Note: {0}";
+
+/* Title for note preview */
+"Preview Note" = "Preview Note";
 
 /* --------------------------------------------------------------------- */
 /* MARK: - Common strings from NachoCore */
@@ -511,5 +812,14 @@
 /* Notification configuration setting label for none */
 "None (notification config)" = "None";
 
-
+/* Common errors */
+"The network is unavailable." = "The network is unavailable.";
+"Your device is out of space." = "Your device is out of space.";
+"Message download failed." = "Message download failed.";
+"Calendar body download failed." = "Calendar body download failed.";
+"Attachment download failed." = "Attachment download failed.";
+"Authorization failed." = "Authorization failed.";
+"Your password has expired." = "Your password has expired.";
+"Your password may need to be updated." = "Your password may need to be updated.";
+"Service unavailable." = "Service unavailable.";
 

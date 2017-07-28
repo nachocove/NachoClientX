@@ -715,5 +715,63 @@ namespace NachoPlatform
 
         #endregion
 
+        #region Common Errors
+
+        public string ErrorNetworkUnavailable {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("The network is unavailable.", "");
+            }
+        }
+
+        public string ErrorOutOfSpace {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Your device is out of space.", "");
+            }
+        }
+
+        public string ErrorMessageDownloadFailed {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Message download failed.", "");
+            }
+        }
+
+        public string ErrorCalendarDownloadFailed {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Calendar body download failed.", "");
+            }
+        }
+
+        public string ErrorAttachmentDownloadFailed {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Attachment download failed.", "");
+            }
+        }
+
+        public string ErrorAuthFail {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Authorization failed.", "");
+            }
+        }
+
+        public string ErrorPasswordExpired {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Your password has expired.", "");
+            }
+        }
+
+        public string ErrorPasswordUpdate {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Your password may need to be updated.", "");
+            }
+        }
+
+        public string ErrorServiceUnavailable {
+            get {
+                return NSBundle.MainBundle.LocalizedString ("Service unavailable.", "");
+            }
+        }
+
+        #endregion
+
     }
 }

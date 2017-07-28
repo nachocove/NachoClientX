@@ -315,24 +315,24 @@ namespace NachoClient.iOS
             NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.DidShowNotification, DidShowKeyboard);
 
             if (calendarItemIsMissing) {
-                NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it was deleted.",
-                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Event Deleted", "Event edit alert title when deleted"), NSBundle.MainBundle.LocalizedString ("The event can't be edited because it was deleted.", "Event edit alert message when deleted"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("OK", ""), NcAlertActionStyle.Cancel, () => {
                         DismissView ();
                     }));
             }
 
             if (noCalendarAccess) {
-                NcAlertView.Show (this, "No Calendar Access",
-                    "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.",
-                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("No Calendar Access", "Event edit alert title when premissions revoked"),
+                    NSBundle.MainBundle.LocalizedString ("The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.", "Event edit alert message when premissions revoked"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("OK", ""), NcAlertActionStyle.Cancel, () => {
                         DismissView ();
                     }));
             }
 
             if (noDeviceCalendar) {
-                NcAlertView.Show (this, "No device calendars",
-                    "The Calendar app does not have any accessible calendars.",
-                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("No device calendars", "Event edit alert title when no device calendar"),
+                    NSBundle.MainBundle.LocalizedString ("The Calendar app does not have any accessible calendars.", "Event edit alert message when no device calendar"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("OK", ""), NcAlertActionStyle.Cancel, () => {
                         DismissView ();
                     }));
             }
@@ -409,11 +409,11 @@ namespace NachoClient.iOS
             doneButton = new NcUIBarButtonItem ();
             cancelButton = new NcUIBarButtonItem ();
 
-            doneButton.Title = (CalendarItemEditorAction.create == action ? "Send" : "Done");
-            doneButton.AccessibilityLabel = "Done";
+            doneButton.Title = (CalendarItemEditorAction.create == action ? NSBundle.MainBundle.LocalizedString ("Send", "") : NSBundle.MainBundle.LocalizedString ("Done", ""));
+            doneButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Done", "");
 
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
-            cancelButton.AccessibilityLabel = "Close";
+            cancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
 
             cancelButton.Clicked += CancelButtonClicked;
 
@@ -427,10 +427,10 @@ namespace NachoClient.iOS
             titleView.BackgroundColor = UIColor.White;
 
             titleField = new UITextField (new CGRect (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
-            titleField.AccessibilityLabel = "Title";
+            titleField.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Title (event edit)", "");
             titleField.Font = labelFont;
             titleField.TextColor = solidTextColor;
-            titleField.Placeholder = "Title";
+            titleField.Placeholder = NSBundle.MainBundle.LocalizedString ("Title (event edit)", "");
             titleField.ClearButtonMode = UITextFieldViewMode.Always;
             titleView.AddSubview (titleField);
 
@@ -443,7 +443,7 @@ namespace NachoClient.iOS
             descriptionView.BackgroundColor = UIColor.White;
 
             descriptionPlaceHolder = new UILabel (new CGRect (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
-            descriptionPlaceHolder.Text = "Description";
+            descriptionPlaceHolder.Text = NSBundle.MainBundle.LocalizedString ("Description (event edit)", "");
             descriptionPlaceHolder.Font = labelFont;
             descriptionPlaceHolder.TextColor = new UIColor (.8f, .8f, .8f, 1f);
 
@@ -470,13 +470,13 @@ namespace NachoClient.iOS
             allDayView = new UIView (new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
             allDayView.BackgroundColor = UIColor.White;
             UILabel allDayLabel = new UILabel (new CGRect (15, 12.438f, 50, TEXT_LINE_HEIGHT));
-            allDayLabel.Text = "All Day";
+            allDayLabel.Text = NSBundle.MainBundle.LocalizedString ("All Day (event edit)", "");
             allDayLabel.Font = labelFont;
             allDayLabel.TextColor = solidTextColor;
             allDayView.AddSubview (allDayLabel);
 
             allDaySwitch = new UISwitch ();
-            allDaySwitch.AccessibilityLabel = "All day";
+            allDaySwitch.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("All Day (event edit)", "");
             allDaySwitch.SizeToFit ();
             allDaySwitch.OnTintColor = A.Color_NachoTeal;
             allDaySwitch.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
@@ -487,7 +487,7 @@ namespace NachoClient.iOS
             startView = new UIView (new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3), SCREEN_WIDTH, CELL_HEIGHT));
             startView.BackgroundColor = UIColor.White;
             UILabel startLabel = new UILabel (new CGRect (15, 12.438f, 40, TEXT_LINE_HEIGHT));
-            startLabel.Text = "Starts";
+            startLabel.Text = NSBundle.MainBundle.LocalizedString ("Starts (event edit)", "");
             startLabel.Font = labelFont;
             startLabel.TextColor = solidTextColor;
             startView.AddSubview (startLabel);
@@ -514,7 +514,7 @@ namespace NachoClient.iOS
             endView = new UIView (new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4), SCREEN_WIDTH, CELL_HEIGHT));
             endView.BackgroundColor = UIColor.White;
             UILabel endLabel = new UILabel (new CGRect (15, 12.438f, 30, TEXT_LINE_HEIGHT));
-            endLabel.Text = "Until";
+            endLabel.Text = NSBundle.MainBundle.LocalizedString ("Until (event edit)", "");
             endLabel.Font = labelFont;
             endLabel.TextColor = solidTextColor;
             endView.AddSubview (endLabel);
@@ -547,11 +547,11 @@ namespace NachoClient.iOS
             locationView.BackgroundColor = UIColor.White;
 
             locationField = new UITextField (new CGRect (15, 12.438f, SCREEN_WIDTH - 24, TEXT_LINE_HEIGHT));
-            locationField.AccessibilityLabel = "Location";
+            locationField.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Location (event edit)", "");
             locationField.Font = labelFont;
             locationField.TextColor = solidTextColor;
             locationField.ClearButtonMode = UITextFieldViewMode.Always;
-            locationField.Placeholder = "Location";
+            locationField.Placeholder = NSBundle.MainBundle.LocalizedString ("Location (event edit)", "");
             locationField.EditingDidBegin += LocationEditingDidBegin;
             locationField.EditingDidEnd += LocationEditingDidEnd;
             locationField.ShouldReturn += TextFieldResignFirstResponder;
@@ -569,7 +569,7 @@ namespace NachoClient.iOS
             peopleView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             UILabel peopleLabel = new UILabel (new CGRect (15, 12.438f, 200, TEXT_LINE_HEIGHT));
-            peopleLabel.Text = "Attendees (0)";
+            peopleLabel.Text = NSBundle.MainBundle.LocalizedString ("Attendees (event edit)", "");
             peopleLabel.Tag = PEOPLE_DETAIL_TAG;
             peopleLabel.Font = labelFont;
             peopleLabel.TextColor = solidTextColor;
@@ -588,13 +588,13 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, alertsView);
 
             UILabel alertsLabel = new UILabel (new CGRect (15, 12.438f, 70, TEXT_LINE_HEIGHT));
-            alertsLabel.Text = "Reminder";
+            alertsLabel.Text = NSBundle.MainBundle.LocalizedString ("Reminder (event edit)", "");
             alertsLabel.Font = labelFont;
             alertsLabel.TextColor = solidTextColor;
             alertsView.AddSubview (alertsLabel);
 
             UILabel alertsDetailLabel = new UILabel ();
-            alertsDetailLabel.Text = "None";
+            alertsDetailLabel.Text = NSBundle.MainBundle.LocalizedString ("None (event reminder)", "");
             alertsDetailLabel.Tag = ALERT_DETAIL_TAG;
             alertsDetailLabel.SizeToFit ();
             alertsDetailLabel.TextAlignment = UITextAlignment.Right;
@@ -612,7 +612,7 @@ namespace NachoClient.iOS
             calendarView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             UILabel calendarLabel = new UILabel (new CGRect (15, 12.438f, 70, TEXT_LINE_HEIGHT));
-            calendarLabel.Text = "Calendar";
+            calendarLabel.Text = NSBundle.MainBundle.LocalizedString ("Calendar (event edit)", "");
             calendarLabel.Font = labelFont;
             calendarLabel.TextColor = solidTextColor;
             calendarView.AddSubview (calendarLabel);
@@ -636,7 +636,7 @@ namespace NachoClient.iOS
             deleteView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             UILabel deleteLabel = new UILabel (new CGRect (25 + 24, 12.438f, 120, TEXT_LINE_HEIGHT));
-            deleteLabel.Text = "Delete Event";
+            deleteLabel.Text = NSBundle.MainBundle.LocalizedString ("Delete Event", "Button title for deleting an event");
             deleteLabel.Font = labelFont;
             deleteLabel.TextColor = solidTextColor;
             deleteView.AddSubview (deleteLabel);
@@ -732,10 +732,10 @@ namespace NachoClient.iOS
             suppressLayout = true;
 
             if (CalendarItemEditorAction.create == action) {
-                NavigationItem.Title = "New Event";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("New Event (noun)", "View title when creating a new event");
                 deleteView.Hidden = true;
             } else {
-                NavigationItem.Title = "Edit Event";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Edit Event (noun)", "View title when editing an existing event");
                 deleteView.Hidden = false;
             }
 
@@ -815,7 +815,11 @@ namespace NachoClient.iOS
 
             //people view
             var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
-            peopleDetailLabelView.Text = (0 != c.attendees.Count ? "Attendees: (" + c.attendees.Count + ")" : "Attendees:");
+            if (c.attendees.Count == 0) {
+                peopleDetailLabelView.Text = NSBundle.MainBundle.LocalizedString ("Attendees (event edit)", "");
+            } else {
+                peopleDetailLabelView.Text = string.Format (NSBundle.MainBundle.LocalizedString ("Attendees ({0}) (event edit)", ""), c.attendees.Count);
+            }
 
             //alert view
             var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
@@ -1140,12 +1144,12 @@ namespace NachoClient.iOS
         protected bool CanBeSaved ()
         {
             if (string.IsNullOrEmpty (titleField.Text)) {
-                NcAlertView.ShowMessage (this, "Cannot Save Event", "The title of the event must not be empty.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Cannot Save Event", "Title for alert when error saving event"), NSBundle.MainBundle.LocalizedString ("The title of the event must not be empty.", "Message for alert when error saving event"));
                 return false;
             }
             if (startDate > endDate) {
-                NcAlertView.ShowMessage (this, "Cannot Save Event",
-                    "The starting time must be no later than the ending time.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Cannot Save Event", "Title for alert when error saving event"),
+                                         NSBundle.MainBundle.LocalizedString ("The starting time must be no later than the ending time.", "Message for alert when error saving event because of invalid time"));
                 return false;
             }
             return true;
@@ -1394,9 +1398,9 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (eventEditStarted) {
-                NcAlertView.Show (this, "Are you sure?", "This event will not be saved.",
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
-                    new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Are you sure?", "Event edit discard confirmation title"), NSBundle.MainBundle.LocalizedString ("This event will not be saved.", "Event edit discard confirmation message"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Yes", ""), NcAlertActionStyle.Destructive, () => {
                         DismissView ();
                     }));
             } else {
@@ -1410,9 +1414,9 @@ namespace NachoClient.iOS
                 // Make sure the item wasn't deleted while it was being edited.
                 var dbItem = McCalendar.QueryById<McCalendar> (item.Id);
                 if (null == dbItem || dbItem.IsAwaitingDelete) {
-                    NcAlertView.Show (this, "Deleted Event",
-                        "The changes to the event cannot be saved because the event has been deleted.",
-                        new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                    NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Deleted Event (alert)", "Alert title when saving deleted event"),
+                        NSBundle.MainBundle.LocalizedString ("The changes to the event cannot be saved because the event has been deleted.", "Alert message when saving deleted event"),
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("OK", ""), NcAlertActionStyle.Cancel, () => {
                             DismissView ();
                         }));
                     return;
@@ -1723,10 +1727,10 @@ namespace NachoClient.iOS
         private void DeleteTapAction ()
         {
             NcActionSheet.Show (deleteView, this,
-                new NcAlertAction ("Delete Event", NcAlertActionStyle.Destructive, () => {
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Delete Event (verb)", "Event edit delete confirmation button title"), NcAlertActionStyle.Destructive, () => {
                     DeleteEvent ();
                 }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
         }
     }
 }

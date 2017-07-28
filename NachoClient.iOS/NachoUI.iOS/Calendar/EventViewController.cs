@@ -144,19 +144,6 @@ namespace NachoClient.iOS
             EVENT_CALENDAR_DETAIL_TAG = 124,
         }
 
-        protected static TupleList<uint, string> minList = new TupleList<uint, string> {
-            { 0, "None" },
-            { 1, "At time of event" },
-            { 5, "5 min before" },
-            { 15, "15 min before" },
-            { 30, "30 min before" },
-            { 60, "1 hour before" },
-            { 120, "2 hours before" },
-            { 1440, "1 day before" },
-            { 2880, "2 days before" },
-            { 10080, "1 week before" },
-        };
-
         public EventViewController () : base ()
         {
         }
@@ -206,7 +193,7 @@ namespace NachoClient.iOS
             editEventButton = new NcUIBarButtonItem ();
             editEventButton.TintColor = A.Color_NachoBlue;
             editEventButton.Image = UIImage.FromBundle ("gen-edit");
-            editEventButton.AccessibilityLabel = "Edit";
+            editEventButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Edit", "");
             editEventButton.Clicked += EditButtonClicked;
 
             // Title label
@@ -262,21 +249,21 @@ namespace NachoClient.iOS
             acceptLabel = new UILabel (new CGRect (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
             acceptLabel.TextColor = textColor;
             acceptLabel.Font = A.Font_AvenirNextMedium14;
-            acceptLabel.Text = "Attend";
+            acceptLabel.Text = NSBundle.MainBundle.LocalizedString ("Attend", "");
             acceptLabel.Hidden = true;
             eventCardView.Add (acceptLabel);
 
             tentativeLabel = new UILabel (new CGRect (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
             tentativeLabel.TextColor = textColor;
             tentativeLabel.Font = A.Font_AvenirNextMedium14;
-            tentativeLabel.Text = "Maybe";
+            tentativeLabel.Text = NSBundle.MainBundle.LocalizedString ("Maybe", "");
             tentativeLabel.Hidden = true;
             eventCardView.Add (tentativeLabel);
 
             declineLabel = new UILabel (new CGRect (declineButton.Frame.X + 24 + 6, 20, 50, 20));
             declineLabel.TextColor = textColor;
             declineLabel.Font = A.Font_AvenirNextMedium14;
-            declineLabel.Text = "Decline";
+            declineLabel.Text = NSBundle.MainBundle.LocalizedString ("Decline", "");
             declineLabel.Hidden = true;
             eventCardView.Add (declineLabel);
 
@@ -299,7 +286,7 @@ namespace NachoClient.iOS
             removeFromCalendarLabel = new UILabel (new CGRect (18 + 24 + 10, 20, 100, 20));
             removeFromCalendarLabel.TextColor = textColor;
             removeFromCalendarLabel.Font = A.Font_AvenirNextMedium14;
-            removeFromCalendarLabel.Text = "Remove from calendar";
+            removeFromCalendarLabel.Text = NSBundle.MainBundle.LocalizedString ("Remove from calendar", "");
             removeFromCalendarLabel.SizeToFit ();
             removeFromCalendarLabel.Hidden = true;
             eventCardView.Add (removeFromCalendarLabel);
@@ -312,7 +299,7 @@ namespace NachoClient.iOS
             yOffset += 18;
 
             // When label, image, and detail
-            Util.AddTextLabelWithImageView (yOffset, "WHEN", "event-when", TagType.EVENT_WHEN_TITLE_TAG, eventCardView);
+            Util.AddTextLabelWithImageView (yOffset, NSBundle.MainBundle.LocalizedString ("WHEN (calendar body)", ""), "event-when", TagType.EVENT_WHEN_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
             Util.AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, eventCardView);
             yOffset += 20;
@@ -322,7 +309,7 @@ namespace NachoClient.iOS
             yOffset += 20 + 20;
 
             // Location label, image, and detail
-            Util.AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", TagType.EVENT_LOCATION_TITLE_TAG, eventCardView);
+            Util.AddTextLabelWithImageView (yOffset, NSBundle.MainBundle.LocalizedString ("LOCATION (calendar body)", ""), "event-location", TagType.EVENT_LOCATION_TITLE_TAG, eventCardView);
             locationView = new UcLocationView (0, yOffset, EVENT_CARD_WIDTH - 60, LinkSelected);
             locationView.Tag = (int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG;
             locationView.Font = A.Font_AvenirNextRegular14;
@@ -331,7 +318,7 @@ namespace NachoClient.iOS
             yOffset += 30;
 
             // Description, for which we use a BodyView.
-            Util.AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
+            Util.AddTextLabelWithImageView (yOffset, NSBundle.MainBundle.LocalizedString ("DESCRIPTION (calendar body)", "Calendar body header for description section"), "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
             descriptionView = BodyView.VariableHeightBodyView (new CGPoint (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, this);
             descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
@@ -348,7 +335,7 @@ namespace NachoClient.iOS
             eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
             eventAlertsView.BackgroundColor = cellBGColor;
 
-            Util.AddTextLabelWithImageView (0, "REMINDER", "event-reminder", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
+            Util.AddTextLabelWithImageView (0, NSBundle.MainBundle.LocalizedString ("REMINDER (calendar body)", "Calendar body header for reminder section"), "event-reminder", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
             Util.AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.EVENT_ALERT_DETAIL_TAG, eventAlertsView);
 
             eventAlertsViewArrow = Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, 2, 12, eventAlertsView);
@@ -368,7 +355,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("email-icn-attachment")) {
                 imageView.Image = image;
             }
-            attachmentListView.SetHeader ("ATTACHMENTS", A.Font_AvenirNextMedium12, A.Color_NachoLightText, imageView, A.Font_AvenirNextMedium12, A.Color_NachoLightText, UIColor.White, 0f);
+            attachmentListView.SetHeader (NSBundle.MainBundle.LocalizedString ("ATTACHMENTS (calendar body)", "Calendar body header for attachments section"), A.Font_AvenirNextMedium12, A.Color_NachoLightText, imageView, A.Font_AvenirNextMedium12, A.Color_NachoLightText, UIColor.White, 0f);
             attachmentListView.SetAttachmentCellIndent (42f);
             attachmentListView.OnAttachmentSelected = AttachmentsOnSelected;
             attachmentListView.OnAttachmentError = AttachmentOnError;
@@ -380,10 +367,10 @@ namespace NachoClient.iOS
             // Phone label, image, and detail.  The phone field has been removed from the UI
             // until we figure out how to make it useful.
 #if PHONE_UI
-            AddTextLabelWithImageView (45, yOffset, "Phone", "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
+            AddTextLabelWithImageView (45, yOffset, NSBundle.MainBundle.LocalizedString ("Phone (event field)", "Event field label"), "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
             yOffset += 20 + 5;
             UIButton phoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
-            phoneDetailButton.AccessibilityLabel = "Phone";
+            phoneDetailButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Phone (event field)", "Event field label");
             phoneDetailButton.Font = A.Font_AvenirNextRegular14;
             phoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
             phoneDetailButton.Tag = (int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG;
@@ -400,7 +387,7 @@ namespace NachoClient.iOS
 
             Util.AddArrowAccessory (eventOrganizerView.Frame.Width - 18 - 12, 2, 12, eventOrganizerView);
 
-            Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
+            Util.AddTextLabelWithImageView (0, NSBundle.MainBundle.LocalizedString ("ORGANIZER (calendar body)", ""), "event-organizer", TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
 
             //User Name
             var userNameLabel = new UILabel (new CGRect (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
@@ -431,7 +418,7 @@ namespace NachoClient.iOS
             attendeeTapGestureRecognizer = new UITapGestureRecognizer ();
             attendeeTapGestureRecognizerTapToken = attendeeTapGestureRecognizer.AddTarget (AttendeeTapGestureRecognizerTap);
             eventAttendeeView.AddGestureRecognizer (attendeeTapGestureRecognizer);
-            Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
+            Util.AddTextLabelWithImageView (0, NSBundle.MainBundle.LocalizedString ("ATTENDEES (calendar body)", ""), "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
             eventCardView.AddSubview (eventAttendeeView);
 
             yOffset += 96 + 20;
@@ -447,12 +434,12 @@ namespace NachoClient.iOS
             eventNotesView.AddGestureRecognizer (notesTapGestureRecognizer);
             eventCardView.AddSubview (eventNotesView);
 
-            Util.AddTextLabelWithImageView (0, "NOTES", "event-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
+            Util.AddTextLabelWithImageView (0, NSBundle.MainBundle.LocalizedString ("NOTES (calendar body)", ""), "event-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
             Util.AddDetailTextLabel (42, 22, SCREEN_WIDTH - 90, 20, TagType.EVENT_NOTES_DETAIL_TAG, eventNotesView);
 
             yOffset += CELL_HEIGHT;
 
-            Util.AddTextLabelWithImageView (yOffset, "CALENDAR", "event-when", TagType.EVENT_CALENDAR_TITLE_TAG, eventCardView);
+            Util.AddTextLabelWithImageView (yOffset, NSBundle.MainBundle.LocalizedString ("CALENDAR (calendar body)", ""), "event-when", TagType.EVENT_CALENDAR_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
             Util.AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_CALENDAR_DETAIL_TAG, eventCardView);
             yOffset += 20 + 20;
@@ -472,7 +459,7 @@ namespace NachoClient.iOS
             cancelMeetingLabel = new UILabel ();
             nfloat xPos = cancelMeetingButton.Frame.Right + 6;
             cancelMeetingLabel.Frame = new CGRect (xPos, yOffset, EVENT_CARD_WIDTH - xPos, 24);
-            cancelMeetingLabel.Text = "Cancel this meeting";
+            cancelMeetingLabel.Text = NSBundle.MainBundle.LocalizedString ("Cancel this meeting", "Button title to cancel a meeting");
             cancelMeetingLabel.Font = A.Font_AvenirNextRegular14;
             cancelMeetingLabel.Hidden = true;
             eventCardView.AddSubview (cancelMeetingLabel);
@@ -555,7 +542,7 @@ namespace NachoClient.iOS
             // Phone disabled for now.
 #if PHONE_UI
             var phoneButton = View.ViewWithTag ((int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
-            phoneButton.SetTitle ("Not available", UIControlState.Normal);
+            phoneButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Not available (event phone)", "Label when phone isn't avaiable for an event"), UIControlState.Normal);
             phoneButton.Enabled = false;
 #endif
             descriptionView.Configure (detail.SpecificItem, false);
@@ -620,7 +607,7 @@ namespace NachoClient.iOS
             }
             ClearView (eventAttendeeView);
             eventAttendeeView.BackgroundColor = cellBGColor;
-            Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
+            Util.AddTextLabelWithImageView (0, NSBundle.MainBundle.LocalizedString ("ATTENDEES (calendar body)", ""), "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
             Util.AddArrowAccessory (eventAttendeeView.Frame.Width - 18 - 12, 2, 12, eventAttendeeView);
             extraAttendeesButton = null;
             var titleOffset = 16;
@@ -661,7 +648,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
                     extraAttendeesButton.SetTitle (string.Format ("+{0}", detail.SpecificItem.attendees.Count - 4), UIControlState.Normal);
-                    extraAttendeesButton.AccessibilityLabel = "More";
+                    extraAttendeesButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("More", "");
                     extraAttendeesButton.TouchUpInside += ExtraAttendeesTouchUpInside;
                     eventAttendeeView.AddSubview (extraAttendeesButton);
                 }
@@ -799,7 +786,7 @@ namespace NachoClient.iOS
         {
             var candidates = McFolder.QueryByFolderEntryId<McCalendar> (detail.Account.Id, c.Id);
             if ((null == candidates) || (0 == candidates.Count)) {
-                return "None";
+                return NSBundle.MainBundle.LocalizedString ("None", "");
             } else {
                 return candidates.First ().DisplayName;
             }
@@ -831,7 +818,7 @@ namespace NachoClient.iOS
             View.Hidden = false;
             scrollView.ScrollEnabled = false;
             scrollView.UserInteractionEnabled = false;
-            titleLabelView.Text = "Information is unavailable";
+            titleLabelView.Text = NSBundle.MainBundle.LocalizedString ("Information is unavailable", "Label for calendar event when data is gone");
             titleLabelView.Lines = 0;
             titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabelView.SizeToFit ();
@@ -1031,7 +1018,7 @@ namespace NachoClient.iOS
                 } else {
                     // The calendar is not writable, so the "Remove from calendar" button doesn't make sense.
                     // Instead, just show a message about the meeting being cancelled.
-                    messageLabel.Text = "The meeting has been canceled.";
+                    messageLabel.Text = NSBundle.MainBundle.LocalizedString ("The meeting has been canceled.", "");
                     messageLabel.Hidden = false;
                     messageLabel.Frame = new CGRect (18, 18, 150, 24);
                     organizerIcon.Hidden = true;
@@ -1066,7 +1053,7 @@ namespace NachoClient.iOS
 
                 // Show "You are the organizer"
                 messageLabel.Hidden = false;
-                messageLabel.Text = "You are the organizer";
+                messageLabel.Text = NSBundle.MainBundle.LocalizedString ("You are the organizer", "Label indicating user is the event's organizer");
                 messageLabel.Frame = new CGRect (18 + 24 + 12, 18, 150, 24);
                 organizerIcon.Hidden = false;
                 acceptButton.Hidden = true;
@@ -1159,35 +1146,35 @@ namespace NachoClient.iOS
             if (detail.IsRecurring) {
                 if (NcResponseType.Declined == response) {
                     NcActionSheet.Show (declineButton, this, null,
-                        "Declining the meeting will also delete the meeting from your calendar.",
-                        new NcAlertAction ("Decline the entire series", NcAlertActionStyle.Destructive, () => {
+                        NSBundle.MainBundle.LocalizedString ("Declining the meeting will also delete the meeting from your calendar.", "Alert message to confirm meeting decline"),
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Decline the entire series", "Option when declining a recurring event to decline all"), NcAlertActionStyle.Destructive, () => {
                             MakeStatusUpdates (response, false);
                         }),
-                        new NcAlertAction ("Decline just this occurrence", NcAlertActionStyle.Destructive, () => {
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Decline just this occurrence", "Option when declining a recurring event to decline just this ocurrence"), NcAlertActionStyle.Destructive, () => {
                             MakeStatusUpdates (response, true);
                         }),
-                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, () => {
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, () => {
                             SelectButtonForResponse (userResponse);
                         }));
                 } else {
                     NcActionSheet.Show (acceptButton, this,
-                        new NcAlertAction ("Respond for the entire series", () => {
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Respond for the entire series", "Option when responding to a recurring event to respond for all occurrences"), () => {
                             MakeStatusUpdates (response, false);
                         }),
-                        new NcAlertAction ("Respond to just this occurrence", () => {
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Respond to just this occurrence", "Option when responding to a recurring event to respond to just one occurrence"), () => {
                             MakeStatusUpdates (response, true);
                         }),
-                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, () => {
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, () => {
                             SelectButtonForResponse (userResponse);
                         }));
                 }
             } else if (NcResponseType.Declined == response) {
                 NcActionSheet.Show (declineButton, this, null,
-                    "Declining the meeting will also delete the meeting from your calendar.",
-                    new NcAlertAction ("Decline the meeting", NcAlertActionStyle.Destructive, () => {
+                    NSBundle.MainBundle.LocalizedString ("Declining the meeting will also delete the meeting from your calendar.", ""),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Decline the meeting", "button title when confirming meeeting decline"), NcAlertActionStyle.Destructive, () => {
                         MakeStatusUpdates (response, false);
                     }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, () => {
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, () => {
                         SelectButtonForResponse (userResponse);
                     }));
             } else {
@@ -1331,13 +1318,11 @@ namespace NachoClient.iOS
         private void UserResponseChanged (NcResponseType response)
         {
             if (McAccount.AccountTypeEnum.Device == detail.Account.AccountType) {
-                NcAlertView.ShowMessage (this, "Can't Change Response",
-                    "Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. " +
-                    "Use the Calendar app or some other client to change your response.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Can't Change Response", "Alert title when user can't change their event response"),
+                                         NSBundle.MainBundle.LocalizedString ("Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. Use the Calendar app or some other client to change your response.", "Alert message when user can't change their event response"));
             } else if (!detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                NcAlertView.ShowMessage (this, "Can't Change Response",
-                    "Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. " +
-                    "Use a different client to change your response.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Can't Change Response", ""),
+                                         NSBundle.MainBundle.LocalizedString ("Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. Use a different client to change your response.", "Alert message when user can't change their event response"));
             } else {
                 SelectButtonForResponse (response);
                 UpdateStatus (response);
@@ -1377,8 +1362,8 @@ namespace NachoClient.iOS
         private void CancelMeetingButtonClicked (object sender, EventArgs args)
         {
             NcActionSheet.Show (cancelMeetingButton, this, null,
-                "Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees.",
-                new NcAlertAction ("Cancel this occurrence", NcAlertActionStyle.Destructive, () => {
+                NSBundle.MainBundle.LocalizedString ("Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees.", "Alert message when confirming meeting cancelation"),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel this occurrence", "Option when canceling a recurring meeting"), NcAlertActionStyle.Destructive, () => {
                     DateTime occurrenceStartTime;
                     if (detail.SpecificItem is McException) {
                         occurrenceStartTime = ((McException)detail.SpecificItem).ExceptionStartTime;
@@ -1396,7 +1381,7 @@ namespace NachoClient.iOS
 
                     NavigationController.PopViewController (true);
                 }),
-                new NcAlertAction ("Don't cancel the meeting", NcAlertActionStyle.Cancel, null));
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Don't cancel the meeting", "Option when canceling a meeting"), NcAlertActionStyle.Cancel, null));
         }
 
         private void ExtraAttendeesTouchUpInside (object sender, EventArgs e)
@@ -1415,9 +1400,9 @@ namespace NachoClient.iOS
         {
             string message;
             if (!ErrorHelper.ExtractErrorString (result, out message)) {
-                message = "Download failed.";
+                message = NSBundle.MainBundle.LocalizedString ("Download failed. (event)", "Generic error for an attachment issue");
             }
-            NcAlertView.ShowMessage (this, "Attachment error", message);
+            NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Attachment error", "Title for alert when there's an attachment error"), message);
         }
 
         private void AttachmentsOnStateChange (bool isExpanded)

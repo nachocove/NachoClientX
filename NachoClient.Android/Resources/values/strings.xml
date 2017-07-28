@@ -498,4 +498,15 @@
     <string name="notification_configuration_inbox">Inbox</string>
     <string name="notification_configuration_none">None</string>
 
+    <!-- Common Errors -->
+    <string name="error_network_unavailable">The network is unavailable.</string>
+    <string name="error_out_of_space">Your device is out of space.</string>
+    <string name="error_message_download_failed">Message download failed.</string>
+    <string name="error_calendar_download_failed">Calendar body download failed.</string>
+    <string name="error_attachment_download_failed">Attachment download failed.</string>
+    <string name="error_auth_fail">Authorization failed.</string>
+    <string name="error_password_expired">Your password has expired.</string>
+    <string name="error_password_update">Your password may need to be updated.</string>
+    <string name="error_service_unavailable">Service unavailable.</string>
+
 </resources>

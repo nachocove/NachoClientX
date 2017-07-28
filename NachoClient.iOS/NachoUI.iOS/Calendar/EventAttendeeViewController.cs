@@ -26,12 +26,7 @@ namespace NachoClient.iOS
         protected string organizerName;
         protected string organizerEmail;
 
-        UIBarButtonItem multiSelectButton;
-        UIBarButtonItem multiResendButton;
-        UIBarButtonItem multiRemoveButton;
-        UIBarButtonItem multiCancelButton;
         UIBarButtonItem addAttendeesButton;
-        public bool isMultiSelecting;
 
         protected INachoAttendeeListChooserDelegate owner;
         protected UIView organizerView;
@@ -143,51 +138,27 @@ namespace NachoClient.iOS
         protected void CreateEventAttendeeView ()
         {
             nfloat yOffset = 0;
-            NavigationItem.Title = "Attendees";
-
-            multiSelectButton = new NcUIBarButtonItem ();
-            multiSelectButton.TintColor = A.Color_NachoBlue;
-            multiSelectButton.Image = UIImage.FromBundle ("folder-edit");
-            multiSelectButton.AccessibilityLabel = "Folder edit";
-            multiSelectButton.Clicked += multiClicked;
-
-            multiRemoveButton = new NcUIBarButtonItem ();
-            multiRemoveButton.TintColor = A.Color_NachoBlue;
-            multiRemoveButton.Image = UIImage.FromBundle ("gen-delete-all");
-            multiRemoveButton.AccessibilityLabel = "Delete";
-            multiRemoveButton.Clicked += removeClicked;
-
-            multiResendButton = new NcUIBarButtonItem ();
-            multiResendButton.TintColor = A.Color_NachoBlue;
-            multiResendButton.Image = UIImage.FromBundle ("beer");
-            multiResendButton.AccessibilityLabel = "Beer";
-            multiResendButton.Clicked += resendClicked;
-
-            multiCancelButton = new NcUIBarButtonItem ();
-            multiCancelButton.TintColor = A.Color_NachoBlue;
-            multiCancelButton.Image = UIImage.FromBundle ("gen-close");
-            multiCancelButton.AccessibilityLabel = "Close";
-            multiCancelButton.Clicked += cancelClicked;
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Attendees (event attendees)", "Title for event attendees view");
 
             addAttendeesButton = new NcUIBarButtonItem ();
             addAttendeesButton.TintColor = A.Color_NachoBlue;
             addAttendeesButton.Image = UIImage.FromBundle ("calendar-add-attendee");
-            addAttendeesButton.AccessibilityLabel = "Add attendee";
+            addAttendeesButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Add attendee", "Button title for adding an event attendee");
 
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
                 ChooseAttendee (address);
-            }; 
+            };
 
             segmentedControlView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
             segmentedControl = new UISegmentedControl ();
             segmentedControl.Frame = new CGRect (6, 5, View.Frame.Width - 12, 30);
-            segmentedControl.InsertSegment ("All", 0, false);
-            segmentedControl.InsertSegment ("Required", 1, false);
-            segmentedControl.InsertSegment ("Optional", 2, false);
+            segmentedControl.InsertSegment (NSBundle.MainBundle.LocalizedString ("All (attendee list)", "Attendee list segment"), 0, false);
+            segmentedControl.InsertSegment (NSBundle.MainBundle.LocalizedString ("Required (attendee list)", "Attendee list segment"), 1, false);
+            segmentedControl.InsertSegment (NSBundle.MainBundle.LocalizedString ("Optional (attendee list)", "Attendee list segment"), 2, false);
             segmentedControl.SelectedSegment = 0;
             segmentedControl.TintColor = A.Color_NachoGreen;
 
@@ -230,7 +201,7 @@ namespace NachoClient.iOS
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
             emptyListLabel.TextColor = A.Color_NachoGreen;
-            emptyListLabel.Text = "No attendees";
+            emptyListLabel.Text = NSBundle.MainBundle.LocalizedString ("No attendees", "fallback text when no attendees are in the list");
             emptyListLabel.Hidden = true;
             addAttendeeView.AddSubview (emptyListLabel);
 
@@ -238,28 +209,8 @@ namespace NachoClient.iOS
             tableView.SeparatorColor = UIColor.Clear;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
             tableView.Source = AttendeeSource;
-            tableView.AccessibilityLabel = "Event attendee";
+            tableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Attendees (event attendees)", "Title for event attendees view");
             View.AddSubview (tableView);
-
-
-            // When the user is adding attendees to an event and the 
-            // list of attendees is empty they are presented with this message
-            var stringAttributes = new UIStringAttributes {
-                ForegroundColor = A.Color_NachoGreen,
-                BackgroundColor = UIColor.White,
-                Font = A.Font_AvenirNextDemiBold14
-            };
-
-            var noAttendeesString = new NSMutableAttributedString ("There are currently no attendees yet. \n \nStart adding attendees to your event by tapping on the  ", stringAttributes);
-            var noAttendeesStringPartTwo = new NSAttributedString ("  icon above.", stringAttributes);
-
-            var inlineIcon = new NachoInlineImageTextAttachment ();
-            inlineIcon.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
-
-            var stringWithImage = NSAttributedString.CreateFrom (inlineIcon);
-
-            noAttendeesString.Append (stringWithImage);
-            noAttendeesString.Append (noAttendeesStringPartTwo);
 
             var messageWidth = NMath.Max (addAttendeeView.Frame.Width - 4 * A.Card_Horizontal_Indent, 320 - 4 * A.Card_Horizontal_Indent);
 
@@ -267,77 +218,15 @@ namespace NachoClient.iOS
             emptyMessagelabel.TextAlignment = UITextAlignment.Center;
             emptyMessagelabel.Lines = 0;
             emptyMessagelabel.LineBreakMode = UILineBreakMode.WordWrap;
-            emptyMessagelabel.AttributedText = noAttendeesString;
+            emptyMessagelabel.Text = NSBundle.MainBundle.LocalizedString ("There are currently no attendees.\n\nStart adding attendees to your event by tapping on the add icon above", "Fallback message for when there are no attendees when editing");
             emptyMessagelabel.SizeToFit ();
-            emptyMessagelabel.Center = new CGPoint (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2); 
+            emptyMessagelabel.Center = new CGPoint (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
             emptyMessagelabel.Hidden = true;
+            emptyMessagelabel.Font = A.Font_AvenirNextDemiBold14;
+            emptyMessagelabel.TextColor = A.Color_NachoGreen;
             addAttendeeView.AddSubview (emptyMessagelabel);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
-        }
-
-        private void multiClicked (object sender, EventArgs e)
-        {
-            ToggleMultiSelect (true);
-        }
-
-        private void removeClicked (object sender, EventArgs e)
-        {
-            foreach (var item in AttendeeSource.MultiSelect) {
-                AttendeeSource.RemoveAttendee (item.Value);
-            }
-            EndMultiSelect ();
-        }
-
-        private void resendClicked (object sender, EventArgs e)
-        {
-            EndMultiSelect ();
-        }
-
-        private void cancelClicked (object sender, EventArgs e)
-        {
-            EndMultiSelect ();
-        }
-
-        private void EndMultiSelect ()
-        {
-            AttendeeSource.MultiSelect.Clear ();
-            ToggleMultiSelect (false);
-        }
-
-        private void ToggleMultiSelect (bool isMultiSelect)
-        {
-            if (isMultiSelect) {
-                NavigationItem.Title = "";
-                isMultiSelecting = true;
-                AttendeeSource.IsMultiSelecting = true;
-                ConfigureNavBar (0);
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        segmentedControlView.Center = new CGPoint (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
-                        tableView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
-                        ConfigureVisibleCells ();
-                    },
-                    () => {
-                    }
-                );
-
-            } else {
-                NavigationItem.Title = "Attendees";
-                isMultiSelecting = false;
-                AttendeeSource.IsMultiSelecting = false;
-                ConfigureNavBar (0);
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        segmentedControlView.Center = new CGPoint (segmentedControlView.Center.X, segmentedControlView.Center.Y + segmentedControlView.Frame.Height);
-                        tableView.Frame = new CGRect (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);
-                        ConfigureVisibleCells ();
-                    },
-                    () => {
-
-                    }
-                );
-            }
         }
 
         public void ConfigureVisibleCells ()
@@ -352,36 +241,11 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItem = null;
 
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             if (editing) {
-                if (0 != AttendeeList.Count) {
-                    if (isMultiSelecting) {
-                        NavigationItem.LeftBarButtonItem = multiCancelButton;
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                            multiRemoveButton,
-                            multiResendButton
-                        };
-                        if (0 == multiCount) {
-                            multiRemoveButton.Enabled = false;
-                            multiResendButton.Enabled = false;
-                        } else {
-                            multiRemoveButton.Enabled = true;
-                            multiResendButton.Enabled = true;
-                        }
-                    } else {
-                        Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                            //multiSelectButton,
-                            addAttendeesButton
-                        };
-                    }
-                } else {
-                    Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
-                    NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                        addAttendeesButton
-                    };
-                }
-            } else {
-                Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
+                    addAttendeesButton
+                };
             }
         }
 
@@ -410,7 +274,7 @@ namespace NachoClient.iOS
                 addAttendeeView.Hidden = false;
                 emptyListLabel.Hidden = editing;
                 emptyMessagelabel.Hidden = !editing;
-                emptyListLabel.Text = "No required attendees";
+                emptyListLabel.Text = NSBundle.MainBundle.LocalizedString ("No required attendees", "Fallback text for when there are no required attendees");
                 emptyListLabel.SizeToFit ();
                 emptyListLabel.Frame = new CGRect (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
                 emptyListLabel.Center = new CGPoint (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
@@ -429,7 +293,7 @@ namespace NachoClient.iOS
                 addAttendeeView.Hidden = false;
                 emptyListLabel.Hidden = editing;
                 emptyMessagelabel.Hidden = !editing;
-                emptyListLabel.Text = "No optional attendees";
+                emptyListLabel.Text = NSBundle.MainBundle.LocalizedString ("No optional attendees", "Fallback text for when there are no optional attendees");
                 emptyListLabel.SizeToFit ();
                 emptyListLabel.Frame = new CGRect (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
                 emptyListLabel.Center = new CGPoint (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
@@ -498,7 +362,7 @@ namespace NachoClient.iOS
                 break;
             case NcEmailAddress.Action.create:
                 // Get rid of any existing attendees with the same e-mail address.
-                AttendeeList.RemoveAll((McAttendee a) => { return a.Email == mailboxAddress.Address; });
+                AttendeeList.RemoveAll ((McAttendee a) => { return a.Email == mailboxAddress.Address; });
                 var attendee = new McAttendee ();
                 attendee.AccountId = account.Id;
                 attendee.Name = name;
@@ -530,7 +394,7 @@ namespace NachoClient.iOS
         public void EmailSwipeHandler (McContact contact)
         {
             if (contact == null) {
-                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+                Util.ComplainAbout (NSBundle.MainBundle.LocalizedString ("No Email Address", "Alert title when the attendee cannot be emailed"), NSBundle.MainBundle.LocalizedString ("This contact does not have an email address.", "Alert message when the attendee cannot be emailed"));
             } else {
                 var address = Util.GetContactDefaultEmail (contact);
                 if (address == null) {
@@ -538,7 +402,7 @@ namespace NachoClient.iOS
                         if (contact.CanUserEdit ()) {
                             SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
                         } else {
-                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                            Util.ComplainAbout (NSBundle.MainBundle.LocalizedString ("No Email Address", ""), NSBundle.MainBundle.LocalizedString ("This contact does not have an email address, and we are unable to modify the contact.", "Alert message when the attendee cannot be emailed and we can't add an address"));
                         }
                     } else {
                         SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
@@ -552,7 +416,7 @@ namespace NachoClient.iOS
         public void CallSwipeHandler (McContact contact)
         {
             Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
-                SelectDefault(contact, type);
+                SelectDefault (contact, type);
             });
         }
 

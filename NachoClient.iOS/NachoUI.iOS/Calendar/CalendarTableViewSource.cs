@@ -121,7 +121,7 @@ namespace NachoClient.iOS
                 "I'm Late", A.Color_NachoSwipeLate);
         private static SwipeActionDescriptor FORWARD_BUTTON =
             new SwipeActionDescriptor (FORWARD_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeForward),
-                "Forward", A.Color_NachoeSwipeForward);
+                "Forward (verb)", A.Color_NachoeSwipeForward);
 
         /// <summary>
         /// Create the views, not the values, of the cell.
@@ -216,7 +216,7 @@ namespace NachoClient.iOS
         {
             if (cell.ReuseIdentifier.ToString ().Equals (EmptyCellReuseIdentifier)) {
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
-                cell.TextLabel.Text = "No messages";
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("No messages", "Empty calendar view message");
                 return;
             }
 
@@ -250,7 +250,7 @@ namespace NachoClient.iOS
             if (null == c || null == cRoot) {
                 cell.ContentView.ViewWithTag (SWIPE_TAG).Hidden = true;
                 cell.TextLabel.Hidden = false;
-                cell.TextLabel.Text = "This event has been deleted.";
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("This event has been deleted.", "Calendar list delete event message");
                 return;
             }
 
@@ -285,7 +285,7 @@ namespace NachoClient.iOS
             // Starting time and duration
             var startAndDuration = "";
             if (c.AllDayEvent) {
-                startAndDuration = "ALL DAY";
+                startAndDuration = NSBundle.MainBundle.LocalizedString ("ALL DAY (calendar list)", "All day indicator");
             } else {
                 var start = DateTimeFormatter.Instance.MinutePrecisionTime (e.GetStartTimeUtc ());
                 if (e.EndTime > e.StartTime) {
@@ -427,7 +427,7 @@ namespace NachoClient.iOS
             }
 
             var addButton = new UIButton (UIButtonType.ContactAdd);
-            addButton.AccessibilityLabel = "Add event";
+            addButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Add event", "Button title for adding a calendar event");
             addButton.TintColor = A.Color_NachoGreen;
             addButton.Frame = new CGRect (tableView.Frame.Width - 34, (view.Frame.Height / 2) - 8, 16, 16);
             addButton.TouchUpInside += (sender, e) => {
@@ -437,7 +437,7 @@ namespace NachoClient.iOS
             preventAddButtonGC.Add (addButton);
             view.AddSubview (addButton);
 
-            dayLabelView.Text = date.ToString ("dddd");
+            dayLabelView.Text = DateTimeFormatter.Instance.WeekdayName (date);
             dateLabelView.Text = DateTimeFormatter.Instance.DateWithYear (date);
             bigNumberView.Text = date.Day.ToString ();
 

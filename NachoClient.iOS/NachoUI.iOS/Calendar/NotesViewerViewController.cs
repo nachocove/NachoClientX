@@ -68,7 +68,7 @@ namespace NachoClient.iOS
             View.AddSubview (navbar);
             navbar.BackgroundColor = A.Color_NachoGreen;
             navbar.Translucent = false;
-            UINavigationItem title = new UINavigationItem ("Preview Note");
+            UINavigationItem title = new UINavigationItem (NSBundle.MainBundle.LocalizedString ("Preview Note", "Title for note preview"));
             navbar.SetItems (new UINavigationItem[]{ title }, false);
             UIBarButtonItem cancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
@@ -76,7 +76,7 @@ namespace NachoClient.iOS
             cancelButton.Clicked += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
-            cancelButton.AccessibilityLabel = "Cancel";
+            cancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel", "");
             yOffset += navbar.Frame.Height;
             notesTextView = new UITextView (new CGRect (0, 64, View.Frame.Width, View.Frame.Height - 64));
             notesTextView.Text = owner.GetNoteText ();

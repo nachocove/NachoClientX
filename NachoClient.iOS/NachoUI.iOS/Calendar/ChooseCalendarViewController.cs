@@ -68,14 +68,14 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationItem.Title = "Calendars";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Calendars (calendar picker)", "Title for calendar picker");
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             tableView = new UITableView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), UITableViewStyle.Grouped);
             tableView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             tableView.ScrollEnabled = true;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
-            tableView.AccessibilityLabel = "Choose calendar";
+            tableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Calendars (calendar picker)", "Title for calendar picker");
             View.AddSubview (tableView);
         }
 

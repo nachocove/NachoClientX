@@ -503,7 +503,7 @@ namespace NachoClient.iOS
             SelectButton = new NcSimpleColorButton ();
             SelectButton.Frame = new CGRect (0, DividerView.Frame.Y + DividerView.Frame.Height, Bounds.Width, ButtonHeight);
             SelectButton.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            SelectButton.SetTitle ("Use Date", UIControlState.Normal);
+            SelectButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Use Date", "Setter button title for the date picker"), UIControlState.Normal);
             SelectButton.TouchUpInside += (sender, e) => {
                 var date = DateTime.SpecifyKind (DatePicker.Date.ToDateTime (), DateTimeKind.Utc);
                 dateSelected (date);

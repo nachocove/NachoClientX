@@ -85,9 +85,9 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             if (string.IsNullOrEmpty (itemTitle)) {
-                NavigationItem.Title = "Note";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Note (notes view)", "Title for notes view");
             } else {
-                NavigationItem.Title = string.Format ("Note: {0}", itemTitle);
+                NavigationItem.Title = string.Format (NSBundle.MainBundle.LocalizedString ("Note: {0} (notes view)", "Title for notes view with note name"), itemTitle);
             }
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
         }

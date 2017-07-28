@@ -56,7 +56,7 @@ namespace NachoClient.iOS
             // }
                 
             todayButton = new NcUIBarButtonItem ();
-            todayButton.AccessibilityLabel = "Today";
+            todayButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Today (go to)", "Button title for go to today action");
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
@@ -65,7 +65,7 @@ namespace NachoClient.iOS
 
             var addEventButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
-            addEventButton.AccessibilityLabel = "New meeting";
+            addEventButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("New meeting (verb)", "Button title for creating a new meeting");
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 CreateEvent ();
             };
@@ -246,7 +246,7 @@ namespace NachoClient.iOS
             ConfigureCalendarTableSize (1);
             calendarTableView.Source = calendarSource;
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
-            calendarTableView.AccessibilityLabel = "Calendar";
+            calendarTableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Calendar (calendar list)", "Title for calendar view");
 
             DateDotView = new DateBarView (View, eventCalendarMap);
             DateDotView.SetOwner (this);

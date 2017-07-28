@@ -31,18 +31,18 @@ namespace NachoClient.iOS
 
         public UIImage Image { get; protected set; }
 
-        public string Text { get; protected set; }
+        public string TextKey { get; protected set; }
 
         public UIColor Color { get; protected set; }
         // This is not the tag for an UI object. Instead, it is for identifying the action during callback
         public int Tag { get; protected set; }
 
-        public SwipeActionDescriptor (int tag, nfloat widthDelta, UIImage image, string text, UIColor color = null)
+        public SwipeActionDescriptor (int tag, nfloat widthDelta, UIImage image, string textKey, UIColor color = null)
         {
             NcAssert.True (0.9 >= widthDelta); // FIXME: max width check, dependent on # of items per side 
             WidthDelta = widthDelta;
             Image = image;
-            Text = text;
+            TextKey = textKey;
             Color = color;
             Tag = tag;
         }
@@ -56,12 +56,12 @@ namespace NachoClient.iOS
         {
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_BUTTON;
             Config = descriptor;
-            SetTitle (Config.Text, UIControlState.Normal);
+            SetTitle (NSBundle.MainBundle.LocalizedString (Config.TextKey, ""), UIControlState.Normal);
             Font = A.Font_AvenirNextDemiBold14;
             BackgroundColor = Config.Color;
             Enabled = true;
             UserInteractionEnabled = true;
-            AccessibilityLabel = Config.Text;
+            AccessibilityLabel = NSBundle.MainBundle.LocalizedString (Config.TextKey, "");
 
             if (null != Config.Image) {
                 UIImage image = Config.Image;
@@ -130,8 +130,8 @@ namespace NachoClient.iOS
     /// </summary>
     public class SwipeActionSwipingView : UIView
     {
-        nfloat[] leftOffsets;
-        nfloat[] rightOffsets;
+        nfloat [] leftOffsets;
+        nfloat [] rightOffsets;
 
         nfloat maxLeftDelta;
         nfloat maxRightDelta;
@@ -200,7 +200,7 @@ namespace NachoClient.iOS
 
             // Compute the amount of shift required for each button
             maxRightDelta = 0.0f;
-            leftOffsets = new nfloat[leftActionButtons.Count];
+            leftOffsets = new nfloat [leftActionButtons.Count];
             nfloat total = 0.0f;
             for (int i = leftActionButtons.Count - 1; i >= 0; i--) {
                 total += leftActionButtons [i].Frame.Width;
@@ -209,7 +209,7 @@ namespace NachoClient.iOS
             }
 
             maxLeftDelta = 0.0f;
-            rightOffsets = new nfloat[rightActionButtons.Count];
+            rightOffsets = new nfloat [rightActionButtons.Count];
             total = 0.0f;
             for (int i = rightActionButtons.Count - 1; i >= 0; i--) {
                 total += rightActionButtons [i].Frame.Width;
@@ -509,8 +509,8 @@ namespace NachoClient.iOS
             swipeRecognizer = new UIPanGestureRecognizer (PanHandler);
             swipeRecognizer.ShouldRecognizeSimultaneously =
                 (UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer) => {
-                return true;
-            };
+                    return true;
+                };
             swipeRecognizer.ShouldReceiveTouch = (UIGestureRecognizer recognizer, UITouch touch) => {
                 if (null == swipingView) {
                     return true;
@@ -521,13 +521,13 @@ namespace NachoClient.iOS
                 }
                 return true;
             };
-            swipeRecognizer.ShouldBegin = delegate(UIGestureRecognizer obj) {
+            swipeRecognizer.ShouldBegin = delegate (UIGestureRecognizer obj) {
                 if (ShouldSwipe != null && !ShouldSwipe ()) {
                     return false;
                 }
                 var recognizer = (UIPanGestureRecognizer)obj;
                 var velocity = recognizer.VelocityInView (this);
-                return NMath.Abs (velocity.X) > NMath.Abs (velocity.Y); 
+                return NMath.Abs (velocity.X) > NMath.Abs (velocity.Y);
             };
             swipeRecognizer.MinimumNumberOfTouches = 1;
             swipeRecognizer.MaximumNumberOfTouches = 1;
@@ -540,8 +540,7 @@ namespace NachoClient.iOS
         private void PanHandler (UIPanGestureRecognizer obj)
         {
             switch (obj.State) {
-            case UIGestureRecognizerState.Began:
-                {
+            case UIGestureRecognizerState.Began: {
                     isPanning = true;
                     TryOnSwipe (this, SwipeState.SWIPE_BEGIN);
 
@@ -581,16 +580,14 @@ namespace NachoClient.iOS
                     }
                     break;
                 }
-            case UIGestureRecognizerState.Changed:
-                {
+            case UIGestureRecognizerState.Changed: {
                     // Move the swiping view
                     nfloat deltaPercentage = obj.TranslationInView (this).X / Frame.Width;
                     nfloat locationPercentage = obj.LocationInView (this).X / Frame.Width;
                     swipingView.MoveByDelta (deltaPercentage, locationPercentage);
                     break;
                 }
-            default:
-                {
+            default: {
                     NcAssert.True ((UIGestureRecognizerState.Ended == obj.State) ||
                     (UIGestureRecognizerState.Cancelled == obj.State));
                     isPanning = false;

@@ -40,11 +40,11 @@ namespace NachoClient.iOS
             tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
             source = new AlertChoicesSource (this);
             tableView.Source = source;
-            tableView.AccessibilityLabel = "Remainder";
+            tableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Reminder", "Title for reminder picker in Calendar");
 
             View.Add (tableView);
 
-            NavigationItem.Title = "Reminder";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Reminder", "Title for reminder picker in Calendar");
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
         }
 
