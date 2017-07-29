@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using Foundation;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
@@ -8,8 +9,9 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    
-    public interface MessageComposeHeaderViewDelegate {
+
+    public interface MessageComposeHeaderViewDelegate
+    {
         void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
@@ -34,7 +36,7 @@ namespace NachoClient.iOS
 
         UITapGestureRecognizer TapGesture;
 
-        public ComposeFieldLabel (CGRect frame) : base(frame)
+        public ComposeFieldLabel (CGRect frame) : base (frame)
         {
             NameLabel = new UILabel (Bounds);
             ValueLabel = new UILabel (Bounds);
@@ -82,7 +84,7 @@ namespace NachoClient.iOS
 
         UITapGestureRecognizer TapRecognizer;
 
-        public ComposeActionSelectionView (CGRect frame) : base(frame)
+        public ComposeActionSelectionView (CGRect frame) : base (frame)
         {
             CheckboxView = new ActionCheckboxView (20.0f);
             CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
@@ -145,7 +147,7 @@ namespace NachoClient.iOS
         public void SetIntent (McEmailMessage.IntentType intent, MessageDeferralType intentDateType, DateTime intentDate)
         {
             if (intent == McEmailMessage.IntentType.None) {
-                TextLabel.Text = "Request an action for the recipient";
+                TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Request an action for the recipient", "Message action label");
                 TextLabel.TextColor = adoptedTheme.DisabledTextColor;
                 DateLabel.Text = "";
                 CheckboxView.IsChecked = false;
@@ -169,7 +171,7 @@ namespace NachoClient.iOS
 
         #region Properties
 
-        public MessageComposeHeaderViewDelegate HeaderDelegate; 
+        public MessageComposeHeaderViewDelegate HeaderDelegate;
         public nfloat PreferredHeight {
             get {
                 if (preferredHeight == 0.0f) {
@@ -217,9 +219,9 @@ namespace NachoClient.iOS
         {
             CcFieldsAreCollapsed = true;
 
-            ToView = new UcAddressBlock (this, "To:", null, Bounds.Width);
-            CcView = new UcAddressBlock (this, "Cc:", "Cc/Bcc:", Bounds.Width);
-            BccView = new UcAddressBlock (this, "Bcc:", null, Bounds.Width);
+            ToView = new UcAddressBlock (this, NSBundle.MainBundle.LocalizedString ("To:", ""), null, Bounds.Width);
+            CcView = new UcAddressBlock (this, NSBundle.MainBundle.LocalizedString ("Cc:", ""), NSBundle.MainBundle.LocalizedString ("Cc/Bcc:", ""), Bounds.Width);
+            BccView = new UcAddressBlock (this, NSBundle.MainBundle.LocalizedString ("Bcc:", ""), null, Bounds.Width);
 
             ToView.SetCompact (true, -1);
             CcView.SetCompact (true, -1, true);
@@ -235,20 +237,20 @@ namespace NachoClient.iOS
 
             FromView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
             FromView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FromView.NameLabel.Text = "Cc/Bcc/From: ";
+            FromView.NameLabel.Text = NSBundle.MainBundle.LocalizedString ("Cc/Bcc/From: ", "");
             FromView.Action = SelectFrom;
             FromView.LeftPadding = LeftPadding;
             FromView.RightPadding = RightPadding;
             FromView.SetNeedsLayout ();
 
-            var label = FieldLabel ("Subject:");
+            var label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Subject:", ""));
             SubjectField = new NcAdjustableLayoutTextField (new CGRect (0, 0, Bounds.Width, LineHeight));
             SubjectField.BackgroundColor = UIColor.White;
             SubjectField.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            SubjectField.AccessibilityLabel = "Subject";
+            SubjectField.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Subject:", "");
             SubjectField.LeftViewMode = UITextFieldViewMode.Always;
             SubjectField.AdjustedEditingInsets = new UIEdgeInsets (0.0f, LeftPadding + label.Frame.Width + 10.0f, 0.0f, RightPadding);
-            SubjectField.AdjustedLeftViewRect = new CGRect(LeftPadding, (SubjectField.Frame.Height - label.Frame.Height) / 2.0, label.Frame.Width, label.Frame.Height);
+            SubjectField.AdjustedLeftViewRect = new CGRect (LeftPadding, (SubjectField.Frame.Height - label.Frame.Height) / 2.0, label.Frame.Width, label.Frame.Height);
             SubjectField.LeftView = label;
             SubjectField.EditingDidBegin += SubjectEditingDidBegin;
             SubjectField.EditingDidEnd += SubjectEditingDidEnd;
@@ -261,12 +263,12 @@ namespace NachoClient.iOS
             IntentView.RightPadding = RightPadding;
             IntentView.SetNeedsLayout ();
 
-//            if (!String.IsNullOrEmpty (PresetSubject)) {
-//                alwaysShowIntent = true;
-//                subjectField.Text += PresetSubject;
-//            }
+            //            if (!String.IsNullOrEmpty (PresetSubject)) {
+            //                alwaysShowIntent = true;
+            //                subjectField.Text += PresetSubject;
+            //            }
 
-//            intentDisplayLabel.Text = "NONE";
+            //            intentDisplayLabel.Text = "NONE";
 
             AttachmentsView = new UcAttachmentBlock (this, 40, true);
             AttachmentsView.AdoptTheme (Theme.Active);
@@ -279,7 +281,7 @@ namespace NachoClient.iOS
             FromSeparator = SeparatorView ();
             SubjectSeparator = SeparatorView ();
             IntentSeparator = SeparatorView ();
-//            IntentSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.05f);
+            //            IntentSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.05f);
             AttachmentsSeparator = SeparatorView ();
             AttachmentsSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.25f);
 
@@ -375,7 +377,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void AddressBlockAutoCompleteContactClicked(UcAddressBlock view, string prefix)
+        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
         {
             var address = EmailAddressForAddressView (view, prefix);
             if (HeaderDelegate != null) {
@@ -383,7 +385,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void AddressBlockContactPickerRequested(UcAddressBlock view)
+        public void AddressBlockContactPickerRequested (UcAddressBlock view)
         {
             var address = EmailAddressForAddressView (view, null);
             if (HeaderDelegate != null) {
@@ -428,7 +430,7 @@ namespace NachoClient.iOS
         {
             AttachmentsView.ToggleCompact ();
             SetNeedsLayout ();
-            UIView.Animate(0.2, () => {
+            UIView.Animate (0.2, () => {
                 AttachmentsView.LayoutIfNeeded ();
                 LayoutIfNeeded ();
             });
@@ -463,7 +465,7 @@ namespace NachoClient.iOS
                 UpdateCcCollapsed ();
                 SetNeedsLayout ();
                 CcView.SetEditFieldAsFirstResponder ();
-                UIView.Animate(0.2, () => {
+                UIView.Animate (0.2, () => {
                     CcView.LayoutIfNeeded ();
                     FromView.LayoutIfNeeded ();
                     LayoutIfNeeded ();
@@ -491,11 +493,11 @@ namespace NachoClient.iOS
         {
             CcFieldsAreCollapsed = CcFieldsAreCollapsed && CcView.IsEmpty () && BccView.IsEmpty ();
             if (CcFieldsAreCollapsed) {
-                FromView.NameLabel.Text = "Cc/Bcc/From: ";
+                FromView.NameLabel.Text = NSBundle.MainBundle.LocalizedString ("Cc/Bcc/From: ", "");
                 CcView.SetCompact (true, -1, true);
             } else {
                 CcView.SetCompact (true, -1);
-                FromView.NameLabel.Text = "From: ";
+                FromView.NameLabel.Text = NSBundle.MainBundle.LocalizedString ("From: ", "");
             }
             CcView.ConfigureView ();
             CcView.SetNeedsLayout ();
@@ -533,12 +535,12 @@ namespace NachoClient.iOS
 
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
 
-            if ((Math.Abs(preferredHeight - previousPreferredHeight) > 0.5) && HeaderDelegate != null) {
+            if ((Math.Abs (preferredHeight - previousPreferredHeight) > 0.5) && HeaderDelegate != null) {
                 HeaderDelegate.MessageComposeHeaderViewDidChangeHeight (this);
             }
         }
-            
-        private nfloat LayoutSubviewAtYPosition(UIView subview, nfloat y, float padding = 0f, nfloat? maxHeight = null, float minHeight = 0f)
+
+        private nfloat LayoutSubviewAtYPosition (UIView subview, nfloat y, float padding = 0f, nfloat? maxHeight = null, float minHeight = 0f)
         {
             var layoutHeight = subview.Frame.Height;
             if (maxHeight.HasValue) {
@@ -548,7 +550,7 @@ namespace NachoClient.iOS
                 layoutHeight = minHeight;
             }
             subview.Frame = new CGRect (subview.Frame.X, y, subview.Frame.Width, layoutHeight);
-            if (subview.Hidden){
+            if (subview.Hidden) {
                 return 0f;
             }
             return layoutHeight + padding;
@@ -567,7 +569,7 @@ namespace NachoClient.iOS
 
         private UILabel FieldLabel (String text)
         {
-            var label = new UILabel(new CGRect(0, 0, Bounds.Width, LineHeight));
+            var label = new UILabel (new CGRect (0, 0, Bounds.Width, LineHeight));
             label.BackgroundColor = UIColor.White;
             label.Text = text;
             label.SizeToFit ();

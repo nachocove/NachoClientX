@@ -177,9 +177,9 @@ namespace NachoClient.iOS
         {
             if (message.IntentDate != default (DateTime)) {
                 if (message.IntentDate < DateTime.UtcNow) {
-                    AttributedDateText = new NSMutableAttributedString ("due " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (message.IntentDateType)));
+                    AttributedDateText = new NSMutableAttributedString (string.Format (NSBundle.MainBundle.LocalizedString ("due {0} (message)", "Label in message cell indicating future intent due date"), Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (message.IntentDateType))));
                 } else {
-                    AttributedDateText = new NSMutableAttributedString ("by " + Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (message.IntentDateType)));
+                    AttributedDateText = new NSMutableAttributedString (string.Format (NSBundle.MainBundle.LocalizedString ("by {0} (message)", "Label in message cell indicating past intent due date"), Pretty.FutureDate (message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (message.IntentDateType))));
                 }
             } else {
                 AttributedDateText = new NSMutableAttributedString (Pretty.TimeWithDecreasingPrecision (message.DateReceived));

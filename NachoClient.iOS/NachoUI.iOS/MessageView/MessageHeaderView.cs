@@ -134,7 +134,7 @@ namespace NachoClient.iOS
                     if (Message.IntentDateType != MessageDeferralType.None) {
                         var dueDateString = Pretty.FutureDate (Message.IntentDate, NachoCore.Brain.NcMessageIntent.IntentIsToday (Message.IntentDateType));
                         location = attributedDateText.Length;
-                        attributedDateText.Append (new NSAttributedString (" by " + dueDateString));
+                        attributedDateText.Append (new NSAttributedString (string.Format (NSBundle.MainBundle.LocalizedString (" by {0} (message view)", ""), dueDateString)));
                         attributedDateText.AddAttribute (UIStringAttributeKey.ForegroundColor, adoptedTheme.TableViewCellDateLabelTextColor, new NSRange (location, dueDateString.Length + 3));
                     }
                 }
@@ -143,7 +143,7 @@ namespace NachoClient.iOS
             FromLabel.Text = Pretty.SenderString (Message.From);
             string prettySubject = "";
             if (String.IsNullOrWhiteSpace (Message.Subject)) {
-                prettySubject = "(no subject)";
+                prettySubject = NSBundle.MainBundle.LocalizedString ("(no subject)", "fallback text for messages with no subject");
                 SubjectLabel.TextColor = adoptedTheme.DisabledTextColor;
             } else {
                 SubjectLabel.TextColor = adoptedTheme.TableViewCellMainLabelTextColor;

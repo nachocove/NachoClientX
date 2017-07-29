@@ -93,7 +93,7 @@ namespace NachoClient.iOS
 
             AcceptButton = new NcSimpleColorButton ();
             AcceptButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            AcceptButton.SetTitle ("Accept and add to calendar", UIControlState.Normal);
+            AcceptButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Accept and add to calendar (calendar invite)", "Calendar invite option"), UIControlState.Normal);
             using (var image = UIImage.FromBundle ("calendar-invite-action-accept")) {
                 AcceptButton.SetImage (image, UIControlState.Normal);
             }
@@ -102,7 +102,7 @@ namespace NachoClient.iOS
 
             TentativeButton = new NcSimpleColorButton ();
             TentativeButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            TentativeButton.SetTitle ("Tentatively accept", UIControlState.Normal);
+            TentativeButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Tentatively accept (calendar invite)", "Calendar invite option"), UIControlState.Normal);
             using (var image = UIImage.FromBundle ("calendar-invite-action-maybe")) {
                 TentativeButton.SetImage (image, UIControlState.Normal);
             }
@@ -111,7 +111,7 @@ namespace NachoClient.iOS
 
             DeclineButton = new NcSimpleColorButton ();
             DeclineButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            DeclineButton.SetTitle ("Decline", UIControlState.Normal);
+            DeclineButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Decline (calendar invite)", "Calendar invite option"), UIControlState.Normal);
             using (var image = UIImage.FromBundle ("calendar-invite-action-decline")) {
                 DeclineButton.SetImage (image, UIControlState.Normal);
             }
@@ -120,7 +120,7 @@ namespace NachoClient.iOS
 
             RemoveButton = new NcSimpleColorButton ();
             RemoveButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            RemoveButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+            RemoveButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Remove from calendar (calendar invite)", "Calendar invite option"), UIControlState.Normal);
             using (var image = UIImage.FromBundle ("calendar-invite-action-decline")) {
                 RemoveButton.SetImage (image, UIControlState.Normal);
             }
@@ -195,7 +195,7 @@ namespace NachoClient.iOS
                 using (var image = UIImage.FromBundle ("calendar-invite-cancel")) {
                     IconView.Image = image;
                 }
-                DetailTextLabel.Text = "This event has been canceled";
+                DetailTextLabel.Text = NSBundle.MainBundle.LocalizedString ("This event has been canceled", "Calendar invite indication of cancelation");
             } else {
                 ActionsView.Hidden = false;
                 AcceptButton.Hidden = false;

@@ -130,23 +130,23 @@ namespace NachoClient.iOS
             // Nav bar
             CloseButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (CloseButton, "icn-close");
-            CloseButton.AccessibilityLabel = "Close";
+            CloseButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             CloseButton.Clicked += Close;
 
             SendButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (SendButton, "icn-send");
-            SendButton.AccessibilityLabel = "Send";
+            SendButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Send", "");
             SendButton.Clicked += Send;
 
             QuickResponseButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (QuickResponseButton, "contact-quickemail");
-            QuickResponseButton.AccessibilityLabel = "Quick response";
+            QuickResponseButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Quick response", "");
             QuickResponseButton.Clicked += QuickReply;
 
 
             AddAttachmentButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (AddAttachmentButton, "files-email-attachment");
-            AddAttachmentButton.AccessibilityLabel = "Add attachment";
+            AddAttachmentButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Add attachment", "");
             AddAttachmentButton.Clicked += AddAttachment;
 
             NavigationItem.LeftBarButtonItem = CloseButton;
@@ -187,7 +187,7 @@ namespace NachoClient.iOS
             View.AddSubview (ScrollView);
 
             UIMenuController.SharedMenuController.MenuItems = new UIMenuItem [] {
-                new UIMenuItem("Attach", new ObjCRuntime.Selector("attach:"))
+                new UIMenuItem(NSBundle.MainBundle.LocalizedString ("Attach (menu)", ""), new ObjCRuntime.Selector("attach:"))
             };
         }
 
@@ -285,10 +285,10 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
-                NcAlertView.Show (this, "Empty Subject", "This message does not have a subject. How would you like to proceed?",
-                    new NcAlertAction ("Send Anyway", SendWithoutSubject),
-                    new NcAlertAction ("Add Subject", AddSubject),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Empty Subject", "Alert title when sending with an empty subject"), NSBundle.MainBundle.LocalizedString ("This message does not have a subject. How would you like to proceed?", "Alert message when sending with an empty subject"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Send Anyway", "Button title for sending without a subject"), SendWithoutSubject),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Add Subject", "Button title for adding a subject before sending"), AddSubject),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
             } else {
                 CheckSizeBeforeSending ();
             }
@@ -310,17 +310,17 @@ namespace NachoClient.iOS
             Composer.Save (ContentHtml);
             if (Composer.IsOversize) {
                 if (Composer.CanResize) {
-                    NcAlertView.Show (this, "Large Message",
-                        string.Format ("This message is {0}. You can make it smaller by reducing the size of the attached images.", Pretty.PrettyFileSize (Composer.MessageSize)),
-                        new NcAlertAction (string.Format ("Small images ({0})", Pretty.PrettyFileSize (Composer.EstimatedSmallSize)), ResizeImagesSmall),
-                        new NcAlertAction (string.Format ("Medium images ({0})", Pretty.PrettyFileSize (Composer.EstimatedMediumSize)), ResizeImagesMedium),
-                        new NcAlertAction (string.Format ("Large images ({0})", Pretty.PrettyFileSize (Composer.EstimatedLargeSize)), ResizeImagesLarge),
-                        new NcAlertAction (string.Format ("Actual size ({0})", Pretty.PrettyFileSize (Composer.MessageSize)), AcknowlegeSizeWarning),
-                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                    NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Large Message", "Alert title for message size warning"),
+                        string.Format (NSBundle.MainBundle.LocalizedString ("This message is {0}. You can make it smaller by reducing the size of the attached images.", "Alert message for message size warning"), Pretty.PrettyFileSize (Composer.MessageSize)),
+                        new NcAlertAction (string.Format (NSBundle.MainBundle.LocalizedString ("Small images ({0})", "Button action for resizing images, with estimated size"), Pretty.PrettyFileSize (Composer.EstimatedSmallSize)), ResizeImagesSmall),
+                        new NcAlertAction (string.Format (NSBundle.MainBundle.LocalizedString ("Medium images ({0})", "Button action for resizing images, with estimated size"), Pretty.PrettyFileSize (Composer.EstimatedMediumSize)), ResizeImagesMedium),
+                        new NcAlertAction (string.Format (NSBundle.MainBundle.LocalizedString ("Large images ({0})", "Button action for resizing images, with estimated size"), Pretty.PrettyFileSize (Composer.EstimatedLargeSize)), ResizeImagesLarge),
+                        new NcAlertAction (string.Format (NSBundle.MainBundle.LocalizedString ("Actual size ({0})", "Button action for resizing images, with estimated size"), Pretty.PrettyFileSize (Composer.MessageSize)), AcknowlegeSizeWarning),
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
                 } else {
-                    NcAlertView.Show (this, "Large Message", string.Format ("This message is {0}", Pretty.PrettyFileSize (Composer.MessageSize)),
-                        new NcAlertAction ("Send Anyway", AcknowlegeSizeWarning),
-                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                    NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Large Message", ""), string.Format (NSBundle.MainBundle.LocalizedString ("This message is {0}", "Alert message for message size warning"), Pretty.PrettyFileSize (Composer.MessageSize)),
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Send Anyway", ""), AcknowlegeSizeWarning),
+                        new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
                 }
             } else {
                 Send ();
@@ -398,9 +398,9 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             NcActionSheet.Show (CloseButton, this, null, null,
-                new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, DiscardDraft),
-                new NcAlertAction ("Save Draft", NcAlertActionStyle.Default, SaveDraft),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Discard Draft", "Button for discarding message draft"), NcAlertActionStyle.Destructive, DiscardDraft),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Save Draft", "Button for saving message draft"), NcAlertActionStyle.Default, SaveDraft),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
         }
 
         // User opting to discard while closing
@@ -751,8 +751,8 @@ namespace NachoClient.iOS
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            NcAlertView.Show (this, "Could not load message", "Sorry, the message could not be loaded. Please try again.",
-                new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+            NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Could not load message", "Alert title for message load error"), NSBundle.MainBundle.LocalizedString ("Sorry, the message could not be loaded. Please try again.", "Alert message for failed message load"),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("OK", ""), NcAlertActionStyle.Cancel, () => {
                     DismissViewController (true, null);
                 }));
         }
@@ -795,8 +795,8 @@ namespace NachoClient.iOS
                 }
             } else {
                 Log.Error (Log.LOG_UI, "DisplayMessageBody called without a valid bundle");
-                NcAlertView.Show (this, "Could not load message", "Sorry, the message could not be loaded. Please try again.",
-                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Could not load message", ""), NSBundle.MainBundle.LocalizedString ("Sorry, the message could not be loaded. Please try again.", ""),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("OK", ""), NcAlertActionStyle.Cancel, () => {
                         DismissViewController (true, null);
                     }));
             }
@@ -1019,13 +1019,13 @@ namespace NachoClient.iOS
         void ShowIntentDeadline (ActionSheetViewController sheet, NcMessageIntent.MessageIntent intent)
         {
             sheet.BeginReplacingItems ();
-            sheet.AddItem (new ActionSheetItem ("No Due Date", () => { SelectMessageIntent (intent, MessageDeferralType.None); }));
-            sheet.AddItem (new ActionSheetItem ("One Hour", () => { SelectMessageIntent (intent, MessageDeferralType.OneHour); }, accessoryImageName: "later-accessory"));
-            sheet.AddItem (new ActionSheetItem ("Today", () => { SelectMessageIntent (intent, MessageDeferralType.EndOfDay); }, accessoryImageName: "later-accessory"));
-            sheet.AddItem (new ActionSheetItem ("Tomorrow", () => { SelectMessageIntent (intent, MessageDeferralType.Tomorrow); }, accessoryImageName: "tomorrow-accessory"));
-            sheet.AddItem (new ActionSheetItem ("Next Week", () => { SelectMessageIntent (intent, MessageDeferralType.NextWeek); }, accessoryImageName: "next-week-accessory"));
-            sheet.AddItem (new ActionSheetItem ("Next Month", () => { SelectMessageIntent (intent, MessageDeferralType.NextMonth); }, accessoryImageName: "next-month-accessory"));
-            sheet.AddItem (new ActionSheetItem ("Pick Date", () => {
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("No Due Date (intent deadline)", ""), () => { SelectMessageIntent (intent, MessageDeferralType.None); }));
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("One Hour (intent deadline)", ""), () => { SelectMessageIntent (intent, MessageDeferralType.OneHour); }, accessoryImageName: "later-accessory"));
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("Today (intent deadline)", ""), () => { SelectMessageIntent (intent, MessageDeferralType.EndOfDay); }, accessoryImageName: "later-accessory"));
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("Tomorrow (intent deadline)", ""), () => { SelectMessageIntent (intent, MessageDeferralType.Tomorrow); }, accessoryImageName: "tomorrow-accessory"));
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("Next Week (intent deadline)", ""), () => { SelectMessageIntent (intent, MessageDeferralType.NextWeek); }, accessoryImageName: "next-week-accessory"));
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("Next Month (intent deadline)", ""), () => { SelectMessageIntent (intent, MessageDeferralType.NextMonth); }, accessoryImageName: "next-month-accessory"));
+            sheet.AddItem (new ActionSheetItem (NSBundle.MainBundle.LocalizedString ("Pick Date (intent deadline)", ""), () => {
                 ShowIntentDatePicker (sheet, intent);
             }, accessoryImageName: "pick-date-accessory", dismissesSheet: false));
             sheet.EndReplacingItems ();

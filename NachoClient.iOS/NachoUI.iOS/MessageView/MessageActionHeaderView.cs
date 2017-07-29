@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using Foundation;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
@@ -8,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    
+
     public class MessageActionHeaderView : UIView
     {
 
@@ -57,7 +58,7 @@ namespace NachoClient.iOS
 
         public MessageActionHeaderView (CGRect frame) : base (frame)
         {
-            
+
             BackgroundColor = UIColor.White;
             SeparatorInset = new UIEdgeInsets (0.0f, 14.0f, 0.0f, 0.0f);
 
@@ -107,7 +108,7 @@ namespace NachoClient.iOS
                 if (_Action.IsCompleted) {
                     CheckboxView.TintColor = A.Color_NachoTextGray;
                     TitleLabel.TextColor = A.Color_NachoTextGray;
-                }else{
+                } else {
                     TitleLabel.TextColor = A.Color_NachoDarkText;
                     if (_Action.IsHot) {
                         CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
@@ -117,29 +118,29 @@ namespace NachoClient.iOS
                 }
                 if (Message.Subject.Equals (_Action.Title)) {
                     if (Message.Intent == McEmailMessage.IntentType.ResponseRequired) {
-                        TitleLabel.Text = "Response Required";
+                        TitleLabel.Text = NSBundle.MainBundle.LocalizedString ("Response Required", "");
                     } else if (Message.Intent == McEmailMessage.IntentType.PleaseRead) {
-                        TitleLabel.Text = "Please Read";
+                        TitleLabel.Text = NSBundle.MainBundle.LocalizedString ("Please Read", "");
                     } else if (Message.Intent == McEmailMessage.IntentType.Urgent) {
-                        TitleLabel.Text = "Urgent - Attention Required";
+                        TitleLabel.Text = NSBundle.MainBundle.LocalizedString ("Urgent - Attention Required", "");
                     } else {
                         TitleLabel.Text = _Action.Title;
                     }
                 } else {
                     TitleLabel.Text = _Action.Title;
                 }
-                if (!_Action.IsCompleted && _Action.DueDate != default(DateTime)) {
+                if (!_Action.IsCompleted && _Action.DueDate != default (DateTime)) {
                     if (_Action.DueDate > DateTime.UtcNow) {
-                        DateLabel.Text = "by " + Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime);
+                        DateLabel.Text = string.Format (NSBundle.MainBundle.LocalizedString ("due {0} (message)", ""), Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime));
                     } else {
-                        DateLabel.Text = "due " + Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime);
+                        DateLabel.Text = string.Format (NSBundle.MainBundle.LocalizedString ("by {0} (message)", ""), Pretty.FutureDate (_Action.DueDate, _Action.DueDateIncludesTime));
                     }
-                }else if (_Action.IsDeferred) {
-                    DateLabel.Text = "Deferred"; 
+                } else if (_Action.IsDeferred) {
+                    DateLabel.Text = NSBundle.MainBundle.LocalizedString ("Deferred (action state)", "");
                 } else {
                     DateLabel.Text = "";
                 }
-            }else{
+            } else {
                 CheckboxView.IsChecked = false;
                 TitleLabel.Text = "";
                 DateLabel.Text = "";
@@ -183,7 +184,7 @@ namespace NachoClient.iOS
 
         void CheckboxChanged (bool isChecked)
         {
-            NcTask.Run(() => {
+            NcTask.Run (() => {
                 NcModel.Instance.RunInTransaction (() => {
                     if (isChecked) {
                         Action.Complete ();
@@ -191,7 +192,7 @@ namespace NachoClient.iOS
                         Action.Uncomplete (McAction.ActionState.Open);
                     }
                 });
-                BeginInvokeOnMainThread(() => {
+                BeginInvokeOnMainThread (() => {
                     Update ();
                 });
             }, "MessageActionHeaderView_CheckboxChanged", NcTask.ActionSerialScheduler);

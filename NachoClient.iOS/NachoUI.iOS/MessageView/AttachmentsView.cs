@@ -144,9 +144,9 @@ namespace NachoClient.iOS
         void UpdateHeaderLabel ()
         {
             if (IsExpanded) {
-                HeaderView.TextLabel.Text = "Hide attachments";
+                HeaderView.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Hide attachments", "Button title to hide attachments list");
             } else {
-                HeaderView.TextLabel.Text = String.Format ("Show {0} attachments", _Attachments.Count);
+                HeaderView.TextLabel.Text = String.Format (NSBundle.MainBundle.LocalizedString ("Show {0} attachments", "Button title to show attachments list"), _Attachments.Count);
             }
         }
 
@@ -171,7 +171,7 @@ namespace NachoClient.iOS
             var cell = tableView.DequeueReusableCell (AttachmentCellIdentifier) as AttachmentCell;
             cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
             if (String.IsNullOrWhiteSpace (cell.TextLabel.Text)) {
-                cell.TextLabel.Text = "(no name)";
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("(no name) (attachment)", "Fallback name for attachment with no name");
                 cell.TextLabel.TextColor = adoptedTheme.DisabledTextColor;
             } else {
                 cell.TextLabel.TextColor = adoptedTheme.DefaultTextColor;
@@ -268,7 +268,7 @@ namespace NachoClient.iOS
             var attachment = _Attachments [indexPath.Row];
             if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
                 return new List<SwipeTableRowAction> (new SwipeTableRowAction[] {
-                    new SwipeTableRowAction("Delete", UIImage.FromBundle("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAttachmentAtIndexPath)
+                    new SwipeTableRowAction(NSBundle.MainBundle.LocalizedString ("Delete", ""), UIImage.FromBundle("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteAttachmentAtIndexPath)
                 });
             }
             return null;

@@ -72,7 +72,7 @@ namespace NachoClient.iOS
 
         public MessageHeaderDetailViewController () : base (UITableViewStyle.Grouped)
         {
-            NavigationItem.Title = "Header Details";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Header Details", "Title for header details view");
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
         }
@@ -211,11 +211,11 @@ namespace NachoClient.iOS
         {
             if (section == FromSection) {
                 if (FromAddress != null && ReplyToAddress != null) {
-                    FromHeader.Label.Text = "From/Reply-To";
+                    FromHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("From/Reply-To (header detail)", "Message header detail section");
                 } else if (ReplyToAddress != null) {
-                    FromHeader.Label.Text = "Reply-To";
+                    FromHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("Reply-To (header detail)", "Message header detail section");
                 } else {
-                    FromHeader.Label.Text = "From";
+                    FromHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("From (header detail)", "Message header detail section");
                 }
                 return FromHeader;
             } else if (section == ToSection) {
@@ -657,7 +657,7 @@ namespace NachoClient.iOS
             get {
                 if (_ToHeader == null) {
                     _ToHeader = CreateCommonHeaderView ();
-                    _ToHeader.Label.Text = "To";
+                    _ToHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("To (header detail)", "Message header detail section");
                 }
                 return _ToHeader;
             }
@@ -668,7 +668,7 @@ namespace NachoClient.iOS
             get {
                 if (_CcHeader == null) {
                     _CcHeader = CreateCommonHeaderView ();
-                    _CcHeader.Label.Text = "CC";
+                    _CcHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("CC (header detail)", "Message header detail section");
                 }
                 return _CcHeader;
             }
@@ -679,7 +679,7 @@ namespace NachoClient.iOS
             get {
                 if (_BccHeader == null) {
                     _BccHeader = CreateCommonHeaderView ();
-                    _BccHeader.Label.Text = "BCC";
+                    _BccHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("BCC (header detail)", "Message header detail section");
                 }
                 return _BccHeader;
             }

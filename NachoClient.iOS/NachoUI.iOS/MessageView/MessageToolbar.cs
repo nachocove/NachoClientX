@@ -3,6 +3,7 @@
 using System;
 using CoreGraphics;
 
+using Foundation;
 using UIKit;
 
 using NachoCore.Utils;
@@ -89,37 +90,37 @@ namespace NachoClient.iOS
             quickReplyButton = new NcUIBarButtonItem ();
             quickReplyButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (quickReplyButton, "toolbar-quick-reply");
-            quickReplyButton.AccessibilityLabel = "Quick Reply";
+            quickReplyButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Quick Reply", "");
             quickReplyButton.Clicked += QuickReplyButtonClicked;
 
             replyButton = new NcUIBarButtonItem ();
             replyButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
-            replyButton.AccessibilityLabel = "Reply";
+            replyButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Reply (verb)", "");
             replyButton.Clicked += ReplyButtonClicked;
 
             replyAllButton = new NcUIBarButtonItem ();
             replyAllButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyAllButton, "toolbar-icn-reply-all");
-            replyAllButton.AccessibilityLabel = "Reply all";
+            replyAllButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Reply all", "");
             replyAllButton.Clicked += ReplyAllButtonClicked;
 
             forwardButton = new NcUIBarButtonItem ();
             forwardButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (forwardButton, "toolbar-icn-fwd");
-            forwardButton.AccessibilityLabel = "Forward";
+            forwardButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Forward (verb)", "");
             forwardButton.Clicked += ForwardButtonClicked;
 
             moveButton = new NcUIBarButtonItem ();
             moveButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (moveButton, "email-move-swipe");
-            moveButton.AccessibilityLabel = "Move";
+            moveButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Move", "");
             moveButton.Clicked += MoveButtonClicked;
 
             archiveButton = new NcUIBarButtonItem ();
             archiveButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
-            archiveButton.AccessibilityLabel = "Archive";
+            archiveButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Archive (verb)", "");
             archiveButton.Clicked += ArchiveButtonClicked;
 
             flexibleSpace = new NcUIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
@@ -130,10 +131,10 @@ namespace NachoClient.iOS
             deleteButton = new NcUIBarButtonItem ();
             deleteButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (deleteButton, "email-delete");
-            deleteButton.AccessibilityLabel = "Delete";
+            deleteButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Delete", "");
             deleteButton.Clicked += DeleteButtonClicked;
 
-            SetItems (new UIBarButtonItem[] {
+            SetItems (new UIBarButtonItem [] {
                 quickReplyButton,
                 fixedSpace,
                 replyButton,

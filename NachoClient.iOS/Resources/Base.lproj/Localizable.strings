@@ -35,6 +35,19 @@
 "Email (verb)" = "Email";
 "Copy" = "Copy";
 "Value" = "Value";
+"Move" = "Move";
+"Create Event" = "Create Event";
+"Create Action" = "Create Action";
+"Reply (verb)" = "Reply";
+"Reply All" = "Reply All";
+"Quick Reply" = "Quick Reply";
+"Unread (adjective)" = "Unread";
+"Read (adjective)" = "Read";
+"Not Hot (adjective)" = "Not Hot";
+"Hot (adjective)" = "Hot";
+"Archive (verb)" = "Archive";
+"Mark (verb)" = "Mark";
+"(ErrorCode={0}" = "(ErrorCode={0}";
 
 
 /* --------------------------------------------------------------------- */
@@ -721,8 +734,6 @@
 /* Title for contact account picker */
 "Choose an account for the new Contact" = "Choose an account for the new Contact";
 
-
-
 "No email address" = "No email address";
 "You've selected a contact who does not have an email address" = "You've selected a contact who does not have an email address";
 "No phone number" = "No phone number";
@@ -743,6 +754,180 @@
 "Suffix" = "Suffix";
 "Company" = "Company";
 "IM Address" = "IM Address";
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Messages */
+
+/* View title for folder picker */
+"Move to Folder" = "Move to Folder";
+
+/* Title for recent folders section */
+"Recent Folders" = "Recent Folders";
+
+/* Message action label */
+"Request an action for the recipient" = "Request an action for the recipient";
+
+/* Alert title when sending with an empty subject */
+"Empty Subject" = "Empty Subject";
+
+/* Alert message when sending with an empty subject */
+"This message does not have a subject. How would you like to proceed?" = "This message does not have a subject. How would you like to proceed?";
+
+/* Button title for sending without a subject */
+"Send Anyway" = "Send Anyway";
+
+/* Button title for adding a subject before sending */
+"Add Subject" = "Add Subject";
+
+/* Alert title for message size warning */
+"Large Message" = "Large Message";
+
+/* Alert message for message size warning */
+"This message is {0}. You can make it smaller by reducing the size of the attached images." = "This message is {0}. You can make it smaller by reducing the size of the attached images.";
+
+/* Button action for resizing images, with estimated size */
+"Small images ({0})" = "Small images ({0})";
+
+/* Button action for resizing images, with estimated size */
+"Medium images ({0})" = "Medium images ({0})";
+
+/* Button action for resizing images, with estimated size */
+"Large images ({0})" = "Large images ({0})";
+
+/* Button action for resizing images, with estimated size */
+"Actual size ({0})" = "Actual size ({0})";
+
+/* Alert message for message size warning */
+"This message is {0}" = "This message is {0}";
+
+/* Button for discarding message draft */
+"Discard Draft" = "Discard Draft";
+
+/* Button for saving message draft */
+"Save Draft" = "Save Draft";
+
+/* Alert title for message load error */
+"Could not load message" = "Could not load message";
+
+/* Alert message for failed message load */
+"Sorry, the message could not be loaded. Please try again." = "Sorry, the message could not be loaded. Please try again.";
+
+/* Message Fields */
+"To:" = "To:";
+"Cc:" = "Cc:";
+"Bcc:" = "Bcc:";
+"Cc/Bcc:" = "Cc/Bcc:";
+"Cc/Bcc/From: " = "Cc/Bcc/From: ";
+"Subject:" = "Subject:";
+"From: " = "From: ";
+
+/* Message Intent Deadlines */
+"No Due Date (intent deadline)" = "No Due Date";
+"One Hour (intent deadline)" = "One Hour";
+"Today (intent deadline)" = "Today";
+"Tomorrow (intent deadline)" = "Tomorrow";
+"Next Week (intent deadline)" = "Next Week";
+"Next Month (intent deadline)" = "Next Month";
+"Pick Date (intent deadline)" = "Pick Date";
+
+"Quick response" = "Quick response";
+"Add attachment" = "Add attachment";
+"Attach (menu)" = "Attach";
+
+/* Label in message cell indicating future intent due date */
+"due {0} (message)" = "due {0}";
+
+/* Label in message cell indicating past intent due date */
+"by {0} (message)" = "by {0}";
+
+/* Title for message list view */
+"Message list" = "Message list";
+
+/* Label for mark messages title */
+"Mark {0} messages" = "Mark {0} messages";
+
+/* Actions shown under the mark messages title, should complete a sentence if possible */
+"[Mark messages] As Read" = "As Read";
+"[Mark messages] As Unread" = "As Unread";
+"[Mark messages] As Hot" = "As Hot";
+"[Mark messages] As Not Hot" = "As Not Hot";
+
+"All (message filter)" = "All";
+"Hot (message filter)" = "Hot";
+"Unread (message filter)" = "Unread";
+"Focus (message filter)" = "Focus";
+
+/* Label indicating a refresh just happened */
+"Last updated just now" = "Last updated just now";
+
+/* Label indicating a specific refresh time" */
+"Last updated {0}" = "Last updated {0}";
+
+/* Message indicating send failure */
+"There was a problem sending this message.  You can resend this message or open it in the drafts folder." = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
+
+"Edit Message" = "Edit Message";
+
+/* Button title to hide attachments list */
+"Hide attachments" = "Hide attachments";
+
+/* Button title to show attachments list */
+"Show {0} attachments" = "Show {0} attachments";
+
+/* Fallback name for attachment with no name */
+"(no name) (attachment)" = "(no name)";
+
+/* Calendar invite option */
+"Accept and add to calendar (calendar invite)" = "Accept and add to calendar";
+
+/* Calendar invite option */
+"Tentatively accept (calendar invite)" = "Tentatively accept";
+
+/* Calendar invite option */
+"Decline (calendar invite)" = "Decline";
+
+/* Calendar invite option */
+"Remove from calendar (calendar invite)" = "Remove from calendar";
+
+/* Calendar invite indication of cancelation */
+"This event has been canceled" = "This event has been canceled";
+
+/* Message Intents */
+"Response Required" = "Response Required";
+"Please Read" = "Please Read";
+"Urgent - Attention Required" = "Urgent - Attention Required";
+
+/* Title for header details view */
+"Header Details" = "Header Details";
+
+/* Message header detail section */
+"From/Reply-To (header detail)" = "From/Reply-To";
+
+/* Message header detail section */
+"Reply-To (header detail)" = "Reply-To";
+
+/* Message header detail section */
+"From (header detail)" = "From";
+
+/* Message header detail section */
+"To (header detail)" = "To";
+
+/* Message header detail section */
+"CC (header detail)" = "CC";
+
+/* Message header detail section */
+"BCC (header detail)" = "BCC";
+
+" by {0} (message view)" = " by {0}";
+
+/* fallback text for messages with no subject */
+"(no subject)" = "(no subject)";
+
+/* Title for message view back button */
+"Message (message view)" = "Message";
+
+"Message download failed. Tap here to retry." = "Message download failed. Tap here to retry.";
 
 
 /* --------------------------------------------------------------------- */

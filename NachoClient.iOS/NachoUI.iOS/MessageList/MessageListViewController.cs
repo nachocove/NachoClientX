@@ -72,10 +72,10 @@ namespace NachoClient.iOS
             AutomaticallyAdjustsScrollViewInsets = false;
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             NewMessageButton = new NcUIBarButtonItem (UIImage.FromBundle ("contact-newemail"), UIBarButtonItemStyle.Plain, NewMessage);
-            EditTableButton = new UIBarButtonItem ("Edit", UIBarButtonItemStyle.Plain, EditTable);
-            EditTableButton.AccessibilityLabel = "Folder edit";
-            CancelEditingButton = new UIBarButtonItem ("Cancel", UIBarButtonItemStyle.Plain, CancelEditingTable);
-            DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
+            EditTableButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Edit", ""), UIBarButtonItemStyle.Plain, EditTable);
+            EditTableButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Edit", "");
+            CancelEditingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIBarButtonItemStyle.Plain, CancelEditingTable);
+            DoneSwipingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Done", ""), UIBarButtonItemStyle.Plain, EndSwiping);
 
             NavigationItem.LeftItemsSupplementBackButton = true;
             NavigationItem.LeftBarButtonItem = SearchButton;
@@ -122,7 +122,7 @@ namespace NachoClient.iOS
             TableView.AllowsMultipleSelectionDuringEditing = true;
             TableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof (SwipeTableViewCell), UnavailableCellIdentifier);
-            TableView.AccessibilityLabel = "Message list";
+            TableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Message list", "Title for message list view");
             TableView.BackgroundColor = UIColor.White;
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
 
@@ -380,13 +380,13 @@ namespace NachoClient.iOS
             var thread = Messages.GetEmailThread (indexPath.Row);
             if (message != null) {
                 var alertView = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
-                alertView.AddAction (UIAlertAction.Create ("Move", UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove (thread, message); }));
-                alertView.AddAction (UIAlertAction.Create ("Create Event", UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent (message); }));
-                alertView.AddAction (UIAlertAction.Create ("Forward", UIAlertActionStyle.Default, (UIAlertAction action) => { Forward (message); }));
-                alertView.AddAction (UIAlertAction.Create ("Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { Reply (message); }));
-                alertView.AddAction (UIAlertAction.Create ("Reply All", UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll (message); }));
-                alertView.AddAction (UIAlertAction.Create ("Quick Reply", UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply (message); }));
-                alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Move", ""), UIAlertActionStyle.Default, (UIAlertAction action) => { ShowFoldersForMove (thread, message); }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Create Event", ""), UIAlertActionStyle.Default, (UIAlertAction action) => { CreateEvent (message); }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Forward (verb)", ""), UIAlertActionStyle.Default, (UIAlertAction action) => { Forward (message); }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Reply (verb)", ""), UIAlertActionStyle.Default, (UIAlertAction action) => { Reply (message); }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Reply All", ""), UIAlertActionStyle.Default, (UIAlertAction action) => { ReplyAll (message); }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Quick Reply", ""), UIAlertActionStyle.Default, (UIAlertAction action) => { QuickReply (message); }));
+                alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
                 PresentViewController (alertView, true, null);
             }
         }
@@ -504,12 +504,12 @@ namespace NachoClient.iOS
 
         void MarkSelectedMessages (object sender, EventArgs e)
         {
-            var alertView = UIAlertController.Create (String.Format ("Mark {0} messages", TableView.IndexPathsForSelectedRows.Length), null, UIAlertControllerStyle.ActionSheet);
-            alertView.AddAction (UIAlertAction.Create ("As Read", UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
-            alertView.AddAction (UIAlertAction.Create ("As Unread", UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
-            alertView.AddAction (UIAlertAction.Create ("As Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsHot));
-            alertView.AddAction (UIAlertAction.Create ("As Not Hot", UIAlertActionStyle.Default, MarkSelectedMessagesAsNotHot));
-            alertView.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
+            var alertView = UIAlertController.Create (String.Format (NSBundle.MainBundle.LocalizedString ("Mark {0} messages", "Label for mark messages title"), TableView.IndexPathsForSelectedRows.Length), null, UIAlertControllerStyle.ActionSheet);
+            alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("[Mark messages] As Read", ""), UIAlertActionStyle.Default, MarkSelectedMessagesAsRead));
+            alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("[Mark messages] As Unread", ""), UIAlertActionStyle.Default, MarkSelectedMessagesAsUnread));
+            alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("[Mark messages] As Hot", ""), UIAlertActionStyle.Default, MarkSelectedMessagesAsHot));
+            alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("[Mark messages] As Not Hot", ""), UIAlertActionStyle.Default, MarkSelectedMessagesAsNotHot));
+            alertView.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIAlertActionStyle.Cancel, (UIAlertAction action) => { }));
             PresentViewController (alertView, true, null);
         }
 
@@ -794,14 +794,14 @@ namespace NachoClient.iOS
                 var actions = new List<SwipeTableRowAction> ();
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
                     if (message.IsRead) {
-                        actions.Add (new SwipeTableRowAction ("Unread", UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Unread (adjective)", ""), UIImage.FromBundle ("email-unread-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsUnread));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Read", UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Read (adjective)", ""), UIImage.FromBundle ("email-read-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), MarkMessageAsRead));
                     }
                     if (message.isHot ()) {
-                        actions.Add (new SwipeTableRowAction ("Not Hot", UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Not Hot (adjective)", ""), UIImage.FromBundle ("email-not-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsUnhot));
                     } else {
-                        actions.Add (new SwipeTableRowAction ("Hot", UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
+                        actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Hot (adjective)", ""), UIImage.FromBundle ("email-hot"), UIColor.FromRGB (0xE6, 0x59, 0x59), MarkMessageAsHot));
                     }
                     // Temporarily disabling actions until we have a new place for them
                     //actions.Add (new SwipeTableRowAction ("Action", UIImage.FromBundle ("email-action-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), MakeAction));
@@ -816,10 +816,10 @@ namespace NachoClient.iOS
             var message = Messages.GetCachedMessage (indexPath.Row);
             if (message != null) {
                 var actions = new List<SwipeTableRowAction> ();
-                actions.Add (new SwipeTableRowAction ("Delete", UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
+                actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Delete", ""), UIImage.FromBundle ("email-delete-swipe"), UIColor.FromRGB (0xd2, 0x47, 0x47), DeleteMessage));
                 if (!Messages.HasOutboxSemantics () && !Messages.HasDraftsSemantics ()) {
-                    actions.Add (new SwipeTableRowAction ("Archive", UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
-                    actions.Add (new SwipeTableRowAction ("More", UIImage.FromBundle ("gen-more-active"), UIColor.FromRGB (0x4F, 0x64, 0x6D), ShowMoreActionsForMessage));
+                    actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("Archive (verb)", ""), UIImage.FromBundle ("email-archive-swipe"), UIColor.FromRGB (0x01, 0xb2, 0xcd), ArchiveMessage));
+                    actions.Add (new SwipeTableRowAction (NSBundle.MainBundle.LocalizedString ("More", ""), UIImage.FromBundle ("gen-more-active"), UIColor.FromRGB (0x4F, 0x64, 0x6D), ShowMoreActionsForMessage));
                 }
                 return actions;
             }
@@ -918,25 +918,25 @@ namespace NachoClient.iOS
                 MessageFilterBarItem selectedItem = null;
 
                 if (filters.HasFlag (FolderFilterOptions.All)) {
-                    items.Add (new MessageFilterBarItem ("All", UIImage.FromBundle ("email-filter-all"), FilterAll));
+                    items.Add (new MessageFilterBarItem (NSBundle.MainBundle.LocalizedString ("All (message filter)", ""), UIImage.FromBundle ("email-filter-all"), FilterAll));
                     if (Messages.FilterSetting == FolderFilterOptions.All) {
                         selectedItem = items.Last ();
                     }
                 }
                 if (filters.HasFlag (FolderFilterOptions.Hot)) {
-                    items.Add (new MessageFilterBarItem ("Hot", UIImage.FromBundle ("email-hot"), FilterHot));
+                    items.Add (new MessageFilterBarItem (NSBundle.MainBundle.LocalizedString ("Hot (message filter)", ""), UIImage.FromBundle ("email-hot"), FilterHot));
                     if (Messages.FilterSetting == FolderFilterOptions.Hot) {
                         selectedItem = items.Last ();
                     }
                 }
                 if (filters.HasFlag (FolderFilterOptions.Unread)) {
-                    items.Add (new MessageFilterBarItem ("Unread", UIImage.FromBundle ("email-filter-unread"), FilterUnread));
+                    items.Add (new MessageFilterBarItem (NSBundle.MainBundle.LocalizedString ("Unread (message filter)", ""), UIImage.FromBundle ("email-filter-unread"), FilterUnread));
                     if (Messages.FilterSetting == FolderFilterOptions.Unread) {
                         selectedItem = items.Last ();
                     }
                 }
                 if (filters.HasFlag (FolderFilterOptions.Focused)) {
-                    items.Add (new MessageFilterBarItem ("Focus", UIImage.FromBundle ("email-filter-focus"), FilterFocus));
+                    items.Add (new MessageFilterBarItem (NSBundle.MainBundle.LocalizedString ("Focus (message filter)", ""), UIImage.FromBundle ("email-filter-focus"), FilterFocus));
                     if (Messages.FilterSetting == FolderFilterOptions.Focused) {
                         selectedItem = items.Last ();
                     }
@@ -1083,10 +1083,10 @@ namespace NachoClient.iOS
             SelectedAccounts = new Dictionary<int, int> ();
             TableView.SetEditing (true, true);
             UpdateNavigationItem ();
-            MoveButton = new UIBarButtonItem ("Move", UIBarButtonItemStyle.Plain, ShowFoldersForMovingSelectedMessages);
-            ArchiveButton = new UIBarButtonItem ("Archive", UIBarButtonItemStyle.Plain, ArchiveSelectedMessages);
-            DeleteButton = new UIBarButtonItem ("Delete", UIBarButtonItemStyle.Plain, DeleteSelectedMessages);
-            MarkButton = new UIBarButtonItem ("Mark", UIBarButtonItemStyle.Plain, MarkSelectedMessages);
+            MoveButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Move", ""), UIBarButtonItemStyle.Plain, ShowFoldersForMovingSelectedMessages);
+            ArchiveButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Archive (verb)", ""), UIBarButtonItemStyle.Plain, ArchiveSelectedMessages);
+            DeleteButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Delete", ""), UIBarButtonItemStyle.Plain, DeleteSelectedMessages);
+            MarkButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Mark (verb)", ""), UIBarButtonItemStyle.Plain, MarkSelectedMessages);
             if (Messages.HasOutboxSemantics () || Messages.HasDraftsSemantics ()) {
                 ToolbarItems = new UIBarButtonItem [] {
                     new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace),
@@ -1135,9 +1135,9 @@ namespace NachoClient.iOS
                 if (lastSyncDate.HasValue) {
                     var diff = DateTime.UtcNow - lastSyncDate.Value;
                     if (diff.TotalSeconds < 60) {
-                        RefreshLabel.Text = "Last updated just now";
+                        RefreshLabel.Text = NSBundle.MainBundle.LocalizedString ("Last updated just now", "Label indicating a refresh just happened");
                     } else {
-                        RefreshLabel.Text = "Last updated " + Pretty.TimeWithDecreasingPrecision (lastSyncDate.Value);
+                        RefreshLabel.Text = string.Format (NSBundle.MainBundle.LocalizedString ("Last updated {0}", "Label indicating a specific refresh time"), Pretty.TimeWithDecreasingPrecision (lastSyncDate.Value));
                     }
                 } else {
                     RefreshLabel.Text = "";
@@ -1165,12 +1165,12 @@ namespace NachoClient.iOS
         {
             string errorString;
             if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
-                errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
+                errorString = String.Format (NSBundle.MainBundle.LocalizedString ("ErrorCode={0}", ""), pending.ResultSubKind);
             }
-            var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
+            var messageString = NSBundle.MainBundle.LocalizedString ("There was a problem sending this message.  You can resend this message or open it in the drafts folder.", "Message indicating send failure");
             var alertString = String.Format ("{0}\n{1}", messageString, errorString);
             var alert = UIAlertController.Create ("", alertString, UIAlertControllerStyle.Alert);
-            alert.AddAction (UIAlertAction.Create ("Edit Message", UIAlertActionStyle.Default, (UIAlertAction action) => {
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Edit Message", ""), UIAlertActionStyle.Default, (UIAlertAction action) => {
                 ComposeOutboxMessage (message);
             }));
             PresentViewController (alert, true, null);

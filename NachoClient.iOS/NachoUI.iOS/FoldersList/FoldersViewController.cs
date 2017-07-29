@@ -55,7 +55,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("contact-newemail")) {
                 ComposeButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, ComposeMessageClicked);
             }
-            ComposeButton.AccessibilityLabel = "New message";
+            ComposeButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Compose Email", "");
             NavigationItem.RightBarButtonItem = ComposeButton;
             AccountHeaders = new List<InsetLabelView> ();
         }
@@ -63,7 +63,7 @@ namespace NachoClient.iOS
         public void PresentAsChooserOverViewController (UIViewController vc, Action completion)
         {
             var navController = new UINavigationController (this);
-            NavigationItem.Title = "Move to Folder";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Move to Folder", "View title for folder picker");
             using (var image = UIImage.FromBundle ("modal-close")) {
                 DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (object sender, EventArgs e) => {
                     vc.DismissViewController (true, null);
@@ -71,7 +71,7 @@ namespace NachoClient.iOS
                     DismissButton = null;
                 });
             }
-            DismissButton.AccessibilityLabel = "Dismiss";
+            DismissButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             NavigationItem.LeftBarButtonItem = DismissButton;
             NavigationItem.RightBarButtonItem = null;
             vc.PresentViewController (navController, true, completion);
@@ -181,7 +181,7 @@ namespace NachoClient.iOS
             get {
                 if (_RecentHeader == null) {
                     _RecentHeader = new InsetLabelView ();
-                    _RecentHeader.Label.Text = "Recent Folders";
+                    _RecentHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("Recent Folders", "Title for recent folders section");
                     _RecentHeader.LabelInsets = new UIEdgeInsets (20.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
                     _RecentHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                     ApplyThemeToHeader (_RecentHeader);

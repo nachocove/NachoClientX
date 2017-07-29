@@ -139,17 +139,17 @@ namespace NachoClient.iOS
         public MessageViewController () : base ()
         {
             CreateEventButton = new NcUIBarButtonItem (UIImage.FromBundle ("cal-add"), UIBarButtonItemStyle.Plain, CreateEventButtonClicked);
-            CreateEventButton.AccessibilityLabel = "Create Event";
+            CreateEventButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Create Event", "");
             ActionButton = new NcUIBarButtonItem (UIImage.FromBundle ("email-action-swipe"), UIBarButtonItemStyle.Plain, ActionButtonClicked);
-            ActionButton.AccessibilityLabel = "Create Action";
+            ActionButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Create Action", "");
 
             HotButton = new NcUIBarButtonItem (UIImage.FromBundle ("email-not-hot"), UIBarButtonItemStyle.Plain, ToggleHot);
-            HotButton.AccessibilityLabel = "Hot";
+            HotButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Hot (verb)", "");
 
             UpdateNavigationItem ();
 
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
-            NavigationItem.BackBarButtonItem.Title = "Message";
+            NavigationItem.BackBarButtonItem.Title = NSBundle.MainBundle.LocalizedString ("Message (message view)", "Title for message view back button");
 
         }
 
@@ -693,8 +693,8 @@ namespace NachoClient.iOS
                 }
             } else {
                 Log.Error (Log.LOG_UI, "MessageViewController called without a valid bundle");
-                var alert = UIAlertController.Create ("Could not load message", "Sorry, the message could not be loaded. Please try again", UIAlertControllerStyle.Alert);
-                alert.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default, null));
+                var alert = UIAlertController.Create (NSBundle.MainBundle.LocalizedString ("Could not load message", ""), NSBundle.MainBundle.LocalizedString ("Sorry, the message could not be loaded. Please try again.", ""), UIAlertControllerStyle.Alert);
+                alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("OK", ""), UIAlertActionStyle.Default, null));
                 PresentViewController (alert, true, null);
             }
         }
@@ -845,9 +845,9 @@ namespace NachoClient.iOS
         {
             var canRetryDownload = result.Why != NcResult.WhyEnum.MissingOnServer;
             if (canRetryDownload) {
-                ErrorLabel.Text = "Message download failed. Tap here to retry.";
+                ErrorLabel.Text = NSBundle.MainBundle.LocalizedString ("Message download failed. Tap here to retry.", "");
             } else {
-                ErrorLabel.Text = "Message download failed.";
+                ErrorLabel.Text = NSBundle.MainBundle.LocalizedString ("Message download failed.", "");
             }
             ErrorTapGestureRecognizer.Enabled = canRetryDownload;
             nfloat padding = 14.0f;
