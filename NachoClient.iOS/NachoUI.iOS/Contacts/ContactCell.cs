@@ -83,7 +83,7 @@ namespace NachoClient.iOS
                     TextLabel.Text = phone;
                     DetailTextLabel.Text = "";
                 } else {
-                    TextLabel.Text = "Unnamed";
+                    TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Unnamed (contact list)", "Fallback text for contact with no name");
                     TextLabel.TextColor = theme.DisabledTextColor;
                     DetailTextLabel.Text = "";
                 }

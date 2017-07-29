@@ -26,6 +26,15 @@
 "More" = "More";
 "Forward (verb)" = "Forward";
 "Send" = "Send";
+"Email Address" = "Email Address";
+"Phone (noun)" = "Phone";
+"Phone Number" = "Phone Number";
+"Compose Email" = "Compose Email";
+"Call (verb)" = "Call";
+"Dial (verb)" = "Dial";
+"Email (verb)" = "Email";
+"Copy" = "Copy";
+"Value" = "Value";
 
 
 /* --------------------------------------------------------------------- */
@@ -283,8 +292,6 @@
 /* Swipe actions */
 "Send Invite" = "Send Invite";
 "Required (calendar attendee)" = "Required";
-"Dial (verb)" = "Dial";
-"Email (verb)" = "Email";
 "I'm Late" = "I'm Late";
 
 /* fallback text for calendar attendee */
@@ -562,6 +569,181 @@
 
 /* Title for note preview */
 "Preview Note" = "Preview Note";
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Contacts */
+
+
+"Edit Contact (verb)" = "Edit Contact";
+
+/* Fallback text for contact with no name */
+"Unnamed (contact list)" = "Unnamed";
+
+/* Fallback text for deleted contact */
+"This contact is unavailable" = "This contact is unavailable";
+
+/* Fallback text for unnamed contact */
+"No name for this contact" = "No name for this contact";
+
+/* Text for contact without email address */
+"No email address for this contact" = "No email address for this contact";
+
+/* Text for contact without phone number */
+"No phone number for this contact" = "No phone number for this contact";
+
+/* Title for contact chooser table */
+"Contacts (chooser)" = "Contacts";
+
+/* Alert title for user entered email address */
+"Invalid email address" = "Invalid email address";
+
+/* Alert message for invalid user entered email address */
+"The value must be an email address containing '@'" = "The value must be an email address containing '@'";
+
+/* Alert title when selecting a contact without an email address */
+"E-mail Address Missing" = "E-mail Address Missing";
+
+/* Alert message when selecting a contact without an email address */
+"You have selected a contact without an e-mail address. Would you like to edit this contact?" = "You have selected a contact without an e-mail address. Would you like to edit this contact?";
+
+/* Alert message when choosing a contact without an email address */
+"You have selected a contact without an e-mail address." = "You have selected a contact without an e-mail address.";
+
+/* Messge for contact that does not have an email address */
+"The contact you selected does not have an email address. Please add an email address for this contact." = "The contact you selected does not have an email address. Please add an email address for this contact.";
+
+/* Button title for setting default email */
+"Set as default email address" = "Set as default email address";
+
+/* Button title to compose email */
+"Compose Email (contact)" = "Compose Email";
+
+/* Message for label when contact does not have a phone number */
+"The contact you selected does not have a phone number. Please add a phone number for this contact." = "The contact you selected does not have a phone number. Please add a phone number for this contact.";
+
+/* Button title for calling a contact */
+"Call Contact" = "Call Contact";
+
+/* Button title for setting default phone number */
+"Set as default phone number" = "Set as default phone number";
+
+/* Button title for setting a default address */
+"Set as default email address" = "Set as default email address";
+
+/* Button title for toggling default */
+"Toggle Default" = "Toggle Default";
+
+/* View title for setting default email */
+"Add a New Email" = "Add a New Email";
+
+/* View title for setting default phone */
+"Add a New Number" = "Add a New Number";
+
+/* View title for choosing default phone */
+"Select a Phone" = "Select a Phone";
+
+/* View title for choosing default email */
+"Select an Email" = "Select an Email";
+
+/* Title for contact detail segment */
+"Contact (contact segment)" = "Contact";
+
+/* Title for contact detail segment */
+"Interactions (contact segment)" = "Interactions";
+
+/* Title for contact detail segment */
+"Notes (contact segment)" = "Notes";
+
+/* Fallback text when contact is gone */
+"Contact is unavailable." = "Contact is unavailable.";
+
+/* Message explaining why notes are unavailable */
+"This contact has not been synced. Adding or editing notes is disabled." = "This contact has not been synced. Adding or editing notes is disabled.";
+
+/* Message describing how to use notes */
+"You have not entered any notes for this contact. You can add and edit notes by tapping the edit button in the top right corner of this screen." = "You have not entered any notes for this contact. You can add and edit notes by tapping the edit button in the top right corner of this screen.";
+
+/* Section header for contact details */
+"EMAIL (contact section)" = "EMAIL";
+
+/* Section header for contact detail */
+"PHONE (contact section)" = "PHONE";
+
+/* View title when adding a new contact */
+"Add Contact" = "Add Contact";
+
+/* View title when editing a contact */
+"Edit Contact (title)" = "Edit Contact";
+
+/* Button title for adding a contact phone */
+"Add Phone" = "Add Phone";
+
+/* Button title for adding a contact email */
+"Add Email" = "Add Email";
+
+/* Button title for adding a contact date */
+"Add Date" = "Add Date";
+
+/* Button title for adding a contact address */
+"Add Address" = "Add Address";
+
+/* Button title for adding a contact IM address */
+"Add IM Address" = "Add IM Address";
+
+/* Button title for adding a contact relationship */
+"Add Relationship" = "Add Relationship";
+
+/* Button title for adding a contact other field */
+"Add Other" = "Add Other";
+
+/* Section header for notes on contact edit page */
+"Notes (contact edit)" = "Notes";
+
+/* Button title for deleting a contact */
+"Delete Contact" = "Delete Contact";
+
+/* Confirmation message title when discarding contact edits */
+"Discard Changes? (contact)" = "Discard Changes?";
+
+/* Confirmation message when discarding contact edits */
+"Going back will discard your changes. Are you sure?" = "Going back will discard your changes. Are you sure?";
+
+/* Title for alert confirmation when deleting contact */
+"Delete Contact (title)" = "Delete Contact";
+
+/* Message for confirmation when deleting contact */
+"Are you sure that you want to delete this contact? This operation cannot be undone." = "Are you sure that you want to delete this contact? This operation cannot be undone.";
+
+/* Placeholder for relationship field */
+"Name (contact relationship)" = "Name";
+
+/* Title for contact account picker */
+"Choose an account for the new Contact" = "Choose an account for the new Contact";
+
+
+
+"No email address" = "No email address";
+"You've selected a contact who does not have an email address" = "You've selected a contact who does not have an email address";
+"No phone number" = "No phone number";
+"You've selected a contact who does not have a phone number" = "You've selected a contact who does not have a phone number";
+"Cannot Dial" = "Cannot Dial";
+"We are unable to dial this phone number" = "We are unable to dial this phone number";
+"Incorrect E-mail Address" = "Incorrect E-mail Address";
+"At least one of the e-mail addresses is in an invalid format." = "At least one of the e-mail addresses is in an invalid format.";
+"Nothing To Save" = "Nothing To Save";
+"No data. There is nothing to save." = "No data. There is nothing to save.";
+"Set As Default" = "Set As Default";
+"Default" = "Default";
+
+/* Contact Fields */
+"First Name" = "First Name";
+"Middle Name" = "Middle Name";
+"Last Name" = "Last Name";
+"Suffix" = "Suffix";
+"Company" = "Company";
+"IM Address" = "IM Address";
+
 
 /* --------------------------------------------------------------------- */
 /* MARK: - Common strings from NachoCore */

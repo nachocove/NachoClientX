@@ -105,11 +105,11 @@ namespace NachoClient.iOS
             navItem = new UINavigationItem ();
             using (var image = UIImage.FromBundle ("modal-close")) {
                 dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
-                dismissButton.AccessibilityLabel = "Close";
+                dismissButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
                 dismissButton.Clicked += DismissViewTouchUpInside;
                 navItem.LeftBarButtonItem = dismissButton;
             }
-            navBar.Items = new UINavigationItem[] { navItem };
+            navBar.Items = new UINavigationItem [] { navItem };
 
             View.AddSubview (navBar);
             nfloat yOffset = 64;
@@ -117,10 +117,10 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoBorderGray.ColorWithAlpha (.5f), View);
 
-//////////////ADD EMAIL VIEW
-//////////////ADD EMAIL VIEW
-//////////////ADD EMAIL VIEW
-//////////////ADD EMAIL VIEW
+            //////////////ADD EMAIL VIEW
+            //////////////ADD EMAIL VIEW
+            //////////////ADD EMAIL VIEW
+            //////////////ADD EMAIL VIEW
 
             yOffset = topOffset + 1;
             UIView addEmailView = new UIView (new CGRect (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
@@ -128,7 +128,7 @@ namespace NachoClient.iOS
             addEmailView.Tag = ADD_EMAIL_VIEW_TAG;
 
             UILabel noEmailLabel = new UILabel (new CGRect (X_INDENT, 15, View.Frame.Width - (X_INDENT * 2), 60));
-            noEmailLabel.Text = "The contact you selected does not have an email address. Please add an email address for this contact.";
+            noEmailLabel.Text = NSBundle.MainBundle.LocalizedString ("The contact you selected does not have an email address. Please add an email address for this contact.", "Messge for contact that does not have an email address");
             noEmailLabel.Font = A.Font_AvenirNextMedium14;
             noEmailLabel.TextColor = UIColor.White;
             noEmailLabel.Lines = 3;
@@ -149,7 +149,7 @@ namespace NachoClient.iOS
             var emailField = new UITextField (new CGRect (mailImage.Frame.Right + 15, 0, emailBox.Frame.Width - (mailImage.Frame.Right + 15), emailBox.Frame.Height));
             emailField.BackgroundColor = UIColor.White;
             emailField.TextColor = A.Color_NachoGreen;
-            emailField.Placeholder = "Email Address";
+            emailField.Placeholder = NSBundle.MainBundle.LocalizedString ("Email Address", "");
             emailField.Font = A.Font_AvenirNextMedium14;
             emailField.BorderStyle = UITextBorderStyle.None;
             emailField.TextAlignment = UITextAlignment.Left;
@@ -162,17 +162,17 @@ namespace NachoClient.iOS
             emailBox.AddSubview (emailField);
             addEmailView.AddSubview (emailBox);
 
-            AddDefaultToggleButton (emailBox.Frame.Left, emailBox.Frame.Bottom + 20, emailBox.Frame.Width, "Set as default email address", ToggleDefault, addEmailView, ADD_NEW_DEFAULT_EMAIL_BUTTON_TAG);
+            AddDefaultToggleButton (emailBox.Frame.Left, emailBox.Frame.Bottom + 20, emailBox.Frame.Width, NSBundle.MainBundle.LocalizedString ("Set as default email address", "Button title for setting default email"), ToggleDefault, addEmailView, ADD_NEW_DEFAULT_EMAIL_BUTTON_TAG);
 
-            UIView actionView = CreateActionView ("Compose Email", "now-newemail", SaveAndCompose, addEmailView, ADD_NEW_EMAIL_BUTTON_TAG);
+            UIView actionView = CreateActionView (NSBundle.MainBundle.LocalizedString ("Compose Email (contact)", "Button title to compose email"), "now-newemail", SaveAndCompose, addEmailView, ADD_NEW_EMAIL_BUTTON_TAG);
             addEmailView.AddSubview (actionView);
 
             scrollView.AddSubview (addEmailView);
 
-//////////////ADD PHONE VIEW
-//////////////ADD PHONE VIEW
-//////////////ADD PHONE VIEW
-//////////////ADD PHONE VIEW
+            //////////////ADD PHONE VIEW
+            //////////////ADD PHONE VIEW
+            //////////////ADD PHONE VIEW
+            //////////////ADD PHONE VIEW
             yOffset = topOffset + 1;
 
             UIView addPhoneView = new UIView (new CGRect (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
@@ -180,7 +180,7 @@ namespace NachoClient.iOS
             addPhoneView.Tag = PHONE_ADD_VIEW_TAG;
 
             UILabel noPhoneLabel = new UILabel (new CGRect (X_INDENT, 15, View.Frame.Width - (X_INDENT * 2), 60));
-            noPhoneLabel.Text = "The contact you selected does not have a phone number. Please add a phone number for this contact.";
+            noPhoneLabel.Text = NSBundle.MainBundle.LocalizedString ("The contact you selected does not have a phone number. Please add a phone number for this contact.", "Message for label when contact does not have a phone number");
             noPhoneLabel.Font = A.Font_AvenirNextMedium14;
             noPhoneLabel.TextColor = UIColor.White;
             noPhoneLabel.Lines = 3;
@@ -192,7 +192,7 @@ namespace NachoClient.iOS
             phoneBox.BackgroundColor = UIColor.White;
 
             UIButton selectLabelButton = new UIButton (new CGRect (0, 0, 90, CELL_HEIGHT));
-            selectLabelButton.AccessibilityLabel = "Phone label";
+            selectLabelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Phone (noun)", "");
             selectLabelButton.Tag = SELECT_PHONELABEL_BUTTON_TAG;
             selectLabelButton.TouchUpInside += SelectLabelTouchUpInside;
             selectLabelButton.BackgroundColor = UIColor.White;
@@ -212,7 +212,7 @@ namespace NachoClient.iOS
 
             var phoneField = new UITextField (new CGRect (selectLabelButton.Frame.Right + 15, 0, phoneBox.Frame.Width - (selectLabelButton.Frame.Right + 20), phoneBox.Frame.Height));
             phoneField.BackgroundColor = UIColor.White;
-            phoneField.Placeholder = "Phone Number";
+            phoneField.Placeholder = NSBundle.MainBundle.LocalizedString ("Phone Number", "");
             phoneField.TextColor = A.Color_NachoGreen;
             phoneField.Font = A.Font_AvenirNextMedium14;
             phoneField.BorderStyle = UITextBorderStyle.None;
@@ -226,19 +226,19 @@ namespace NachoClient.iOS
             phoneBox.AddSubview (phoneField);
             addPhoneView.AddSubview (phoneBox);
 
-            AddDefaultToggleButton (phoneBox.Frame.Left, phoneBox.Frame.Bottom + 20, phoneBox.Frame.Width, "Set as default phone number", ToggleDefault, addPhoneView, ADD_NEW_DEFAULT_PHONE_BUTTON_TAG);
+            AddDefaultToggleButton (phoneBox.Frame.Left, phoneBox.Frame.Bottom + 20, phoneBox.Frame.Width, NSBundle.MainBundle.LocalizedString ("Set as default phone number", "Button title for setting default phone number"), ToggleDefault, addPhoneView, ADD_NEW_DEFAULT_PHONE_BUTTON_TAG);
 
-            UIView callActionView = CreateActionView ("Call Contact", "contacts-call-swipe", SaveAndCall, addPhoneView, ADD_NEW_PHONE_BUTTON_TAG);
+            UIView callActionView = CreateActionView (NSBundle.MainBundle.LocalizedString ("Call Contact", "Button title for calling a contact"), "contacts-call-swipe", SaveAndCall, addPhoneView, ADD_NEW_PHONE_BUTTON_TAG);
             addPhoneView.AddSubview (callActionView);
 
             addPhoneView.Hidden = true;
             scrollView.AddSubview (addPhoneView);
 
 
-////////////MULTI PHONE SELECTOR VIEW
-////////////MULTI PHONE SELECTOR VIEW
-////////////MULTI PHONE SELECTOR VIEW
-////////////MULTI PHONE SELECTOR VIEW
+            ////////////MULTI PHONE SELECTOR VIEW
+            ////////////MULTI PHONE SELECTOR VIEW
+            ////////////MULTI PHONE SELECTOR VIEW
+            ////////////MULTI PHONE SELECTOR VIEW
             yOffset = topOffset + 1;
 
             UIView selectPhoneView = new UIView (new CGRect (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
@@ -283,15 +283,15 @@ namespace NachoClient.iOS
                 internalYOffset += 20;
             }
 
-            AddDefaultToggleButton (phoneBox.Frame.Left, internalYOffset, phoneBox.Frame.Width, "Set as default phone number", ToggleDefault, selectPhoneView, SET_DEFAULT_PHONE_BUTTON_TAG);
+            AddDefaultToggleButton (phoneBox.Frame.Left, internalYOffset, phoneBox.Frame.Width, NSBundle.MainBundle.LocalizedString ("Set as default phone number", ""), ToggleDefault, selectPhoneView, SET_DEFAULT_PHONE_BUTTON_TAG);
 
-            UIView callAction = CreateActionView ("Call Contact", "contacts-call-swipe", CallSelectedPhone, selectPhoneView, CALL_CONTACT_BUTTON_TAG);
+            UIView callAction = CreateActionView (NSBundle.MainBundle.LocalizedString ("Call Contact", "Button title for calling a contact"), "contacts-call-swipe", CallSelectedPhone, selectPhoneView, CALL_CONTACT_BUTTON_TAG);
             selectPhoneView.AddSubview (callAction);
 
-////////////MULTI EMAIL SELECTOR VIEW
-////////////MULTI EMAIL SELECTOR VIEW
-////////////MULTI EMAIL SELECTOR VIEW
-////////////MULTI EMAIL SELECTOR VIEW
+            ////////////MULTI EMAIL SELECTOR VIEW
+            ////////////MULTI EMAIL SELECTOR VIEW
+            ////////////MULTI EMAIL SELECTOR VIEW
+            ////////////MULTI EMAIL SELECTOR VIEW
             yOffset = topOffset + 1;
             UIView selectEmailView = new UIView (new CGRect (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
             selectEmailView.BackgroundColor = A.Color_NachoGreen;
@@ -324,10 +324,10 @@ namespace NachoClient.iOS
 
             internalYOffset += 20;
 
-            UIButton toggleButton = AddDefaultToggleButton (phoneBox.Frame.Left, internalYOffset, phoneBox.Frame.Width, "Set as default email address", ToggleDefault, selectEmailView, SET_DEFAULT_EMAIL_BUTTON_TAG);
+            UIButton toggleButton = AddDefaultToggleButton (phoneBox.Frame.Left, internalYOffset, phoneBox.Frame.Width, NSBundle.MainBundle.LocalizedString ("Set as default email address", "Button title for setting a default address"), ToggleDefault, selectEmailView, SET_DEFAULT_EMAIL_BUTTON_TAG);
             toggleButton.TitleEdgeInsets = new UIEdgeInsets (8, 0, 8, 34);
 
-            UIView emailAction = CreateActionView ("Compose Email", "now-newemail", EmailSelectedAddress, selectEmailView, COMPOSE_EMAIL_BUTTON_TAG);
+            UIView emailAction = CreateActionView (NSBundle.MainBundle.LocalizedString ("Compose Email", ""), "now-newemail", EmailSelectedAddress, selectEmailView, COMPOSE_EMAIL_BUTTON_TAG);
             selectEmailView.AddSubview (emailAction);
         }
 
@@ -343,7 +343,7 @@ namespace NachoClient.iOS
             actionButton.Layer.CornerRadius = 64 / 2;
             actionButton.Layer.MasksToBounds = true;
             actionButton.Layer.BorderColor = A.Color_NachoBackgroundGray.ColorWithAlpha (.5f).CGColor;
-            actionButton.Layer.BorderWidth = .5f;                 
+            actionButton.Layer.BorderWidth = .5f;
             actionButton.Frame = new CGRect (0, 0, 64, 64);
             actionButton.Tag = buttonTag;
             actionButton.Center = new CGPoint (actionView.Frame.Width / 2, actionView.Frame.Height / 2 - 50);
@@ -367,7 +367,7 @@ namespace NachoClient.iOS
         protected UIButton AddDefaultToggleButton (nfloat frameX, nfloat frameY, nfloat width, string label, EventHandler buttonClicked, UIView parent, int tag)
         {
             UIButton toggleButton = new UIButton (new CGRect (frameX, frameY, width, CELL_HEIGHT));
-            toggleButton.AccessibilityLabel = "Toggle";
+            toggleButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Toggle Default", "Button title for toggling default");
             toggleButton.Tag = tag;
             toggleButton.TouchUpInside += buttonClicked;
             toggleButton.Layer.BorderColor = A.Color_NachoBlue.CGColor;
@@ -480,22 +480,22 @@ namespace NachoClient.iOS
         {
             switch (viewType) {
             case DefaultSelectionType.EmailAdder:
-                navItem.Title = "Add a New Email";
+                navItem.Title = NSBundle.MainBundle.LocalizedString ("Add a New Email", "View title for setting default email");
                 UIView emailAddView = (UIView)View.ViewWithTag (ADD_EMAIL_VIEW_TAG);
                 emailAddView.Hidden = false;
                 break;
             case DefaultSelectionType.PhoneNumberAdder:
-                navItem.Title = "Add a New Number";
+                navItem.Title = NSBundle.MainBundle.LocalizedString ("Add a New Number", "View title for setting default phone");
                 UIView phoneAddView = (UIView)View.ViewWithTag (PHONE_ADD_VIEW_TAG);
                 phoneAddView.Hidden = false;
                 break;
             case DefaultSelectionType.DefaultPhoneSelector:
-                navItem.Title = "Select a Phone";
+                navItem.Title = NSBundle.MainBundle.LocalizedString ("Select a Phone", "View title for choosing default phone");
                 UIView phoneSelectView = (UIView)View.ViewWithTag (SELECT_PHONE_VIEW_TAG);
                 phoneSelectView.Hidden = false;
                 break;
             case DefaultSelectionType.DefaultEmailSelector:
-                navItem.Title = "Select an Email";
+                navItem.Title = NSBundle.MainBundle.LocalizedString ("Select an Email", "View title for choosing default email");
                 UIView emailSelectView = (UIView)View.ViewWithTag (SELECT_EMAIL_VIEW_TAG);
                 emailSelectView.Hidden = false;
                 break;
@@ -643,7 +643,7 @@ namespace NachoClient.iOS
             phoneLabelLabel.Text = ContactsHelper.ExchangeNameToLabel (selectedName);
 
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
-            phoneTextField.Text = newPhoneString; 
+            phoneTextField.Text = newPhoneString;
         }
 
         protected override void OnKeyboardChanged ()

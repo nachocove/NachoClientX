@@ -41,7 +41,7 @@ namespace NachoClient.iOS
 
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             NewContactButton = new NcUIBarButtonItem (UIImage.FromBundle ("chat-sharecontact"), UIBarButtonItemStyle.Plain, NewContact);
-            DoneSwipingButton = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Plain, EndSwiping);
+            DoneSwipingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Done", ""), UIBarButtonItemStyle.Plain, EndSwiping);
 
             UpdateNavigationItem ();
         }
@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                 SearchResultsViewController.Cleanup ();
                 SearchResultsViewController = null;
             }
-            
+
             base.Cleanup ();
         }
 
@@ -167,19 +167,19 @@ namespace NachoClient.iOS
 
         void ShowSearch (object sender, EventArgs e)
         {
-        	EndAllTableEdits ();
-        	if (SearchController == null) {
-        		SearchResultsViewController = new ContactSearchResultsViewController () { IsLongLived = true };
-        		SearchController = new NachoSearchController (SearchResultsViewController);
-        		SearchController.Delegate = this;
-        	}
-        	SearchResultsViewController.PrepareForSearching ();
-        	SearchController.PresentOverViewController (this);
+            EndAllTableEdits ();
+            if (SearchController == null) {
+                SearchResultsViewController = new ContactSearchResultsViewController () { IsLongLived = true };
+                SearchController = new NachoSearchController (SearchResultsViewController);
+                SearchController.Delegate = this;
+            }
+            SearchResultsViewController.PrepareForSearching ();
+            SearchController.PresentOverViewController (this);
         }
 
         void EndSwiping (object sender, EventArgs e)
         {
-        	EndSwiping ();
+            EndSwiping ();
         }
 
         void NewContact (object sender, EventArgs e)
@@ -192,9 +192,9 @@ namespace NachoClient.iOS
             var group = ContactGroups [indexPath.Section];
             var contact = group.GetCachedContact (indexPath.Row);
             var address = Util.GetContactDefaultEmail (contact);
-            if (address != null){
-                ComposeMessage(address);
-            }else{
+            if (address != null) {
+                ComposeMessage (address);
+            } else {
                 SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
             }
         }
@@ -204,7 +204,7 @@ namespace NachoClient.iOS
             var group = ContactGroups [indexPath.Section];
             var contact = group.GetCachedContact (indexPath.Row);
             Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
-                SelectDefault(contact, type);
+                SelectDefault (contact, type);
             });
         }
 
@@ -215,7 +215,7 @@ namespace NachoClient.iOS
 
         public void DidChangeSearchText (NachoSearchController searchController, string text)
         {
-        	SearchResultsViewController.SearchForText (text);
+            SearchResultsViewController.SearchForText (text);
         }
 
         public void DidSelectSearch (NachoSearchController searchController)
@@ -307,20 +307,20 @@ namespace NachoClient.iOS
             var actions = new List<SwipeTableRowAction> ();
             var hasEmail = contact.EmailAddresses.Count > 0;
             var hasPhone = contact.PhoneNumbers.Count > 0;
-            if (hasEmail){
-                actions.Add (new SwipeTableRowAction ("Email", UIImage.FromBundle ("contacts-email-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), EmailContact));
+            if (hasEmail) {
+                actions.Add (new SwipeTableRowAction ("Email (verb)", UIImage.FromBundle ("contacts-email-swipe"), UIColor.FromRGB (0x00, 0xC8, 0x9D), EmailContact));
             }
-            if (hasPhone){
-                actions.Add (new SwipeTableRowAction ("Call", UIImage.FromBundle ("contacts-call-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), CallContact));
+            if (hasPhone) {
+                actions.Add (new SwipeTableRowAction ("Call (verb)", UIImage.FromBundle ("contacts-call-swipe"), UIColor.FromRGB (0xF5, 0x98, 0x27), CallContact));
             }
             return actions;
         }
 
         public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-        	base.WillDisplay (tableView, cell, indexPath);
-        	var themed = cell as ThemeAdopter;
-        	if (themed != null && adoptedTheme != null) {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
                 themed.AdoptTheme (adoptedTheme);
             }
         }
@@ -333,8 +333,8 @@ namespace NachoClient.iOS
 
         public override void DidEndSwiping (UITableView tableView, NSIndexPath indexPath)
         {
-        	base.DidEndSwiping (tableView, indexPath);
-        	UpdateNavigationItem ();
+            base.DidEndSwiping (tableView, indexPath);
+            UpdateNavigationItem ();
         }
 
         #endregion
@@ -362,9 +362,10 @@ namespace NachoClient.iOS
             var accounts = McAccount.GetCanAddContactAccounts ();
             var actions = new List<NcAlertAction> ();
             foreach (var account in accounts) {
-                actions.Add (CreateAddAccountAction(account));
+                actions.Add (CreateAddAccountAction (account));
             }
-            NcActionSheet.Show (NewContactButton, this, "Choose an account for the new Contact", "", actions.ToArray ());
+            actions.Add (new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), () => { }));
+            NcActionSheet.Show (NewContactButton, this, NSBundle.MainBundle.LocalizedString ("Choose an account for the new Contact", "Title for contact account picker"), "", actions.ToArray ());
         }
 
         NcAlertAction CreateAddAccountAction (McAccount account)
@@ -404,7 +405,7 @@ namespace NachoClient.iOS
 
         protected void EndAllTableEdits ()
         {
-        	if (SwipingIndexPath != null) {
+            if (SwipingIndexPath != null) {
                 EndSwiping ();
             }
         }
@@ -424,7 +425,7 @@ namespace NachoClient.iOS
 
         public void ContactDefaultSelectorComposeMessage (string address)
         {
-        	ComposeMessage (address);
+            ComposeMessage (address);
         }
 
         #endregion
@@ -470,7 +471,7 @@ namespace NachoClient.iOS
         public UILabel NameLabel { get; private set; }
         CALayer BorderLayer;
         nfloat BorderWidth = 0.5f;
-        
+
         public ContactGroupTableViewHeaderView (IntPtr handle) : base (handle)
         {
             NameLabel = new UILabel ();
@@ -514,13 +515,13 @@ namespace NachoClient.iOS
 
         public override void Cleanup ()
         {
-        	Searcher = null;
-        	base.Cleanup ();
+            Searcher = null;
+            base.Cleanup ();
         }
 
         public override void LoadView ()
         {
-        	base.LoadView ();
+            base.LoadView ();
             TableView.RegisterClassForCellReuse (typeof (ContactCell), ContactCellIdentifier);
             TableView.BackgroundColor = UIColor.White;
             TableView.RowHeight = 64.0f;

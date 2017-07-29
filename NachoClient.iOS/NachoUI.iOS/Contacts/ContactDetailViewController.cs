@@ -202,11 +202,11 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
-            NavigationItem.Title = "Contacts";
+            NavigationItem.Title = "";
 
             editContact = new NcUIBarButtonItem ();
             editContact.Image = UIImage.FromBundle ("gen-edit");
-            editContact.AccessibilityLabel = "Edit";
+            editContact.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Edit", "");
             editContact.Clicked += EditButtonClicked;
             NavigationItem.SetRightBarButtonItem (editContact, true);
 
@@ -282,7 +282,7 @@ namespace NachoClient.iOS
             UILabel callLabel = new UILabel (new CGRect (callIcon.Frame.Right + 10, 15, 50, 15));
             callLabel.TextColor = A.Color_NachoGreen;
             callLabel.Font = A.Font_AvenirNextMedium14;
-            callLabel.Text = "Call";
+            callLabel.Text = NSBundle.MainBundle.LocalizedString ("Call (verb)", "");
             callLabel.TextAlignment = UITextAlignment.Left;
             callLabel.SizeToFit ();
             callView.AddSubview (callLabel);
@@ -305,7 +305,7 @@ namespace NachoClient.iOS
             UILabel emailLabel = new UILabel (new CGRect (emailIcon.Frame.Right + 10, 15, 50, 15));
             emailLabel.TextColor = A.Color_NachoGreen;
             emailLabel.Font = A.Font_AvenirNextMedium14;
-            emailLabel.Text = "Email";
+            emailLabel.Text = NSBundle.MainBundle.LocalizedString ("Email (verb)", "");
             emailLabel.TextAlignment = UITextAlignment.Left;
             emailLabel.SizeToFit ();
             emailView.AddSubview (emailLabel);
@@ -324,9 +324,9 @@ namespace NachoClient.iOS
             var segmentedControl = new UISegmentedControl ();
             segmentedControl.Frame = new CGRect (PADDING, VERTICAL_PADDING, segmentedViewHolder.Frame.Width - (PADDING * 2), SEGMENTED_CONTROL_HEIGHT);
             segmentedControl.TintColor = A.Color_NachoGreen;
-            segmentedControl.InsertSegment ("Contact", 0, false);
-            segmentedControl.InsertSegment ("Interactions", 1, false);
-            segmentedControl.InsertSegment ("Notes", 2, false);
+            segmentedControl.InsertSegment (NSBundle.MainBundle.LocalizedString ("Contact (contact segment)", "Title for contact detail segment"), 0, false);
+            segmentedControl.InsertSegment (NSBundle.MainBundle.LocalizedString ("Interactions (contact segment)", "Title for contact detail segment"), 1, false);
+            segmentedControl.InsertSegment (NSBundle.MainBundle.LocalizedString ("Notes (contact segment)", "Title for contact detail segment"), 2, false);
             segmentedControl.SelectedSegment = 0;
 
             var segmentedControlTextNormal = new UITextAttributes ();
@@ -362,7 +362,7 @@ namespace NachoClient.iOS
             InteractionsTableView.Hidden = true;
             InteractionsTableView.BackgroundColor = UIColor.White;
             InteractionsTableView.RowHeight = MessageCell.PreferredHeight (3, A.Font_AvenirNextMedium17, A.Font_AvenirNextMedium14);
-            InteractionsTableView.AccessibilityLabel = "Contact interaction";
+            InteractionsTableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Interactions (contact segment)", "");
             InteractionsTableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
             segmentedViewHolder.AddSubview (InteractionsTableView);
 
@@ -428,7 +428,7 @@ namespace NachoClient.iOS
 
             if (null == contact) {
                 var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
-                unavailableTitle.Text = "Contact is unavailable.";
+                unavailableTitle.Text = NSBundle.MainBundle.LocalizedString ("Contact is unavailable.", "Fallback text when contact is gone");
                 return;
             }
 
@@ -579,17 +579,14 @@ namespace NachoClient.iOS
             notesTextView.TextColor = A.Color_NachoGreen;
 
             if (!contact.CanUserEdit ()) {
-                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
+                notesTextView.Text = NSBundle.MainBundle.LocalizedString ("This contact has not been synced. Adding or editing notes is disabled.", "Message explaining why notes are unavailable");
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
                 if (null != contactBody) {
                     notesTextView.Text = contactBody.GetContentsString ();
                 }
                 if (string.IsNullOrEmpty (notesTextView.Text)) {
-                    notesTextView.Text = "You have not entered any " +
-                    "notes for this contact. You can add and " +
-                    "edit notes by tapping the edit button in the top" +
-                    " right corner of this screen.";
+                    notesTextView.Text = NSBundle.MainBundle.LocalizedString ("You have not entered any notes for this contact. You can add and edit notes by tapping the edit button in the top right corner of this screen.", "Message describing how to use notes");
                     notesTextView.TextColor = UIColor.Gray;
                 }
             }
@@ -674,7 +671,7 @@ namespace NachoClient.iOS
         protected void DefaultEmailTapHandler ()
         {
             if (contact == null) {
-                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+                Util.ComplainAbout (NSBundle.MainBundle.LocalizedString ("No Email Address", ""), NSBundle.MainBundle.LocalizedString ("This contact does not have an email address.", ""));
             } else {
                 var address = Util.GetContactDefaultEmail (contact);
                 if (address == null) {
@@ -682,7 +679,7 @@ namespace NachoClient.iOS
                         if (contact.CanUserEdit ()) {
                             SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
                         } else {
-                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                            Util.ComplainAbout (NSBundle.MainBundle.LocalizedString ("No Email Address", ""), NSBundle.MainBundle.LocalizedString ("This contact does not have an email address, and we are unable to modify the contact.", ""));
                         }
                     } else {
                         SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
@@ -724,7 +721,7 @@ namespace NachoClient.iOS
             var emailLabel = new UILabel (new CGRect (emailIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             emailLabel.Font = A.Font_AvenirNextMedium10;
             emailLabel.TextColor = UIColor.DarkGray;
-            emailLabel.Text = "EMAIL";
+            emailLabel.Text = NSBundle.MainBundle.LocalizedString ("EMAIL (contact section)", "Section header for contact details");
             emailLabel.SizeToFit ();
             emailView.AddSubview (emailLabel);
 
@@ -799,7 +796,7 @@ namespace NachoClient.iOS
             if (!string.IsNullOrEmpty (phone.Label)) {
                 phoneLabelText = phone.Label.ToUpper ();
             } else {
-                phoneLabelText = "PHONE";
+                phoneLabelText = NSBundle.MainBundle.LocalizedString ("PHONE (contact section)", "Section header for contact detail");
             }
 
             var phoneLabel = new UILabel (new CGRect (phoneIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
@@ -917,7 +914,7 @@ namespace NachoClient.iOS
             copyMenu.SetTargetRect (new CGRect (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 7, 0, 0), longPressData.containerView.Superview);
             copyMenu.ArrowDirection = UIMenuControllerArrowDirection.Down;
 
-            UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new ObjCRuntime.Selector ("DoCopy"));
+            UIMenuItem copyMenuItem = new UIMenuItem (NSBundle.MainBundle.LocalizedString ("Copy", ""), new ObjCRuntime.Selector ("DoCopy"));
             copyMenu.MenuItems = new UIMenuItem [] { copyMenuItem };
             copyMenu.SetMenuVisible (true, true);
         }
@@ -1039,7 +1036,7 @@ namespace NachoClient.iOS
         protected void TouchedEmailButton (string address)
         {
             if (string.IsNullOrEmpty (address)) {
-                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                ComplainAbout (NSBundle.MainBundle.LocalizedString ("No email address", ""), NSBundle.MainBundle.LocalizedString ("You've selected a contact who does not have an email address", ""));
                 return;
             }
             var account = McAccount.EmailAccountForContact (contact);
@@ -1053,11 +1050,11 @@ namespace NachoClient.iOS
         protected void TouchedCallButton (string number)
         {
             if (string.IsNullOrEmpty (number)) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
+                ComplainAbout (NSBundle.MainBundle.LocalizedString ("No phone number", ""), NSBundle.MainBundle.LocalizedString ("You've selected a contact who does not have a phone number", ""));
                 return;
             }
             if (!PerformAction ("tel", number)) {
-                ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
+                ComplainAbout (NSBundle.MainBundle.LocalizedString ("Cannot Dial", ""), NSBundle.MainBundle.LocalizedString ("We are unable to dial this phone number", ""));
             }
         }
 
@@ -1173,7 +1170,7 @@ namespace NachoClient.iOS
             NcAssert.True (null != contact);
 
             if (!contact.CanUserEdit ()) {
-                return "This contact has not been synced. Adding or editing notes is disabled.";
+                return NSBundle.MainBundle.LocalizedString ("This contact has not been synced. Adding or editing notes is disabled.", "");
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
                 if (null != contactBody) {

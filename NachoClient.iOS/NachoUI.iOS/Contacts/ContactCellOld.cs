@@ -1,6 +1,7 @@
 //  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using Foundation;
 using CoreGraphics;
 using UIKit;
 
@@ -9,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    
+
     public static class ContactCellOld
     {
 
@@ -30,10 +31,10 @@ namespace NachoClient.iOS
 
         private static SwipeActionDescriptor CALL_BUTTON =
             new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.5f, UIImage.FromBundle ("contacts-call-swipe"),
-                "Dial", A.Color_NachoSwipeActionOrange);
+                "Dial (verb)", A.Color_NachoSwipeActionOrange);
         private static SwipeActionDescriptor EMAIL_BUTTON =
             new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.5f, UIImage.FromBundle ("contacts-email-swipe"),
-                "Email", A.Color_NachoSwipeActionMatteBlack);
+                "Email (verb)", A.Color_NachoSwipeActionMatteBlack);
 
         private const string ContactCellReuseIdentifier = "ContactCell";
 
@@ -125,7 +126,7 @@ namespace NachoClient.iOS
             }
 
             if (null == contact) {
-                titleLabel.Text = "This contact is unavailable";
+                titleLabel.Text = NSBundle.MainBundle.LocalizedString ("This contact is unavailable", "Fallback text for deleted contact");
                 titleLabel.TextColor = UIColor.LightGray;
                 titleLabel.Font = A.Font_AvenirNextRegular14;
                 subtitle1Label.Text = "";
@@ -148,22 +149,22 @@ namespace NachoClient.iOS
 
             if (String.IsNullOrEmpty (displayTitle) && !String.IsNullOrEmpty (displaySubtitle1)) {
                 displayTitle = displaySubtitle1;
-                displaySubtitle1 = "No name for this contact";
+                displaySubtitle1 = NSBundle.MainBundle.LocalizedString ("No name for this contact", "Fallback text for unnamed contact");
                 displaySubtitle1Color = A.Color_NachoTextGray;
             }
 
             if (String.IsNullOrEmpty (displayTitle)) {
-                displayTitle = "No name for this contact";
+                displayTitle = NSBundle.MainBundle.LocalizedString ("No name for this contact", "Fallback text for unnamed contact");
                 displayTitleColor = A.Color_NachoLightText;
             }
 
             if (String.IsNullOrEmpty (displaySubtitle1)) {
-                displaySubtitle1 = "No email address for this contact";
+                displaySubtitle1 = NSBundle.MainBundle.LocalizedString ("No email address for this contact", "Text for contact without email address");
                 displaySubtitle1Color = A.Color_NachoLightText;
             }
 
             if (String.IsNullOrEmpty (displaySubtitle2)) {
-                displaySubtitle2 = "No phone number for this contact";
+                displaySubtitle2 = NSBundle.MainBundle.LocalizedString ("No phone number for this contact", "Text for contact without phone number");
                 displaySubtitle2Color = A.Color_NachoLightText;
             }
 

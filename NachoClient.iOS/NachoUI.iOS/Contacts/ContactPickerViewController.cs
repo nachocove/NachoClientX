@@ -56,7 +56,7 @@ namespace NachoClient.iOS
             SearchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             CloseButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (CloseButton, "icn-close");
-            CloseButton.AccessibilityLabel = "Close";
+            CloseButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             CloseButton.Clicked += Close;
 
             NavigationItem.LeftBarButtonItem = CloseButton;

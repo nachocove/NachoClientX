@@ -195,23 +195,23 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("icn-close")) {
                 cancelButton.Image = image;
             }
-            cancelButton.AccessibilityLabel = "Cancel";
+            cancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel", "");
             cancelButton.Clicked += CancelButtonClicked;
             cancelButton.TintColor = A.Color_NachoBlue;
             NavigationItem.SetLeftBarButtonItem (cancelButton, true);
 
             switch (controllerType) {
             case ControllerType.Add:
-                NavigationItem.Title = "Add Contact";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Add Contact (title)", "View title when adding a new contact");
                 break;
             case ControllerType.Edit:
-                NavigationItem.Title = "Edit Contact";
+                NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Edit Contact (title)", "View title when editing a contact");
                 break;
             }
 
             doneButton = new NcUIBarButtonItem ();
-            doneButton.Title = "Save";
-            doneButton.AccessibilityLabel = "Save";
+            doneButton.Title = NSBundle.MainBundle.LocalizedString ("Save", "");
+            doneButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Save", "");
             doneButton.Clicked += DoneButtonClicked;
             NavigationItem.SetRightBarButtonItem (doneButton, true);
 
@@ -276,7 +276,7 @@ namespace NachoClient.iOS
             firstNameField.Font = A.Font_AvenirNextMedium14;
             firstNameField.TextColor = A.Color_NachoGreen;
             firstNameField.TextAlignment = UITextAlignment.Left;
-            firstNameField.Placeholder = "First Name";
+            firstNameField.Placeholder = NSBundle.MainBundle.LocalizedString ("First Name", "");
             firstNameField.Tag = FIRST_NAME_TAG;
             firstNameField.ShouldChangeCharacters += NameChanged;
             firstNameField.EditingDidEnd += NameEditingEnded;
@@ -289,7 +289,7 @@ namespace NachoClient.iOS
             middleNameField.Font = A.Font_AvenirNextMedium14;
             middleNameField.TextColor = A.Color_NachoGreen;
             middleNameField.TextAlignment = UITextAlignment.Left;
-            middleNameField.Placeholder = "Middle Name";
+            middleNameField.Placeholder = NSBundle.MainBundle.LocalizedString ("Middle Name", "");
             middleNameField.Tag = MIDDLE_NAME_TAG;
             middleNameField.ShouldChangeCharacters += NameChanged;
             middleNameField.EditingDidEnd += NameEditingEnded;
@@ -303,7 +303,7 @@ namespace NachoClient.iOS
             lastNameField.TextColor = A.Color_NachoGreen;
             lastNameField.TextAlignment = UITextAlignment.Left;
             lastNameField.Tag = LAST_NAME_TAG;
-            lastNameField.Placeholder = "Last Name";
+            lastNameField.Placeholder = NSBundle.MainBundle.LocalizedString ("Last Name", "");
             lastNameField.ShouldChangeCharacters += NameChanged;
             lastNameField.EditingDidEnd += NameEditingEnded;
             lastNameField.ShouldReturn += NameFieldReturn;
@@ -315,7 +315,7 @@ namespace NachoClient.iOS
             suffixField.TextColor = A.Color_NachoGreen;
             suffixField.TextAlignment = UITextAlignment.Left;
             suffixField.Tag = SUFFIX_TAG;
-            suffixField.Placeholder = "Suffix";
+            suffixField.Placeholder = NSBundle.MainBundle.LocalizedString ("Suffix", "");
             suffixField.ShouldChangeCharacters += NameChanged;
             suffixField.EditingDidEnd += NameEditingEnded;
             suffixField.ShouldReturn += NameFieldReturn;
@@ -336,7 +336,7 @@ namespace NachoClient.iOS
             headerCompanyTextField.TextAlignment = UITextAlignment.Left;
             headerCompanyTextField.Tag = HEADER_COMPANY_TEXT_FIELD;
             headerCompanyTextField.SpellCheckingType = UITextSpellCheckingType.No;
-            headerCompanyTextField.Placeholder = "Company";
+            headerCompanyTextField.Placeholder = NSBundle.MainBundle.LocalizedString ("Company", "");
             headerCompanyTextField.EditingDidEnd += CompanyEditingEnded;
             headerCompanyView.AddSubview (headerCompanyTextField);
 
@@ -346,7 +346,7 @@ namespace NachoClient.iOS
             phoneView.BackgroundColor = UIColor.White;
             contentView.AddSubview (phoneView);
 
-            addPhoneButton = AddNewButton ("Phone", AddPhoneTouchUpInside, phoneView);
+            addPhoneButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Phone", "Button title for adding a contact phone"), AddPhoneTouchUpInside, phoneView);
 
             foreach (var p in contactCopy.PhoneNumbers) {
                 PhoneCell phone = new PhoneCell (internalOffset, this, p);
@@ -359,7 +359,7 @@ namespace NachoClient.iOS
 
             emailView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             emailView.BackgroundColor = UIColor.White;
-            addEmailButton = AddNewButton ("Email", AddEmailTouchUpInside, emailView);
+            addEmailButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Email", "Button title for adding a contact email"), AddEmailTouchUpInside, emailView);
             contentView.AddSubview (emailView);
 
             internalOffset = 0;
@@ -375,7 +375,7 @@ namespace NachoClient.iOS
             dateView.BackgroundColor = UIColor.White;
             contentView.AddSubview (dateView);
 
-            addDateButton = AddNewButton ("Date", AddDateTouchUpInside, dateView);
+            addDateButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Date", "Button title for adding a contact date"), AddDateTouchUpInside, dateView);
 
             internalOffset = 0;
             foreach (var d in contactCopy.Dates) {
@@ -390,7 +390,7 @@ namespace NachoClient.iOS
             addressView.BackgroundColor = UIColor.White;
             contentView.AddSubview (addressView);
 
-            addAddressButton = AddNewButton ("Address", AddAddressTouchUpInside, addressView);
+            addAddressButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Address", "Button title for adding a contact address"), AddAddressTouchUpInside, addressView);
 
             internalOffset = 0;
             foreach (var a in contactCopy.Addresses) {
@@ -405,7 +405,7 @@ namespace NachoClient.iOS
             imAddressView.BackgroundColor = UIColor.White;
             contentView.AddSubview (imAddressView);
 
-            addIMAddressButton = AddNewButton ("IM Address", AddIMAddressTouchUpInside, imAddressView);
+            addIMAddressButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add IM Address", "Button title for adding a contact IM address"), AddIMAddressTouchUpInside, imAddressView);
 
             internalOffset = 0;
             foreach (var im in contactCopy.IMAddresses) {
@@ -420,7 +420,7 @@ namespace NachoClient.iOS
             relationshipView.BackgroundColor = UIColor.White;
             contentView.AddSubview (relationshipView);
 
-            addRelationshipButton = AddNewButton ("Relationship", AddRelationshipTouchUpInside, relationshipView);
+            addRelationshipButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Relationship", "Button title for adding a contact relationship"), AddRelationshipTouchUpInside, relationshipView);
 
             internalOffset = 0;
             foreach (var r in contactCopy.Relationships) {
@@ -436,7 +436,7 @@ namespace NachoClient.iOS
             miscView.BackgroundColor = UIColor.White;
             contentView.AddSubview (miscView);
 
-            addMiscButton = AddNewButton ("Other", AddMiscTouchUpInside, miscView);
+            addMiscButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Other", "Button title for adding a contact other field"), AddMiscTouchUpInside, miscView);
 
             internalOffset = 0;
             foreach (var taken in ContactsHelper.GetTakenMiscNames(contactCopy)) {
@@ -453,7 +453,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (notesView);
 
             UILabel notesLabel = new UILabel (new CGRect (27, 8, 100, 15));
-            notesLabel.Text = "Notes";
+            notesLabel.Text = NSBundle.MainBundle.LocalizedString ("Notes (contact edit)", "Section header for notes on contact edit page");
             notesLabel.TextColor = UIColor.DarkGray;
             notesLabel.Font = A.Font_AvenirNextMedium14;
             notesLabel.SizeToFit ();
@@ -474,7 +474,7 @@ namespace NachoClient.iOS
             yOffset = notesView.Frame.Bottom + CELL_HEIGHT;
 
             deleteContactButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, CELL_HEIGHT));
-            deleteContactButton.AccessibilityLabel = "Delete";
+            deleteContactButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Delete", "");
             deleteContactButton.BackgroundColor = UIColor.White;
             deleteContactButton.TouchUpInside += DeleteContactButtonTouchUpInside;
             contentView.AddSubview (deleteContactButton);
@@ -484,7 +484,7 @@ namespace NachoClient.iOS
             deleteContactButton.AddSubview (deleteContactIcon);
 
             UILabel deleteContactLabel = new UILabel (new CGRect (deleteContactIcon.Frame.Right + 10, 14, 150, 16));
-            deleteContactLabel.Text = "Delete Contact";
+            deleteContactLabel.Text = NSBundle.MainBundle.LocalizedString ("Delete Contact", "Button title for deleting a contact");
             deleteContactLabel.Font = A.Font_AvenirNextMedium14;
             deleteContactLabel.TextAlignment = UITextAlignment.Left;
             deleteContactLabel.TextColor = A.Color_NachoGreen;
@@ -706,13 +706,13 @@ namespace NachoClient.iOS
         protected UIButton AddNewButton (string title, EventHandler action, UIView parent)
         {
             UIButton addButton = new UIButton (new CGRect (0, parent.Frame.Bottom, View.Frame.Width, CELL_HEIGHT));
-            addButton.AccessibilityLabel = "Add";
+            addButton.AccessibilityLabel = title;
             addButton.BackgroundColor = UIColor.White;
             addButton.TouchUpInside += action;
             parent.AddSubview (addButton);
 
             UILabel addLabel = new UILabel (new CGRect (28, 14, 150, 16));
-            addLabel.Text = "Add " + title;
+            addLabel.Text = title;
             addLabel.Font = A.Font_AvenirNextMedium14;
             addLabel.TextAlignment = UITextAlignment.Left;
             addLabel.TextColor = A.Color_NachoGreen;
@@ -881,9 +881,9 @@ namespace NachoClient.iOS
                 origContact = new McContact ();
             }
             if (!McContact.CompareOnEditableFields (origContact, contactCopy)) {
-                NcAlertView.Show (this, "Discard Changes?", "Going back will discard your changes. Are you sure?",
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
-                    new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Discard Changes? (contact)", "Confirmation message title when discarding contact edits"), NSBundle.MainBundle.LocalizedString ("Going back will discard your changes. Are you sure?", "Confirmation message when discarding contact edits"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Yes", ""), NcAlertActionStyle.Destructive, () => {
                         NavigationController.PopViewController (true);
                     }));
             } else {
@@ -914,13 +914,13 @@ namespace NachoClient.iOS
             }
             bool hasData = UpdateContact ();
             if (HasInvalidEmail ()) {
-                NcAlertView.ShowMessage (this, "Incorrect E-mail Address",
-                    "At least one of the e-mail addresses is in an invalid format.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Incorrect E-mail Address", ""),
+                    NSBundle.MainBundle.LocalizedString ("At least one of the e-mail addresses is in an invalid format.", ""));
                 LayoutView ();
             } else if (!hasData) {
                 // nothing added
-                NcAlertView.ShowMessage (this, "Nothing To Save",
-                    "No data. There is nothing to save.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Nothing To Save", ""),
+                    NSBundle.MainBundle.LocalizedString ("No data. There is nothing to save.", ""));
                 LayoutView ();
             } else {
                 switch (controllerType) {
@@ -1111,10 +1111,10 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            NcAlertView.Show (this, "Delete Contact",
-                "Are you sure that you want to delete this contact? This operation cannot be undone.",
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
-                new NcAlertAction ("Delete", NcAlertActionStyle.Destructive, () => {
+            NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Delete Contact (title)", "Title for alert confirmation when deleting contact"),
+                NSBundle.MainBundle.LocalizedString ("Are you sure that you want to delete this contact? This operation cannot be undone.", "Message for confirmation when deleting contact"),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Delete", ""), NcAlertActionStyle.Destructive, () => {
                     BackEnd.Instance.DeleteContactCmd (contact.AccountId, contact.Id);
                     NavigationController.PopToRootViewController (true);
                 }));
@@ -1518,7 +1518,7 @@ namespace NachoClient.iOS
                 this.AddSubview (editField);
 
                 moreButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));
-                moreButton.AccessibilityLabel = "More";
+                moreButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("More", "");
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.Tag = BUTTON_TAG + 3000;
@@ -1539,7 +1539,7 @@ namespace NachoClient.iOS
             moreView.Hidden = true;
 
             UIButton defaultButton = new UIButton (new CGRect (1, 0, moreView.Frame.Width - 2, (moreView.Frame.Height / 2) - 1));
-            defaultButton.AccessibilityLabel = "Default";
+            defaultButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Default", "");
 
             defaultButton.BackgroundColor = A.Color_NachoGreen;
             defaultButton.Tag = MORE_VIEW_DEFAULT_BUTTON_TAG;
@@ -1554,13 +1554,13 @@ namespace NachoClient.iOS
             UILabel defaultLabel = new UILabel (new CGRect (defaultImageView.Frame.Right + 10, 18, 100, 15));
             defaultLabel.Font = A.Font_AvenirNextMedium14;
             defaultLabel.TextColor = UIColor.White;
-            defaultLabel.Text = "Set As Default";
+            defaultLabel.Text = NSBundle.MainBundle.LocalizedString ("Set As Default", "");
             defaultButton.AddSubview (defaultLabel);
 
             Util.AddHorizontalLine (18, defaultButton.Frame.Bottom, moreView.Frame.Width - (18 * 2), UIColor.LightGray.ColorWithAlpha (.8f), moreView);
 
             UIButton deleteButton = new UIButton (new CGRect (0, moreView.Frame.Height / 2 + 1, moreView.Frame.Width, (moreView.Frame.Height / 2) - 1));
-            deleteButton.AccessibilityLabel = "Delete";
+            deleteButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Delete", "");
             deleteButton.BackgroundColor = A.Color_NachoGreen;
             deleteButton.Tag = MORE_VIEW_DELETE_BUTTON_TAG;
             deleteButton.TouchUpInside += DeleteButtonClicked;
@@ -1574,7 +1574,7 @@ namespace NachoClient.iOS
             UILabel deleteLabel = new UILabel (new CGRect (deleteImageView.Frame.Right + 10, 18, 100, 15));
             deleteLabel.Font = A.Font_AvenirNextMedium14;
             deleteLabel.TextColor = UIColor.White;
-            deleteLabel.Text = "Delete";
+            deleteLabel.Text = NSBundle.MainBundle.LocalizedString ("Delete", "");
             deleteButton.AddSubview (deleteLabel);
 
             UIImageView aarowImageView = new UIImageView (UIImage.FromBundle ("contacts-popup-arrow"));
@@ -1711,7 +1711,7 @@ namespace NachoClient.iOS
                 labelButton.TouchUpInside += PhoneLabelClicked;
 
                 editField.KeyboardType = UIKeyboardType.PhonePad;
-                editField.Placeholder = "Phone Number";
+                editField.Placeholder = NSBundle.MainBundle.LocalizedString ("Phone Number", "");
                 editField.EditingDidEnd += EditingEnded;
                 moreButton.TouchUpInside += MoreButtonClicked;
             }
@@ -1797,7 +1797,7 @@ namespace NachoClient.iOS
             {
                 base.CreateView ();
                 editField.KeyboardType = UIKeyboardType.EmailAddress;
-                editField.Placeholder = "Email Address";
+                editField.Placeholder = NSBundle.MainBundle.LocalizedString ("Email Address", "");
                 editField.EditingDidEnd += EditingEnded;
                 labelButton.TouchUpInside += EmailLabelClicked;
                 moreButton.TouchUpInside += MoreButtonClicked;
@@ -1915,7 +1915,7 @@ namespace NachoClient.iOS
                 dateView.AddSubview (datePicker);
 
                 trashButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));
-                trashButton.AccessibilityLabel = "Trash";
+                trashButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Delete", "");
                 UIImage x = UIImage.FromBundle ("gen-trash");
                 trashButton.SetImage (x, UIControlState.Normal);
                 trashButton.Tag = BUTTON_TAG + 3000;
@@ -2060,7 +2060,7 @@ namespace NachoClient.iOS
                 this.AddSubview (labelButton);
 
                 moreButton = new UIButton (new CGRect (owner.moreButtonIndent, 6, 30, 30));
-                moreButton.AccessibilityLabel = "More";
+                moreButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("More", "");
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.TouchUpInside += MoreButtonClicked;
@@ -2219,7 +2219,7 @@ namespace NachoClient.iOS
                 moreButton.SetImage (x, UIControlState.Normal);
 
                 editField.KeyboardType = UIKeyboardType.Default;
-                editField.Placeholder = "IM Address";
+                editField.Placeholder = NSBundle.MainBundle.LocalizedString ("IM Address", "");
                 editField.EditingDidEnd += EditingEnded;
 
                 labelButton.TouchUpInside += LabelClicked;
@@ -2293,7 +2293,7 @@ namespace NachoClient.iOS
                 moreButton.SetImage (x, UIControlState.Normal);
 
                 editField.KeyboardType = UIKeyboardType.Default;
-                editField.Placeholder = "Name";
+                editField.Placeholder = NSBundle.MainBundle.LocalizedString ("Name (contact relationship)", "Placeholder for relationship field");
                 editField.EditingDidEnd += EditingEnded;
 
                 labelButton.TouchUpInside += LabelClicked;
@@ -2369,7 +2369,7 @@ namespace NachoClient.iOS
                 moreButton.SetImage (x, UIControlState.Normal);
 
                 editField.KeyboardType = UIKeyboardType.Default;
-                editField.Placeholder = "Enter Info";
+                editField.Placeholder = NSBundle.MainBundle.LocalizedString ("Value", "");
                 editField.EditingDidEnd += EditingEnded;
 
                 labelButton.TouchUpInside += LabelClicked;

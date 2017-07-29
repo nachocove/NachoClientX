@@ -84,10 +84,10 @@ namespace NachoClient.iOS
             navBar.Opaque = true;
             navBar.Translucent = false;
 
-            var navItem = new UINavigationItem ("Choose a Label");
+            var navItem = new UINavigationItem ("");
             using (var image = UIImage.FromBundle ("modal-close")) {
                 DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
-                DismissButton.AccessibilityLabel = "Dismiss";
+                DismissButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
                 DismissButton.Clicked += DismissViewTouchUpInside;
                 navItem.LeftBarButtonItem = DismissButton;
             }

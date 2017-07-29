@@ -61,7 +61,7 @@ namespace NachoClient.iOS
 
             //NavigationItem.RightBarButtonItem = new NcUIBarButtonItem (UIBarButtonSystemItem.Search, Search);
 
-            NavigationItem.Title = "Chooser";
+            NavigationItem.Title = "";
 
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
@@ -124,12 +124,12 @@ namespace NachoClient.iOS
 
             resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
             resultsTableView.Source = new ContactChooserDataSource (this);
-            resultsTableView.AccessibilityLabel = "Contact chooser results";
+            resultsTableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Contacts (chooser)", "");
 
             cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
             cancelSearchButton.Frame = new CGRect (View.Frame.Width - 58, 6, 50, 32);
-            cancelSearchButton.SetTitle ("Cancel", UIControlState.Normal);
-            cancelSearchButton.AccessibilityLabel = "Cancel";
+            cancelSearchButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIControlState.Normal);
+            cancelSearchButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel", "");
             cancelSearchButton.Font = A.Font_AvenirNextMedium14;
             cancelSearchButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
             cancelSearchButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -209,7 +209,7 @@ namespace NachoClient.iOS
                 owner.DeleteEmailAddress (this, address);
                 owner.DismissINachoContactChooser (this);
             } else if (!textField.Text.Contains ("@")) {
-                NcAlertView.ShowMessage (this, "Invalid email address", "The value must be an email address containing '@'");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("Invalid email address", "Alert title for user entered email address"), NSBundle.MainBundle.LocalizedString ("The value must be an email address containing '@'", "Alert message for invalid user entered email address"));
             } else {
                 UpdateEmailAddress (null, textField.Text);
             }
@@ -339,15 +339,15 @@ namespace NachoClient.iOS
         void ComplainAboutMissingEmailAddress (McContact contact)
         {
             if (contact.CanUserEdit ()) {
-                NcAlertView.Show (this, "E-mail Address Missing",
-                    "You have selected a contact without an e-mail address. Would you like to edit this contact?",
-                    new NcAlertAction ("No", NcAlertActionStyle.Cancel, null),
-                    new NcAlertAction ("Edit Contact", () => {
+                NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("E-mail Address Missing", "Alert title when selecting a contact without an email address"),
+                    NSBundle.MainBundle.LocalizedString ("You have selected a contact without an e-mail address. Would you like to edit this contact?", "Alert message when selecting a contact without an email address"),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("No", ""), NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Edit Contact (verb)", ""), () => {
                         EditContact (contact);
                     }));
             } else {
-                NcAlertView.ShowMessage (this, "E-mail Address Missing",
-                    "You have selected a contact without an e-mail address.");
+                NcAlertView.ShowMessage (this, NSBundle.MainBundle.LocalizedString ("E-mail Address Missing", ""),
+                    NSBundle.MainBundle.LocalizedString ("You have selected a contact without an e-mail address.", "Alert message when choosing a contact without an email address"));
             }
         }
 

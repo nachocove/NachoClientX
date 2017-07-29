@@ -12,12 +12,12 @@ namespace NachoClient.iOS
     {
 
         public readonly UIImage Image;
-        public readonly string Title;
+        public readonly string TitleKey;
         public readonly UIColor Color;
 
         public SwipeAction (string title, UIImage image, UIColor color)
         {
-            Title = title;
+            TitleKey = title;
             Image = image;
             Color = color;
         }
@@ -57,7 +57,8 @@ namespace NachoClient.iOS
         {
             Normal,
             ShowingSwipeLeftActions,
-            ShowingSwipeRightActions}
+            ShowingSwipeRightActions
+        }
 
         ;
 
@@ -131,7 +132,7 @@ namespace NachoClient.iOS
 
         public bool IsEditing ()
         {
-            return State != SwipeActionViewState.Normal; 
+            return State != SwipeActionViewState.Normal;
         }
 
         public void EndEditing (bool animated = true)
@@ -272,7 +273,7 @@ namespace NachoClient.iOS
                 x = fullWidth + (dampener * over) / (over + dampener);
             } else if (under > 0.0f) {
                 var dampener = PreferredActionWidth;
-                x = 0.0f - (dampener * under) / (under + dampener); 
+                x = 0.0f - (dampener * under) / (under + dampener);
             }
             ActionRevealPercentage = x / fullWidth;
             SetNeedsLayout ();
@@ -554,7 +555,7 @@ namespace NachoClient.iOS
 
         private class ActionsContainerView : UIView
         {
-			
+
             public nfloat PreferredWidth;
             public SwipeActionViewState State;
 
@@ -653,7 +654,7 @@ namespace NachoClient.iOS
             void Update ()
             {
                 ImageView.Image = Action.Image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
-                Label.Text = Action.Title;
+                Label.Text = NSBundle.MainBundle.LocalizedString (Action.TitleKey, "");
                 BackgroundColor = Action.Color;
                 ImageView.TintColor = UIColor.White;
                 ImageView.BackgroundColor = Action.Color;
