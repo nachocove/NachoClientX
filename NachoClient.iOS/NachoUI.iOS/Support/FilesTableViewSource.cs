@@ -69,7 +69,7 @@ namespace NachoClient.iOS
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor EMAIL_ATTACH_BUTTON =
             new SwipeActionDescriptor (EMAIL_ATTACH_TAG, 0.25f, UIImage.FromBundle ("files-forward-swipe"),
-                "Forward", A.Color_NachoeSwipeForward);
+                "Forward (verb)", A.Color_NachoeSwipeForward);
         private static SwipeActionDescriptor OPEN_IN_BUTTON =
             new SwipeActionDescriptor (OPEN_IN_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
                 "Open in", A.Color_NachoSwipeActionMatteBlack);
@@ -82,7 +82,7 @@ namespace NachoClient.iOS
                 "Download", A.Color_NachoSwipeActionMatteBlack);
         private static SwipeActionDescriptor PREVIEW_BUTTON =
             new SwipeActionDescriptor (PREVIEW_TAG, 0.5f, UIImage.FromBundle ("gen-preview-swipe"),
-                "Preview", A.Color_NachoeSwipeForward);
+                "Preview (verb)", A.Color_NachoeSwipeForward);
 
         public List<NcFileIndex> Items {
             get { return items; }

@@ -441,7 +441,6 @@
     <Compile Include="NachoPlatform.iOS\DeviceiOS.cs" />
     <Compile Include="NachoPlatform.iOS\InvokeOnUIThreadiOS.cs" />
     <Compile Include="NachoPlatform.iOS\RegDomiOS.cs" />
-    <Compile Include="NachoUI.iOS\Support\Locale.cs" />
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />

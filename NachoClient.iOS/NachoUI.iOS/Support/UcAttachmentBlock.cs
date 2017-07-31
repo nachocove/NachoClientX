@@ -5,6 +5,7 @@ using System.IO;
 using CoreGraphics;
 using System.Collections.Generic;
 
+using Foundation;
 using UIKit;
 
 using NachoCore.Model;
@@ -73,20 +74,20 @@ namespace NachoClient.iOS
             }
 
             //Cell icon
-            cellIconImageView = new UIImageView (); 
+            cellIconImageView = new UIImageView ();
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             cellIconImageView.Frame = new CGRect (xOffset + 18, 18, 24, 24);
             this.AddSubview (cellIconImageView);
 
             //Text label
-            textLabel = new UILabel (); 
+            textLabel = new UILabel ();
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             textLabel.Frame = new CGRect (xOffset + 60, 11, Bounds.Width - 60 - 52, 19.5f);
             textLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (textLabel);
 
             //Detail text label
-            detailTextlabel = new UILabel (); 
+            detailTextlabel = new UILabel ();
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, Bounds.Width - 60 - 52, 19.5f);
             detailTextlabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -238,12 +239,12 @@ namespace NachoClient.iOS
 
             mainLabel = new UILabel ();
             AdjustXY (mainLabel, LEFT_INDENT, 0);
-            mainLabel.Text = "Attachments";
+            mainLabel.Text = NSBundle.MainBundle.LocalizedString ("Attachments", "");
             contentView.AddSubview (mainLabel);
 
             if (editable) {
                 chooserButton = UIButton.FromType (UIButtonType.System);
-                chooserButton.AccessibilityLabel = "Add attachment";
+                chooserButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Add attachment", "");
                 Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
                 chooserButton.SizeToFit ();
                 chooserButton.Frame = new CGRect (Bounds.Width - 43, 0, 40, CELL_HEIGHT);
@@ -309,9 +310,9 @@ namespace NachoClient.iOS
         public void ConfigureView ()
         {
             if (0 == list.Count) {
-                mainLabel.Text = String.Format ("Attachments:", list.Count);
+                mainLabel.Text = NSBundle.MainBundle.LocalizedString ("Attachments", "");
             } else {
-                mainLabel.Text = String.Format ("Attachments ({0})", list.Count);
+                mainLabel.Text = String.Format (NSBundle.MainBundle.LocalizedString ("Attachments ({0})", ""), list.Count);
             }
 
             foreach (var c in list) {

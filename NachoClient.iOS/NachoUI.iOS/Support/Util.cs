@@ -100,14 +100,6 @@ namespace NachoClient
         const long TicksOneDay = 864000000000;
         const long TicksOneHour = 36000000000;
         const long TicksMinute = 600000000;
-        static string s1 = Locale.GetText ("1 sec");
-        static string sn = Locale.GetText (" secs");
-        static string m1 = Locale.GetText ("1 min");
-        static string mn = Locale.GetText (" mins");
-        static string h1 = Locale.GetText ("1 hour");
-        static string hn = Locale.GetText (" hours");
-        static string d1 = Locale.GetText ("1 day");
-        static string dn = Locale.GetText (" days");
 
         public static string FormatTime (TimeSpan ts)
         {
@@ -116,27 +108,27 @@ namespace NachoClient
             if (ts.Ticks < TicksMinute) {
                 v = ts.Seconds;
                 if (v <= 1)
-                    return s1;
+                    return NSBundle.MainBundle.LocalizedString ("1 sec", "");
                 else
-                    return v + sn;
+                    return string.Format (NSBundle.MainBundle.LocalizedString ("{0} secs", ""), v);
             } else if (ts.Ticks < TicksOneHour) {
                 v = ts.Minutes;
                 if (v == 1)
-                    return m1;
+                    return NSBundle.MainBundle.LocalizedString ("1 min", "");
                 else
-                    return v + mn;
+                    return string.Format (NSBundle.MainBundle.LocalizedString ("{0} mins", ""), v);
             } else if (ts.Ticks < TicksOneDay) {
                 v = ts.Hours;
                 if (v == 1)
-                    return h1;
+                    return NSBundle.MainBundle.LocalizedString ("1 hour", "");
                 else
-                    return v + hn;
+                    return string.Format (NSBundle.MainBundle.LocalizedString ("{0} hours", ""), v);
             } else {
                 v = ts.Days;
                 if (v == 1)
-                    return d1;
+                    return NSBundle.MainBundle.LocalizedString ("1 day", "");
                 else
-                    return v + dn;
+                    return string.Format (NSBundle.MainBundle.LocalizedString ("{0} days", ""), v);
             }
         }
 

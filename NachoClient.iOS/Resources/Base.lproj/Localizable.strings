@@ -53,6 +53,9 @@
 "(ErrorCode={0}" = "(ErrorCode={0}";
 "Search" = "Search";
 "Customer Support" = "Customer Support";
+"Open in" = "Open in";
+"Download" = "Download";
+"Preview (verb)" = "Preview";
 
 
 /* --------------------------------------------------------------------- */
@@ -60,6 +63,18 @@
 
 /* Setter button title for the date picker */
 "Use Date" = "Use Date";
+
+/* Label indicating more items in an address field */
+" +{0} more" = " +{0} more";
+
+"1 sec" = "1 sec";
+"{0} secs" = "{0} secs";
+"1 min" = "1 min";
+"{0} mins" = "{0} mins";
+"1 hour" = "1 hour";
+"{0} hours" = "{0} hours";
+"1 day" = "1 day";
+"{0} days" = "{0} days";
 
 
 /* --------------------------------------------------------------------- */
@@ -859,6 +874,8 @@
 "Next Month (intent deadline)" = "Next Month";
 "Pick Date (intent deadline)" = "Pick Date";
 
+"Attachments" = "Attachments";
+"Attachments ({0})" = "Attachments ({0})";
 "Quick response" = "Quick response";
 "Add attachment" = "Add attachment";
 "Attach (menu)" = "Attach";

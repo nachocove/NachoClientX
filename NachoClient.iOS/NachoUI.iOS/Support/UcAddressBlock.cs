@@ -376,7 +376,7 @@ namespace NachoClient.iOS
             if (1 > moreCount) {
                 moreLabel.Hidden = true;
             } else {
-                moreLabel.Text = String.Format (" +{0} more", moreCount);
+                moreLabel.Text = String.Format (NSBundle.MainBundle.LocalizedString (" +{0} more", "Label indicating more items in an address field"), moreCount);
                 moreLabel.SizeToFit ();
                 moreLabel.Hidden = false;
                 var remainingSpace = xLimit - xOffset;
