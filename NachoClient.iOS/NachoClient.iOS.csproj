@@ -758,6 +758,11 @@
       <Project>{63F04FFB-A98F-4DAA-9870-80527037DD61}</Project>
       <Name>JetBlack.Caching.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NachoClientCallerID.iOS\NachoClientCallerID.iOS.csproj">
+      <IsAppExtension>true</IsAppExtension>
+      <Project>{35569ADA-0F82-4AB7-A5D7-AA5B71357836}</Project>
+      <Name>NachoClientCallerID.iOS</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ITunesArtwork Include="iTunesArtwork" />

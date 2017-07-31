@@ -18,6 +18,8 @@
 		<string>iCloud.com.nachocove.nachomail</string>
 		<key>ShareBundleId</key>
 		<string>com.nachocove.nachomail.share</string>
+		<key>CallerIdBundleId</key>
+		<string>com.nachocove.nachomail.callerid</string>
 		<key>HockeyAppId</key>
 		<string></string>
 		<key>FileSharingEnabled</key>

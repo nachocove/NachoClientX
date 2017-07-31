@@ -141,6 +141,7 @@ class BuildConfig(DictWrappedObject):
             AppGroup=None,
             iCloudContainer=None,
             ShareBundleId=None,
+            CallerIdBundleId=None,
             HockeyAppAppId=None,
             FileSharingEnabled=False
         ),
@@ -353,6 +354,7 @@ class IOSBuilder(object):
     config = None
     solution_path = None
     project_name = None
+    callerid_project_name = 'NachoClientCallerID.iOS'
     archive_path = None
     ipa_path = None
     output_path = None
@@ -367,6 +369,10 @@ class IOSBuilder(object):
     def project_path(self, *components):
         root = os.path.dirname(self.solution_path)
         return os.path.join(root, self.project_name, *components)
+
+    def callerid_project_path(self, *components):
+        root = os.path.dirname(self.solution_path)
+        return os.path.join(root, self.callerid_project_name, *components)
 
     def execute(self):
         self.configure()
@@ -383,6 +389,12 @@ class IOSBuilder(object):
         infofile = BuildInfoFile()
         infofile.populate_with_config(self.build, self.config)
         infofile.add('HockeyAppAppId', self.config.iOS.HockeyAppId)
+        infofile.add('AppGroup', self.config.iOS.AppGroup)
+        infofile.write(path)
+
+    def edit_callerid_buildinfo(self):
+        path = self.callerid_project_path('BuildInfo.cs')
+        infofile = BuildInfoFile()
         infofile.add('AppGroup', self.config.iOS.AppGroup)
         infofile.write(path)
 
@@ -404,12 +416,28 @@ class IOSBuilder(object):
                     entry['CFBundleURLSchemes'][i] = self.config.iOS.BundleId
         plistlib.writePlist(info, info_path)
 
+    def edit_callerid_info(self):
+        info_path = self.callerid_project_path('Info.plist')
+        info = plistlib.readPlist(info_path)
+        orig_bundle_id = info['CFBundleIdentifier']
+        info['CFBundleIdentifier'] = self.config.iOS.BundleId
+        info['CFBundleVersion'] = self.build.number
+        info['CFBundleShortVersionString'] = self.build.version_string
+        info['CFBundleDisplayName'] = self.config.iOS.DisplayName
+        info['CFBundleName'] = self.config.iOS.DisplayName
+        plistlib.writePlist(info, info_path)
+
     def edit_entitlements(self):
         entitlements_path = self.project_path('Entitlements.plist')
         entitlements = plistlib.readPlist(entitlements_path)
         entitlements['com.apple.developer.icloud-container-identifiers'] = [self.config.iOS.iCloudContainer]
-        # FIXME: re-enable app groups when we get the share extension working
-        # entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
+        entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
+        plistlib.writePlist(entitlements, entitlements_path)
+
+    def edit_callerid_entitlements(self):
+        entitlements_path = self.callerid_project_path('Entitlements.plist')
+        entitlements = plistlib.readPlist(entitlements_path)
+        entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
         plistlib.writePlist(entitlements, entitlements_path)
 
     def archive(self):

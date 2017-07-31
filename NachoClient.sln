@@ -99,6 +99,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{86E49005
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Native", "Native", "{0B15890A-0CFD-420A-B201-5032E5D76886}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClientCallerID.iOS", "NachoClientCallerID.iOS\NachoClientCallerID.iOS.csproj", "{35569ADA-0F82-4AB7-A5D7-AA5B71357836}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -577,6 +579,22 @@ Global
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhone.Build.0 = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Debug|Any CPU.ActiveCfg = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Debug|Any CPU.Build.0 = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Release|Any CPU.ActiveCfg = Release|iPhone
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Release|Any CPU.Build.0 = Release|iPhone
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Debug|iPhone.Build.0 = Debug|iPhone
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Release|iPhone.ActiveCfg = Release|iPhone
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Release|iPhone.Build.0 = Release|iPhone
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Ad-Hoc|iPhone.ActiveCfg = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.Ad-Hoc|iPhone.Build.0 = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.AppStore|iPhone.ActiveCfg = Debug|iPhoneSimulator
+		{35569ADA-0F82-4AB7-A5D7-AA5B71357836}.AppStore|iPhone.Build.0 = Debug|iPhoneSimulator
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
