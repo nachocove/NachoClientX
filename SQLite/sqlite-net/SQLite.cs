@@ -55,7 +55,6 @@ using Sqlite3 = SQLitePCL.raw;
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
-using NachoCore.Utils;
 
 namespace SQLite
 {
@@ -132,6 +131,11 @@ namespace SQLite
         AutoIncPK = 4      // force PK field to be auto inc
     }
 
+    public interface SQLiteConnectionDelegate
+    {
+        void ConnectionDidExecuteLongQuery (SQLiteConnection conn, SQLiteCommand command, long ms, int rows);
+    }
+
 	/// <summary>
 	/// Represents an open connection to a SQLite database.
 	/// </summary>
@@ -165,6 +169,8 @@ namespace SQLite
 		public bool StoreDateTimeAsTicks { get; private set; }
 
 		public List<string> CommandRecord { get; set; }
+
+        public SQLiteConnectionDelegate Delegate { get; set; }
 
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
@@ -652,11 +658,7 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms/{1} rows for: {2}", span, r, cmd.CommandText);
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms/{1} rows for: {2}", span, r, cmd.CommandText);
-                    }
+                    Delegate?.ConnectionDidExecuteLongQuery (this, cmd, span, r);
                 }
             }
 			
@@ -686,11 +688,7 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
-                    }
+                    Delegate?.ConnectionDidExecuteLongQuery (this, cmd, span, -1);
                 }
             }
 			return r;
@@ -734,11 +732,7 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
-                    }
+                    Delegate?.ConnectionDidExecuteLongQuery (this, cmd, span, -1);
                 }
             }
             return retval;
@@ -809,11 +803,7 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
-                    }
+                    Delegate?.ConnectionDidExecuteLongQuery (this, cmd, span, -1);
                 }
             }
             return retval;
@@ -3014,11 +3004,7 @@ namespace SQLite
                 Connection._sw.Stop ();
                 var span = Connection._sw.ElapsedMilliseconds;
                 if (span > Connection.TraceThreshold) {
-                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
-                    }
+                    Connection.Delegate?.ConnectionDidExecuteLongQuery (Connection, cmd, span, -1);
                 }
             }
             return retval;
@@ -3046,18 +3032,13 @@ namespace SQLite
                 retval = cmd.ExecuteQuery<T> ().GetEnumerator ();
             } else {
                 retval = cmd.ExecuteDeferredQuery<T> ().GetEnumerator ();
-                Log.Error (Log.LOG_SYS, "SQLite: WE ARE ACTUALLY USING DEFERRED QUERIES");
             }
 
             if (0 < Connection.TraceThreshold) {
                 Connection._sw.Stop ();
                 var span = Connection._sw.ElapsedMilliseconds;
                 if (span > Connection.TraceThreshold) {
-                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
-                    }
+                    Connection.Delegate?.ConnectionDidExecuteLongQuery (Connection, cmd, span, -1);
                 }
             }
             return retval;

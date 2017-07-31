@@ -95,5 +95,6 @@
     <Compile Include="CallDirectoryHandler.cs" />
     <Compile Include="BuildInfo.cs" />
   </ItemGroup>
+  <Import Project="..\SQLite\SQLite.projitems" Label="Shared" Condition="Exists('..\SQLite\SQLite.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.AppExtension.CSharp.targets" />
 </Project>

@@ -680,6 +680,7 @@
     <InterfaceDefinition Include="Resources\Base.lproj\Startup.storyboard" />
     <InterfaceDefinition Include="Resources\Base.lproj\LaunchScreen.storyboard" />
   </ItemGroup>
+  <Import Project="..\SQLite\SQLite.projitems" Label="Shared" Condition="Exists('..\SQLite\SQLite.projitems')" />
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>

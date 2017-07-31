@@ -108,7 +108,7 @@ namespace NachoCore.Model
         #endif
     }
 
-    public sealed class NcModel
+    public sealed class NcModel : SQLiteConnectionDelegate
     {
         List<Type> AllTables {
             get {
@@ -208,6 +208,7 @@ namespace NachoCore.Model
                                 storeDateTimeAsTicks: true);
                             db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                             db.TraceThreshold = 500;
+                            db.Delegate = this;
                         } else {
                             Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} > connection ({1})", threadId, ConnectionCounts ());
                         }
@@ -264,6 +265,7 @@ namespace NachoCore.Model
                 NcSQLiteConnection db;
                 if (ConnectionPool.TryDequeue (out db)) {
                     Log.Info (Log.LOG_DB, "NcSQLiteConnection - eliminating connection");
+                    db.Delegate = null;
                     db.Eliminate ();
                 } else {
                     Log.Error (Log.LOG_DB, "NcSQLiteConnection: Internal error: Can't remove a connection from the cached connection pool with size {0}", ConnectionPool.Count);
@@ -275,6 +277,15 @@ namespace NachoCore.Model
                 Log.Info (Log.LOG_DB, "NcSQLiteConnection: Removed {0} DB connections from the cache, leaving {1} connections.", originalCacheCount - finalCacheCount, finalCacheCount);
             }
             Log.Info (Log.LOG_DB, "NcSQLiteConnection: Cleanup done. {0}", ConnectionCounts ());
+        }
+
+        public void ConnectionDidExecuteLongQuery (SQLiteConnection conn, SQLiteCommand command, long ms, int rows)
+        {
+            if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms/{1} rows for: {2}", ms, rows, command.CommandText);
+            } else {
+                Log.Warn (Log.LOG_SYS, "SQLite: {0}ms/{1} rows for: {2}", ms, rows, command.CommandText);
+            }
         }
 
         public Dictionary<string, long> AllTableRowCounts (bool includeZeroCounts = false)
