@@ -55,7 +55,7 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             NavigationItem.Title = NcServiceHelper.AccountServiceName (account.AccountService);
-                
+
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Exchange:
@@ -96,7 +96,7 @@ namespace NachoClient.iOS
             statusMessage.Alpha = 1.0f;
             statusMessage.Font = UIFont.SystemFontOfSize (17);
             statusMessage.TextColor = UIColor.Black;
-            statusMessage.Text = "Validating Credentials";
+            statusMessage.Text = NSBundle.MainBundle.LocalizedString ("Validating Credentials", "");
             statusMessage.TextAlignment = UITextAlignment.Center;
             statusMessage.Editable = false;
             statusView.AddSubview (statusMessage);
@@ -118,8 +118,8 @@ namespace NachoClient.iOS
             cancelValidation.Layer.CornerRadius = 10.0f;
             cancelValidation.BackgroundColor = UIColor.White;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
-            cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
-            cancelValidation.AccessibilityLabel = "Cancel";
+            cancelValidation.SetTitle (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIControlState.Normal);
+            cancelValidation.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel", "");
             cancelValidation.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             statusView.AddSubview (cancelValidation);
 
@@ -173,7 +173,7 @@ namespace NachoClient.iOS
             ServerList.RemoveAt (0);
 
             if (!BackEnd.Instance.ValidateConfig (account.Id, server, TestCred).isOK ()) {
-                HandleAccountIssue ("Network Error", "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?");
+                HandleAccountIssue (NSBundle.MainBundle.LocalizedString ("Network Error", ""), NSBundle.MainBundle.LocalizedString ("A network issue is preventing your changes from being validated. Would you like to save your changes anyway?", ""));
                 return false;
             }
 
@@ -200,13 +200,13 @@ namespace NachoClient.iOS
                 }
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
-                HandleAccountIssue ("Validation Failed", "This account may not be able to send or receive emails. Save anyway?");
+                HandleAccountIssue (NSBundle.MainBundle.LocalizedString ("Validation Failed", ""), NSBundle.MainBundle.LocalizedString ("This account may not be able to send or receive emails. Save anyway?", ""));
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                HandleAccountIssue ("Invalid Credentials", "User name or password is incorrect. No emails can be sent or received. Save anyway?");
+                HandleAccountIssue (NSBundle.MainBundle.LocalizedString ("Invalid Credentials", ""), NSBundle.MainBundle.LocalizedString ("User name or password is incorrect. No emails can be sent or received. Save anyway?", ""));
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
-                HandleAccountIssue ("Invalid Username", "User name is incorrect. No emails can be sent or received. Save anyway?");
+                HandleAccountIssue (NSBundle.MainBundle.LocalizedString ("Invalid Username", ""), NSBundle.MainBundle.LocalizedString ("User name is incorrect. No emails can be sent or received. Save anyway?", ""));
             }
         }
 
@@ -214,10 +214,10 @@ namespace NachoClient.iOS
         {
             HideStatusView ();
             NcAlertView.Show (this, title, message,
-                new NcAlertAction ("Save", () => {
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Save", ""), () => {
                     SavePasswordAndExit ();
                 }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
         }
 
         void SavePasswordAndExit ()
@@ -240,12 +240,12 @@ namespace NachoClient.iOS
             HideStatusView ();
             BackEnd.Instance.CancelValidateConfig (account.Id);
 
-            NcAlertView.Show (this, "Validation Cancelled",
-                "Your settings have not been validated. Would you like to save them anyway?",
-                new NcAlertAction ("Save", () => {
+            NcAlertView.Show (this, NSBundle.MainBundle.LocalizedString ("Validation Cancelled", ""),
+                NSBundle.MainBundle.LocalizedString ("Your settings have not been validated. Would you like to save them anyway?", ""),
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Save", ""), () => {
                     SavePasswordAndExit ();
                 }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null));
         }
     }
 }

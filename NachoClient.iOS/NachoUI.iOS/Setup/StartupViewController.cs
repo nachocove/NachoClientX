@@ -55,8 +55,8 @@ namespace NachoClient.iOS
                 currentState = StartupViewState.Incompatible;
                 // Display an alert view and wait to get out
                 NcAlertView.ShowMessage (this,
-                    "Incompatible Version",
-                    "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.");
+                    NSBundle.MainBundle.LocalizedString ("Incompatible Version", "Warning message title about incompatible version"),
+                    NSBundle.MainBundle.LocalizedString ("Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.", "Warning message about incompatible version"));
             }
         }
 

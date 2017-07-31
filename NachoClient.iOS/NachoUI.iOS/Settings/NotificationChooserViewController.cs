@@ -52,11 +52,11 @@ namespace NachoClient.iOS
             tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
             source = new NotificationChoicesSource (this);
             tableView.Source = source;
-            tableView.AccessibilityLabel = "Notification chooser";
+            tableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Notifications (setting title)", "Title for notification setting picker");
 
             View.Add (tableView);
 
-            NavigationItem.Title = "Notifications";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Notifications (setting title)", "Title for notification setting picker");
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
         }
 
@@ -67,11 +67,11 @@ namespace NachoClient.iOS
             doneButton = new NcUIBarButtonItem ();
             cancelButton = new NcUIBarButtonItem ();
 
-            doneButton.Title = "Save";
-            doneButton.AccessibilityLabel = "Save";
+            doneButton.Title = NSBundle.MainBundle.LocalizedString ("Save", "");
+            doneButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Save", "");
 
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
-            cancelButton.AccessibilityLabel = "Cancel";
+            cancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel", "");
 
             cancelButton.Clicked += (sender, e) => {
                 NavigationController.PopViewController (true);

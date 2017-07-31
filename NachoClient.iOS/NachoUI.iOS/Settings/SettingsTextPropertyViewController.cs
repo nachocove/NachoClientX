@@ -47,12 +47,12 @@ namespace NachoClient.iOS
 
             cancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
-            cancelButton.AccessibilityLabel = "Close";
+            cancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             cancelButton.Clicked += CancelButton_Clicked;
 
             saveButton = new NcUIBarButtonItem ();
-            saveButton.Title = "Save";
-            saveButton.AccessibilityLabel = "Send";
+            saveButton.Title = NSBundle.MainBundle.LocalizedString ("Save", "");
+            saveButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Save", "");
             saveButton.Clicked += SaveButton_Clicked;
 
             NavigationItem.LeftBarButtonItem = cancelButton;

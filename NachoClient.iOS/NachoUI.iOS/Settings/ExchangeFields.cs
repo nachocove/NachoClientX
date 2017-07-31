@@ -115,19 +115,19 @@ namespace NachoClient.iOS
             infoLabel.TextColor = A.Color_NachoRed;
             infoLabel.Lines = 2;
             infoLabel.TextAlignment = UITextAlignment.Center;
-            infoLabel.Text = "Please fill out the required credentials.";
+            infoLabel.Text = NSBundle.MainBundle.LocalizedString ("Please fill out the required credentials.", "Title for exchange advanced fields");
             infoLabel.TextColor = A.Color_NachoGreen;
             contentView.AddSubview (infoLabel);
             yOffset = infoLabel.Frame.Bottom + 15;
 
             // For non-edit prompt
-            emailView = new AdvancedTextField ("Email", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            emailView = new AdvancedTextField (NSBundle.MainBundle.LocalizedString ("Email (address)", ""), "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             emailView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (emailView);
 
             yOffset = NMath.Max (accountImageView.Frame.Bottom, accountEmailAddr.Frame.Bottom);
 
-            passwordView = new AdvancedTextField ("Password", "******", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
+            passwordView = new AdvancedTextField (NSBundle.MainBundle.LocalizedString ("Password", ""), "******", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
             passwordView.EditingChangedCallback = MaybeEnableConnect;
             passwordView.textField.SecureTextEntry = true;
             contentView.AddSubview (passwordView);
@@ -138,19 +138,19 @@ namespace NachoClient.iOS
             contentView.AddSubview (emailWhiteInset);
 
             yOffset += 25;
-            serverView = new AdvancedTextField ("Server", "Server", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            serverView = new AdvancedTextField (NSBundle.MainBundle.LocalizedString ("Server", ""), NSBundle.MainBundle.LocalizedString ("Server", ""), true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             serverView.EditingChangedCallback = MaybeEnableConnect;
 
             contentView.AddSubview (serverView);
             yOffset += CELL_HEIGHT;
 
             yOffset += 25;
-            domainView = new AdvancedTextField ("Domain", "Domain", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            domainView = new AdvancedTextField (NSBundle.MainBundle.LocalizedString ("Domain", ""), NSBundle.MainBundle.LocalizedString ("Domain", ""), true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             domainView.EditingChangedCallback = MaybeEnableConnect;
 
             contentView.AddSubview (domainView);
             yOffset += CELL_HEIGHT;
-            usernameView = new AdvancedTextField ("Username", "Username", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            usernameView = new AdvancedTextField (NSBundle.MainBundle.LocalizedString ("Username", ""), NSBundle.MainBundle.LocalizedString ("Username", ""), true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             usernameView.EditingChangedCallback = MaybeEnableConnect;
 
             contentView.AddSubview (usernameView);
@@ -174,10 +174,10 @@ namespace NachoClient.iOS
             contentView.AddSubview (connectButton);
 
             customerSupportButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
-            customerSupportButton.AccessibilityLabel = "Customer Support";
+            customerSupportButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Customer Support", "");
             customerSupportButton.BackgroundColor = A.Color_NachoNowBackground;
             customerSupportButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            customerSupportButton.SetTitle ("Customer Support", UIControlState.Normal);
+            customerSupportButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Customer Support", ""), UIControlState.Normal);
             customerSupportButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += CustomerSupportButton_TouchUpInside;
@@ -231,7 +231,7 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT;
 
             if (showAdvancedSettings) {
-                
+
                 yOffset += 20;
 
                 ViewFramer.Create (serverView).Y (yOffset);
@@ -270,17 +270,13 @@ namespace NachoClient.iOS
         {
             var server = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
 
-            string message;
-            string messagePrefix = "We had a problem finding the server";
-
             if (null == server) {
-                message = messagePrefix + " for '" + account.EmailAddr + "'.";
+                return string.Format (NSBundle.MainBundle.LocalizedString ("We had a problem finding the server for {0}.", ""), account.EmailAddr);
             } else if (null == server.UserSpecifiedServerName) {
-                message = messagePrefix + " '" + server.Host + "'.";
+                return string.Format (NSBundle.MainBundle.LocalizedString ("We had a problem finding the server '{0}'.", ""), server.Host);
             } else {
-                message = messagePrefix + " '" + server.UserSpecifiedServerName + "'.";
+                return string.Format (NSBundle.MainBundle.LocalizedString ("We had a problem finding the server '{0}'.", ""), server.UserSpecifiedServerName);
             }
-            return message;
         }
 
         void LoadAccount ()
@@ -321,7 +317,7 @@ namespace NachoClient.iOS
                 return;
             }
             var cred = new McCred ();
-            cred.SetTestPassword (passwordView.textField.Text);          
+            cred.SetTestPassword (passwordView.textField.Text);
             if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
                 cred.UserSpecifiedUsername = false;
                 cred.Username = emailView.textField.Text;
@@ -382,7 +378,7 @@ namespace NachoClient.iOS
         void Complain (AdvancedTextField field, string text)
         {
             var vc = Util.FindOutermostViewController ();
-            NcAlertView.ShowMessage (vc, "Settings", text);
+            NcAlertView.ShowMessage (vc, NSBundle.MainBundle.LocalizedString ("Settings (main tab)", ""), text);
             if (null != field) {
                 field.textField.TextColor = A.Color_NachoRed;
             }
@@ -391,19 +387,19 @@ namespace NachoClient.iOS
         bool CanUserConnect ()
         {
             if (emailView.IsNullOrEmpty ()) {
-                Complain (emailView, "Enter an email address");
+                Complain (emailView, NSBundle.MainBundle.LocalizedString ("Enter an email address", "Error message for advanced exchange fields"));
                 return false;
             }
             if (!EmailHelper.IsValidEmail (emailView.textField.Text)) {
-                Complain (emailView, "Email address is invalid");
+                Complain (emailView, NSBundle.MainBundle.LocalizedString ("Email address is invalid", "Error message for advanced exchange fields"));
                 return false;
             }
             if (passwordView.IsNullOrEmpty ()) {
-                Complain (passwordView, "Enter a password");
+                Complain (passwordView, NSBundle.MainBundle.LocalizedString ("Enter a password", "Error message for advanced exchange fields"));
                 return false;
             }
             if (serverView.IsNullOrEmpty ()) {
-                Complain (serverView, "Enter a server");
+                Complain (serverView, NSBundle.MainBundle.LocalizedString ("Enter a server", "Error message for advanced exchange fields"));
                 return false;
             }
             if (!serverView.IsNullOrEmpty ()) {
@@ -416,7 +412,7 @@ namespace NachoClient.iOS
             string serviceName;
             var emailAddress = emailView.textField.Text;
             if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
+                var nuance = String.Format (NSBundle.MainBundle.LocalizedString ("Nacho Mail does not support {0} yet.", "Error message for advanced exchange fields"), serviceName);
                 Complain (emailView, nuance);
                 return false;
             }

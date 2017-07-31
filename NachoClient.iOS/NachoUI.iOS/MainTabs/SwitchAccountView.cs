@@ -65,11 +65,11 @@ namespace NachoClient.iOS
             TitleLabel = new UILabel (new CGRect (0.0f, 20.0f, Bounds.Width, 44.0f));
             TitleLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             TitleLabel.TextAlignment = UITextAlignment.Center;
-            TitleLabel.Text = "Switch Accounts";
+            TitleLabel.Text = NSBundle.MainBundle.LocalizedString ("Switch Accounts", "Title for switch accounts view");
 
             AddButton = new AccountActionButton (new CGRect (0.0f, 0.0f, 40.0f, 40.0f));
             AddButton.ImageView.Image = UIImage.FromBundle ("add-account").ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
-            AddButton.TitleLabel.Text = "Add Account";
+            AddButton.TitleLabel.Text = NSBundle.MainBundle.LocalizedString ("Add Account", "Button title for adding an account");
             AddButton.Action = HandleAddAccount;
 
             BackgroundTapRecognizer = new UITapGestureRecognizer (TapBackground);

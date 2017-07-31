@@ -55,7 +55,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            NavigationItem.Title = "About Nacho Mail";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("About Nacho Mail", "About screen title");
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
         }
@@ -99,7 +99,7 @@ namespace NachoClient.iOS
                 if (_AboutFooter == null) {
                     _AboutFooter = new InsetLabelView ();
                     _AboutFooter.LabelInsets = new UIEdgeInsets (10.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-                    _AboutFooter.Label.Text = "Nacho Mail version " + NcApplication.GetVersionString ();
+                    _AboutFooter.Label.Text = string.Format (NSBundle.MainBundle.LocalizedString ("Nacho Mail version {0}", "Version string"), NcApplication.GetVersionString ());
                     _AboutFooter.Label.TextAlignment = UITextAlignment.Center;
                     _AboutFooter.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
@@ -135,16 +135,16 @@ namespace NachoClient.iOS
                     cell.AccessoryView = new DisclosureAccessoryView ();
                 }
                 if (indexPath.Row == DetailsRowRelease) {
-                    cell.TextLabel.Text = "Release Notes";
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Release Notes", "About release notes");
                     return cell;
                 } else if (indexPath.Row == DetailsRowPrivacy) {
-                    cell.TextLabel.Text = "Privacy Policy";
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Privacy Policy", "About privacy policy");
                     return cell;
                 } else if (indexPath.Row == DetailsRowLicense) {
-                    cell.TextLabel.Text = "License Agreement";
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("License Agreement", "About License Agreement");
                     return cell;
                 } else if (indexPath.Row == DetailsRowOpenSource) {
-                    cell.TextLabel.Text = "Open Source Contributions";
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Open Source Contributions", "About open source");
                     return cell;
                 }
             }
@@ -186,7 +186,7 @@ namespace NachoClient.iOS
         {
             var vc = new SettingsLegalViewController ();
             vc.DocumentLocation = NSBundle.MainBundle.GetUrlForResource ("ReleaseNotes", "html");
-            vc.NavigationItem.Title = "Release Notes";
+            vc.NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Release Notes", "");
             NavigationController.PushViewController (vc, true);
         }
 
@@ -194,7 +194,7 @@ namespace NachoClient.iOS
         {
             var vc = new SettingsLegalViewController ();
             vc.DocumentLocation = new NSUrl ("https://nachocove.com/privacy-policy-text/");
-            vc.NavigationItem.Title = "Privacy Policy";
+            vc.NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Privacy Policy", "");
             NavigationController.PushViewController (vc, true);
         }
 
@@ -202,7 +202,7 @@ namespace NachoClient.iOS
         {
             var vc = new SettingsLegalViewController ();
             vc.DocumentLocation = new NSUrl ("https://nachocove.com/legal-text/");
-            vc.NavigationItem.Title = "License Agreement";
+            vc.NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("License Agreement", "");
             NavigationController.PushViewController (vc, true);
         }
 
@@ -210,7 +210,7 @@ namespace NachoClient.iOS
         {
             var vc = new SettingsLegalViewController ();
             vc.DocumentLocation = NSBundle.MainBundle.GetUrlForResource ("LegalInfo", "html");
-            vc.NavigationItem.Title = "Open Source Contributions";
+            vc.NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Open Source Contributions", "");
             NavigationController.PushViewController (vc, true);
         }
 
@@ -233,17 +233,14 @@ namespace NachoClient.iOS
                 HeaderLabel.TextAlignment = UITextAlignment.Center;
                 HeaderLabel.Lines = 0;
                 HeaderLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                HeaderLabel.Text = "Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability.";
+                HeaderLabel.Text = NSBundle.MainBundle.LocalizedString ("Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability.", "About intro");
                 ContentView.AddSubview (HeaderLabel);
 
                 DescriptionLabel = new UILabel ();
                 DescriptionLabel.TextAlignment = UITextAlignment.Center;
                 DescriptionLabel.Lines = 5;
                 DescriptionLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                DescriptionLabel.Text = "In addition to being a great email " +
-                "client, your PIM software should actively help you achieve your" +
-                " goals, help you manage your time and reduce clutter that gets " +
-                "in your way.";
+                DescriptionLabel.Text = NSBundle.MainBundle.LocalizedString ("In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way.", "About details");
                 ContentView.AddSubview (DescriptionLabel);
 
                 SetNeedsLayout ();

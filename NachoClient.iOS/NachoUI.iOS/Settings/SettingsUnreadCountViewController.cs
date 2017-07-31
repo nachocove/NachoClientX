@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using Foundation;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Utils;
@@ -29,12 +30,12 @@ namespace NachoClient.iOS
 
         public SettingsUnreadCountViewController () : base (UITableViewStyle.Grouped)
         {
-            NavigationItem.Title = "Unread Count";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Unread Count (setting)", "");
 
-            Options = new List<UnreadOption> (new UnreadOption[] {
-                new UnreadOption ("All Messages", EmailHelper.ShowUnreadEnum.AllMessages),
-                new UnreadOption ("Recent Messages", EmailHelper.ShowUnreadEnum.RecentMessages),
-                new UnreadOption ("Today's Messages", EmailHelper.ShowUnreadEnum.TodaysMessages),
+            Options = new List<UnreadOption> (new UnreadOption [] {
+                new UnreadOption (NSBundle.MainBundle.LocalizedString ("All Messages (unread count)", ""), EmailHelper.ShowUnreadEnum.AllMessages),
+                new UnreadOption (NSBundle.MainBundle.LocalizedString ("Recent Messages (unread count)", ""), EmailHelper.ShowUnreadEnum.RecentMessages),
+                new UnreadOption (NSBundle.MainBundle.LocalizedString ("Today's Messages (unread count)", ""), EmailHelper.ShowUnreadEnum.TodaysMessages),
             });
         }
 
@@ -129,7 +130,7 @@ namespace NachoClient.iOS
         private class OptionCell : SwipeTableViewCell, ThemeAdopter
         {
 
-            public OptionCell (IntPtr ptr) : base(ptr)
+            public OptionCell (IntPtr ptr) : base (ptr)
             {
             }
 

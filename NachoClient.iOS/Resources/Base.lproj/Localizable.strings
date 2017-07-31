@@ -1,8 +1,10 @@
 ﻿/* --------------------------------------------------------------------- */
 /* MARK: - Common Strings */
 
+/* App Name, do not change */
 "Nacho Mail" = "Nacho Mail";
 "Username" = "Username";
+"Password" = "Password";
 "Domain" = "Domain";
 "Server" = "Server";
 "Host" = "Host";
@@ -33,6 +35,7 @@
 "Call (verb)" = "Call";
 "Dial (verb)" = "Dial";
 "Email (verb)" = "Email";
+"Email (address)" = "Email";
 "Copy" = "Copy";
 "Value" = "Value";
 "Move" = "Move";
@@ -48,6 +51,8 @@
 "Archive (verb)" = "Archive";
 "Mark (verb)" = "Mark";
 "(ErrorCode={0}" = "(ErrorCode={0}";
+"Search" = "Search";
+"Customer Support" = "Customer Support";
 
 
 /* --------------------------------------------------------------------- */
@@ -83,6 +88,12 @@
 
 /* MDM error message with specific company name */
 "Please contact the administrator for your {0} account.  We received an invalid configuration." = "Please contact the administrator for your {0} account.  We received an invalid configuration.";
+
+/* Warning message title about incompatible version */
+"Incompatible Version" = "Incompatible Version";
+
+/* "Warning message about incompatible version */
+"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app." = "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.";
 
 
 /* --------------------------------------------------------------------- */
@@ -241,6 +252,23 @@
 
 /* Exchange wall code submit button title */
 "Enable Exchange" = "Enable Exchange";
+
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Main Tabs */
+
+/* Labels for main navigation tabs */
+"Inbox (main tab)" = "Inbox";
+"All Mail (main tab)" = "All Mail";
+"Calendar (main tab)" = "Calendar";
+"Contacts (main tab)" = "Contacts";
+"Settings (main tab)" = "Settings";
+
+/* Title for switch accounts view */
+"Switch Accounts" = "Switch Accounts";
+
+/* Button title for adding an account */
+"Add Account" = "Add Account";
 
 
 /* --------------------------------------------------------------------- */
@@ -929,6 +957,192 @@
 
 "Message download failed. Tap here to retry." = "Message download failed. Tap here to retry.";
 
+
+/* --------------------------------------------------------------------- */
+/* MARK: - Settings */
+
+/* About screen title */
+"About Nacho Mail" = "About Nacho Mail";
+
+/* Version string */
+"Nacho Mail version {0}" = "Nacho Mail version {0}";
+
+/* About release notes */
+"Release Notes" = "Release Notes";
+
+/* About privacy policy */
+"Privacy Policy" = "Privacy Policy";
+
+/* About License Agreement */
+"License Agreement" = "License Agreement";
+
+/* About open source */
+"Open Source Contributions" = "Open Source Contributions";
+
+/* About intro */
+"Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability." = "Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability.";
+
+/* About details */
+"In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way." = "In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way.";
+
+/* Title for account settings screen */
+"Account Settings" = "Account Settings";
+
+/* Field label for account nickname */
+"Nickname (account)" = "Nickname";
+
+/* Field label for account password update */
+"Update Password" = "Update Password";
+
+/* Field label for account advanced settings */
+"Advanced Settings (account)" = "Advanced Settings";
+
+/* Field label for account signature */
+"Signature" = "Signature";
+
+/* Field label for account sync */
+"Days to sync" = "Days to sync";
+
+/* Field label for account notifications option */
+"Notifications (account)" = "Notifications";
+
+/* Field label for account fast notification option */
+"Fast Notification" = "Fast Notification";
+
+/* Field label for default email account toggle */
+"Default Email Account" = "Default Email Account";
+
+/* Field label for default calendar account toggle */
+"Default Calendar Account" = "Default Calendar Account";
+
+/* Delete account button title */
+"Delete This Account" = "Delete This Account";
+
+/* Account deletion wait message */
+"Deleting Account" = "Deleting Account";
+
+/* Title for nickname entry view */
+"Create a nickname for this account." = "Create a nickname for this account.";
+
+/* Title for alert when clearing issue warning */
+"Clear Notification" = "Clear Notification";
+
+/* Message shown after issue warning has been cleared */
+"Password expiration cleared" = "Password expiration cleared";
+
+/* Account Issues */
+"Update Password (account issue)" = "Update Password";
+"Certificate Issue (account issue)" = "Certificate Issue";
+"Server Error (account issue)" = "Server Error";
+"Password expires {0}" = "Password expires {0}";
+
+/* Title for update password screen */
+"Update Password (title)" = "Update Password";
+
+/* Prompt on update password screen */
+"Enter your account password" = "Enter your account password";
+
+/* Button title for updating password */
+"Update (password)" = "Update";
+
+/* Status message when waiting for password update */
+"Validating Credentials" = "Validating Credentials";
+
+/* Title for error when updating password */
+"Network Error" = "Network Error";
+
+/* Error message when updating password */
+"A network issue is preventing your changes from being validated. Would you like to save your changes anyway?" = "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?";
+
+/* Alert title for error when updating password */
+"Validation Failed" = "Validation Failed";
+
+/* Alert message for error when updating password */
+"This account may not be able to send or receive emails. Save anyway?" = "This account may not be able to send or receive emails. Save anyway?";
+
+/* Alert title for error when updating password */
+"Invalid Credentials" = "Invalid Credentials";
+
+/* Alert message for error when updating password */
+"User name or password is incorrect. No emails can be sent or received. Save anyway?" = "User name or password is incorrect. No emails can be sent or received. Save anyway?";
+
+/* Alert title for error when updating password */
+"Invalid Username" = "Invalid Username";
+
+/* Alert message for error when updating password */
+"User name is incorrect. No emails can be sent or received. Save anyway?" = "User name is incorrect. No emails can be sent or received. Save anyway?";
+
+/* Alert title when canceling password update */
+"Validation Cancelled" = "Validation Cancelled";
+
+/* Alert message when canceling password update */
+"Your settings have not been validated. Would you like to save them anyway?" = "Your settings have not been validated. Would you like to save them anyway?";
+
+/* Title for exchange advanced fields */
+"Please fill out the required credentials." = "Please fill out the required credentials.";
+
+/* Error message for advanced exchange fields */
+"Enter an email address" = "Enter an email address";
+
+/* Error message for advanced exchange fields */
+"Email address is invalid" = "Email address is invalid";
+
+/* Error message for advanced exchange fields */
+"Enter a password" = "Enter a password";
+
+/* Error message for advanced exchange fields */
+"Enter a server" = "Enter a server";
+
+/* Error message for advanced exchange fields */
+"Nacho Mail does not support {0} yet." = "Nacho Mail does not support {0} yet.";
+
+"We had a problem finding the server for {0}." = "We had a problem finding the server for {0}.";
+"We had a problem finding the server '{0}'." = "We had a problem finding the server '{0}'.";
+
+/* Title for settings screen */
+"Settings (title)" = "Settings";
+
+/* Settings sections */
+"Accounts (settings section)" = "Accounts";
+
+/* Label for unread count setting */
+"Unread Count (setting)" = "Unread Count";
+
+/* Button title for adding an acccount in settings */
+"Add Account (setting)" = "Add Account";
+
+/* Button title for adding a salesforce account in settings */
+"Connect to Salesforce (setting)" = "Connect to Salesforce";
+
+/* Button title for viewing about screen */
+"About Nacho Mail (setting)" = "About Nacho Mail";
+
+/* Unread count option */
+"All Messages (unread count)" = "All Messages";
+
+/* Unread count option */
+"Recent Messages (unread count)" = "Recent Messages";
+
+/* Unread count option */
+"Today's Messages (unread count)" = "Today's Messages";
+
+"Incoming Mail Server" = "Incoming Mail Server";
+"Outgoing Mail Server" = "Outgoing Mail Server";
+"We had a problem finding a server." = "We had a problem finding a server.";
+"The server name is required." = "The server name is required.";
+"Invalid server name. Please check that you typed it in correctly." = "Invalid server name. Please check that you typed it in correctly.";
+"Invalid server name. Scheme or port number is not allowed." = "Invalid server name. Scheme or port number is not allowed.";
+"Invalid port number. It must be a number." = "Invalid port number. It must be a number.";
+"All fields must be filled in." = "All fields must be filled in.";
+
+/* Title for notification setting picker */
+"Notifications (setting title)" = "Notifications (setting title)";
+
+"This signature will appear at the bottom of every message you send" = "This signature will appear at the bottom of every message you send";
+"It looks like you've copied some HTML content.  You can paste it here to use it as your signature" = "It looks like you've copied some HTML content.  You can paste it here to use it as your signature";
+"To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it" = "To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it";
+"Use Rich Text Signature" = "Use Rich Text Signature";
+"Paste HTML Signature" = "Paste HTML Signature";
 
 /* --------------------------------------------------------------------- */
 /* MARK: - Common strings from NachoCore */

@@ -64,19 +64,19 @@ namespace NachoClient.iOS
             //nachoNowItem = nowNavController.TabBarItem = MakeTabBarItem ("Hot", "nav-hot");
 
             var inboxNavController = CreateAccountSwitchingNavigationController (InboxViewController);
-            inboxNavController.TabBarItem = MakeTabBarItem ("Inbox", "nav-inbox");
+            inboxNavController.TabBarItem = MakeTabBarItem (NSBundle.MainBundle.LocalizedString ("Inbox (main tab)", ""), "nav-inbox");
 
             var allMailNavController = CreateAccountSwitchingNavigationController (AllMailViewController);
-            allMailNavController.TabBarItem = MakeTabBarItem ("All Mail", "nav-mail");
+            allMailNavController.TabBarItem = MakeTabBarItem (NSBundle.MainBundle.LocalizedString ("All Mail (main tab)", ""), "nav-mail");
 
             var calendarNavController = CreateAccountSwitchingNavigationController (CalendarViewController);
-            calendarNavController.TabBarItem = MakeTabBarItem ("Calendar", "nav-calendar");
+            calendarNavController.TabBarItem = MakeTabBarItem (NSBundle.MainBundle.LocalizedString ("Calendar (main tab)", ""), "nav-calendar");
 
             var contactsNavController = CreateAccountSwitchingNavigationController (ContactsViewController);
-            contactsNavController.TabBarItem = MakeTabBarItem ("Contacts", "nav-contacts");
+            contactsNavController.TabBarItem = MakeTabBarItem (NSBundle.MainBundle.LocalizedString ("Contacts (main tab)", ""), "nav-contacts");
 
             var settingsNavController = new UINavigationController (SettingsViewController);
-            settingsNavController.TabBarItem = MakeTabBarItem ("Settings", "more-settings");
+            settingsNavController.TabBarItem = MakeTabBarItem (NSBundle.MainBundle.LocalizedString ("Settings (main tab)", ""), "more-settings");
 
             ViewControllers = new UIViewController [] {
                 //nowNavController,

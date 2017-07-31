@@ -48,7 +48,7 @@ namespace NachoClient.iOS
             SearchBar.ShowsCancelButton = true;
             SearchBar.Frame = new CGRect (SearchBarInset, 20.0f, NavigationBar.Bounds.Width - SearchBarInset, 44.0f);
             SearchBar.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            SearchBar.Placeholder = "Search";
+            SearchBar.Placeholder = NSBundle.MainBundle.LocalizedString ("Search", "");
             NavigationBar.AddSubview (SearchBar);
 
             BackgroundTapRecognizer = new UITapGestureRecognizer (ViewTap);

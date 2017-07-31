@@ -44,16 +44,16 @@ namespace NachoClient.iOS
 
             IsHtmlEnabled = !String.IsNullOrEmpty (Account.HtmlSignature);
 
-            NavigationItem.Title = "Signature";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Signature", "");
 
             CancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (CancelButton, "icn-close");
-            CancelButton.AccessibilityLabel = "Close";
+            CancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             CancelButton.Clicked += CancelButton_Clicked;
 
             SaveButton = new NcUIBarButtonItem ();
-            SaveButton.Title = "Save";
-            SaveButton.AccessibilityLabel = "Send";
+            SaveButton.Title = NSBundle.MainBundle.LocalizedString ("Save", "");
+            SaveButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Save", "");
             SaveButton.Clicked += SaveButton_Clicked;
 
             NavigationItem.LeftBarButtonItem = CancelButton;
@@ -282,7 +282,7 @@ namespace NachoClient.iOS
             var headerFont = A.Font_AvenirNextRegular17;
 
             SignatureHeaderLabel = new HeaderFooterView ();
-            SignatureHeaderLabel.Label.Text = "This signature will appear at the bottom of every message you send";
+            SignatureHeaderLabel.Label.Text = NSBundle.MainBundle.LocalizedString ("This signature will appear at the bottom of every message you send", "");
 
             PasteFooterLabel = new HeaderFooterView ();
         }
@@ -349,9 +349,9 @@ namespace NachoClient.iOS
         void UpdatePasteFooterText ()
         {
             if (UIPasteboard.General.Contains (new string[] { "Apple Web Archive pasteboard type" })) {
-                PasteFooterLabel.Label.Text =  "It looks like you've copied some HTML content.  You can paste it here to use it as your signature";
+                PasteFooterLabel.Label.Text =  NSBundle.MainBundle.LocalizedString ("It looks like you've copied some HTML content.  You can paste it here to use it as your signature", "");
             } else {
-                PasteFooterLabel.Label.Text = "To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it";
+                PasteFooterLabel.Label.Text = NSBundle.MainBundle.LocalizedString ("To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it", "");
             }
         }
 
@@ -367,7 +367,7 @@ namespace NachoClient.iOS
                 if (cell == null) {
                     cell = new SwitchCell (SwitchCellIdentifier);
                 }
-                cell.Label.Text = "Use Rich Text Signature";
+                cell.Label.Text = NSBundle.MainBundle.LocalizedString ("Use Rich Text Signature", "");
                 cell.SwitchView.On = ViewController.IsHtmlEnabled;
                 cell.OnSwitch = SwitchedTextType;
                 return cell;
@@ -415,7 +415,7 @@ namespace NachoClient.iOS
                 if (cell == null) {
                     cell = new ButtonCell (ButtonCellIdentifier);
                 }
-                cell.Button.SetTitle ("Paste HTML Signature", UIControlState.Normal);
+                cell.Button.SetTitle (NSBundle.MainBundle.LocalizedString ("Paste HTML Signature", ""), UIControlState.Normal);
                 cell.Button.Enabled = UIPasteboard.General.Contains (new string[] { "Apple Web Archive pasteboard type" });
                 cell.OnSelect = Paste;
                 return cell;

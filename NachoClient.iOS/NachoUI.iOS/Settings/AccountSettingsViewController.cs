@@ -88,7 +88,7 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             NavigationController.NavigationBar.Translucent = false;
-            NavigationItem.Title = "Account Settings";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Account Settings", "Title for account settings screen");
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -125,40 +125,40 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            DisplayNameTextBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Description", INDENT, 15, ChangeDescriptionTapHandler);
+            DisplayNameTextBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Nickname (account)", "Field label for account nickname"), INDENT, 15, ChangeDescriptionTapHandler);
             contentView.AddSubview (DisplayNameTextBlock);
             yOffset = DisplayNameTextBlock.Frame.Bottom;
 
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if ((null != creds) && ((McCred.CredTypeEnum.Password == creds.CredType) || (McCred.CredTypeEnum.OAuth2 == creds.CredType))) {
                 Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Update Password", INDENT, 15, ChangePasswordTapHandler);
+                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Update Password", "Field label for account password update"), INDENT, 15, ChangePasswordTapHandler);
                 contentView.AddSubview (ChangePasswordBlock);
                 yOffset = ChangePasswordBlock.Frame.Bottom;
             }
 
             if ((McAccount.AccountServiceEnum.Exchange == account.AccountService) || (McAccount.AccountServiceEnum.IMAP_SMTP == account.AccountService)) {
                 Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-                AdvancedSettingsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Advanced Settings", INDENT, 15, AdvancedSettingsTapHandler);
+                AdvancedSettingsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Advanced Settings (account)", "Field label for account advanced settings"), INDENT, 15, AdvancedSettingsTapHandler);
                 contentView.AddSubview (AdvancedSettingsBlock);
                 yOffset = AdvancedSettingsBlock.Frame.Bottom;
             }
                 
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Signature", INDENT, 15, SignatureTapHandler);
+            SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Signature", "Field label for account signature"), INDENT, 15, SignatureTapHandler);
             contentView.AddSubview (SignatureBlock);
             yOffset = SignatureBlock.Frame.Bottom;
 
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            DaysToSyncBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Days to sync", INDENT, 15, DaysToSyncTapHandler);
+            DaysToSyncBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Days to sync", "Field label for account sync"), INDENT, 15, DaysToSyncTapHandler);
             contentView.AddSubview (DaysToSyncBlock);
             yOffset = DaysToSyncBlock.Frame.Bottom;
 
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            NotificationsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Notifications", INDENT, 15, NotificationsTapHandler);
+            NotificationsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Notifications (account)", "Field label for account notifications option"), INDENT, 15, NotificationsTapHandler);
             contentView.AddSubview (NotificationsBlock);
             yOffset = NotificationsBlock.Frame.Bottom;
 
@@ -168,7 +168,7 @@ namespace NachoClient.iOS
             fastNotificationLabel.Font = A.Font_AvenirNextRegular14;
             fastNotificationLabel.TextAlignment = UITextAlignment.Left;
             fastNotificationLabel.TextColor = A.Color_NachoDarkText;
-            fastNotificationLabel.Text = "Fast Notification";
+            fastNotificationLabel.Text = NSBundle.MainBundle.LocalizedString ("Fast Notification", "Field label for account fast notification option");
             fastNotificationLabel.SizeToFit ();
             ViewFramer.Create (fastNotificationLabel).Height (HEIGHT);
 
@@ -190,7 +190,7 @@ namespace NachoClient.iOS
                 defaultEmailLabel.Font = A.Font_AvenirNextRegular14;
                 defaultEmailLabel.TextAlignment = UITextAlignment.Left;
                 defaultEmailLabel.TextColor = A.Color_NachoDarkText;
-                defaultEmailLabel.Text = "Default Email Account";
+                defaultEmailLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Email Account", "Field label for default email account toggle");
                 defaultEmailLabel.SizeToFit ();
                 ViewFramer.Create (defaultEmailLabel).Height (HEIGHT);
 
@@ -213,7 +213,7 @@ namespace NachoClient.iOS
                 defaultCalendarLabel.Font = A.Font_AvenirNextRegular14;
                 defaultCalendarLabel.TextAlignment = UITextAlignment.Left;
                 defaultCalendarLabel.TextColor = A.Color_NachoDarkText;
-                defaultCalendarLabel.Text = "Default Calendar Account";
+                defaultCalendarLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Calendar Account", "Field label for default calendar account toggle");
                 defaultCalendarLabel.SizeToFit ();
                 ViewFramer.Create (defaultCalendarLabel).Height (HEIGHT);
 
@@ -244,13 +244,13 @@ namespace NachoClient.iOS
                 var serverIssueText = "";
                 switch (serverIssue) {
                 case BackEndStateEnum.CredWait:
-                    serverIssueText = "Update Password";
+                    serverIssueText = NSBundle.MainBundle.LocalizedString ("Update Password (account issue)", "");
                     break;
                 case BackEndStateEnum.CertAskWait:
-                    serverIssueText = "Certificate Issue";
+                    serverIssueText = NSBundle.MainBundle.LocalizedString ("Certificate Issue (account issue)", "");
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    serverIssueText = "Server Error";
+                    serverIssueText = NSBundle.MainBundle.LocalizedString ("Server Error (account issue)", "");
                     break;
                 }
                 FixAccountButton.SetTitle (serverIssueText, UIControlState.Normal);
@@ -270,7 +270,7 @@ namespace NachoClient.iOS
             DateTime expiry;
             string rectificationUrl;
             if (LoginHelpers.PasswordWillExpire (account.Id, out expiry, out rectificationUrl)) {
-                var expiryText = "Password expires " + Pretty.ReminderDate (expiry);
+                var expiryText = string.Format (NSBundle.MainBundle.LocalizedString ("Password expires {0}", ""), Pretty.ReminderDate (expiry));
                 ExpiredPasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), expiryText, INDENT, 15, ExpiredPasswordTapHandler);
                 contentView.AddSubview (ExpiredPasswordBlock);
                 yOffset = ExpiredPasswordBlock.Frame.Bottom;
@@ -289,8 +289,8 @@ namespace NachoClient.iOS
             DeleteAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
             Util.AddButtonImage (DeleteAccountButton, "email-delete-two", UIControlState.Normal);
             DeleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
-            DeleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
-            DeleteAccountButton.AccessibilityLabel = "Delete Account";
+            DeleteAccountButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Delete This Account", "Delete account button title"), UIControlState.Normal);
+            DeleteAccountButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Delete This Account", "");
             DeleteAccountButton.Font = A.Font_AvenirNextRegular14;
             DeleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             DeleteAccountButton.TouchUpInside += onDeleteAccount;
@@ -316,7 +316,7 @@ namespace NachoClient.iOS
             DeleteAccountStatusMessage.Alpha = 1.0f;
             DeleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
             DeleteAccountStatusMessage.TextColor = UIColor.Black;
-            DeleteAccountStatusMessage.Text = "Deleting Account";
+            DeleteAccountStatusMessage.Text = NSBundle.MainBundle.LocalizedString ("Deleting Account", "Account deletion wait message");
             DeleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
             AlertMimicView.AddSubview (DeleteAccountStatusMessage);
 
@@ -431,8 +431,8 @@ namespace NachoClient.iOS
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 var descriptionViewController = new SettingsTextPropertyViewController ();
-                var tag = "Create a descriptive label for this account.";
-                descriptionViewController.Setup ("Description", tag, account.DisplayName, OnSaveDescription);
+                var tag = NSBundle.MainBundle.LocalizedString ("Create a nickname for this account.", "Title for nickname entry view");
+                descriptionViewController.Setup (NSBundle.MainBundle.LocalizedString ("Nickname (account)", ""), tag, account.DisplayName, OnSaveDescription);
                 NavigationController.PushViewController (descriptionViewController, true);
             }
         }
@@ -452,11 +452,11 @@ namespace NachoClient.iOS
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 NcActionSheet.Show (ExpiredPasswordBlock, this,
-                    new NcAlertAction ("Clear Notification", () => {
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Clear Notification", "Title for alert when clearing issue warning"), () => {
                         LoginHelpers.ClearPasswordExpiration (account.Id);
-                        ExpiredPasswordBlock.SetLabel ("Password expiration cleared");
+                        ExpiredPasswordBlock.SetLabel (NSBundle.MainBundle.LocalizedString ("Password expiration cleared", "Message shown after issue warning has been cleared"));
                     }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null)
                 );
             }
         }
@@ -506,7 +506,7 @@ namespace NachoClient.iOS
                 new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
                     UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
                 }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null)
             );
         }
 

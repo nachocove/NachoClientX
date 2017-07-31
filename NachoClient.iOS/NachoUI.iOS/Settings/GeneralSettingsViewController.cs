@@ -48,7 +48,7 @@ namespace NachoClient.iOS
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
-            NavigationItem.Title = "Settings";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Settings (title)", "Title for settings screen");
         }
 
         #endregion
@@ -175,7 +175,7 @@ namespace NachoClient.iOS
                 if (_AccountsHeader == null) {
                     _AccountsHeader = new InsetLabelView ();
                     _AccountsHeader.LabelInsets = new UIEdgeInsets (5.0f, GroupedCellInset + 6.0f, 5.0f, GroupedCellInset);
-                    _AccountsHeader.Label.Text = "Accounts";
+                    _AccountsHeader.Label.Text = NSBundle.MainBundle.LocalizedString ("Accounts (settings section)", "");
                     _AccountsHeader.Frame = new CGRect (0.0f, 0.0f, 100.0f, 20.0f);
                 }
                 return _AccountsHeader;
@@ -194,7 +194,7 @@ namespace NachoClient.iOS
             if (indexPath.Section == SectionGeneralSettings) {
                 if (indexPath.Row == GeneralSettingsRowUnreadCount) {
                     var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as SettingsNameValueCell;
-                    cell.TextLabel.Text = "Unread Count";
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Unread Count (setting)", "Label for unread count setting");
                     cell.ValueLabel.Text = ValueForUnreadCount ();
                     if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
                         cell.AccessoryView = new DisclosureAccessoryView ();
@@ -220,13 +220,13 @@ namespace NachoClient.iOS
                     var cell = tableView.DequeueReusableCell (ButttonCellIdentifier) as ButtonCell;
                     //                    cell.SeparatorInset = new UIEdgeInsets (0.0f, AccountCell.PreferredHeight, 0.0f, 0.0f);
                     if (actionRow == AccountsExtraRowAddAccount) {
-                        cell.TextLabel.Text = "Add Account";
+                        cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Add Account (setting)", "Button title for adding an acccount in settings");
                         if ((cell.AccessoryView as AddAccessoryView) == null) {
                             cell.AccessoryView = new AddAccessoryView ();
                         }
                         return cell;
                     } else if (actionRow == AccountsExtraRowConnectToSalesforce) {
-                        cell.TextLabel.Text = "Connect to Salesforce";
+                        cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Connect to Salesforce (setting)", "Button title for adding a salesforce account in settings");
                         if ((cell.AccessoryView as AddAccessoryView) == null) {
                             cell.AccessoryView = new AddAccessoryView ();
                         }
@@ -235,7 +235,7 @@ namespace NachoClient.iOS
                 }
             } else if (indexPath.Section == SectionAbout){
                 var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as SettingsNameValueCell;
-                cell.TextLabel.Text = "About Nacho Mail";
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("About Nacho Mail (setting)", "Button title for viewing about screen");
                 cell.ValueLabel.Text = "";
                 if ((cell.AccessoryView as DisclosureAccessoryView) == null) {
                     cell.AccessoryView = new DisclosureAccessoryView ();
@@ -333,7 +333,7 @@ namespace NachoClient.iOS
             credentialsViewController.AccountDelegate = this;
             var closeButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (closeButton, "icn-close");
-            closeButton.AccessibilityLabel = "Close";
+            closeButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
             closeButton.Clicked += (object sender, EventArgs e) => { 
                 credentialsViewController.Cancel ();
                 DismissViewController(true, null); 
@@ -522,11 +522,11 @@ namespace NachoClient.iOS
         {
             switch (EmailHelper.HowToDisplayUnreadCount ()) {
             case EmailHelper.ShowUnreadEnum.AllMessages:
-                return "All Messages";
+                return NSBundle.MainBundle.LocalizedString ("All Messages (unread count)", "Unread count option");
             case EmailHelper.ShowUnreadEnum.RecentMessages:
-                return "Recent Messages";
+                return NSBundle.MainBundle.LocalizedString ("Recent Messages (unread count)", "Unread count option");
             case EmailHelper.ShowUnreadEnum.TodaysMessages:
-                return "Today's Messages";
+                return NSBundle.MainBundle.LocalizedString ("Today's Messages (unread count)", "Unread count option");
             default:
                 NcAssert.CaseError ();
                 return "";
