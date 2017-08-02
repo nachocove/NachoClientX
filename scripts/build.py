@@ -355,6 +355,7 @@ class IOSBuilder(object):
     solution_path = None
     project_name = None
     callerid_project_name = 'NachoClientCallerID.iOS'
+    share_project_name = 'NachoClientShare.iOS'
     archive_path = None
     ipa_path = None
     output_path = None
@@ -374,6 +375,10 @@ class IOSBuilder(object):
         root = os.path.dirname(self.solution_path)
         return os.path.join(root, self.callerid_project_name, *components)
 
+    def share_project_path(self, *components):
+        root = os.path.dirname(self.solution_path)
+        return os.path.join(root, self.share_project_name, *components)
+
     def execute(self):
         self.configure()
         self.archive()
@@ -383,6 +388,12 @@ class IOSBuilder(object):
         self.edit_buildinfo()
         self.edit_info()
         self.edit_entitlements()
+        self.edit_callerid_buildinfo()
+        self.edit_callerid_info()
+        self.edit_callerid_entitlements()
+        self.edit_share_buildinfo()
+        self.edit_share_info()
+        self.edit_share_entitlements()
 
     def edit_buildinfo(self):
         path = self.project_path('BuildInfo.cs')
@@ -394,6 +405,12 @@ class IOSBuilder(object):
 
     def edit_callerid_buildinfo(self):
         path = self.callerid_project_path('BuildInfo.cs')
+        infofile = BuildInfoFile()
+        infofile.add('AppGroup', self.config.iOS.AppGroup)
+        infofile.write(path)
+
+    def edit_share_buildinfo(self):
+        path = self.share_project_path('BuildInfo.cs')
         infofile = BuildInfoFile()
         infofile.add('AppGroup', self.config.iOS.AppGroup)
         infofile.write(path)
@@ -420,7 +437,18 @@ class IOSBuilder(object):
         info_path = self.callerid_project_path('Info.plist')
         info = plistlib.readPlist(info_path)
         orig_bundle_id = info['CFBundleIdentifier']
-        info['CFBundleIdentifier'] = self.config.iOS.BundleId
+        info['CFBundleIdentifier'] = self.config.iOS.CallerIdBundleId
+        info['CFBundleVersion'] = self.build.number
+        info['CFBundleShortVersionString'] = self.build.version_string
+        info['CFBundleDisplayName'] = self.config.iOS.DisplayName
+        info['CFBundleName'] = self.config.iOS.DisplayName
+        plistlib.writePlist(info, info_path)
+
+    def edit_share_info(self):
+        info_path = self.share_project_path('Info.plist')
+        info = plistlib.readPlist(info_path)
+        orig_bundle_id = info['CFBundleIdentifier']
+        info['CFBundleIdentifier'] = self.config.iOS.ShareBundleId
         info['CFBundleVersion'] = self.build.number
         info['CFBundleShortVersionString'] = self.build.version_string
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
@@ -436,6 +464,12 @@ class IOSBuilder(object):
 
     def edit_callerid_entitlements(self):
         entitlements_path = self.callerid_project_path('Entitlements.plist')
+        entitlements = plistlib.readPlist(entitlements_path)
+        entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
+        plistlib.writePlist(entitlements, entitlements_path)
+
+    def edit_share_entitlements(self):
+        entitlements_path = self.share_project_path('Entitlements.plist')
         entitlements = plistlib.readPlist(entitlements_path)
         entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
         plistlib.writePlist(entitlements, entitlements_path)

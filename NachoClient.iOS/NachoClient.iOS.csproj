@@ -763,6 +763,11 @@
       <Project>{35569ADA-0F82-4AB7-A5D7-AA5B71357836}</Project>
       <Name>NachoClientCallerID.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NachoClientShare.iOS\NachoClientShare.iOS.csproj">
+      <IsAppExtension>true</IsAppExtension>
+      <Project>{4E723051-3DD7-4CD4-A2D9-C82E5B7E2560}</Project>
+      <Name>NachoClientShare.iOS</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ITunesArtwork Include="iTunesArtwork" />

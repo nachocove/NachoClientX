@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDisplayName</key>
-	<string>[dev] Nacho Mail</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.nachocove.nachomail.share</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -30,5 +28,9 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
 	</dict>
+	<key>CFBundleName</key>
+	<string>Nacho Dev</string>
+	<key>CFBundleDisplayName</key>
+	<string>Nacho Dev</string>
 </dict>
 </plist>

@@ -40,6 +40,7 @@ def build_ios(buildspec, config):
     builder = build.IOSBuilder(nacho_path("NachoClient.sln"), "NachoClient.iOS", buildspec, config)
     builder.edit_buildinfo()
     builder.edit_callerid_buildinfo()
+    builder.edit_share_buildinfo()
 
 
 def build_android(buildspec, config):
