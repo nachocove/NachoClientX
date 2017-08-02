@@ -58,8 +58,6 @@ namespace NachoClient.iOS
 
             NcApplication.GuaranteeGregorianCalendar ();
 
-            MigrateDocumentsLocation ();
-
             // One-time initialization that do not need to be shut down later.
             if (!FirstLaunchInitialization) {
                 FirstLaunchInitialization = true;
@@ -474,44 +472,6 @@ namespace NachoClient.iOS
         {
             McMutables.Set (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             Log.Info (Log.LOG_UI, "UpdateGoInactiveTime: exit");
-        }
-
-        public static void MigrateDocumentsLocation ()
-        {
-            string AppGroupDocuments = NcApplication.GetDocumentsPath ();
-            string MigrationIndicator = Path.Combine (AppGroupDocuments, "moved");
-
-            if (!File.Exists (MigrationIndicator)) {
-                string AppDocuments = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-                string destination;
-
-                Log.Info (Log.LOG_DB, "Moving Documents to App Group");
-
-                var dirs = Directory.GetDirectories (AppDocuments);
-                foreach (var dir in dirs) {
-                    destination = Path.Combine (AppGroupDocuments, Path.GetFileName (dir));
-                    Log.Info (Log.LOG_DB, "Moving directory {0} to {1}", Path.GetFileName (dir), destination);
-                    try {
-                        Directory.Move (dir, destination);
-                    } catch (Exception ex) {
-                        Log.Error (Log.LOG_DB, "Cannot move dir {0} to {1} - {2}", dir, destination, ex);
-                    }
-                }
-
-                var files = Directory.GetFiles (AppDocuments);
-                foreach (var file in files) {
-                    destination = Path.Combine (AppGroupDocuments, Path.GetFileName (file));
-                    Log.Info (Log.LOG_DB, "Moving file {0} to {1}", Path.GetFileName (file), destination);
-                    try {
-                        Directory.Move (file, destination);
-                    } catch (Exception ex) {
-                        Log.Error (Log.LOG_DB, "Cannot move file {0} to {1} - {2}", file, destination, ex);
-                    }
-                }
-
-                using (var stream = File.Create (MigrationIndicator)) {
-                }
-            }
         }
 
         #endregion
