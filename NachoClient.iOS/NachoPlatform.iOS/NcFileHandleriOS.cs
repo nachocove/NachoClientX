@@ -48,7 +48,8 @@ namespace NachoPlatform
 
         public string NachoDocumentsPath ()
         {
-            return Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var container = NSFileManager.DefaultManager.GetContainerUrl (NachoClient.Build.BuildInfo.AppGroup).Path;
+            return Path.Combine (container, "Documents");
         }
     }
 }

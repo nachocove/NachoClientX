@@ -47,7 +47,7 @@ namespace NachoCore
         private static string Documents;
         private static string DataDir;
 
-        public double UpTimeSec { 
+        public double UpTimeSec {
             get {
                 return (DateTime.UtcNow - _LaunchTimeUTc).TotalSeconds;
             }
@@ -55,13 +55,13 @@ namespace NachoCore
 
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
-            private set { 
+            private set {
                 if (value != _ExecutionContext) {
-                    _ExecutionContext = value; 
+                    _ExecutionContext = value;
                     Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
                     var result = NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
                     result.Value = _ExecutionContext;
-                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    InvokeStatusIndEvent (new StatusIndEventArgs () {
                         Status = result,
                         Account = ConstMcAccount.NotAccountSpecific,
                     });
@@ -155,11 +155,11 @@ namespace NachoCore
                 if (_TelemetryService == null) {
                     lock (TelemetryServiceLockObj) {
                         if (_TelemetryService == null) {
-                            #if TELEMETRY_AWS
+#if TELEMETRY_AWS
                             _TelemetryService = new Telemetry ();
-                            #else
+#else
                             _TelemetryService = new Telemetry_NOOP ();
-                            #endif
+#endif
                         }
                     }
                 }
@@ -190,7 +190,7 @@ namespace NachoCore
 
         public ExecutionContextEnum PlatformIndication {
             get { return _PlatformIndication; }
-            set { 
+            set {
                 _PlatformIndication = value;
                 Log.Info (Log.LOG_LIFECYCLE, "PlatformIndication => {0}", _PlatformIndication.ToString ());
                 if (ExecutionContextEnum.Migrating != ExecutionContext &&
@@ -376,7 +376,7 @@ namespace NachoCore
                 if (null == nonXammit) {
                     aex.Handle ((ex) => true);
                 } else {
-                    foreach (var ex in aex.InnerExceptions) { 
+                    foreach (var ex in aex.InnerExceptions) {
                         if (ex is IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
                             NcApplicationMonitor.DumpFileLeaks ();
@@ -438,7 +438,7 @@ namespace NachoCore
                         }
                     }
                 }
-                return instance; 
+                return instance;
             }
         }
 
@@ -461,7 +461,7 @@ namespace NachoCore
             EstablishService ();
             EmailHelper.Setup ();
             BackEnd.Instance.Enable (this);
-            ExecutionContext = _PlatformIndication; 
+            ExecutionContext = _PlatformIndication;
             ContinueOnActivation ();
             // load products from app store
             StoreHandler.Instance.Start ();
@@ -515,7 +515,7 @@ namespace NachoCore
                             (percentage) => {
                                 var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
                                 result.Value = percentage;
-                                InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                                InvokeStatusIndEvent (new StatusIndEventArgs () {
                                     Status = result,
                                     Account = ConstMcAccount.NotAccountSpecific,
                                 });
@@ -523,7 +523,7 @@ namespace NachoCore
                             (description) => {
                                 var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
                                 result.Value = description;
-                                InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                                InvokeStatusIndEvent (new StatusIndEventArgs () {
                                     Status = result,
                                     Account = ConstMcAccount.NotAccountSpecific,
                                 });
@@ -546,7 +546,7 @@ namespace NachoCore
                     (percentage) => {
                         var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
                         result.Value = percentage;
-                        InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        InvokeStatusIndEvent (new StatusIndEventArgs () {
                             Status = result,
                             Account = ConstMcAccount.NotAccountSpecific,
                         });
@@ -554,7 +554,7 @@ namespace NachoCore
                     (description) => {
                         var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
                         result.Value = description;
-                        InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        InvokeStatusIndEvent (new StatusIndEventArgs () {
                             Status = result,
                             Account = ConstMcAccount.NotAccountSpecific,
                         });
@@ -574,8 +574,8 @@ namespace NachoCore
 
             NcApplicationMonitor.Instance.Stop ();
             NcModel.Instance.Stop ();
-            StoreHandler.Instance.Stop (); 
-            CloudHandler.Instance.Stop (); 
+            StoreHandler.Instance.Stop ();
+            CloudHandler.Instance.Stop ();
 
             if (null != StartupUnmarkTimer) {
                 StartupUnmarkTimer.Dispose ();
@@ -781,7 +781,7 @@ namespace NachoCore
 
             // I could not find any cultures with a non-Gregorian default calendar and a Gregorian optional calendar.
             // Since this code can't be tested, it is disabled.
-            #if false
+#if false
             // Does the current culture have a Gregorian calendar as an option?
             foreach (var optionalCalendar in CultureInfo.CurrentCulture.OptionalCalendars) {
                 if (optionalCalendar is GregorianCalendar) {
@@ -797,7 +797,7 @@ namespace NachoCore
                     return;
                 }
             }
-            #endif
+#endif
 
             // Is there a culture with the same language that has a Gregorian calendar?
             foreach (var culture in CultureInfo.GetCultures (CultureTypes.AllCultures)) {
@@ -812,7 +812,7 @@ namespace NachoCore
 
             // Fall back to English (United States)
             try {
-                var enUS = CultureInfo.GetCultureInfo("en-US");
+                var enUS = CultureInfo.GetCultureInfo ("en-US");
                 Log.Warn (Log.LOG_LIFECYCLE, "Changing the culture from {0} ({1}) to {2} ({3}) because the latter has a Gregorian calendar.",
                     CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName, enUS.Name, enUS.DisplayName);
                 Thread.CurrentThread.CurrentCulture = enUS;
@@ -918,13 +918,13 @@ namespace NachoCore
 
         public string GetPushService ()
         {
-            #if __IOS__
+#if __IOS__
             return "APNS";
-            #elif __ANDROID__
+#elif __ANDROID__
             return "GCM";
-            #else
+#else
             throw new PlatformNotSupportedException ();
-            #endif
+#endif
         }
 
         public bool InSafeMode ()
@@ -987,7 +987,7 @@ namespace NachoCore
                     }
                 }
 
-                #if HOCKEY_APP
+#if HOCKEY_APP
                 // Check if HockeyApp has any queued crash reports
                 if (!crashReportingDone) {
                     numCrashes = NumberOfCrashReports ();
@@ -995,9 +995,9 @@ namespace NachoCore
                         crashReportingDone = true;
                     }
                 }
-                #else
+#else
                 crashReportingDone = true;
-                #endif
+#endif
 
                 Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: telemetryEvents={0}, crashes={1}", numTelemetryEvents, numCrashes);
 
@@ -1071,6 +1071,9 @@ namespace NachoCore
         {
             if (Documents == null) {
                 Documents = NachoPlatform.NcFileHandler.Instance.NachoDocumentsPath ();
+                if (!Directory.Exists (Documents)) {
+                    Directory.CreateDirectory (Documents);
+                }
             }
             return Documents;
         }

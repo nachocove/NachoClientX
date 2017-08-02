@@ -484,7 +484,6 @@
     <Compile Include="NachoUI.iOS\Support\NcAlertView.cs" />
     <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
     <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
-    <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
     <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />

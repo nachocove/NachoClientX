@@ -29,6 +29,7 @@
     <MtouchLink>None</MtouchLink>
     <MtouchArch>i386, x86_64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L../../ios-openssl/lib -L../../NachoPlatformBinding/NachoPlatformLib -lcrypto -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib/libNachoPlatformLibSDK.a"</MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>pdbonly</DebugType>
@@ -43,6 +44,7 @@
     <MtouchLink>SdkOnly</MtouchLink>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L../../ios-openssl/lib -L../../NachoPlatformBinding/NachoPlatformLib -lcrypto -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib/libNachoPlatformLibSDK.a"</MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>pdbonly</DebugType>

@@ -42,7 +42,7 @@ namespace NachoClient.iOS
 
         private DateTime ForegroundTime = DateTime.MinValue;
 
-        public AppDelegate () : base()
+        public AppDelegate () : base ()
         {
             NotificationsHandler.BackgroundController = BackgroundController;
             BackgroundController.NotificationsHandler = NotificationsHandler;
@@ -58,8 +58,7 @@ namespace NachoClient.iOS
 
             NcApplication.GuaranteeGregorianCalendar ();
 
-            // move data files to Documents/Data if needed
-            NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded ();
+            MigrateDocumentsLocation ();
 
             // One-time initialization that do not need to be shut down later.
             if (!FirstLaunchInitialization) {
@@ -96,7 +95,7 @@ namespace NachoClient.iOS
 
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
-            Theme.Active = new NachoTheme();
+            Theme.Active = new NachoTheme ();
             Theme.Active.DefineAppearance ();
 
             NotificationsHandler.RegisterForNotifications ();
@@ -123,11 +122,11 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-           // if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
-           //     application.ShortcutItems = new UIApplicationShortcutItem[] {
-           //         new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
-           //     };
-           // }
+            // if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
+            //     application.ShortcutItems = new UIApplicationShortcutItem[] {
+            //         new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
+            //     };
+            // }
 
             // I don't know where to put this.  It can't go in NcApplication.MonitorReport(), because
             // C#'s TimeZoneInfo.Local has an ID and name of "Local", which is not helpful.  It has
@@ -252,8 +251,8 @@ namespace NachoClient.iOS
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
-        	Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
-        	BackgroundController.StartFetch (completionHandler, BackgroundController.FetchCause.PerformFetch);
+            Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
+            BackgroundController.StartFetch (completionHandler, BackgroundController.FetchCause.PerformFetch);
         }
 
         public override void ReceiveMemoryWarning (UIApplication application)
@@ -287,7 +286,7 @@ namespace NachoClient.iOS
             var nachoScheme = nachoSchemeObject.ToString ();
 
             if (url.IsFileUrl) {
-                OpenFiles (new string[] { url.Path }, sourceApplication);
+                OpenFiles (new string [] { url.Path }, sourceApplication);
                 return true;
             } else if (url.Scheme.Equals (nachoScheme)) {
                 var components = url.PathComponents;
@@ -322,7 +321,7 @@ namespace NachoClient.iOS
             }
         }
 
-        void OpenFiles (string[] paths, string source = null)
+        void OpenFiles (string [] paths, string source = null)
         {
             if (NcApplication.ReadyToStartUI ()) {
                 var account = NcApplication.Instance.DefaultEmailAccount;
@@ -403,7 +402,7 @@ namespace NachoClient.iOS
         /// Status bar height can change when the user is on a call or using navigation
         public override void ChangedStatusBarFrame (UIApplication application, CGRect oldStatusBarFrame)
         {
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_StatusBarHeightChanged),
             });
         }
@@ -425,18 +424,18 @@ namespace NachoClient.iOS
             // TODO Make use of the MX information that was gathered during auto-d.
             // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
-//            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
-//            switch ((uint)arg) {
-//            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
-//                why = NcResult.WhyEnum.InvalidDest;
-//                break;
-//            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
-//                why = NcResult.WhyEnum.ServerError;
-//                break;
-//            default:
-//                why = NcResult.WhyEnum.NotSpecified;
-//                break;
-//            }
+            //            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
+            //            switch ((uint)arg) {
+            //            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
+            //                why = NcResult.WhyEnum.InvalidDest;
+            //                break;
+            //            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
+            //                why = NcResult.WhyEnum.ServerError;
+            //                break;
+            //            default:
+            //                why = NcResult.WhyEnum.NotSpecified;
+            //                break;
+            //            }
 
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
@@ -457,7 +456,7 @@ namespace NachoClient.iOS
         private void CopyResourcesToDocuments ()
         {
             var documentsPath = NcApplication.GetDocumentsPath ();
-            string[] resources = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
+            string [] resources = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var resourceName in resources) {
                 var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
                 var destinationPath = Path.Combine (documentsPath, resourceName);
@@ -475,6 +474,44 @@ namespace NachoClient.iOS
         {
             McMutables.Set (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             Log.Info (Log.LOG_UI, "UpdateGoInactiveTime: exit");
+        }
+
+        public static void MigrateDocumentsLocation ()
+        {
+            string AppGroupDocuments = NcApplication.GetDocumentsPath ();
+            string MigrationIndicator = Path.Combine (AppGroupDocuments, "moved");
+
+            if (!File.Exists (MigrationIndicator)) {
+                string AppDocuments = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+                string destination;
+
+                Log.Info (Log.LOG_DB, "Moving Documents to App Group");
+
+                var dirs = Directory.GetDirectories (AppDocuments);
+                foreach (var dir in dirs) {
+                    destination = Path.Combine (AppGroupDocuments, Path.GetFileName (dir));
+                    Log.Info (Log.LOG_DB, "Moving directory {0} to {1}", Path.GetFileName (dir), destination);
+                    try {
+                        Directory.Move (dir, destination);
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_DB, "Cannot move dir {0} to {1} - {2}", dir, destination, ex);
+                    }
+                }
+
+                var files = Directory.GetFiles (AppDocuments);
+                foreach (var file in files) {
+                    destination = Path.Combine (AppGroupDocuments, Path.GetFileName (file));
+                    Log.Info (Log.LOG_DB, "Moving file {0} to {1}", Path.GetFileName (file), destination);
+                    try {
+                        Directory.Move (file, destination);
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_DB, "Cannot move file {0} to {1} - {2}", file, destination, ex);
+                    }
+                }
+
+                using (var stream = File.Create (MigrationIndicator)) {
+                }
+            }
         }
 
         #endregion
