@@ -401,6 +401,8 @@ class IOSBuilder(object):
         infofile.populate_with_config(self.build, self.config)
         infofile.add('HockeyAppAppId', self.config.iOS.HockeyAppId)
         infofile.add('AppGroup', self.config.iOS.AppGroup)
+        infofile.add('ShareBundleId', self.config.iOS.ShareBundleId)
+        infofile.add('CallerIdBundleId', self.config.iOS.CallerIdBundleId)
         infofile.write(path)
 
     def edit_callerid_buildinfo(self):

@@ -25,5 +25,12 @@
 	</dict>
 	<key>CFBundleName</key>
 	<string>Nacho Dev</string>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+		<integer>2</integer>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>Nacho Dev</string>
 </dict>
 </plist>

@@ -14,6 +14,8 @@ namespace NachoClientCallerID.iOS
     public class CallDirectoryHandler : CXCallDirectoryProvider, ICXCallDirectoryExtensionContextDelegate
     {
 
+        NSUserDefaults Defaults;
+
         protected CallDirectoryHandler (IntPtr handle) : base (handle)
         {
             // Note: this .ctor should not contain any initialization logic.
@@ -21,9 +23,18 @@ namespace NachoClientCallerID.iOS
 
         public override void BeginRequestWithExtensionContext (NSExtensionContext context)
         {
+            Defaults = new NSUserDefaults (NachoClient.Build.BuildInfo.AppGroup, NSUserDefaultsType.SuiteName);
+            Defaults.SetInt (Defaults.IntForKey ("requestCount") + 1, "requestCount");
+            Defaults.SetBool (false, "requestFinished");
+            Defaults.SetBool (false, "requestError");
+            Defaults.SetBool (false, "requestExpired");
+            Defaults.SetInt (0, "entryCount");
+            Defaults.Synchronize ();
 
             var callContext = (CXCallDirectoryExtensionContext)context;
             callContext.Delegate = this;
+
+            int entryCount = 0;
 
             using (var connection = GetDatabaseConnection ()) {
                 if (connection != null) {
@@ -32,12 +43,23 @@ namespace NachoClientCallerID.iOS
                     do {
                         result = SQLite3.Step (statement);
                         callContext.AddIdentificationEntry (SQLite3.ColumnInt64 (statement, 0), SQLite3.ColumnString (statement, 1));
+                        ++entryCount;
                     } while (result == SQLite3.Result.Row);
                     SQLite3.Finalize (statement);
                 }
             }
 
-            callContext.CompleteRequest (null);
+            Defaults.SetInt (entryCount, "entryCount");
+            Defaults.Synchronize ();
+
+            callContext.CompleteRequest ((expired) => {
+                if (expired) {
+                    Defaults.SetBool (true, "requestExpired");
+                } else {
+                    Defaults.SetBool (true, "requestFinished");
+                }
+                Defaults.Synchronize ();
+            });
         }
 
         SQLiteConnection GetDatabaseConnection ()
@@ -63,6 +85,11 @@ namespace NachoClientCallerID.iOS
             // This may be used to store the error details in a location accessible by the extension's containing app, so that the
             // app may be notified about errors which occured while loading data even if the request to load data was initiated by
             // the user in Settings instead of via the app itself.
+            Defaults.SetBool (true, "requestError");
+            Defaults.SetString (error.Domain, "errorDomain");
+            Defaults.SetInt (error.Code, "errorCode");
+            Defaults.SetString (error.Description, "errorDescription");
+            Defaults.Synchronize ();
         }
     }
 }
