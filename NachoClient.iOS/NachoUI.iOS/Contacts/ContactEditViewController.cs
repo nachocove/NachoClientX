@@ -70,7 +70,7 @@ namespace NachoClient.iOS
         public McContact contact;
         public McAccount account;
         protected McContact contactCopy;
-       
+
         protected nfloat yOffset;
 
         protected const int HEADER_INITIALS_CIRCLE_TAG = 100;
@@ -152,7 +152,7 @@ namespace NachoClient.iOS
             contentView = new UIView (scrollView.Bounds);
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
-            
+
             moreButtonIndent = View.Frame.Width - 40;
 
             switch (controllerType) {
@@ -439,7 +439,7 @@ namespace NachoClient.iOS
             addMiscButton = AddNewButton (NSBundle.MainBundle.LocalizedString ("Add Other", "Button title for adding a contact other field"), AddMiscTouchUpInside, miscView);
 
             internalOffset = 0;
-            foreach (var taken in ContactsHelper.GetTakenMiscNames(contactCopy)) {
+            foreach (var taken in ContactsHelper.GetTakenMiscNames (contactCopy)) {
                 MiscCell mCell = new MiscCell (internalOffset, this, taken, ContactsHelper.MiscContactAttributeNameToValue (taken, contactCopy));
                 miscCellList.Add (mCell);
                 miscView.AddSubview (mCell);
@@ -489,7 +489,7 @@ namespace NachoClient.iOS
             deleteContactLabel.TextAlignment = UITextAlignment.Left;
             deleteContactLabel.TextColor = A.Color_NachoGreen;
             deleteContactButton.AddSubview (deleteContactLabel);
-             
+
             yOffset = deleteContactButton.Frame.Bottom + 20;
 
             viewCover = new UIView (View.Frame);
@@ -687,7 +687,7 @@ namespace NachoClient.iOS
                 }
                 break;
             }
-            contactNameLabel.Text = 
+            contactNameLabel.Text =
                 firstName +
             (middleName.Length > 0 ? " " : "") +
             middleName +
@@ -899,7 +899,7 @@ namespace NachoClient.iOS
                     (!new RegexUtilities ().IsValidEmail (e.editField.Text))) {
                     e.editField.TextColor = A.Color_NachoRed;
                     badEmailFlag = true;
-                } 
+                }
             }
             return badEmailFlag;
         }
@@ -948,6 +948,8 @@ namespace NachoClient.iOS
                     NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId, contactCopy.Id, f.Id);
                     break;
                 }
+                Log.Info (Log.LOG_CONTACTS, "CallDirectory needs update becaue of UI save");
+                CallDirectory.Instance.RequestUpdate ();
                 NavigationController.PopViewController (true);
             }
         }
@@ -1129,7 +1131,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var phoneAttribute = contactCopy.AddOrUpdatePhoneNumberAttribute (contactCopy.AccountId, 
+            var phoneAttribute = contactCopy.AddOrUpdatePhoneNumberAttribute (contactCopy.AccountId,
                                      ContactsHelper.GetAvailablePhoneNames (contactCopy).First (),
                                      ContactsHelper.ExchangeNameToLabel (ContactsHelper.GetAvailablePhoneNames (contactCopy).First ()),
                                      ""
@@ -1150,7 +1152,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var emailAttribute = contactCopy.AddOrUpdateEmailAddressAttribute (contactCopy.AccountId, 
+            var emailAttribute = contactCopy.AddOrUpdateEmailAddressAttribute (contactCopy.AccountId,
                                      ContactsHelper.GetAvailableEmailNames (contactCopy).First (),
                                      ContactsHelper.ExchangeNameToLabel (ContactsHelper.GetAvailableEmailNames (contactCopy).First ()),
                                      ""
@@ -1243,7 +1245,7 @@ namespace NachoClient.iOS
             }
 
             string nextRelationshipName = ContactsHelper.GetAvailableRelationshipNames (contactCopy).First ();
-            McContactStringAttribute relationshipAttribute; 
+            McContactStringAttribute relationshipAttribute;
 
             if (Xml.Contacts.Child != nextRelationshipName) {
                 relationshipAttribute = contactCopy.AddRelationshipAttribute (contactCopy.AccountId,
@@ -1318,7 +1320,7 @@ namespace NachoClient.iOS
             headerPortraitImageView.Hidden = true;
 
             if (0 == contactCopy.PortraitId) {
-                headerInitialsLabel.BackgroundColor = userBackgroundColor; 
+                headerInitialsLabel.BackgroundColor = userBackgroundColor;
                 headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contactCopy);
                 headerInitialsLabel.Hidden = false;
             } else {
@@ -1578,7 +1580,7 @@ namespace NachoClient.iOS
             deleteButton.AddSubview (deleteLabel);
 
             UIImageView aarowImageView = new UIImageView (UIImage.FromBundle ("contacts-popup-arrow"));
-            aarowImageView.Frame = new CGRect (moreView.Frame.Width, 
+            aarowImageView.Frame = new CGRect (moreView.Frame.Width,
                 (moreView.Frame.Height / 2) - (aarowImageView.Frame.Height / 2),
                 aarowImageView.Frame.Width,
                 aarowImageView.Frame.Height);
@@ -1897,7 +1899,7 @@ namespace NachoClient.iOS
                 dateLabel.UserInteractionEnabled = true;
                 this.AddSubview (dateLabel);
 
-                dateLabelTap = new UITapGestureRecognizer (); 
+                dateLabelTap = new UITapGestureRecognizer ();
                 dateLabelTap.NumberOfTapsRequired = 1;
                 dateLabelTapToken = dateLabelTap.AddTarget (DateClicked);
                 dateLabel.AddGestureRecognizer (dateLabelTap);

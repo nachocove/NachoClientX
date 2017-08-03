@@ -14,8 +14,8 @@ namespace NachoCore.Utils
     public class NcTask
     {
         public const int MaxCancellationTestInterval = 100;
-        private static ConcurrentDictionary<WeakReference,string> TaskMap = new ConcurrentDictionary<WeakReference, string> ();
-        private static ConcurrentDictionary<string,string> UniqueList = new ConcurrentDictionary<string, string> ();
+        private static ConcurrentDictionary<WeakReference, string> TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+        private static ConcurrentDictionary<string, string> UniqueList = new ConcurrentDictionary<string, string> ();
         private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
         public static TaskScheduler ActionSerialScheduler = new LimitedConcurrencyLevelTaskScheduler (1);
@@ -65,7 +65,7 @@ namespace NachoCore.Utils
             return Run (action, name, stfu, false);
         }
 
-        static string[] LoginRunningTasks = new string[] {
+        static string [] LoginRunningTasks = new string [] {
             "Brain",
             "CheckNotified",
             "DeviceProtoControl:DeviceDbChange",
@@ -101,7 +101,8 @@ namespace NachoCore.Utils
             "UpdateUnreadMessageCount",
             "UpdateUnreadMessageView",
             "OAuthHTTPServer",
-            "OAuthHTTPClient"
+            "OAuthHTTPClient",
+            "CallDirectoryUpdate"
         };
 
         struct tracer
@@ -144,14 +145,14 @@ namespace NachoCore.Utils
 
             var spawningId = Thread.CurrentThread.ManagedThreadId;
             var task = Task.Factory.StartNew (delegate {
-                #if __ANDROID__
+#if __ANDROID__
                 if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
                     Log.Error (Log.LOG_UTILS, "StartNew running on main thread.");
                     new NcTimer ("StartNew workaround", TryAgain, action, 100, 0);
                     return;
                 }
                 Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
-                #endif
+#endif
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;
                 if (200 < latency) {
@@ -199,7 +200,7 @@ namespace NachoCore.Utils
 
         }
 
-        #if __ANDROID__
+#if __ANDROID__
         static void TryAgain (Object o)
         {
             if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
@@ -212,13 +213,13 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_SYS, "NcTask cancelled in TryAgain.");
             } 
         }
-        #endif
+#endif
 
         public static void StopService ()
         {
             Log.Info (Log.LOG_SYS, "NcTask: Stopping all NCTasks...");
             Cts.Cancel ();
-            Task.WaitAny (new Task[] { Task.Delay (4 * MaxCancellationTestInterval) });
+            Task.WaitAny (new Task [] { Task.Delay (4 * MaxCancellationTestInterval) });
             foreach (var pair in TaskMap) {
                 try {
                     var taskRef = pair.Key;
@@ -270,7 +271,7 @@ namespace NachoCore.Utils
         public static bool CancelableSleep (int msec, CancellationToken token)
         {
             try {
-                Task.WaitAll (new Task[] { Task.Delay (msec, token) });
+                Task.WaitAll (new Task [] { Task.Delay (msec, token) });
                 return true;
             } catch (AggregateException e) {
                 foreach (var ex in e.InnerExceptions) {

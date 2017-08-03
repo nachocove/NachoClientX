@@ -672,6 +672,7 @@
     <Compile Include="NachoUI.iOS\Calendar\IBodyRender.cs" />
     <Compile Include="NachoPlatform.iOS\Strings.cs" />
     <Compile Include="NachoPlatform.iOS\DateTimeFormatter.cs" />
+    <Compile Include="CallDirectory.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\Base.lproj\AccountCreation.storyboard" />

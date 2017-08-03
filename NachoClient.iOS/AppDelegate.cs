@@ -177,6 +177,7 @@ namespace NachoClient.iOS
 
             NotificationsHandler.BecomeActive ();
             BackgroundController.BecomeActive ();
+            CallDirectory.Instance.BecomeActive ();
 
             NcApplication.Instance.ContinueOnActivation ();
 
@@ -199,6 +200,7 @@ namespace NachoClient.iOS
 
             UpdateGoInactiveTime ();
             NotificationsHandler.BecomeInactive ();
+            CallDirectory.Instance.BecomeInactive ();
 
             if (DateTime.MinValue != ForegroundTime) {
                 // Log the duration of foreground for usage analytics
