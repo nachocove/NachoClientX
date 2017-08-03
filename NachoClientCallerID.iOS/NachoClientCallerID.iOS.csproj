@@ -81,6 +81,9 @@
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
     <MtouchExtraArgs>-gcc_flags "-ObjC -L../../ios-openssl/lib -L../../NachoPlatformBinding/NachoPlatformLib -lcrypto -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib/libNachoPlatformLibSDK.a"</MtouchExtraArgs>
   </PropertyGroup>
+  <Target Name="BuildDevBuildSettings">
+    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py ios" WorkingDirectory="$(ProjectDir)" />
+  </Target>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -106,4 +109,10 @@
   </ItemGroup>
   <Import Project="..\SQLite\SQLite.projitems" Label="Shared" Condition="Exists('..\SQLite\SQLite.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.AppExtension.CSharp.targets" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' ">
+    <BuildDependsOn>
+      BuildDevBuildSettings;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+  </PropertyGroup>
 </Project>

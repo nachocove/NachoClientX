@@ -58,6 +58,9 @@
     <MtouchDebug>true</MtouchDebug>
     <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
+  <Target Name="BuildDevBuildSettings">
+    <Exec Command="$(SolutionDir)/scripts/mk_build_info.py ios" WorkingDirectory="$(ProjectDir)" />
+  </Target>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -79,4 +82,10 @@
     <Compile Include="BuildInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.AppExtension.CSharp.targets" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' ">
+    <BuildDependsOn>
+      BuildDevBuildSettings;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+  </PropertyGroup>
 </Project>

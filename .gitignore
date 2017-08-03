@@ -28,7 +28,8 @@ NachoClient.*/.build_number*
 NachoClientShare.iOS*/.build_number*
 Test.*/.build_number
 NachoClient.*/BuildInfo.cs
-NachoClientShare.iOS*/BuildInfo.cs
+NachoClientShare.iOS/BuildInfo.cs
+NachoClientCallerId.iOS/BuildInfo.cs
 NachoClient.*/LogSettings.cs
 NachoClient.*/.skip_hockeyapp_upload
 *.pyc
