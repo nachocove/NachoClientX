@@ -485,7 +485,7 @@ class IOSBuilder(object):
         # An xarchive is named according to the build time, with a precision of 1 minute
         # Since we don't know exactly which time msbuild used, we'll search for a few minutes.
         # The risk of finding the wrong build is impossible as long as builds continue to take at least several minutes.
-        expected_xarchive_format = "%s %d-%d-%02d %d.%02d %s.xcarchive"
+        expected_xarchive_format = "%s %d-%02d-%02d %d.%02d %s.xcarchive"
         checked_xarchives = []
         for i in range(3):
             expected_xarchive = os.path.join(os.getenv('HOME'), 'Library', 'Developer', 'Xcode', 'Archives', buildtime.strftime("%Y-%m-%d"), expected_xarchive_format % (self.project_name, buildtime.date().month, buildtime.date().day, buildtime.date().year % 100, buildtime.time().hour % 12 if buildtime.time().hour > 0 else 12, buildtime.time().minute, "PM" if buildtime.time().hour >= 12 else "AM"))
