@@ -4,46 +4,11 @@ using NachoCore;
 
 namespace NachoPlatform
 {
-    public class PushAssist : IPushAssist
+    public class PushAssist : PushAssistCommon
     {
-        public PushAssist (IPushAssistOwner owner)
+        public PushAssist (IPushAssistOwner owner) : base (owner)
         {
         }
-
-        public static bool SetDeviceToken (string token)
-        {
-            return true;
-        }
-
-        public static bool ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
-        {
-            return true;
-        }
-
-        #region IPushAssist implementation
-
-        public void Dispose ()
-        {
-        }
-
-        public void Execute ()
-        {
-        }
-
-        public void Park ()
-        {
-        }
-
-        public bool IsStartOrParked ()
-        {
-            return false;
-        }
-
-        public void Stop ()
-        {
-        }
-
-        #endregion
     }
 }
 
