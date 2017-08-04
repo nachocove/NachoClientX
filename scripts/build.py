@@ -30,6 +30,7 @@ def main():
     args = parser.parse_args()
 
     build = Build(args.kind, args.version, args.build)
+
     platforms = platforms_from_args(args)
 
     builder = Builder(build, platforms=platforms, config_file=args.config, unsigned_only=args.unsigned or args.kind == 'bluecedar', skip_git=args.no_git)
@@ -50,6 +51,8 @@ class Build(object):
     major = 0
     minor = 0
     bugfix = 0
+    prerelease_type = None
+    prerelease_number = 0
     number = 0
     source = None
 
@@ -57,14 +60,32 @@ class Build(object):
         self.kind = kind
         parts = version_string.split('.')
         self.major = int(parts[0])
-        if len(parts) > 1:
+        if len(parts) > 2:
             self.minor = int(parts[1])
-            if len(parts) > 2:
-                self.bufix = int(parts[2])
+            self.bugfix, self.prerelease_type, self.prerelease_number = self.parse_prerelease(parts[2])
+        elif len(parts) > 1:
+            self.minor, self.prerelease_type, self.prerelease_number = self.parse_prerelease(parts[1])
         self.number = build_number
+
+    def parse_prerelease(self, component):
+        import re
+        matches = re.match("^(\d+)(a|b|rc)(\d+)$", component)
+        if matches is None:
+            return int(component), None, 0
+        return int(matches.group(1)), matches.group(2), int(matches.group(3))
+
+    @property
+    def prerelease_string(self):
+        if self.prerelease_type is None:
+            return ""
+        return "%s%d" % (self.prerelease_type, self.prerelease_number)
 
     @property
     def version_string(self):
+        return '%d.%d.%d%s' % (self.major, self.minor, self.bugfix, self.prerelease_string)
+
+    @property
+    def version_string_without_prerelease(self):
         return '%d.%d.%d' % (self.major, self.minor, self.bugfix)
 
     @property
@@ -80,6 +101,10 @@ class Build(object):
         if self.kind == 'store':
             return 'v%s_%s' % (self.version_string, self.number)
         return 'v%s_%s_%s' % (self.version_string, self.number, self.kind)
+
+    @property
+    def sorttuple(self):
+        return (self.major, self.minor, self.bugfix, self.prerelease_type if self.prerelease_type is not None else 'z', self.prerelease_number)
 
 
 class DevBuild(Build):
@@ -423,7 +448,7 @@ class IOSBuilder(object):
         orig_bundle_id = info['CFBundleIdentifier']
         info['CFBundleIdentifier'] = self.config.iOS.BundleId
         info['CFBundleVersion'] = self.build.number
-        info['CFBundleShortVersionString'] = self.build.version_string
+        info['CFBundleShortVersionString'] = self.build.version_string_without_prerelease
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
         info['CFBundleName'] = self.config.iOS.DisplayName
         info['UIFileSharingEnabled'] = self.config.iOS.FileSharingEnabled
@@ -441,7 +466,7 @@ class IOSBuilder(object):
         orig_bundle_id = info['CFBundleIdentifier']
         info['CFBundleIdentifier'] = self.config.iOS.CallerIdBundleId
         info['CFBundleVersion'] = self.build.number
-        info['CFBundleShortVersionString'] = self.build.version_string
+        info['CFBundleShortVersionString'] = self.build.version_string_without_prerelease
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
         info['CFBundleName'] = self.config.iOS.DisplayName
         plistlib.writePlist(info, info_path)
@@ -452,7 +477,7 @@ class IOSBuilder(object):
         orig_bundle_id = info['CFBundleIdentifier']
         info['CFBundleIdentifier'] = self.config.iOS.ShareBundleId
         info['CFBundleVersion'] = self.build.number
-        info['CFBundleShortVersionString'] = self.build.version_string
+        info['CFBundleShortVersionString'] = self.build.version_string_without_prerelease
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
         info['CFBundleName'] = self.config.iOS.DisplayName
         plistlib.writePlist(info, info_path)
