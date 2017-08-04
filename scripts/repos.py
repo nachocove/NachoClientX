@@ -270,8 +270,8 @@ def command_delete_branch(args):
 def command_delete_tag(args):
     repos = all_repos()
     for repo in repos:
-        print "Deleting tag %s with %s..." % (tag, repo.name)
-        repo.delete_tag(tag, message)
+        print "Deleting tag %s with %s..." % (args.tag, repo.name)
+        repo.delete_tag(args.tag)
     print "\nDone"
 
 
