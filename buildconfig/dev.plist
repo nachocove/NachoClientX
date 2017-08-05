@@ -62,7 +62,7 @@
 	<key>Pinger</key>
 	<dict>
 		<key>Hostname</key>
-		<string>ec2-54-193-95-54.us-west-1.compute.amazonaws.com</string>
+		<string>ec2-54-193-95-54.us-west-1.compute.amazonaws.com:8443</string>
 		<key>RootCert</key>
 		<string>-----BEGIN CERTIFICATE-----
 MIIDszCCApugAwIBAgIBATANBgkqhkiG9w0BAQsFADCBhjE5MDcGA1UEAwwwZWMy
