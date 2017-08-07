@@ -56,7 +56,7 @@ namespace NachoPlatform
         private const string KIdentifierForVendor = "IdentifierForVendor";
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
-        private const string KUserId = "UserId";
+        private const string KUserId = "UserId2";
         private const string KDeviceId = "DeviceId";
         private const string KLogSalt = "LogSalt";
 
@@ -67,7 +67,7 @@ namespace NachoPlatform
 
         private string CreateQuery (string handle)
         {
-            return  handle;
+            return handle;
         }
 
         private string CreateQuery (int handle)
@@ -152,7 +152,7 @@ namespace NachoPlatform
             return Getter (LogSaltKey (handle));
         }
 
-        public bool SetLogSalt(int handle, string logSalt)
+        public bool SetLogSalt (int handle, string logSalt)
         {
             return Setter (LogSaltKey (handle), logSalt);
         }
@@ -178,6 +178,7 @@ namespace NachoPlatform
         {
             return Setter (UserIdKey (), userId);
         }
+
         #endregion
 
         #region DeviceId
@@ -208,10 +209,8 @@ namespace NachoPlatform
 
         #region ISharedPreferences
         ISharedPreferences _Prefs;
-        ISharedPreferences Prefs
-        {
-            get
-            {
+        ISharedPreferences Prefs {
+            get {
                 if (_Prefs == null) {
                     _Prefs = PreferenceManager.GetDefaultSharedPreferences (MainApplication.Instance.ApplicationContext);
                 }
@@ -221,7 +220,7 @@ namespace NachoPlatform
 
         private string Getter (string query, bool errorIfMissing = false)
         {
-            var r = Prefs.GetString(query, null);
+            var r = Prefs.GetString (query, null);
             if (null != r) {
                 try {
                     return DecryptString (r);
@@ -244,8 +243,8 @@ namespace NachoPlatform
             NcAssert.True (null != value);
             var enc = EncryptString (value);
             var editor = Prefs.Edit ();
-            editor.PutString(query, enc);
-            editor.Commit();
+            editor.PutString (query, enc);
+            editor.Commit ();
             return true;
         }
 
@@ -260,7 +259,7 @@ namespace NachoPlatform
 
         #region RandomNumberGenerator
         private static System.Security.Cryptography.RandomNumberGenerator _Random;
-        private void RandomBytes (byte[] bytes)
+        private void RandomBytes (byte [] bytes)
         {
             if (_Random == null) {
                 _Random = new System.Security.Cryptography.RNGCryptoServiceProvider ();
@@ -292,7 +291,7 @@ namespace NachoPlatform
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsKeyKey, RSAEncryptKey (MakeAES256Key ()));
                     editor.Commit ();
-                    NcAssert.True (Prefs.Contains(KPrefsKeyKey)); // make darn tootin' sure it's saved.
+                    NcAssert.True (Prefs.Contains (KPrefsKeyKey)); // make darn tootin' sure it's saved.
                 }
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 PrefsKey = RSADecryptKey (r);
@@ -303,7 +302,7 @@ namespace NachoPlatform
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsMACKey, RSAEncryptKey (MakeAES256Key ()));
                     editor.Commit ();
-                    NcAssert.True (Prefs.Contains(KPrefsMACKey)); // make darn tootin' sure it's saved.
+                    NcAssert.True (Prefs.Contains (KPrefsMACKey)); // make darn tootin' sure it's saved.
                 }
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 PrefsMacKey = RSADecryptKey (r);
@@ -312,7 +311,7 @@ namespace NachoPlatform
 
         private IKey MakeAES256Key ()
         {
-            byte[] raw = new byte[32];
+            byte [] raw = new byte [32];
             RandomBytes (raw);
             return new SecretKeySpec (raw, "AES");
         }
@@ -322,22 +321,22 @@ namespace NachoPlatform
             return Cipher.GetInstance ("AES/CBC/PKCS7Padding");
         }
 
-        private Mac AesMac()
+        private Mac AesMac ()
         {
             return Mac.GetInstance ("HmacSHA256");
         }
 
         private string DecryptString (string encryptedTextB64)
         {
-            byte[] encryptedPackage = Convert.FromBase64String (encryptedTextB64);
-            if (encryptedPackage[0] != (byte)0) {
+            byte [] encryptedPackage = Convert.FromBase64String (encryptedTextB64);
+            if (encryptedPackage [0] != (byte)0) {
                 throw new KeychainDecryptionException (string.Format ("WRONG version {0}", encryptedPackage [0]));
             }
 
-            byte[] iv = new byte[AES_IV_LEN];
-            byte[] hmac = new byte[SHA256_LEN];
+            byte [] iv = new byte [AES_IV_LEN];
+            byte [] hmac = new byte [SHA256_LEN];
             int enc_len = encryptedPackage.Length - (1 + AES_IV_LEN + SHA256_LEN); // +1 for version
-            byte[] encData = new byte[enc_len];
+            byte [] encData = new byte [enc_len];
 
             int offset = 1; // skip version
             Array.Copy (encryptedPackage, offset, iv, 0, AES_IV_LEN);
@@ -350,15 +349,15 @@ namespace NachoPlatform
             var mac = AesMac ();
             mac.Init (PrefsMacKey);
             mac.Reset ();
-            byte[] computedHmac = mac.DoFinal (encData);
-            if (!FixedTimeCompare(computedHmac, hmac)) {
+            byte [] computedHmac = mac.DoFinal (encData);
+            if (!FixedTimeCompare (computedHmac, hmac)) {
                 throw new KeychainDecryptionException ("HMAC FAILED");
             }
 
             var ips = new IvParameterSpec (iv);
             var cipher = AesCipher ();
             cipher.Init (CipherMode.DecryptMode, PrefsKey, ips);
-            byte[] decryptedData = cipher.DoFinal (encData);
+            byte [] decryptedData = cipher.DoFinal (encData);
 
             return Encoding.UTF8.GetString (decryptedData);
         }
@@ -367,40 +366,40 @@ namespace NachoPlatform
         {
             var cipher = AesCipher ();
             cipher.Init (CipherMode.EncryptMode, PrefsKey);
-            byte[] encrypted = cipher.DoFinal (Encoding.UTF8.GetBytes (data));
+            byte [] encrypted = cipher.DoFinal (Encoding.UTF8.GetBytes (data));
             var iv = cipher.GetIV ();
             NcAssert.True (iv.Length == AES_IV_LEN);
 
             var mac = AesMac ();
             mac.Init (PrefsMacKey);
             mac.Reset ();
-            byte[] hmac = mac.DoFinal (encrypted);
+            byte [] hmac = mac.DoFinal (encrypted);
             NcAssert.True (hmac.Length == SHA256_LEN);
 
-            var encPackage = new MemoryStream();
+            var encPackage = new MemoryStream ();
             encPackage.WriteByte ((byte)0); // version number 0
             encPackage.Write (iv, 0, iv.Length);
             encPackage.Write (hmac, 0, hmac.Length);
             encPackage.Write (encrypted, 0, encrypted.Length);
             int encLen = (int)encPackage.Length;
             encPackage.Close ();
-            byte[] encryptedData = new byte[encLen];
+            byte [] encryptedData = new byte [encLen];
             Array.Copy (encPackage.GetBuffer (), encryptedData, encLen);
             return Convert.ToBase64String (encryptedData);
         }
 
-        private bool FixedTimeCompare (byte[] a, byte[] b)
+        private bool FixedTimeCompare (byte [] a, byte [] b)
         {
             int result = a.Length ^ b.Length;
-            for (var i=0; i<a.Length && i<b.Length; i++) {
-                result |= a[i] ^ b[i];
+            for (var i = 0; i < a.Length && i < b.Length; i++) {
+                result |= a [i] ^ b [i];
             }
             return result == 0;
         }
 
-        public static string ByteArrayToString(byte[] ba)
+        public static string ByteArrayToString (byte [] ba)
         {
-            string hex = BitConverter.ToString(ba);
+            string hex = BitConverter.ToString (ba);
             return string.Format ("({0}):{1}", ba.Length, hex.Replace ("-", ""));
         }
 
@@ -443,19 +442,19 @@ namespace NachoPlatform
             Java.Util.Calendar start = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
             Java.Util.Calendar end = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
             end.Add (Java.Util.CalendarField.Year, 20);
-            KeyPairGenerator generator = KeyPairGenerator.GetInstance("RSA", DefaultKeyStore);
-            KeyPairGeneratorSpec spec = new KeyPairGeneratorSpec.Builder(MainApplication.Instance.ApplicationContext)
+            KeyPairGenerator generator = KeyPairGenerator.GetInstance ("RSA", DefaultKeyStore);
+            KeyPairGeneratorSpec spec = new KeyPairGeneratorSpec.Builder (MainApplication.Instance.ApplicationContext)
                 .SetKeyType ("RSA")
                 .SetKeySize (KeyPairSize)
                 .SetAlias (KDefaultKeyPair)
-                .SetSubject(new Javax.Security.Auth.X500.X500Principal("CN=NachoMail"))
+                .SetSubject (new Javax.Security.Auth.X500.X500Principal ("CN=NachoMail"))
                 .SetSerialNumber (Java.Math.BigInteger.One)
-                .SetStartDate(start.Time)
-                .SetEndDate(end.Time)
+                .SetStartDate (start.Time)
+                .SetEndDate (end.Time)
                 //.SetEncryptionRequired () // TODO We probably need to see if we can still use the key in the background if the device is locked.
                 .Build ();
-            generator.Initialize(spec);
-            generator.GenerateKeyPair();
+            generator.Initialize (spec);
+            generator.GenerateKeyPair ();
             st.Stop ();
             RSAKeyGenerated = true;
             RSAKeyGenerationTimeMilliseconds = st.ElapsedMilliseconds;
@@ -471,7 +470,7 @@ namespace NachoPlatform
 
         private string RSAEncryptKey (IKey key)
         {
-            byte[] encryptedData;
+            byte [] encryptedData;
             KeyStore.PrivateKeyEntry privateKeyEntry;
             using (var ks = getKeystore ()) {
                 privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);

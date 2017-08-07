@@ -32,7 +32,7 @@ namespace NachoCore.Utils
         ITelemetryBE BackEnd;
         ITelementryDB DBBackEnd;
 
-        NcCounter[] Counters;
+        NcCounter [] Counters;
         NcCounter FailToSend;
 
         private NcRateLimter FailToSendLogLimiter;
@@ -48,21 +48,21 @@ namespace NachoCore.Utils
 
         public Telemetry ()
         {
-            #if !TELEMETRY_BE_NOOP
-            DBBackEnd = new TelemetryJsonFileTable ();
-            #else
-            DBBackEnd = new TelemetryJsonFileTable_NOOP ();
-            #endif
+            if (string.IsNullOrEmpty (BuildInfo.AwsAccountId) || string.IsNullOrEmpty (BuildInfo.AwsAuthRoleArn) || string.IsNullOrEmpty (BuildInfo.AwsIdentityPoolId) || string.IsNullOrEmpty (BuildInfo.S3Bucket)) {
+                DBBackEnd = new TelemetryJsonFileTable_NOOP ();
+            } else {
+                DBBackEnd = new TelemetryJsonFileTable ();
+            }
             BackEnd = null;
             DbUpdated = new AutoResetEvent (false);
-            Counters = new NcCounter[(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
+            Counters = new NcCounter [(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
             Counters [0] = new NcCounter ("Telemetry", true);
             Counters [0].AutoReset = true;
             Counters [0].ReportPeriod = 0;
             Counters [0].PreReportCallback = PreReportAdjustment;
 
-            Type teleEvtType = typeof(TelemetryEventType);
-            foreach (TelemetryEventType type in Enum.GetValues(teleEvtType)) {
+            Type teleEvtType = typeof (TelemetryEventType);
+            foreach (TelemetryEventType type in Enum.GetValues (teleEvtType)) {
                 if ((TelemetryEventType.COUNTER == type) ||
                     (TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE == type) ||
                     (TelemetryEventType.UNKNOWN == type)) {
@@ -112,10 +112,10 @@ namespace NachoCore.Utils
             DbUpdated.Set ();
         }
 
-        public void RecordLogEvent (Log log, Log.Level level, string fmt, params object[] list)
+        public void RecordLogEvent (Log log, Log.Level level, string fmt, params object [] list)
         {
             TelemetryEventType type;
-            switch (level){
+            switch (level) {
             case Log.Level.Debug:
                 type = TelemetryEventType.DEBUG;
                 break;
@@ -143,7 +143,7 @@ namespace NachoCore.Utils
             RecordJsonEvent (type, jsonEvent);
         }
 
-        protected void RecordProtocolEvent (TelemetryEventType type, byte[] payload)
+        protected void RecordProtocolEvent (TelemetryEventType type, byte [] payload)
         {
             // TODO - Add check for the limit of wbxml. But we need to limit the base64 encode no the binary bytes.
             var jsonEvent = new TelemetryProtocolEvent (type) {
@@ -152,13 +152,13 @@ namespace NachoCore.Utils
             RecordJsonEvent (type, jsonEvent);
         }
 
-        public void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
+        public void RecordWbxmlEvent (bool isRequest, byte [] wbxml)
         {
             var type = isRequest ? TelemetryEventType.WBXML_REQUEST : TelemetryEventType.WBXML_RESPONSE;
             RecordProtocolEvent (type, wbxml);
         }
 
-        public void RecordImapEvent (bool isRequest, byte[] payload)
+        public void RecordImapEvent (bool isRequest, byte [] payload)
         {
             var type = isRequest ? TelemetryEventType.IMAP_REQUEST : TelemetryEventType.IMAP_RESPONSE;
             RecordProtocolEvent (type, payload);
@@ -288,7 +288,7 @@ namespace NachoCore.Utils
         }
 
         public void RecordAccountEmailAddress (McAccount account)
-        {               
+        {
             string emailAddress = account.EmailAddr;
             if (String.IsNullOrEmpty (emailAddress)) {
                 return;
@@ -398,7 +398,7 @@ namespace NachoCore.Utils
         /// Send a SHA1 hash of the email address of all McAccounts (that have an email addresss)
         private void SendSha1AccountEmailAddresses ()
         {
-            foreach (var account in McAccount.GetAllAccounts()) {
+            foreach (var account in McAccount.GetAllAccounts ()) {
                 if (McAccount.AccountTypeEnum.Device == account.AccountType) {
                     continue;
                 }
@@ -416,19 +416,32 @@ namespace NachoCore.Utils
         private void Process ()
         {
             try {
-                #if !TELEMETRY_BE_NOOP
                 if (!string.IsNullOrEmpty (BuildInfo.AwsAccountId) &&
                     !string.IsNullOrEmpty (BuildInfo.AwsAuthRoleArn) &&
                     !string.IsNullOrEmpty (BuildInfo.AwsIdentityPoolId)) {
-                    BackEnd = new TelemetryBES3 ();
+                    if (string.IsNullOrEmpty (BuildInfo.S3Bucket)) {
+                        Log.Info (Log.LOG_SYS, "No AWS S3 setting available. Using TelemetryBE_NOOP, but fetching AWS cognito credentials");
+                        BackEnd = new TelemetryBE_NOOP ();
+                        var credentials = new TelemetryAWSCredentials (
+                            BuildInfo.AwsAccountId,
+                            BuildInfo.AwsIdentityPoolId,
+                            BuildInfo.AwsUnauthRoleArn,
+                            BuildInfo.AwsAuthRoleArn,
+                            Amazon.RegionEndpoint.USEast1
+                        );
+                        try {
+                            NcApplication.Instance.UserId = credentials.GetIdentityId ();
+                            Log.LOG_SYS.Info ("Got user id from cognito: {0}", NcApplication.Instance.UserId);
+                        } catch (Exception e) {
+                            Log.LOG_SYS.Error ("Unable to fetch AWS cognito credentials: {0}", e);
+                        }
+                    } else {
+                        BackEnd = new TelemetryBES3 ();
+                    }
                 } else {
-                    BackEnd = new TelemetryBE_NOOP ();
                     Log.Error (Log.LOG_SYS, "No AWS setting available. Using TelemetryBE_NOOP");
                     BackEnd = new TelemetryBE_NOOP ();
                 }
-                #else
-                BackEnd = new TelemetryBE_NOOP ();
-                #endif
 
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.

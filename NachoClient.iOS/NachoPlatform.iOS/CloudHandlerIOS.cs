@@ -10,7 +10,7 @@ namespace NachoPlatform
 {
     public class CloudHandler : IPlatformCloudHandler
     {
-        private const string KUserId = "UserId3";
+        private const string KUserId = "UserId4";
         private const string KFirstInstallDate = "FirstInstallDate3";
         private const string KPurchaseDate = "PurchaseDate3";
         private const string KIsAlreadyPurchased = "IsAlreadyPurchased3";
@@ -42,7 +42,7 @@ namespace NachoPlatform
         public CloudHandler ()
         {
             // Checks to see if the user of this device has iCloud enabled
-            var uburl = NSFileManager.DefaultManager.GetUrlForUbiquityContainer (null);                
+            var uburl = NSFileManager.DefaultManager.GetUrlForUbiquityContainer (null);
             // Connected to iCloud?
             // FIXME - remove following line after telemetry is ready.
             uburl = null;
@@ -52,7 +52,7 @@ namespace NachoPlatform
                 iCloudUrl = null;
                 Store = null;
                 Log.Info (Log.LOG_SYS, "CloudHandler: Unable to connect to iCloud");
-            } else {    
+            } else {
                 // Yes, 
                 HasiCloud = true;
                 iCloudUrl = uburl;
@@ -85,7 +85,7 @@ namespace NachoPlatform
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Setting UserId {0}", UserId);
             if (HasiCloud) {
-                Store.SetString (KUserId, UserId);  
+                Store.SetString (KUserId, UserId);
                 Store.Synchronize ();
             }
             Keychain.Instance.SetUserId (UserId);
@@ -100,9 +100,9 @@ namespace NachoPlatform
                     if (remotePurchaseStatus == true) {
                         bool localPurchaseStatus = NSUserDefaults.StandardUserDefaults.BoolForKey (KIsAlreadyPurchased);
                         if (localPurchaseStatus != remotePurchaseStatus) {
-                            if (localPurchaseStatus) { 
+                            if (localPurchaseStatus) {
                                 // locally purchased, update cloud)
-                                Store.SetBool (KIsAlreadyPurchased, true);  
+                                Store.SetBool (KIsAlreadyPurchased, true);
                                 string purchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey (KPurchaseDate);
                                 Store.SetString (KPurchaseDate, purchaseDate);
                             } else {
@@ -146,13 +146,13 @@ namespace NachoPlatform
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Recording purchase status(true) on {0}", purchaseDate.ToAsUtcString ());
             if (HasiCloud) {
-                Store.SetBool (KIsAlreadyPurchased, true);  
+                Store.SetBool (KIsAlreadyPurchased, true);
                 Store.SetString (KPurchaseDate, purchaseDate.ToAsUtcString ());
                 Store.Synchronize ();
             }
             NSUserDefaults.StandardUserDefaults.SetBool (true, KIsAlreadyPurchased);
             NSUserDefaults.StandardUserDefaults.SetString (purchaseDate.ToAsUtcString (), KPurchaseDate);
-            NSUserDefaults.StandardUserDefaults.Synchronize ();        
+            NSUserDefaults.StandardUserDefaults.Synchronize ();
         }
 
         public void SetFirstInstallDate (DateTime installDate)
@@ -163,7 +163,7 @@ namespace NachoPlatform
                 Store.Synchronize ();
             }
             NSUserDefaults.StandardUserDefaults.SetString (installDate.ToAsUtcString (), KFirstInstallDate);
-            NSUserDefaults.StandardUserDefaults.Synchronize ();   
+            NSUserDefaults.StandardUserDefaults.Synchronize ();
         }
 
         public DateTime GetFirstInstallDate ()
@@ -187,7 +187,7 @@ namespace NachoPlatform
             // if no icloud or not found in iCloud
             installDate = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
             Log.Info (Log.LOG_SYS, "CloudHandler: First install date not found in cloud. Getting user defaults value {0}.", installDate);
-            return installDate.ToDateTime ();        
+            return installDate.ToDateTime ();
         }
 
         private void TokensWatcher (object sender, EventArgs ea)
@@ -219,31 +219,31 @@ namespace NachoPlatform
             // start listening to changes in NcApplication
             NcApplication.Instance.StatusIndEvent += TokensWatcher;
             // start listening to changes in cloud keys
-            CloudKeyObserver = 
+            CloudKeyObserver =
                 NSNotificationCenter.DefaultCenter.AddObserver (
                 NSUbiquitousKeyValueStore.DidChangeExternallyNotification
                     , delegate (NSNotification n) {
-                NSDictionary userInfo = n.UserInfo;
-                NSNumber reasonNumber = (NSNumber)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangeReasonKey);
-                int reason = reasonNumber.Int32Value; // reason change was triggered
+                        NSDictionary userInfo = n.UserInfo;
+                        NSNumber reasonNumber = (NSNumber)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangeReasonKey);
+                        int reason = reasonNumber.Int32Value; // reason change was triggered
 
-                NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
-                for (uint i = 0; i < changedKeys.Count; i++) {
-                    string key = Marshal.PtrToStringAuto (changedKeys.ValueAt (i));
-                    if (key == KUserId) {
-                        Log.Info (Log.LOG_SYS, "CloudHandler: Notification change reason {0}", reason);
-                        // ICloud override local - TODO: confirm this
-                        string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
-                        Log.Info (Log.LOG_SYS, "CloudHandler: Notification from cloud. UserId changed to {0}", userId);
-                        if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
-                            if (CloudInstallDateEarlierThanLocal ()) {
-                                Log.Info (Log.LOG_SYS, "CloudHandler: Replacing localUserId {0} with {1} from Cloud", NcApplication.Instance.ClientId, userId);
-                                NcApplication.Instance.UserId = userId;
+                        NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
+                        for (uint i = 0; i < changedKeys.Count; i++) {
+                            string key = Marshal.PtrToStringAuto (changedKeys.ValueAt (i));
+                            if (key == KUserId) {
+                                Log.Info (Log.LOG_SYS, "CloudHandler: Notification change reason {0}", reason);
+                                // ICloud override local - TODO: confirm this
+                                string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
+                                Log.Info (Log.LOG_SYS, "CloudHandler: Notification from cloud. UserId changed to {0}", userId);
+                                if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
+                                    if (CloudInstallDateEarlierThanLocal ()) {
+                                        Log.Info (Log.LOG_SYS, "CloudHandler: Replacing localUserId {0} with {1} from Cloud", NcApplication.Instance.ClientId, userId);
+                                        NcApplication.Instance.UserId = userId;
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            });
+                    });
         }
 
         public bool CloudInstallDateEarlierThanLocal ()
@@ -259,8 +259,8 @@ namespace NachoPlatform
                     Log.Info (Log.LOG_SYS, "CloudHandler: Local first install date is null");
                     return true;
                 }
-                DateTime cloudInstallDate = cloudInstallDateStr.ToDateTime (); 
-                DateTime localInstallDate = localInstallDateStr.ToDateTime (); 
+                DateTime cloudInstallDate = cloudInstallDateStr.ToDateTime ();
+                DateTime localInstallDate = localInstallDateStr.ToDateTime ();
                 if (DateTime.Compare (cloudInstallDate, localInstallDate) < 0) {
                     Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is earlier than local {1}", cloudInstallDateStr, localInstallDateStr);
                     return true;
