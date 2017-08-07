@@ -48,11 +48,11 @@ namespace NachoCore.Utils
 
         public Telemetry ()
         {
-#if !TELEMETRY_BE_NOOP
-            DBBackEnd = new TelemetryJsonFileTable ();
-#else
-            DBBackEnd = new TelemetryJsonFileTable_NOOP ();
-#endif
+            if (string.IsNullOrEmpty (BuildInfo.AwsAccountId) || string.IsNullOrEmpty (BuildInfo.AwsAuthRoleArn) || string.IsNullOrEmpty (BuildInfo.AwsIdentityPoolId) || string.IsNullOrEmpty (BuildInfo.S3Bucket)) {
+                DBBackEnd = new TelemetryJsonFileTable_NOOP ();
+            } else {
+                DBBackEnd = new TelemetryJsonFileTable ();
+            }
             BackEnd = null;
             DbUpdated = new AutoResetEvent (false);
             Counters = new NcCounter [(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
@@ -416,19 +416,32 @@ namespace NachoCore.Utils
         private void Process ()
         {
             try {
-#if !TELEMETRY_BE_NOOP
                 if (!string.IsNullOrEmpty (BuildInfo.AwsAccountId) &&
                     !string.IsNullOrEmpty (BuildInfo.AwsAuthRoleArn) &&
                     !string.IsNullOrEmpty (BuildInfo.AwsIdentityPoolId)) {
-                    BackEnd = new TelemetryBES3 ();
+                    if (string.IsNullOrEmpty (BuildInfo.S3Bucket)) {
+                        Log.Info (Log.LOG_SYS, "No AWS S3 setting available. Using TelemetryBE_NOOP, but fetching AWS cognito credentials");
+                        BackEnd = new TelemetryBE_NOOP ();
+                        var credentials = new TelemetryAWSCredentials (
+                            BuildInfo.AwsAccountId,
+                            BuildInfo.AwsIdentityPoolId,
+                            BuildInfo.AwsUnauthRoleArn,
+                            BuildInfo.AwsAuthRoleArn,
+                            Amazon.RegionEndpoint.USEast1
+                        );
+                        try {
+                            NcApplication.Instance.UserId = credentials.GetIdentityId ();
+                            Log.LOG_SYS.Info ("Got user id from cognito: {0}", NcApplication.Instance.UserId);
+                        } catch (Exception e) {
+                            Log.LOG_SYS.Error ("Unable to fetch AWS cognito credentials: {0}", e);
+                        }
+                    } else {
+                        BackEnd = new TelemetryBES3 ();
+                    }
                 } else {
-                    BackEnd = new TelemetryBE_NOOP ();
                     Log.Error (Log.LOG_SYS, "No AWS setting available. Using TelemetryBE_NOOP");
                     BackEnd = new TelemetryBE_NOOP ();
                 }
-#else
-                BackEnd = new TelemetryBE_NOOP ();
-#endif
 
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.

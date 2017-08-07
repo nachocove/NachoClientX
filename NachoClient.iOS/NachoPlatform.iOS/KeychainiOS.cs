@@ -29,7 +29,7 @@ namespace NachoPlatform
         private const string KIdentifierForVendor = "IdentifierForVendor";
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
-        private const string KUserId = "UserId";
+        private const string KUserId = "UserId2";
         private const string KDeviceId = "DeviceId";
         private const string KLogSalt = "LogSalt";
 
@@ -101,7 +101,7 @@ namespace NachoPlatform
 
         public bool DeleteLogSalt (int handle)
         {
-            return Deleter (CreateQuery (handle, KLogSalt));     
+            return Deleter (CreateQuery (handle, KLogSalt));
         }
 
         public string GetIdentifierForVendor ()
@@ -189,7 +189,7 @@ namespace NachoPlatform
 
         private NSData Getter (SecRecord query, bool errorIfMissing = false)
         {
-            SecStatusCode res = default(SecStatusCode);
+            SecStatusCode res = default (SecStatusCode);
             for (var i = 0; i < KSecKeyChainGetFailRetry; i++) {
                 var match = SecKeyChain.QueryAsRecord (query, out res);
                 if (SecStatusCode.Success == res) {
@@ -235,7 +235,7 @@ namespace NachoPlatform
             return str;
         }
 
-        private bool Setter (SecRecord query, NSData value, 
+        private bool Setter (SecRecord query, NSData value,
                              SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
         {
             SecStatusCode res;
@@ -273,7 +273,7 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Delete returned {0}:{1}", res.ToString (), DumpQuery (query));
                 return false;
             }
-            return true;        
+            return true;
         }
     }
 }

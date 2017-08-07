@@ -155,11 +155,7 @@ namespace NachoCore
                 if (_TelemetryService == null) {
                     lock (TelemetryServiceLockObj) {
                         if (_TelemetryService == null) {
-#if TELEMETRY_AWS
                             _TelemetryService = new Telemetry ();
-#else
-                            _TelemetryService = new Telemetry_NOOP ();
-#endif
                         }
                     }
                 }
