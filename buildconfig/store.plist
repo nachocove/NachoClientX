@@ -55,7 +55,7 @@
 		<key>UnauthRoleArn</key>
 		<string></string>
 		<key>AuthRoleArn</key>
-		<string></string>
+		<string>NO PUBLIC AUTHENTICATION</string>
 		<key>S3Bucket</key>
 		<string>59f1d07a-prod-t3-</string>
 		<key>SupportS3Bucket</key>
