@@ -95,5 +95,7 @@
 	<array>
 		<string>de</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This allows Nacho Mail to take photos to attach</string>
 </dict>
 </plist>
