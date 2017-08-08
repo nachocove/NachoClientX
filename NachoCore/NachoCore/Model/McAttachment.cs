@@ -46,6 +46,23 @@ namespace NachoCore.Model
             return att;
         }
 
+        public static List<McAttachment> AttachmentsFromPaths (McAccount account, string [] paths, string source = null)
+        {
+            var attachments = new List<McAttachment> ();
+            foreach (var path in paths) {
+                // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
+                var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
+                document.SetDisplayName (Path.GetFileName (path));
+                document.SourceApplication = source;
+                document.UpdateFileMove (path);
+                var attachment = McAttachment.InsertSaveStart (account.Id);
+                attachment.SetDisplayName (document.DisplayName);
+                attachment.UpdateFileCopy (document.GetFilePath ());
+                attachments.Add (attachment);
+            }
+            return attachments;
+        }
+
         /// <summary>
         /// DEPRECATED - DO NOT USE.
         /// </summary>
@@ -81,14 +98,14 @@ namespace NachoCore.Model
             if (String.IsNullOrEmpty (ContentType)) {
                 return false;
             }
-            var mimeInfo = ContentType.Split (new char[] { '/' });
+            var mimeInfo = ContentType.Split (new char [] { '/' });
             if (2 != mimeInfo.Length) {
                 return false;
             }
             if (!String.Equals ("image", mimeInfo [0], StringComparison.OrdinalIgnoreCase)) {
                 return false;
             }
-            string[] subtype = {
+            string [] subtype = {
                 "tiff",
                 "jpeg",
                 "jpg",
@@ -117,7 +134,7 @@ namespace NachoCore.Model
             case McAbstrFolderEntry.ClassCodeEnum.Calendar:
             case McAbstrFolderEntry.ClassCodeEnum.Email:
             case McAbstrFolderEntry.ClassCodeEnum.Chat:
-                // FIXME - can we get rid of never-in-folder?
+            // FIXME - can we get rid of never-in-folder?
             case McAbstrFolderEntry.ClassCodeEnum.NeverInFolder:
                 break;
             default:

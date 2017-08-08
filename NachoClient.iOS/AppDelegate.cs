@@ -300,6 +300,29 @@ namespace NachoClient.iOS
                             OpenFiles (paths, sourceApplication);
                             return true;
                         }
+                    } else if (components [1].Equals ("compose")) {
+                        var query = System.Web.HttpUtility.ParseQueryString (url.Query ?? "", System.Text.Encoding.UTF8);
+                        var account = NcApplication.Instance.Account;
+                        var message = McEmailMessage.MessageWithSubject (account, query.Get ("subject") ?? "");
+                        message.To = string.Join (", ", query.GetValues ("to") ?? new string [] { });
+                        message.Cc = string.Join (", ", query.GetValues ("cc") ?? new string [] { });
+                        message.Bcc = string.Join (", ", query.GetValues ("bcc") ?? new string [] { });
+                        var composeViewController = new MessageComposeViewController (account);
+                        composeViewController.Composer.Message = message;
+                        composeViewController.Composer.InitialText = query.Get ("body") ?? "";
+                        var container = query.Get ("container") ?? BuildInfo.AppGroup;
+                        var stash = query.Get ("attachments");
+                        if (container != null && stash != null) {
+                            var containerUrl = NSFileManager.DefaultManager.GetContainerUrl (container);
+                            if (containerUrl != null) {
+                                var paths = Directory.GetFiles (Path.Combine (containerUrl.Path, stash));
+                                var attachments = McAttachment.AttachmentsFromPaths (account, paths);
+                                if (attachments.Count > 0) {
+                                    composeViewController.Composer.InitialAttachments = attachments;
+                                }
+                            }
+                        }
+                        composeViewController.Present ();
                     }
                 }
             }
@@ -325,18 +348,7 @@ namespace NachoClient.iOS
         {
             if (NcApplication.ReadyToStartUI ()) {
                 var account = NcApplication.Instance.DefaultEmailAccount;
-                var attachments = new List<McAttachment> ();
-                foreach (var path in paths) {
-                    // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
-                    var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
-                    document.SetDisplayName (Path.GetFileName (path));
-                    document.SourceApplication = source;
-                    document.UpdateFileMove (path);
-                    var attachment = McAttachment.InsertSaveStart (account.Id);
-                    attachment.SetDisplayName (document.DisplayName);
-                    attachment.UpdateFileCopy (document.GetFilePath ());
-                    attachments.Add (attachment);
-                }
+                var attachments = McAttachment.AttachmentsFromPaths (account, paths, source);
                 if (attachments.Count > 0) {
                     var composeViewController = new MessageComposeViewController (account);
                     composeViewController.Composer.InitialAttachments = attachments;
