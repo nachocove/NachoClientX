@@ -864,7 +864,7 @@
 "Cc/Bcc/From:" = "Cc/Bcc/From:";
 "Subject:" = "Subject:";
 "From:" = "From:";
-"Attachments:" = "Attachments:"
+"Attachments:" = "Attachments:";
 
 /* Message Intent Deadlines */
 "No Due Date (intent deadline)" = "No Due Date";

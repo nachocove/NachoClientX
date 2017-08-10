@@ -503,8 +503,8 @@ namespace NachoClient.iOS
         public void MessageComposeHeaderViewDidSelectBccChooser (MessageComposeHeaderView view)
         {
             ShowContactPicker ((NcEmailAddress [] addresses) => {
-                HeaderView.CcField.EmailTokenField.Add (addresses);
-                HeaderView.CcField.EmailTokenField.BecomeFirstResponder ();
+                HeaderView.BccField.EmailTokenField.Add (addresses);
+                HeaderView.BccField.EmailTokenField.BecomeFirstResponder ();
             });
         }
 
@@ -1083,7 +1083,9 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderFromView ()
         {
-            HeaderView.FromField.ValueLabel.Text = Composer.Account.EmailAddr;
+            if (!HeaderView.ShouldHideFrom) {
+                HeaderView.FromField.ValueLabel.Text = Composer.Account.EmailAddr;
+            }
         }
 
         private void UpdateHeaderSubjectView ()

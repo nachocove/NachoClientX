@@ -622,6 +622,54 @@ namespace NachoClient.iOS
 
         #endregion
     }
+    
+    public class ComposeFieldLabel : UIView
+    {
+        public readonly UILabel NameLabel;
+        public readonly UILabel ValueLabel;
+        private UIView DisclosureIndicatorView;
+        public Action Action;
+        public nfloat LeftPadding = 0.0f;
+        public nfloat RightPadding = 0.0f;
+        private nfloat DisclosureWidth = 12.0f;
+
+        UITapGestureRecognizer TapGesture;
+
+        public ComposeFieldLabel (CGRect frame) : base (frame)
+        {
+            NameLabel = new UILabel (Bounds);
+            ValueLabel = new UILabel (Bounds);
+            BackgroundColor = UIColor.White;
+            AddSubview (NameLabel);
+            AddSubview (ValueLabel);
+            DisclosureIndicatorView = Util.AddArrowAccessory (Bounds.Width - RightPadding - DisclosureWidth, 0, DisclosureWidth, this);
+            TapGesture = new UITapGestureRecognizer (Tap);
+            AddGestureRecognizer (TapGesture);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            DisclosureIndicatorView.Frame = new CGRect (
+                Bounds.Width - RightPadding - DisclosureWidth,
+                (Bounds.Height - DisclosureIndicatorView.Frame.Height) / 2.0f,
+                DisclosureWidth,
+                DisclosureIndicatorView.Frame.Height
+            );
+            NameLabel.SizeToFit ();
+            var x = LeftPadding;
+            NameLabel.Frame = new CGRect (x, 0, NameLabel.Frame.Width, Bounds.Height);
+            x += NameLabel.Frame.Width;
+            ValueLabel.Frame = new CGRect (x, 0, DisclosureIndicatorView.Frame.X - x, Bounds.Height);
+        }
+
+        public void Tap ()
+        {
+            if (Action != null) {
+                Action ();
+            }
+        }
+    }
 
     public class ChatMessagesHeaderView : UIView, IUcAddressBlockDelegate
     {

@@ -89,7 +89,11 @@ namespace NachoClient.iOS
             label.BackgroundColor = TintColor;
             label.TextColor = UIColor.White;
             label.Font = Font;
-            label.Text = address.address;
+            if (address.contact != null && !String.IsNullOrWhiteSpace (address.contact.GetDisplayName ())) {
+                label.Text = address.contact.GetDisplayName ();
+            } else {
+                label.Text = address.address;
+            }
             label.LineBreakMode = UILineBreakMode.MiddleTruncation;
             label.Lines = 1;
             label.TextAlignment = UITextAlignment.Center;
@@ -130,6 +134,15 @@ namespace NachoClient.iOS
             if (emailTokenDelegate != null) {
                 emailTokenDelegate.EmailAddressFieldDidChange (this);
             }
+        }
+
+        public override bool BecomeFirstResponder ()
+        {
+            if (base.BecomeFirstResponder ()) {
+                SelectedRange = new NSRange (TextStorage.Length, 0);
+                return true;
+            }
+            return false;
         }
     }
 }
