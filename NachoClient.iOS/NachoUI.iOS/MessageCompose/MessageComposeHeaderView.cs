@@ -1,6 +1,8 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Foundation;
 using UIKit;
 using CoreGraphics;
@@ -14,65 +16,463 @@ namespace NachoClient.iOS
     {
         void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
-        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to);
+        void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
+        void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
+        void MessageComposeHeaderViewDidSearchTo (MessageComposeHeaderView view, string search);
+        void MessageComposeHeaderViewDidSearchCc (MessageComposeHeaderView view, string search);
+        void MessageComposeHeaderViewDidSearchBcc (MessageComposeHeaderView view, string search);
+        void MessageComposeHeaderViewDidSelectToChooser (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectCcChooser (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectBccChooser (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
         void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
-        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
-        void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address);
-        void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
-        void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
     }
 
-    public class ComposeFieldLabel : UIView
+    public class MessageComposeFieldView : UIView, ThemeAdopter
     {
-        public readonly UILabel NameLabel;
-        public readonly UILabel ValueLabel;
-        private UIView DisclosureIndicatorView;
-        public Action Action;
-        public nfloat LeftPadding = 0.0f;
-        public nfloat RightPadding = 0.0f;
-        private nfloat DisclosureWidth = 12.0f;
+        public WeakReference<MessageComposeHeaderView> WeakHeaderView = new WeakReference<MessageComposeHeaderView> (null);
+        public UILabel NameLabel { get; private set; }
+        public UIView ContentView { get; private set; }
+        public UIView SeparatorView { get; private set; }
 
-        UITapGestureRecognizer TapGesture;
+        private UIView _AccessoryView;
+        public UIView AccessoryView {
+            get {
+                return _AccessoryView;
+            }
+            set {
+                if (_AccessoryView != null) {
+                    _AccessoryView.RemoveFromSuperview ();
+                }
+                _AccessoryView = value;
+                if (_AccessoryView != null) {
+                    AddSubview (_AccessoryView);
+                }
+                SetNeedsLayout ();
+            }
+        }
 
-        public ComposeFieldLabel (CGRect frame) : base (frame)
+        public string Name {
+            get {
+                return NameLabel.Text;
+            }
+            set {
+                NameLabel.Text = value;
+                if (!_NameWidth.HasValue) {
+                    SetNeedsLayout ();
+                }
+            }
+        }
+
+        private nfloat? _NameWidth;
+        public nfloat? NameWidth {
+            get {
+                return _NameWidth;
+            }
+            set {
+                _NameWidth = value;
+                SetNeedsLayout ();
+            }
+        }
+
+        private nfloat _NameContentSpacing = 0.0f;
+        public nfloat NameContentSpacing {
+            get {
+                return _NameContentSpacing;
+            }
+            set {
+                _NameContentSpacing = value;
+                SetNeedsLayout ();
+            }
+        }
+
+        private UIEdgeInsets _ContentInsets = new UIEdgeInsets (4.0f, 10.0f, 4.0f, 10.0f);
+        public UIEdgeInsets ContentInsets {
+            get {
+                return _ContentInsets;
+            }
+            set {
+                _ContentInsets = value;
+                SetNeedsLayout ();
+            }
+        }
+
+        private nfloat SeparatorSize = 1.0f;
+
+        public MessageComposeFieldView (string name, UIView contentView) : base ()
         {
-            NameLabel = new UILabel (Bounds);
-            ValueLabel = new UILabel (Bounds);
-            BackgroundColor = UIColor.White;
+            ContentView = contentView;
+
+            NameLabel = new UILabel ();
+            NameLabel.Text = name;
+            NameLabel.Lines = 1;
+            NameLabel.LineBreakMode = UILineBreakMode.MiddleTruncation;
+
+            SeparatorView = new UIView ();
+
+            AddSubview (ContentView);
             AddSubview (NameLabel);
-            AddSubview (ValueLabel);
-            DisclosureIndicatorView = Util.AddArrowAccessory (Bounds.Width - RightPadding - DisclosureWidth, 0, DisclosureWidth, this);
-            TapGesture = new UITapGestureRecognizer (Tap);
-            AddGestureRecognizer (TapGesture);
+            AddSubview (SeparatorView);
+        }
+
+        public virtual void Cleanup ()
+        {
+        }
+
+        public virtual void AdoptTheme (Theme theme)
+        {
+            if (ContentView is ThemeAdopter) {
+                (ContentView as ThemeAdopter).AdoptTheme (theme);
+            }
+            TintColor = theme.TableViewTintColor;
+            NameLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            NameLabel.TextColor = theme.DefaultTextColor;
+            SeparatorView.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.15f);
         }
 
         public override void LayoutSubviews ()
         {
-            base.LayoutSubviews ();
-            DisclosureIndicatorView.Frame = new CGRect (
-                Bounds.Width - RightPadding - DisclosureWidth,
-                (Bounds.Height - DisclosureIndicatorView.Frame.Height) / 2.0f,
-                DisclosureWidth,
-                DisclosureIndicatorView.Frame.Height
-            );
-            NameLabel.SizeToFit ();
-            var x = LeftPadding;
-            NameLabel.Frame = new CGRect (x, 0, NameLabel.Frame.Width, Bounds.Height);
-            x += NameLabel.Frame.Width;
-            ValueLabel.Frame = new CGRect (x, 0, DisclosureIndicatorView.Frame.X - x, Bounds.Height);
+            NameLabel.Frame = new CGRect (_ContentInsets.Left, ContentInsets.Top, ComputedNameWidth, NameLabel.Font.RoundedLineHeight (1.0f));
+            var contentLeft = NameLabel.Frame.X + NameLabel.Frame.Width + _NameContentSpacing;
+            var contentRight = ContentInsets.Right;
+            if (_AccessoryView != null) {
+                _AccessoryView.Frame = new CGRect (new CGPoint (ContentInsets.Right - _AccessoryView.Frame.Size.Width, ContentInsets.Top), _AccessoryView.Frame.Size);
+                contentRight += _AccessoryView.Frame.Width;
+            }
+            var contentWidth = Bounds.Width - contentLeft - contentRight;
+            var contentSize = ContentView.SizeThatFits (new CGSize (contentWidth, 0));
+            ContentView.Frame = new CGRect (contentLeft, ContentInsets.Top, contentWidth, contentSize.Height);
+            SeparatorView.Frame = new CGRect (0, ContentView.Frame.Y + ContentView.Frame.Height + _ContentInsets.Bottom, Bounds.Width, SeparatorSize);
         }
 
-        public void Tap ()
+        nfloat ComputedNameWidth {
+            get {
+                if (_NameWidth.HasValue) {
+                    return _NameWidth.Value;
+                } else {
+                    var size = NameLabel.SizeThatFits (new CGSize (Bounds.Width, 0));
+                    return size.Width;
+                }
+            }
+        }
+
+        public override CGSize SizeThatFits (CGSize size)
         {
-            if (Action != null) {
-                Action ();
+            var contentLeft = _ContentInsets.Left + ComputedNameWidth + _NameContentSpacing;
+            var contentRight = _ContentInsets.Right;
+            if (_AccessoryView != null) {
+                contentRight += _AccessoryView.Frame.Width;
+            }
+            var contentSize = ContentView.SizeThatFits (new CGSize (size.Width - contentLeft - contentRight, 0));
+            return new CGSize (size.Width, contentSize.Height + _ContentInsets.Top + _ContentInsets.Bottom + SeparatorSize);
+        }
+    }
+
+    public class MessageComposeEmailFieldView : MessageComposeFieldView, EmailAddressTokenTextFieldDelegate
+    {
+
+        public EmailAddressTokenTextField EmailTokenField {
+            get {
+                return ContentView as EmailAddressTokenTextField;
+            }
+        }
+
+        public MessageComposeEmailFieldView (string name) : base (name, new EmailAddressTokenTextField ())
+        {
+            EmailTokenField.EmailTokenDelegate = this;
+            // TODO: set accessory view to + image
+        }
+
+        public override void Cleanup ()
+        {
+            base.Cleanup ();
+            // TODO: clear choose button action
+        }
+
+        public override void AdoptTheme (Theme theme)
+        {
+            base.AdoptTheme (theme);
+            EmailTokenField.Font = theme.DefaultFont.WithSize (14.0f);
+            EmailTokenField.TintColor = theme.TableViewTintColor;
+            EmailTokenField.TextColor = theme.DefaultTextColor;
+        }
+
+        public override void TouchesBegan (NSSet touches, UIEvent evt)
+        {
+            EmailTokenField.BecomeFirstResponder ();
+        }
+
+        public void EmailAddressFieldAutocompleteText (EmailAddressTokenTextField field, string text)
+        {
+            if (WeakHeaderView.TryGetTarget (out var headerView)) {
+                // TODO: ask header view delegate for autocomplete help
+            }
+        }
+
+        public void EmailAddressFieldDidChange (EmailAddressTokenTextField field)
+        {
+            var size = field.SizeThatFits (new CGSize (Frame.Size.Width, 0));
+            if (size.Height != field.Frame.Size.Height) {
+                if (WeakHeaderView.TryGetTarget (out var headerView)) {
+                    headerView.SetNeedsLayout ();
+                    headerView.LayoutIfNeeded ();
+                }
+            }
+        }
+
+        void ChooseButtonClicked (object sender, EventArgs e)
+        {
+            if (WeakHeaderView.TryGetTarget (out var headerView)) {
+                // TODO: ask header view delegate for chooser
             }
         }
     }
 
-    public class ComposeActionSelectionView : UIView, ThemeAdopter
+    public class MessageComposeLabelFieldView : MessageComposeFieldView
+    {
+
+        public UILabel ValueLabel {
+            get {
+                return ContentView as UILabel;
+            }
+        }
+
+        PressGestureRecognizer PressRecognizer;
+        public event EventHandler Pressed;
+
+        public MessageComposeLabelFieldView (string name) : base (name, new UILabel ())
+        {
+            PressRecognizer = new PressGestureRecognizer (Press);
+            ValueLabel.BackgroundColor = UIColor.Clear;
+            NameLabel.BackgroundColor = UIColor.Clear;
+            AddGestureRecognizer (PressRecognizer);
+        }
+
+        public override void Cleanup ()
+        {
+            base.Cleanup ();
+            RemoveGestureRecognizer (PressRecognizer);
+            PressRecognizer = null;
+        }
+
+        void Press ()
+        {
+            if (Pressed == null) {
+                return;
+            }
+            if (PressRecognizer.State == UIGestureRecognizerState.Began) {
+                SetSelected (true, animated: false);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Ended) {
+                Pressed?.Invoke (this, new EventArgs ());
+                SetSelected (false, animated: false);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Failed) {
+                SetSelected (false, animated: true);
+            } else if (PressRecognizer.State == UIGestureRecognizerState.Cancelled) {
+                SetSelected (false, animated: false);
+            }
+        }
+
+        void SetSelected (bool selected, bool animated = true)
+        {
+            if (animated) {
+                UIView.BeginAnimations (null, IntPtr.Zero);
+                UIView.SetAnimationDuration (0.25f);
+            }
+            if (selected) {
+                BackgroundColor = UIColor.FromRGB (0xE0, 0xE0, 0xE0);
+            } else {
+                BackgroundColor = UIColor.White;
+            }
+            if (animated) {
+                UIView.CommitAnimations ();
+            }
+        }
+
+        public override void AdoptTheme (Theme theme)
+        {
+            base.AdoptTheme (theme);
+            ValueLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            ValueLabel.TextColor = theme.DefaultTextColor;
+        }
+    }
+
+    public class MessageComposeTextFieldView : MessageComposeFieldView
+    {
+
+        public UITextField TextField {
+            get {
+                return ContentView as UITextField;
+            }
+        }
+
+        public MessageComposeTextFieldView (string name) : base (name, new UITextField ())
+        {
+        }
+
+        public override void AdoptTheme (Theme theme)
+        {
+            base.AdoptTheme (theme);
+            TextField.Font = theme.DefaultFont;
+            TextField.TextColor = theme.DefaultTextColor;
+        }
+    }
+
+    public class MessageComposeAttachmentsView : UIView, ThemeAdopter, IUITableViewDelegate, IUITableViewDataSource
+    {
+
+        private const string AttachmentCellIdentifier = "attachment";
+
+        public WeakReference<MessageComposeHeaderView> WeakHeaderView {
+            get {
+                return FieldView.WeakHeaderView;
+            }
+            set {
+                FieldView.WeakHeaderView = value;
+            }
+        }
+
+        public UIEdgeInsets ContentInsets {
+            get {
+                return FieldView.ContentInsets;
+            }
+            set {
+                FieldView.ContentInsets = value;
+            }
+        }
+
+        private MessageComposeLabelFieldView FieldView;
+        private UITableView TableView;
+        public List<McAttachment> Attachments;
+
+        private nfloat RowHeight = 44.0f;
+
+        public MessageComposeAttachmentsView (string name)
+        {
+            FieldView = new MessageComposeLabelFieldView (name);
+            // TODO: accessory view (+)
+            AddSubview (FieldView);
+
+            TableView = new UITableView (new CGRect (0.0f, 0.0f, Bounds.Width, RowHeight), UITableViewStyle.Plain);
+            TableView.ScrollEnabled = false;
+            TableView.WeakDelegate = this;
+            TableView.WeakDataSource = this;
+            TableView.RowHeight = RowHeight;
+            TableView.SeparatorStyle = UITableViewCellSeparatorStyle.None;
+            TableView.RegisterClassForCellReuse (typeof (AttachmentCell), AttachmentCellIdentifier);
+            AddSubview (TableView);
+        }
+
+        public void Cleanup ()
+        {
+        }
+
+        Theme AdoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != AdoptedTheme) {
+                AdoptedTheme = theme;
+                FieldView.AdoptTheme (theme);
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        public override void LayoutSubviews ()
+        {
+            FieldView.Frame = new CGRect (0.0f, 0.0f, Bounds.Width, FieldView.SizeThatFits (new CGSize (Bounds.Width, 0)).Height);
+        }
+
+        public void Add (McAttachment attachment)
+        {
+            Attachments.Add (attachment);
+            TableView.ReloadData ();
+            SetNeedsLayout ();
+        }
+
+        public void Update (McAttachment attachment)
+        {
+            for (var i = 0; i < Attachments.Count; ++i) {
+                if (Attachments [i].Id == attachment.Id) {
+                    Attachments [i] = attachment;
+                    TableView.ReloadRows (new NSIndexPath [] { NSIndexPath.FromRowSection (i, 0) }, UITableViewRowAnimation.None);
+                    break;
+                }
+            }
+        }
+
+        [Export ("numberOfSectionsInTableView:")]
+        public nint NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        [Foundation.Export ("tableView:numberOfRowsInSection:")]
+        public nint RowsInSection (UITableView tableView, nint section)
+        {
+            return Attachments.Count;
+        }
+
+        [Foundation.Export ("tableView:cellForRowAtIndexPath:")]
+        public UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            var attachment = Attachments [indexPath.Row];
+            var cell = tableView.DequeueReusableCell (AttachmentCellIdentifier) as AttachmentCell;
+            cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+            if (String.IsNullOrWhiteSpace (cell.TextLabel.Text)) {
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("(no name) (attachment)", "Fallback name for attachment with no name");
+                cell.TextLabel.TextColor = AdoptedTheme.DisabledTextColor;
+            } else {
+                cell.TextLabel.TextColor = AdoptedTheme.DefaultTextColor;
+            }
+            cell.DetailTextLabel.Text = Pretty.GetAttachmentDetail (attachment);
+            cell.IconView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
+            cell.AdoptTheme (AdoptedTheme);
+            return cell;
+        }
+
+        // TODO: attachment selection/viewing
+        // TODO: attachment removal
+
+        private class AttachmentCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public readonly UIImageView IconView;
+            nfloat Inset = 14.0f;
+            nfloat IconSize = 24.0f;
+            nfloat TextSpacing = 5.0f;
+
+            public AttachmentCell (IntPtr handle) : base (handle)
+            {
+                DetailTextSpacing = 0.0f;
+
+                IconView = new UIImageView (new CGRect (0.0f, 0.0f, IconSize, IconSize));
+                SeparatorInset = new UIEdgeInsets (0.0f, Inset + IconSize + TextSpacing, 0.0f, 0.0f);
+
+                ContentView.AddSubview (IconView);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (17.0f);
+                TextLabel.TextColor = theme.DefaultTextColor;
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (12.0f);
+                DetailTextLabel.TextColor = theme.DisabledTextColor;
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                IconView.Center = new CGPoint (Inset + IconSize / 2.0f, ContentView.Bounds.Height / 2.0f);
+            }
+        }
+
+    }
+
+    public class MessageComposeActionSelectionView : UIView, ThemeAdopter
     {
 
         ActionCheckboxView CheckboxView;
@@ -81,23 +481,34 @@ namespace NachoClient.iOS
         public readonly UILabel TextLabel;
         public readonly UILabel DateLabel;
         public Action Action;
+        private UIView SeparatorView;
+        private nfloat SeparatorSize = 1.0f;
 
         UITapGestureRecognizer TapRecognizer;
 
-        public ComposeActionSelectionView (CGRect frame) : base (frame)
+        public MessageComposeActionSelectionView (CGRect frame) : base (frame)
         {
             CheckboxView = new ActionCheckboxView (20.0f);
             CheckboxView.TintColor = UIColor.FromRGB (0xEE, 0x70, 0x5B);
 
             TextLabel = new UILabel ();
             DateLabel = new UILabel ();
+            SeparatorView = new UIView ();
 
             AddSubview (CheckboxView);
             AddSubview (TextLabel);
             AddSubview (DateLabel);
+            AddSubview (SeparatorView);
 
             TapRecognizer = new UITapGestureRecognizer (Tap);
             AddGestureRecognizer (TapRecognizer);
+            SetNeedsLayout ();
+        }
+
+        public void Cleanup ()
+        {
+            RemoveGestureRecognizer (TapRecognizer);
+            TapRecognizer = null;
         }
 
         Theme adoptedTheme;
@@ -108,23 +519,23 @@ namespace NachoClient.iOS
             DateLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
             DateLabel.Font = theme.DefaultFont.WithSize (14.0f);
             TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+            SeparatorView.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.15f);
         }
 
         void Tap ()
         {
-            if (Action != null) {
-                Action ();
-            }
+            Action?.Invoke ();
         }
 
         public override void LayoutSubviews ()
         {
             base.LayoutSubviews ();
-            CheckboxView.Center = new CGPoint (LeftPadding + CheckboxView.Frame.Width / 2.0f, Bounds.Height / 2.0f);
+            var height = Bounds.Height - SeparatorSize;
+            CheckboxView.Center = new CGPoint (LeftPadding + CheckboxView.Frame.Width / 2.0f, height / 2.0f);
             var dateSize = DateLabel.SizeThatFits (new CGSize (Bounds.Width, 0.0f));
             dateSize.Height = DateLabel.Font.RoundedLineHeight (1.0f);
             var textHeight = TextLabel.Font.RoundedLineHeight (1.0f);
-            var textTop = (Bounds.Height - textHeight) / 2.0f;
+            var textTop = (height - textHeight) / 2.0f;
 
             CGRect frame;
 
@@ -141,6 +552,8 @@ namespace NachoClient.iOS
             frame.Width = DateLabel.Frame.X - frame.X - 3.0f;
             frame.Height = textHeight;
             TextLabel.Frame = frame;
+
+            SeparatorView.Frame = new CGRect (0.0f, Bounds.Height - SeparatorSize, Bounds.Width, SeparatorSize);
 
         }
 
@@ -166,42 +579,35 @@ namespace NachoClient.iOS
 
     }
 
-    public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, ThemeAdopter
+    public class MessageComposeHeaderView : UIView, ThemeAdopter
     {
 
         #region Properties
 
         public MessageComposeHeaderViewDelegate HeaderDelegate;
+
+        public readonly MessageComposeEmailFieldView ToField;
+        public readonly MessageComposeEmailFieldView CcField;
+        public readonly MessageComposeEmailFieldView BccField;
+        public readonly MessageComposeLabelFieldView FromField; //"gen-more-arrow"
+        public readonly MessageComposeTextFieldView SubjectField;
+        public readonly MessageComposeActionSelectionView IntentView;
+        public readonly MessageComposeAttachmentsView AttachmentsView;
+
+        private nfloat LineHeight = 42.0f;
+
+
+        UIEdgeInsets FieldInsets = new UIEdgeInsets (4.0f, 15.0f, 4.0f, 15.0f);
+
+        nfloat preferredHeight = 0.0f;
         public nfloat PreferredHeight {
             get {
-                if (preferredHeight == 0.0f) {
+                if (preferredHeight < 1.0f) {
                     return (LineHeight + 1.0f) * 4.0f;
                 }
                 return preferredHeight;
             }
         }
-        public bool AttachmentsAllowed = true;
-        public readonly UcAddressBlock ToView;
-        public readonly UcAddressBlock CcView;
-        public readonly UcAddressBlock BccView;
-        public readonly ComposeFieldLabel FromView;
-        public readonly NcAdjustableLayoutTextField SubjectField;
-        public readonly ComposeActionSelectionView IntentView;
-        public readonly UcAttachmentBlock AttachmentsView;
-        UIView ToSeparator;
-        UIView CcSeparator;
-        UIView BccSeparator;
-        UIView FromSeparator;
-        UIView SubjectSeparator;
-        UIView IntentSeparator;
-        UIView AttachmentsSeparator;
-        UcAddressBlock ActiveAddressView;
-        bool CcFieldsAreCollapsed;
-        nfloat preferredHeight = 0.0f;
-
-        private nfloat LineHeight = 42.0f;
-        private nfloat RightPadding = 15.0f;
-        private nfloat LeftPadding = 15.0f;
 
         bool ShouldHideIntent {
             get {
@@ -209,7 +615,9 @@ namespace NachoClient.iOS
             }
         }
 
+        bool CcFieldsAreCollapsed;
         public bool ShouldHideFrom;
+        public bool AttachmentsAllowed = true;
 
         #endregion
 
@@ -219,88 +627,65 @@ namespace NachoClient.iOS
         {
             CcFieldsAreCollapsed = true;
 
-            ToView = new UcAddressBlock (this, NSBundle.MainBundle.LocalizedString ("To:", ""), null, Bounds.Width);
-            CcView = new UcAddressBlock (this, NSBundle.MainBundle.LocalizedString ("Cc:", ""), NSBundle.MainBundle.LocalizedString ("Cc/Bcc:", ""), Bounds.Width);
-            BccView = new UcAddressBlock (this, NSBundle.MainBundle.LocalizedString ("Bcc:", ""), null, Bounds.Width);
+            ToField = new MessageComposeEmailFieldView (NSBundle.MainBundle.LocalizedString ("To:", ""));
+            CcField = new MessageComposeEmailFieldView (NSBundle.MainBundle.LocalizedString ("Cc:", ""));
+            BccField = new MessageComposeEmailFieldView (NSBundle.MainBundle.LocalizedString ("Bcc:", ""));
+            FromField = new MessageComposeLabelFieldView (NSBundle.MainBundle.LocalizedString ("Cc/Bcc/From:", ""));
+            SubjectField = new MessageComposeTextFieldView (NSBundle.MainBundle.LocalizedString ("Subject:", ""));
+            AttachmentsView = new MessageComposeAttachmentsView (NSBundle.MainBundle.LocalizedString ("Attachments:", ""));
+            IntentView = new MessageComposeActionSelectionView (new CGRect (0, 0, Bounds.Width, LineHeight));
 
-            ToView.SetCompact (true, -1);
-            CcView.SetCompact (true, -1, true);
-            BccView.SetCompact (true, -1);
+            ToField.WeakHeaderView.SetTarget (this);
+            CcField.WeakHeaderView.SetTarget (this);
+            BccField.WeakHeaderView.SetTarget (this);
+            FromField.WeakHeaderView.SetTarget (this);
+            SubjectField.WeakHeaderView.SetTarget (this);
+            AttachmentsView.WeakHeaderView.SetTarget (this);
 
-            ToView.ConfigureView ();
-            CcView.ConfigureView ();
-            BccView.ConfigureView ();
+            ToField.ContentInsets = FieldInsets;
+            CcField.ContentInsets = FieldInsets;
+            BccField.ContentInsets = FieldInsets;
+            FromField.ContentInsets = FieldInsets;
+            SubjectField.ContentInsets = FieldInsets;
+            AttachmentsView.ContentInsets = FieldInsets;
+            IntentView.LeftPadding = FieldInsets.Left;
+            IntentView.RightPadding = FieldInsets.Right;
 
-            ToView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            CcView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            BccView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            ToField.NameWidth = 30.0f;
+            CcField.NameWidth = ToField.NameWidth;
+            BccField.NameWidth = ToField.NameWidth;
 
-            FromView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
-            FromView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            FromView.NameLabel.Text = NSBundle.MainBundle.LocalizedString ("Cc/Bcc/From: ", "");
-            FromView.Action = SelectFrom;
-            FromView.LeftPadding = LeftPadding;
-            FromView.RightPadding = RightPadding;
-            FromView.SetNeedsLayout ();
+            FromField.NameContentSpacing = 5.0f;
+            SubjectField.NameContentSpacing = 5.0f;
 
-            var label = FieldLabel (NSBundle.MainBundle.LocalizedString ("Subject:", ""));
-            SubjectField = new NcAdjustableLayoutTextField (new CGRect (0, 0, Bounds.Width, LineHeight));
-            SubjectField.BackgroundColor = UIColor.White;
-            SubjectField.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            SubjectField.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Subject:", "");
-            SubjectField.LeftViewMode = UITextFieldViewMode.Always;
-            SubjectField.AdjustedEditingInsets = new UIEdgeInsets (0.0f, LeftPadding + label.Frame.Width + 10.0f, 0.0f, RightPadding);
-            SubjectField.AdjustedLeftViewRect = new CGRect (LeftPadding, (SubjectField.Frame.Height - label.Frame.Height) / 2.0, label.Frame.Width, label.Frame.Height);
-            SubjectField.LeftView = label;
-            SubjectField.EditingDidBegin += SubjectEditingDidBegin;
-            SubjectField.EditingDidEnd += SubjectEditingDidEnd;
-
-            IntentView = new ComposeActionSelectionView (new CGRect (0, 0, Bounds.Width, LineHeight));
-            IntentView.AdoptTheme (Theme.Active);
-            IntentView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            IntentView.Action = SelectIntent;
-            IntentView.LeftPadding = LeftPadding;
-            IntentView.RightPadding = RightPadding;
-            IntentView.SetNeedsLayout ();
-
-            //            if (!String.IsNullOrEmpty (PresetSubject)) {
-            //                alwaysShowIntent = true;
-            //                subjectField.Text += PresetSubject;
-            //            }
-
-            //            intentDisplayLabel.Text = "NONE";
-
-            AttachmentsView = new UcAttachmentBlock (this, 40, true);
-            AttachmentsView.AdoptTheme (Theme.Active);
-            AttachmentsView.Frame = new CGRect (0, 0, Bounds.Width, 40);
-            AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-
-            ToSeparator = SeparatorView ();
-            CcSeparator = SeparatorView ();
-            BccSeparator = SeparatorView ();
-            FromSeparator = SeparatorView ();
-            SubjectSeparator = SeparatorView ();
-            IntentSeparator = SeparatorView ();
-            //            IntentSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.05f);
-            AttachmentsSeparator = SeparatorView ();
-            AttachmentsSeparator.BackgroundColor = UIColor.White.ColorDarkenedByAmount (0.25f);
-
-            AddSubview (ToView);
-            AddSubview (ToSeparator);
-            AddSubview (CcView);
-            AddSubview (CcSeparator);
-            AddSubview (BccView);
-            AddSubview (BccSeparator);
-            AddSubview (FromView);
-            AddSubview (FromSeparator);
+            AddSubview (ToField);
+            AddSubview (CcField);
+            AddSubview (BccField);
+            AddSubview (FromField);
             AddSubview (SubjectField);
-            AddSubview (SubjectSeparator);
             AddSubview (AttachmentsView);
-            AddSubview (AttachmentsSeparator);
             AddSubview (IntentView);
-            AddSubview (IntentSeparator);
 
+            AdoptTheme (Theme.Active);
             SetNeedsLayout ();
+
+            SubjectField.TextField.EditingDidEnd += SubjectEditingDidEnd;
+            IntentView.Action = SelectIntent;
+            FromField.Pressed += FromFieldPressed;
+        }
+
+        public void Cleanup ()
+        {
+            SubjectField.TextField.EditingDidEnd -= SubjectEditingDidEnd;
+            IntentView.Action = null;
+            FromField.Pressed -= FromFieldPressed;
+            ToField.Cleanup ();
+            CcField.Cleanup ();
+            BccField.Cleanup ();
+            FromField.Cleanup ();
+            SubjectField.Cleanup ();
+            AttachmentsView.Cleanup ();
+            IntentView.Cleanup ();
         }
 
         #endregion
@@ -309,37 +694,40 @@ namespace NachoClient.iOS
 
         public void AdoptTheme (Theme theme)
         {
-            ToView.AdoptTheme (theme);
-            CcView.AdoptTheme (theme);
-            BccView.AdoptTheme (theme);
-            var labelFont = theme.DefaultFont.WithSize (14.0f);
-            var labelColor = theme.DefaultTextColor;
-            FromView.NameLabel.Font = labelFont;
-            FromView.ValueLabel.Font = labelFont;
-            FromView.NameLabel.TextColor = labelColor;
-            FromView.ValueLabel.TextColor = labelColor;
-            SubjectField.Font = labelFont;
-            SubjectField.TextColor = labelColor;
-            IntentView.AdoptTheme (theme);
+            ToField.AdoptTheme (theme);
+            CcField.AdoptTheme (theme);
+            BccField.AdoptTheme (theme);
+            FromField.AdoptTheme (theme);
+            SubjectField.AdoptTheme (theme);
             AttachmentsView.AdoptTheme (theme);
-
-            var label = (SubjectField.LeftView as UILabel);
-            label.Font = labelFont;
-            label.TextColor = labelColor;
-
-            var separatorColor = UIColor.White.ColorDarkenedByAmount (0.15f);
-            ToSeparator.BackgroundColor = separatorColor;
-            CcSeparator.BackgroundColor = separatorColor;
-            BccSeparator.BackgroundColor = separatorColor;
-            FromSeparator.BackgroundColor = separatorColor;
-            SubjectSeparator.BackgroundColor = separatorColor;
-            IntentSeparator.BackgroundColor = separatorColor;
-            AttachmentsSeparator.BackgroundColor = separatorColor;
+            IntentView.AdoptTheme (theme);
         }
 
         #endregion
 
         #region User Actions
+
+        public void SubjectEditingDidEnd (object sender, EventArgs e)
+        {
+            HeaderDelegate?.MessageComposeHeaderViewDidChangeSubject (this, SubjectField.TextField.Text);
+        }
+
+        private void SelectIntent ()
+        {
+            HeaderDelegate?.MessageComposeHeaderViewDidSelectIntentField (this);
+        }
+
+        void FromFieldPressed (object sender, EventArgs e)
+        {
+            if (CcFieldsAreCollapsed) {
+                ShowCcFields ();
+                CcField.EmailTokenField.BecomeFirstResponder ();
+            } else {
+                HeaderDelegate?.MessageComposeHeaderViewDidSelectFromField (this);
+            }
+        }
+
+        /*
 
         public void AddressBlockWillBecomeActive (UcAddressBlock view)
         {
@@ -436,28 +824,6 @@ namespace NachoClient.iOS
             });
         }
 
-        public void SubjectEditingDidBegin (object sender, EventArgs e)
-        {
-            SetNeedsLayout ();
-            UIView.Animate (0.2, () => {
-                LayoutIfNeeded ();
-            });
-        }
-
-        public void SubjectEditingDidEnd (object sender, EventArgs e)
-        {
-            if (HeaderDelegate != null) {
-                HeaderDelegate.MessageComposeHeaderViewDidChangeSubject (this, SubjectField.Text);
-            }
-        }
-
-        private void SelectIntent ()
-        {
-            if (HeaderDelegate != null) {
-                HeaderDelegate.MessageComposeHeaderViewDidSelectIntentField (this);
-            }
-        }
-
         private void SelectFrom ()
         {
             if (CcFieldsAreCollapsed) {
@@ -474,34 +840,37 @@ namespace NachoClient.iOS
                 HeaderDelegate.MessageComposeHeaderViewDidSelectFromField (this);
             }
         }
+        */
 
         #endregion
 
         #region Layout
 
-        public void AddressBlockNeedsLayout (UcAddressBlock view)
+        public void ShowCcFields (bool animated = true)
         {
-            SetNeedsLayout ();
-        }
-
-        public void AttachmentBlockNeedsLayout (UcAttachmentBlock view)
-        {
-            SetNeedsLayout ();
+            CcFieldsAreCollapsed = false;
+            FromField.Name = NSBundle.MainBundle.LocalizedString ("From:", "");
+            FromField.NameWidth = ToField.NameWidth;
+            if (animated) {
+                CcField.Frame = FromField.Frame;
+                BccField.Frame = FromField.Frame;
+                FromField.SetNeedsLayout ();
+                SetNeedsLayout ();
+                UIView.Animate (0.3f, () => {
+                    FromField.LayoutIfNeeded ();
+                    LayoutIfNeeded ();
+                });
+            } else {
+                SetNeedsLayout ();
+            }
         }
 
         public void UpdateCcCollapsed ()
         {
-            CcFieldsAreCollapsed = CcFieldsAreCollapsed && CcView.IsEmpty () && BccView.IsEmpty ();
-            if (CcFieldsAreCollapsed) {
-                FromView.NameLabel.Text = NSBundle.MainBundle.LocalizedString ("Cc/Bcc/From: ", "");
-                CcView.SetCompact (true, -1, true);
-            } else {
-                CcView.SetCompact (true, -1);
-                FromView.NameLabel.Text = NSBundle.MainBundle.LocalizedString ("From: ", "");
+            var shouldExpand = CcField.EmailTokenField.Addresses.Length > 0 || CcField.EmailTokenField.Addresses.Length > 0;
+            if (CcFieldsAreCollapsed && shouldExpand) {
+                ShowCcFields (animated: false);
             }
-            CcView.ConfigureView ();
-            CcView.SetNeedsLayout ();
-            FromView.SetNeedsLayout ();
         }
 
         public override void LayoutSubviews ()
@@ -559,22 +928,6 @@ namespace NachoClient.iOS
         #endregion
 
         #region Helpers
-
-        private UIView SeparatorView ()
-        {
-            var separator = new UIView (new CGRect (0, 0, Bounds.Width, 1));
-            separator.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            return separator;
-        }
-
-        private UILabel FieldLabel (String text)
-        {
-            var label = new UILabel (new CGRect (0, 0, Bounds.Width, LineHeight));
-            label.BackgroundColor = UIColor.White;
-            label.Text = text;
-            label.SizeToFit ();
-            return label;
-        }
 
         private NcEmailAddress EmailAddressForAddressView (UcAddressBlock view, string prefix)
         {

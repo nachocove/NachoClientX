@@ -4,22 +4,16 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
+
 using CoreGraphics;
 using Foundation;
 using UIKit;
 
-using MimeKit;
-
-using NachoCore;
-using NachoPlatform;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
 
 using WebKit;
-using Photos;
-using MobileCoreServices;
 
 using System.Linq;
 
@@ -35,14 +29,13 @@ namespace NachoClient.iOS
 
     }
 
-    public partial class MessageComposeViewController : NcUIViewController,
+    public class MessageComposeViewController : NcUIViewController,
         // IWKNavigationDelegate,
         // IWKScriptMessageHandler,
         IUIWebViewDelegate,
         IUIScrollViewDelegate,
         MessageComposeHeaderViewDelegate,
         INachoFileChooserParent,
-        INachoContactChooserDelegate,
         MessageComposerDelegate,
         NcWebViewMessageHandler,
         AccountPickerViewControllerDelegate,
@@ -205,7 +198,7 @@ namespace NachoClient.iOS
                     ShowFakeQuickResponses ();
                 } else {
                     if (!Composer.HasRecipient) {
-                        HeaderView.ToView.SetEditFieldAsFirstResponder ();
+                        HeaderView.ToField.EmailTokenField.BecomeFirstResponder ();
                     } else if (String.IsNullOrEmpty (Composer.Message.Subject)) {
                         HeaderView.SubjectField.BecomeFirstResponder ();
                     } else if (IsWebViewLoaded) {
@@ -237,6 +230,9 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             base.ViewDidDisappear (animated);
+            if (ShouldCleanupDuringDidDisappear) {
+                Cleanup ();
+            }
         }
 
         public override void ViewDidUnload ()
@@ -244,6 +240,11 @@ namespace NachoClient.iOS
             base.ViewDidUnload ();
             NcWebViewMessageProtocol.RemoveHandler (this, "nachoCompose");
             NcWebViewMessageProtocol.RemoveHandler (this, "nacho");
+        }
+
+        void Cleanup ()
+        {
+            HeaderView.Cleanup ();
         }
 
         #endregion
@@ -447,139 +448,70 @@ namespace NachoClient.iOS
 
         #region User Actions - Header
 
-        // User selecting + button in To/CC/BCC field
-        public void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address)
+        public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
-            var chooserController = new ContactChooserViewController ();
-            chooserController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
-            FadeCustomSegue.Transition (this, chooserController);
-        }
-
-        NcEmailAddress.Kind PickingKind;
-
-        // User starting to type in To/CC/BCC field
-        public void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address)
-        {
-            PickingKind = address.kind;
-            var picker = new ContactPickerViewController ();
-            picker.PickerDelegate = this;
-            PresentViewController (new UINavigationController (picker), true, null);
-        }
-
-        public void ContactPickerDidPickContact (ContactPickerViewController vc, McContact contact)
-        {
-            var address = new NcEmailAddress (PickingKind);
-            address.contact = contact;
-            address.address = contact.GetEmailAddress ();
-            AddEmailAddresss (address);
-            CloseContactPicker ();
-        }
-
-        public void ContactPickerDidPickCancel (ContactPickerViewController vc)
-        {
-            CloseContactPicker ();
-        }
-
-        void CloseContactPicker ()
-        {
-            DismissViewController (true, null);
-            switch (PickingKind) {
-            case NcEmailAddress.Kind.To:
-                HeaderView.ToView.SetEditFieldAsFirstResponder ();
-                break;
-            case NcEmailAddress.Kind.Cc:
-                HeaderView.CcView.SetEditFieldAsFirstResponder ();
-                break;
-            case NcEmailAddress.Kind.Bcc:
-                HeaderView.BccView.SetEditFieldAsFirstResponder ();
-                break;
-            }
-        }
-
-        bool SalesforceBccAdded = false;
-        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool> ();
-
-        void MaybeAddSalesforceBcc ()
-        {
-            if (!SalesforceBccAdded) {
-                string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
-                if (null != extraBcc) {
-                    SalesforceBccAdded = true;
-                    var parsedExtraBcc = NcEmailAddress.ParseBccAddressListString (extraBcc);
-                    if (0 == parsedExtraBcc.Count) {
-                        Log.Error (Log.LOG_EMAIL, "The Salesforce extra Bcc address could not be parsed.");
-                    }
-                    foreach (var address in parsedExtraBcc) {
-                        HeaderView.BccView.Append (address);
-                    }
-                    Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
-                }
-            }
-        }
-
-        // User selecting contact for To/CC/BCC field
-        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
-        {
-            AddEmailAddresss (address);
-        }
-
-        void AddEmailAddresss (NcEmailAddress address)
-        {
-            if (address.kind == NcEmailAddress.Kind.To) {
-                HeaderView.ToView.Append (address);
-                Composer.Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
-            } else if (address.kind == NcEmailAddress.Kind.Cc) {
-                HeaderView.CcView.Append (address);
-                Composer.Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
-            } else if (address.kind == NcEmailAddress.Kind.Bcc) {
-                HeaderView.BccView.Append (address);
-                Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
-            } else {
-                NcAssert.CaseError ();
-            }
+            Composer.Message.To = to;
             MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
-        public void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address)
+        public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
         {
-
-            if (address.kind == NcEmailAddress.Kind.To) {
-                Composer.Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
-            } else if (address.kind == NcEmailAddress.Kind.Cc) {
-                Composer.Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
-            } else if (address.kind == NcEmailAddress.Kind.Bcc) {
-                Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
-            } else {
-                NcAssert.CaseError ();
-            }
+            Composer.Message.Cc = cc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
-        // ??
-        // I think this is when the user starts typing an email adderess and then clears it.
-        // Since we don't change anything when they start typing, there's nothing to change if the clear.
-        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
+        public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
         {
-            // old implementation did nothing
+            Composer.Message.Bcc = bcc;
+            MaybeAddSalesforceBcc ();
+            UpdateSendEnabled ();
+        }
+
+        public void MessageComposeHeaderViewDidSearchTo (MessageComposeHeaderView view, string search)
+        {
+            // TODO: show autocomplete
+        }
+
+        public void MessageComposeHeaderViewDidSearchCc (MessageComposeHeaderView view, string search)
+        {
+            // TODO: show autocomplete
+        }
+
+        public void MessageComposeHeaderViewDidSearchBcc (MessageComposeHeaderView view, string search)
+        {
+            // TODO: show autocomplete
+        }
+
+        public void MessageComposeHeaderViewDidSelectToChooser (MessageComposeHeaderView view)
+        {
+            ShowContactPicker ((NcEmailAddress [] addresses) => {
+                HeaderView.ToField.EmailTokenField.Add (addresses);
+                HeaderView.ToField.EmailTokenField.BecomeFirstResponder ();
+            });
+        }
+
+        public void MessageComposeHeaderViewDidSelectCcChooser (MessageComposeHeaderView view)
+        {
+            ShowContactPicker ((NcEmailAddress [] addresses) => {
+                HeaderView.CcField.EmailTokenField.Add (addresses);
+                HeaderView.CcField.EmailTokenField.BecomeFirstResponder ();
+            });
+        }
+
+        public void MessageComposeHeaderViewDidSelectBccChooser (MessageComposeHeaderView view)
+        {
+            ShowContactPicker ((NcEmailAddress [] addresses) => {
+                HeaderView.CcField.EmailTokenField.Add (addresses);
+                HeaderView.CcField.EmailTokenField.BecomeFirstResponder ();
+            });
         }
 
         // User tapping the from field
         public void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view)
         {
-            var picker = new AccountPickerViewController ();
-            picker.PickerDelegate = this;
-            picker.Accounts = EmailAccounts;
-            picker.SelectedAccount = Composer.Account;
-            NavigationController.PushViewController (picker, true);
-        }
-
-        public void AccountPickerDidPickAccount (AccountPickerViewController vc, McAccount account)
-        {
-            NavigationController.PopViewController (true);
-            Composer.SetAccount (account);
-            UpdateHeaderFromView ();
-            UpdateHeaderAttachmentsView ();
+            ShowAccountPicker ();
         }
 
         // User changing the subject
@@ -643,7 +575,7 @@ namespace NachoClient.iOS
             if (attachment != null) {
                 attachment.Link (Composer.Message);
                 attachment.Update ();
-                HeaderView.AttachmentsView.Append (attachment);
+                HeaderView.AttachmentsView.Add (attachment);
                 this.DismissViewController (true, null);
             } else {
                 NcAssert.CaseError ();
@@ -662,12 +594,12 @@ namespace NachoClient.iOS
         {
             attachment.Update ();
             attachment.Link (Composer.Message);
-            HeaderView.AttachmentsView.Append (attachment);
+            HeaderView.AttachmentsView.Add (attachment);
         }
 
         public void AttachmentUpdated (McAttachment attachment)
         {
-            HeaderView.AttachmentsView.UpdateAttachment (attachment);
+            HeaderView.AttachmentsView.Update (attachment);
         }
 
         // Not really a direct user action, but caused by the user selecting a date for the intent
@@ -730,7 +662,7 @@ namespace NachoClient.iOS
                         attachment.UpdateData (jpg.ToArray ());
                     }
                 }
-                HeaderView.AttachmentsView.Append (attachment);
+                HeaderView.AttachmentsView.Add (attachment);
                 ++i;
             }
         }
@@ -922,6 +854,40 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Contact Autocomplete & Browsing
+
+        Action<NcEmailAddress []> ContactPickerCompletion;
+
+        void ShowContactPicker (Action<NcEmailAddress []> completion)
+        {
+            ContactPickerCompletion = completion;
+            var picker = new ContactPickerViewController ();
+            picker.PickerDelegate = this;
+            PresentViewController (new UINavigationController (picker), true, null);
+        }
+
+        public void ContactPickerDidPickContact (ContactPickerViewController vc, McContact contact)
+        {
+            var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown);
+            address.contact = contact;
+            address.address = contact.GetEmailAddress ();
+            CloseContactPicker (new NcEmailAddress [] { address });
+        }
+
+        public void ContactPickerDidPickCancel (ContactPickerViewController vc)
+        {
+            CloseContactPicker (new NcEmailAddress [] { });
+        }
+
+        void CloseContactPicker (NcEmailAddress [] addresses)
+        {
+            DismissViewController (true, null);
+            ContactPickerCompletion (addresses);
+            ContactPickerCompletion = null;
+        }
+
+        #endregion
+
         #region Helpers
 
         private void UpdateSendEnabled ()
@@ -1048,6 +1014,42 @@ namespace NachoClient.iOS
             return "<!DOCTYPE html>\n" + WebView.EvaluateJavascript ("document.documentElement.outerHTML");
         }
 
+        bool SalesforceBccAdded = false;
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool> ();
+
+        void MaybeAddSalesforceBcc ()
+        {
+            if (!SalesforceBccAdded) {
+                string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
+                if (null != extraBcc) {
+                    SalesforceBccAdded = true;
+                    var parsedExtraBcc = NcEmailAddress.ParseBccAddressListString (extraBcc);
+                    if (0 == parsedExtraBcc.Count) {
+                        Log.Error (Log.LOG_EMAIL, "The Salesforce extra Bcc address could not be parsed.");
+                    }
+                    HeaderView.BccField.EmailTokenField.Add (parsedExtraBcc.ToArray ());
+                    HeaderView.UpdateCcCollapsed ();
+                }
+            }
+        }
+
+        void ShowAccountPicker ()
+        {
+            var picker = new AccountPickerViewController ();
+            picker.PickerDelegate = this;
+            picker.Accounts = EmailAccounts;
+            picker.SelectedAccount = Composer.Account;
+            NavigationController.PushViewController (picker, true);
+        }
+
+        public void AccountPickerDidPickAccount (AccountPickerViewController vc, McAccount account)
+        {
+            NavigationController.PopViewController (true);
+            Composer.SetAccount (account);
+            UpdateHeaderFromView ();
+            UpdateHeaderAttachmentsView ();
+        }
+
         #endregion
 
         #region Header View
@@ -1066,39 +1068,27 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderToView ()
         {
-            HeaderView.ToView.Clear ();
-            var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Composer.Message.To);
-            foreach (var address in addresses) {
-                HeaderView.ToView.Append (address);
-            }
+            HeaderView.ToField.EmailTokenField.AddressString = Composer.Message.To;
         }
 
         private void UpdateHeaderCcView ()
         {
-            HeaderView.CcView.Clear ();
-            var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Composer.Message.Cc);
-            foreach (var address in addresses) {
-                HeaderView.CcView.Append (address);
-            }
+            HeaderView.CcField.EmailTokenField.AddressString = Composer.Message.Cc;
         }
 
         private void UpdateHeaderBccView ()
         {
-            HeaderView.BccView.Clear ();
-            var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Composer.Message.Bcc);
-            foreach (var address in addresses) {
-                HeaderView.BccView.Append (address);
-            }
+            HeaderView.BccField.EmailTokenField.AddressString = Composer.Message.Bcc;
         }
 
         private void UpdateHeaderFromView ()
         {
-            HeaderView.FromView.ValueLabel.Text = Composer.Account.EmailAddr;
+            HeaderView.FromField.ValueLabel.Text = Composer.Account.EmailAddr;
         }
 
         private void UpdateHeaderSubjectView ()
         {
-            HeaderView.SubjectField.Text = Composer.Message.Subject;
+            HeaderView.SubjectField.TextField.Text = Composer.Message.Subject;
         }
 
         private void UpdateHeaderIntentView ()
@@ -1108,11 +1098,7 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderAttachmentsView ()
         {
-            HeaderView.AttachmentsView.Clear ();
-            var attachments = McAttachment.QueryByItem (Composer.Message);
-            foreach (var attachment in attachments) {
-                HeaderView.AttachmentsView.Append (attachment);
-            }
+            HeaderView.AttachmentsView.Attachments = McAttachment.QueryByItem (Composer.Message);
         }
 
         #endregion

@@ -26,16 +26,16 @@ namespace NachoClient.iOS
     {
 
         public EmailAddressTokenTextFieldDelegate EmailTokenDelegate {
-        	get {
+            get {
                 EmailAddressTokenTextFieldDelegate tokenDelegate;
-        		if (WeakTokenDelegate.TryGetTarget (out tokenDelegate)) {
-        			return tokenDelegate;
-        		}
-        		return null;
-        	}
-        	set {
-        		WeakTokenDelegate.SetTarget (value);
-        	}
+                if (WeakTokenDelegate.TryGetTarget (out tokenDelegate)) {
+                    return tokenDelegate;
+                }
+                return null;
+            }
+            set {
+                WeakTokenDelegate.SetTarget (value);
+            }
         }
         private WeakReference<EmailAddressTokenTextFieldDelegate> WeakTokenDelegate = new WeakReference<EmailAddressTokenTextFieldDelegate> (null);
 
@@ -59,6 +59,15 @@ namespace NachoClient.iOS
             KeyboardType = UIKeyboardType.EmailAddress;
             AutocapitalizationType = UITextAutocapitalizationType.None;
             AutocorrectionType = UITextAutocorrectionType.No;
+        }
+
+        public NcEmailAddress [] Addresses {
+            get {
+                return RepresentedObjects;
+            }
+            set {
+                RepresentedObjects = value;
+            }
         }
 
         public string AddressString {
@@ -109,7 +118,7 @@ namespace NachoClient.iOS
             InternetAddressList addresses;
             if (InternetAddressList.TryParse (text, out addresses)) {
                 foreach (var mailbox in addresses.Mailboxes) {
-                    return new NcEmailAddress (NcEmailAddress.Kind.Unknown, mailbox.ToString());
+                    return new NcEmailAddress (NcEmailAddress.Kind.Unknown, mailbox.ToString ());
                 }
             }
             return null;

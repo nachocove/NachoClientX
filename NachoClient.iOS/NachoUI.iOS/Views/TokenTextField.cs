@@ -121,7 +121,7 @@ namespace NachoClient.iOS
         {
             if (TextStorage.Length == 0) {
                 AttributedText = new NSAttributedString ("", FieldAttributes ());
-            }else{
+            } else {
                 TextStorage.SetAttributes (FieldAttributes (), new NSRange (0, TextStorage.Length));
             }
             TypingAttributes = FieldAttributes ();
@@ -158,7 +158,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SetRepresentedObjectAtSelection (T representedObject)
+        public void FinishAutocomplete (T representedObject)
         {
             var range = EditingTokenRange ();
             TextStorage.Replace (range, AttributedStringForRepresentedObject (representedObject));
@@ -175,6 +175,23 @@ namespace NachoClient.iOS
             Autocomplete (null);
         }
 
+        public void Add (T representedObject)
+        {
+            Add (new T [] { representedObject });
+        }
+
+        public void Add (T [] representedObjects)
+        {
+            foreach (var representedObject in representedObjects) {
+                _RepresentedObjects.Add (representedObject);
+                var attributedString = AttributedStringForRepresentedObject (representedObject);
+                TextStorage.Append (attributedString);
+            }
+            if (representedObjects.Length > 0) {
+                DidChange ();
+            }
+        }
+
         #endregion
 
         #region Editing
@@ -187,9 +204,9 @@ namespace NachoClient.iOS
         public override void DeleteBackward ()
         {
             var range = SelectedTextRange;
-            if (!range.Start.IsEqual(range.End)) {
+            if (!range.Start.IsEqual (range.End)) {
                 ReplaceText (range, "");
-            } else if (!range.Start.IsEqual(BeginningOfDocument)){
+            } else if (!range.Start.IsEqual (BeginningOfDocument)) {
                 range = GetTextRange (GetPosition (range.Start, -1), range.Start);
                 ReplaceText (range, "");
             }
@@ -197,11 +214,11 @@ namespace NachoClient.iOS
 
         public override void ReplaceText (UITextRange range, string text)
         {
-            if (!range.Start.IsEqual(range.End)) {
+            if (!range.Start.IsEqual (range.End)) {
                 RemoveRepresentedObjectsInRange (range);
             }
             if (text == "," || text == ";" || text == "\n") {
-                if (!range.Start.IsEqual(range.End)) {
+                if (!range.Start.IsEqual (range.End)) {
                     base.ReplaceText (range, "");
                 }
                 Tokenize ();
@@ -303,7 +320,7 @@ namespace NachoClient.iOS
             }
             var attachmentString = NSAttributedString.FromAttachment (attachment);
             var attributedString = new NSMutableAttributedString (attachmentString);
-            attributedString.AddAttributes (FieldAttributes(), new NSRange (0, attributedString.Length));
+            attributedString.AddAttributes (FieldAttributes (), new NSRange (0, attributedString.Length));
             return attributedString;
         }
 
@@ -319,7 +336,7 @@ namespace NachoClient.iOS
                     tokenStart -= 1;
                 }
                 if (tokenStart < tokenEnd) {
-                    var representedObject = RepresentedObjectForText(text.Substring (tokenStart, tokenEnd - tokenStart));
+                    var representedObject = RepresentedObjectForText (text.Substring (tokenStart, tokenEnd - tokenStart));
                     if (representedObject != null) {
                         changed = true;
                         _RepresentedObjects.Insert (objectIndex, representedObject);
