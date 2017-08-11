@@ -18,7 +18,7 @@ namespace NachoClient.iOS
         EmailAddressTokenTextField EmailField;
         UITextView TextField;
 
-        public TestViewController () : base()
+        public TestViewController () : base ()
         {
         }
 
@@ -62,6 +62,10 @@ namespace NachoClient.iOS
         public void EmailAddressFieldDidChange (EmailAddressTokenTextField field)
         {
             TextField.Text = EmailField.AddressString;
+        }
+
+        public void EmailAddressFieldDidRequsetDetails (EmailAddressTokenTextField field)
+        {
         }
 
     }

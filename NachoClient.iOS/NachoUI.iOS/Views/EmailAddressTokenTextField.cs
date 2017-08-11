@@ -20,6 +20,7 @@ namespace NachoClient.iOS
     {
         void EmailAddressFieldAutocompleteText (EmailAddressTokenTextField field, string text);
         void EmailAddressFieldDidChange (EmailAddressTokenTextField field);
+        void EmailAddressFieldDidRequsetDetails (EmailAddressTokenTextField field);
     }
 
     public class EmailAddressTokenTextField : TokenTextField<NcEmailAddress>
@@ -79,6 +80,22 @@ namespace NachoClient.iOS
             }
         }
 
+        [Export ("headerDetails:")]
+        public void ShowHeaderDetails (NSObject sender)
+        {
+            EmailTokenDelegate?.EmailAddressFieldDidRequsetDetails (this);
+        }
+
+        public override bool CanPerform (ObjCRuntime.Selector action, NSObject withSender)
+        {
+            switch (action.Name) {
+            case "headerDetails:":
+                return true;
+            default:
+                return base.CanPerform (action, withSender);
+            }
+        }
+
         protected override UIView ViewForRepresentedObject (NcEmailAddress address)
         {
             var view = new UIView ();
@@ -109,6 +126,9 @@ namespace NachoClient.iOS
             label.Frame = new CGRect (horizontalViewPadding, 0, size.Width + 2.0f * horizontalLabelPadding, Font.LineHeight);
             view.Frame = new CGRect (0, Font.Descender, label.Frame.Width + 2.0f * horizontalViewPadding, label.Frame.Height);
             view.AddSubview (label);
+            view.AddGestureRecognizer (new UITapGestureRecognizer ((recognizer) => {
+                SelectRepresentedObject (address);
+            }));
             return view;
         }
 

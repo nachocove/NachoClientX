@@ -162,10 +162,12 @@ namespace NachoCore.Utils
                 return;
             }
             Account = account;
+            var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Account), Account.EmailAddr);
             if (Message != null) {
                 Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                     var message = record as McEmailMessage;
                     message.Subject = Message.Subject;
+                    message.From = mailbox.ToString ();
                     message.To = Message.To;
                     message.Cc = Message.Cc;
                     message.Bcc = Message.Bcc;

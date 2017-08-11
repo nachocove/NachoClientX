@@ -130,7 +130,7 @@ namespace NachoClient.iOS
             SendButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (SendButton, "icn-send");
             SendButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Send", "");
-            SendButton.Clicked += Send;
+            SendButton.Clicked += ConfirmHeaderDetailsBeforeSend;
 
             QuickResponseButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (QuickResponseButton, "contact-quickemail");
@@ -179,10 +179,6 @@ namespace NachoClient.iOS
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (WebView);
             View.AddSubview (ScrollView);
-
-            UIMenuController.SharedMenuController.MenuItems = new UIMenuItem [] {
-                new UIMenuItem(NSBundle.MainBundle.LocalizedString ("Attach (menu)", ""), new ObjCRuntime.Selector("attach:"))
-            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -281,6 +277,11 @@ namespace NachoClient.iOS
         #endregion
 
         #region User Actions - Navbar
+
+        public void ConfirmHeaderDetailsBeforeSend (object sender, EventArgs e)
+        {
+            ShowHeaderDetails (withSendOption: true);
+        }
 
         // User hitting the send button
         public void Send (object sender, EventArgs e)
@@ -513,6 +514,11 @@ namespace NachoClient.iOS
                 HeaderView.BccField.EmailTokenField.Add (addresses);
                 HeaderView.BccField.EmailTokenField.BecomeFirstResponder ();
             });
+        }
+
+        public void MessageComposeHeaderViewDidRequestDetails (MessageComposeHeaderView view)
+        {
+            ShowHeaderDetails ();
         }
 
         // User tapping the from field
@@ -1100,6 +1106,23 @@ namespace NachoClient.iOS
             Composer.SetAccount (account);
             UpdateHeaderFromView ();
             UpdateHeaderAttachmentsView ();
+        }
+
+        public void ShowHeaderDetails (bool withSendOption = false)
+        {
+            var detailsController = new MessageHeaderDetailViewController ();
+            detailsController.Message = Composer.Message;
+            if (withSendOption) {
+                detailsController.NavigationItem.Title = "Confirm From & To";
+                var sendButton = new NcUIBarButtonItem ();
+                Util.SetAutomaticImageForButton (sendButton, "icn-send");
+                sendButton.Clicked += (sender, e) => {
+                    NavigationController.PopViewController (animated: true);
+                    Send (sendButton, new EventArgs ());
+                };
+                detailsController.NavigationItem.RightBarButtonItem = sendButton;
+            }
+            NavigationController.PushViewController (detailsController, animated: true);
         }
 
         #endregion

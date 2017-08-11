@@ -880,6 +880,7 @@
 "Quick response" = "Quick response";
 "Add attachment" = "Add attachment";
 "Attach (menu)" = "Attach";
+"Details (menu)" = "Details";
 
 /* Label in message cell indicating future intent due date */
 "due {0} (message)" = "due {0}";

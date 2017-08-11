@@ -232,6 +232,23 @@ namespace NachoClient.iOS
             }
         }
 
+        public void SelectRepresentedObject (T representedObject)
+        {
+            var textIndex = 0;
+            var objectIndex = 0;
+            var text = TextStorage.MutableString.ToString ();
+            while (textIndex < text.Length) {
+                if (text [textIndex] == AttachmentCharacter) {
+                    if (Object.ReferenceEquals (RepresentedObjects [objectIndex], representedObject)) {
+                        SelectedRange = new NSRange (textIndex, 1);
+                        break;
+                    }
+                    objectIndex += 1;
+                }
+                textIndex += 1;
+            }
+        }
+
         #endregion
 
         #region Pasteboard
@@ -456,6 +473,32 @@ namespace NachoClient.iOS
             }
         }
 
+        public override UIView HitTest (CGPoint point, UIEvent uievent)
+        {
+            if (IsFirstResponder) {
+                var text = TextStorage.MutableString.ToString ();
+                var textIndex = 0;
+                var objectIndex = 0;
+                while (textIndex < text.Length) {
+                    if (text [textIndex] == AttachmentCharacter) {
+                        var rect = LayoutManager.BoundingRectForGlyphRange (new NSRange (textIndex, 1), TextContainer);
+                        if (rect.Contains (point)) {
+                            if (textIndex < SelectedRange.Location || textIndex >= SelectedRange.Location + SelectedRange.Length) {
+                                var attachment = TextStorage.GetAttribute (UIStringAttributeKey.Attachment, textIndex, out var range);
+                                if (attachment is ViewAttachment) {
+                                    return (attachment as ViewAttachment).View;
+                                }
+                            }
+                            break;
+                        }
+                        objectIndex += 1;
+                    }
+                    textIndex += 1;
+                }
+            }
+            return base.HitTest (point, uievent);
+        }
+
         #endregion
 
         private const int AttachmentCharacter = 0xFFFC;
@@ -464,12 +507,14 @@ namespace NachoClient.iOS
     class ViewAttachment : NSTextAttachment
     {
 
+        public readonly UIView View;
         CGRect ViewFrame;
 
         public ViewAttachment (UIView view, nfloat scale)
         {
             Image = view.RenderToImage (scale);
             ViewFrame = view.Frame;
+            View = view;
         }
 
         public override CGRect GetAttachmentBounds (NSTextContainer textContainer, CGRect proposedLineFragment, CGPoint glyphPosition, nuint characterIndex)

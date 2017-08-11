@@ -30,6 +30,7 @@ namespace NachoClient.iOS
         void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
         void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidRequestDetails (MessageComposeHeaderView view);
     }
 
     public class MessageComposeFieldView : UIView, ThemeAdopter
@@ -275,6 +276,13 @@ namespace NachoClient.iOS
                 } else if (this == headerView.BccField) {
                     headerView.HeaderDelegate?.MessageComposeHeaderViewDidChangeBcc (headerView, field.AddressString);
                 }
+            }
+        }
+
+        public void EmailAddressFieldDidRequsetDetails (EmailAddressTokenTextField field)
+        {
+            if (WeakHeaderView.TryGetTarget (out var headerView)) {
+                headerView.HeaderDelegate?.MessageComposeHeaderViewDidRequestDetails (headerView);
             }
         }
 

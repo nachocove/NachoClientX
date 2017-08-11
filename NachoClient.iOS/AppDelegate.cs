@@ -120,6 +120,12 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
+            UIMenuController.SharedMenuController.MenuItems = new UIMenuItem [] {
+                new UIMenuItem (NSBundle.MainBundle.LocalizedString ("Copy", ""), new ObjCRuntime.Selector ("DoCopy")),
+                new UIMenuItem (NSBundle.MainBundle.LocalizedString ("Attach (menu)", ""), new ObjCRuntime.Selector("attach:")),
+                new UIMenuItem (NSBundle.MainBundle.LocalizedString ("Details (menu)", ""), new ObjCRuntime.Selector("headerDetails:"))
+            };
+
             // if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
             //     application.ShortcutItems = new UIApplicationShortcutItem[] {
             //         new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)

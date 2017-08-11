@@ -913,9 +913,6 @@ namespace NachoClient.iOS
             UIMenuController copyMenu = UIMenuController.SharedMenuController;
             copyMenu.SetTargetRect (new CGRect (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 7, 0, 0), longPressData.containerView.Superview);
             copyMenu.ArrowDirection = UIMenuControllerArrowDirection.Down;
-
-            UIMenuItem copyMenuItem = new UIMenuItem (NSBundle.MainBundle.LocalizedString ("Copy", ""), new ObjCRuntime.Selector ("DoCopy"));
-            copyMenu.MenuItems = new UIMenuItem [] { copyMenuItem };
             copyMenu.SetMenuVisible (true, true);
         }
 
