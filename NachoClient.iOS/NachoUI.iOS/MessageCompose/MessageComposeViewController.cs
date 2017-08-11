@@ -190,6 +190,7 @@ namespace NachoClient.iOS
                 Composer.StartPreparingMessage ();
                 UpdateHeaderView ();
                 HeaderView.UpdateCcCollapsed ();
+                HeaderView.LayoutIfNeeded ();
                 UpdateSendEnabled ();
                 if (StartWithQuickResponse) {
                     ShowFakeQuickResponses ();
@@ -1110,6 +1111,7 @@ namespace NachoClient.iOS
 
         public void ShowHeaderDetails (bool withSendOption = false)
         {
+            View.EndEditing (true);
             var detailsController = new MessageHeaderDetailViewController ();
             detailsController.Message = Composer.Message;
             if (withSendOption) {
