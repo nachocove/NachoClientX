@@ -492,7 +492,7 @@ namespace NachoClient.iOS
         public void Add (McAttachment attachment)
         {
             Attachments.Add (attachment);
-            TableView.InsertRows (new NSIndexPath [] { NSIndexPath.FromRowSection (Attachments.Count - 1, 0) }, UITableViewRowAnimation.Top);
+            TableView.ReloadData ();
             if (WeakHeaderView.TryGetTarget (out var headerView)) {
                 headerView.SetNeedsLayout ();
             }
@@ -533,7 +533,7 @@ namespace NachoClient.iOS
             } else {
                 cell.TextLabel.TextColor = AdoptedTheme.DefaultTextColor;
             }
-            cell.AccessoryView = new ImageAccessoryView ("gen-delete-small");
+            cell.AccessoryView = new ImageAccessoryView ("gen-delete-small", width: 36, contentMode: UIViewContentMode.Center);
             cell.AccessoryView.AddGestureRecognizer (new UITapGestureRecognizer ((recognizer) => {
                 RemoveAttachment (indexPath);
             }));
@@ -547,8 +547,9 @@ namespace NachoClient.iOS
         {
             var attachment = Attachments [indexPath.Row];
             Attachments.RemoveAt (indexPath.Row);
-            TableView.DeleteRows (new NSIndexPath [] { indexPath }, UITableViewRowAnimation.Left);
+            TableView.ReloadData ();
             if (WeakHeaderView.TryGetTarget (out var headerView)) {
+                headerView.SetNeedsLayout ();
                 headerView.HeaderDelegate?.MessageComposeHeaderViewDidRemoveAttachment (headerView, attachment);
             }
         }
