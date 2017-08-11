@@ -442,7 +442,8 @@ namespace NachoClient.iOS
             } else {
                 badgeCount = EmailHelper.GetUnreadMessageCountForBadge ();
                 badgeCount += McChat.UnreadMessageCountForBadge ();
-                badgeCount += McAction.CountOfNewActionsForBadge ();
+                // disabling new action count because we've disabled the action ui.  It may return at some point
+                //badgeCount += McAction.CountOfNewActionsForBadge ();
                 Log.Info (Log.LOG_UI, "UpdateBadgeCount: badge count = {0}", badgeCount);
             }
             InvokeOnUIThread.Instance.Invoke (() => {
