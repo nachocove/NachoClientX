@@ -422,7 +422,16 @@ namespace NachoClient.iOS
         private MessageComposeLabelFieldView FieldView;
         private UITableView TableView;
         private UIView SeparatorView;
-        public List<McAttachment> Attachments;
+        private List<McAttachment> _Attachments;
+        public List<McAttachment> Attachments {
+            get {
+                return _Attachments;
+            }
+            set {
+                _Attachments = value;
+                TableView.ReloadData ();
+            }
+        }
 
         private nfloat RowHeight = 44.0f;
         private nfloat SeparatorSize = 1.0f;
