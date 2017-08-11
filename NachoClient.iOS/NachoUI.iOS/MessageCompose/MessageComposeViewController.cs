@@ -40,6 +40,7 @@ namespace NachoClient.iOS
         NcWebViewMessageHandler,
         AccountPickerViewControllerDelegate,
         ContactPickerViewControllerDelegate,
+        ContactAutocompleteMenuDelegate,
         ThemeAdopter
     {
 
@@ -471,17 +472,23 @@ namespace NachoClient.iOS
 
         public void MessageComposeHeaderViewDidSearchTo (MessageComposeHeaderView view, string search)
         {
-            // TODO: show autocomplete
+            UpdateAutocompleteMenu (HeaderView.ToField, search, (address) => {
+                HeaderView.ToField.EmailTokenField.FinishAutocomplete (address);
+            });
         }
 
         public void MessageComposeHeaderViewDidSearchCc (MessageComposeHeaderView view, string search)
         {
-            // TODO: show autocomplete
+            UpdateAutocompleteMenu (HeaderView.CcField, search, (address) => {
+                HeaderView.CcField.EmailTokenField.FinishAutocomplete (address);
+            });
         }
 
         public void MessageComposeHeaderViewDidSearchBcc (MessageComposeHeaderView view, string search)
         {
-            // TODO: show autocomplete
+            UpdateAutocompleteMenu (HeaderView.BccField, search, (address) => {
+                HeaderView.BccField.EmailTokenField.FinishAutocomplete (address);
+            });
         }
 
         public void MessageComposeHeaderViewDidSelectToChooser (MessageComposeHeaderView view)
@@ -857,6 +864,51 @@ namespace NachoClient.iOS
         #region Contact Autocomplete & Browsing
 
         Action<NcEmailAddress []> ContactPickerCompletion;
+        Action<NcEmailAddress> AutocompleteCompletion;
+        ContactAutocompleteMenu AutocompleteMenu;
+
+        void UpdateAutocompleteMenu (UIView anchorView, string text, Action<NcEmailAddress> completion)
+        {
+            if (AutocompleteMenu == null || AutocompleteMenu.Superview == null) {
+                AttachAutocompleteMenu (anchorView);
+            }
+            AutocompleteCompletion = completion;
+            AutocompleteMenu.Update (text);
+        }
+
+        void AttachAutocompleteMenu (UIView anchorView)
+        {
+            if (AutocompleteMenu == null) {
+                AutocompleteMenu = new ContactAutocompleteMenu ();
+                AutocompleteMenu.AutocompleteDelegate = this;
+            }
+            if (AutocompleteMenu.Superview == null) {
+                var anchorFrame = View.ConvertRectFromView (anchorView.Frame, anchorView.Superview);
+                var y = anchorFrame.Y + anchorFrame.Height;
+                AutocompleteMenu.Frame = new CGRect (anchorFrame.X, y, anchorFrame.Width, View.Bounds.Height - keyboardHeight - y);
+            }
+        }
+
+        public void AutocompleteMenuDidAppear (ContactAutocompleteMenu menu)
+        {
+            View.AddSubview (AutocompleteMenu);
+            ScrollView.ScrollEnabled = false;
+            menu.AdoptTheme (adoptedTheme);
+        }
+
+        public void AutocompleteMenuDidDisappear (ContactAutocompleteMenu menu)
+        {
+            ScrollView.ScrollEnabled = true;
+            AutocompleteCompletion = null;
+            AutocompleteMenu.RemoveFromSuperview ();
+        }
+
+        public void AutocompleteMenuDidSelect (ContactAutocompleteMenu menu, McContactEmailAddressAttribute contactAddress)
+        {
+            var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, contactAddress.CachedAddress.CanonicalEmailAddress);
+            address.contact = contactAddress.CachedContact;
+            AutocompleteCompletion (address);
+        }
 
         void ShowContactPicker (Action<NcEmailAddress []> completion)
         {

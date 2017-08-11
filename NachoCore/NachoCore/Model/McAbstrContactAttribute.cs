@@ -33,6 +33,16 @@ namespace NachoCore.Model
             return McContact.QueryById<McContact> ((int)ContactId);
         }
 
+        private McContact _CachedContact;
+        public McContact CachedContact {
+            get {
+                if (_CachedContact == null) {
+                    _CachedContact = GetContact ();
+                }
+                return _CachedContact;
+            }
+        }
+
         public static List<T> QueryByContactId<T> (int contactId) where T : McAbstrContactAttribute, new()
         {
             return NcModel.Instance.Db.Table<T> ().Where (x => contactId == x.ContactId).ToList ();

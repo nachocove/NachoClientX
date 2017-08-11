@@ -169,6 +169,7 @@ namespace NachoClient.iOS
                 if (text [textIndex] == AttachmentCharacter) {
                     objectIndex += 1;
                 }
+                ++textIndex;
             }
             _RepresentedObjects.Insert (objectIndex, representedObject);
             DidChange ();
@@ -276,6 +277,7 @@ namespace NachoClient.iOS
         {
             if (base.ResignFirstResponder ()) {
                 Tokenize ();
+                Autocomplete (null);
                 return true;
             }
             return false;

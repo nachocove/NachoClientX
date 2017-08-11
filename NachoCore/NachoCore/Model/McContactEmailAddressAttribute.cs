@@ -18,6 +18,16 @@ namespace NachoCore.Model
         [Indexed] // Email address as it appears in contact record
         public string Value { get; set; }
 
+        private McEmailAddress _CachedAddress;
+        public McEmailAddress CachedAddress {
+            get {
+                if (_CachedAddress == null) {
+                    _CachedAddress = McEmailAddress.QueryById<McEmailAddress> (EmailAddress);
+                }
+                return _CachedAddress;
+            }
+        }
+
         public bool IsEquivalent (McContactEmailAddressAttribute address)
         {
             return EmailAddress == address.EmailAddress;

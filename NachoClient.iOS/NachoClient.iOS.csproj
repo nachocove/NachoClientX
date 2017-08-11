@@ -673,6 +673,7 @@
     <Compile Include="NachoPlatform.iOS\Strings.cs" />
     <Compile Include="NachoPlatform.iOS\DateTimeFormatter.cs" />
     <Compile Include="CallDirectory.cs" />
+    <Compile Include="NachoUI.iOS\MessageCompose\ContactAutocompleteMenu.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\Base.lproj\AccountCreation.storyboard" />

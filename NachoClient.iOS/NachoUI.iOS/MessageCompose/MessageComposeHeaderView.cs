@@ -307,6 +307,8 @@ namespace NachoClient.iOS
         public MessageComposeLabelFieldView (string name) : base (name, new UILabel ())
         {
             PressRecognizer = new PressGestureRecognizer (Press);
+            PressRecognizer.IsCanceledByPanning = true;
+            PressRecognizer.DelaysStart = true;
             ValueLabel.BackgroundColor = UIColor.Clear;
             NameLabel.BackgroundColor = UIColor.Clear;
             AddGestureRecognizer (PressRecognizer);
@@ -615,6 +617,8 @@ namespace NachoClient.iOS
             AddSubview (SeparatorView);
 
             PressRecognizer = new PressGestureRecognizer (Press);
+            PressRecognizer.IsCanceledByPanning = true;
+            PressRecognizer.DelaysStart = true;
             AddGestureRecognizer (PressRecognizer);
             SetNeedsLayout ();
         }
