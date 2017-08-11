@@ -375,6 +375,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override void TouchesBegan (NSSet touches, UIEvent evt)
+        {
+            TextField.BecomeFirstResponder ();
+        }
+
         public override void AdoptTheme (Theme theme)
         {
             base.AdoptTheme (theme);

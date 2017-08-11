@@ -14,6 +14,8 @@ namespace NachoClient.iOS
     public interface TokenTextFieldDelegate<T>
     {
         UIView TokenFieldViewForRepresentedObject (TokenTextField<T> field, T representedObject);
+        string TokenFieldStringForRepresentedObjects (TokenTextField<T> field, T [] representedObjects);
+        T [] TokenFieldRepresentedObjectsForString (TokenTextField<T> field, string text);
         void TokenFieldAutocompleteText (TokenTextField<T> field, string text);
         T TokenFieldRepresentedObjectForText (TokenTextField<T> field, string text);
         void TokenFieldDidChange (TokenTextField<T> field);
@@ -153,7 +155,7 @@ namespace NachoClient.iOS
                 foreach (var obj in _RepresentedObjects) {
                     attributedText.Append (AttributedStringForRepresentedObject (obj));
                 }
-                attributedText.SetAttributes (FieldAttributes (), new NSRange (0, attributedText.Length));
+                attributedText.AddAttributes (FieldAttributes (), new NSRange (0, attributedText.Length));
                 AttributedText = attributedText;
             }
         }
@@ -236,31 +238,71 @@ namespace NachoClient.iOS
 
         public override void Copy (NSObject sender)
         {
-            // TODO: add content to pasteboard
-            //base.Copy (sender);
+            var objectIndex = 0;
+            var text = TextStorage.MutableString.ToString ();
+            var textIndex = 0;
+            var range = SelectedTextRange;
+            var rangeStart = GetOffsetFromPosition (BeginningOfDocument, range.Start);
+            var rangeEnd = GetOffsetFromPosition (BeginningOfDocument, range.End);
+            var selectedObjects = new List<T> ();
+            while (textIndex < rangeStart) {
+                if (text [textIndex] == AttachmentCharacter) {
+                    objectIndex += 1;
+                }
+                textIndex += 1;
+            }
+            while (textIndex < rangeEnd) {
+                if (text [textIndex] == AttachmentCharacter) {
+                    selectedObjects.Add (_RepresentedObjects [objectIndex]);
+                    objectIndex += 1;
+                }
+                textIndex += 1;
+            }
+            if (selectedObjects.Count > 0) {
+                var selectedText = StringForRepresentedObjects (selectedObjects.ToArray ());
+                UIPasteboard.General.String = selectedText;
+            }
         }
 
         public override void Cut (NSObject sender)
         {
             Copy (sender);
-            Delete (sender);
+            RemoveRepresentedObjectsInRange (SelectedTextRange);
+            TextStorage.DeleteRange (SelectedRange);
+            DidChange ();
         }
 
         public override void Paste (NSObject sender)
         {
-            Delete (sender);
-            // TODO: inspect paseboard and 
-            //base.Paste (sender);
+            if (UIPasteboard.General.HasStrings) {
+                var pastedObjects = RepresentedObjectsForString (UIPasteboard.General.String);
+                if (pastedObjects.Length > 0) {
+                    var text = TextStorage.MutableString.ToString ();
+                    var selectionIndex = GetOffsetFromPosition (BeginningOfDocument, SelectedTextRange.Start);
+                    var textIndex = 0;
+                    var objectIndex = 0;
+                    while (textIndex < selectionIndex) {
+                        if (text [textIndex] == AttachmentCharacter) {
+                            objectIndex += 1;
+                        }
+                        textIndex += 1;
+                    }
+                    var pastedText = new NSMutableAttributedString ();
+                    foreach (var pastedObject in pastedObjects) {
+                        pastedText.Append (AttributedStringForRepresentedObject (pastedObject));
+                    }
+                    RemoveRepresentedObjectsInRange (SelectedTextRange);
+                    _RepresentedObjects.InsertRange (objectIndex, pastedObjects);
+                    TextStorage.Replace (SelectedRange, pastedText);
+                    SelectedRange = new NSRange (textIndex + pastedText.Length, 0);
+                    DidChange ();
+                }
+            }
         }
 
         public override bool CanPerform (ObjCRuntime.Selector action, NSObject withSender)
         {
-            // FIXME: temporary disabling of pasteboard actions until they're filled in with
-            // proper behavior for tokens
             switch (action.Name) {
-            case "cut:":
-            case "copy:":
-            case "paste:":
             case "_lookup:":
             case "_define:":
                 return false;
@@ -305,6 +347,16 @@ namespace NachoClient.iOS
         protected virtual void Autocomplete (string text)
         {
             TokenDelegate.TokenFieldAutocompleteText (this, text);
+        }
+
+        protected virtual string StringForRepresentedObjects (T [] representedObjects)
+        {
+            return TokenDelegate.TokenFieldStringForRepresentedObjects (this, representedObjects);
+        }
+
+        protected virtual T [] RepresentedObjectsForString (string text)
+        {
+            return TokenDelegate.TokenFieldRepresentedObjectsForString (this, text);
         }
 
         #endregion

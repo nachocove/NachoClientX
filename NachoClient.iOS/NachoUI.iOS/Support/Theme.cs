@@ -123,7 +123,7 @@ namespace NachoClient.iOS
             DefaultFontSize = UIFont.SystemFontSize;
             DefaultFont = UIFont.SystemFontOfSize (DefaultFontSize);
             BoldDefaultFont = UIFont.BoldSystemFontOfSize (DefaultFontSize);
-            MediumDefaultFont = UIFont.SystemFontOfSize(DefaultFontSize, UIFontWeight.Medium);
+            MediumDefaultFont = UIFont.SystemFontOfSize (DefaultFontSize, UIFontWeight.Medium);
         }
 
         static Theme _active;
@@ -133,7 +133,7 @@ namespace NachoClient.iOS
                     _active = new NachoTheme ();
                 }
                 return _active;
-            }    
+            }
             set {
                 _active = value;
             }
@@ -180,7 +180,8 @@ namespace NachoClient.iOS
             }
         }
 
-        private UITextAttributes TabBarButtonTextAttributes (UIColor color) {
+        private UITextAttributes TabBarButtonTextAttributes (UIColor color)
+        {
             var attributes = new UITextAttributes ();
             attributes.Font = NavigationBarButtonFont;
             attributes.TextColor = color;
@@ -191,88 +192,88 @@ namespace NachoClient.iOS
     class NachoTheme : Theme
     {
 
-    	private UIColor MainColor = UIColor.FromRGBA (0x0C, 0x42, 0x4B, 0xFF);
-    	private UIColor MainShadedColor = UIColor.FromRGBA (0x35, 0x62, 0x6A, 0xFF);
-    	private UIColor MainShadedColor2 = UIColor.FromRGBA (0x5F, 0x82, 0x88, 0xFF);
-    	private UIColor AccentColor = UIColor.FromRGBA (0x73, 0xFF, 0xF3, 0xFF);
-    	private UIColor ShadedColor = UIColor.FromRGBA (0xE6, 0xE7, 0xE8, 0xFF);
-    	private UIColor ShadedColor2 = UIColor.FromRGBA (0xFA, 0xFA, 0xFA, 0xFF);
+        private UIColor MainColor = UIColor.FromRGBA (0x0C, 0x42, 0x4B, 0xFF);
+        private UIColor MainShadedColor = UIColor.FromRGBA (0x35, 0x62, 0x6A, 0xFF);
+        private UIColor MainShadedColor2 = UIColor.FromRGBA (0x5F, 0x82, 0x88, 0xFF);
+        private UIColor AccentColor = UIColor.FromRGBA (0x73, 0xFF, 0xF3, 0xFF);
+        private UIColor ShadedColor = UIColor.FromRGBA (0xE6, 0xE7, 0xE8, 0xFF);
+        private UIColor ShadedColor2 = UIColor.FromRGBA (0xFA, 0xFA, 0xFA, 0xFF);
 
-    	public NachoTheme ()
-    	{
+        public NachoTheme ()
+        {
 
-    		DefaultTextColor = UIColor.FromRGBA (0x33, 0x33, 0x33, 0xFF);
-    		DisabledTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
-    		DestructiveTextColor = UIColor.FromRGBA (0xEB, 0x4C, 0x2F, 0xFF);
-    		ButtonTextColor = MainColor;
+            DefaultTextColor = UIColor.FromRGBA (0x33, 0x33, 0x33, 0xFF);
+            DisabledTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
+            DestructiveTextColor = UIColor.FromRGBA (0xEB, 0x4C, 0x2F, 0xFF);
+            ButtonTextColor = MainColor;
 
-    		// Navigation
-    		IsNavigationBarOpaque = true;
-    		NavigationBarBackgroundColor = MainColor;
+            // Navigation
+            IsNavigationBarOpaque = true;
+            NavigationBarBackgroundColor = MainColor;
             NavigationBarTintColor = AccentColor;
-    		NavigationBarShadowImage = new UIImage ();
-    		NavigationBarBackgroundImage = new UIImage ();
-    		NavigationBarTitleColor = UIColor.White;
+            NavigationBarShadowImage = new UIImage ();
+            NavigationBarBackgroundImage = new UIImage ();
+            NavigationBarTitleColor = UIColor.White;
 
-    		// Toolbar
-    		IsToolbarOpaque = true;
-    		ToolbarBackgroundColor = ShadedColor2;
-    		ToolbarTintColor = MainColor;
+            // Toolbar
+            IsToolbarOpaque = true;
+            ToolbarBackgroundColor = ShadedColor2;
+            ToolbarTintColor = MainColor;
 
-    		// TabBar
-    		IsTabBarOpaque = true;
-    		TabBarBackgroundColor = ShadedColor2;
-    		TabBarTintColor = TabBarBackgroundColor.ColorDarkenedByAmount (0.5f);
-    		TabBarSelectedColor = MainColor;
+            // TabBar
+            IsTabBarOpaque = true;
+            TabBarBackgroundColor = ShadedColor2;
+            TabBarTintColor = TabBarBackgroundColor.ColorDarkenedByAmount (0.5f);
+            TabBarSelectedColor = MainColor;
 
-    		// Tables
-    		TableViewGroupedBackgroundColor = ShadedColor;
-    		TableViewTintColor = MainColor;
-    		TableViewCellMainLabelTextColor = MainColor;
-    		TableViewCellDetailLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
-    		TableViewCellDateLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
-    		TableViewCellDisclosureAccessoryColor = MainColor;
-    		TableViewCellActionAccessoryColor = MainColor;
-    		TableSectionHeaderTextColor = TableViewGroupedBackgroundColor.ColorDarkenedByAmount (0.6f);
+            // Tables
+            TableViewGroupedBackgroundColor = ShadedColor;
+            TableViewTintColor = MainColor;
+            TableViewCellMainLabelTextColor = MainColor;
+            TableViewCellDetailLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
+            TableViewCellDateLabelTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
+            TableViewCellDisclosureAccessoryColor = MainColor;
+            TableViewCellActionAccessoryColor = MainColor;
+            TableSectionHeaderTextColor = TableViewGroupedBackgroundColor.ColorDarkenedByAmount (0.6f);
 
-    		// Filterbar
-    		FilterbarBackgroundColor = ShadedColor;
-    		FilterbarBorderColor = ShadedColor.ColorDarkenedByAmount (0.15f);
-    		FilterbarItemColor = FilterbarBorderColor;
-    		FilterbarSelectedItemColor = MainColor;
+            // Filterbar
+            FilterbarBackgroundColor = ShadedColor;
+            FilterbarBorderColor = ShadedColor.ColorDarkenedByAmount (0.15f);
+            FilterbarItemColor = FilterbarBorderColor;
+            FilterbarSelectedItemColor = MainColor;
 
-    		// Startup
-    		AccountCreationBackgroundColor = MainColor;
-            AccountCreationButtonColor = UIColor.FromRGBA(0x1A, 0xC8, 0xB6, 0xFF);
-    		AccountCreationButtonTitleColor = UIColor.White;
-    		AccountCreationTextColor = UIColor.White;
-    		AccountCreationFieldLabelTextColor = MainColor;
+            // Startup
+            AccountCreationBackgroundColor = MainColor;
+            AccountCreationButtonColor = UIColor.FromRGBA (0x1A, 0xC8, 0xB6, 0xFF);
+            AccountCreationButtonTitleColor = UIColor.White;
+            AccountCreationTextColor = UIColor.White;
+            AccountCreationFieldLabelTextColor = MainColor;
 
-    		// Account Switcher
-    		AccountSwitcherTextColor = UIColor.White;
+            // Account Switcher
+            AccountSwitcherTextColor = UIColor.White;
 
-    		// Message
-    		MessageIntentTextColor = UIColor.FromRGB (0xD2, 0x47, 0x47);
-    		ThreadIndicatorColor = MainShadedColor2;
+            // Message
+            MessageIntentTextColor = UIColor.FromRGB (0xD2, 0x47, 0x47);
+            ThreadIndicatorColor = MainShadedColor2;
 
-    		// Action
-    		ActionCheckboxColorHot = UIColor.FromRGB (0xEE, 0x70, 0x5B);
+            // Action
+            ActionCheckboxColorHot = UIColor.FromRGB (0xEE, 0x70, 0x5B);
 
             // Action Sheet
             ActionSheetBackgroundColor = UIColor.Black.ColorWithAlpha (0.5f);
             ActionSheetItemBackgroundColor = UIColor.White;
             ActionSheetItemTextColor = MainColor;
-    	}
+        }
 
-    	public override void DefineAppearance ()
-    	{
-    		base.DefineAppearance ();
+        public override void DefineAppearance ()
+        {
+            base.DefineAppearance ();
 
-    		using (var arrow = UIImage.FromFile ("nav-backarrow")) {
-    			UINavigationBar.Appearance.BackIndicatorImage = arrow;
-    			UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
-    		}
-    	}
+            using (var arrow = UIImage.FromBundle ("nav-backarrow")) {
+                UINavigationBar.Appearance.BackIndicatorImage = arrow;
+                UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
+            }
+        }
 
     }
     class ApolloTheme : Theme
@@ -292,7 +293,7 @@ namespace NachoClient.iOS
             DisabledTextColor = UIColor.FromRGBA (0x77, 0x77, 0x77, 0xFF);
             DestructiveTextColor = UIColor.FromRGBA (0xEB, 0x4C, 0x2F, 0xFF);
             ButtonTextColor = MainColor;
-            
+
             // Navigation
             IsNavigationBarOpaque = true;
             NavigationBarBackgroundColor = MainColor;
@@ -350,7 +351,7 @@ namespace NachoClient.iOS
         {
             base.DefineAppearance ();
 
-            using (var arrow = UIImage.FromFile ("nav-backarrow")) {
+            using (var arrow = UIImage.FromBundle ("nav-backarrow")) {
                 UINavigationBar.Appearance.BackIndicatorImage = arrow;
                 UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
             }
@@ -395,7 +396,7 @@ namespace NachoClient.iOS
             }
             if (tableView.Style == UITableViewStyle.Plain) {
                 var indexPaths = tableView.IndexPathsForVisibleRows;
-                var sections = new System.Collections.Generic.HashSet<int>();
+                var sections = new System.Collections.Generic.HashSet<int> ();
                 if (indexPaths != null) {
                     foreach (var indexPath in indexPaths) {
                         sections.Add (indexPath.Section);

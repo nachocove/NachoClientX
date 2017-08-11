@@ -72,12 +72,10 @@ namespace NachoClient.iOS
 
         public string AddressString {
             get {
-                var addressList = new List<NcEmailAddress> (RepresentedObjects);
-                return EmailHelper.AddressStringFromList (addressList);
+                return StringForRepresentedObjects (RepresentedObjects);
             }
             set {
-                var addressList = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, new string [] { value });
-                RepresentedObjects = addressList.ToArray ();
+                RepresentedObjects = RepresentedObjectsForString (value);
             }
         }
 
@@ -92,7 +90,12 @@ namespace NachoClient.iOS
             if (address.contact != null && !String.IsNullOrWhiteSpace (address.contact.GetDisplayName ())) {
                 label.Text = address.contact.GetDisplayName ();
             } else {
-                label.Text = address.address;
+                var mailbox = address.ToMailboxAddress (mustUseAddress: true);
+                if (mailbox != null && !string.IsNullOrWhiteSpace (mailbox.Name)) {
+                    label.Text = mailbox.Name;
+                } else {
+                    label.Text = address.address;
+                }
             }
             label.LineBreakMode = UILineBreakMode.MiddleTruncation;
             label.Lines = 1;
@@ -126,6 +129,17 @@ namespace NachoClient.iOS
                 }
             }
             return null;
+        }
+
+        protected override string StringForRepresentedObjects (NcEmailAddress [] addresses)
+        {
+            var addressList = new List<NcEmailAddress> (addresses);
+            return EmailHelper.AddressStringFromList (addressList);
+        }
+
+        protected override NcEmailAddress [] RepresentedObjectsForString (string text)
+        {
+            return EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, new string [] { text }).ToArray ();
         }
 
         protected override void DidChange ()
