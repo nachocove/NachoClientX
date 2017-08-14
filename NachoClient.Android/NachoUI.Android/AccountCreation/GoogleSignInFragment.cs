@@ -109,7 +109,7 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        bool ValidationIsFinished()
+        bool ValidationIsFinished ()
         {
             if (!finished) {
                 var account = McAccount.GetAccountBeingConfigured ();
@@ -152,7 +152,9 @@ namespace NachoClient.AndroidClient
 
                 Newtonsoft.Json.Linq.JObject userInfo;
                 try {
+                    Log.Info (Log.LOG_UI, "Requesting Google userinfo");
                     var userInfoString = new System.Net.WebClient ().DownloadString (url);
+                    Log.Info (Log.LOG_UI, "Google userinfo request done");
                     userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info from {0}: {1}", source, ex);
@@ -170,11 +172,13 @@ namespace NachoClient.AndroidClient
                         NcAccountHandler.Instance.RemoveAccount (Account.Id);
                         Account = null;
                     }
+                    Log.Info (Log.LOG_UI, "Creating Google account");
                     Account = NcAccountHandler.Instance.CreateAccount (Service,
                         (string)userInfo ["email"],
                         access_token,
                         refresh_token,
                         expireSecs);
+                    Log.Info (Log.LOG_UI, "Creating Google servers");
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                     Log.Info (Log.LOG_UI, "GoogleCredentialsViewController created account ID{0}", Account.Id);
 

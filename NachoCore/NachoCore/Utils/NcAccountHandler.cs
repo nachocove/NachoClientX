@@ -28,7 +28,7 @@ namespace NachoCore.Model
                         }
                     }
                 }
-                return instance; 
+                return instance;
             }
         }
 
@@ -40,13 +40,16 @@ namespace NachoCore.Model
                                         string accessToken, string refreshToken, uint expireSecs)
         {
             return CreateAccountCore (service, emailAddress, (accountId) => {
-                var cred = new McCred () { 
+                Log.Info (Log.LOG_SYS, "Creating oauth creds");
+                var cred = new McCred () {
                     AccountId = accountId,
                     CredType = McCred.CredTypeEnum.OAuth2,
                     Username = emailAddress,
                 };
                 cred.Insert ();
+                Log.Info (Log.LOG_SYS, "Updating oauth creds");
                 cred.UpdateOauth2 (accessToken, refreshToken, expireSecs);
+                Log.Info (Log.LOG_SYS, "Updating oauth creds done");
                 return cred;
             }, null);
         }
@@ -54,7 +57,7 @@ namespace NachoCore.Model
         public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
         {
             return CreateAccountCore (service, emailAddress, (accountId) => {
-                var cred = new McCred () { 
+                var cred = new McCred () {
                     AccountId = accountId,
                     CredType = McCred.CredTypeEnum.Password,
                     Username = emailAddress,
@@ -81,7 +84,7 @@ namespace NachoCore.Model
                 } else {
                     username = McCred.Join (config.Domain, username);
                 }
-                var cred = new McCred () { 
+                var cred = new McCred () {
                     AccountId = accountId,
                     CredType = McCred.CredTypeEnum.Password,
                     Username = username,
@@ -94,7 +97,7 @@ namespace NachoCore.Model
                     account.DisplayName = config.BrandingName;
                 }
                 if (!String.IsNullOrEmpty (config.Host)) {
-                    var server = new McServer () { 
+                    var server = new McServer () {
                         AccountId = account.Id,
                         Capabilities = McAccount.ActiveSyncCapabilities,
                     };
@@ -111,21 +114,25 @@ namespace NachoCore.Model
         private McAccount CreateAccountCore (McAccount.AccountServiceEnum service, string emailAddress, Func<int, McCred> makeCred, Action<McAccount> customize)
         {
             var account = new McAccount () { EmailAddr = emailAddress };
-
+            Log.Info (Log.LOG_SYS, "Starting account creation transaction");
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
+                Log.Info (Log.LOG_SYS, "Started account creation transaction");
                 account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.InProgress;
                 account.Signature = "Sent from Nacho Mail";
                 account.SetAccountService (service);
                 account.DisplayName = NcServiceHelper.AccountServiceName (service);
                 account.AssignOpenColorIndex ();
+                Log.Info (Log.LOG_SYS, "About to insert account");
                 account.Insert ();
+                Log.Info (Log.LOG_SYS, "Account insert done");
                 if (customize != null) {
                     customize (account);
                     account.Update ();
                 }
+                Log.Info (Log.LOG_SYS, "About to make creds");
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
                 NcApplication.Instance.TelemetryService.RecordAccountEmailAddress (account);
@@ -294,7 +301,7 @@ namespace NachoCore.Model
             // delete all file system data for account id
             RemoveAccountFiles (AccountId);
 
-            NcApplication.Instance.Account = LoginHelpers.PickStartupAccount();
+            NcApplication.Instance.Account = LoginHelpers.PickStartupAccount ();
             // if successful, unmark account is being removed since it is completed.
             DeleteRemovingAccountFile ();
         }
