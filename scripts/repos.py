@@ -21,7 +21,6 @@ REPO_NAMES = (
     'aws-sdk-xamarin',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
-    'JetBlack.Caching',
     'TokenAutoComplete',
     'TokenAutoCompleteBinding',
     'rtfparserkit',

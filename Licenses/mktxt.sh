@@ -22,7 +22,6 @@ LIST="MimeKit \
     MailKit \
     Microsoft \
     CSharp-Name-Parser \
-    JetBlack.Caching \
     ios-openssl"
 
 FILE=LegalInfo.txt

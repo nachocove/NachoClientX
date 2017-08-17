@@ -4,7 +4,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
-using JetBlack.Caching.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -78,7 +77,7 @@ namespace NachoCore.Utils
             PerAccountFetchHints accountHints;
             if (Hints.TryGetValue (AccountId, out accountHints)) {
                 accountHints.RemoveHint (Id);
-            }            
+            }
         }
 
         #region PerAccountFetchHints
@@ -97,13 +96,15 @@ namespace NachoCore.Utils
                 }
             }
 
-            readonly CircularBuffer<Hint> AccountHints;
+            readonly List<Hint> AccountHints;
+            int MaxHits;
             int HintCounter;
             public int OverrunCounter { get; protected set; }
 
             public PerAccountFetchHints (int maxSize)
             {
-                AccountHints = new CircularBuffer<Hint> (maxSize);
+                AccountHints = new List<Hint> (maxSize);
+                MaxHits = maxSize;
                 HintCounter = 0;
             }
 
@@ -111,7 +112,7 @@ namespace NachoCore.Utils
             {
                 lock (AccountHints) {
                     HintCounter++;
-                    for (var i = 0; i<AccountHints.Count; i++) {
+                    for (var i = 0; i < AccountHints.Count; i++) {
                         Hint h = AccountHints [i];
                         if (h.Id == Id) {
                             // update the priority
@@ -121,11 +122,11 @@ namespace NachoCore.Utils
                     }
 
                     // We didn't find an item on the list. Add it.
-                    if (AccountHints.Count == AccountHints.Capacity) {
+                    if (AccountHints.Count == MaxHits) {
                         // need to remove the lowest priority element
                         int lowestPrioIdx = -1;
-                        for (var i = 0; i<AccountHints.Count; i++) {
-                            if (lowestPrioIdx < 0 || AccountHints[lowestPrioIdx].Priority > AccountHints[i].Priority) {
+                        for (var i = 0; i < AccountHints.Count; i++) {
+                            if (lowestPrioIdx < 0 || AccountHints [lowestPrioIdx].Priority > AccountHints [i].Priority) {
                                 lowestPrioIdx = i;
                             }
                         }
@@ -133,10 +134,8 @@ namespace NachoCore.Utils
                             AccountHints.RemoveAt (lowestPrioIdx);
                         }
                     }
-                    NcAssert.True (AccountHints.Count < AccountHints.Capacity);
-                    if (null != AccountHints.Enqueue (new Hint (Id, HintCounter))) {
-                        OverrunCounter++;
-                    }
+                    NcAssert.True (AccountHints.Count < MaxHits);
+                    AccountHints.Add (new Hint (Id, HintCounter));
                 }
             }
 
@@ -148,7 +147,7 @@ namespace NachoCore.Utils
                     hints.Sort ((h1, h2) => {
                         return h2.Priority - h1.Priority;
                     });
-                    foreach (Hint h in hints.Take(count)) {
+                    foreach (Hint h in hints.Take (count)) {
                         hintList.Add (h.Id);
                         var idx = AccountHints.IndexOf (h);
                         if (idx >= 0) {
@@ -164,7 +163,7 @@ namespace NachoCore.Utils
             public void RemoveHint (int Id)
             {
                 lock (AccountHints) {
-                    for (var i = 0; i<AccountHints.Count; i++) {
+                    for (var i = 0; i < AccountHints.Count; i++) {
                         Hint h = AccountHints [i];
                         if (h.Id == Id) {
                             var idx = AccountHints.IndexOf (h);
