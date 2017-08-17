@@ -363,7 +363,7 @@ namespace NachoClient.AndroidClient
 
         void CheckForAndroidPermissions ()
         {
-            // Check is always called when the calendar is selected.  The goal here is to ask only if we've never asked before
+            // Check is always called when the the contacts tab is selected.  The goal here is to ask only if we've never asked before
             // On Android, "never asked before" means:
             // 1. We don't have permission
             // 2. ShouldShowRequestPermissionRationale returns false

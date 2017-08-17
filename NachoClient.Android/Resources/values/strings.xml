@@ -249,7 +249,7 @@
     <string name="contact_item_action_email">Email</string>
     <string name="contact_choose_account">Choose the account for this new contact</string>
     <string name="contacts_permission_request_title">Device Contacts Permission</string>
-    <string name="contacts_permission_request_message">With read &amp; write access to your device contacts, Nacho Mail can include your device contacts in its contacts view and as options when addressing emails.  You will have another opportunity to grant these permissions next.</string>
+    <string name="contacts_permission_request_message">With read &amp; write access to your device contacts, Nacho Mail can include your device contacts in its contacts view and as options when addressing emails or events.  You will have another opportunity to grant these permissions next.</string>
     <string name="contacts_permission_request_cancel">Cancel</string>
     <string name="contacts_permission_request_ack">Proceed</string>
 
