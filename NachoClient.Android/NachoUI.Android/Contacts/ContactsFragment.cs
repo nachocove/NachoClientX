@@ -51,14 +51,14 @@ namespace NachoClient.AndroidClient
         {
             CanCreateContact = McAccount.GetCanAddContactAccounts ().Count > 0;
             UpdateActions (tabActivity);
-			StartListeningForStatusInd ();
-			SetNeedsReload ();
+            StartListeningForStatusInd ();
+            SetNeedsReload ();
             CheckForAndroidPermissions ();
         }
 
         public void OnTabUnselected (MainTabsActivity tabActivity)
-		{
-			StopListeningForStatusInd ();
+        {
+            StopListeningForStatusInd ();
         }
 
         public void OnAccountSwitched (MainTabsActivity tabActivity)
@@ -335,7 +335,7 @@ namespace NachoClient.AndroidClient
 
         void StartListeningForStatusInd ()
         {
-            if (!IsListeningForStatusInd){
+            if (!IsListeningForStatusInd) {
                 NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
                 IsListeningForStatusInd = true;
             }
@@ -343,7 +343,7 @@ namespace NachoClient.AndroidClient
 
         void StopListeningForStatusInd ()
         {
-            if (IsListeningForStatusInd){
+            if (IsListeningForStatusInd) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
                 IsListeningForStatusInd = false;
             }
@@ -351,17 +351,17 @@ namespace NachoClient.AndroidClient
 
         void StatusIndEventHandler (object sender, EventArgs e)
         {
-			var s = (StatusIndEventArgs)e;
-			if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
-				SetNeedsReload ();
-			}
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+                SetNeedsReload ();
+            }
         }
 
         #endregion
 
         #region Permissions
 
-        void CheckForAndroidPermissions()
+        void CheckForAndroidPermissions ()
         {
             // Check is always called when the calendar is selected.  The goal here is to ask only if we've never asked before
             // On Android, "never asked before" means:
@@ -373,13 +373,13 @@ namespace NachoClient.AndroidClient
             if (!hasAndroidReadPermission || !hasAndroidWritePermission) {
                 bool hasAskedRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadContacts);
                 bool hasAskedWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteContacts);
-                if (!hasAskedRead && !hasAskedWrite){
+                if (!hasAskedRead && !hasAskedWrite) {
                     RequestAndroidPermissions ();
                 }
             }
         }
 
-        void RequestAndroidPermissions()
+        void RequestAndroidPermissions ()
         {
             bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadContacts);
             bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteContacts);
@@ -387,7 +387,7 @@ namespace NachoClient.AndroidClient
                 var builder = new Android.App.AlertDialog.Builder (Context);
                 builder.SetTitle (Resource.String.contacts_permission_request_title);
                 builder.SetMessage (Resource.String.contacts_permission_request_message);
-                builder.SetNegativeButton (Resource.String.contacts_permission_request_cancel,(sender, e) => {});
+                builder.SetNegativeButton (Resource.String.contacts_permission_request_cancel, (sender, e) => { });
                 builder.SetPositiveButton (Resource.String.contacts_permission_request_ack, (sender, e) => {
                     RequestPermissions (new string [] {
                         Android.Manifest.Permission.ReadContacts,
@@ -405,14 +405,14 @@ namespace NachoClient.AndroidClient
 
         public override void OnRequestPermissionsResult (int requestCode, string [] permissions, Permission [] grantResults)
         {
-            if (requestCode == REQUEST_CONTACTS_PERMISSIONS){
-                if (grantResults.Length == 2 && grantResults[0] == Permission.Granted && grantResults[1] == Permission.Granted){
+            if (requestCode == REQUEST_CONTACTS_PERMISSIONS) {
+                if (grantResults.Length == 2 && grantResults [0] == Permission.Granted && grantResults [1] == Permission.Granted) {
                     BackEnd.Instance.Start (McAccount.GetDeviceAccount ().Id);
-                }else{
+                } else {
                     // If the user denies one or both of the permissions, re-request, this time shownig our rationale.
                     bool shouldAskRead = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.ReadContacts);
                     bool shouldAskWrite = ShouldShowRequestPermissionRationale (Android.Manifest.Permission.WriteContacts);
-                    if (shouldAskRead || shouldAskWrite){
+                    if (shouldAskRead || shouldAskWrite) {
                         RequestAndroidPermissions ();
                     }
                 }
@@ -502,10 +502,10 @@ namespace NachoClient.AndroidClient
             case ViewType.Contact:
                 var holder = ContactViewHolder.Create (parent);
                 holder.ContentView.ContextMenuCreated += (sender, e) => {
-                   int groupPosition;
-                   int itemPosition;
-                   GetGroupPosition (holder.AdapterPosition, out groupPosition, out itemPosition);
-                   ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
+                    int groupPosition;
+                    int itemPosition;
+                    GetGroupPosition (holder.AdapterPosition, out groupPosition, out itemPosition);
+                    ItemContextMenuCreated (groupPosition, itemPosition, e.Menu);
                 };
                 return holder;
             }
@@ -524,7 +524,7 @@ namespace NachoClient.AndroidClient
             var contactHolder = (holder as ContactViewHolder);
             contactHolder.SetContact (contact);
         }
-        
+
         public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
         {
             var contact = GetContact (groupPosition, position);
@@ -648,7 +648,7 @@ namespace NachoClient.AndroidClient
                     } else {
                         DetailLabel.Text = "";
                     }
-                } else if (!String.IsNullOrEmpty (phone)){
+                } else if (!String.IsNullOrEmpty (phone)) {
                     NameLabel.Text = phone;
                     DetailLabel.Text = "";
                 } else {
@@ -657,7 +657,7 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            PortraitView.SetPortrait(contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
+            PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
         }
     }
 }

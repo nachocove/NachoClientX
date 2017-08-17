@@ -22,7 +22,7 @@ namespace NachoClient.AndroidClient
     [Activity ()]
     public class EventEditActivity : NcActivity
     {
-        
+
         public const string ACTION_DELETE = "NachoClient.AndroidClient.EventEditActivity.ACTION_DELETE";
         public const string EXTRA_CALENDAR_ID = "NachoClient.AndroidClient.EventEditActivity.EXTRA_CALENDAR_ID";
         public const string EXTRA_ACCOUNT_ID = "NachoClient.AndroidClient.EventEditActivity.EXTRA_ACCOUNT_ID";
@@ -155,7 +155,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-        	FinishWithSaveConfirmation ();
+            FinishWithSaveConfirmation ();
         }
 
         #endregion
@@ -227,9 +227,9 @@ namespace NachoClient.AndroidClient
         {
             // TODO: send cancelation notices
             BackEnd.Instance.DeleteCalCmd (CalendarItem.AccountId, CalendarItem.Id);
-        	var intent = new Intent (ACTION_DELETE);
-        	SetResult (Result.Ok, intent);
-        	Finish ();
+            var intent = new Intent (ACTION_DELETE);
+            SetResult (Result.Ok, intent);
+            Finish ();
         }
 
         #endregion

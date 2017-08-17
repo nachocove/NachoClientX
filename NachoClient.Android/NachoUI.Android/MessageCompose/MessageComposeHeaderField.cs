@@ -233,7 +233,7 @@ namespace NachoClient.AndroidClient
             ContainerView.Clickable = true;
             ContainerView.SetBackgroundResource (values.GetResourceId (0, 0));
             ContainerView.Click += (sender, e) => {
-                AddAttachment.Invoke (this, new EventArgs());
+                AddAttachment.Invoke (this, new EventArgs ());
             };
         }
 
@@ -308,7 +308,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
         {
-            var attachment = Attachments[position];
+            var attachment = Attachments [position];
             var attachmentHolder = (holder as AttachmentViewHolder);
             attachmentHolder.SetAttachment (attachment);
             attachmentHolder.SetClickHandler ((sender, e) => {
@@ -350,7 +350,7 @@ namespace NachoClient.AndroidClient
             EventHandler RemoveHandler;
 
             public event EventHandler RemoveClicked;
-            
+
             public static AttachmentViewHolder Create (ViewGroup parent)
             {
                 var view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageComposeAttachmentListItem, parent, false);

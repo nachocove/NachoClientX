@@ -24,8 +24,8 @@ using Android.Views.InputMethods;
 
 namespace NachoClient.AndroidClient
 {
-    
-    public class MessageComposeFragment : 
+
+    public class MessageComposeFragment :
         Fragment,
         NachoJavascriptMessageHandler,
         MessageComposerDelegate,
@@ -50,13 +50,13 @@ namespace NachoClient.AndroidClient
         }
 
         public McAccount Account {
-        	get {
-        		if (Composer != null) {
-        			return Composer.Account;
-        		}
-        		return null;
-        	}
-        	set {
+            get {
+                if (Composer != null) {
+                    return Composer.Account;
+                }
+                return null;
+            }
+            set {
                 if (Composer == null) {
                     Composer = new MessageComposer (value);
                 }
@@ -95,7 +95,7 @@ namespace NachoClient.AndroidClient
             HeaderView.Delegate = this;
 
             WebView.Settings.JavaScriptEnabled = true;
-			WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nacho"), "_android_messageHandlers_nacho");
+            WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nacho"), "_android_messageHandlers_nacho");
             WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
             WebView.SetWebViewClient (new NachoWebClient (this));
         }
@@ -218,7 +218,7 @@ namespace NachoClient.AndroidClient
                 alert.SetPositiveButton (Resource.String.message_compose_empty_subject_edit, AddSubject);
                 alert.ShowWithCancelAction (SendCanceled);
             } else {
-    			CheckSizeBeforeSending ();
+                CheckSizeBeforeSending ();
             }
         }
 
@@ -259,7 +259,7 @@ namespace NachoClient.AndroidClient
                         var alert = new AlertDialog.Builder (Activity);
                         var format = GetString (Resource.String.message_compose_resize_title_format);
                         alert.SetTitle (String.Format (format, Pretty.PrettyFileSize (Composer.MessageSize)));
-                        alert.SetSingleChoiceItems (new string[] {
+                        alert.SetSingleChoiceItems (new string [] {
                             String.Format (GetString (Resource.String.message_compose_resize_choice_small_format), Pretty.PrettyFileSize (Composer.EstimatedSmallSize)),
                             String.Format (GetString (Resource.String.message_compose_resize_choice_medium_format), Pretty.PrettyFileSize (Composer.EstimatedMediumSize)),
                             String.Format (GetString (Resource.String.message_compose_resize_choice_large_format), Pretty.PrettyFileSize (Composer.EstimatedLargeSize)),
@@ -335,7 +335,7 @@ namespace NachoClient.AndroidClient
 
         #region Attachment Picking
 
-        AttachmentPicker AttachmentPicker = new AttachmentPicker();
+        AttachmentPicker AttachmentPicker = new AttachmentPicker ();
 
         void ShowAttachmentPicker ()
         {
@@ -344,7 +344,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
         {
-            if (AttachmentPicker.OnActivityResult (this, Composer.Account.Id, requestCode, resultCode, data)){
+            if (AttachmentPicker.OnActivityResult (this, Composer.Account.Id, requestCode, resultCode, data)) {
                 return;
             }
         }
@@ -360,7 +360,7 @@ namespace NachoClient.AndroidClient
         #region User Action - Header
 
         bool SalesforceBccAdded = false;
-        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool> ();
 
         void AddSalesforceBccIfNeeded ()
         {
@@ -373,11 +373,11 @@ namespace NachoClient.AndroidClient
                     } else {
                         Composer.Message.Bcc += ", " + extraBcc;
                     }
-                    UpdateHeaderBccView  ();
+                    UpdateHeaderBccView ();
                 }
             }
         }
-                
+
 
         public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
@@ -415,7 +415,7 @@ namespace NachoClient.AndroidClient
                     Composer.SetAccount (selectedAccount);
                     var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Composer.Account), Composer.Account.EmailAddr);
                     Composer.Message.From = mailbox.ToString ();
-					UpdateHeaderFromView();
+                    UpdateHeaderFromView ();
                 }
             });
         }
@@ -481,7 +481,7 @@ namespace NachoClient.AndroidClient
 
         public void OnPageFinished (Android.Webkit.WebView view, string url)
         {
-            if (IsWebViewLoaded){
+            if (IsWebViewLoaded) {
                 return;
             }
             IsWebViewLoaded = true;
@@ -509,7 +509,7 @@ namespace NachoClient.AndroidClient
         void WebViewFocused (object sender, Android.Views.View.FocusChangeEventArgs e)
         {
             var scrollView = View.FindViewById (Resource.Id.scroll_view) as Android.Support.V4.Widget.NestedScrollView;
-			EvaluateJavascript ("Editor.defaultEditor.focus()", (result) => {
+            EvaluateJavascript ("Editor.defaultEditor.focus()", (result) => {
                 scrollView.ScrollY = 0;
             });
             scrollView.ScrollY = 0;
@@ -604,8 +604,8 @@ namespace NachoClient.AndroidClient
 
         public void Save (Action callback)
         {
-        	GetHtmlContent ((string html) => {
-        		Composer.Save (html);
+            GetHtmlContent ((string html) => {
+                Composer.Save (html);
                 callback ();
             });
         }

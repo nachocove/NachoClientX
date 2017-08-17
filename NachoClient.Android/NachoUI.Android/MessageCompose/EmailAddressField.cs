@@ -53,7 +53,7 @@ namespace NachoClient.AndroidClient
                         return Contact.GetPrimaryCanonicalEmailAddress ().ToLowerInvariant ();
                     }
                     return EmailAddress.address.ToLowerInvariant ();
-                }    
+                }
             }
 
             public TokenObject (NcEmailAddress address) : base ()
@@ -99,7 +99,7 @@ namespace NachoClient.AndroidClient
         {
             var wrapper = p0 as TokenObject;
             if (wrapper != null) {
-                var textView = LayoutInflater.From(Context).Inflate (Resource.Layout.EmailAddressToken, null) as TextView;
+                var textView = LayoutInflater.From (Context).Inflate (Resource.Layout.EmailAddressToken, null) as TextView;
                 if (wrapper.Contact != null) {
                     var displayName = wrapper.Contact.GetDisplayName ();
                     if (!String.IsNullOrWhiteSpace (displayName)) {

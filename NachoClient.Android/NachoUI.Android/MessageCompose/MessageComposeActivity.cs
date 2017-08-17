@@ -18,7 +18,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
 
-    [Activity (WindowSoftInputMode=Android.Views.SoftInput.AdjustResize)]
+    [Activity (WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]
     public class MessageComposeActivity : NcActivity
     {
 
@@ -51,7 +51,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent NewMessageIntent (Context context, int accountId, string recipient = null)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             if (!String.IsNullOrEmpty (recipient)) {
                 intent.PutExtra (EXTRA_INITIAL_RECIPIENT, recipient);
@@ -62,7 +62,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent ForwardAttachmentIntent (Context context, int accountId, int attachmentId)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_INITIAL_ATTACHMENT, attachmentId);
             intent.PutExtra (EXTRA_ACCOUNT_ID, accountId);
@@ -71,7 +71,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent RespondIntent (Context context, EmailHelper.Action action, McEmailMessage relatedMessage, bool quickReply = false)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_ACTION, (int)action);
             intent.PutExtra (EXTRA_RELATED_MESSAGE_ID, relatedMessage.Id);
@@ -82,7 +82,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent InitialTextIntent (Context context, McEmailMessage message, string text)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
@@ -92,12 +92,12 @@ namespace NachoClient.AndroidClient
 
         public static Intent MessageWithAttachmentsIntent (Context context, McEmailMessage message, string text, IList<McAttachment> attachments)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
             intent.PutExtra (EXTRA_INITIAL_TEXT, text);
-            int[] attachmentIds = new int[attachments.Count];
+            int [] attachmentIds = new int [attachments.Count];
             int a = 0;
             foreach (var attachment in attachments) {
                 attachmentIds [a++] = attachment.Id;
@@ -108,7 +108,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent ForwardCalendarIntent (Context context, int calendarId, McEmailMessage message)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_ACTION, (int)EmailHelper.Action.Forward);
             intent.PutExtra (EXTRA_RELATED_CALENDAR_ID, calendarId);
@@ -119,7 +119,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent DraftIntent (Context context, McEmailMessage message)
         {
-            var intent = new Intent (context, typeof(MessageComposeActivity));
+            var intent = new Intent (context, typeof (MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
@@ -154,7 +154,7 @@ namespace NachoClient.AndroidClient
             FindSubviews ();
             if (ComposeFragment.Composer != null) {
                 Composer = ComposeFragment.Composer;
-            } else if (bundle != null){
+            } else if (bundle != null) {
                 PopulateFromSavedBundle (bundle);
             } else {
                 PopulateFromIntent ();
@@ -290,7 +290,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-        	FinishWithSaveConfirmation ();
+            FinishWithSaveConfirmation ();
         }
 
         #endregion
