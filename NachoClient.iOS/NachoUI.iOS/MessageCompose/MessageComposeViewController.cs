@@ -217,6 +217,7 @@ namespace NachoClient.iOS
                 ShowQuickResponses (animated: false);
                 StartWithQuickResponse = false;
             }
+            PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillDisappear (bool animated)
