@@ -18,7 +18,6 @@ REPO_NAMES = (
     'DnDns',
     'DDay-iCal-Xamarin',
     'CSharp-Name-Parser',
-    'aws-sdk-xamarin',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
     'TokenAutoComplete',

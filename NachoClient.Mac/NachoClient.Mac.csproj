@@ -250,10 +250,6 @@
       <Project>{53089CAB-AE06-4BE6-9E23-CCCC03730EEA}</Project>
       <Name>DnDns</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_Core\AWSSDK_Core.csproj">
-      <Project>{4E8016CD-33E3-4961-A954-119A623527D4}</Project>
-      <Name>AWSSDK_Core</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BundleResource Include="..\NachoClient.iOS\Resources\chat-email.html">
