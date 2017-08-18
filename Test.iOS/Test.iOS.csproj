@@ -418,18 +418,6 @@
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
-      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
-      <Name>MailKit.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.iOS.csproj">
-      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
-      <Name>MimeKit.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.iOS.csproj">
-      <Project>{0249241C-205E-4AC0-828B-90F822359B9E}</Project>
-      <Name>BouncyCastle.iOS</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
       <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
       <Name>DnDns.iOS</Name>

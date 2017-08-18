@@ -222,22 +222,6 @@
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\Portable.Text.Encoding\Portable.Text.Encoding\Portable.Text.Encoding.csproj">
-      <Project>{EEE48C75-11BE-4B50-B759-F85B5052D473}</Project>
-      <Name>Portable.Text.Encoding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.csproj">
-      <Project>{4C235092-820C-4DEB-9074-D356FB797D8B}</Project>
-      <Name>BouncyCastle</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.csproj">
-      <Project>{D5F54A4F-D84B-430F-9271-F7861E285B3E}</Project>
-      <Name>MimeKit</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.csproj">
-      <Project>{7264D469-A390-4C10-9C87-DAA37EDD3C1D}</Project>
-      <Name>MailKit</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.Collections\DDay.Collections\DDay.Collections.csproj">
       <Project>{E04EFEB6-4625-4D58-AC91-7B8B8A2C97BB}</Project>
       <Name>DDay.Collections</Name>

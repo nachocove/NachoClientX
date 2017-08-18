@@ -9,7 +9,7 @@ using Java.Security;
 using Android.Security;
 using Javax.Crypto;
 using Javax.Crypto.Spec;
-using Portable.Text;
+using System.Text;
 using System.IO;
 
 namespace NachoPlatform

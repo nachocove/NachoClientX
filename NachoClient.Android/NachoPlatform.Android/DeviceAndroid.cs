@@ -5,7 +5,7 @@ using Android.OS;
 using NachoClient.AndroidClient;
 using Android.Telephony;
 using System.Security.Cryptography;
-using Portable.Text;
+using System.Text;
 using System.Linq;
 using Android.Bluetooth;
 using System.Globalization;
@@ -16,19 +16,15 @@ namespace NachoPlatform
     public sealed class Device : IPlatformDevice
     {
         private static volatile Device instance;
-        private static object syncRoot = new Object();
+        private static object syncRoot = new Object ();
 
-        private Device () {}
+        private Device () { }
 
-        public static Device Instance
-        {
-            get 
-            {
-                if (instance == null) 
-                {
-                    lock (syncRoot) 
-                    {
-                        if (instance == null) 
+        public static Device Instance {
+            get {
+                if (instance == null) {
+                    lock (syncRoot) {
+                        if (instance == null)
                             instance = new Device ();
                     }
                 }
@@ -36,29 +32,35 @@ namespace NachoPlatform
             }
         }
 
-        public string Model () {
+        public string Model ()
+        {
             return Build.Model;
         }
 
-        public string UserAgentModel () {
+        public string UserAgentModel ()
+        {
             return Build.Model;
         }
 
-        public string OsType () {
+        public string OsType ()
+        {
             return "Android";
         }
 
-        public string OsVersion () {
+        public string OsVersion ()
+        {
             return Build.VERSION.Release;
         }
 
-        public string Type () {
+        public string Type ()
+        {
             // NOTE: The native email client uses "Android". The NitroDesk client uses "Touchdown".
             return "Android";
         }
 
         private string _Identity;
-        public string Identity() {
+        public string Identity ()
+        {
             // NOTE: The native email client uses "android1325419235512".
             // The NitroDesk client uses "49515649525250545154575557495751".
             if (null == _Identity) {
@@ -75,32 +77,37 @@ namespace NachoPlatform
         {
             var DeviceIdHashInput = Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ();
             string hashStr;
-            using (SHA256Managed sha256 = new SHA256Managed()) {
-                var hash = sha256.ComputeHash (Encoding.UTF8.GetBytes (MainApplication.Instance.ApplicationInfo.PackageName+DeviceIdHashInput));
-                hashStr = string.Format("Ncho{0}", string.Join("", hash.Select(b => b.ToString(IsSimulator () ? "x2" : "X2")).ToArray()));
+            using (SHA256Managed sha256 = new SHA256Managed ()) {
+                var hash = sha256.ComputeHash (Encoding.UTF8.GetBytes (MainApplication.Instance.ApplicationInfo.PackageName + DeviceIdHashInput));
+                hashStr = string.Format ("Ncho{0}", string.Join ("", hash.Select (b => b.ToString (IsSimulator () ? "x2" : "X2")).ToArray ()));
             }
             // We current truncate the string to 28 bytes, but we could by spec go for 32 bytes.
             return hashStr.Substring (0, IsSimulator () ? 16 : 28);
         }
 
-        public string Os () {
+        public string Os ()
+        {
             return "Android " + Build.VERSION.Release;
         }
-        public OsCode BaseOs () {
+        public OsCode BaseOs ()
+        {
             return OsCode.Android;
         }
-        public string OsLanguage () {
+        public string OsLanguage ()
+        {
             return CultureInfo.CurrentCulture.Name; // e.g. 'en-US', 'de-DE', etc
         }
-        public string FriendlyName () {
+        public string FriendlyName ()
+        {
             // get user-settable device name.
             BluetoothAdapter myDevice = BluetoothAdapter.DefaultAdapter;
             if (null != myDevice && !string.IsNullOrEmpty (myDevice.Name)) {
                 return myDevice.Name;
             }
-            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(string.Format ("{0} {1}", Build.Brand, Build.Model));
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase (string.Format ("{0} {1}", Build.Brand, Build.Model));
         }
-        public string UserAgent () {
+        public string UserAgent ()
+        {
             // NOTE: The native client uses "Android/4.3-EAS-1.3".
             // The NitroDesk client uses "TouchDown(MSRPC)/8.1.00052/".
             return "Android/4.3-EAS-1.3";

@@ -5,7 +5,7 @@ using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
-using Portable.Text;
+using System.Text;
 using System.Security.Cryptography;
 
 namespace NachoCore.Model
@@ -198,15 +198,15 @@ namespace NachoCore.Model
 
         public string ServerIdHashString ()
         {
-            byte[] bytes = Encoding.UTF8.GetBytes (ServerId);
+            byte [] bytes = Encoding.UTF8.GetBytes (ServerId);
             SHA256Managed hashstring = new SHA256Managed ();
-            byte[] hash = hashstring.ComputeHash (bytes);
+            byte [] hash = hashstring.ComputeHash (bytes);
             string hex = BitConverter.ToString (hash);
             return hex.Replace ("-", "");
         }
 
         // "factory" to create folders.
-        public static McFolder Create (int accountId, 
+        public static McFolder Create (int accountId,
                                        bool isClientOwned,
                                        bool isHidden,
                                        bool isDistinguished,
@@ -266,14 +266,14 @@ namespace NachoCore.Model
 
         public static List<McFolder> GetClientOwnedFolders (string serverId)
         {
-            return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
+            return NcModel.Instance.Db.Table<McFolder> ().Where (x =>
                 serverId == x.ServerId &&
             true == x.IsClientOwned).ToList ();
         }
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
         {
-            return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
+            return NcModel.Instance.Db.Table<McFolder> ().Where (x =>
                 accountId == x.AccountId &&
             serverId == x.ServerId &&
             true == x.IsClientOwned).SingleOrDefault ();
@@ -520,14 +520,14 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
+        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode [] types)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
                           " WHERE f.AccountId = ? AND " +
                           " f.IsAwaitingDelete = 0 AND " +
                           " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
                           " f.IsHidden = 0 " +
-                          " ORDER BY f.DisplayName ", 
+                          " ORDER BY f.DisplayName ",
                               accountId);
             return folders.ToList ();
         }
@@ -605,7 +605,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
             " likelihood (f.AccountId = ?, 1.0) AND " +
             " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
-            " likelihood (f.ServerId = ?, 0.05) ", 
+            " likelihood (f.ServerId = ?, 0.05) ",
                 accountId, serverId).SingleOrDefault ();
         }
 
@@ -645,7 +645,7 @@ namespace NachoCore.Model
                 target.ParentId = destParentId;
                 return true;
             });
-            
+
             RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
         }
 
@@ -813,7 +813,7 @@ namespace NachoCore.Model
             NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
             NcAssert.True (classCode != ClassCodeEnum.NeverInFolder);
             NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
-            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode
                 (AccountId, Id, obj.Id, classCode);
             if (null == existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
@@ -831,7 +831,7 @@ namespace NachoCore.Model
             NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
             NcAssert.True (classCode != ClassCodeEnum.NeverInFolder);
             NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
-            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode
                 (AccountId, Id, obj.Id, classCode);
             if (null != existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_AlreadyInFolder);
@@ -875,7 +875,7 @@ namespace NachoCore.Model
 
         public NcResult Unlink (int feId, ClassCodeEnum classCode)
         {
-            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode
                 (AccountId, Id, feId, classCode);
             if (null == existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
@@ -1059,7 +1059,7 @@ namespace NachoCore.Model
         {
             if (String.IsNullOrEmpty (searchFor)) {
                 return new List<McFolder> ();
-            } 
+            }
 
             searchFor = "%" + searchFor + "%";
             // FIXME - double-check this query.
@@ -1077,7 +1077,7 @@ namespace NachoCore.Model
         {
             if (String.IsNullOrEmpty (searchFor)) {
                 return new List<McFolder> ();
-            } 
+            }
 
             searchFor = "%" + searchFor + "%";
 
@@ -1263,7 +1263,7 @@ namespace NachoCore.Model
 
         public static McFolder GetHotFakeFolder ()
         {
-            return  new McFolder () {
+            return new McFolder () {
                 Id = HOT_FAKE_FOLDER_ID,
                 DisplayName = "Hot List",
             };

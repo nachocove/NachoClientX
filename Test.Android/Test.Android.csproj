@@ -215,22 +215,6 @@
       <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
       <Name>NachoPlatformBinding.Android</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.Android.csproj">
-      <Project>{9BF818C3-C20E-4EFB-9426-F0A6C2EDC627}</Project>
-      <Name>MailKit.Android</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.Android.csproj">
-      <Project>{004B4019-62B7-4A15-AF2C-C20968845C46}</Project>
-      <Name>MimeKit.Android</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.Android.csproj">
-      <Project>{A0D302CB-8866-4AB1-98B9-F0772EABF5DF}</Project>
-      <Name>BouncyCastle.Android</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\Portable.Text.Encoding\Portable.Text.Encoding\Portable.Text.Encoding.csproj">
-      <Project>{EEE48C75-11BE-4B50-B759-F85B5052D473}</Project>
-      <Name>Portable.Text.Encoding</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.Android\antlr.runtime.Android.csproj">
       <Project>{1923FB99-0E59-4774-8AA9-C14B9BC3F655}</Project>
       <Name>antlr.runtime.Android</Name>

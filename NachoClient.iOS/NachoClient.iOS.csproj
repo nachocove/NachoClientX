@@ -145,6 +145,16 @@
     <Reference Include="System.Net.Http.Primitives">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\Xamarin.iOS10\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
+    <Reference Include="BouncyCastle">
+      <HintPath>..\packages\MimeKit.1.18.0\lib\Xamarin.iOS10\BouncyCastle.dll</HintPath>
+    </Reference>
+    <Reference Include="MimeKit">
+      <HintPath>..\packages\MimeKit.1.18.0\lib\Xamarin.iOS10\MimeKit.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="MailKit">
+      <HintPath>..\packages\MailKit.1.18.0\lib\Xamarin.iOS10\MailKit.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -744,10 +754,6 @@
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
-      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
-      <Name>MailKit.iOS</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
       <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
       <Name>CSharpNameParser</Name>
@@ -763,18 +769,6 @@
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.iOS.csproj">
-      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
-      <Name>MimeKit.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.iOS.csproj">
-      <Project>{0249241C-205E-4AC0-828B-90F822359B9E}</Project>
-      <Name>BouncyCastle.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\Portable.Text.Encoding\Portable.Text.Encoding\Portable.Text.Encoding.csproj">
-      <Project>{EEE48C75-11BE-4B50-B759-F85B5052D473}</Project>
-      <Name>Portable.Text.Encoding</Name>
     </ProjectReference>
     <ProjectReference Include="..\NachoClientCallerID.iOS\NachoClientCallerID.iOS.csproj">
       <IsAppExtension>true</IsAppExtension>

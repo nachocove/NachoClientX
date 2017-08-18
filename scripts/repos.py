@@ -14,7 +14,6 @@ REPO_NAMES = (
     'ios-openssl',
     'NachoPlatformBinding',
     'NachoUIMonitorBinding',
-    'MailKit',
     'DnDns',
     'DDay-iCal-Xamarin',
     'CSharp-Name-Parser',
