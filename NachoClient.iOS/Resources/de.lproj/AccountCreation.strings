@@ -1,99 +1,99 @@
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "2y6-cA-FqX"; */
-"2y6-cA-FqX.accessibilityLabel" = "E-Mail-Addresse";
+"2y6-cA-FqX.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "Username"; ObjectID = "2y6-cA-FqX"; */
-"2y6-cA-FqX.placeholder" = "Benutzername";
+"2y6-cA-FqX.placeholder" = "Username";
 
 /* Class = "UILabel"; text = "Syncing your inbox..."; ObjectID = "3FB-pb-3iF"; */
-"3FB-pb-3iF.text" = "Synchronisieren Sie Ihren Posteingang...";
+"3FB-pb-3iF.text" = "Syncing your inbox...";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "3Ix-9z-ccR"; */
-"3Ix-9z-ccR.accessibilityLabel" = "E-Mail-Addresse";
+"3Ix-9z-ccR.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "3YI-1R-4CH"; */
-"3YI-1R-4CH.accessibilityLabel" = "E-Mail-Addresse";
+"3YI-1R-4CH.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "Username"; ObjectID = "3YI-1R-4CH"; */
-"3YI-1R-4CH.placeholder" = "Benutzername";
+"3YI-1R-4CH.placeholder" = "Username";
 
 /* Class = "UIButton"; accessibilityLabel = "Submit"; ObjectID = "53m-EO-fBv"; */
-"53m-EO-fBv.accessibilityLabel" = "Einreichen";
+"53m-EO-fBv.accessibilityLabel" = "Submit";
 
 /* Class = "UIButton"; normalTitle = "Submit"; ObjectID = "53m-EO-fBv"; */
-"53m-EO-fBv.normalTitle" = "Einreichen";
+"53m-EO-fBv.normalTitle" = "Submit";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "6pa-2h-Dmh"; */
-"6pa-2h-Dmh.accessibilityLabel" = "E-Mail-Addresse";
+"6pa-2h-Dmh.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "imap.example.com"; ObjectID = "6pa-2h-Dmh"; */
 "6pa-2h-Dmh.placeholder" = "imap.example.com";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "BgF-IF-7iw"; */
-"BgF-IF-7iw.accessibilityLabel" = "E-Mail-Addresse";
+"BgF-IF-7iw.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "Server"; ObjectID = "BgF-IF-7iw"; */
 "BgF-IF-7iw.placeholder" = "Server";
 
 /* Class = "UILabel"; text = "Outgoing Mail Server"; ObjectID = "Gci-gt-wyB"; */
-"Gci-gt-wyB.text" = "Postausgangsserver";
+"Gci-gt-wyB.text" = "Outgoing Mail Server";
 
 /* Class = "UILabel"; text = "Enter your account information"; ObjectID = "IzI-ua-2Rd"; */
-"IzI-ua-2Rd.text" = "Geben Sie Ihre Kontoinformationen ein";
+"IzI-ua-2Rd.text" = "Enter your account information";
 
 /* Class = "UIBarButtonItem"; title = "Skip"; ObjectID = "JWR-di-rh6"; */
-"JWR-di-rh6.title" = "Überspringen";
+"JWR-di-rh6.title" = "Skip";
 
 /* Class = "UILabel"; text = "Label"; ObjectID = "L5Q-F2-Cim"; */
-"L5Q-F2-Cim.text" = "Etikette";
+"L5Q-F2-Cim.text" = "Label";
 
 /* Class = "UINavigationItem"; title = "Choose Service"; ObjectID = "MGc-fL-o1H"; */
-"MGc-fL-o1H.title" = "Wählen Sie Service";
+"MGc-fL-o1H.title" = "Choose Service";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "ObC-Wz-O9K"; */
-"ObC-Wz-O9K.accessibilityLabel" = "E-Mail-Addresse";
+"ObC-Wz-O9K.accessibilityLabel" = "Email Address";
 
 /* Class = "UINavigationItem"; title = "Syncing..."; ObjectID = "PQQ-JP-jvc"; */
-"PQQ-JP-jvc.title" = "Synchronisierung...";
+"PQQ-JP-jvc.title" = "Syncing...";
 
 /* Class = "UINavigationItem"; title = "Sign In with Google"; ObjectID = "TPX-gb-OeM"; */
-"TPX-gb-OeM.title" = "Anmeldung mit Google";
+"TPX-gb-OeM.title" = "Sign In with Google";
 
 /* Class = "UILabel"; text = "Incoming Mail Server"; ObjectID = "UyD-tn-scV"; */
-"UyD-tn-scV.text" = "Eingehender Mailserver";
+"UyD-tn-scV.text" = "Incoming Mail Server";
 
 /* Class = "UITextField"; accessibilityLabel = "Password"; ObjectID = "dCm-mU-vPx"; */
 "dCm-mU-vPx.accessibilityLabel" = "Password";
 
 /* Class = "UITextField"; placeholder = "Password"; ObjectID = "dCm-mU-vPx"; */
-"dCm-mU-vPx.placeholder" = "Passwort";
+"dCm-mU-vPx.placeholder" = "Password";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "dar-CW-rI0"; */
-"dar-CW-rI0.accessibilityLabel" = "E-Mail-Addresse";
+"dar-CW-rI0.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "smtp.example.com"; ObjectID = "dar-CW-rI0"; */
 "dar-CW-rI0.placeholder" = "smtp.example.com";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "nLS-18-JbP"; */
-"nLS-18-JbP.accessibilityLabel" = "E-Mail-Addresse";
+"nLS-18-JbP.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "Domain"; ObjectID = "nLS-18-JbP"; */
 "nLS-18-JbP.placeholder" = "Domain";
 
 /* Class = "UIButton"; accessibilityLabel = "Advanced Sign In"; ObjectID = "xOP-hg-BDu"; */
-"xOP-hg-BDu.accessibilityLabel" = "Fortgeschrittene Anmeldung";
+"xOP-hg-BDu.accessibilityLabel" = "Advanced Sign In";
 
 /* Class = "UIButton"; normalTitle = "Advanced Sign In"; ObjectID = "xOP-hg-BDu"; */
-"xOP-hg-BDu.normalTitle" = "Fortgeschrittene Anmeldung";
+"xOP-hg-BDu.normalTitle" = "Advanced Sign In";
 
 /* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "yZe-2C-eOT"; */
-"yZe-2C-eOT.accessibilityLabel" = "E-Mail-Addresse";
+"yZe-2C-eOT.accessibilityLabel" = "Email Address";
 
 /* Class = "UITextField"; placeholder = "Email Address"; ObjectID = "yZe-2C-eOT"; */
-"yZe-2C-eOT.placeholder" = "E-Mail-Addresse";
+"yZe-2C-eOT.placeholder" = "Email Address";
 
 /* Class = "UINavigationItem"; title = "Enter Credentials"; ObjectID = "yiJ-DN-viX"; */
-"yiJ-DN-viX.title" = "Geben Sie Anmeldeinformationen ein";
+"yiJ-DN-viX.title" = "Enter Credentials";
 
 /* Class = "UINavigationItem"; title = "Sign In with Salesforce"; ObjectID = "ynB-6i-27y"; */
-"ynB-6i-27y.title" = "Anmelden mit Salesforce";
+"ynB-6i-27y.title" = "Sign In with Salesforce";

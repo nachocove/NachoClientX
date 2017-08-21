@@ -1,4 +1,15 @@
-﻿/* --------------------------------------------------------------------- */
+﻿/*
+ * IMPORTANT: REPLACEMENT STRINGS
+ * - These strings do not use the standard iOS printf-style replacement syntax
+ * - The syntax we use is specific to C# string.Format (see https://msdn.microsoft.com/en-us/library/system.string.format(v=vs.110).aspx)
+ * - {0} denotes the first replacement, {1} the second, and so on...
+ * - So {0} in this file is bascially what %1$s is for the usual iOS printf style,
+ *   and {1} is basically %2$s, and so on...
+ * - Types aren't typically specified, so {n} may be a string or a number
+ */
+
+
+/* --------------------------------------------------------------------- */
 /* MARK: - Common Strings */
 
 /* App Name, do not change */
