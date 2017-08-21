@@ -50,7 +50,7 @@ namespace NachoClient.AndroidClient
 
             var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId, capability);
             if (null == certToBeExamined) {
-                fragment.certInfo = "Unable to find certificate to be examined.";
+                fragment.certInfo = fragment.GetString (Resource.String.cert_ask_error);
                 fragment.certCommonName = "error";
                 fragment.certOrganization = "error";
             } else {

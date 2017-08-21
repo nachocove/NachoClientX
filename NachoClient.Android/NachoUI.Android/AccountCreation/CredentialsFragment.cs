@@ -195,7 +195,7 @@ namespace NachoClient.AndroidClient
                 StartReceivingLoginEvents ();
                 LoginEvents.CheckBackendState ();
             }
-                
+
             return view;
         }
 
@@ -313,23 +313,23 @@ namespace NachoClient.AndroidClient
         String IssueWithCredentials (String email, String password)
         {
             if (!email.Contains ("@")) {
-                return "Your email address must include an @.  For Example, username@company.com";
+                return GetString (Resource.String.credentials_error_email_missing_at);
             }
             if (!EmailHelper.IsValidEmail (email)) {
-                return "Your email address is not valid.\nFor example, username@company.com";
+                return GetString (Resource.String.credentials_error_email_invalid);
             }
             String serviceName = null;
             if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
-                return String.Format ("Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (service));
+                return String.Format (GetString (Resource.String.credentials_error_service_unsupported_format), NcServiceHelper.AccountServiceName (service));
             }
             if (!NcServiceHelper.DoesAddressMatchService (email, service)) {
-                return String.Format ("The email address does not match the service. Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (service));
+                return String.Format (GetString (Resource.String.credentials_error_email_service_mismatch_format), NcServiceHelper.AccountServiceName (service));
             }
             if (LoginHelpers.ConfiguredAccountExists (email)) {
-                return "An account with that email address already exists. Duplicate accounts are not supported.";
+                return GetString (Resource.String.credentials_error_account_exists);
             }
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                return "No network connection. Please check that you have internet access.";
+                return GetString (Resource.String.credentials_error_network_error);
             }
             if (IsShowingAdvanced) {
                 return advancedFieldsViewController.IssueWithFields ();
@@ -344,7 +344,7 @@ namespace NachoClient.AndroidClient
                     if (advancedFieldsViewController == null) {
                         if (service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                             advancedSubview = advancedImapSubview;
-                            advancedFieldsViewController = new AdvancedImapView (advancedSubview); 
+                            advancedFieldsViewController = new AdvancedImapView (advancedSubview);
                         } else if (service == McAccount.AccountServiceEnum.Exchange) {
                             advancedSubview = advancedExchangeSubview;
                             advancedFieldsViewController = new AdvancedExchangeView (advancedSubview);
@@ -486,7 +486,7 @@ namespace NachoClient.AndroidClient
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "CredentialsFragment got too many devices while verifying");
-            ShowCredentialsError ("You are already using the maximum number of devices for this account.  Please contact your system administrator.");
+            ShowCredentialsError (GetString (Resource.String.credentials_error_max_devices));
         }
 
         public void ServerIndServerErrorRetryLater (int acccountId)
@@ -495,7 +495,7 @@ namespace NachoClient.AndroidClient
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "CredentialsFragment got server error while verifying");
-            ShowCredentialsError ("The server is currently unavailable. Please try again later.");
+            ShowCredentialsError (GetString (Resource.String.credentials_error_server_unavailable));
         }
 
         private void HandleNetworkUnavailableError ()
@@ -503,7 +503,7 @@ namespace NachoClient.AndroidClient
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "CredentialsFragment got network unavailable while verifying");
-            ShowCredentialsError ("We were unable to verify your information because your device is offline.  Please try again when your device is online");
+            ShowCredentialsError (GetString (Resource.String.credentials_error_device_offline));
         }
 
         /// <summary>
@@ -521,7 +521,7 @@ namespace NachoClient.AndroidClient
             var serverErrors = ServerCertificatePeek.ServerErrors (Account.Id);
             if (serverErrors.Count > 0) {
                 foreach (var server in serverErrors.Keys) {
-                    serverErrorsTxt += string.Format ("{0}: {1}", server, serverErrors[server].SslPolicyError);
+                    serverErrorsTxt += string.Format ("{0}: {1}", server, serverErrors [server].SslPolicyError);
                 }
             }
             return serverErrorsTxt;
@@ -537,16 +537,16 @@ namespace NachoClient.AndroidClient
                 foreach (var server in certErrors.Keys) {
                     certErrorStrings.Add (String.Format ("{0}: {1}", server, certErrors [server].SslPolicyError));
                 }
-                string errorText = String.Format ("We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}", String.Join ("; ", certErrorStrings));
+                string errorText = String.Format (GetString (Resource.String.credentials_error_cert_issue_format), String.Join ("; ", certErrorStrings));
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait with cert errors for {0}", service);
                 ShowCredentialsError (errorText);
-            }else if (service == McAccount.AccountServiceEnum.GoogleExchange || service == McAccount.AccountServiceEnum.Office365Exchange) {
-                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
+            } else if (service == McAccount.AccountServiceEnum.GoogleExchange || service == McAccount.AccountServiceEnum.Office365Exchange) {
+                string errorText = GetString (Resource.String.credentials_error_general);
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for known exchange service {0}, not showing advanced", service);
                 ShowCredentialsError (errorText);
             } else if (service == McAccount.AccountServiceEnum.Exchange || service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for service {0}, showing advanced", service);
-                string errorText = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
+                string errorText = GetString (Resource.String.credentials_error_see_advanced);
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
                     statusLabel.Text = errorText;
@@ -555,7 +555,7 @@ namespace NachoClient.AndroidClient
                     statusLabel.Text = errorText;
                 }
             } else {
-                string errorText = "We were unable to verify your information.  Please confirm it is correct and try again.";
+                string errorText = GetString (Resource.String.credentials_error_general);
                 Log.Info (Log.LOG_UI, "CredentialsFragment got unexpected ServerConfWait for service {0}", service);
                 ShowCredentialsError (errorText);
             }
@@ -566,7 +566,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "CredentialsFragment got CredWait for service {0}", service);
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
-            ShowCredentialsError ("Invalid username or password.  Please adjust and try again.");
+            ShowCredentialsError (GetString (Resource.String.credentials_error_rejected));
         }
 
         private void HandleCertificateAsk (McAccount.AccountCapabilityEnum capability)
@@ -593,7 +593,7 @@ namespace NachoClient.AndroidClient
         #endregion
 
         #region Cert Ask Interface
-       
+
         public void AcceptCertificate (int accountId)
         {
             Log.Info (Log.LOG_UI, "CredentialsFragment certificate accepted by user");
@@ -613,7 +613,7 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             LoginHelpers.UserInterventionStateChanged (accountId);
             UpdateForSubmitting ();
-            statusLabel.Text = "Account not created because the certificate was not accepted";
+            statusLabel.Text = GetString (Resource.String.credentials_account_not_created);
         }
 
         #endregion

@@ -32,14 +32,14 @@ namespace NachoClient.AndroidClient
 
         private class AccountSyncingStatusMessage
         {
-            public string Title;
-            public string Details;
+            public int TitleResource;
+            public int DetailsResource;
             public bool IsWorking;
 
-            public AccountSyncingStatusMessage (string title, string details, bool isWorking)
+            public AccountSyncingStatusMessage (int titleResource, int detailsResource, bool isWorking)
             {
-                Title = title;
-                Details = details;
+                TitleResource = titleResource;
+                DetailsResource = detailsResource;
                 IsWorking = isWorking;
             }
         }
@@ -49,11 +49,11 @@ namespace NachoClient.AndroidClient
         private bool DismissOnVisible;
         private NcTimer DismissTimer;
 
-        private static AccountSyncingStatusMessage SyncingMessage = new AccountSyncingStatusMessage ("Syncing...", "Syncing your inbox...", true);
-        private static AccountSyncingStatusMessage SuccessMessage = new AccountSyncingStatusMessage ("Account Created", "Your account is ready!", false);
-        private static AccountSyncingStatusMessage ErrorMessage = new AccountSyncingStatusMessage ("Account Created", "Sorry, we could not fully sync your inbox.  Please see Settings for more information", false);
-        private static AccountSyncingStatusMessage TooManyDevicesMessage = new AccountSyncingStatusMessage ("Cannot Create Account", "You are already using the maximum number of devices for this account.  Please contact your system administrator.", false);
-        private static AccountSyncingStatusMessage NetworkMessage = new AccountSyncingStatusMessage ("Account Created", "Syncing will complete when network connectivity is restored", false);
+        private static AccountSyncingStatusMessage SyncingMessage = new AccountSyncingStatusMessage (Resource.String.waiting_title_syncing, Resource.String.waiting_syncing, true);
+        private static AccountSyncingStatusMessage SuccessMessage = new AccountSyncingStatusMessage (Resource.String.waiting_title_created, Resource.String.waiting_ready, false);
+        private static AccountSyncingStatusMessage ErrorMessage = new AccountSyncingStatusMessage (Resource.String.waiting_title_created, Resource.String.waiting_contunue_unsynced, false);
+        private static AccountSyncingStatusMessage TooManyDevicesMessage = new AccountSyncingStatusMessage (Resource.String.waiting_title_error, Resource.String.waiting_error_max_devices, false);
+        private static AccountSyncingStatusMessage NetworkMessage = new AccountSyncingStatusMessage (Resource.String.waiting_title_created, Resource.String.waiting_contunue_without_network, false);
 
         private AccountSyncingStatusMessage Message = SyncingMessage;
 
@@ -116,7 +116,7 @@ namespace NachoClient.AndroidClient
 
         void Update ()
         {
-            statusLabel.Text = Message.Details;
+            statusLabel.Text = GetString (Message.DetailsResource);
             if (mIsVisible) {
                 if (Message.IsWorking) {
                     activityIndicatorView.Visibility = ViewStates.Visible;
@@ -124,11 +124,11 @@ namespace NachoClient.AndroidClient
                     activityIndicatorView.Visibility = ViewStates.Invisible;
                 }
             }
-//                if (Message.IsWorking) {
-//                    NavigationItem.RightBarButtonItem = skipButton;
-//                } else {
-//                    NavigationItem.RightBarButtonItem = null;
-//                }
+            //                if (Message.IsWorking) {
+            //                    NavigationItem.RightBarButtonItem = skipButton;
+            //                } else {
+            //                    NavigationItem.RightBarButtonItem = null;
+            //                }
         }
 
         private void CompleteAccount ()

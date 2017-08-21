@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+    IMPORTANT: REPLACEMENT STRINGS
+    - These strings do not use the standard Android printf-style replacement syntax
+    - The syntax we use is specific to C# string.Format (see https://msdn.microsoft.com/en-us/library/system.string.format(v=vs.110).aspx)
+    - {0} denotes the first replacement, {1} the second, and so on...
+    - So {0} in this file is bascially what %1$s is for the usual Android printf style,
+      and {1} is basically %2$s, and so on...
+    - Types aren't typically specified, so {n} may be a string or a number
+-->
+
 <resources>
     
     <string name="app_name">Nacho Mail</string>
@@ -14,6 +25,7 @@
 
     <!-- Welcome -->
     <string name="welcome_get_started">Start by choosing your email service provider</string>
+    <!-- placeholder 0 = User's company name; "Start by setting up your Toyota account"  -->
     <string name="welcome_mdm_format">Start by setting up your {0} account.</string>
     <string name="welcome_mdm_generic">Start by setting up your company account.</string>
     <string name="welcome_continue">Welcome Back!  We need to finish setting up your account.</string>
@@ -37,6 +49,7 @@
 
     <!-- Credentials Fragment -->
     <string name="credentials_submit">Submit</string>
+    <!-- placeholder 0 = Account type; "Please provide your Exchange information" -->
     <string name="credentials_prompt">Please provide your {0} information</string>
     <string name="credentials_email_hint">Email Address</string>
     <string name="credentials_password_hint">Password</string>
@@ -44,6 +57,22 @@
     <string name="credentials_title">Enter Credentials</string>
     <string name="credentials_advanced">Advanced Sign In</string>
     <string name="credentials_hide_advanced">Hide Advanced Sign In</string>
+    <string name="credentials_error_email_missing_at">Your email address must include an @.  For Example, username@company.com</string>
+    <string name="credentials_error_email_invalid">Your email address is not valid.\nFor example, username@company.com</string>
+    <!-- placeholder 0 = Account type; "Please use your Yahoo email address instead" -->
+    <string name="credentials_error_service_unsupported_format">Please use your {0} email address instead.</string>
+    <string name="credentials_error_email_service_mismatch_format">The email address does not match the service. Please use your {0} email address instead.</string>
+    <string name="credentials_error_account_exists">An account with that email address already exists. Duplicate accounts are not supported.</string>
+    <string name="credentials_error_network_error">No network connection. Please check that you have internet access.</string>
+    <string name="credentials_error_max_devices">You are already using the maximum number of devices for this account.  Please contact your system administrator.</string>
+    <string name="credentials_error_server_unavailable">The server is currently unavailable. Please try again later.</string>
+    <string name="credentials_error_device_offline">We were unable to verify your information because your device is offline.  Please try again when your device is online</string>
+    <!-- placeholder 0 = Error message -->
+    <string name="credentials_error_cert_issue_format">We were unable to connect because of a server certificate issue, which can only be fixed by altering the server\'s configuration.  {0}</string>
+    <string name="credentials_error_general">We were unable to verify your information.  Please confirm it is correct and try again.</string>
+    <string name="credentials_error_see_advanced">We were unable to verify your information.  Please confirm or enter advanced configuration information.</string>
+    <string name="credentials_error_rejected">Invalid username or password.  Please adjust and try again.</string>
+    <string name="credentials_account_not_created">Account not created because the certificate was not accepted</string>
 
     <!-- Advanced Credentials -->
     <string name="advanced_server">Server</string>
@@ -61,12 +90,21 @@
     <!-- Cert Ask Fragment -->
     <string name="cert_ask_demo_certificate">Subject: CN=outlook.com</string>
     <string name="cert_ask_cancel">Cancel</string>
+    <!-- placeholder 0 = Certificate common name, placeholder 1 = Certificate organization -->
     <string name="cert_ask_prompt">Do you want to allow {0} from {1} to provide information about your account?</string>
     <string name="cert_ask_warning">You should only allow sources you know and trust to configure your account.</string>
     <string name="cert_ask_allow">Allow</string>
     <string name="cert_ask_title">Security Warning</string>
+    <string name="cert_ask_error">Unable to find certificate to be examined.</string>
 
     <!-- Waiting Fragment -->
+    <string name="waiting_title_syncing">Syncing...</string>
+    <string name="waiting_title_created">Account Created</string>
+    <string name="waiting_title_error">Cannot Create Account</string>
+    <string name="waiting_ready">Your account is ready!</string>
+    <string name="waiting_contunue_unsynced">Sorry, we could not fully sync your inbox.  Please see Settings for more information</string>
+    <string name="waiting_contunue_without_network">Syncing will complete when network connectivity is restored</string>
+    <string name="waiting_error_max_devices">You are already using the maximum number of devices for this account.  Please contact your system administrator.</string>
     <string name="waiting_syncing">Syncing your inbox...</string>
 
     <!-- Main Activity -->
@@ -79,7 +117,9 @@
     <string name="tab_contacts">People</string>
     <string name="main_action_settings">Settings</string>
     <string name="main_action_search">Search</string>
+    <!-- placeholder 0 = count of new messages, placeholder 1 = account name; "3 new in Home" -->
     <string name="main_unread_format_single">{0} new in {1}</string>
+    <!-- placeholder 0 = count of new messages, placeholder 1 = count of accounts; "5 new in 2 accounts" -->
     <string name="main_unread_format_multiple">{0} new in {1} accounts</string>
     <string name="main_item_settings_alert">Attention Required</string>
 
@@ -121,6 +161,7 @@
     <string name="calendar_invite_remove">Remove from calendar</string>
 
     <!-- Attachments View -->
+    <!-- placeholder 0 = count of attachments; "Show 5 attachments" -->
     <string name="attachments_header_show_format">Show {0} attachments</string>
     <string name="attachments_header_hide">Hide attachments</string>
 
@@ -141,7 +182,9 @@
     <string name="message_compose_empty_subject_message">This message does not have a subject.  How would you like to proceed?</string>
     <string name="message_compose_empty_subject_edit">Add Subject</string>
     <string name="message_compose_empty_subject_send">Send Anyway</string>
+    <!-- placeholder 0 = user-friendly size of message; "This message is 5MB..." -->
     <string name="message_compose_resize_title_format">This message is {0}. You can make it smaller by reducing the size of the attached images.</string>
+    <!-- placeholder 0 = user-friendly size of message; "Small Images (300KB)" -->
     <string name="message_compose_resize_choice_small_format">Small Images ({0})</string>
     <string name="message_compose_resize_choice_medium_format">Medium Images ({0})</string>
     <string name="message_compose_resize_choice_large_format">Large Images ({0})</string>
@@ -210,6 +253,7 @@
     <string name="event_reminder">Reminder</string>
     <string name="event_note_set">Add a Note</string>
     <string name="event_response_confirmation_message">This is a recurring event</string>
+    <!-- placeholder 0 = reponse; "Accept the entire series" -->
     <string name="event_response_confirmation_all_format">{0} the entire series</string>
     <string name="event_response_confirmation_occurrence_format">{0} only this occurrence</string>
     <string name="event_response_confirmation_accept">Accept</string>
@@ -314,6 +358,7 @@
     <string name="account_issue_cred">Update Password</string>
     <string name="account_issue_cert">Approve Certificate</string>
     <string name="account_issue_server">Configuration Issue</string>
+    <!-- placeholder 0 = date/time; "Password expires 20 Aug 2017" -->
     <string name="account_password_expires">Password expires {0}</string>
     <string name="account_update_password">Update Password</string>
     <string name="account_advanced">Advanced Settings</string>
@@ -349,6 +394,7 @@
 
     <!-- Password Notice Dialog -->
     <string name="password_notice_title">Password Expiring</string>
+    <!-- placeholder 0 = date/time; "Your password expires 20 Aug 2017" -->
     <string name="password_notice_message_format">Your password expires {0}</string>
     <string name="password_notice_close">Close</string>
     <string name="password_notice_clear">Clear Warning</string>
@@ -391,31 +437,44 @@
     <string name="datetime_minute_precision_time_noampm_pattern">h:mm</string>
     <string name="datetime_hour_precision_time_noampm_pattern">h</string>
 
+    <!-- placeholder 0 = localized time; "Today - 1:53pm" -->
     <string name="friendly_datetime_today_format">Today - {0}</string>
     <string name="friendly_datetime_yesterday_format">Yesterday - {0}</string>
+    <!-- placeholder 0 = localized day, 1 = localized time; "Friday - 1:53pm" -->
     <string name="friendly_datetime_other_format">{0} - {1}</string>
     <string name="decreasing_precision_time_yesterday">Yesterday</string>
     <string name="future_date_today">Today</string>
     <string name="future_date_tomorrow">Tomorrow</string>
     <string name="future_date_yesterday">Yesterday</string>
+    <!-- placeholder 0 = localized time; "Yesterday 1:53pm" -->
     <string name="variable_date_yesterday_format">Yesterday {0}</string>
+    <!-- placeholder 0 = localized day, 1 = localized time; "Friday 1:53pm" -->
     <string name="variable_date_other_format">{0} {1}</string>
 
     <!-- Events -->
     <string name="event_time_now">now</string>
     <string name="event_time_one_minute">in 1 minute</string>
     <string name="event_time_minutes_format">in {0} minutes</string>
+    <!-- placeholder 0 = localized time; "at 1:53pm" -->
     <string name="event_time_at_format">at {0}</string>
+    <!-- placeholder 0 = localized day, 1 = localized time; "Friday 1:53pm" -->
     <string name="event_time_date_format">{0} {1}</string>
     <string name="event_day_today">Today</string>
     <string name="event_day_tomorrow">Tomorrow</string>
+    <!-- placeholder 0 = localized date, "through 8/20" -->
     <string name="event_detail_time_through_format">through {0}</string>
+    <!-- placeholder 0 & 1 = localized time, "1:00pm to 2:00pm" -->
     <string name="event_detail_time_to_format">{0} to {1}</string>
+    <!-- placeholder 0 & 1 = localized date, "8/20 through 8/24" -->
     <string name="meeting_request_time_all_day_format">{0} through {1}</string>
+    <!-- placeholder 0 = localized date, 1 = shortened localized time & 2 = localized time, "8/20 from 1 to 2pm" -->
     <string name="meeting_request_time_same_half_day_format">{0} from {1} to {2}</string>
+    <!-- placeholder 0 = localized date, 1 & 2 = localized time, "8/20, 10am to 2pm" -->
     <string name="meeting_request_time_same_day_format">{0}, {1} to {2}</string>
+    <!-- placeholder 0 = localized date, 1 = localized time, 2 = localized date/time, "8/20 at 10am to 8/21 2pm" -->
     <string name="meeting_request_time_multi_day_format">{0} at {1} to {2}</string>
     <string name="event_notification_default_title">Event</string>
+    <!-- placeholder 0 = localzied date; "8/20 all day" -->
     <string name="event_notification_all_day_time_format">{0} all day</string>
     <string name="event_notification_time_format">{0} - {1}</string>
     <string name="attendee_status_optional">Optional</string>
@@ -425,6 +484,7 @@
     <string name="attendee_status_declined">Declined</string>
     <string name="attendee_status_tentative">Tentative</string>
     <string name="attendee_status_no_response">No Response</string>
+    <!-- placeholder 0 = invitee name or email; "John has accepted the meeting" -->
     <string name="meeting_response_accepted_format">{0} has accepted the meeting.</string>
     <string name="meeting_response_declined_format">{0} has declined the meeting.</string>
     <string name="meeting_response_tentative_format">{0} has tenatively accepted the meeting.</string>
@@ -480,8 +540,10 @@
 
     <!-- Attachments -->
     <string name="attachment_inline_unknown_file">Inline Unknown file</string>
+    <!-- placeholder 0 = file type; "Inline PDF file" -->
     <string name="attachment_inline_typed_file_format">Inline {0} file</string>
     <string name="attachment_unknown_file">Unknown file</string>
+    <!-- placeholder 0 = file type; "PDF file" -->
     <string name="attachment_typed_file_format">{0} file</string>
 
     <!-- Settings -->
