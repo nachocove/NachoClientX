@@ -303,16 +303,16 @@ class Builder(object):
         if not self.skip_git:
             self.checkout()
         self.restore_nuget_packages()
-        # if 'ios' in self.platforms:
-        #     self.build_ios()
-        # if 'android' in self.platforms:
-        #     self.build_android()
-        # if not self.skip_git:
-        #     self.tag()
-        # if len(self.outputs) > 0:
-        #     print ""
-        #     printer = repos.TablePrinter()
-        #     printer.print_table(self.outputs)
+        if 'ios' in self.platforms:
+            self.build_ios()
+        if 'android' in self.platforms:
+            self.build_android()
+        if not self.skip_git:
+            self.tag()
+        if len(self.outputs) > 0:
+            print ""
+            printer = repos.TablePrinter()
+            printer.print_table(self.outputs)
 
     def checkout(self):
         # First, make sure this repo is checked out to the appropriate branch
@@ -359,14 +359,9 @@ class Builder(object):
         self.outputs.append(('git tag:', self.build.tag))
 
     def restore_nuget_packages(self):
-        # Can't get this working...nuget refuses to use the right source and sees no packages
-        # Intent was to delete the packages from git, since we don't need to version track them and
-        # Visual Studio will auto-restore them.  But that leaves a build server with no packages unless
-        # its able to restore them using nuget
-        # print "Restoring packages..."
-        # cmd = command.Command('nuget', 'restore', self.nacho_path('NachoClient.sln'))
-        # cmd.execute()
-        pass
+        print "Restoring packages..."
+        cmd = command.Command('nuget', 'restore', '-Source', 'https://www.nuget.org/api/v2/', self.nacho_path('NachoClient.sln'))
+        cmd.execute()
 
     def build_ios(self):
         print "Building iOS..."

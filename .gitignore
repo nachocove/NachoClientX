@@ -36,3 +36,4 @@ NachoClient.*/.skip_hockeyapp_upload
 NachoClient.Android/Resources/Resource.designer.cs
 Test.Android/Resources/Resource.designer.cs
 .idea/*
+packages/*
