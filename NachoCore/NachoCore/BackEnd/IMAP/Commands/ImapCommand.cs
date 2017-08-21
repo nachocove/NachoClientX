@@ -352,9 +352,9 @@ namespace NachoCore.IMAP
             }
         }
 
-        private static byte[] Combine (byte[] first, byte[] second)
+        private static byte [] Combine (byte [] first, byte [] second)
         {
-            byte[] ret = new byte[first.Length + second.Length];
+            byte [] ret = new byte [first.Length + second.Length];
             Buffer.BlockCopy (first, 0, ret, 0, first.Length);
             Buffer.BlockCopy (second, 0, ret, first.Length, second.Length);
             return ret;
@@ -398,7 +398,7 @@ namespace NachoCore.IMAP
             NcAssert.NotNull (mailKitFolder, "mailKitFolder is null");
 
             // if we can, open the folder, so that we get the UidValidity.
-            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) && !mailKitFolder.Attributes.HasFlag (FolderAttributes.NonExistent)) {
                 mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
             }
 
@@ -442,7 +442,7 @@ namespace NachoCore.IMAP
                 folder = McFolder.Create (AccountId, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
-                folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
+                folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) || mailKitFolder.Attributes.HasFlag (FolderAttributes.NonExistent);
                 try {
                     folder.Insert ();
                 } catch (ArgumentException ex) {
@@ -488,7 +488,7 @@ namespace NachoCore.IMAP
                 // update.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
-                    target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
+                    target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) || mailKitFolder.Attributes.HasFlag (FolderAttributes.NonExistent);
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
                     target.ImapExists = mailKitFolder.Count;
                     if (needFullSync) {
