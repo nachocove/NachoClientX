@@ -16,7 +16,7 @@ namespace NachoCore
         List<McEmailMessageThread> updatedThreadList;
         McFolder folder;
         FolderFilterOptions MissingFolderFilterSetting = FolderFilterOptions.All;
-        public delegate McFolder FolderQuery();
+        public delegate McFolder FolderQuery ();
         FolderQuery _FolderQuery;
 
         public NachoFolderMessages (McFolder folder)
@@ -25,15 +25,16 @@ namespace NachoCore
             threadList = new List<McEmailMessageThread> ();
         }
 
-        public NachoFolderMessages (FolderQuery folderQuery){
+        public NachoFolderMessages (FolderQuery folderQuery)
+        {
             _FolderQuery = folderQuery;
             threadList = new List<McEmailMessageThread> ();
         }
-        
+
         private List<McEmailMessageThread> QueryMessagesByConversation ()
         {
             List<McEmailMessageThread> list;
-            if (folder == null){
+            if (folder == null) {
                 return new List<McEmailMessageThread> ();
             }
             switch (folder.FilterSetting) {
@@ -63,10 +64,10 @@ namespace NachoCore
 
         public override bool BeginRefresh (out List<int> adds, out List<int> deletes)
         {
-            if (folder == null && _FolderQuery != null){
+            if (folder == null && _FolderQuery != null) {
                 folder = _FolderQuery ();
-                if (folder != null){
-                    if (folder.FilterSetting != MissingFolderFilterSetting){
+                if (folder != null) {
+                    if (folder.FilterSetting != MissingFolderFilterSetting) {
                         FilterSetting = MissingFolderFilterSetting;
                     }
                     _FolderQuery = null;
@@ -97,7 +98,7 @@ namespace NachoCore
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                     CommitRefresh ();
                     if (null != completionAction) {
-                        completionAction (changed, adds, deletes);
+                        completionAction (this, changed, adds, deletes);
                     }
                 });
             }, "NachoEmailMessages.BackgroundRefresh");
@@ -136,7 +137,7 @@ namespace NachoCore
 
         public override string DisplayName ()
         {
-            if (folder == null){
+            if (folder == null) {
                 return "";
             }
             return folder.DisplayName;
@@ -157,13 +158,13 @@ namespace NachoCore
 
         public override FolderFilterOptions FilterSetting {
             get {
-                if (folder == null){
+                if (folder == null) {
                     return MissingFolderFilterSetting;
                 }
                 return folder.FilterSetting;
             }
             set {
-                if (folder == null){
+                if (folder == null) {
                     MissingFolderFilterSetting = value;
                     return;
                 }
@@ -179,11 +180,11 @@ namespace NachoCore
             }
         }
 
-        private static FolderFilterOptions[] possibleFilters = new FolderFilterOptions[] {
+        private static FolderFilterOptions [] possibleFilters = new FolderFilterOptions [] {
             FolderFilterOptions.All, FolderFilterOptions.Hot, FolderFilterOptions.Unread
         };
 
-        public override FolderFilterOptions[] PossibleFilterSettings {
+        public override FolderFilterOptions [] PossibleFilterSettings {
             get {
                 return possibleFilters;
             }
@@ -210,7 +211,7 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            if (folder == null){
+            if (folder == null) {
                 return true;
             }
             return account.ContainsAccount (folder.AccountId);
@@ -229,9 +230,9 @@ namespace NachoCore
 
         public override void RefetchSyncTime ()
         {
-            if (folder != null){
-				folder = McFolder.QueryById<McFolder> (folder.Id);
-			}
+            if (folder != null) {
+                folder = McFolder.QueryById<McFolder> (folder.Id);
+            }
         }
 
     }

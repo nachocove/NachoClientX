@@ -159,7 +159,7 @@ namespace NachoClient.AndroidClient
         {
             WeakListener = new WeakReference<Listener> (listener);
             SetContact (contact);
-            Messages.BackgroundRefresh ((changed, adds, deletes) => {
+            Messages.BackgroundRefresh ((messages, changed, adds, deletes) => {
                 if (changed) {
                     ConfigureGroups ();
                     NotifyDataSetChanged ();
@@ -399,7 +399,7 @@ namespace NachoClient.AndroidClient
                         } else {
                             DetailLabel.Text = "";
                         }
-                    } else if (!String.IsNullOrEmpty (phone)){
+                    } else if (!String.IsNullOrEmpty (phone)) {
                         NameLabel.Text = phone;
                         DetailLabel.Text = "";
                     } else {
@@ -408,7 +408,7 @@ namespace NachoClient.AndroidClient
                     }
                 }
 
-                PortraitView.SetPortrait(contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
+                PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
 
                 if (!String.IsNullOrEmpty (email)) {
                     EmailButton.Visibility = ViewStates.Visible;

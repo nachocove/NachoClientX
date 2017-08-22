@@ -142,50 +142,46 @@ namespace NachoClient.AndroidClient
             if (!IsReloading && !IsContextMenuOpen) {
                 IsReloading = true;
                 NeedsReload = false;
-                if (Messages.HasBackgroundRefresh ()) {
-                    Messages.BackgroundRefresh (HandleReloadResults);
+                NachoEmailMessages messages;
+                lock (MessagesLock) {
+                    messages = Messages;
+                }
+                if (messages.HasBackgroundRefresh ()) {
+                    messages.BackgroundRefresh (HandleReloadResults);
                 } else {
                     NcTask.Run (() => {
                         List<int> adds;
                         List<int> deletes;
-                        NachoEmailMessages messages;
-                        lock (MessagesLock) {
-                            messages = Messages;
-                        }
                         bool changed = messages.BeginRefresh (out adds, out deletes);
                         InvokeOnUIThread.Instance.Invoke (() => {
-                            bool handledResults = false;
-                            lock (MessagesLock) {
-                                if (messages == Messages) {
-                                    Messages.CommitRefresh ();
-                                    HandleReloadResults (changed, adds, deletes);
-                                    handledResults = true;
-                                }
-                            }
-                            if (!handledResults) {
-                                IsReloading = false;
-                                if (NeedsReload) {
-                                    Reload ();
-                                }
-                            }
+                            messages.CommitRefresh ();
+                            HandleReloadResults (messages, changed, adds, deletes);
                         });
                     }, "MessageListFragment.Reload");
                 }
             }
         }
 
-        void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
+        void HandleReloadResults (NachoEmailMessages messages, bool changed, List<int> adds, List<int> deletes)
         {
+            bool messagesPropertyHasChanged = false;
+            lock (MessagesLock) {
+                messagesPropertyHasChanged = Messages != messages;
+            }
             if (SwipeRefresh.Refreshing && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
-            Messages.ClearCache ();
-            if (!HasLoadedOnce) {
-                HasLoadedOnce = true;
-                MessagesAdapter.NotifyDataSetChanged ();
+            if (messagesPropertyHasChanged) {
+                Log.Info (Log.LOG_UI, "MessageListFragment.HandleReloadResults: messages != Messages, not updating view, NeedsReload = {0}", NeedsReload);
             } else {
-                // FIXME: selective adds and deletes
-                MessagesAdapter.NotifyDataSetChanged ();
+                Messages.ClearCache ();
+                if (!HasLoadedOnce) {
+                    HasLoadedOnce = true;
+                    MessagesAdapter.NotifyDataSetChanged ();
+                } else {
+                    // FIXME: selective adds and deletes
+                    MessagesAdapter.NotifyDataSetChanged ();
+                }
             }
             IsReloading = false;
             if (NeedsReload) {
@@ -739,7 +735,7 @@ namespace NachoClient.AndroidClient
                 ItemClicked (holder.AdapterPosition);
             };
             holder.ContentView.ContextMenuCreated += (sender, e) => {
-               ItemContextMenuCreated (holder.AdapterPosition, e.Menu);
+                ItemContextMenuCreated (holder.AdapterPosition, e.Menu);
             };
             return holder;
         }
@@ -895,7 +891,7 @@ namespace NachoClient.AndroidClient
             int subjectLength;
             var previewText = Pretty.MessagePreview (message, out subjectLength);
             int attachmentIndex = -1;
-            if (message.isHot ()){
+            if (message.isHot ()) {
                 previewText = "  " + previewText;
                 subjectLength += 2;
             }
@@ -910,7 +906,7 @@ namespace NachoClient.AndroidClient
             }
             var styledPreview = new SpannableString (previewText);
             styledPreview.SetSpan (new ForegroundColorSpan (ItemView.Context.ThemeColorCompat (Android.Resource.Attribute.ColorPrimary)), 0, subjectLength, 0);
-            if (message.isHot ()){
+            if (message.isHot ()) {
                 var imageSpan = new ImageSpan (ItemView.Context, Resource.Drawable.subject_hot);
                 styledPreview.SetSpan (imageSpan, 0, 1, 0);
             }

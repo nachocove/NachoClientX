@@ -59,7 +59,7 @@ namespace NachoCore
             if (null == contact) {
                 threadList = new List<McEmailMessageThread> ();
                 if (null != completionAction) {
-                    completionAction (true, null, null);
+                    completionAction (this, true, null, null);
                 }
                 return;
             }
@@ -75,7 +75,7 @@ namespace NachoCore
                         threadList = newThreadList;
                     }
                     if (null != completionAction) {
-                        completionAction (changed, adds, deletes);
+                        completionAction (this, changed, adds, deletes);
                     }
                 });
             }, "UserInteractionEmailMessages.BackgroundRefresh");

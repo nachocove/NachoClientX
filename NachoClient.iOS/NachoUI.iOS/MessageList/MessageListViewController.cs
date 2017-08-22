@@ -582,64 +582,59 @@ namespace NachoClient.iOS
             if (!IsReloading) {
                 IsReloading = true;
                 NeedsReload = false;
-                if (Messages.HasBackgroundRefresh ()) {
+                NachoEmailMessages messages;
+                lock (MessagesLock) {
+                    messages = Messages;
+                }
+                if (messages.HasBackgroundRefresh ()) {
                     Log.Info (Log.LOG_UI, "MessageListViewController.Reload: using NachoEmailMessages background refresh");
-                    Messages.BackgroundRefresh (HandleReloadResults);
+                    messages.BackgroundRefresh (HandleReloadResults);
                 } else {
                     Log.Info (Log.LOG_UI, "MessageListViewController.Reload: simulating a background refresh because this NachoEmailMessages doesn't have one");
                     NcTask.Run (() => {
                         List<int> adds;
                         List<int> deletes;
-                        NachoEmailMessages messages;
-                        lock (MessagesLock) {
-                            messages = Messages;
-                        }
                         bool changed = messages.BeginRefresh (out adds, out deletes);
                         BeginInvokeOnMainThread (() => {
-                            bool handledResults = false;
-                            lock (MessagesLock) {
-                                if (messages == Messages) {
-                                    Messages.CommitRefresh ();
-                                    HandleReloadResults (changed, adds, deletes);
-                                    handledResults = true;
-                                }
-                            }
-                            if (!handledResults) {
-                                IsReloading = false;
-                                if (NeedsReload) {
-                                    Reload ();
-                                }
-                            }
+                            messages.CommitRefresh ();
+                            HandleReloadResults (messages, changed, adds, deletes);
                         });
                     }, MessageRefreshTaskName);
                 }
             }
         }
 
-        void HandleReloadResults (bool changed, List<int> adds, List<int> deletes)
+        void HandleReloadResults (NachoEmailMessages messages, bool changed, List<int> adds, List<int> deletes)
         {
-            Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes",
-                changed, adds == null ? 0 : adds.Count, deletes == null ? 0 : deletes.Count);
-            Messages.ClearCache ();
+            bool messagesPropertyHasChanged = false;
+            lock (MessagesLock) {
+                messagesPropertyHasChanged = Messages != messages;
+            }
             if (IsShowingRefreshIndicator && !SyncManager.IsSyncing) {
                 EndRefreshing ();
             }
-            if (PopsWhenEmpty && Messages.Count () == 0 && this == NavigationController.TopViewController) {
-                NavigationController.PopViewController (true);
+            if (messagesPropertyHasChanged) {
+                Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: messages != Messages, not updating view, NeedsReload = {0}", NeedsReload);
             } else {
-                if (!HasLoadedOnce) {
-                    // If this is the first time we're showing messages, don't bother with any add/delete animations
-                    HasLoadedOnce = true;
-                    TableView.ReloadData ();
+                Log.Info (Log.LOG_UI, "MessageListViewController.HandleReloadResults: changed = {0}, {1} adds, {2} deletes", changed, adds == null ? 0 : adds.Count, deletes == null ? 0 : deletes.Count);
+                Messages.ClearCache ();
+                if (PopsWhenEmpty && Messages.Count () == 0 && this == NavigationController.TopViewController) {
+                    NavigationController.PopViewController (true);
                 } else {
-                    if (changed) {
-                        // If the message set has changed, animate added and deleted rows
-                        Util.UpdateTable (TableView, adds, deletes);
+                    if (!HasLoadedOnce) {
+                        // If this is the first time we're showing messages, don't bother with any add/delete animations
+                        HasLoadedOnce = true;
+                        TableView.ReloadData ();
+                    } else {
+                        if (changed) {
+                            // If the message set has changed, animate added and deleted rows
+                            Util.UpdateTable (TableView, adds, deletes);
+                        }
+                        // Regardless of whether messges have been added or deleted, existing rows may have new data, at least
+                        // for properties like read/unread.  To catch any of those changes, we'll refresh all visible rows.
+                        // Note that this may do a small amount of double work for any visible row that was just added.
+                        UpdateVisibleRows ();
                     }
-                    // Regardless of whether messges have been added or deleted, existing rows may have new data, at least
-                    // for properties like read/unread.  To catch any of those changes, we'll refresh all visible rows.
-                    // Note that this may do a small amount of double work for any visible row that was just added.
-                    UpdateVisibleRows ();
                 }
             }
             IsReloading = false;

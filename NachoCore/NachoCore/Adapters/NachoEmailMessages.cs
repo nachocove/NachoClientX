@@ -7,7 +7,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public delegate void NachoMessagesRefreshCompletionDelegate (bool changed, List<int> adds, List<int> deletes);
+    public delegate void NachoMessagesRefreshCompletionDelegate (NachoEmailMessages messages, bool changed, List<int> adds, List<int> deletes);
 
     public class NachoEmailMessages
     {
@@ -50,7 +50,7 @@ namespace NachoCore
         public virtual void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
         {
             if (null != completionAction) {
-                completionAction (false, null, null);
+                completionAction (this, false, null, null);
             }
         }
 
@@ -109,9 +109,9 @@ namespace NachoCore
             }
         }
 
-        public virtual FolderFilterOptions[] PossibleFilterSettings {
+        public virtual FolderFilterOptions [] PossibleFilterSettings {
             get {
-                return new FolderFilterOptions[] { FolderFilterOptions.All };
+                return new FolderFilterOptions [] { FolderFilterOptions.All };
             }
         }
 
@@ -152,8 +152,8 @@ namespace NachoCore
 
         #region Message Caching
 
-        int[] first = new int[3] { -1, -1, -1 };
-        List<McEmailMessage>[] cache = new List<McEmailMessage>[3];
+        int [] first = new int [3] { -1, -1, -1 };
+        List<McEmailMessage> [] cache = new List<McEmailMessage> [3];
         const int CACHEBLOCKSIZE = 32;
 
         public void ClearCache ()
@@ -258,7 +258,7 @@ namespace NachoCore
         #region Ignored messages
 
         HashSet<int> ignoredMessageIds = null;
-        DateTime lastIgnoredUpdateTime = default(DateTime);
+        DateTime lastIgnoredUpdateTime = default (DateTime);
         object ignoredMessagesLock = new object ();
 
         public virtual void IgnoreMessage (int messageId)

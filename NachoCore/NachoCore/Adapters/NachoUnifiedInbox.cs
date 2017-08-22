@@ -75,7 +75,7 @@ namespace NachoCore
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                     CommitRefresh ();
                     if (null != completionAction) {
-                        completionAction (changed, adds, deletes);
+                        completionAction (this, changed, adds, deletes);
                     }
                 });
             }, "NachoUnifiedInbox.BackgroundRefresh");
@@ -140,11 +140,11 @@ namespace NachoCore
             }
         }
 
-        private static FolderFilterOptions[] possibleFilters = new FolderFilterOptions[] {
+        private static FolderFilterOptions [] possibleFilters = new FolderFilterOptions [] {
             FolderFilterOptions.All, FolderFilterOptions.Hot, FolderFilterOptions.Unread
         };
 
-        public override FolderFilterOptions[] PossibleFilterSettings {
+        public override FolderFilterOptions [] PossibleFilterSettings {
             get {
                 return possibleFilters;
             }

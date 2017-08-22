@@ -1141,7 +1141,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            InteractionMessages.BackgroundRefresh ((bool changed, List<int> adds, List<int> deletes) => {
+            InteractionMessages.BackgroundRefresh ((messages, changed, adds, deletes) => {
                 InteractionsTableView.ReloadData ();
             });
 
