@@ -311,6 +311,7 @@
     <Compile Include="NachoUI.Android\MessageView\CalendarInviteView.cs" />
     <Compile Include="NachoPlatform.Android\Strings.cs" />
     <Compile Include="NachoPlatform.Android\DateTimeFormatter.cs" />
+    <Compile Include="NachoPlatform.Android\PlatformProcess.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -430,10 +431,6 @@
     <AndroidNativeLibrary Include="lib\arm64-v8a\libnachoplatform.so" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.Android\NachoPlatformBinding.Android.csproj">
-      <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
-      <Name>NachoPlatformBinding.Android</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.Android\Lucene.Net.Android.csproj">
       <Project>{B0F398CA-1CAA-45FD-94DC-15BBF1A93377}</Project>
       <Name>Lucene.Net.Android</Name>

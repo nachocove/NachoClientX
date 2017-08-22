@@ -211,10 +211,6 @@
       <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
       <Name>NachoClient.Android</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.Android\NachoPlatformBinding.Android.csproj">
-      <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
-      <Name>NachoPlatformBinding.Android</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.Android\antlr.runtime.Android.csproj">
       <Project>{1923FB99-0E59-4774-8AA9-C14B9BC3F655}</Project>
       <Name>antlr.runtime.Android</Name>
