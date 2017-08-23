@@ -29,7 +29,7 @@
     <MtouchLink>None</MtouchLink>
     <MtouchArch>i386, x86_64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L../../ios-openssl/lib -L../../NachoPlatformBinding/NachoPlatformLib -lcrypto -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib/libNachoPlatformLibSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs></MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>pdbonly</DebugType>
@@ -44,7 +44,7 @@
     <MtouchLink>SdkOnly</MtouchLink>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L../../ios-openssl/lib -L../../NachoPlatformBinding/NachoPlatformLib -lcrypto -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib/libNachoPlatformLibSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs></MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>pdbonly</DebugType>
@@ -79,7 +79,7 @@
     <MtouchLink>SdkOnly</MtouchLink>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L../../ios-openssl/lib -L../../NachoPlatformBinding/NachoPlatformLib -lcrypto -lNachoPlatformLibSDK -force_load ../../NachoPlatformBinding/NachoPlatformLib/libNachoPlatformLibSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs></MtouchExtraArgs>
   </PropertyGroup>
   <Target Name="BuildDevBuildSettings">
     <Exec Command="$(SolutionDir)/scripts/mk_build_info.py ios" WorkingDirectory="$(ProjectDir)" />
@@ -102,10 +102,11 @@
     <Compile Include="BuildInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
-      <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
-      <Name>NachoPlatformBinding</Name>
-    </ProjectReference>
+    <NativeReference Include="..\native.iOS\libs\libnachosqlite3.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
   </ItemGroup>
   <Import Project="..\SQLite\SQLite.projitems" Label="Shared" Condition="Exists('..\SQLite\SQLite.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.AppExtension.CSharp.targets" />

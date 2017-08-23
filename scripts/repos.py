@@ -11,8 +11,6 @@ import build
 REPO_NAMES = (
     'Reachability',
     'registered-domain-libs',
-    'ios-openssl',
-    'NachoPlatformBinding',
     'NachoUIMonitorBinding',
     'DnDns',
     'DDay-iCal-Xamarin',

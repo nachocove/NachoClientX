@@ -63,6 +63,17 @@ namespace NachoPlatform
         SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action);
     }
 
+    public interface IPlatformProcess
+	{
+		string [] GetStackTrace ();
+		long GetUsedMemory ();
+		int GetNumberOfSystemThreads ();
+        int GetCurrentNumberOfFileDescriptors ();
+        int GetCurrentNumberOfInUseFileDescriptors ();
+        string [] GetCurrentInUseFileDescriptors ();
+        string GetFileNameForDescriptor (int fd);
+    }
+
     public delegate void NetStatusEventHandler (Object sender, NetStatusEventArgs e);
 
     public enum NetStatusStatusEnum

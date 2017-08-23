@@ -26,7 +26,7 @@
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs></MtouchExtraArgs>
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <MtouchArch>i386, x86_64</MtouchArch>
     <CodesignKey>iPhone Developer</CodesignKey>
@@ -47,7 +47,7 @@
     </IpaPackageName>
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs></MtouchExtraArgs>
     <MtouchProfiling>true</MtouchProfiling>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
@@ -61,7 +61,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs></MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
@@ -708,6 +708,7 @@
     <Compile Include="NachoPlatform.iOS\DateTimeFormatter.cs" />
     <Compile Include="CallDirectory.cs" />
     <Compile Include="NachoUI.iOS\MessageCompose\ContactAutocompleteMenu.cs" />
+    <Compile Include="NachoPlatform.iOS\PlatformProcess.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\Base.lproj\AccountCreation.storyboard" />
@@ -745,10 +746,6 @@
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
       <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
       <Name>DnDns.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
-      <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
-      <Name>NachoPlatformBinding</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
@@ -1479,6 +1476,45 @@
     <ImageAsset Include="Resources\Images.xcassets\Loginscreen-3.imageset\Loginscreen-3.png" />
     <ImageAsset Include="Resources\Images.xcassets\Loginscreen-3.imageset\Loginscreen-3%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\Loginscreen-3.imageset\Loginscreen-3%403x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <NativeReference Include="..\native.iOS\libs\libnachodevice.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
+    <NativeReference Include="..\native.iOS\libs\libnachodns.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+      <Frameworks></Frameworks>
+      <LinkerFlags>-lresolv</LinkerFlags>
+    </NativeReference>
+    <NativeReference Include="..\native.iOS\libs\libnacholog.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
+    <NativeReference Include="..\native.iOS\libs\libnachoregdom.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
+    <NativeReference Include="..\native.iOS\libs\libnachosqlite3.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
+    <NativeReference Include="..\native.iOS\libs\libnachoproc.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
+    <NativeReference Include="..\native.iOS\libs\libnachoreachability.a">
+      <Kind>Static</Kind>
+      <SmartLink>False</SmartLink>
+      <ForceLoad>True</ForceLoad>
+    </NativeReference>
   </ItemGroup>
   <PropertyGroup>
     <BuildDependsOn>

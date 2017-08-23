@@ -402,10 +402,6 @@
       <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>
       <Name>NachoClient.iOS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
-      <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
-      <Name>NachoPlatformBinding</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.iOS\antlr.runtime.iOS.csproj">
       <Project>{3043ADD2-B6EF-4392-B5E4-983B63260039}</Project>
       <Name>antlr.runtime.iOS</Name>

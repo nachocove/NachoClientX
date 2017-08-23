@@ -1,47 +1,35 @@
+PROJECTS := nachosqlite3 nachoregdom nachodns nachodevice nacholog nachoproc nachoreachability
 
-XBUILD=xcodebuild
-PROJECT_ROOT=.
-PROJECT=$(PROJECT_ROOT)/NachoPlatform.xcodeproj
-TARGET=NachoPlatform
+LIBS := $(foreach proj, $(PROJECTS), libs/lib$(proj).a)
+PLATFORMS := iphonesimulator/i386 iphonesimulator/x86_64 iphoneos/armv7 iphoneos/arm64
 
-all: libNachoPlatformSDK.a libcrypto.a
+project = $(patsubst lib%.a,%, $(notdir $(1)))
+sdk = $(notdir $(call dirnoslash,$(call dirnoslash, $(1))))
+arch = $(notdir $(call dirnoslash,$(1)))
+built = build/$(patsubst libs/%,%,$(1))
+dirnoslash = $(patsubst %/,%,$(dir $(1)))
 
-gen_srcs: src/tld-canon.h
+XBUILD := xcodebuild
 
-src/tld-canon.h:
-	-php ../../registered-domain-libs/generateEffectiveTLDs.php c > src/tld-canon.h
+.PHONY: all clean
+.SECONDARY: $(foreach proj, $(PROJECTS), $(foreach platform, $(PLATFORMS), libs/platforms/$(platform)/lib$(proj).a))
 
-libNachoPlatform-i386.a: gen_srcs
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphonesimulator -configuration Release build
-	mv -f $(PROJECT_ROOT)/build/Release-iphonesimulator/lib$(TARGET).a $@
+all: $(LIBS)
+	@echo "Done"
 
-libNachoPlatform-x86_64.a: gen_srcs
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphonesimulator -arch x86_64 -configuration Release build TARGET_BUILD_DIR='./build/build-x86_64'
-	mv -f ./build/build-x86_64/lib$(TARGET).a $@
+libs/%.a: $(foreach platform, $(PLATFORMS), libs/platforms/$(platform)/%.a)
+	@echo "Creating $@..."
+	@mkdir -p $(dir $@)
+	@lipo -create -output $@ $^
 
-libNachoPlatform-armv7.a: gen_srcs
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphoneos -arch armv7 -configuration Release build
-	mv -f $(PROJECT_ROOT)/build/Release-iphoneos/lib$(TARGET).a $@
-
-libNachoPlatform-arm64.a: gen_srcs
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphoneos -arch arm64 -configuration Release build TARGET_BUILD_DIR='./build/build-arm64'
-	mv -f ./build/build-arm64/lib$(TARGET).a $@
-
-libNachoPlatformSDK.a: libNachoPlatform-i386.a libNachoPlatform-armv7.a libNachoPlatform-arm64.a
-	lipo -create -output $@ $^
-
-# The way our build system works, ios-openssl should have already been built by
-# NachoPlatformBinding.  Including a make call here because it'll ensure the file
-# exists and won't cost any time if openssl is already built
-libcrypto.a: 
-	make -C ../../ios-openssl
-	cp ../../ios-openssl/lib/libcrypto.a .
+libs/platforms/%.a: 
+	@echo "Building $@..."
+	@mkdir -p $(dir $@)
+	@$(XBUILD) -project $(call project, $@)/$(call project, $@).xcodeproj -target $(call project, $@) -sdk $(call sdk, $@) -arch $(call arch, $@) -configuration Release build TARGET_BUILD_DIR=../$(dir $(call built, $@)) > /dev/null
+	@mv -f $(call built, $@) $@
 
 clean:
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphonesimulator -configuration Release clean
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphonesimulator -arch x86_64 -configuration Release clean TARGET_BUILD_DIR='./build/build-x86_64'
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphoneos -arch armv7 -configuration Release clean
-	$(XBUILD) -project $(PROJECT) -target $(TARGET) -sdk iphoneos -arch arm64 -configuration Release clean TARGET_BUILD_DIR='./build/build-arm64'
-	rm -f *.a *.dll
-	rm -f src/tld-canon.h
-# intentionally not calling clean on ios-openssl because NachoPlatformBinding is really in charge of it
+	@echo "Cleaning..."
+	@rm -rf build
+	@rm -rf libs
+	@echo "Done"

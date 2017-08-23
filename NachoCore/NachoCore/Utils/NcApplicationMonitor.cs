@@ -2,10 +2,10 @@
 //
 using System;
 using NachoCore.Utils;
-using NachoPlatformBinding;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using NachoCore.Model;
+using NachoPlatform;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -116,7 +116,7 @@ namespace NachoCore
             }
             long processMemory;
             try {
-                processMemory = PlatformProcess.GetUsedMemory () / (1024 * 1024);
+                processMemory = PlatformProcess.Instance.GetUsedMemory () / (1024 * 1024);
                 ProcessMemory.AddSample ((int)processMemory);
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SYS, "NcApplicationMonitor: Could not get PlatformProcess.GetUsedMemory: {0}", ex);
@@ -129,7 +129,7 @@ namespace NachoCore
             ThreadPool.GetMaxThreads (out maxWorker, out maxCompletion);
             int systemThreads;
             try {
-                systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
+                systemThreads = PlatformProcess.Instance.GetNumberOfSystemThreads ();
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SYS, "NcApplicationMonitor: could not get PlatformProcess.GetNumberOfSystemThreads: {0}", ex);
                 systemThreads = -1;
@@ -153,13 +153,13 @@ namespace NachoCore
             int maxfd;
             int openfd;
             try {
-                maxfd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
+                maxfd = PlatformProcess.Instance.GetCurrentNumberOfFileDescriptors ();
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SYS, "NcApplicationMonitor: could not get PlatformProcess.GetCurrentNumberOfFileDescriptors: {0}", ex);
                 maxfd = -1;
             }
             try {
-                openfd = PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ();
+                openfd = PlatformProcess.Instance.GetCurrentNumberOfInUseFileDescriptors ();
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SYS, "NcApplicationMonitor: could not get PlatformProcess.GetCurrentNumberOfInUseFileDescriptors: {0}", ex);
                 openfd = -1;
@@ -180,10 +180,10 @@ namespace NachoCore
         public static void DumpFileDescriptors ()
         {
             try {
-                var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+                var openFds = PlatformProcess.Instance.GetCurrentInUseFileDescriptors ();
                 Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", openFds.Length);
                 foreach (var fd in openFds) {
-                    var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
+                    var path = PlatformProcess.Instance.GetFileNameForDescriptor (int.Parse (fd));
                     if (null == path) {
                         continue;
                     }
@@ -209,7 +209,7 @@ namespace NachoCore
         public static void DumpFileLeaks ()
         {
             try {
-                var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+                var openFds = PlatformProcess.Instance.GetCurrentInUseFileDescriptors ();
                 if (DateTime.MinValue == firstRun) {
                     firstRun = DateTime.Now;
                 }
@@ -217,7 +217,7 @@ namespace NachoCore
                     e.Value.active = false;
                 }
                 foreach (var fd in openFds) {
-                    var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
+                    var path = PlatformProcess.Instance.GetFileNameForDescriptor (int.Parse (fd));
                     FirstSeen firstSeen;
                     if (FDtracker.TryGetValue (fd, out firstSeen)) {
                         firstSeen.active = true;

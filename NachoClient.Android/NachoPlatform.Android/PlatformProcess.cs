@@ -5,13 +5,15 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NachoPlatformBinding
+namespace NachoPlatform
 {
-    public class PlatformProcess
+    public class PlatformProcess : IPlatformProcess
     {
         public PlatformProcess ()
         {
         }
+
+        public static readonly IPlatformProcess Instance = new PlatformProcess ();
 
         protected static string ProcPathSelf = "/proc/self";
         protected static string ProcPathSelfFd = ProcPathSelf + "/fd";
@@ -35,12 +37,12 @@ namespace NachoPlatformBinding
             return null;
         }
 
-        public static long GetUsedMemory ()
+        public long GetUsedMemory ()
         {
             return Java.Lang.Runtime.GetRuntime ().TotalMemory ();
         }
 
-        public static int GetCurrentNumberOfFileDescriptors ()
+        public int GetCurrentNumberOfFileDescriptors ()
         {
             var value = SearchProcStatus ("FDSize:");
             if (String.IsNullOrEmpty (value)) {
@@ -54,7 +56,7 @@ namespace NachoPlatformBinding
             return 0;
         }
 
-        public static int GetCurrentNumberOfInUseFileDescriptors ()
+        public int GetCurrentNumberOfInUseFileDescriptors ()
         {
             var dir = new DirectoryInfo (ProcPathSelfFd);
             try {
@@ -73,7 +75,7 @@ namespace NachoPlatformBinding
             }
         }
 
-        public static string[] GetCurrentInUseFileDescriptors ()
+        public string[] GetCurrentInUseFileDescriptors ()
         {
             var list = new List<string> ();
             var dir = new DirectoryInfo (ProcPathSelfFd);
@@ -106,7 +108,7 @@ namespace NachoPlatformBinding
             return new String (cbuf, 0, chars);
         }
 
-        public static string GetFileNameForDescriptor (int fd)
+        public string GetFileNameForDescriptor (int fd)
         {
             var path = String.Format ("{0}/{1}", ProcPathSelfFd, fd);
             try {
@@ -118,7 +120,7 @@ namespace NachoPlatformBinding
             }
         }
 
-        public static int GetNumberOfSystemThreads ()
+        public int GetNumberOfSystemThreads ()
         {
             var value = SearchProcStatus ("Threads:");
             if (String.IsNullOrEmpty (value)) {
@@ -132,7 +134,7 @@ namespace NachoPlatformBinding
             return 0;
         }
 
-        public static string[] GetStackTrace ()
+        public string[] GetStackTrace ()
         {
             var stacktrace = System.Environment.StackTrace;
             return stacktrace.Split (new string[] { System.Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);

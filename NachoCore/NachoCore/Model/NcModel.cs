@@ -477,7 +477,7 @@ namespace NachoCore.Model
                         return;
                     }
                     var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
-                    foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
+                    foreach (var frame in PlatformProcess.Instance.GetStackTrace ()) {
                         messageWithStack += "\n" + frame;
                     }
                     Log.LOG_DB.Info (messageWithStack);
@@ -544,7 +544,7 @@ namespace NachoCore.Model
         void LogWriteFromUIThread(string tag)
         {
             if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
-                // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, NachoPlatformBinding.PlatformProcess.GetStackTrace ());
+                // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, PlatformProcess.Instance.GetStackTrace ());
             }
         }
 
