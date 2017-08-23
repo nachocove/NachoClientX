@@ -188,23 +188,9 @@
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="packages.config" />
-    <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
-    </None>
-    <None Include="..\native.Android\libs\armeabi-v7a\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\armeabi-v7a\libnachoplatform.so</Link>
-    </None>
-    <None Include="..\native.Android\libs\x86\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Icon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
-    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoplatform.so" />
-    <AndroidNativeLibrary Include="lib\x86\libnachoplatform.so" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
@@ -239,6 +225,9 @@
   <ItemGroup>
     <Folder Include="Assets\xsd\" />
     <Folder Include="Common\" />
+    <Folder Include="lib\armeabi\" />
+    <Folder Include="lib\armeabi-v7a\" />
+    <Folder Include="lib\x86\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
@@ -280,6 +269,16 @@
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
       <Link>Assets\xsd\Response\Ping.xsd</Link>
     </AndroidAsset>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidNativeLibrary Include="lib\arm64-v8a\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\arm64-v8a\libnachosqlite3.so" />
+    <AndroidNativeLibrary Include="lib\armeabi\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\armeabi\libnachosqlite3.so" />
+    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachosqlite3.so" />
+    <AndroidNativeLibrary Include="lib\x86\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\x86\libnachosqlite3.so" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Import Project="..\packages\Xamarin.Build.Download.0.4.3\build\Xamarin.Build.Download.targets" Condition="Exists('..\packages\Xamarin.Build.Download.0.4.3\build\Xamarin.Build.Download.targets')" />

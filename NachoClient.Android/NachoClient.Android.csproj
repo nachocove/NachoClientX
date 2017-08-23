@@ -61,7 +61,7 @@
     <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="CleanNachoNative">
-    <Exec Command="make clean" WorkingDirectory="$(ProjectDir)/../native.Android" />
+    <Exec Command="bash -cl make clean" WorkingDirectory="$(ProjectDir)/../native.Android" />
   </Target>
   <Target Name="CleanNachoLogSettings">
     <Exec Command="rm -f LogSettings.cs" WorkingDirectory="$(ProjectDir)" />
@@ -315,18 +315,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
-    <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
-    </None>
-    <None Include="..\native.Android\libs\armeabi-v7a\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\armeabi-v7a\libnachoplatform.so</Link>
-    </None>
-    <None Include="..\native.Android\libs\x86\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
-    </None>
-    <None Include="..\native.Android\libs\arm64-v8a\libnachoplatform.so">
-      <Link>NachoPlatform.Android\libs\arm64-v8a\libnachoplatform.so</Link>
-    </None>
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
@@ -362,13 +350,10 @@
     <Folder Include="Assets\xsd\common\" />
     <Folder Include="lib\" />
     <Folder Include="lib\armeabi\" />
-    <Folder Include="lib\armeabi-v7a\" />
-    <Folder Include="lib\x86\" />
     <Folder Include="lib\arm64-v8a\" />
     <Folder Include="NachoUI.Android\" />
     <Folder Include="Resources\menu\" />
     <Folder Include="NachoPlatform.Android\" />
-    <Folder Include="NachoPlatform.Android\libs\" />
     <Folder Include="Resources\drawable\" />
     <Folder Include="Resources\drawable-hdpi\" />
     <Folder Include="Resources\drawable-mdpi\" />
@@ -423,12 +408,6 @@
     <AndroidAsset Include="..\NachoClient.iOS\Resources\chat-email.html">
       <Link>Assets\chat-email.html</Link>
     </AndroidAsset>
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
-    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoplatform.so" />
-    <AndroidNativeLibrary Include="lib\x86\libnachoplatform.so" />
-    <AndroidNativeLibrary Include="lib\arm64-v8a\libnachoplatform.so" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.Android\Lucene.Net.Android.csproj">
@@ -1039,6 +1018,16 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidNativeLibrary Include="lib\arm64-v8a\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\arm64-v8a\libnachosqlite3.so" />
+    <AndroidNativeLibrary Include="lib\armeabi\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\armeabi\libnachosqlite3.so" />
+    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachosqlite3.so" />
+    <AndroidNativeLibrary Include="lib\x86\libnachoregdom.so" />
+    <AndroidNativeLibrary Include="lib\x86\libnachosqlite3.so" />
   </ItemGroup>
   <Import Project="..\SQLite\SQLite.projitems" Label="Shared" Condition="Exists('..\SQLite\SQLite.projitems')" />
   <Import Project="..\NachoCore\NachoCore.projitems" Label="Shared" Condition="Exists('..\NachoCore\NachoCore.projitems')" />

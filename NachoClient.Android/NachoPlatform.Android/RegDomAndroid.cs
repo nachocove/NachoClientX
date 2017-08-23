@@ -25,7 +25,7 @@ namespace NachoPlatform
             }
         }
 
-        [DllImport ("libnachoplatform.so")]
+        [DllImport ("nachoregdom")]
         private static extern void nacho_get_regdom (StringBuilder dest, uint limit, string domain);
 
         public string RegDomFromFqdn (string domain)

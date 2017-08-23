@@ -3160,7 +3160,7 @@ namespace SQLite
 		public delegate void ErrorLogCallback (IntPtr pArg, int iErrCode, string zMsg);
 
     #if __ANDROID__
-    const string KDllPath = "nachoplatform";
+    const string KDllPath = "nachosqlite3";
     #else
     const string KDllPath = "__Internal";
 #endif
