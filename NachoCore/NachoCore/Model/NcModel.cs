@@ -121,7 +121,6 @@ namespace NachoCore.Model
                     typeof(McEmailAddress),
                     typeof(McEmailMessage),
                     typeof(McEmailMessageCategory),
-                    typeof(McEmailMessageDependency),
                     typeof(McMeetingRequest),
                     typeof(McAttachment),
                     typeof(McMapAttachmentItem),

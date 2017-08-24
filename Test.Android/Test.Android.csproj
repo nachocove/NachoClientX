@@ -135,7 +135,6 @@
     <Compile Include="McPendingTest.cs" />
     <Compile Include="Common\CommonUtils.cs" />
     <Compile Include="NcApplicationTest.cs" />
-    <Compile Include="NcEmailMessageDependency.cs" />
     <Compile Include="NcScoreCombinerTest.cs" />
     <Compile Include="MockStopwatch.cs" />
     <Compile Include="MockTimer.cs" />

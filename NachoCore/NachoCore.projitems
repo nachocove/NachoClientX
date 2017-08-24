@@ -246,7 +246,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McDocument.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McEmailAddressScore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McEmailMessageCategory.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McEmailMessageDependency.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McFolder.cs" />
@@ -426,6 +425,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Oauth2\OauthHttpServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration57.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration58.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration59.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

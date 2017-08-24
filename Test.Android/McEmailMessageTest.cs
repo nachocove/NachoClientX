@@ -77,17 +77,6 @@ namespace Test.Common
             return message;
         }
 
-        public void SetupDependency (McEmailMessage message, McEmailAddress address)
-        {
-            McEmailMessageDependency dep = new McEmailMessageDependency (message.AccountId);
-            dep.EmailAddressId = address.Id;
-            dep.EmailMessageId = message.Id;
-            dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
-
-            dep.Insert ();
-            NcAssert.True (0 < dep.Id);
-        }
-
         public void CheckMessages (McEmailMessage[] messages, List<McEmailMessageThread> got, params int[] expectedIndices)
         {
             Assert.AreEqual (expectedIndices.Length, got.Count);
@@ -248,7 +237,6 @@ namespace Test.Common
 
             for (int n = 0; n < 10; n++) {
                 Folder.Link (messages [n]);
-                SetupDependency (messages [n], addresses [n]);
             }
 
             List<McEmailMessageThread> messageList =
@@ -606,7 +594,6 @@ namespace Test.Common
 
             for (int n = 0; n < 10; n++) {
                 Folder.Link (messages [n]);
-                SetupDependency (messages [n], addresses [n]);
             }
 
             List<McEmailMessageThread> messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id);
