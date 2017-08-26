@@ -1,0 +1,1369 @@
+/* App Name, do not change */
+"Nacho Mail" = "Nacho Mail";
+"Username" = "Gebruikersnaam";
+"Password" = "Wachtwoord";
+"Domain" = "Domein";
+"Server" = "Server";
+"Host" = "Host";
+"Port" = "Port";
+"OK" = "OKE";
+"Save" = "Opslaan";
+"Close" = "Dichtbij";
+"Edit" = "Bewerken";
+"Cancel" = "Annuleren";
+"Cancel Editing" = "Bewerking annuleren";
+"Done" = "Klaar";
+"Done Editing" = "Klaar met bewerken";
+"Not Hot (verb)" = "Niet Hot";
+"Hot (verb)" = "Hot";
+"Defer" = "Uitstellen";
+"Delete" = "Verwijderen";
+"Clear" = "Duidelijk";
+"Set" = "Instellen";
+"Remove" = "Verwijderen";
+"Yes" = "Ja";
+"More" = "Meer";
+"Forward (verb)" = "Vooruit";
+"Send" = "Versturen";
+"Email Address" = "E-mailadres";
+"Phone (noun)" = "Telefoon";
+"Phone Number" = "Telefoonnummer";
+"Compose Email" = "E-mail opstellen";
+"Call (verb)" = "Bellen";
+"Dial (verb)" = "Intoetsten";
+"Email (verb)" = "E-mailen";
+"Email (address)" = "E-mailadres";
+"Copy" = "Kopiëren";
+"Value" = "Waarde";
+"Move" = "Verplaatsen";
+"Create Event" = "gebeurtenis creëren";
+/* Title for action edit view when creating */
+"Create Action" = "Actie creëren";
+
+"Reply (verb)" = "Beantwoorden";
+"Reply All" = "Allen beantwoorden";
+"Quick Reply" = "Snel beantwoorden";
+"Unread (adjective)" = "Ongelezen";
+"Read (adjective)" = "Gelezen";
+"Not Hot (adjective)" = "Niet Hot";
+"Hot (adjective)" = "Hot";
+"Archive (verb)" = "Archiveren";
+"Mark (verb)" = "Markeren";
+"(ErrorCode={0}" = "(ErrorCode={0}";
+"Search" = "Zoeken";
+"Customer Support" = "Klantenondersteuning";
+"Open in" = "Openen in";
+"Download" = "Downloaden";
+"Preview (verb)" = "Voorbeeld";
+
+
+/* Setter button title for the date picker */
+"Use Date" = "Gebruiksdatum";
+
+/* Label indicating more items in an address field */
+" +{0} more" = " +{0} meer";
+
+"1 sec" = "1 seconde";
+"{0} secs" = "{0} seconde";
+"1 min" = "1 minuut";
+"{0} mins" = "{0} minuten";
+"1 hour" = "1 uur";
+"{0} hours" = "{0} uren";
+"1 day" = "1 dag";
+"{0} days" = "{0} dagen";
+
+
+/* A welcome message for the user when their account creation is in progress */
+"Welcome Back!  We need to finish setting up your account." = "Welkom terug! We moeten doorgaan met het opzetten van je account.";
+
+/* Action button to continue when account creation is in progress */
+"Continue" = "Doorgaan";
+
+/* action button to start account creation */
+"Get Started" = "Beginnen";
+
+/* A welcome message to the user on first launch */
+"Start by choosing your email service provider" = "Begin door je e-mailprovider te kiezen";
+
+/* Welcome message with generic company name */
+"Start by setting up your company account." = "Begin door je bedrijfsaccount op te zetten.";
+
+/* Welcome message with specific company name */
+"Start by setting up your {0} account." = "Begin door je {0} account op te zetten.";
+
+/* MDM error message with generic company name */
+"Please contact the administrator for your company account.  We received an invalid configuration." = "Neem contact op met de beheerder voor je bedrijfsaccount. We hebben een ongeldige configuratie ontvangen.";
+
+/* MDM error message with specific company name */
+"Please contact the administrator for your {0} account.  We received an invalid configuration." = "Neem contact op met de beheerder voor je {0} account. We hebben een ongeldige configuratie ontvangen.";
+
+/* Warning message title about incompatible version */
+"Incompatible Version" = "Incompatibele versie";
+
+/* "Warning message about incompatible version */
+"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app." = "Het uitvoeren van deze oudere versie resulteert in een incompatibele downgrade van de eerder geïnstalleerde versie. Installeer alstublieft een nieuwere versie van de app.";
+
+
+/* Account creation instructions */
+"Please provide your {0} information" = "Geef alstublieft je {0} informatie op";
+
+/* Account credentials status message for verification */
+"Verifying your information..." = "Je gegevens verifiëren...";
+
+/* Account credentials action to hide advanced fields */
+"Hide Advanced" = "Verberg Geavanceerd";
+
+/* Account credentials button to show advanced fields */
+"Advanced Sign In" = "Geavanceerd inloggen";
+
+/* Account creation error for invalid email missing @ */
+"Your email address must include an @.  For Example, username@company.com" = "Je e-mailadres moet een @ bevatten. Bijvoorbeeld, gebruikersnaam@company.com";
+
+/* Account creation error for invalid email */
+"Your email address is not valid.\nFor example, username@company.com" = "Je e-mailadres is niet geldig.\nBijvoorbeeld, gebruikersnaam@company.com";
+
+/* Account creation error for wrong email */
+"Please use your {0} email address instead." = "Gebruik alstublieft je {0} e-mailadres.";
+
+/* Account creation error for wrong email */
+"The email address does not match the service. Please use your {0} email address instead." = "Het e-mailadres komt niet overeen met de dienst. Gebruik alstublieft je {0} e-mailadres.";
+
+/* Account creation error for no network */
+"No network connection. Please check that you have internet access." = "Geen netwerkverbinding. Controleer of je toegang hebt tot het internet.";
+
+/* Account creation error for device limit */
+"You are already using the maximum number of devices for this account.  Please contact your system administrator." = "Je gebruikt al het maximum aantal apparaten voor dit account. Neem contact op met je systeembeheerder.";
+
+/* Account creation error for server issue */
+"The server is currently unavailable. Please try again later." = "De server is momenteel niet beschikbaar. Probeer het later nogmaals.";
+
+/* Account creation error because offline */
+"We were unable to verify your information because your device is offline.  Please try again when your device is online" = "We kunnen je gegevens niet verifiëren omdat je apparaat offline is. Probeer het opnieuw wanneer je apparaat online is";
+
+/* Account creation cert error */
+"We were unable to connect because of a server certificate issue, which can only be fixed by altering the server's configuration.  {0}" = "We konden geen verbinding maken door een probleem met een servercertificaat, die alleen kan worden hersteld door de configuratie van de server te wijzigen. {0}";
+
+/* Account creation error general */
+"We were unable to verify your information.  Please confirm it is correct and try again." = "We kunnen je gegevens niet verifiëren. Bevestig dat het correct is en probeer het opnieuw.";
+
+/* Account creation error, see advanced */
+"We were unable to verify your information.  Please confirm or enter advanced configuration information." = "We kunnen je gegevens niet verifiëren. Bevestig of geef geavanceerde configuratiegegevens op.";
+
+/* Acccount creation error credentials */
+"Invalid username or password.  Please adjust and try again." = "Ongeldige gebruikersnaam of wachtwoord. Pas alsjeblieft aan en probeer het opnieuw.";
+
+/* Account creation cert rejected */
+"Account not created because the certificate was not accepted" = "Account niet gemaakt omdat het certificaat niet geaccepteerd is";
+
+/* Error message when authenticating user */
+"We could not complete your account authentication.  Please try again." = "We konden je accountverificatie niet voltooien. Probeer het opnieuw.";
+
+/* Error title for duplicate account */
+"Account Exists" = "Account bestaat al";
+
+/* Error message for a duplicate account */
+"An account with that email address already exists. Duplicate accounts are not supported." = "Er bestaat al een account met dat e-mailadres. Dubbele accounts worden niet ondersteund.";
+
+/* Error for bad incoming server */
+"Invalid incoming server name. Please check that you typed it in correctly." = "Ongeldige inkomende servernaam. Controleer of je het correct hebt ingevoerd.";
+
+/* Error for bad outgoing server */
+"Invalid outgoing server name. Please check that you typed it in correctly." = "Ongeldige uitgaande servernaam. Controleer of je het correct hebt ingevoerd.";
+
+/* Error for incoming server including port */
+"Invalid incoming server name. Scheme or port number is not allowed." = "Ongeldige inkomende servernaam. Schema of poortnummer is niet toegestaan.";
+
+/* Error for outgoing server including port */
+"Invalid outgoing server name. Scheme or port number is not allowed." = "Ongeldige uitgaande servernaam. Schema of poortnummer is niet toegestaan.";
+
+/* Error for incoming port */
+"Invalid incoming port number. it must be > 0 and < 65536." = "Ongeldig inkomend poortnummer. Het moet> 0 en <65536 zijn.";
+
+/* Error for incoming port string */
+"Invalid incoming port number. It must be a number." = "Ongeldig inkomend poortnummer. Het moet een nummer zijn.";
+
+/* Error for outgoing port */
+"Invalid outgoing port number. it must be > 0 and < 65536." = "Ongeldig uitgaand poortnummer. Het moet> 0 en <65536 zijn.";
+
+/* Error for outgoing port string */
+"Invalid outgoing port number. It must be a number." = "Ongeldig uitgaand poortnummer. Het moet een nummer zijn.";
+
+
+/* Titles shown on Account Syncing screen */
+"Syncing... (syncing view)" = "Synchroniseren...";
+"Account Created (syncing view)" = "Account aangemaakt";
+
+/* Detail messages shown on Account Syncing screen */
+"Syncing your inbox..." = "Je inbox synchroniseren...";
+"Your account is ready!" = "Je account is klaar!";
+"Sorry, we could not fully sync your inbox.  Please see Settings for more information" = "Sorry, we kunnen je inbox niet volledig synchroniseren. Zie Instellingen voor meer informatie";
+"Syncing will complete when network connectivity is restored" = "Synchronisatie wordt voltooid wanneer netwerkverbindingen worden hersteld";
+
+
+/* Title for certificate accept/reject prompt */
+"Certificate (cert ask)" = "Certificaat";
+
+/* Title for certificate accept/reject view */
+"Security Warning (cert ask)" = "Veiligheidswaarschuwing";
+
+/* Action for accepting certificate */
+"Allow (cert ask)" = "Toestaan";
+
+/* Action for rejecting certificate */
+"Cancel (cert ask)" = "Annuleren";
+
+/* Prompt for accepting certificate */
+"Do you want to allow {0} from {1} ..." = "Wil je {0} van {1} toestaan ​​om informatie over je account te geven?\n\nJe mag alleen bronnen die je kent ​​en vertrouwt toestaan om je account te configureren.";
+
+/* Error message for cert prompt */
+"Unable to find certificate to be examined." = "Kan geen certificaat vinden dat onderzocht moet worden.";
+
+
+/* Title for exchange wall alert */
+"Send Request (exchange wall)" = "Verzend Verzoek";
+
+/* Message for exchange wall alert */
+"Please send a request to {0}" = "Stuur een verzoek naar {0}";
+
+/* Title for exchange wall error */
+"Incorrect Code" = "Foute code";
+
+/* Message for exchange wall error */
+"The code you provided is not valid.  Please verify what was entered and try again." = "De code die je opgegeven hebt is niet geldig. Controleer alstublieft wat er is ingevoerd en probeer het opnieuw.";
+
+/* Code entry instructions on exchange wall */
+"Enter the access code to enable Exchange accounts" = "Voer de toegangscode in om Exchange-accounts in te schakelen";
+
+/* Instructions on exchange wall */
+"Please contact Nacho Cove to inquire about support for enterprise Exchange/ActiveSync accounts" = "Neem contact op met Nacho Cove om te informeren over ondersteuning voor Enterprise Exchange/ActiveSync accounts";
+
+/* Exchange wall contact action title */
+"Contact Nacho Cove" = "Neem contact op met Nacho Cove";
+
+/* Exchange wall code entry action title */
+"Have a code?" = "Heb je een code?";
+
+/* Exchange wall code entry field placeholder */
+"Code (exchange wall)" = "Code";
+
+/* Exchange wall code submit button title */
+"Enable Exchange" = "Exchange inschakelen";
+
+
+/* Labels for main navigation tabs */
+"Inbox (main tab)" = "Inbox";
+"All Mail (main tab)" = "Alle e-mails";
+"Calendar (main tab)" = "Agenda";
+"Contacts (main tab)" = "Contacten";
+"Settings (main tab)" = "Instellingen";
+
+/* Title for switch accounts view */
+"Switch Accounts" = "Accounts wisselen";
+
+/* Button title for adding an account */
+"Add Account" = "Account toevoegen";
+
+
+/* Action state labels when editing */
+"Hot (action state)" = "Hot";
+"Normal (action state)" = "Normaal";
+"Deferred (action state)" = "Uitgesteld";
+"Open (action state)" = "Open";
+"Completed (action state)" = "Voltooid";
+
+/* Action defer labels when editing */
+"An Hour From Now (action defer)" = "Een uur van nu af";
+"Tonight (action defer)" = "Vanavond";
+"Tomorrow Morning (action defer)" = "Morgenochtend";
+"Monday Morning (action defer)" = "Maandagmorgen";
+"Saturday Morning (action defer)" = "Zaterdagochtend";
+"Pick a Date (action defer)" = "Kies een datum";
+"Due Date (action defer)" = "Einddatum";
+
+/* Action edit view sections */
+"Summary (action edit)" = "Overzicht";
+"Notes (action edit)" = "Notities";
+"Priority (action edit)" = "Prioriteit";
+"Defer Until (action edit)" = "Uitstellen tot";
+
+/* Title for action edit view when modifying */
+"Edit Action" = "Actie bewerken";
+
+/* Detail text for action due date when nothing is set */
+"Set a Due Date (action edit)" = "Stel een vervaldatum in";
+
+/* Detail text for action due date when a date is set */
+"Due on {0} (action edit)" = "Vanwege {0}";
+
+/* Action item defer menu heading */
+"Defer until... (action list)" = "Uitstellen tot...";
+"An Hour From Now (action list)" = "Een uur vanaf nu";
+"Tonight (action list)" = "Vanavond";
+"Tomorrow Morning (action list)" = "Morgenochtend";
+"Monday Morning (action list)" = "Maandagochtend";
+"Saturday Morning (action list)" = "Zaterdagochtend";
+"Other... (action list)" = "Andere...";
+
+/* Action list indicator */
+"{0} Actions" = "{0} Acties";
+
+/* Button title to make an action back into a regular email */
+"Not Action" = "Niet Actie";
+
+
+/* Title for reminder picker in Calendar */
+"Reminder (calendar picker)" = "Overigen";
+
+/* Swipe actions */
+"Send Invite" = "Uitnodiging sturen";
+"Required (calendar attendee)" = "Benodigt";
+"I'm Late" = "Ik ben laat";
+
+/* fallback text for calendar attendee */
+"Contact has no name or email address" = "Contact heeft geen naam of e-mailadres";
+
+/* fallback text for calendar attendee without email */
+"Contact has no email address" = "Contact heeft geen e-mailadres";
+
+/* Title for resend invite confirmation */
+"Resend invite?" = "Verstuur uitnodiging?";
+
+/* Calendar body header for time section */
+"WHEN (calendar body)" = "WANNEER";
+
+/* Calendar body header for location section */
+"LOCATION (calendar body)" = "PLAATS";
+
+/* Calendar body header for attendees section */
+"ATTENDEES (calendar body)" = "DEELNEMERS";
+
+/* Calendar body header for organizer section */
+"ORGANIZER (calendar body)" = "ORGANISATOR";
+
+/* Calendar body header for description section */
+"DESCRIPTION (calendar body)" = "BESCHRIJVING";
+
+/* Calendar body header for reminder section */
+"REMINDER (calendar body)" = "HERINNERING";
+
+/* Calendar body header for attachments section */
+"ATTACHMENTS (calendar body)" = "BIJLAGEN";
+
+/* Calendar body header for attachments section */
+"NOTES (calendar body)" = "NOTITIES";
+
+/* Calendar body header for attachments section */
+"CALENDAR (calendar body)" = "Agenda";
+
+/* Calendar Invite response */
+"Attend" = "Bijwonen";
+
+/* Calendar Invite response */
+"Maybe" = "Misschien";
+
+/* Calendar Invite response */
+"Decline" = "Afwijzen";
+
+/* Calenar invite response */
+"Remove from calendar" = "Verwijder uit Agenda";
+
+/* Calendar invitation status */
+"You have not responded to this invitation." = "Je hebt niet geantwoord op deze uitnodiging.";
+
+/* Caledar invitation status when accepted */
+"You accepted the meeting." = "Je hebt de vergadering geaccepteerd.";
+
+/* Calendar invite status when tentative */
+"You might attend the meeting." = "Je kunt de vergadering bijwonen.";
+
+/* Calendar invite status when declined */
+"You declined the meeting." = "Je hebt de vergadering geweigerd.";
+
+/* Calendar attendee status when accepted */
+"{0} has accepted the meeting." = "{0} heeft de vergadering geaccepteerd.";
+
+/* Calendar attendee status when tentative */
+"{0} has tentatively accepted the meeting." = "{0} heeft de vergadering tentatief geaccepteerd.";
+
+/* Calendar attendee status when declined */
+"{0} has declined the meeting." = "{0} heeft de vergadering geweigerd.";
+
+/* Calendar attendee status when unknown */
+"The status of {0} is unknown." = "De status van {0} is onbekend.";
+
+/* Calendar event cancelation status */
+"The meeting has been canceled." = "De vergadering is geannuleerd.";
+
+/* Empty calendar view message */
+"No messages (calendar list)" = "Geen berichten";
+
+/* Calendar list delete event message */
+"This event has been deleted." = "Dit gebeurtenis is verwijderd.";
+
+/* All day indicator */
+"ALL DAY (calendar list)" = "DE HELE DAG";
+
+/* Button title for adding a calendar event */
+"Add event" = "Voeg gebeurtenis toe";
+
+/* Button title for go to today action */
+"Today (go to)" = "Vandaag";
+
+/* Button title for creating a new meeting */
+"New meeting (verb)" = "Nieuwe ontmoeting";
+
+/* Title for calendar view */
+"Calendar (calendar list)" = "Agenda";
+
+/* Title for calendar picker */
+"Calendars (calendar picker)" = "Agenda's";
+
+/* Event edit alert title when deleted */
+"Event Deleted" = "Gebeurtenis is verwijderd";
+
+/* Event edit alert message when deleted */
+"The event can't be edited because it was deleted." = "De gebeurtenis kan niet bewerkt worden omdat het verwijderd is.";
+
+/* Event edit alert title when premissions revoked */
+"No Calendar Access" = "Geen toegang tot de agenda";
+
+/* Event edit alert message when premissions revoked */
+"The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar." = "De app heeft geen toegang tot de agenda van het apparaat. Als je gebeurtenissen in de agenda van het apparaat wilt maken of bijwerken, gebruik je de Instellingen om toegang te geven tot de agenda van Nacho Mail.";
+
+/* Event edit alert title when no device calendar */
+"No device calendars" = "Geen apparaat agenda’s";
+
+/* Event edit alert message when no device calendar */
+"The Calendar app does not have any accessible calendars." = "De Agenda app heeft geen toegankelijke agenda's.";
+
+/* Event edit sections */
+"Title (event edit)" = "Titel";
+"Description (event edit)" = "Beschrijving";
+"All Day (event edit)" = "De hele dag";
+"Starts (event edit)" = "Begint";
+"Until (event edit)" = "Tot";
+"Location (event edit)" = "Plaats";
+"Attendees (event edit)" = "Deelnemers";
+"Attendees ({0}) (event edit)" = "Deelnemers {0}";
+"Reminder (event edit)" = "Herinnering";
+"Calendar (event edit)" = "Agenda";
+
+/* Event reminders */
+"None (event reminder)" = "Geen";
+"At time of event (event reminder)" = "Op het moment van De gebeurtenis";
+"5 min before (event reminder)" = "5 minuten van te voren";
+"15 min before (event reminder)" = "15 minuten van te voren";
+"30 min before (event reminder)" = "30 minuten van te voren";
+"1 hour before (event reminder)" = "1 uur van te voren";
+"2 hours before (event reminder)" = "2 uur van te voren";
+"1 day before (event reminder)" = "1 dag eerder";
+"2 days before (event reminder)" = "2 dagen van te voren";
+"1 week before (event reminder)" = "1 week van te voren";
+
+/* Button title for deleting an event */
+"Delete Event" = "Verwijder gebeurtenis";
+
+/* View title when creating a new event */
+"New Event (noun)" = "Nieuwe gebeurtenis";
+
+/* View title when editing an existing event */
+"Edit Event (noun)" = "Bewerk gebeurtenis";
+
+/* Title for alert when error saving event */
+"Cannot Save Event" = "Kan gebeurtenis niet opslaan";
+
+/* Message for alert when error saving event */
+"The title of the event must not be empty." = "De titel van de gebeurtenis mag niet leeg zijn.";
+
+/* Message for alert when error saving event because of invalid time */
+"The starting time must be no later than the ending time." = "De starttijd moet uiterlijk de eindtijd zijn.";
+
+/* Event edit discard confirmation message */
+"This event will not be saved." = "Deze gebeurtenis wordt niet opgeslagen.";
+
+/* Event edit discard confirmation title */
+"Are you sure?" = "Weet je het zeker?";
+
+/* Alert title when saving deleted event */
+"Deleted Event (alert)" = "Verwijderde gebeurtenis";
+
+/* Alert message when saving deleted event */
+"The changes to the event cannot be saved because the event has been deleted." = "De wijzigingen in de gebeurtenis kunnen niet worden opgeslagen omdat de gebeurtenis is verwijderd.";
+
+/* Event edit delete confirmation button title */
+"Delete Event (verb)" = "Verwijder gebeurtenis";
+
+/* Title for event attendees view */
+"Attendees (event attendees)" = "Deelnemers";
+
+/* Button title for adding an event attendee */
+"Add attendee" = "Voeg deelnemer toe";
+
+/* Attendee list segment */
+"All (attendee list)" = "Alle";
+
+/* Attendee list segment */
+"Required (attendee list)" = "Benodigt";
+
+/* Attendee list segment */
+"Optional (attendee list)" = "Facultatief";
+
+/* fallback text when no attendees are in the list */
+"No attendees" = "Geen deelnemers";
+
+/* Fallback message for when there are no attendees when editing */
+"There are currently no attendees.\n\nStart adding attendees to your event by tapping on the add icon above" = "Er zijn momenteel geen aanwezigen.\n\nBegin met deelnemers aan je gebeurtenis toe te voegen door op het toevoegen-icoon hierboven te tikken";
+
+/* Fallback text for when there are no required attendees */
+"No required attendees" = "Geen verplichte deelnemers";
+
+/* Fallback text for when there are no optional attendees */
+"No optional attendees" = "Geen optionele deelnemers";
+
+/* Alert title when the attendee cannot be emailed */
+"No Email Address" = "Geen e-mailadres";
+
+/* Alert message when the attendee cannot be emailed */
+"This contact does not have an email address." = "Dit contact heeft geen e-mailadres.";
+
+/* Alert message when the attendee cannot be emailed and we can't add an address */
+"This contact does not have an email address, and we are unable to modify the contact." = "Dit contact heeft geen e-mailadres, en we kunnen het contact niet wijzigen.";
+
+/* Event field label */
+"Phone (event field)" = "Telefoon";
+
+/* Button title to cancel a meeting */
+"Cancel this meeting" = "Deze vergadering annuleren";
+
+/* Label when phone isn't avaiable for an event */
+"Not available (event phone)" = "Niet beschikbaar";
+
+/* Label for calendar event when data is gone */
+"Information is unavailable" = "Informatie is niet beschikbaar";
+
+/* Label indicating user is the event's organizer */
+"You are the organizer" = "Jij bent de organisator";
+
+/* Alert message to confirm meeting decline */
+"Declining the meeting will also delete the meeting from your calendar." = "Door de vergadering te verkleinen, wordt de vergadering ook uit je agenda verwijderd.";
+
+/* Option when declining a recurring event to decline all */
+"Decline the entire series" = "Weiger de hele serie";
+
+/* Option when declining a recurring event to decline just this ocurrence */
+"Decline just this occurrence" = "Weiger alleen deze gebeurtenis";
+
+/* Option when responding to a recurring event to respond for all occurrences */
+"Respond for the entire series" = "Reageer voor de hele serie";
+
+/* Option when responding to a recurring event to respond to just one occurrence */
+"Respond to just this occurrence" = "Reageer op deze gebeurtenis";
+
+/* button title when confirming meeeting decline */
+"Decline the meeting" = "Weiger de vergadering";
+
+/* Alert title when user can't change their event response */
+"Can't Change Response" = "Kan geen reactie wijzigen";
+
+/* Alert message when user can't change their event response */
+"Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. Use the Calendar app or some other client to change your response." = "Je reactie op de vergadering kan niet worden gewijzigd omdat de vergadering wordt beheerd door de Agenda-app, niet door Nacho Mail. Gebruik de Agenda app of een andere app om je reactie te wijzigen.";
+
+/* Alert message when user can't change their event response */
+"Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. Use a different client to change your response." = "Je reactie op de vergadering kan niet worden gewijzigd omdat de vergadering is opgeslagen in een agenda die niet door deze app beschreven kan worden. Gebruik een andere app om je reactie te wijzigen.";
+
+/* Alert message when confirming meeting cancelation */
+"Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees." = "Annuleer dit voorval van de vergadering en stuur een annuleringsbericht naar alle deelnemers.";
+
+/* Option when canceling a recurring meeting */
+"Cancel this occurrence" = "Annuleer dit voorval";
+
+/* Option when canceling a meeting */
+"Don't cancel the meeting" = "De vergadering niet annuleren";
+
+/* Title for alert when there's an attachment error */
+"Attachment error" = "Bijlagefout";
+
+/* Generic error for an attachment issue */
+"Download failed. (event)" = "Download mislukt.";
+
+/* Title for notes view */
+"Note (notes view)" = "Notitie";
+
+/* Title for notes view with note name */
+"Note: {0} (notes view)" = "Opmerking: {0}";
+
+/* Title for note preview */
+"Preview Note" = "Weergave van Notitie";
+
+
+/* MARK: - Contacts */
+
+
+"Edit Contact (verb)" = "Bewerk contact";
+
+/* Fallback text for contact with no name */
+"Unnamed (contact list)" = "Naamloos";
+
+/* Fallback text for deleted contact */
+"This contact is unavailable" = "Dit contact is niet beschikbaar";
+
+/* Fallback text for unnamed contact */
+"No name for this contact" = "Geen naam voor dit contact";
+
+/* Text for contact without email address */
+"No email address for this contact" = "Geen e-mailadres voor dit contact";
+
+/* Text for contact without phone number */
+"No phone number for this contact" = "Geen telefoonnummer voor dit contact";
+
+/* Title for contact chooser table */
+"Contacts (chooser)" = "Contacten";
+
+/* Alert title for user entered email address */
+"Invalid email address" = "Ongeldig e-mailadres";
+
+/* Alert message for invalid user entered email address */
+"The value must be an email address containing '@'" = "De waarde moet een e-mailadres zijn met een '@'";
+
+/* Alert title when selecting a contact without an email address */
+"E-mail Address Missing" = "E-mailadres ontbreekt";
+
+/* Alert message when selecting a contact without an email address */
+"You have selected a contact without an e-mail address. Would you like to edit this contact?" = "Je hebt een contactpersoon gekozen zonder een e-mailadres. Wil je dit contact bewerken?";
+
+/* Alert message when choosing a contact without an email address */
+"You have selected a contact without an e-mail address." = "Je hebt een contactpersoon gekozen zonder een e-mailadres.";
+
+/* Messge for contact that does not have an email address */
+"The contact you selected does not have an email address. Please add an email address for this contact." = "De geselecteerde contactpersoon heeft geen e-mailadres. Voeg alsjeblieft een e-mailadres toe voor dit contact.";
+
+/* Button title for setting default email */
+"Set as default email address" = "Stel als standaard e-mailadres in";
+
+/* Button title to compose email */
+"Compose Email (contact)" = "E-mail opstellen";
+
+/* Message for label when contact does not have a phone number */
+"The contact you selected does not have a phone number. Please add a phone number for this contact." = "Het geselecteerde contactpersoon heeft geen telefoonnummer. Voeg hier een telefoonnummer toe voor dit contact.";
+
+/* Button title for calling a contact */
+"Call Contact" = "Bel Contact";
+
+/* Button title for setting default phone number */
+"Set as default phone number" = "Stel als standaard telefoonnummer in";
+
+/* Button title for toggling default */
+"Toggle Default" = "Wissel Standaard";
+
+/* View title for setting default email */
+"Add a New Email" = "Voeg een nieuw e-mailadres toe";
+
+/* View title for setting default phone */
+"Add a New Number" = "Voeg een nieuw nummer toe";
+
+/* View title for choosing default phone */
+"Select a Phone" = "Selecteer een telefoon";
+
+/* View title for choosing default email */
+"Select an Email" = "Selecteer een e-mailadres";
+
+/* Title for contact detail segment */
+"Contact (contact segment)" = "Contact";
+
+/* Title for contact detail segment */
+"Interactions (contact segment)" = "Interacties";
+
+/* Title for contact detail segment */
+"Notes (contact segment)" = "Notities";
+
+/* Fallback text when contact is gone */
+"Contact is unavailable." = "Contact is niet beschikbaar.";
+
+/* Message explaining why notes are unavailable */
+"This contact has not been synced. Adding or editing notes is disabled." = "Dit contact is niet gesynchroniseerd. Notities toevoegen of bewerken is uitgeschakeld.";
+
+/* Message describing how to use notes */
+"You have not entered any notes for this contact. You can add and edit notes by tapping the edit button in the top right corner of this screen." = "Je hebt geen notities ingevoerd voor dit contact. Je kunt notities toevoegen en bewerken door op de bewerkingsknop in de rechterbovenhoek van dit scherm te tikken.";
+
+/* Section header for contact details */
+"EMAIL (contact section)" = "E-MAIL";
+
+/* Section header for contact detail */
+"PHONE (contact section)" = "TELEFOON";
+
+/* View title when adding a new contact */
+"Add Contact" = "Voeg contact toe";
+
+/* View title when editing a contact */
+"Edit Contact (title)" = "Bewerk contact";
+
+/* Button title for adding a contact phone */
+"Add Phone" = "Voeg telefoon toe";
+
+/* Button title for adding a contact email */
+"Add Email" = "Voeg e-mailadres toe";
+
+/* Button title for adding a contact date */
+"Add Date" = "Voeg datum toe";
+
+/* Button title for adding a contact address */
+"Add Address" = "Voeg adres toe";
+
+/* Button title for adding a contact IM address */
+"Add IM Address" = "Voeg IM-adres toe";
+
+/* Button title for adding a contact relationship */
+"Add Relationship" = "Voeg relatie toe";
+
+/* Button title for adding a contact other field */
+"Add Other" = "Voeg andere toe";
+
+/* Section header for notes on contact edit page */
+"Notes (contact edit)" = "Notities";
+
+/* Button title for deleting a contact */
+"Delete Contact" = "Verwijder contact";
+
+/* Confirmation message title when discarding contact edits */
+"Discard Changes? (contact)" = "Veranderingen ongedaan maken?";
+
+/* Confirmation message when discarding contact edits */
+"Going back will discard your changes. Are you sure?" = "Als je terug gaat, worden je wijzigingen ongedaan gemaakt. Weet je het zeker?";
+
+/* Title for alert confirmation when deleting contact */
+"Delete Contact (title)" = "Verwijder contact";
+
+/* Message for confirmation when deleting contact */
+"Are you sure that you want to delete this contact? This operation cannot be undone." = "Weet je zeker dat je dit contact wilt verwijderen? Deze bewerking kan niet ongedaan worden gemaakt.";
+
+/* Placeholder for relationship field */
+"Name (contact relationship)" = "Naam";
+
+/* Title for contact account picker */
+"Choose an account for the new Contact" = "Kies een account voor het nieuwe Contact";
+
+"No email address" = "Geen e-mailadres";
+"You've selected a contact who does not have an email address" = "Je hebt een contactpersoon geselecteerd die geen e-mailadres heeft";
+"No phone number" = "Geen telefoonnummer";
+"You've selected a contact who does not have a phone number" = "Je hebt een contactpersoon geselecteerd die geen telefoonnummer heeft";
+"Cannot Dial" = "Kan niet kiezen";
+"We are unable to dial this phone number" = "We kunnen dit telefoonnummer niet bellen";
+"Incorrect E-mail Address" = "Incorrect e-mailadres";
+"At least one of the e-mail addresses is in an invalid format." = "Tenminste één van de e-mailadressen is in een ongeldig formaat.";
+"Nothing To Save" = "Niets te besparen";
+"No data. There is nothing to save." = "Geen gegevens. Er is niets te redden.";
+"Set As Default" = "Instellen als standaard";
+"Default" = "Standaard";
+
+/* Contact Fields */
+"First Name" = "Voornaam";
+"Middle Name" = "Midden-naam";
+"Last Name" = "Achternaam";
+"Suffix" = "Achtervoegsel";
+"Company" = "Bedrijf";
+"IM Address" = "IM-adres";
+
+
+/* View title for folder picker */
+"Move to Folder" = "Verplaats naar map";
+
+/* Title for recent folders section */
+"Recent Folders" = "Recente mappen";
+
+/* Message action label */
+"Request an action for the recipient" = "Verzoek een ​​actie voor de ontvanger";
+
+/* Alert title when sending with an empty subject */
+"Empty Subject" = "Leeg onderwerp";
+
+/* Alert message when sending with an empty subject */
+"This message does not have a subject. How would you like to proceed?" = "Dit bericht heeft geen onderwerp. Hoe wil je doorgaan?";
+
+/* Button title for sending without a subject */
+"Send Anyway" = "Stuur toch";
+
+/* Button title for adding a subject before sending */
+"Add Subject" = "Voeg een onderwerp toe";
+
+/* Alert title for message size warning */
+"Large Message" = "Groot bericht";
+
+/* Alert message for message size warning */
+"This message is {0}. You can make it smaller by reducing the size of the attached images." = "Dit bericht is {0}. Je kunt het kleiner maken door de grootte van de bijgevoegde afbeeldingen te verminderen.";
+
+/* Button action for resizing images, with estimated size */
+"Small images ({0})" = "Kleine afbeeldingen ({0})";
+
+/* Button action for resizing images, with estimated size */
+"Medium images ({0})" = "Middelgrote afbeeldingen ({0})";
+
+/* Button action for resizing images, with estimated size */
+"Large images ({0})" = "Grote afbeeldingen ({0})";
+
+/* Button action for resizing images, with estimated size */
+"Actual size ({0})" = "Werkelijke grootte ({0})";
+
+/* Alert message for message size warning */
+"This message is {0}" = "Dit bericht is {0}";
+
+/* Button for discarding message draft */
+"Discard Draft" = "Ontwerp ontwerp";
+
+/* Button for saving message draft */
+"Save Draft" = "Concept opslaan";
+
+/* Alert title for message load error */
+"Could not load message" = "Kan het bericht niet laden";
+
+/* Alert message for failed message load */
+"Sorry, the message could not be loaded. Please try again." = "Sorry, het bericht kan niet worden geladen. Probeer het opnieuw.";
+
+/* Message Fields */
+"To:" = "Tot:";
+"Cc:" = "Cc:";
+"Bcc:" = "Bcc:";
+"Cc/Bcc:" = "CC / BCC:";
+"Cc/Bcc/From:" = "Cc / Bcc / Van:";
+"Subject:" = "Onderwerpen:";
+"From:" = "Van:";
+"Attachments:" = "Bijlagen:";
+
+/* Message Intent Deadlines */
+"No Due Date (intent deadline)" = "Geen vervaldatum";
+"One Hour (intent deadline)" = "Een uur";
+"Today (intent deadline)" = "Vandaag";
+"Tomorrow (intent deadline)" = "Morgen";
+"Next Week (intent deadline)" = "Volgende week";
+"Next Month (intent deadline)" = "Volgende maand";
+"Pick Date (intent deadline)" = "Kies datum";
+
+"Attachments" = "Toebehoren";
+"Attachments ({0})" = "Bijlagen ({0})";
+"Quick response" = "Snelle reactie";
+"Add attachment" = "Voeg bijlage toe";
+"Attach (menu)" = "Toevoegen";
+"Details (menu)" = "Details";
+
+/* Label in message cell indicating future intent due date */
+"due {0} (message)" = "loopt af op {0}";
+
+/* Label in message cell indicating past intent due date */
+"by {0} (message)" = "Door {0}";
+
+/* Title for message list view */
+"Message list" = "Berichtlijst";
+
+/* Label for mark messages title */
+"Mark {0} messages" = "Markeer {0} berichten";
+
+/* Actions shown under the mark messages title, should complete a sentence if possible */
+"[Mark messages] As Read" = "Als gelezen";
+"[Mark messages] As Unread" = "Als ongelezen";
+"[Mark messages] As Hot" = "Als hot";
+"[Mark messages] As Not Hot" = "Als niet hot";
+
+"All (message filter)" = "Alle";
+"Hot (message filter)" = "Hot";
+"Unread (message filter)" = "Ongelezen";
+"Focus (message filter)" = "Focus";
+
+/* Label indicating a refresh just happened */
+"Last updated just now" = "Laatst bijgewerkt op dit moment";
+
+/* Label indicating a specific refresh time" */
+"Last updated {0}" = "Laatst bijgewerkt {0}";
+
+/* Message indicating send failure */
+"There was a problem sending this message.  You can resend this message or open it in the drafts folder." = "Er is een probleem geweest bij het verzenden van dit bericht. Je kunt dit bericht opnieuw verzenden of openen in de Concepten-map.";
+
+"Edit Message" = "Bericht bewerken";
+
+/* Button title to hide attachments list */
+"Hide attachments" = "Verberg bijlagen";
+
+/* Button title to show attachments list */
+"Show {0} attachments" = "Toon {0} bijlagen";
+
+/* Fallback name for attachment with no name */
+"(no name) (attachment)" = "(geen naam)";
+
+/* Calendar invite option */
+"Accept and add to calendar (calendar invite)" = "Accepteer en voeg toe aan agenda";
+
+/* Calendar invite option */
+"Tentatively accept (calendar invite)" = "Voorzichtig accepteren";
+
+/* Calendar invite option */
+"Decline (calendar invite)" = "Afwijzen";
+
+/* Calendar invite option */
+"Remove from calendar (calendar invite)" = "Verwijder vanaf agenda";
+
+/* Calendar invite indication of cancelation */
+"This event has been canceled" = "Deze gebeurtenis is geannuleerd";
+
+/* Message Intents */
+"Response Required" = "Reactie vereist";
+"Please Read" = "Gelieve te lezen";
+"Urgent - Attention Required" = "Dringend - Aandacht is benodigd";
+
+/* Title for header details view */
+"Header Details" = "Koptekst Details";
+
+/* Message header detail section */
+"From/Reply-To (header detail)" = "Van / Reageer aan";
+
+/* Message header detail section */
+"Reply-To (header detail)" = "Antwoord aan";
+
+/* Message header detail section */
+"From (header detail)" = "Van";
+
+/* Message header detail section */
+"To (header detail)" = "Tot";
+
+/* Message header detail section */
+"CC (header detail)" = "CC";
+
+/* Message header detail section */
+"BCC (header detail)" = "BCC";
+
+" by {0} (message view)" = " Door {0}";
+
+/* fallback text for messages with no subject */
+"(no subject)" = "(geen onderwerp)";
+
+/* Title for message view back button */
+"Message (message view)" = "Bericht";
+
+"Message download failed. Tap here to retry." = "Bericht downloaden is mislukt. Tik hier om opnieuw te proberen.";
+
+
+/* About screen title */
+"About Nacho Mail" = "Over Nacho Mail";
+
+/* Version string */
+"Nacho Mail version {0}" = "Nacho Mail versie {0}";
+
+/* About release notes */
+"Release Notes" = "Geef Notities vrij";
+
+/* About privacy policy */
+"Privacy Policy" = "Privacybeleid";
+
+/* About License Agreement */
+"License Agreement" = "Licentieovereenkomst";
+
+/* About open source */
+"Open Source Contributions" = "Open-Source Bijdragen";
+
+/* About intro */
+"Nacho Mail believes that productivity software is more than just a great email app with contacts and calendar capability." = "Nacho Mail is van mening dat productiviteitssoftware meer is dan alleen een geweldige e-mail app met contacten en agenda mogelijkheden.";
+
+/* About details */
+"In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way." = "Naast een geweldige e-mailclient, moet je PIM-software je actief helpen om je doelen te bereiken, je helpen je tijd te beheren en de rommel te verminderen die je in de weg gaat liggen.";
+
+/* Title for account settings screen */
+"Account Settings" = "Accountinstellingen";
+
+/* Field label for account nickname */
+"Nickname (account)" = "Bijnaam";
+
+/* Field label for account password update */
+"Update Password" = "Wachtwoord bijwerken";
+
+/* Field label for account advanced settings */
+"Advanced Settings (account)" = "Geavanceerde instellingen";
+
+/* Field label for account signature */
+"Signature" = "Handtekening";
+
+/* Field label for account sync */
+"Days to sync" = "Dagen om te synchroniseren";
+
+/* Field label for account notifications option */
+"Notifications (account)" = "Meldingen";
+
+/* Field label for account fast notification option */
+"Fast Notification" = "Snelle melding";
+
+/* Field label for default email account toggle */
+"Default Email Account" = "Standaard e-mailaccount";
+
+/* Field label for default calendar account toggle */
+"Default Calendar Account" = "Standaard agenda-account";
+
+/* Delete account button title */
+"Delete This Account" = "Verwijder dit account";
+
+/* Account deletion wait message */
+"Deleting Account" = "Account verwijderen";
+
+/* Title for nickname entry view */
+"Create a nickname for this account." = "Maak een bijnaam voor dit account.";
+
+/* Title for alert when clearing issue warning */
+"Clear Notification" = "Duidelijke kennisgeving";
+
+/* Message shown after issue warning has been cleared */
+"Password expiration cleared" = "Wachtwoordafloop is gewist";
+
+/* Account Issues */
+"Update Password (account issue)" = "Wachtwoord bijwerken";
+"Certificate Issue (account issue)" = "Certificaat probleem";
+"Server Error (account issue)" = "Serverfout";
+"Password expires {0}" = "Wachtwoord verloopt {0}";
+
+/* Title for update password screen */
+"Update Password (title)" = "Wachtwoord bijwerken";
+
+/* Prompt on update password screen */
+"Enter your account password" = "Voer je account wachtwoord in";
+
+/* Button title for updating password */
+"Update (password)" = "Bijwerken";
+
+/* Status message when waiting for password update */
+"Validating Credentials" = "Credenties valideren";
+
+/* Title for error when updating password */
+"Network Error" = "Netwerkfout";
+
+/* Error message when updating password */
+"A network issue is preventing your changes from being validated. Would you like to save your changes anyway?" = "Een netwerkprobleem voorkomt dat je wijzigingen worden gevalideerd. Wil je je wijzigingen opslaan?";
+
+/* Alert title for error when updating password */
+"Validation Failed" = "Validatie is mislukt";
+
+/* Alert message for error when updating password */
+"This account may not be able to send or receive emails. Save anyway?" = "Dit account kan mogelijk geen e-mails verzenden of ontvangen. Toch opslaan?";
+
+/* Alert title for error when updating password */
+"Invalid Credentials" = "Ongeldige referenties";
+
+/* Alert message for error when updating password */
+"User name or password is incorrect. No emails can be sent or received. Save anyway?" = "Gebruikersnaam of wachtwoord is onjuist. Er kunnen geen e-mails worden verzonden of ontvangen. Toch opslaan?";
+
+/* Alert title for error when updating password */
+"Invalid Username" = "Ongeldige gebruikersnaam";
+
+/* Alert message for error when updating password */
+"User name is incorrect. No emails can be sent or received. Save anyway?" = "Gebruikersnaam is onjuist. Er kunnen geen e-mails worden verzonden of ontvangen. Toch opslaan?";
+
+/* Alert title when canceling password update */
+"Validation Cancelled" = "Validatie is geannuleerd";
+
+/* Alert message when canceling password update */
+"Your settings have not been validated. Would you like to save them anyway?" = "Je instellingen zijn niet gevalideerd. Wil je ze toch opslaan?";
+
+/* Title for exchange advanced fields */
+"Please fill out the required credentials." = "Vul alstublieft de vereiste referenties in.";
+
+/* Error message for advanced exchange fields */
+"Enter an email address" = "Voer een e-mail adres in";
+
+/* Error message for advanced exchange fields */
+"Email address is invalid" = "E-mailadres is ongeldig";
+
+/* Error message for advanced exchange fields */
+"Enter a password" = "Vul een wachtwoord in";
+
+/* Error message for advanced exchange fields */
+"Enter a server" = "Voer een server in";
+
+/* Error message for advanced exchange fields */
+"Nacho Mail does not support {0} yet." = "Nacho Mail ondersteunt {0} nog niet.";
+
+"We had a problem finding the server for {0}." = "We hebben een probleem gehad met het vinden van de server voor {0}.";
+"We had a problem finding the server '{0}'." = "We hebben een probleem gehad met het vinden van de server '{0}'.";
+
+/* Title for settings screen */
+"Settings (title)" = "Instellingen";
+
+/* Settings sections */
+"Accounts (settings section)" = "Accounts";
+
+/* Label for unread count setting */
+"Unread Count (setting)" = "Aantal Ongelezen";
+
+/* Button title for adding an acccount in settings */
+"Add Account (setting)" = "Account toevoegen";
+
+/* Button title for adding a salesforce account in settings */
+"Connect to Salesforce (setting)" = "Maak verbinding met Salesforce";
+
+/* Button title for viewing about screen */
+"About Nacho Mail (setting)" = "Over Nacho Mail";
+
+/* Unread count option */
+"All Messages (unread count)" = "Alle berichten";
+
+/* Unread count option */
+"Recent Messages (unread count)" = "Recente berichten";
+
+/* Unread count option */
+"Today's Messages (unread count)" = "Berichten van vandaag";
+
+"Incoming Mail Server" = "Binnenkomende mailserver";
+"Outgoing Mail Server" = "Uitgaande mailserver";
+"We had a problem finding a server." = "We hebben een probleem gehad met het vinden van een server.";
+"The server name is required." = "De servernaam is vereist.";
+"Invalid server name. Please check that you typed it in correctly." = "Ongeldige servernaam. Controleer of je het correct hebt ingevoerd.";
+"Invalid server name. Scheme or port number is not allowed." = "Ongeldige servernaam. Schema of poortnummer is niet toegestaan.";
+"Invalid port number. It must be a number." = "Ongeldig poortnummer. Het moet een nummer zijn.";
+"All fields must be filled in." = "Alle velden moeten ingevuld worden.";
+
+/* Title for notification setting picker */
+"Notifications (setting title)" = "Meldingen (instellingstitel)";
+
+"This signature will appear at the bottom of every message you send" = "Deze handtekening verschijnt onderaan elk bericht dat je verzendt";
+"It looks like you've copied some HTML content.  You can paste it here to use it as your signature" = "Het lijkt erop dat je HTML-inhoud hebt gekopieerd. Je kunt het hier plakken om het te gebruiken als je handtekening";
+"To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it" = "Om een ​​HTML-handtekening toe te voegen moet je eerst de inhoud van je handtekening van een andere bron kopiëren en hier terugkeren om deze in te plakken";
+"Use Rich Text Signature" = "Gebruik Rich Text Handtekening";
+"Paste HTML Signature" = "Plak HTML-handtekening hier";
+
+/* compact duration in minutes */
+"{0}m" = "{0}m";
+
+/* compact duration in hours */
+"{0}h" = "{0}u";
+
+/* compact duration in hours and minutes */
+"{0}h{1}m" = "{0}u {1}m";
+
+/* compact duration, greater than one day */
+"1d+" = "1d+";
+
+/* no reminder is set */
+"None (Reminder)" = "Geen";
+
+/* reminder when the event starts */
+"At time of event" = "Op het moment van het gebeurtenis";
+
+/* reminder 1 minute before the event starts */
+"1 minute before" = "1 minuut van te voren";
+
+/* reminder 1 hour before the event starts */
+"1 hour before" = "1 uur van te voren";
+
+/* reminder 1 day before the event starts */
+"1 day before" = "1 dag van te voren";
+
+/* reminder 1 week before the event starts */
+"1 week before" = "1 week van te voren";
+
+/* reminder X weeks before the event starts */
+"{0} weeks before" = "{0} weken van te voren";
+
+/* reminder X days before the event starts */
+"{0} days before" = "{0} dagen van te voren";
+
+/* reminder X hours before the event starts */
+"{0} hours before" = "{0} uur van te voren";
+
+/* reminder X minutes the event starts */
+"{0} minutes" = "{0} minuten";
+
+/* friendly date/time format for today */
+"Today - {0} (friendly datetime)" = "Vandaag - {0}";
+
+/* friendly date/time format for yesterday */
+"Yesterday - {0} (friendly datetime)" = "Gisteren - {0}";
+
+/* friendly date/time format for any other date */
+"{0} - {1} (friendly datetime)" = "{0} - {1}";
+
+/* Name for yesterday when showing dates in the message list */
+"Yesterday (decreasing precision)" = "Gisteren";
+
+/* Name for today when showing due dates */
+"Today (future date)" = "Vandaag";
+
+/* Name for tomorrow when showing due dates */
+"Tomorrow (future date)" = "Morgen";
+
+/* Name for yesterday when showing due dates */
+"Yesterday (future date)" = "Gisteren";
+
+/* Format for yesterday when showing chat timestamps */
+"Yesterday {0} (variable datetime)" = "Gisteren {0}";
+
+/* Format for other days when showing chat timestamps */
+"{0} {1} (variable datetime)" = "{0} {1}";
+
+/* Name for right now when showing event time */
+"now (event time)" = "Nu";
+
+/* Name for one minute from now when showing event time */
+"in 1 minute (event time)" = "In 1 minuut";
+
+/* Format for x minutes from now when showing event time */
+"in {0} minutes (event time)" = "In {0} minuten";
+
+/* Format for a specific time today when showing event time */
+"at {0} (event time)" = "Op {0}";
+
+/* Format for a specific daty/time when showing event time */
+"{0} {1} (event time)" = "{0} {1}";
+
+/* Name for today when showing an event's day */
+"Today (event day)" = "Vandaag";
+
+/* Name for tomorrow when showing an event's day */
+"Tomorrow (event day)" = "Morgen";
+
+/* "Second line of an all day event's span */
+"through {0}" = "Door {0}";
+
+/* Time span for an event, as shown in the detail screen */
+"{0} to {1} (event detail)" = "{0} tot {1}";
+
+/* Time span for an all day meeting request */
+"{0} through {1} (meeting request)" =  "{0} tot en met {1}";
+
+/* Time span for a meeting request on the same day with the same am/pm */
+"{0} from {1} to {2} (meeting request)" = "{0} van {1} tot {2}";
+
+/* Time span for a meeting request on the same day */
+"{0}, {1} to {2} (meeting request)" = "{0}, {1} tot {2}";
+
+/* Time span for a meeting request on different days */
+"{0} at {1} to {2} (meeting request)" = "{0} om {1} tot {2}";
+
+/* The fallback title for an event notification */
+"Event (event notification)" = "Gebeurtenis";
+
+/* The time of an all day event notification */
+"{0} all day (event notification)" = "{0} de hele dag";
+
+/* The time of an event notification */
+"{0} - {1} (event notification)" = "{0} - {1}";
+
+/* The name for the optional attendee status */
+"Optional (attendee status)" = "Facultatief";
+
+/* The name for the required attendee status */
+"Required (attendee status)" = "Nodig";
+
+/* The name for the resource attendee status */
+"Resource (attendee status)" = "Hulpbron";
+
+/* The name for the accepted attendee status */
+"Accepted (attendee status)" = "Aanvaard";
+
+/* The name for the declined attendee status */
+"Declined (attendee status)" = "Afgewezen";
+
+/* The name for the tentative attendee status */
+"Tentative (attendee status)" = "Voorlopig";
+
+/* The name for the no response attendee status */
+"No Response (attendee status)" = "Geen antwoord";
+
+/* Fallback text to use in a mesasge list when there are no recipients, like for a draft */
+"(No Recipients)" = "(Geen ontvangers)";
+
+"does not repeat" = "Herhaalt niet";
+"repeats daily" = "Herhaalt dagelijks";
+"repeats every {0} days" = "Herhaalt elke {0} dagen";
+"repeats on weekdays" = "Herhaalt op weekdagen";
+"repeats on weekends" = "Herhaalt in het weekend";
+"repeats weekly on {0}" = "Herhaalt wekelijks op {0}";
+"repeats every {0} weeks on weekdays" = "Herhaalt elke {0} week op weekdagen";
+"repeats every {0} weeks on {1}" = "Herhaalt elke {0} weken op {1}";
+"repeats monthly on day {0}" = "Herhaalt maandelijks op dag {0}";
+"repeats every {0} months on day {1}" = "Herhaalt elke {0} maanden op dag {1}";
+"repeats monthly on the last day of the month" = "Herhaalt maandelijks op de laatste dag van de maand";
+"repeats monthly on the last weekday of the month" = "Herhaalt maandelijks op de laatste weekdag van de maand";
+"repeats monthly on the last weekend day of the month" = "Herhaalt maandelijks op het laatste weekend van de maand";
+"repeats monthly on weekdays during week {0} of the month" = "Herhaalt maandag op weekdagen tijdens week {0} van de maand";
+"repeats monthly on weekend days during week {0} of the month" = "Herhaalt maandelijks op weekenddagen tijdens week {0} van de maand";
+"repeats monthly on {0} in week {1} of the month" = "Herhaalt maandelijks op {0} in week {1} van de maand";
+"repeats monthly on the last {0} of the month" = "Herhaalt maandelijks op de laatste {0} van de maand";
+"repeats every {0} months on the last day of the month" = "Herhaalt elke {0} maanden op de laatste dag van de maand";
+"repeats every {0} months on the last weekday of the month" = "Herhaalt elke {0} maanden op de laatste weekdag van de maand";
+"repeats every {0} months on the last weekend day of the month" = "Herhaalt elke {0} maanden op het laatste weekend van de maand";
+"repeats every {0} months on the last {1} of the month" = "Herhaalt elke {0} maanden op de laatste {1} van de maand";
+"repeats every {0} months on the weekdays in week {1} of the month" = "Herhaalt elke {0} maanden op de weekdagen in week {1} van de maand";
+"repeats every {0} months on the weekend days in week {1} of the month" = "Herhaalt elke {0} maanden op de weekenddagen in week {1} van de maand";
+"repeats every {0} months on {1} in week {2} of the month" = "Herhaalt elke {0} maanden op {1} in week {2} van de maand";
+"repeats yearly on the last day of {0}" = "Herhaalt jaarlijks op de laatste dag van {0}";
+"repeats yearly on the last weekday of {0}" = "Herhaalt jaarlijks op de laatste weekdag van {0}";
+"repeats yearly on the last weekend day of {0}" = "Herhaalt jaarlijks op de laatste weekenddag van {0}";
+"repeats yearly on the last {0} of {1}" = "Herhaalt jaarlijks op de laatste {0} van {1}";
+"repeats yearly on the weekdays in week {0} of {1}" = "Herhaalt jaarlijks op de weekdagen in week {0} van {1}";
+"repeats yearly on the weekend days in week {0} of {1}" = "Herhaalt jaarlijks op het weekenddagen in week {0} van {1}";
+"repeats yearly on the {0} in week {1} of {2}" = "Herhaalt jaarlijks op {0} in week {1} van {2}";
+"repeats every {0} years on the last day of {1}" = "Herhaalt elke {0} jaar op de laatste dag van {1}";
+"repeats every {0} years on the last weekday of {1}" = "Herhaalt elke {0} jaar op de laatste weekdag van {1}";
+"repeats every {0} years on the last weekend day of {1}" = "Herhaalt elke {0} jaar op de laatste weekenddag van {1}";
+"repeats every {0} years on the last {1} of {2}" = "Herhaalt elke {0} jaar op de laatste {1} van {2}";
+"repeats every {0} years on the weekdays in week {1} of {2}" = "Herhaalt elke {0} jaar op de weekdagen in week {1} van {2}";
+"repeats every {0} years on the weekend days in week {1} of {2}" = "Herhaalt elke {0} jaar op de weekenddagen in week {1} van {2}";
+"repeats every {0} years on the {1} in week {2} of {3}" = "Herhaalt elke {0} jaar op de {1} in week {2} van {3}";
+"repeats every year on {0}" = "Herhaalt jaarlijks op {0}";
+"repeats every {0} years on {1}" = "Herhaalt elke {0} jaar op {1}";
+"month {0} (recurrence)" = "Maand {0}";
+"repeats with an unknown frequency" = "Herhaalt met een onbekende frequentie";
+", (recurrence)" = ",";
+" and (recurrence)" = " en";
+
+/* detail label for inline attachment of unknown type */
+"Inline Unknown file" = "Inline Onbekend bestand";
+
+/* detail label for inline attachment of known type */
+"Inline {0} file" = "Inline {0} bestand";
+
+/* detail label for attachment of unknown type */
+"Unknown file" = "Onbekend bestand";
+
+/* detail label for attachment of known type */
+"{0} file" = "{0} bestand";
+
+/* label for max age filter setting for all messages */
+"All messages (max age filter)" = "Alle berichten";
+
+/* label for max age filter setting for one day */
+"One day (max age filter)" = "Eén dag";
+
+/* label for max age filter setting for three days */
+"Three days (max age filter)" = "Drie dagen";
+
+/* label for max age filter setting for one week */
+"One week (max age filter)" = "Eén week";
+
+/* label for max age filter setting for two weeks */
+"Two weeks (max age filter)" = "Twee weken";
+
+/* label for max age filter setting for one month */
+"One month (max age filter)" = "Eén maand";
+
+/* label for max age filter setting for three months */
+"Three months (max age filter)" = "Drie maanden";
+
+/* label for max age filter setting for six months */
+"Six months (max age filter)" = "Zes maanden";
+
+/* Notification configuration setting label for hot */
+"Hot (notification config)" = "Hot";
+
+/* Notification configuration setting label for VIPs */
+"VIPs (notification config)" = "VIPs";
+
+/* Notification configuration setting label for inbox */
+"Inbox (notification config)" = "Inbox";
+
+/* Notification configuration setting label for none */
+"None (notification config)" = "Geen";
+
+/* Common errors */
+"The network is unavailable." = "Het netwerk is niet beschikbaar.";
+"Your device is out of space." = "Je apparaat heeft ruimte meer.";
+"Message download failed." = "Bericht downloaden is mislukt.";
+"Calendar body download failed." = "Agenda body download is mislukt.";
+"Attachment download failed." = "Bijlage downloaden is mislukt.";
+"Authorization failed." = "Autorisatie is mislukt.";
+"Your password has expired." = "Je wachtwoord is verlopen.";
+"Your password may need to be updated." = "Je wachtwoord moet mogelijk worden bijgewerkt.";
+"Service unavailable." = "Dienst onbeschikbaar.";
+

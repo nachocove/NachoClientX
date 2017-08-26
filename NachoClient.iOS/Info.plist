@@ -93,7 +93,7 @@
 	<string>en</string>
 	<key>CFBundleLocalizations</key>
 	<array>
-		<string>de</string>
+		<string>nl</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>This allows Nacho Mail to take photos to attach</string>

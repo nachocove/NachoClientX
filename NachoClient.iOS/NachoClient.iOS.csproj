@@ -462,6 +462,7 @@
     <Folder Include="Resources\Images.xcassets\Loginscreen-3.imageset\" />
     <Folder Include="Resources\Base.lproj\" />
     <Folder Include="Resources\de.lproj\" />
+    <Folder Include="Resources\nl.lproj\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -733,6 +734,11 @@
     <BundleResource Include="Resources\de.lproj\Startup.strings" />
     <BundleResource Include="Resources\de.lproj\Welcome.strings" />
     <BundleResource Include="Resources\de.lproj\LaunchScreen.strings" />
+    <BundleResource Include="Resources\nl.lproj\AccountCreation.strings" />
+    <BundleResource Include="Resources\nl.lproj\LaunchScreen.strings" />
+    <BundleResource Include="Resources\nl.lproj\Localizable.strings" />
+    <BundleResource Include="Resources\nl.lproj\Startup.strings" />
+    <BundleResource Include="Resources\nl.lproj\Welcome.strings" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">

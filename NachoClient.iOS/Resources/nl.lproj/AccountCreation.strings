@@ -1,0 +1,99 @@
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "2y6-cA-FqX"; */
+"2y6-cA-FqX.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "Username"; ObjectID = "2y6-cA-FqX"; */
+"2y6-cA-FqX.placeholder" = "Gebruikersnaam";
+
+/* Class = "UILabel"; text = "Syncing your inbox..."; ObjectID = "3FB-pb-3iF"; */
+"3FB-pb-3iF.text" = "Je inbox synchroniseren...";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "3Ix-9z-ccR"; */
+"3Ix-9z-ccR.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "3YI-1R-4CH"; */
+"3YI-1R-4CH.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "Username"; ObjectID = "3YI-1R-4CH"; */
+"3YI-1R-4CH.placeholder" = "Gebruikersnaam";
+
+/* Class = "UIButton"; accessibilityLabel = "Submit"; ObjectID = "53m-EO-fBv"; */
+"53m-EO-fBv.accessibilityLabel" = "Indienen";
+
+/* Class = "UIButton"; normalTitle = "Submit"; ObjectID = "53m-EO-fBv"; */
+"53m-EO-fBv.normalTitle" = "Indienen";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "6pa-2h-Dmh"; */
+"6pa-2h-Dmh.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "imap.example.com"; ObjectID = "6pa-2h-Dmh"; */
+"6pa-2h-Dmh.placeholder" = "imap.voorbeeld.com";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "BgF-IF-7iw"; */
+"BgF-IF-7iw.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "Server"; ObjectID = "BgF-IF-7iw"; */
+"BgF-IF-7iw.placeholder" = "Server";
+
+/* Class = "UILabel"; text = "Outgoing Mail Server"; ObjectID = "Gci-gt-wyB"; */
+"Gci-gt-wyB.text" = "Uitgaande mailserver";
+
+/* Class = "UILabel"; text = "Enter your account information"; ObjectID = "IzI-ua-2Rd"; */
+"IzI-ua-2Rd.text" = "Vul je accountgegevens in";
+
+/* Class = "UIBarButtonItem"; title = "Skip"; ObjectID = "JWR-di-rh6"; */
+"JWR-di-rh6.title" = "Overslaan";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "L5Q-F2-Cim"; */
+"L5Q-F2-Cim.text" = "Label";
+
+/* Class = "UINavigationItem"; title = "Choose Service"; ObjectID = "MGc-fL-o1H"; */
+"MGc-fL-o1H.title" = "Kies Dienst";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "ObC-Wz-O9K"; */
+"ObC-Wz-O9K.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UINavigationItem"; title = "Syncing..."; ObjectID = "PQQ-JP-jvc"; */
+"PQQ-JP-jvc.title" = "Synchroniseren...";
+
+/* Class = "UINavigationItem"; title = "Sign In with Google"; ObjectID = "TPX-gb-OeM"; */
+"TPX-gb-OeM.title" = "Log in met Google";
+
+/* Class = "UILabel"; text = "Incoming Mail Server"; ObjectID = "UyD-tn-scV"; */
+"UyD-tn-scV.text" = "Binnenkomende e-mailserver";
+
+/* Class = "UITextField"; accessibilityLabel = "Password"; ObjectID = "dCm-mU-vPx"; */
+"dCm-mU-vPx.accessibilityLabel" = "Wachtwoord";
+
+/* Class = "UITextField"; placeholder = "Password"; ObjectID = "dCm-mU-vPx"; */
+"dCm-mU-vPx.placeholder" = "Wachtwoord";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "dar-CW-rI0"; */
+"dar-CW-rI0.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "smtp.example.com"; ObjectID = "dar-CW-rI0"; */
+"dar-CW-rI0.placeholder" = "smtp.voorbeeld.com";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "nLS-18-JbP"; */
+"nLS-18-JbP.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "Domain"; ObjectID = "nLS-18-JbP"; */
+"nLS-18-JbP.placeholder" = "Domein";
+
+/* Class = "UIButton"; accessibilityLabel = "Advanced Sign In"; ObjectID = "xOP-hg-BDu"; */
+"xOP-hg-BDu.accessibilityLabel" = "Geavanceerd inloggen";
+
+/* Class = "UIButton"; normalTitle = "Advanced Sign In"; ObjectID = "xOP-hg-BDu"; */
+"xOP-hg-BDu.normalTitle" = "Geavanceerd inloggen";
+
+/* Class = "UITextField"; accessibilityLabel = "Email Address"; ObjectID = "yZe-2C-eOT"; */
+"yZe-2C-eOT.accessibilityLabel" = "E-mailadres";
+
+/* Class = "UITextField"; placeholder = "Email Address"; ObjectID = "yZe-2C-eOT"; */
+"yZe-2C-eOT.placeholder" = "E-mailadres";
+
+/* Class = "UINavigationItem"; title = "Enter Credentials"; ObjectID = "yiJ-DN-viX"; */
+"yiJ-DN-viX.title" = "Voer credenties in";
+
+/* Class = "UINavigationItem"; title = "Sign In with Salesforce"; ObjectID = "ynB-6i-27y"; */
+"ynB-6i-27y.title" = "Log in met Salesforce";
