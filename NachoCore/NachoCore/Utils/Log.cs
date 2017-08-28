@@ -29,15 +29,15 @@ namespace NachoCore.Utils
             Info = 1 << 1,
             Warn = 1 << 2,
             Error = 1 << 3
-		}
+        }
 
-		public static LogFormatter DefaultFormatter = new LogFormatter ();
+        public static LogFormatter DefaultFormatter = new LogFormatter ();
 
-		private static HashSet<string> TelemetryBlacklist = new HashSet<string> () {
-			"XML"
-		};
+        private static HashSet<string> TelemetryBlacklist = new HashSet<string> () {
+            "XML"
+        };
 
-		public static bool TelemetryDisabled;
+        public static bool TelemetryDisabled;
 
         #region Nacho Subsystems
 
@@ -96,7 +96,7 @@ namespace NachoCore.Utils
                 ConsoleLevel = levels.Console;
                 TelemetryLevel = levels.Telemetry;
             } else {
-                ConsoleLevel = Level.Debug | Level.Info | Level.Warn | Level.Error;
+                ConsoleLevel = Level.Info | Level.Warn | Level.Error;
                 TelemetryLevel = Level.Info | Level.Warn | Level.Error;
             }
             if (TelemetryBlacklist.Contains (Subsystem)) {
