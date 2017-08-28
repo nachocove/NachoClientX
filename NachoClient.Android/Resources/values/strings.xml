@@ -488,7 +488,7 @@
     <string name="meeting_response_accepted_format">{0} has accepted the meeting.</string>
     <string name="meeting_response_declined_format">{0} has declined the meeting.</string>
     <string name="meeting_response_tentative_format">{0} has tenatively accepted the meeting.</string>
-    <string name="meeting_response_unknown_format">"The status of {0} is unknown.</string>
+    <string name="meeting_response_unknown_format">The status of {0} is unknown.</string>
 
     <string name="no_recipients_fallback">(No Recipients)</string>
 

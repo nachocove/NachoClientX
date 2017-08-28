@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <!-- 
+    IMPORTANT: REPLACEMENT STRINGS
+    - These strings do not use the standard Android printf-style replacement syntax
+    - The syntax we use is specific to C# string.Format (see https://msdn.microsoft.com/en-us/library/system.string.format(v=vs.110).aspx)
+    - {0} denotes the first replacement, {1} the second, and so on...
+    - So {0} in this file is bascially what %1$s is for the usual Android printf style,
+      and {1} is basically %2$s, and so on...
+    - Types aren't typically specified, so {n} may be a string or a number
+-->
+<resources>
+    <string name="app_name">Nacho Mail</string>
+    <string name="app_name_dev">Nacho Dev</string>
+    <string name="app_name_beta">Nacho Beta</string>
+    <string name="app_name_alpha">Nacho Alpha</string>
+    <!-- Startup -->
+    <string name="startup_welcome">Welkom bij</string>
+    <string name="startup_incompatible_version">Incompatibele versie</string>
+    <string name="startup_incompatible_message">Het uitvoeren van deze oudere versie resulteert in een incompatibele downgrade van de eerder geïnstalleerde versie. Installeer alstublieft een nieuwere versie van de app.</string>
+    <string name="startup_loading_compose">Nacho Mail laden</string>
+    <!-- Welcome -->
+    <string name="welcome_get_started">Begin door je e-mailprovider te kiezen</string>
+    <!-- placeholder 0 = User's company name; "Start by setting up your Toyota account"  -->
+    <string name="welcome_mdm_format">Begin door je {0} account op te zetten.</string>
+    <string name="welcome_mdm_generic">Begin door je bedrijfsaccount op te zetten.</string>
+    <string name="welcome_continue">Welkom terug! We moeten doorgaan met het opzetten van je account.</string>
+    <string name="welcome_continue_action">Doorgaan</string>
+    <!-- Account Creation Choose Provider -->
+    <string name="choose_provider_title">Kies provider</string>
+    <!-- Account Creation Exchange Enable -->
+    <string name="exchange_enable_message">Neem contact op met Nacho Cove om te informeren over ondersteuning voor Enterprise Exchange/ActiveSync accounts</string>
+    <string name="exchange_enable_enter_code_message">Voer de toegangscode in om Exchange-accounts in te schakelen</string>
+    <string name="exchange_enable_request_code">Vraag een Code aan</string>
+    <string name="exchange_enable_enter_code">Heb je een code?</string>
+    <string name="exchange_enable_submit">Indienen</string>
+    <string name="exchange_enable_code">Code</string>
+    <string name="exchange_enable_invalid_code">Sorry, de ingevoerde code is ongeldig. Controleer alstublieft de code die je hebt ontvangen en probeer het opnieuw.</string>
+    <string name="exchange_enable_invalid_code_ack">OKE</string>
+    <string name="exchange_enable_send_request">Stuur een verzoek met behulp van</string>
+    <string name="exchange_enable_request_issue">Stuur een email naar info@nachocove.com</string>
+    <string name="exchange_enable_request_issue_ack">OKE</string>
+    <!-- Credentials Fragment -->
+    <string name="credentials_submit">Indienen</string>
+    <!-- placeholder 0 = Account type; "Please provide your Exchange information" -->
+    <string name="credentials_prompt">Geef alstublieft je {0} informatie op</string>
+    <string name="credentials_email_hint">E-mailadres</string>
+    <string name="credentials_password_hint">Wachtwoord</string>
+    <string name="credentials_support">Klantenondersteuning</string>
+    <string name="credentials_title">Voer credenties in</string>
+    <string name="credentials_advanced">Geavanceerd inloggen</string>
+    <string name="credentials_hide_advanced">Verberg Geavanceerd Inloggen</string>
+    <string name="credentials_error_email_missing_at">Je e-mailadres moet een @ bevatten. Bijvoorbeeld, gebruikersnaam@company.com</string>
+    <string name="credentials_error_email_invalid">Je e-mailadres is niet geldig.\nBijvoorbeeld, gebruikersnaam@company.com</string>
+    <!-- placeholder 0 = Account type; "Please use your Yahoo email address instead" -->
+    <string name="credentials_error_service_unsupported_format">Gebruik alstublieft je {0} e-mailadres.</string>
+    <string name="credentials_error_email_service_mismatch_format">Het e-mailadres komt niet overeen met de dienst. Gebruik alstublieft je {0} e-mailadres.</string>
+    <string name="credentials_error_account_exists">Er bestaat al een account met dat e-mailadres. Dubbele accounts worden niet ondersteund.</string>
+    <string name="credentials_error_network_error">Geen netwerkverbinding. Controleer of je toegang hebt tot het internet.</string>
+    <string name="credentials_error_max_devices">Je gebruikt al het maximum aantal apparaten voor dit account. Neem contact op met je systeembeheerder.</string>
+    <string name="credentials_error_server_unavailable">De server is momenteel niet beschikbaar. Probeer het later nogmaals.</string>
+    <string name="credentials_error_device_offline">We kunnen je gegevens niet verifiëren omdat je apparaat offline is. Probeer het opnieuw wanneer je apparaat online is</string>
+    <!-- placeholder 0 = Error message -->
+    <string name="credentials_error_cert_issue_format">We konden geen verbinding maken door een probleem met een servercertificaat, die alleen kan worden hersteld door de configuratie van de server te wijzigen. {0}</string>
+    <string name="credentials_error_general">We kunnen je gegevens niet verifiëren. Bevestig dat het correct is en probeer het opnieuw.</string>
+    <string name="credentials_error_see_advanced">We kunnen je gegevens niet verifiëren. Bevestig of geef geavanceerde configuratiegegevens op.</string>
+    <string name="credentials_error_rejected">Ongeldige gebruikersnaam of wachtwoord. Pas alsjeblieft aan en probeer het opnieuw.</string>
+    <string name="credentials_account_not_created">Account niet gemaakt omdat het certificaat niet geaccepteerd is</string>
+    <!-- Advanced Credentials -->
+    <string name="advanced_server">Server</string>
+    <string name="advanced_domain">Domein</string>
+    <string name="advanced_username">Gebruikersnaam</string>
+    <string name="advanced_incoming_mail_server">Binnenkomende e-mailserver</string>
+    <string name="advanced_outgoing_mail_server">Uitgaande mailserver</string>
+    <string name="advanced_imap_server_example">imap.voorbeeld.com</string>
+    <string name="advanced_smtp_server_example">smtp.voorbeeld.com</string>
+    <string name="advanced_port">Port</string>
+    <string name="advanced_host">Host</string>
+    <!-- Cert Ask Fragment -->
+    <string name="cert_ask_demo_certificate">Onderwerp: CN=outlook.com</string>
+    <string name="cert_ask_cancel">Annuleren</string>
+    <!-- placeholder 0 = Certificate common name, placeholder 1 = Certificate organization -->
+    <string name="cert_ask_prompt">Wil je {0} van {1} toestaan ​​om informatie over je account te geven?</string>
+    <string name="cert_ask_warning">Je mag alleen bronnen die je kent ​​en vertrouwd toestaan om je account te configureren.</string>
+    <string name="cert_ask_allow">Toestaan</string>
+    <string name="cert_ask_title">Veiligheidswaarschuwing</string>
+    <string name="cert_ask_error">Kan geen certificaat vinden dat onderzocht moet worden.</string>
+    <!-- Waiting Fragment -->
+    <string name="waiting_title_syncing">Synchroniseren...</string>
+    <string name="waiting_title_created">Account aangemaakt</string>
+    <string name="waiting_title_error">Kan geen account aanmaken</string>
+    <string name="waiting_ready">Je account is klaar!</string>
+    <string name="waiting_contunue_unsynced">Sorry, we kunnen je inbox niet volledig synchroniseren. Zie Instellingen voor meer informatie</string>
+    <string name="waiting_contunue_without_network">Synchronisatie wordt voltooid wanneer netwerkverbindingen worden hersteld</string>
+    <string name="waiting_error_max_devices">Je gebruikt al het maximum aantal apparaten voor dit account. Neem contact op met je systeembeheerder.</string>
+    <string name="waiting_syncing">Je inbox synchroniseren...</string>
+    <!-- Main Activity -->
+    <string name="main_drawer_open">Open</string>
+    <string name="main_drawer_close">Dichtbij</string>
+    <string name="tab_home">Thuis</string>
+    <string name="tab_inbox">Inbox</string>
+    <string name="tab_all_mail">Alle</string>
+    <string name="tab_calendar">Gebeurtenissen</string>
+    <string name="tab_contacts">Mensen</string>
+    <string name="main_action_settings">Instellingen</string>
+    <string name="main_action_search">Zoeken</string>
+    <!-- placeholder 0 = count of new messages, placeholder 1 = account name; "3 new in Home" -->
+    <string name="main_unread_format_single">{0} nieuw in {1}</string>
+    <!-- placeholder 0 = count of new messages, placeholder 1 = count of accounts; "5 new in 2 accounts" -->
+    <string name="main_unread_format_multiple">{0} nieuw in {1} accounts</string>
+    <string name="main_item_settings_alert">Aandacht vereist</string>
+    <!-- Account Switcher -->
+    <string name="switcher_action_add_account">Account toevoegen</string>
+    <!-- Message List -->
+    <string name="messages_sync_time_latest">Actueel!</string>
+    <string name="messages_sync_time_format">Laatst bijgewerkt {0}</string>
+    <string name="message_item_action_hot">Hot</string>
+    <string name="message_item_action_unhot">Niet Hot</string>
+    <string name="message_item_action_reply">Beantwoorden</string>
+    <string name="message_item_action_forward">Vooruit</string>
+    <string name="message_item_action_delete">Verwijderen</string>
+    <string name="message_item_action_archive">Archiveren</string>
+    <string name="message_item_action_move">Verplaatsen</string>
+    <string name="message_item_action_event">gebeurtenis creëren</string>
+    <string name="message_item_action_read">Markeer als gelezen</string>
+    <string name="message_item_action_unread">Markeren als ongelezen</string>
+    <string name="messages_filter_all">Alle</string>
+    <string name="messages_filter_hot">Hot</string>
+    <string name="messages_filter_unread">Ongelezen</string>
+    <string name="messages_filter_focus">Focus</string>
+    <!-- Message View -->
+    <string name="message_action_hot">Hot</string>
+    <string name="message_action_unhot">Niet Hot</string>
+    <string name="message_action_forward">Vooruit</string>
+    <string name="message_action_event">gebeurtenis creëren</string>
+    <string name="message_action_move">Verplaatsen</string>
+    <string name="message_action_archive">Archiveren</string>
+    <string name="message_action_delete">Verwijderen</string>
+    <!-- Calendar Invite View -->
+    <string name="calendar_invite_canceled">Deze gebeurtenis is geannuleerd</string>
+    <string name="calendar_invite_accept">Accepteer en voeg toe aan agenda</string>
+    <string name="calendar_invite_tentative">Voorzichtig accepteren</string>
+    <string name="calendar_invite_decline">Afwijzen</string>
+    <string name="calendar_invite_remove">Verwijder vanaf agenda</string>
+    <!-- Attachments View -->
+    <!-- placeholder 0 = count of attachments; "Show 5 attachments" -->
+    <string name="attachments_header_show_format">Toon {0} bijlagen</string>
+    <string name="attachments_header_hide">Verberg bijlagen</string>
+    <!-- Message Header Detail View -->
+    <string name="message_header_detail_title">Bericht Details</string>
+    <string name="message_header_detail_from">Van</string>
+    <string name="message_header_detail_from_replyto">Van / Reageer aan</string>
+    <string name="message_header_detail_to">Tot</string>
+    <string name="message_header_detail_cc">CC</string>
+    <string name="message_header_detail_bcc">BCC</string>
+    <!-- Message Compose -->
+    <string name="message_compose_close_save">Concept opslaan</string>
+    <string name="message_compose_close_discard">Ontwerp ontwerp</string>
+    <string name="message_compose_action_send">Versturen</string>
+    <string name="message_compose_action_attach">Voeg bijlage toe</string>
+    <string name="message_compose_empty_subject_title">Leeg onderwerp</string>
+    <string name="message_compose_empty_subject_message">Dit bericht heeft geen onderwerp. Hoe wil je doorgaan?</string>
+    <string name="message_compose_empty_subject_edit">Voeg een onderwerp toe</string>
+    <string name="message_compose_empty_subject_send">Stuur toch</string>
+    <!-- placeholder 0 = user-friendly size of message; "This message is 5MB..." -->
+    <string name="message_compose_resize_title_format">Dit bericht is {0}. Je kunt het kleiner maken door de grootte van de bijgevoegde afbeeldingen te verminderen.</string>
+    <!-- placeholder 0 = user-friendly size of message; "Small Images (300KB)" -->
+    <string name="message_compose_resize_choice_small_format">Kleine afbeeldingen ({0})</string>
+    <string name="message_compose_resize_choice_medium_format">Middelgrote afbeeldingen ({0})</string>
+    <string name="message_compose_resize_choice_large_format">Grote afbeeldingen ({0})</string>
+    <string name="message_compose_resize_choice_actual_format">Werkelijke grootte ({0})</string>
+    <string name="message_compose_oversize_title">Groot bericht</string>
+    <string name="message_compose_oversize_message_format">Dit bericht is {0}</string>
+    <string name="message_compose_oversize_message_send">Stuur toch</string>
+    <string name="message_compose_field_to">Tot:</string>
+    <string name="message_compose_field_cc">Cc:</string>
+    <string name="message_compose_field_bcc">Bcc:</string>
+    <string name="message_compose_field_from">Van:</string>
+    <string name="message_compose_field_from_collapsed">Cc / Bcc / Van:</string>
+    <string name="message_compose_field_ccbcc_collapsed">CC / BCC:</string>
+    <string name="message_compose_field_subject">Onderwerpen:</string>
+    <string name="message_compose_field_attachments">Bijlagen:</string>
+    <!-- Attachment Picker -->
+    <string name="attachment_chooser_take_photo">Neem foto</string>
+    <string name="attachment_chooser_nacho_files">Blader door bijlagen</string>
+    <string name="attachment_chooser_camera_permission_request_title">Camera- en opslagtoestemming</string>
+    <string name="attachment_chooser_camera_permission_request_message">Nacho Mail heeft toegang tot je camera nodig en moet bestanden op kunnen slaan om een ​​foto te maken. Je wordt gevraagd deze toestemmingen toe te staan.</string>
+    <string name="attachment_chooser_camera_permission_request_ack">Doorgaan</string>
+    <string name="attachment_chooser_camera_permission_denied_title">Geen toestemming</string>
+    <string name="attachment_chooser_camera_permission_denied_message">Activeer Camera &amp; Opslag-toestemming in je systeeminstellingen voor Nacho Mail</string>
+    <string name="attachment_chooser_camera_permission_denied_settings">Bekijk instellingen</string>
+    <!-- File Picker -->
+    <string name="file_picker_title">Bestandskiezer</string>
+    <string name="file_picker_tab_name">Bijnaam</string>
+    <string name="file_picker_tab_date">Datum</string>
+    <string name="file_picker_tab_contact">Contact</string>
+    <string name="file_picker_noname">(geen naam)</string>
+    <string name="file_picker_note">Notitie</string>
+    <!-- Image Attachment View -->
+    <string name="image_view_action_share">Delen</string>
+    <!-- All Mail -->
+    <string name="folders_recent">Recente mappen</string>
+    <!-- Folder picker -->
+    <string name="folder_picker_title">Verplaats bericht</string>
+    <!-- Calendar -->
+    <string name="calendar_action_today">Vandaag</string>
+    <string name="calendar_event_item_all_day">De hele dag</string>
+    <string name="calendar_event_item_action_forward">Vooruit</string>
+    <string name="calendar_event_item_action_late">Ik kom te laat</string>
+    <string name="calendar_permission_request_title">Apparaat Agenda Toestemming</string>
+    <string name="calendar_permission_request_message">Met lees en schrijf toegang tot de agenda van je apparaat kan Nacho Mail je agenda items in de agendaweergave zetten. Je zal nog een kans krijgen om deze toestemmingen te geven.</string>
+    <string name="calendar_permission_request_cancel">Annuleren</string>
+    <string name="calendar_permission_request_ack">Doorgaan</string>
+    <!-- Calendar Event View -->
+    <string name="event_action_forward">Vooruit</string>
+    <string name="event_action_delete">Verwijderen</string>
+    <string name="event_action_cancel">Gebeurtenis Annuleren</string>
+    <string name="event_delete_confirmation_message">Deze gebeurtenis uit je agenda verwijderen?</string>
+    <string name="event_delete_confirmation_accept">Ja, verwijder gebeurtenis</string>
+    <string name="event_cancel_confirmation_message">Annuleer deze gebeurtenis en stuur een bericht?</string>
+    <string name="event_cancel_confirmation_accept">Ja, annuleren gebeurtenis</string>
+    <string name="event_header_attachments">Toebehoren</string>
+    <string name="event_header_attendees">Deelnemers</string>
+    <string name="event_header_attendees_organizer">Deelnemers (jij bent de organisator)</string>
+    <string name="event_remider_set">Stel een herinnering in</string>
+    <string name="event_reminder">Herinnering</string>
+    <string name="event_note_set">Voeg een notitie toe</string>
+    <string name="event_response_confirmation_message">Dit is een terugkerende gebeurtenis</string>
+    <!-- placeholder 0 = reponse; "Accept the entire series" -->
+    <string name="event_response_confirmation_all_format">{0} de hele serie</string>
+    <string name="event_response_confirmation_occurrence_format">{0} alleen deze gebeurtenis</string>
+    <string name="event_response_confirmation_accept">Accepteren</string>
+    <string name="event_response_confirmation_decline">Afwijzen</string>
+    <string name="event_response_confirmation_tentative">Zeg misschien aan</string>
+    <!-- Calendar Event Edit View -->
+    <string name="event_edit_action_save">Opslaan</string>
+    <string name="event_edit_action_delete">Verwijderen</string>
+    <string name="event_edit_delete_confirmation_message">Als je dit event verwijdert wordt deze permanent verwijderd uit je agenda</string>
+    <string name="event_edit_delete_confirmation_accept">Ja, verwijder gebeurtenis</string>
+    <string name="event_edit_close_save">Wijzigingen opslaan</string>
+    <string name="event_edit_close_discard">Veranderingen ongedaan maken</string>
+    <string name="event_edit_section_info">Onderwerp, tijd en plaats</string>
+    <string name="event_edit_section_description">Details</string>
+    <string name="event_edit_section_reminder">Herinnering</string>
+    <string name="event_edit_section_attachments">Toebehoren</string>
+    <string name="event_edit_section_attendees">Deelnemers</string>
+    <string name="event_edit_subject">Onderwerp</string>
+    <string name="event_edit_all_day">De hele dag</string>
+    <string name="event_edit_start">Begin</string>
+    <string name="event_edit_end">Einde</string>
+    <string name="event_edit_location">Plaats</string>
+    <string name="event_edit_calendar">Agenda</string>
+    <string name="event_edit_description">Gedetailleerde beschrijving</string>
+    <string name="event_edit_add_attachment">Voeg bijlage toe</string>
+    <string name="event_edit_add_attendees">Deelnemers toevoegen</string>
+    <!-- Add Calendar Event Attendee Dialog -->
+    <string name="add_attendee_required">Vereist:</string>
+    <string name="add_attendee_optional">Optioneel:</string>
+    <string name="add_attendee_done">Klaar</string>
+    <string name="add_attendee_cancel">Annuleren</string>
+    <!-- Contacts List -->
+    <string name="contact_item_action_call">Bellen</string>
+    <string name="contact_item_action_email">E-mailadres</string>
+    <string name="contact_choose_account">Kies het account voor dit nieuwe contactpersoon</string>
+    <string name="contacts_permission_request_title">Apparaatcontacttoestemming</string>
+    <string name="contacts_permission_request_message">Met lees en schrijf toegang tot je toestelcontacten kan Nacho Mail je toestelcontacten in de contactweergave en als opties bevatten bij het adresseren van e-mails of gebeurtenissen. Je zal nog een kans krijgen om deze toestemmingen te geven.</string>
+    <string name="contacts_permission_request_cancel">Annuleren</string>
+    <string name="contacts_permission_request_ack">Doorgaan</string>
+    <!-- Contact View -->
+    <string name="contact_action_delete">Verwijderen</string>
+    <string name="contact_delete_confirmation_message">Als je dit contact verwijdert wordt deze permanent verwijderd van je apparaat</string>
+    <string name="contact_delete_confirmation_accept">Ja, verwijder contact</string>
+    <string name="contact_more_messages">Bekijk oudere berichten</string>
+    <string name="contact_email_button">E-mailadres</string>
+    <string name="contact_call_button">Bellen</string>
+    <string name="contact_interactions">Interacties</string>
+    <string name="contact_fields">Contactdetails</string>
+    <string name="contact_field_email_label">E-mailadres</string>
+    <string name="contact_field_phone_label">Telefoon</string>
+    <!-- Contact Edit -->
+    <string name="contact_edit_action_save">Opslaan</string>
+    <string name="contact_edit_action_delete">Verwijderen</string>
+    <string name="contact_edit_close_save">Wijzigingen opslaan</string>
+    <string name="contact_edit_close_discard">Veranderingen ongedaan maken</string>
+    <string name="contact_edit_delete_confirmation_message">Als je dit contact verwijdert wordt deze permanent verwijderd van je apparaat</string>
+    <string name="contact_edit_delete_confirmation_accept">Ja, verwijder contact</string>
+    <string name="contact_edit_add_phone">Voeg telefoon toe</string>
+    <string name="contact_edit_add_email">Voeg e-mailadres toe</string>
+    <string name="contact_edit_add_date">Voeg datum toe</string>
+    <string name="contact_edit_add_address">Voeg adres toe</string>
+    <string name="contact_edit_add_im">Voeg IM-adres toe</string>
+    <string name="contact_edit_add_relationship">Voeg relatie toe</string>
+    <string name="contact_edit_add_other">Voeg andere toe</string>
+    <string name="contact_edit_hint_first_name">Eerste</string>
+    <string name="contact_edit_hint_middle_name">Midden</string>
+    <string name="contact_edit_hint_last_name">Laatste</string>
+    <string name="contact_edit_hint_suffix">Achtervoegsel</string>
+    <string name="contact_edit_hint_company">Bedrijf</string>
+    <string name="contact_edit_hint_street">Straat</string>
+    <string name="contact_edit_hint_city">Stad</string>
+    <string name="contact_edit_hint_state">Staat</string>
+    <string name="contact_edit_hint_postcode">Postcode</string>
+    <string name="contact_edit_hint_country">Land</string>
+    <string name="contact_edit_hint_notes">Notities</string>
+    <string name="contact_edit_hint_phone">Telefoon</string>
+    <string name="contact_edit_hint_email">E-mailadres</string>
+    <string name="contact_edit_hint_relationship">Naam</string>
+    <string name="contact_edit_hint_im">IM-adres</string>
+    <string name="contact_edit_hint_other">Waarde</string>
+    <!-- General Settings -->
+    <string name="settings_label">Instellingen</string>
+    <string name="settings_action_add_account">Account toevoegen</string>
+    <string name="settings_accounts">Accounts</string>
+    <string name="settings_unread_count">Aantal Ongelezen</string>
+    <string name="settings_unread_count_all">Alle berichten</string>
+    <string name="settings_unread_count_recent">Recente berichten</string>
+    <string name="settings_unread_count_today">Berichten van vandaag</string>
+    <string name="settings_about">Over Nacho Mail</string>
+    <!-- Account Settings -->
+    <string name="account_settings_label">Accountinstellingen</string>
+    <string name="account_action_delete_account">Account verwijderen</string>
+    <string name="account_name">Bijnaam</string>
+    <string name="account_name_hint">Bijvoorbeeld Thuis, Werk</string>
+    <string name="account_issue_cred">Wachtwoord bijwerken</string>
+    <string name="account_issue_cert">Keur certificaat goed</string>
+    <string name="account_issue_server">Configuratie probleem</string>
+    <!-- placeholder 0 = date/time; "Password expires 20 Aug 2017" -->
+    <string name="account_password_expires">Wachtwoord verloopt {0}</string>
+    <string name="account_update_password">Wachtwoord bijwerken</string>
+    <string name="account_advanced">Geavanceerde instellingen</string>
+    <string name="account_signature">Handtekening</string>
+    <string name="account_signature_hint">Handtekening</string>
+    <string name="account_sync">Dagen om te synchroniseren</string>
+    <string name="account_notifications">Meldingen</string>
+    <string name="account_notifications_done">Klaar</string>
+    <string name="account_fast_notifications">Snelle melding</string>
+    <string name="account_default_email">Standaard e-mailaccount</string>
+    <string name="account_default_calendar">Standaard agenda-account</string>
+    <!-- About -->
+    <string name="about_label">Over Nacho Mail</string>
+    <string name="about_release_notes">Geef Notities vrij</string>
+    <string name="about_privacy_policy">Privacybeleid</string>
+    <string name="about_license_agreement">Licentieovereenkomst</string>
+    <string name="about_contributions">Open-Source Bijdragen</string>
+    <string name="about_intro">Nacho Mail is van mening dat productiviteitssoftware meer is dan alleen een geweldige e-mail app met contacten en agenda mogelijkheden.</string>
+    <string name="about_detail">Naast een geweldige e-mailclient, hoort je PIM-software je actief te helpen om je doelen te bereiken, je tijd te beheren en rommel te verminderen.</string>
+    <string name="about_version_format">Nacho Mail versie {0}</string>
+    <!-- Simple Text Dialog -->
+    <string name="text_dialog_save">Opslaan</string>
+    <string name="text_dialog_cancel">Annuleren</string>
+    <!-- Password Update Dialog -->
+    <string name="password_update_title">Wachtwoord bijwerken</string>
+    <string name="password_update_save">Opslaan</string>
+    <string name="password_update_cancel">Annuleren</string>
+    <string name="password_update_username_hint">Gebruikersnaam</string>
+    <string name="password_update_password_hint">Wachtwoord</string>
+    <!-- Password Notice Dialog -->
+    <string name="password_notice_title">Wachtwoord verloopt</string>
+    <!-- placeholder 0 = date/time; "Your password expires 20 Aug 2017" -->
+    <string name="password_notice_message_format">Je wachtwoord verloopt {0}</string>
+    <string name="password_notice_close">Dichtbij</string>
+    <string name="password_notice_clear">Verwijder waarschuwing</string>
+    <string name="password_notice_rectify">Stel nieuw wachtwoord in</string>
+    <!-- Pretty Formatting -->
+    <string name="pretty_compact_minutes_format">{0}m</string>
+    <string name="pretty_compact_hours_format">{0}u</string>
+    <string name="pretty_compact_hours_minutes_format">{0}u {1}m</string>
+    <string name="pretty_compact_day_plus">1d+</string>
+    <string name="reminder_none">Geen</string>
+    <string name="reminder_at_event">Op het moment van het gebeurtenis</string>
+    <string name="reminder_one_minute">1 minuut van te voren</string>
+    <string name="reminder_one_hour">1 uur van te voren</string>
+    <string name="reminder_one_day">1 dag van te voren</string>
+    <string name="reminder_one_week">1 week van te voren</string>
+    <string name="reminder_weeks_format">{0} weken van te voren</string>
+    <string name="reminder_days_format">{0} dagen van te voren</string>
+    <string name="reminder_hours_format">{0} uur van te voren</string>
+    <string name="reminder_minutes_format">{0} minuten van te voren</string>
+    <!-- Date/Time Formatting, see https://developer.android.com/reference/java/text/SimpleDateFormat.html -->
+    <string name="datetime_month_with_year_pattern">MMMM yyyy</string>
+    <string name="datetime_short_numeric_date_pattern">M/d</string>
+    <string name="datetime_short_numeric_date_with_year_pattern">d/M/yyyy</string>
+    <string name="datetime_short_numeric_date_with_short_year_pattern">d/M/yy</string>
+    <string name="datetime_date_pattern">d MMMM</string>
+    <string name="datetime_abbr_date_pattern">d MMM</string>
+    <string name="datetime_date_with_year_pattern">d MMMM yyyy</string>
+    <string name="datetime_abbr_date_with_year_pattern">d MMM yyyy</string>
+    <string name="datetime_abbr_date_with_weekday_pattern">EEE d MMM</string>
+    <string name="datetime_abbr_date_with_weekday_and_year_pattern">EEE d MMM yyyy</string>
+    <string name="datetime_date_with_weekday_pattern">EEEE d MMMM</string>
+    <string name="datetime_date_with_weekday_and_year_pattern">EEEE d MMMM yyyy</string>
+    <string name="datetime_minute_precision_time_24_pattern">H:mm</string>
+    <string name="datetime_minute_precision_time_pattern">h:mm a</string>
+    <string name="datetime_hour_precision_time_24_pattern">H:mm</string>
+    <string name="datetime_hour_precision_time_pattern">h a</string>
+    <string name="datetime_minute_precision_time_noampm_pattern">h:mm</string>
+    <string name="datetime_hour_precision_time_noampm_pattern">h</string>
+    <!-- placeholder 0 = localized time; "Today - 1:53pm" -->
+    <string name="friendly_datetime_today_format">Vandaag - {0}</string>
+    <string name="friendly_datetime_yesterday_format">Gisteren - {0}</string>
+    <!-- placeholder 0 = localized day, 1 = localized time; "Friday - 1:53pm" -->
+    <string name="friendly_datetime_other_format">{0} - {1}</string>
+    <string name="decreasing_precision_time_yesterday">Gisteren</string>
+    <string name="future_date_today">Vandaag</string>
+    <string name="future_date_tomorrow">Morgen</string>
+    <string name="future_date_yesterday">Gisteren</string>
+    <!-- placeholder 0 = localized time; "Yesterday 1:53pm" -->
+    <string name="variable_date_yesterday_format">Gisteren {0}</string>
+    <!-- placeholder 0 = localized day, 1 = localized time; "Friday 1:53pm" -->
+    <string name="variable_date_other_format">{0} {1}</string>
+    <!-- Events -->
+    <string name="event_time_now">Nu</string>
+    <string name="event_time_one_minute">In 1 minuut</string>
+    <string name="event_time_minutes_format">In {0} minuten</string>
+    <!-- placeholder 0 = localized time; "at 1:53pm" -->
+    <string name="event_time_at_format">Op {0}</string>
+    <!-- placeholder 0 = localized day, 1 = localized time; "Friday 1:53pm" -->
+    <string name="event_time_date_format">{0} {1}</string>
+    <string name="event_day_today">Vandaag</string>
+    <string name="event_day_tomorrow">Morgen</string>
+    <!-- placeholder 0 = localized date, "through 8/20" -->
+    <string name="event_detail_time_through_format">Door {0}</string>
+    <!-- placeholder 0 & 1 = localized time, "1:00pm to 2:00pm" -->
+    <string name="event_detail_time_to_format">{0} tot {1}</string>
+    <!-- placeholder 0 & 1 = localized date, "8/20 through 8/24" -->
+    <string name="meeting_request_time_all_day_format">{0} tot en met {1}</string>
+    <!-- placeholder 0 = localized date, 1 = shortened localized time & 2 = localized time, "8/20 from 1 to 2pm" -->
+    <string name="meeting_request_time_same_half_day_format">{0} van {1} tot {2}</string>
+    <!-- placeholder 0 = localized date, 1 & 2 = localized time, "8/20, 10am to 2pm" -->
+    <string name="meeting_request_time_same_day_format">{0}, {1} tot {2}</string>
+    <!-- placeholder 0 = localized date, 1 = localized time, 2 = localized date/time, "8/20 at 10am to 8/21 2pm" -->
+    <string name="meeting_request_time_multi_day_format">{0} om {1} tot {2}</string>
+    <string name="event_notification_default_title">Gebeurtenis</string>
+    <!-- placeholder 0 = localzied date; "8/20 all day" -->
+    <string name="event_notification_all_day_time_format">{0} de hele dag</string>
+    <string name="event_notification_time_format">{0} - {1}</string>
+    <string name="attendee_status_optional">Facultatief</string>
+    <string name="attendee_status_required">Nodig</string>
+    <string name="attendee_status_resource">Hulpbron</string>
+    <string name="attendee_status_accepted">Aanvaard</string>
+    <string name="attendee_status_declined">Afgewezen</string>
+    <string name="attendee_status_tentative">Voorlopig</string>
+    <string name="attendee_status_no_response">Geen antwoord</string>
+    <!-- placeholder 0 = invitee name or email; "John has accepted the meeting" -->
+    <string name="meeting_response_accepted_format">{0} heeft de vergadering geaccepteerd.</string>
+    <string name="meeting_response_declined_format">{0} heeft de vergadering geweigerd.</string>
+    <string name="meeting_response_tentative_format">{0} heeft de vergadering onder voorbehoud geaccepteerd.</string>
+    <string name="meeting_response_unknown_format">De status van {0} is onbekend.</string>
+    <string name="no_recipients_fallback">(Geen ontvangers)</string>
+    <!-- Recurrence -->
+    <string name="recurrence_does_not_repeat">Herhaalt niet</string>
+    <string name="recurrence_daily">Herhaalt dagelijks</string>
+    <string name="recurrence_every_x_days_format">Herhaalt elke {0} dagen</string>
+    <string name="recurrence_weekdays">Herhaalt op weekdagen</string>
+    <string name="recurrence_weekends">Herhaalt in het weekend</string>
+    <string name="recurrence_weekly_format">Herhaalt wekelijks op {0}</string>
+    <string name="recurrence_every_x_weekdays_format">Herhaalt elke {0} week op weekdagen</string>
+    <string name="recurrence_every_x_weeks_format">Herhaalt elke {0} weken op {1}</string>
+    <string name="recurrence_monthly_format">Herhaalt maandelijks op dag {0}</string>
+    <string name="recurrence_every_x_months_format">Herhaalt elke {0} maanden op dag {1}</string>
+    <string name="recurrence_last_day_of_month">Herhaalt maandelijks op de laatste dag van de maand</string>
+    <string name="recurrence_last_weekday_of_month">Herhaalt maandelijks op de laatste weekdag van de maand</string>
+    <string name="recurrence_last_weekend_day_of_month">Herhaalt maandelijks op het laatste weekend van de maand</string>
+    <string name="recurrence_weekdays_in_week_of_month_format">Herhaalt maandag op weekdagen tijdens week {0} van de maand</string>
+    <string name="recurrence_weekend_days_in_week_of_month_format">Herhaalt maandelijks op weekenddagen tijdens week {0} van de maand</string>
+    <string name="recurrence_named_day_in_week_of_month_format">Herhaalt maandelijks op {0} in week {1} van de maand</string>
+    <string name="recurrence_last_named_day_of_month_format">Herhaalt maandelijks op de laatste {0} van de maand</string>
+    <string name="recurrence_last_day_of_every_x_months_format">Herhaalt elke {0} maanden op de laatste dag van de maand</string>
+    <string name="recurrence_last_weekday_of_every_x_months_format">Herhaalt elke {0} maanden op de laatste weekdag van de maand</string>
+    <string name="recurrence_last_weekend_day_of_every_x_months_format">Herhaalt elke {0} maanden op het laatste weekend van de maand</string>
+    <string name="recurrence_last_named_day_of_every_x_months_format">Herhaalt elke {0} maanden op de laatste {1} van de maand</string>
+    <string name="recurrence_weekdays_in_week_of_every_x_month_format">Herhaalt elke {0} maanden op de weekdagen in week {1} van de maand</string>
+    <string name="recurrence_weekend_days_in_week_of_every_x_month_format">Herhaalt elke {0} maanden op de weekenddagen in week {1} van de maand</string>
+    <string name="recurrence_named_day_in_week_of_every_x_month_format">Herhaalt elke {0} maanden op {1} in week {2} van de maand</string>
+    <string name="recurrence_last_day_of_named_month">Herhaalt jaarlijks op de laatste dag van {0}</string>
+    <string name="recurrence_last_weekday_of_named_month_format">Herhaalt jaarlijks op de laatste weekdag van {0}</string>
+    <string name="recurrence_last_weekend_day_of_named_month_format">Herhaalt jaarlijks op de laatste weekenddag van {0}</string>
+    <string name="recurrence_last_named_day_of_named_month_format">Herhaalt jaarlijks op de laatste {0} van {1}</string>
+    <string name="recurrence_weekdays_in_week_of_named_month_format">Herhaalt jaarlijks op de weekdagen in week {0} van {1}</string>
+    <string name="recurrence_weekend_days_in_week_of_named_month_format">Herhaalt jaarlijks op het weekenddagen in week {0} van {1}</string>
+    <string name="recurrence_named_day_in_week_of_named_month_format">Herhaalt jaarlijks op {0} in week {1} van {2}</string>
+    <string name="recurrence_last_day_of_named_month_every_x_years">Herhaalt elke {0} jaar op de laatste dag van {1}</string>
+    <string name="recurrence_last_weekday_of_named_month_every_x_years_format">Herhaalt elke {0} jaar op de laatste weekdag van {1}</string>
+    <string name="recurrence_last_weekend_day_of_named_month_every_x_years_format">Herhaalt elke {0} jaar op de laatste weekenddag van {1}</string>
+    <string name="recurrence_last_named_day_of_named_month_every_x_years_format">Herhaalt elke {0} jaar op de laatste {1} van {2}</string>
+    <string name="recurrence_weekdays_in_week_of_named_month_every_x_years_format">Herhaalt elke {0} jaar op de weekdagen in week {1} van {2}</string>
+    <string name="recurrence_weekend_days_in_week_of_named_month_every_x_years_format">Herhaalt elke {0} jaar op de weekenddagen in week {1} van {2}</string>
+    <string name="recurrence_named_day_in_week_of_named_month_every_x_years_format">Herhaalt elke {0} jaar op de {1} in week {2} van {3}</string>
+    <string name="recurrence_yearly_format">Herhaalt jaarlijks op {0}</string>
+    <string name="recurrence_every_x_years_format">Herhaalt elke {0} jaar op {1}</string>
+    <string name="recurrence_unknown_month_format">Maand {0}</string>
+    <string name="recurrence_unknown">Herhaalt met een onbekende frequentie</string>
+    <string name="recurrence_list_joiner">,</string>
+    <string name="recurrence_list_final_joiner">en</string>
+    <!-- Attachments -->
+    <string name="attachment_inline_unknown_file">Inline Onbekend bestand</string>
+    <!-- placeholder 0 = file type; "Inline PDF file" -->
+    <string name="attachment_inline_typed_file_format">Inline {0} bestand</string>
+    <string name="attachment_unknown_file">Onbekend bestand</string>
+    <!-- placeholder 0 = file type; "PDF file" -->
+    <string name="attachment_typed_file_format">{0} bestand</string>
+    <!-- Settings -->
+    <string name="max_age_filter_all_messages">Alle berichten</string>
+    <string name="max_age_filter_one_day">Eén dag</string>
+    <string name="max_age_filter_three_days">Drie dagen</string>
+    <string name="max_age_filter_one_week">Eén week</string>
+    <string name="max_age_filter_two_weeks">Twee weken</string>
+    <string name="max_age_filter_one_month">Eén maand</string>
+    <string name="max_age_filter_three_months">Drie maanden</string>
+    <string name="max_age_filter_six_months">Zes maanden</string>
+    <string name="notification_configuration_hot">Hot</string>
+    <string name="notification_configuration_vips">VIPs</string>
+    <string name="notification_configuration_inbox">Inbox</string>
+    <string name="notification_configuration_none">Geen</string>
+    <!-- Common Errors -->
+    <string name="error_network_unavailable">Het netwerk is niet beschikbaar.</string>
+    <string name="error_out_of_space">Je apparaat heeft ruimte meer.</string>
+    <string name="error_message_download_failed">Bericht downloaden is mislukt.</string>
+    <string name="error_calendar_download_failed">Agenda body download is mislukt.</string>
+    <string name="error_attachment_download_failed">Bijlage downloaden is mislukt.</string>
+    <string name="error_auth_fail">Autorisatie is mislukt.</string>
+    <string name="error_password_expired">Je wachtwoord is verlopen.</string>
+    <string name="error_password_update">Je wachtwoord moet mogelijk worden bijgewerkt.</string>
+    <string name="error_service_unavailable">Dienst onbeschikbaar.</string>
+</resources>

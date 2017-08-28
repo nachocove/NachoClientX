@@ -378,7 +378,7 @@
     <Folder Include="NachoUI.Android\Calendar\" />
     <Folder Include="NachoUI.Android\Contacts\" />
     <Folder Include="NachoUI.Android\Chat\" />
-    <Folder Include="Resources\values-de\" />
+    <Folder Include="Resources\values-nl\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -1014,7 +1014,7 @@
     <AndroidResource Include="Resources\drawable-xhdpi\IconBetaRounded.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\IconAlphaRounded.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\IconBetaRounded.png" />
-    <AndroidResource Include="Resources\values-de\strings.xml" />
+    <AndroidResource Include="Resources\values-nl\strings.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
