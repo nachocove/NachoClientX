@@ -426,6 +426,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration57.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration58.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration59.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\Indexer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

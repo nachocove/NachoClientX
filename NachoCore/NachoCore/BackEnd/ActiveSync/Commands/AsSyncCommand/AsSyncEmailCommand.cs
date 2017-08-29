@@ -102,7 +102,7 @@ namespace NachoCore.ActiveSync
                     // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
                     NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
                 }
-                NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                emailMessage.ProcessAfterReceipt ();
 
                 // If this message is a cancellation notice, mark the event as cancelled.  (The server may
                 // have already done this, but some servers don't.)

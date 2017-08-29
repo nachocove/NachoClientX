@@ -499,7 +499,7 @@ namespace NachoCore.Utils
                 } else {
                     indexMatches = new List<MatchedItem> ();
                     foreach (var account in McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.ContactReader)) {
-                        var index = NcBrain.SharedInstance.Index (account.Id);
+                        var index = Indexer.Instance.IndexForAccount (account.Id);
                         indexMatches.AddRange (index.SearchAllContactFields (searchString, maxMatches: 100));
                     }
                     lastIndexSearchString = searchString;

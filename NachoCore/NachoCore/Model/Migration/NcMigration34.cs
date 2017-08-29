@@ -23,8 +23,8 @@ namespace NachoCore.Model
         public override void Run (System.Threading.CancellationToken token)
         {
             NcIndex index;
-            foreach (var account in McAccount.GetAllAccounts()) {
-                index = NcBrain.SharedInstance.Index (account.Id);
+            foreach (var account in McAccount.GetAllAccounts ()) {
+                index = Indexer.Instance.IndexForAccount (account.Id);
                 if (index.BeginRemoveTransaction ()) {
                     var numUpdated = index.BulkRemoveEmailMessage ();
                     index.EndRemoveTransaction ();

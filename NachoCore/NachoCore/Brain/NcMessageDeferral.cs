@@ -38,7 +38,7 @@ namespace NachoCore.Brain
             var utc = deferUntil;
             var local = deferUntil.LocalT ();
             BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
-            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            //NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
             return NcResult.OK ();
         }
 
@@ -56,7 +56,7 @@ namespace NachoCore.Brain
         static private NcResult ClearMessageFlags (McEmailMessage message)
         {
             BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
-            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            //NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
             return NcResult.OK ();
         }
 
@@ -94,7 +94,7 @@ namespace NachoCore.Brain
         {
             var start = DateTime.UtcNow;
             BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
-            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            //NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
             return NcResult.OK ();
         }
 

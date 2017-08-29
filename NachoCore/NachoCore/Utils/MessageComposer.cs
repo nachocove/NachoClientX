@@ -561,7 +561,7 @@ namespace NachoCore.Utils
             if (invalidateBundle) {
                 Bundle.Invalidate ();
             }
-            NcBrain.IndexMessage (Message);
+            Index.Indexer.Instance.Add (Message);
         }
 
         void WriteBody ()

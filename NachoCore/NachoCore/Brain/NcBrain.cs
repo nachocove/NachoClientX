@@ -2,23 +2,14 @@
 //
 
 using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.IO;
-using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
-using NachoCore.Index;
-using System.Threading;
-using System.Linq;
 
 namespace NachoCore.Brain
 {
     public partial class NcBrain
     {
-        public const bool ENABLED = true;
-        public const bool SCORING_ENABLED = false;
+        public const bool ENABLED = false;
 
         public static bool RegisterStatusIndHandler = false;
 
@@ -56,8 +47,6 @@ namespace NachoCore.Brain
             }
         }
 
-        private ConcurrentDictionary<int, NcIndex> _Indexes;
-
         public NcCounter RootCounter;
         public OperationCounters McEmailMessageCounters;
         public OperationCounters McEmailAddressCounters;
@@ -70,7 +59,6 @@ namespace NachoCore.Brain
 
         public NcBrain (string prefix = "Brain")
         {
-            _Indexes = new ConcurrentDictionary<int, NcIndex> ();
 
             NotificationRateLimiter = new NcBrainNotification ();
 
@@ -90,24 +78,6 @@ namespace NachoCore.Brain
         {
             RootCounter.Dispose ();
             RootCounter = null;
-        }
-
-        public NcIndex Index (int accountId)
-        {
-            NcIndex index;
-            if (_Indexes.TryGetValue (accountId, out index)) {
-                return index;
-            }
-            var indexPath = NcModel.Instance.GetIndexPath (accountId);
-            index = new Index.NcIndex (indexPath);
-            if (!_Indexes.TryAdd (accountId, index)) {
-                // A race happens and this thread loses. There should be an Index in the dictionary now
-                index.Dispose ();
-                index = null;
-                var got = _Indexes.TryGetValue (accountId, out index);
-                NcAssert.True (got);
-            }
-            return index;
         }
 
         public bool IsRunning { get; protected set; }
@@ -186,7 +156,7 @@ namespace NachoCore.Brain
         public void Process ()
         {
             bool tvStarted = false;
-            if (ENABLED && !IsInUnitTest ()) {
+            if (!IsInUnitTest ()) {
                 // Delay brain to avoid initialization logjam
                 if (!NcTask.CancelableSleep (StartupDelayMsec)) {
                     NcTask.Cts.Token.ThrowIfCancellationRequested ();
@@ -207,10 +177,6 @@ namespace NachoCore.Brain
                 bool didSomething = true;
                 while (true) {
 
-                    if (didSomething) {
-                        OpenedIndexes.Cleanup ();
-                    }
-
                     if (!tvStarted && !IsInUnitTest () && NcApplication.Instance.IsForeground) {
                         McEmailMessage.StartTimeVariance (EventQueue.Token);
                         tvStarted = true;
@@ -225,9 +191,7 @@ namespace NachoCore.Brain
                             Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                             return;
                         }
-                        if (ENABLED) {
-                            ProcessEvent (brainEvent);
-                        }
+                        ProcessEvent (brainEvent);
                         didSomething = true;
                         continue;
                     }
@@ -235,7 +199,7 @@ namespace NachoCore.Brain
                     didSomething = false;
 
                     // Priority 2: Quick scoring of new messages
-                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Quick score messages", QuickScore, 50)) {
+                    if (KeepGoing () && RunSeveralTimes ("Quick score messages", QuickScore, 50)) {
                         didSomething = true;
                     }
 
@@ -246,13 +210,10 @@ namespace NachoCore.Brain
 
                     // Priority 3: Glean and score unscored messages. Update the score of messages with
                     // a high NeedsUpdate count. Index newly arrived messages.
-                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Glean/analyze messages", AnalyzeEmail, 30)) {
+                    if (KeepGoing () && RunSeveralTimes ("Glean/analyze messages", AnalyzeEmail, 30)) {
                         didSomething = true;
                     }
-                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Update message scores (high)", UpdateScoreHigh, 20)) {
-                        didSomething = true;
-                    }
-                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.INDEX_MESSAGE, 10)) {
+                    if (KeepGoing () && RunSeveralTimes ("Update message scores (high)", UpdateScoreHigh, 20)) {
                         didSomething = true;
                     }
                     if (didSomething || !KeepGoing ()) {
@@ -261,29 +222,11 @@ namespace NachoCore.Brain
 
                     // Priority 4: Update the score of messages with a low NeedsUpdate count. Unindex deleted
                     // messages. Reindex messages that have been downloaded.
-                    if (SCORING_ENABLED && KeepGoing () && RunSeveralTimes ("Update message scores (low)", UpdateScoreLow, 20)) {
-                        didSomething = true;
-                    }
-                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.UNINDEX_MESSAGE, 10)) {
-                        didSomething = true;
-                    }
-                    if (KeepGoing () && RunSeveralTimes ("Index messages", IndexEmail, 10)) {
+                    if (KeepGoing () && RunSeveralTimes ("Update message scores (low)", UpdateScoreLow, 20)) {
                         didSomething = true;
                     }
                     if (didSomething || !KeepGoing () || !NcApplication.Instance.IsForeground) {
                         continue;
-                    }
-
-                    // Priority 5: Index/reindex/unindex contacts.  This is only done when in the foreground.
-                    // Indexing of contacts is the lowest priority because the indexes are rarely used.
-                    if (KeepGoing () && RunSeveralTimes ("Index contacts", IndexContacts, 20)) {
-                        didSomething = true;
-                    }
-                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.REINDEX_CONTACT, 20)) {
-                        didSomething = true;
-                    }
-                    if (KeepGoing () && ProcessSeveralPersistedEvents (NcBrainEventType.UNINDEX_CONTACT, 20)) {
-                        didSomething = true;
                     }
 
                     // Finally, handle any persistent events that slipped through the cracks.  This could be
@@ -318,27 +261,13 @@ namespace NachoCore.Brain
             switch (eventArgs.Status.SubKind) {
 
             case NcResult.SubKindEnum.Info_RicInitialSyncCompleted:
-                if (SCORING_ENABLED) {
-                    NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
-                }
+                NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
                 break;
 
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded:
-                if (SCORING_ENABLED) {
-                    NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
-                }
+                NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
                 break;
-            }
-        }
-
-        public void ProcessOneNewEmail (McEmailMessage emailMessage)
-        {
-            NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-
-            var folder = McFolder.QueryByFolderEntryId<McEmailMessage> (emailMessage.AccountId, emailMessage.Id).FirstOrDefault ();
-            if (null != folder && !folder.IsJunkFolder () && NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 != folder.Type) {
-                NcBrain.IndexMessage (emailMessage);
             }
         }
     }

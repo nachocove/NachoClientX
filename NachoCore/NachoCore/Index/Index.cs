@@ -2,17 +2,14 @@
 //
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Linq;
-using MimeKit;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Store;
 using Lucene.Net.Index;
 using Lucene.Net.Documents;
 using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
-using Lucene.Net.Search.Payloads;
 using System.Text.RegularExpressions;
 
 namespace NachoCore.Index
@@ -21,12 +18,26 @@ namespace NachoCore.Index
     {
         public const int KTimeoutMsec = 5000;
 
+        #region Getting an Index
+
+        public NcIndex (string indexDirectoryPath)
+        {
+            Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);
+            IndexDirectory = FSDirectory.Open (indexDirectoryPath);
+            Lock = new Mutex ();
+        }
+
         private StandardAnalyzer Analyzer;
         private FSDirectory IndexDirectory;
 
         private Mutex Lock;
         private IndexWriter Writer;
         private IndexReader Reader;
+
+        #endregion
+
+        #region Index Status
+
         private bool Deleted;
 
         public bool Dirty { protected set; get; }
@@ -37,27 +48,49 @@ namespace NachoCore.Index
             }
         }
 
-        public NcIndex (string indexDirectoryPath)
+        #endregion
+
+        #region Searching Emails
+
+        public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
         {
-            Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);
-            IndexDirectory = FSDirectory.Open (indexDirectoryPath);
-            Lock = new Mutex ();
+            return SearchFields ("message", queryString, new string [] {
+                "body",
+                "from",
+                "to",
+                "cc",
+                "bcc",
+                "from_domain",
+                "to_domain",
+                "cc_domain",
+                "bcc_domain",
+                "subject",
+                "preview",
+            }, maxMatches, false);
         }
 
-        public void Dispose ()
+        #endregion
+
+        #region Searching Contacts
+
+        public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)
         {
-            Analyzer.Dispose ();
-            IndexDirectory.Dispose ();
-            Analyzer = null;
-            IndexDirectory = null;
+            return SearchFields ("contact", queryString, new string [] {
+                "first_name",
+                "middle_name",
+                "last_name",
+                "company_name",
+                "email_address",
+                "email_domain",
+                "phone_number",
+                "address",
+                "note"
+            }, maxMatches, false);
         }
 
-        private void Debug (string fmt, params object [] args)
-        {
-#if INDEX_DEBUG
-            Console.WriteLine (fmt, args);
-#endif
-        }
+        #endregion
+
+        #region Adding Items
 
         // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
         // So, if you are going to use more than one item, please use the later combination.
@@ -111,6 +144,10 @@ namespace NachoCore.Index
             Writer = null;
             Lock.ReleaseMutex ();
         }
+
+        #endregion
+
+        #region Removing Items
 
         // Remove() is significantly slower than BeginRemoveTransaction() + BatchRemove() + EndRemoveTransaction()
         // So, if you are going to remove more than one item, please use the later combination.
@@ -186,6 +223,22 @@ namespace NachoCore.Index
             Lock.ReleaseMutex ();
         }
 
+        #endregion
+
+        #region Disposable interface
+
+        public void Dispose ()
+        {
+            Analyzer.Dispose ();
+            IndexDirectory.Dispose ();
+            Analyzer = null;
+            IndexDirectory = null;
+        }
+
+        #endregion
+
+        #region Deleting the entire index
+
         public bool MarkForDeletion ()
         {
             if (!Lock.WaitOne (KTimeoutMsec)) {
@@ -196,25 +249,9 @@ namespace NachoCore.Index
             return true;
         }
 
-        public List<MatchedItem> Search (string queryString, int maxMatches = 1000, bool leadingWildcard = false)
-        {
-            List<MatchedItem> matchedItems = new List<MatchedItem> ();
-            try {
-                using (var reader = IndexReader.Open (IndexDirectory, true)) {
-                    var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
-                    parser.AllowLeadingWildcard = leadingWildcard;
-                    var query = parser.Parse (queryString);
-                    var searcher = new IndexSearcher (reader);
-                    var matches = searcher.Search (query, maxMatches);
-                    foreach (var scoreDoc in matches.ScoreDocs) {
-                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc), scoreDoc.Score));
-                    }
-                }
-            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
-                // This can happen if a search is done before anything is written to the index.
-            }
-            return matchedItems;
-        }
+        #endregion
+
+        #region Private Helpers
 
         public List<MatchedItem> SearchFields (string type, string queryString, string [] fields, int maxMatches = 1000, bool leadingWildcard = false)
         {
@@ -242,37 +279,34 @@ namespace NachoCore.Index
             return Search (newQueryString, maxMatches, leadingWildcard);
         }
 
-        public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
+        public List<MatchedItem> Search (string queryString, int maxMatches = 1000, bool leadingWildcard = false)
         {
-            return SearchFields ("message", queryString, new string [] {
-                "body",
-                "from",
-                "to",
-                "cc",
-                "bcc",
-                "from_domain",
-                "to_domain",
-                "cc_domain",
-                "bcc_domain",
-                "subject",
-                "preview",
-            }, maxMatches, false);
+            List<MatchedItem> matchedItems = new List<MatchedItem> ();
+            try {
+                using (var reader = IndexReader.Open (IndexDirectory, true)) {
+                    var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
+                    parser.AllowLeadingWildcard = leadingWildcard;
+                    var query = parser.Parse (queryString);
+                    var searcher = new IndexSearcher (reader);
+                    var matches = searcher.Search (query, maxMatches);
+                    foreach (var scoreDoc in matches.ScoreDocs) {
+                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc), scoreDoc.Score));
+                    }
+                }
+            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
+                // This can happen if a search is done before anything is written to the index.
+            }
+            return matchedItems;
         }
 
-        public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)
+        private void Debug (string fmt, params object [] args)
         {
-            return SearchFields ("contact", queryString, new string [] {
-                "first_name",
-                "middle_name",
-                "last_name",
-                "company_name",
-                "email_address",
-                "email_domain",
-                "phone_number",
-                "address",
-                "note"
-            }, maxMatches, false);
+#if INDEX_DEBUG
+            Console.WriteLine (fmt, args);
+#endif
         }
+
+        #endregion
     }
 
     public class MatchedItem

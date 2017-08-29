@@ -445,7 +445,7 @@ namespace NachoCore.IMAP
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
                 if (justCreated) {
-                    NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                    emailMessage.ProcessAfterReceipt ();
                 }
                 if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
                     // Another client has remotely read / unread this email.

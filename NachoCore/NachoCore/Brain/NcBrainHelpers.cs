@@ -9,50 +9,6 @@ using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
-    public class OpenedIndexSet : Dictionary<int, NcIndex>
-    {
-        protected NcBrain Brain;
-
-        public OpenedIndexSet (NcBrain brain)
-        {
-            Brain = brain;
-        }
-
-        public NcIndex Get (int accountId)
-        {
-            NcIndex index;
-            if (!TryGetValue (accountId, out index)) {
-                index = Brain.Index (accountId);
-                if (null == index) {
-                    Log.Warn (Log.LOG_BRAIN, "fail to get index for account {0}", accountId);
-                    return null;
-                }
-                if (!index.BeginAddTransaction ()) {
-                    Log.Warn (Log.LOG_BRAIN, "fail to begin add transaction (accountId={0})", accountId);
-                    return null;
-                }
-                Add (accountId, index);
-            }
-            return index;
-        }
-
-        public void Release (int accountId)
-        {
-            NcIndex index;
-            if (TryGetValue (accountId, out index)) {
-                index.EndAddTransaction ();
-                Remove (accountId);
-            }
-        }
-
-        public void Cleanup ()
-        {
-            foreach (var index in Values) {
-                index.EndAddTransaction ();
-            }
-            Clear ();
-        }
-    }
 
     public class BrainQueryAndProcess
     {

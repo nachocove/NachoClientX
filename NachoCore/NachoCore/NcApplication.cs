@@ -565,7 +565,9 @@ namespace NachoCore
         public void StopBasalServices ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
-            NcBrain.StopService ();
+            if (NcBrain.ENABLED) {
+                NcBrain.StopService ();
+            }
             BackEnd.Instance.Stop ();
 
             NcApplicationMonitor.Instance.Stop ();
@@ -602,9 +604,13 @@ namespace NachoCore
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
                 BackEnd.Instance.Start ();
-                NcBrain.StartService ();
+                if (NcBrain.ENABLED) {
+                    NcBrain.StartService ();
+                }
                 NcCapture.ResumeAll ();
-                NcTimeVariance.ResumeAll ();
+                if (NcBrain.ENABLED) {
+                    NcTimeVariance.ResumeAll ();
+                }
                 NachoPlatform.Calendars.Instance.EventProviderInstance.NumberOfDays ();
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);
@@ -620,7 +626,9 @@ namespace NachoCore
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();
-                NcTimeVariance.PauseAll ();
+                if (NcBrain.ENABLED) {
+                    NcTimeVariance.PauseAll ();
+                }
             }
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services exited.");
         }

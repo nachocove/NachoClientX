@@ -55,9 +55,9 @@ namespace NachoCore.Utils
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
                         Account = McAccount.QueryById<McAccount> (message.AccountId),
                     });
-                    if (oldUserAction != newUserAction) {
-                        NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
-                    }
+                    //if (oldUserAction != newUserAction) {
+                    //    NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
+                    //}
                 }
             }, "ToggleHotOrNot");
             return newUserAction;

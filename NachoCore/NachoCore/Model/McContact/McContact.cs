@@ -966,7 +966,7 @@ namespace NachoCore.Model
 
                     if (!this.IsGleaned () && ContactIndexDocument.Version == this.IndexVersion) {
                         // A non-gleaned contact that has already been indexed. Re-index the contact.
-                        NcBrain.ReindexContact (this);
+                        Indexer.Instance.Add (this);
                     }
                 });
                 return retval;
@@ -1008,7 +1008,7 @@ namespace NachoCore.Model
                 var phoneList = PhoneNumbers;
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
-                    NcBrain.UnindexContact (this);
+                    Indexer.Instance.Remove (this);
                     retval = base.Delete ();
                     EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
                 });
@@ -1934,7 +1934,7 @@ namespace NachoCore.Model
                 if (null != emailAddress) {
                     emailAddress.IsVip = this.IsVip;
                     emailAddress.Update ();
-                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
+                    //NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
                 }
             }
 

@@ -2,7 +2,6 @@
 //
 using System;
 using NachoCore.Utils;
-using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
@@ -18,15 +17,15 @@ namespace NachoCore.Brain
         INITIAL_RIC,
         UPDATE_ADDRESS_SCORE,
         UPDATE_MESSAGE_SCORE,
-        UNINDEX_MESSAGE,
-        UNINDEX_CONTACT,
+        UNINDEX_MESSAGE_OBSOLETE,
+        UNINDEX_CONTACT_OBSOLETE,
         PERSISTENT_QUEUE,
-        REINDEX_CONTACT,
+        REINDEX_CONTACT_OBSOLETE,
         UPDATE_MESSAGE_NOTIFICATION_STATUS,
         UPDATE_MESSAGE_READ_STATUS,
         UPDATE_MESSAGE_REPLY_STATUS,
         PAUSE_OBSOLETE,
-        INDEX_MESSAGE,
+        INDEX_MESSAGE_OBSOLETE,
     };
 
     [Serializable]
@@ -202,24 +201,6 @@ namespace NachoCore.Brain
     }
 
     [Serializable]
-    public class NcBrainIndexMessageEvent : NcBrainMessageEvent
-    {
-        public NcBrainIndexMessageEvent (Int64 accountId, Int64 emailMessageId)
-            : base (NcBrainEventType.INDEX_MESSAGE, accountId, emailMessageId)
-        {
-        }
-    }
-
-    [Serializable]
-    public class NcBrainUnindexMessageEvent : NcBrainMessageEvent
-    {
-        public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
-            : base (NcBrainEventType.UNINDEX_MESSAGE, accountId, emailMessageId)
-        {
-        }
-    }
-
-    [Serializable]
     public class NcBrainUpdateMessageNotificationStatusEvent : NcBrainMessageEvent
     {
         public DateTime NotificationTime;
@@ -277,24 +258,6 @@ namespace NachoCore.Brain
         {
             return String.Format ("[{0}: type={1}, accountId={2}, ContactId={3}",
                 GetType ().Name, Type, AccountId, ContactId);
-        }
-    }
-
-    [Serializable]
-    public class NcBrainUnindexContactEvent : NcBrainContactEvent
-    {
-        public NcBrainUnindexContactEvent (Int64 accountId, Int64 contactId)
-            : base (NcBrainEventType.UNINDEX_CONTACT, accountId, contactId)
-        {
-        }
-    }
-
-    [Serializable]
-    public class NcBrainReindexContactEvent : NcBrainContactEvent
-    {
-        public NcBrainReindexContactEvent (Int64 accountId, Int64 contactId)
-            : base (NcBrainEventType.REINDEX_CONTACT, accountId, contactId)
-        {
         }
     }
 

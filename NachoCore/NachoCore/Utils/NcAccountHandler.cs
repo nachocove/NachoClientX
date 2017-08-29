@@ -268,7 +268,7 @@ namespace NachoCore.Model
             try {
                 var indexDirPath = NcModel.Instance.GetIndexPath (AccountId);
                 if (Directory.Exists (indexDirPath)) {
-                    NcBrain.MarkForDeletion (AccountId);
+                    Index.Indexer.Instance.DeleteIndex (AccountId);
                 }
                 Directory.Delete (AccountDirPath, true);
             } catch (Exception e) {

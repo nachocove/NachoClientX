@@ -1151,6 +1151,16 @@ namespace NachoCore.Model
                 }
             }
         }
+
+        public void ProcessAfterReceipt ()
+        {
+            // TODO: glean contacts
+            // TODO: request index
+            // TODO: poulate FromEmailAddressId (if 0; perhaps it always gets set beforehand?)
+            // TODO: populate McMapEmailAddressEntry for from/to/cc
+            // TODO: populate HeadersFiltered (used only by contact gleaner)
+            // TODO: populate IsReply (maybe not, is only used by brain)
+        }
     }
 
     public class McEmailMessageThread
@@ -1584,7 +1594,7 @@ namespace NachoCore.Model
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Delete ();
                     // FIXME: Do we need to delete associated records like Attachments?
-                    NcBrain.UnindexEmailMessage (this);
+                    Indexer.Instance.Remove (this);
                     DeleteScoreStates ();
                     McEmailMessageNeedsUpdate.Delete (this);
                 });
@@ -1706,7 +1716,7 @@ namespace NachoCore.Model
         public McEmailMessage MarkHasBeenNotified (bool shouldNotify)
         {
             if (shouldNotify) {
-                NcBrain.MessageNotificationStatusUpdated (this, DateTime.UtcNow, 0.1);
+                //NcBrain.MessageNotificationStatusUpdated (this, DateTime.UtcNow, 0.1);
             }
             return UpdateWithOCApply<McEmailMessage> ((record) => {
                 var target = (McEmailMessage)record;

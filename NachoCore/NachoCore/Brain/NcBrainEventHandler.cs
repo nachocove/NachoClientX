@@ -4,34 +4,26 @@ using System;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
-using System.Threading;
 
 namespace NachoCore.Brain
 {
     public partial class NcBrain
     {
         private NcQueue<NcBrainEvent> EventQueue;
-        protected OpenedIndexSet OpenedIndexes;
-        private long BytesIndexed;
 
         private BrainQueryAndProcess QuickScore;
         private BrainQueryAndProcess UpdateScoreHigh;
         private BrainQueryAndProcess UpdateScoreLow;
         private BrainQueryAndProcess AnalyzeEmail;
-        private BrainQueryAndProcess IndexEmail;
-        private BrainQueryAndProcess IndexContacts;
 
         private void InitializeEventHandler ()
         {
             EventQueue = new NcQueue<NcBrainEvent> ();
-            OpenedIndexes = new OpenedIndexSet (this);
 
             QuickScore = new BrainQueryAndProcess (McEmailMessage.QueryRecentNeedQuickScoringObjects, QuickScoreEmailMessage, 50);
             UpdateScoreHigh = new BrainQueryAndProcess (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScores, 50);
             UpdateScoreLow = new BrainQueryAndProcess (McEmailMessage.QueryNeedUpdateObjectsBelow, UpdateEmailMessageScores, 50);
             AnalyzeEmail = new BrainQueryAndProcess (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 50);
-            IndexEmail = new BrainQueryAndProcess (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 50);
-            IndexContacts = new BrainQueryAndProcess (McContact.QueryNeedIndexingObjects, IndexContact, 50);
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
@@ -104,29 +96,6 @@ namespace NachoCore.Brain
 
             case NcBrainEventType.PERSISTENT_QUEUE:
                 // Used to wake up the brain whenever an persistent event is added to the database.
-                break;
-
-            case NcBrainEventType.INDEX_MESSAGE:
-                IndexEmailMessage (McEmailMessage.QueryById<McEmailMessage> ((int)((NcBrainIndexMessageEvent)brainEvent).EmailMessageId));
-                break;
-
-            case NcBrainEventType.UNINDEX_MESSAGE:
-                var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
-                UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
-                break;
-
-            case NcBrainEventType.UNINDEX_CONTACT:
-                var contactEvent = brainEvent as NcBrainUnindexContactEvent;
-                UnindexContact ((int)contactEvent.AccountId, (int)contactEvent.ContactId);
-                break;
-
-            case NcBrainEventType.REINDEX_CONTACT:
-                var reindexEvent = brainEvent as NcBrainReindexContactEvent;
-                var contact = McContact.QueryById<McContact> ((int)reindexEvent.ContactId);
-                UnindexContact ((int)reindexEvent.AccountId, (int)reindexEvent.ContactId);
-                if (null != contact) {
-                    IndexContact (contact);
-                }
                 break;
 
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
