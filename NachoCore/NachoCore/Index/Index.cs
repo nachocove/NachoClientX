@@ -52,11 +52,11 @@ namespace NachoCore.Index
             IndexDirectory = null;
         }
 
-        private void Debug (string fmt, params object[] args)
+        private void Debug (string fmt, params object [] args)
         {
-            #if INDEX_DEBUG
+#if INDEX_DEBUG
             Console.WriteLine (fmt, args);
-            #endif
+#endif
         }
 
         // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
@@ -216,7 +216,7 @@ namespace NachoCore.Index
             return matchedItems;
         }
 
-        public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000, bool leadingWildcard = false)
+        public List<MatchedItem> SearchFields (string type, string queryString, string [] fields, int maxMatches = 1000, bool leadingWildcard = false)
         {
             string newQueryString = "";
             queryString = queryString
@@ -244,7 +244,7 @@ namespace NachoCore.Index
 
         public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
         {
-            return SearchFields ("message", queryString, new string[] {
+            return SearchFields ("message", queryString, new string [] {
                 "body",
                 "from",
                 "to",
@@ -261,7 +261,7 @@ namespace NachoCore.Index
 
         public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)
         {
-            return SearchFields ("contact", queryString, new string[] {
+            return SearchFields ("contact", queryString, new string [] {
                 "first_name",
                 "middle_name",
                 "last_name",

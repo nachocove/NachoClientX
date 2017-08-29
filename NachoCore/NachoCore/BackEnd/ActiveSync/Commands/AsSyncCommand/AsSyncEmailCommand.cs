@@ -73,12 +73,12 @@ namespace NachoCore.ActiveSync
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
                     if (emailMessage.IsChat) {
-                        var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
-                        if (result.isError()){
-                            Log.Error(Log.LOG_AS, "{0}: ServerSaysAddOrChangeEmail: could not start download for chat message: {1}", cmdNameWithAccount, result);
+                        var result = BackEnd.Instance.DnldEmailBodyCmd (emailMessage.AccountId, emailMessage.Id, false);
+                        if (result.isError ()) {
+                            Log.Error (Log.LOG_AS, "{0}: ServerSaysAddOrChangeEmail: could not start download for chat message: {1}", cmdNameWithAccount, result);
                         }
                     }
-                    if (emailMessage.IsAction){
+                    if (emailMessage.IsAction) {
                         McAction.RunCreateActionFromMessageTask (emailMessage.Id);
                     }
                 } else {

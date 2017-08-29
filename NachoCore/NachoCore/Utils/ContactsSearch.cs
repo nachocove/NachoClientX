@@ -59,7 +59,8 @@ namespace NachoCore.Utils
             }
         }
 
-        void StartSearch () {
+        void StartSearch ()
+        {
 
             NcTask.Run (() => {
 
@@ -163,8 +164,7 @@ namespace NachoCore.Utils
             if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind &&
                 null != s.Account && null != s.Tokens &&
                 accountSearchTokens.Keys.Contains (s.Account.Id) &&
-                s.Tokens.Contains (accountSearchTokens [s.Account.Id]))
-            {
+                s.Tokens.Contains (accountSearchTokens [s.Account.Id])) {
                 accountSearchTokens.Remove (s.Account.Id);
                 bool startSearch;
                 lock (lockObject) {
@@ -283,7 +283,7 @@ namespace NachoCore.Utils
 
         protected override void DoSearch (string searchString)
         {
-            var searchWords = searchString.Trim ().Split (new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var searchWords = searchString.Trim ().Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             var contactMatches = new List<McContact> ();
             var emailMatches = new List<McContactEmailAddressAttribute> ();
@@ -470,7 +470,7 @@ namespace NachoCore.Utils
 
         protected override void DoSearch (string searchString)
         {
-            var searchWords = searchString.Trim ().Split (new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var searchWords = searchString.Trim ().Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             var rawContacts = new List<McContact> ();
             var dbEmailMatches = new List<McContactEmailAddressAttribute> ();
@@ -498,7 +498,7 @@ namespace NachoCore.Utils
                     indexMatches = lastIndexResults;
                 } else {
                     indexMatches = new List<MatchedItem> ();
-                    foreach (var account in McAccount.QueryByAccountCapabilities(McAccount.AccountCapabilityEnum.ContactReader)) {
+                    foreach (var account in McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.ContactReader)) {
                         var index = NcBrain.SharedInstance.Index (account.Id);
                         indexMatches.AddRange (index.SearchAllContactFields (searchString, maxMatches: 100));
                     }

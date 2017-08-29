@@ -12,7 +12,7 @@ namespace NachoCore
 {
     public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
 
-    public class NcProtoControl: IBEContext
+    public class NcProtoControl : IBEContext
     {
         public class PcEvt : SmEvt
         {
@@ -54,7 +54,7 @@ namespace NachoCore
             }
         }
 
-        public McServer Server { 
+        public McServer Server {
             get {
                 return McServer.QueryByAccountIdAndCapabilities (AccountId, Capabilities);
             }
@@ -64,7 +64,7 @@ namespace NachoCore
             }
         }
 
-        public McProtocolState ProtocolState { 
+        public McProtocolState ProtocolState {
             get {
                 return McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
             }
@@ -262,7 +262,7 @@ namespace NachoCore
 
         public NcResult.SubKindEnum DoNotDelaySubKind {
             get {
-                return (BackEndState == BackEndStateEnum.CredWait) ? 
+                return (BackEndState == BackEndStateEnum.CredWait) ?
                     NcResult.SubKindEnum.Error_CredWait :
                     NcResult.SubKindEnum.Info_ServiceUnavailable;
             }
@@ -286,7 +286,7 @@ namespace NachoCore
             }
         }
 
-        protected bool GetItemAndFolder<T> (int itemId, 
+        protected bool GetItemAndFolder<T> (int itemId,
             out T item,
             int folderId,
             out McFolder folder,
@@ -353,7 +353,7 @@ namespace NachoCore
                             EmailSetFlag_FlagType = McPending.MarkReadFlag,
                             ServerId = emailMessage.ServerId,
                             ParentId = srcFolder.ServerId,
-                        };   
+                        };
                         markUpdate.Insert ();
 
                         // Mark the actual item.
@@ -393,7 +393,7 @@ namespace NachoCore
             return Execute ();
         }
 
-        object executeLock = new object();
+        object executeLock = new object ();
 
         protected virtual bool Execute ()
         {
@@ -618,7 +618,8 @@ namespace NachoCore
             return result;
         }
 
-        protected enum SendEmailKind {
+        protected enum SendEmailKind
+        {
             Reply,
             Forward,
         }
@@ -648,9 +649,9 @@ namespace NachoCore
                 };
                 pending.Insert ();
                 if (kind == SendEmailKind.Reply) {
-                    MarkEmailAnswered(pending, refdEmailMessage, true);
+                    MarkEmailAnswered (pending, refdEmailMessage, true);
                 } else {
-                    MarkMessageForwarded(pending, refdEmailMessage, true);
+                    MarkMessageForwarded (pending, refdEmailMessage, true);
                 }
                 result = NcResult.OK (pending.Token);
             });
@@ -659,7 +660,7 @@ namespace NachoCore
             }, "SmartEmailCmd");
             Log.Info (Log.LOG_BACKEND, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
             return result;
-            
+
         }
         public virtual NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
             int folderId, bool originalEmailIsEmbedded)
@@ -791,7 +792,7 @@ namespace NachoCore
                     EmailSetFlag_FlagType = read ? McPending.MarkReadFlag : McPending.MarkUnreadFlag,
                     ServerId = emailMessage.ServerId,
                     ParentId = folder.ServerId,
-                };   
+                };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -820,7 +821,7 @@ namespace NachoCore
         }
 
 
-        public virtual NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 
+        public virtual NcResult SetEmailFlagCmd (int emailMessageId, string flagType,
                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return null;
@@ -941,7 +942,7 @@ namespace NachoCore
             McCalendar cal;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind, clientOwnedOkay:true)) {
+                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind, clientOwnedOkay: true)) {
                     result = NcResult.Error (subKind);
                     return;
                 }
@@ -982,7 +983,7 @@ namespace NachoCore
                     ParentId = primeFolder.ServerId,
                     ServerId = cal.ServerId,
                     CalUpdate_SendBody = sendBody,
-                };   
+                };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
             });
@@ -1012,7 +1013,7 @@ namespace NachoCore
                     Operation = McPending.Operations.CalDelete,
                     ParentId = primeFolder.ServerId,
                     ServerId = cal.ServerId,
-                };   
+                };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
                 cal.Delete ();
@@ -1025,7 +1026,7 @@ namespace NachoCore
             }
             return result;
         }
-       
+
         public virtual NcResult MoveCalCmd (int calId, int destFolderId, bool lastInSeq = true)
         {
             var cal = McAbstrObject.QueryById<McCalendar> (calId);
@@ -1066,7 +1067,7 @@ namespace NachoCore
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
                 NcResult.SubKindEnum subKind;
-                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind, clientOwnedOkay:true)) {
+                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind, clientOwnedOkay: true)) {
                     result = NcResult.Error (subKind);
                     return;
                 }
@@ -1107,7 +1108,7 @@ namespace NachoCore
                     Operation = McPending.Operations.ContactUpdate,
                     ParentId = primeFolder.ServerId,
                     ServerId = contact.ServerId,
-                };   
+                };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
             });
@@ -1137,7 +1138,7 @@ namespace NachoCore
                     Operation = McPending.Operations.ContactDelete,
                     ParentId = primeFolder.ServerId,
                     ServerId = contact.ServerId,
-                };   
+                };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
                 contact.Delete ();
@@ -1195,7 +1196,7 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult CreateFolderCmd (int destFolderId, string displayName, 
+        public virtual NcResult CreateFolderCmd (int destFolderId, string displayName,
             NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode folderType)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
@@ -1203,7 +1204,7 @@ namespace NachoCore
 
             // It seems exceedingly unlikely that this would fail, but we need to check anyway.
             bool AOk = false;
-            for (var i = 0; i<3; i++) {
+            for (var i = 0; i < 3; i++) {
                 if (McFolder.QueryByServerId<McFolder> (AccountId, serverId) != null) {
                     serverId = DateTime.UtcNow.Ticks.ToString ();
                 } else {
@@ -1441,7 +1442,7 @@ namespace NachoCore
             Owner.StatusInd (this, status);
         }
 
-        public virtual void StatusInd (NcResult status, string[] tokens)
+        public virtual void StatusInd (NcResult status, string [] tokens)
         {
             Owner.StatusInd (this, status, tokens);
         }

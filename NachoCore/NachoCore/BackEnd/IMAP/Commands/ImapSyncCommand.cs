@@ -357,7 +357,7 @@ namespace NachoCore.IMAP
                 imapSummaries = new List<IMessageSummary> ();
                 foreach (var uid in syncInst.UidSet) {
                     try {
-                        var s = mailKitFolder.Fetch (new List<UniqueId>{ uid }, syncInst.Flags, Cts.Token);
+                        var s = mailKitFolder.Fetch (new List<UniqueId> { uid }, syncInst.Flags, Cts.Token);
                         if (1 == s.Count) {
                             imapSummaries.Add (s [0]);
                         } else if (s.Count > 0) {
@@ -423,13 +423,13 @@ namespace NachoCore.IMAP
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, attachments);
-                        if (emailMessage.IsChat){
-                            var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
-                            if (result.isError()){
-                                Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                        if (emailMessage.IsChat) {
+                            var result = BackEnd.Instance.DnldEmailBodyCmd (emailMessage.AccountId, emailMessage.Id, false);
+                            if (result.isError ()) {
+                                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
                             }
                         }
-                        if (emailMessage.IsAction){
+                        if (emailMessage.IsAction) {
                             McAction.RunCreateActionFromMessageTask (emailMessage.Id);
                         }
                     } else {
@@ -776,11 +776,11 @@ namespace NachoCore.IMAP
             }
             if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
                 var references = new List<string> ();
-                if (!String.IsNullOrEmpty (emailMessage.InReplyTo)){
+                if (!String.IsNullOrEmpty (emailMessage.InReplyTo)) {
                     references.AddRange (MimeKit.Utils.MimeUtils.EnumerateReferences (emailMessage.InReplyTo));
                 }
-                if (!String.IsNullOrEmpty (emailMessage.References)){
-                    references.AddRange (emailMessage.References.Split('\n'));
+                if (!String.IsNullOrEmpty (emailMessage.References)) {
+                    references.AddRange (emailMessage.References.Split ('\n'));
                 }
                 foreach (var reference in references) {
                     var referencedMessage = McEmailMessage.QueryByMessageId (emailMessage.AccountId, reference);
@@ -862,7 +862,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        readonly string[] ValidTextParts = { "plain", "html" };
+        readonly string [] ValidTextParts = { "plain", "html" };
 
         /// <summary>
         /// Gets the preview from summary.
@@ -966,7 +966,7 @@ namespace NachoCore.IMAP
             {
                 if (multipart.ContentType != null && multipart.ContentType.IsMimeType ("multipart", "alternative")) {
                     VisitBodyPartAlternative (multipart);
-                }else if (multipart.ContentType != null && multipart.ContentType.IsMimeType ("multipart", "related")) {
+                } else if (multipart.ContentType != null && multipart.ContentType.IsMimeType ("multipart", "related")) {
                     VisitBodyPartRelated (multipart);
                 } else {
                     VisitChildren (multipart);
@@ -975,7 +975,7 @@ namespace NachoCore.IMAP
 
             void VisitBodyPartRelated (BodyPartMultipart multipart)
             {
-                for (int i = 1; i < multipart.BodyParts.Count; ++i){
+                for (int i = 1; i < multipart.BodyParts.Count; ++i) {
                     multipart.BodyParts [i].Accept (this);
                 }
             }

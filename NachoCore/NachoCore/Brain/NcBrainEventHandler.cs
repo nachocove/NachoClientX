@@ -186,7 +186,7 @@ namespace NachoCore.Brain
 
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
         {
-            switch (brainEvent.UIType) {  
+            switch (brainEvent.UIType) {
             case NcBrainUIEventType.MESSAGE_VIEW:
                 // Update email and contact statistics
                 break;

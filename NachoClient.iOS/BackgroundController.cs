@@ -33,15 +33,15 @@ namespace NachoClient.iOS
 
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult Result;
-        
+
         // used to ensure that a race condition doesn't let the ShutdownTimer stop things after re-activation.
         private int ShutdownCounter = 0;
         private bool FinalShutdownHasHappened = false;
 
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
-        #pragma warning disable 414
+#pragma warning disable 414
         private Timer ShutdownTimer = null;
-        #pragma warning restore 414
+#pragma warning restore 414
 
         private nint BackgroundTaskId = -1;
 
@@ -168,7 +168,7 @@ namespace NachoClient.iOS
         {
 
             if (IsFetching) {
-                if (Cause == FetchCause.RemoteNotification && cause == FetchCause.PerformFetch){
+                if (Cause == FetchCause.RemoteNotification && cause == FetchCause.PerformFetch) {
                     // iOS often starts a PerformFetch while a remote notification is still in progress.
                     // This is not desirable, but it is normal.
                     Log.Info (Log.LOG_LIFECYCLE, "RemoteNotification was immediately followed by PerformFetch.");

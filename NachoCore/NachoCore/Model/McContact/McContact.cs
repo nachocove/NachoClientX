@@ -367,10 +367,9 @@ namespace NachoCore.Model
                 DbCategories = value;
             }
         }
-        
+
         [Ignore]
-        public List<ContactOtherAttribute> Others 
-        {
+        public List<ContactOtherAttribute> Others {
             get {
                 var attributeNames = ContactsHelper.GetTakenMiscNames (this);
                 var others = new List<ContactOtherAttribute> ();
@@ -401,7 +400,7 @@ namespace NachoCore.Model
                     return l.Value;
                 }
             }
-            return DateTime.MinValue;       
+            return DateTime.MinValue;
         }
 
         /// <summary>
@@ -414,7 +413,7 @@ namespace NachoCore.Model
                     return l;
                 }
             }
-            return null;       
+            return null;
         }
 
         public string GetEmailAddressAttribute (string name)
@@ -424,7 +423,7 @@ namespace NachoCore.Model
                     return l.Value;
                 }
             }
-            return null; 
+            return null;
         }
 
         public string GetStringAttribute (List<McContactStringAttribute> list, McContactStringType type, string name)
@@ -781,7 +780,7 @@ namespace NachoCore.Model
         ///        Db.CreateTable<McContactEmailAddressAttribute> ();
         /// </summary>
         /// 
-      
+
         protected McContactAncillaryDataEnum HasReadAncillaryData;
 
         // For unit test only
@@ -891,7 +890,7 @@ namespace NachoCore.Model
                     o.Insert ();
                 }
             }
-    
+
             // FIXME: Error handling
             return NcResult.OK ();
         }
@@ -916,7 +915,7 @@ namespace NachoCore.Model
 
         private static string GroupForName (string name)
         {
-            if (String.IsNullOrWhiteSpace (name) || !IsAsciiLetter (name[0])) {
+            if (String.IsNullOrWhiteSpace (name) || !IsAsciiLetter (name [0])) {
                 return "#";
             }
             return name.Substring (0, 1).ToUpper ();
@@ -937,7 +936,7 @@ namespace NachoCore.Model
                 UpdateCachedSortNames ();
 
                 // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
-                if (this.IsGleaned()) {
+                if (this.IsGleaned ()) {
                     IndexVersion = ContactIndexDocument.Version;
                 }
 
@@ -1172,7 +1171,7 @@ namespace NachoCore.Model
                 case Xml.Gal.MobilePhone:
                     AddOrUpdatePhoneNumberAttribute (AccountId, Xml.Contacts.MobilePhoneNumber, null, prop.Value);
                     break;
-                
+
                 case Xml.Gal.Office:
                     OfficeLocation = prop.Value;
                     break;
@@ -1194,7 +1193,7 @@ namespace NachoCore.Model
                         PortraitId = portrait.Id;
                     }
                     break;
- 
+
                 case Xml.Gal.Title:
                     Title = prop.Value;
                     break;
@@ -1416,7 +1415,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McContactStringAttribute> (
                 "SELECT * FROM McContactStringAttribute " +
                 " WHERE " +
-                " ContactId = ? AND Type = ?", 
+                " ContactId = ? AND Type = ?",
                 Id, type).ToList ();
         }
 
@@ -1464,7 +1463,7 @@ namespace NachoCore.Model
             var result = BestMatch (QueryByEmailAddress (emailAddress), preferredAccount);
             if (null == result) {
                 MimeKit.MailboxAddress parsedAddress;
-                if (MimeKit.MailboxAddress.TryParse(emailAddress, out parsedAddress)) {
+                if (MimeKit.MailboxAddress.TryParse (emailAddress, out parsedAddress)) {
                     if (emailAddress != parsedAddress.Address) {
                         result = BestMatch (QueryByEmailAddress (parsedAddress.Address), preferredAccount);
                     }
@@ -1478,9 +1477,8 @@ namespace NachoCore.Model
             McContact best = null;
             foreach (var match in matches) {
                 if (null == best ||
-                    (best.IsGleaned() && !match.IsGleaned()) ||
-                    (best.IsGleaned() == match.IsGleaned() && best.AccountId != preferredAccount && match.AccountId == preferredAccount))
-                {
+                    (best.IsGleaned () && !match.IsGleaned ()) ||
+                    (best.IsGleaned () == match.IsGleaned () && best.AccountId != preferredAccount && match.AccountId == preferredAccount)) {
                     best = match;
                 }
             }
@@ -1719,7 +1717,7 @@ namespace NachoCore.Model
 
         public static int CountByAccountId (int accountId)
         {
-            return NcModel.Instance.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
+            return NcModel.Instance.Db.ExecuteScalar<int> ("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
         }
 
         public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false, bool usingLastName = false)
@@ -1821,7 +1819,7 @@ namespace NachoCore.Model
             }
             if (!String.IsNullOrEmpty (MiddleName)) {
                 value.Add (MiddleName);
-            }           
+            }
             if (!String.IsNullOrEmpty (LastName)) {
                 if (lastNameFirst) {
                     value.Insert (0, LastName);
@@ -2036,7 +2034,7 @@ namespace NachoCore.Model
             } else if (IsGleaned ()) {
                 return 1;
             }
-            Log.Error (Log.LOG_CONTACTS, 
+            Log.Error (Log.LOG_CONTACTS,
                 "unknown contact type: source={0}, accountId={1}, galCacheToken={2}, # email addresses={3}",
                 Source, AccountId, GalCacheToken, EmailAddresses.Count);
             // Make contacts of unknown type the highest priority so they are never eclipsed by mistake
@@ -2057,7 +2055,7 @@ namespace NachoCore.Model
 
         private bool ShouldAttributeBeEclipsed (List<McContact> contactList, CheckAttributeEclipsingFunc checkFunc)
         {
-            foreach (var contact in contactList.Distinct(new McContactComparer ())) {
+            foreach (var contact in contactList.Distinct (new McContactComparer ())) {
                 if (checkFunc (contact)) {
                     return true;
                 }
@@ -2153,7 +2151,7 @@ namespace NachoCore.Model
             }
         }
 
-        protected static bool CompareLists<T> (List<T> list1, List<T> list2, Func<T,T,bool> comparer)
+        protected static bool CompareLists<T> (List<T> list1, List<T> list2, Func<T, T, bool> comparer)
         {
             if (list1.Count != list2.Count) {
                 return false;
@@ -2179,7 +2177,7 @@ namespace NachoCore.Model
             }
 
             string valueA, valueB;
-            string[] properties = new string[] {
+            string [] properties = new string [] {
                 "FirstName",
                 "MiddleName",
                 "LastName",

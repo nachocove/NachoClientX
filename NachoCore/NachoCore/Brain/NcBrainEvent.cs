@@ -43,7 +43,7 @@ namespace NachoCore.Brain
 
         public string GetEventType ()
         {
-            return Enum.GetName (typeof(NcBrainEventType), Type);
+            return Enum.GetName (typeof (NcBrainEventType), Type);
         }
 
         public override string ToString ()
@@ -75,7 +75,7 @@ namespace NachoCore.Brain
 
         public string GetUIType ()
         {
-            return Enum.GetName (typeof(NcBrainUIEventType), UIType);
+            return Enum.GetName (typeof (NcBrainUIEventType), UIType);
         }
 
         public override string ToString ()

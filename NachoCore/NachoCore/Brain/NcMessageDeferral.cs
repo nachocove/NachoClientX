@@ -156,20 +156,20 @@ namespace NachoCore.Brain
                 // Friday 5pm
                 while (from.ToLocalTime ().DayOfWeek != LastDayOfWork) {
                     from = from.AddDays (1);
-                } 
+                }
                 from = AdjustToLocalHour (from, 17);
                 break;
             case MessageDeferralType.Weekend:
                 // Satuday 8am
                 do {
                     from = from.AddDays (1);
-                } while(from.ToLocalTime ().DayOfWeek != FirstDayOfWeekend);
+                } while (from.ToLocalTime ().DayOfWeek != FirstDayOfWeekend);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextWeek:
                 do {
                     from = from.AddDays (1.0d);
-                } while(from.ToLocalTime ().DayOfWeek != FirstDayOfWork);
+                } while (from.ToLocalTime ().DayOfWeek != FirstDayOfWork);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.MonthEnd:
@@ -182,7 +182,7 @@ namespace NachoCore.Brain
                 break;
             case MessageDeferralType.NextMonth:
                 // First day
-                from = from.ToLocalTime();
+                from = from.ToLocalTime ();
                 from = from.AddDays (1.0 - from.Day); // Day is 1..32
                 from = from.AddMonths (1);
                 from = AdjustToLocalHour (from, 8);

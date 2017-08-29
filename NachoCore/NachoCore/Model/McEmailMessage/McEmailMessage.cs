@@ -200,7 +200,7 @@ namespace NachoCore.Model
         public string InternetCPID { set; get; }
 
         /// Set of timestamps used to generation conversation tree
-        public byte[] ConversationIndex { set; get; }
+        public byte [] ConversationIndex { set; get; }
 
         /// Specifies the content class of the data (optional) - Must be 'urn:content-classes:message' for email
         public string ContentClass { set; get; }
@@ -240,7 +240,7 @@ namespace NachoCore.Model
         public bool ClientIsSender { set; get; }
 
         /// IMAP Stuff
-        [Indexed]       
+        [Indexed]
         public uint ImapUid { get; set; }
 
         /// <summary>
@@ -530,7 +530,7 @@ namespace NachoCore.Model
             McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
             var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
 
-            var queryFormat = 
+            var queryFormat =
                 "SELECT DISTINCT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McFolder AS f ON m.FolderId = f.Id " +
@@ -557,7 +557,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)
         {
-            var queryFormat = 
+            var queryFormat =
                 "SELECT e.Id as FirstMessageId, " +
                 (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
                 " as MessageCount FROM McEmailMessage AS e " +
@@ -583,7 +583,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessageThread> QueryUnreadMessageItems (int accountId, int folderId, bool groupBy = true)
         {
-            var queryFormat = 
+            var queryFormat =
                 "SELECT e.Id as FirstMessageId, " +
                 (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
                 " as MessageCount FROM McEmailMessage AS e " +
@@ -853,7 +853,7 @@ namespace NachoCore.Model
             var query = String.Format (queryFormat);
 
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                query, McAbstrFolderEntry.ClassCodeEnum.Email,  Xml.FolderHierarchy.TypeCode.DefaultInbox_2, hotScore, ltrScore);
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, Xml.FolderHierarchy.TypeCode.DefaultInbox_2, hotScore, ltrScore);
         }
 
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)
@@ -867,7 +867,7 @@ namespace NachoCore.Model
                 "   likelihood (b.FilePresence = ?, 0.5))" +
                 " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?",
-                EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version, 
+                EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version,
                 McAbstrFileDesc.FilePresenceEnum.Complete, maxMessages
             );
         }
@@ -884,7 +884,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (cmd);
         }
 
-        public static List<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
+        public static List<McEmailMessage> QueryUnreadAndHotAfter (DateTime since)
         {
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
@@ -905,7 +905,7 @@ namespace NachoCore.Model
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.DateReceived = ?, 0.01) AND " +
                 " likelihood (e.[From] = ?, 0.01) ";
-            
+
             var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
 
             var query = String.Format (queryFormat, account0);
@@ -1140,13 +1140,13 @@ namespace NachoCore.Model
 
         public void DeleteMatchingOutboxMessage ()
         {
-            if (IsChat && !String.IsNullOrEmpty(MessageID)) {
+            if (IsChat && !String.IsNullOrEmpty (MessageID)) {
                 var outbox = McFolder.GetClientOwnedOutboxFolder (AccountId);
                 var outboxMessages = NcModel.Instance.Db.Query<McEmailMessage> (
                     "SELECT m.* FROM McEmailMessage m JOIN McMapFolderFolderEntry e ON m.Id = e.FolderEntryId " +
                     "WHERE m.AccountId = ? AND likelihood(m.MessageID = ?, 0.01) AND m.Id != ? AND e.FolderId = ?",
                     AccountId, MessageID, Id, outbox.Id);
-                foreach (var message in outboxMessages){
+                foreach (var message in outboxMessages) {
                     message.Delete ();
                 }
             }
@@ -1165,12 +1165,12 @@ namespace NachoCore.Model
         List<McEmailMessageThread> thread;
 
         public McEmailMessage FirstMessage ()
-        { 
+        {
             return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
         }
 
         public McEmailMessage FirstMessageSpecialCase ()
-        { 
+        {
             return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
         }
 
@@ -1184,7 +1184,7 @@ namespace NachoCore.Model
         /// </summary>
         public McEmailMessage SingleMessageSpecialCase ()
         {
-//            NcAssert.True (1 == thread.Count);
+            //            NcAssert.True (1 == thread.Count);
             return FirstMessageSpecialCase ();
         }
 
@@ -1456,7 +1456,7 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             using (var capture = CaptureWithStart ("Insert")) {
-                int returnVal = -1; 
+                int returnVal = -1;
 
                 if (0 == ScoreVersion) {
                     // Try to use the address score for initial email message score
@@ -1482,9 +1482,9 @@ namespace NachoCore.Model
                     InsertMeetingRequest ();
                     InsertCategories ();
                     InsertScoreStates ();
-                    McEmailMessageNeedsUpdate.Insert(this, 0);
+                    McEmailMessageNeedsUpdate.Insert (this, 0);
                 });
-              
+
                 return returnVal;
             }
         }
@@ -1586,7 +1586,7 @@ namespace NachoCore.Model
                     // FIXME: Do we need to delete associated records like Attachments?
                     NcBrain.UnindexEmailMessage (this);
                     DeleteScoreStates ();
-                    McEmailMessageNeedsUpdate.Delete(this);
+                    McEmailMessageNeedsUpdate.Delete (this);
                 });
                 return returnVal;
             }
@@ -1647,7 +1647,7 @@ namespace NachoCore.Model
         public static McEmailMessage QueryByMessageId (int accountId, string messageId)
         {
             var queryFormat = "SELECT * FROM McEmailMessage WHERE {0} likelihood(MessageID = ?, 0.01)";
-            
+
             var account0 = SingleAccountString (" AccountId = {0} AND ", accountId);
 
             var query = String.Format (queryFormat, account0);
@@ -1696,7 +1696,7 @@ namespace NachoCore.Model
                     var account = McAccount.QueryById<McAccount> (AccountId);
                     // Make sure if the message is from the account and not to the account, that it's not considered an action
                     // We see this is gmail, where a sent message is duplicated in the All Mail folder and therefore not caught by the previous Sent folder check
-                    if (EmailHelper.AddressIsInList(account.Id, account.EmailAddr, EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, From)) && !EmailHelper.AddressIsInList(account.Id, account.EmailAddr, EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, To, Cc))) {
+                    if (EmailHelper.AddressIsInList (account.Id, account.EmailAddr, EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, From)) && !EmailHelper.AddressIsInList (account.Id, account.EmailAddr, EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, To, Cc))) {
                         IsAction = false;
                     }
                 }

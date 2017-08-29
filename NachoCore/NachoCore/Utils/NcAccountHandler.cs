@@ -28,7 +28,7 @@ namespace NachoCore.Model
                         }
                     }
                 }
-                return instance; 
+                return instance;
             }
         }
 
@@ -40,7 +40,7 @@ namespace NachoCore.Model
                                         string accessToken, string refreshToken, uint expireSecs)
         {
             return CreateAccountCore (service, emailAddress, (accountId) => {
-                var cred = new McCred () { 
+                var cred = new McCred () {
                     AccountId = accountId,
                     CredType = McCred.CredTypeEnum.OAuth2,
                     Username = emailAddress,
@@ -54,7 +54,7 @@ namespace NachoCore.Model
         public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
         {
             return CreateAccountCore (service, emailAddress, (accountId) => {
-                var cred = new McCred () { 
+                var cred = new McCred () {
                     AccountId = accountId,
                     CredType = McCred.CredTypeEnum.Password,
                     Username = emailAddress,
@@ -81,7 +81,7 @@ namespace NachoCore.Model
                 } else {
                     username = McCred.Join (config.Domain, username);
                 }
-                var cred = new McCred () { 
+                var cred = new McCred () {
                     AccountId = accountId,
                     CredType = McCred.CredTypeEnum.Password,
                     Username = username,
@@ -94,7 +94,7 @@ namespace NachoCore.Model
                     account.DisplayName = config.BrandingName;
                 }
                 if (!String.IsNullOrEmpty (config.Host)) {
-                    var server = new McServer () { 
+                    var server = new McServer () {
                         AccountId = account.Id,
                         Capabilities = McAccount.ActiveSyncCapabilities,
                     };
@@ -294,7 +294,7 @@ namespace NachoCore.Model
             // delete all file system data for account id
             RemoveAccountFiles (AccountId);
 
-            NcApplication.Instance.Account = LoginHelpers.PickStartupAccount();
+            NcApplication.Instance.Account = LoginHelpers.PickStartupAccount ();
             // if successful, unmark account is being removed since it is completed.
             DeleteRemovingAccountFile ();
         }
