@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using SQLite;
@@ -124,7 +125,7 @@ namespace NachoCore.Model
                                 target.IsAwaitingDelete = true;
                                 return true;
                             });
-                            if (message.IsChat){
+                            if (message.IsChat) {
                                 var chatMessages = McChatMessage.QueryByMessageId (Id);
                                 foreach (var chatMessage in chatMessages) {
                                     chatMessage.UpdateLatestDuplicate ();
@@ -148,7 +149,7 @@ namespace NachoCore.Model
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                 " likelihood (f.AccountId = ?, 1.0) AND " +
                 " likelihood (f.BodyId = ?, 0.001) ",
-                    typeof(T).Name), 
+                    typeof (T).Name),
                 accountId, bodyId);
         }
 
@@ -158,8 +159,8 @@ namespace NachoCore.Model
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                 " likelihood (f.AccountId = ?, 1.0) AND " +
                 " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.ClientId = ?, 0.001) ", 
-                    typeof(T).Name), 
+                " likelihood (f.ClientId = ?, 0.001) ",
+                    typeof (T).Name),
                 accountId, clientId).SingleOrDefault ();
         }
 
@@ -172,7 +173,7 @@ namespace NachoCore.Model
                     " likelihood (m.AccountId = ?, 1.0) AND " +
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                     " likelihood (m.FolderId = ?, 0.05) ",
-                    typeof(T).Name),
+                    typeof (T).Name),
                 accountId, accountId, folderId);
         }
 
@@ -187,7 +188,7 @@ namespace NachoCore.Model
                     " likelihood (m.FolderId = ?, 0.05) AND " +
                     " likelihood (m.AsSyncEpoch < ?, 0.5) " +
                     " LIMIT ? ",
-                    typeof(T).Name),
+                    typeof (T).Name),
                 accountId, accountId, folderId, currentEpoch, limit);
         }
 
@@ -197,6 +198,15 @@ namespace NachoCore.Model
                 return null;
             }
             return McBody.QueryById<McBody> (BodyId);
+        }
+
+        public virtual McBody GetBodyIfComplete ()
+        {
+            var body = GetBody ();
+            if (body != null && body.IsValid && body.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete && File.Exists (body.GetFilePath ())) {
+                return body;
+            }
+            return null;
         }
 
         public string GetBodyPreviewOrEmpty ()

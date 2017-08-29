@@ -97,9 +97,9 @@ namespace NachoCore.Index
     public class EmailMessageIndexDocument : NcIndexDocument
     {
         public const int Version = 3;
+        public const string DocumentType = "message";
 
-        public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters) :
-            base ("message", id, parameters)
+        public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters) : base (DocumentType, id, parameters)
         {
             AddIndexedField ("subject", parameters.Subject);
 
@@ -146,6 +146,7 @@ namespace NachoCore.Index
 
     public class ContactIndexDocument : NcIndexDocument
     {
+        public const string DocumentType = "contact";
         // We support versioned indexing in case we want to add some field to the index
         // later. Initially, there are two versions. V1 is for all non-body field. V2
         // is for body field. The reason for this is that we want to index contact's
@@ -158,8 +159,7 @@ namespace NachoCore.Index
         // to set all v1 and v2 to v1. They will be re-indexed to v2 or v3.
         public const int Version = 3;
 
-        public ContactIndexDocument (string id, ContactIndexParameters contact)
-            : base ("contact", id, null)
+        public ContactIndexDocument (string id, ContactIndexParameters contact) : base (DocumentType, id, null)
         {
             AddIndexedField ("first_name", contact.FirstName);
             AddIndexedField ("middle_name", contact.MiddleName);

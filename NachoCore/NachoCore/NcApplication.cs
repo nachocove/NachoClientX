@@ -574,6 +574,7 @@ namespace NachoCore
             NcModel.Instance.Stop ();
             StoreHandler.Instance.Stop ();
             CloudHandler.Instance.Stop ();
+            Index.Indexer.Instance.Stop ();
 
             if (null != StartupUnmarkTimer) {
                 StartupUnmarkTimer.Dispose ();
@@ -611,6 +612,7 @@ namespace NachoCore
                 if (NcBrain.ENABLED) {
                     NcTimeVariance.ResumeAll ();
                 }
+                Index.Indexer.Instance.Start ();
                 NachoPlatform.Calendars.Instance.EventProviderInstance.NumberOfDays ();
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);

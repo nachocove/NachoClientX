@@ -1,16 +1,32 @@
 ﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.IO;
+using NachoCore.Utils;
+using NachoCore.Model;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace NachoCore.Index
 {
+    /// <summary>
+    /// The indexer is in charge of getting all searchable items addted to and removed from the
+    /// search indexes.  There is only ever one instance of the indexer, so it can managed tasks
+    /// without stepping on itself.
+    /// </summary>
     public class Indexer
     {
         #region Getting the indexer
 
+        /// <summary>
+        /// The shared singleton indexer 
+        /// </summary>
         public readonly static Indexer Instance = new Indexer ();
 
+        /// <summary>
+        /// Private constructor to enforce singleton patttern
+        /// </summary>
         Indexer ()
         {
         }
@@ -21,6 +37,12 @@ namespace NachoCore.Index
 
         readonly ConcurrentDictionary<int, NcIndex> IndexesByAccount = new ConcurrentDictionary<int, NcIndex> ();
 
+        /// <summary>
+        /// Get the index corresponding to a particular account.  Each account has its own index primarily
+        /// to allow for easy and thorough deletion of the entire account data.
+        /// </summary>
+        /// <returns>The index for an account.</returns>
+        /// <param name="accountId">The id number of the account</param>
         public NcIndex IndexForAccount (int accountId)
         {
             if (IndexesByAccount.TryGetValue (accountId, out var index)) {
@@ -38,6 +60,10 @@ namespace NachoCore.Index
             return index;
         }
 
+        /// <summary>
+        /// Delete the indexed items for a given account
+        /// </summary>
+        /// <param name="accountId">Account id number</param>
         public void DeleteIndex (int accountId)
         {
             var index = IndexForAccount (accountId);
@@ -48,31 +74,451 @@ namespace NachoCore.Index
 
         #region Adding & Removing Items
 
-        public void Add (Model.McEmailMessage message)
+        /// <summary>
+        /// Notify the indexer that an email message needs to be added to the index
+        /// </summary>
+        /// <param name="message">The message to index</param>
+        public void Add (McEmailMessage message)
         {
+            JobQueue.Enqueue (IndexEmailMessagesJob);
+            SetNeedsWork ();
         }
 
-        public void Add (Model.McContact contact)
+        /// <summary>
+        /// Notify the indexer that a contact needs to be added to the index
+        /// </summary>
+        /// <param name="contact">The contact to index</param>
+        public void Add (McContact contact)
         {
+            JobQueue.Enqueue (IndexContactsJob);
+            SetNeedsWork ();
         }
 
-        public void Remove (Model.McEmailMessage message)
+        /// <summary>
+        /// Notify the indexer that an email message needs to be removed from the index
+        /// </summary>
+        /// <param name="message">The message to unindex</param>
+        public void Remove (McEmailMessage message)
         {
+            NcTask.Run (() => {
+                // TODO: insert unindex row
+                JobQueue.Enqueue (UnindexJob);
+                SetNeedsWork ();
+            }, "Indexer.RemoveMessage");
         }
 
-        public void Remove (Model.McContact contact)
+        /// <summary>
+        /// Notify the indexer that a contact needs to be removed from the index
+        /// </summary>
+        /// <param name="contact">The contact to unindex</param>
+        public void Remove (McContact contact)
         {
+            NcTask.Run (() => {
+                // TODO: insert unindex row
+                JobQueue.Enqueue (UnindexJob);
+                SetNeedsWork ();
+            }, "Indexer.RemoveContact");
         }
 
         #endregion
 
-        #region Indexing Queue
+        #region Worker
 
-        void EnqueueJob ()
+        enum StateEnum
         {
+            Stopped,
+            Started,
+            Working
+        }
+
+        int State;
+
+        public void Start ()
+        {
+            if (Interlocked.CompareExchange (ref State, (int)StateEnum.Started, (int)StateEnum.Stopped) == (int)StateEnum.Stopped) {
+                Log.LOG_SEARCH.Info ("Indexer started");
+                SetNeedsWork ();
+            } else {
+                Log.LOG_SEARCH.Warn ("Start() called on Indexer that was not stopped");
+            }
+        }
+
+        public void Stop ()
+        {
+            Interlocked.Exchange (ref State, (int)StateEnum.Stopped);
+            Log.LOG_SEARCH.Info ("Indexer stopped");
+        }
+
+        void SetNeedsWork ()
+        {
+            if (Interlocked.CompareExchange (ref State, (int)StateEnum.Working, (int)StateEnum.Started) == (int)StateEnum.Started) {
+                Log.LOG_SEARCH.Info ("Indexer launching worker");
+                NcTask.Run (Work, "Indexer");
+            }
+        }
+
+        readonly ConcurrentQueue<Action> JobQueue = new ConcurrentQueue<Action> ();
+
+        void Work ()
+        {
+            var originalThreadPriority = Thread.CurrentThread.Priority;
+            Thread.CurrentThread.Priority = ThreadPriority.Lowest;
+            Log.LOG_SEARCH.Info ("Indexer worker running");
+            JobQueue.Enqueue (IndexEmailMessagesJob);
+            JobQueue.Enqueue (IndexContactsJob);
+            JobQueue.Enqueue (UnindexJob);
+            try {
+                while (State == (int)StateEnum.Working && JobQueue.TryDequeue (out var job)) {
+                    job ();
+                }
+            } finally {
+                if (Interlocked.CompareExchange (ref State, (int)StateEnum.Started, (int)StateEnum.Working) != (int)StateEnum.Working) {
+                    Log.LOG_SEARCH.Info ("Indexer worker stopped before completion");
+                    JobQueue.Clear ();
+                } else {
+                    Log.LOG_SEARCH.Info ("Indexer worker done");
+                    // It's possible that an Add or Remove method added a job to the queue
+                    // after the last time we looked.  If that method's call to SetNeedsWork
+                    // happened before we changed the state back to Started, no new worker task was
+                    // launched.  Therefore, we need to check the queue one more time, and
+                    // call SetNeedsWork ourselves to ensure that the job gets picked up.
+                    // Note that if the Add/Remove method's call to SetNeedsWork instead came
+                    // after we changed the state back to Started, we'll be calling SetNeedsWork
+                    // redundantly here, which is not a problem because it will instead be our
+                    // call that won't launch a new worker task.
+                    if (!JobQueue.IsEmpty) {
+                        SetNeedsWork ();
+                    }
+                }
+                Thread.CurrentThread.Priority = originalThreadPriority;
+            }
+        }
+
+        const int MaxIndexEmailMessagesBatchCount = 5;
+
+        void IndexEmailMessagesJob ()
+        {
+            var limit = MaxIndexEmailMessagesBatchCount;
+            var messages = McEmailMessage.QueryNeedsIndexing (maxMessages: limit);
+            Log.LOG_SEARCH.Info ("Indexer found {0} messages to index", messages.Count);
+            var messagesByAccount = new Dictionary<int, List<McEmailMessage>> ();
+            foreach (var message in messages) {
+                if (!messagesByAccount.ContainsKey (message.AccountId)) {
+                    messagesByAccount [message.AccountId] = new List<McEmailMessage> ();
+                }
+                messagesByAccount [message.AccountId].Add (message);
+            }
+            foreach (var pair in messagesByAccount) {
+                IndexEmailMessages (pair.Key, pair.Value.ToArray ());
+            }
+            if (messages.Count == limit) {
+                JobQueue.Enqueue (IndexEmailMessagesJob);
+            }
+        }
+
+        const int MaxIndexContactsBatchCount = 5;
+
+        void IndexContactsJob ()
+        {
+            var limit = MaxIndexContactsBatchCount;
+            var contacts = McContact.QueryNeedIndexing (maxContact: limit);
+            Log.LOG_SEARCH.Info ("Indexer found {0} contacts to index", contacts.Count);
+            var contactsByAccount = new Dictionary<int, List<McContact>> ();
+            foreach (var contact in contacts) {
+                if (!contactsByAccount.ContainsKey (contact.AccountId)) {
+                    contactsByAccount [contact.AccountId] = new List<McContact> ();
+                }
+                contactsByAccount [contact.AccountId].Add (contact);
+            }
+            foreach (var pair in contactsByAccount) {
+                IndexContacts (pair.Key, pair.Value.ToArray ());
+            }
+            if (contacts.Count == limit) {
+                JobQueue.Enqueue (IndexContactsJob);
+            }
+        }
+
+        const int MaxUnindexBatchCount = 5;
+
+        void UnindexJob ()
+        {
+            var limit = MaxUnindexBatchCount;
+        }
+
+        void IndexEmailMessages (int accountId, McEmailMessage [] messages)
+        {
+            // TODO: make sure each message still exists and the account exists
+            var index = IndexForAccount (accountId);
+            // remove any messages that are already in the index
+            using (var transaction = index.RemovingTransaction ()) {
+                if (transaction != null) {
+                    foreach (var message in messages) {
+                        if (message.IsIndexed != 0) {
+                            transaction.Remove (EmailMessageIndexDocument.DocumentType, message.GetIndexId ());
+                        }
+                    }
+                    transaction.Commit ();
+                }
+            }
+            // add all messages to the index
+            using (var transaction = index.AddingTransaction ()) {
+                if (transaction != null) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        foreach (var message in messages) {
+                            transaction.Add (message);
+                            message.UpdateIsIndex (message.SetIndexVersion ());
+                        }
+                        transaction.Commit ();
+                    });
+                }
+            }
+        }
+
+        void UnindexEmailMessages (int accountId, string [] messageIndexIds)
+        {
+            var index = IndexForAccount (accountId);
+            using (var transaction = index.RemovingTransaction ()) {
+                foreach (var id in messageIndexIds) {
+                    transaction.Remove (EmailMessageIndexDocument.DocumentType, id);
+                }
+                transaction.Commit ();
+            }
+        }
+
+        void IndexContacts (int accountId, McContact [] contacts)
+        {
+            // TODO: make sure each contact still exists and the account exists
+            var index = IndexForAccount (accountId);
+            // remove any contacts that are already in the index
+            using (var transaction = index.RemovingTransaction ()) {
+                if (transaction != null) {
+                    foreach (var contact in contacts) {
+                        if (contact.IndexVersion != 0) {
+                            transaction.Remove (ContactIndexDocument.DocumentType, contact.GetIndexId ());
+                        }
+                    }
+                    transaction.Commit ();
+                }
+            }
+            // add all contacts to the index
+            using (var transaction = index.AddingTransaction ()) {
+                if (transaction != null) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        foreach (var contact in contacts) {
+                            transaction.Add (contact);
+                            contact.SetIndexVersion ();
+                            contact.UpdateIndexVersion ();
+                        }
+                        transaction.Commit ();
+                    });
+                }
+            }
+        }
+
+        void UnindexContact (int accountId, string [] contactIndexIds)
+        {
+            var index = IndexForAccount (accountId);
+            using (var transaction = index.RemovingTransaction ()) {
+                foreach (var id in contactIndexIds) {
+                    transaction.Remove (ContactIndexDocument.DocumentType, id);
+                }
+                transaction.Commit ();
+            }
         }
 
         #endregion
 
     }
+
+    #region Email Message Extesnsions
+
+    public static class EmailMessageExtensions
+    {
+
+        /// <summary>
+        /// Get the ID string to use in the search index, unique among all messages
+        /// </summary>
+        /// <returns>A string identifier</returns>
+        /// <param name="message">Message.</param>
+        public static string GetIndexId (this McEmailMessage message)
+        {
+            return message.Id.ToString ();
+        }
+
+        /// <summary>
+        /// Get the body content that will be indexed for search purposes.  This method may block while the content
+        /// is extracted, so it should be called on a background thread.
+        /// </summary>
+        /// <returns>The body content.</returns>
+        /// <param name="message">Message.</param>
+        public static string GetIndexContent (this McEmailMessage message)
+        {
+            var body = message.GetBodyIfComplete ();
+            if (body == null) {
+                return null;
+            }
+            var bundle = new NcEmailMessageBundle (body);
+            if (bundle.NeedsUpdate) {
+                bundle.Update ();
+            }
+            return bundle.FullText;
+        }
+
+        /// <summary>
+        /// Get the structured parameters that can be used to create a <see cref="EmailMessageIndexDocument"/>.
+        /// This method may block while the content parameter is extracted, so it should be called on a background thread.
+        /// </summary>
+        /// <returns>The parameters.</returns>
+        /// <param name="message">Message.</param>
+        public static EmailMessageIndexParameters GetIndexParameters (this McEmailMessage message)
+        {
+
+            var parameters = new EmailMessageIndexParameters () {
+                From = NcEmailAddress.ParseAddressListString (message.From),
+                To = NcEmailAddress.ParseAddressListString (message.To),
+                Cc = NcEmailAddress.ParseAddressListString (message.Cc),
+                Bcc = NcEmailAddress.ParseAddressListString (message.Bcc),
+                ReceivedDate = message.DateReceived,
+                Subject = message.Subject,
+                Preview = message.BodyPreview,
+            };
+            parameters.Content = message.GetIndexContent ();
+            return parameters;
+        }
+
+        /// <summary>
+        /// Get the document that can be added to a search index.  This method may block while the parameters
+        /// are extracted, so it should be called on a background thread.
+        /// </summary>
+        /// <returns>The document.</returns>
+        /// <param name="message">Message.</param>
+        public static EmailMessageIndexDocument GetIndexDocument (this McEmailMessage message)
+        {
+            if (message.IsJunk) {
+                return null;
+            }
+            var id = message.GetIndexId ();
+            var parameters = message.GetIndexParameters ();
+            var doc = new EmailMessageIndexDocument (id, parameters);
+            return doc;
+        }
+    }
+
+    #endregion
+
+    #region Contact Extensions
+
+    public static class ContactExtensions
+    {
+
+        /// <summary>
+        /// Get the ID string to use in the search index, unique among all contacts
+        /// </summary>
+        /// <returns>A string identifier</returns>
+        /// <param name="contact">Contact.</param>
+        public static string GetIndexId (this McContact contact)
+        {
+            return contact.Id.ToString ();
+        }
+
+        /// <summary>
+        /// Get the parameters that can be used to construct a <see cref="ContactIndexDocument"/>
+        /// </summary>
+        /// <returns>The parameters.</returns>
+        /// <param name="contact">Contact.</param>
+        public static ContactIndexParameters GetIndexParameters (this McContact contact)
+        {
+            var parameters = new ContactIndexParameters () {
+                FirstName = contact.FirstName,
+                MiddleName = contact.MiddleName,
+                LastName = contact.LastName,
+                CompanyName = contact.CompanyName,
+            };
+            foreach (var emailAddress in contact.EmailAddresses) {
+                parameters.EmailAddresses.Add (emailAddress.Value);
+                var addr = NcEmailAddress.ParseMailboxAddressString (emailAddress.Value);
+                if (addr != null) {
+                    var idx = emailAddress.Value.IndexOf ("@");
+                    parameters.EmailDomains.Add (emailAddress.Value.Substring (idx + 1));
+                }
+            }
+            foreach (var phoneNumber in contact.PhoneNumbers) {
+                parameters.PhoneNumbers.Add (phoneNumber.Value);
+            }
+            foreach (var address in contact.Addresses) {
+                string addressString = address.Street + "\n" + address.City + "\n" + address.State + "\n" + address.PostalCode + "\n" + address.Country + "\n";
+                parameters.Addresses.Add (addressString);
+            }
+            var body = contact.GetBodyIfComplete ();
+            if (body != null) {
+                try {
+                    parameters.Note = File.ReadAllText (body.GetFilePath ());
+                } catch (IOException) {
+                }
+            }
+            return parameters;
+        }
+
+        /// <summary>
+        /// Get the document that can be added to a search index
+        /// </summary>
+        /// <returns>The index document.</returns>
+        /// <param name="contact">Contact.</param>
+        public static ContactIndexDocument GetIndexDocument (this McContact contact)
+        {
+            var id = contact.GetIndexId ();
+            var parameters = contact.GetIndexParameters ();
+            var doc = new ContactIndexDocument (id, parameters);
+            return doc;
+        }
+    }
+
+    #endregion
+
+    #region AddingTransaction Extensions
+
+    public static class AddingTransactionExtensions
+    {
+        /// <summary>
+        /// Add an email message to the search index for this transaction.  This is a convenience
+        /// method that mostly just calls <see cref="EmailMessageExtensions.GetIndexDocument"/> and forwards
+        /// it along to the <see cref="AddingTransaction.Add(NcIndexDocument)"/> method
+        /// </summary>
+        /// <returns>The add.</returns>
+        /// <param name="transaction">Transaction.</param>
+        /// <param name="message">The message to add</param>
+        public static void Add (this AddingTransaction transaction, McEmailMessage message)
+        {
+            try {
+                var doc = message.GetIndexDocument ();
+                if (doc != null) {
+                    transaction.Add (doc);
+                }
+            } catch (NullReferenceException e) {
+                Log.Error (Log.LOG_SEARCH, "IndexEmailmessage: caught null exception - {0}", e);
+            }
+        }
+
+        /// <summary>
+        /// Add a contact to the search index for this transaction.  This is a convenience
+        /// method that mostly just calls <see cref="ContactExtensions.GetIndexDocument"/> and forwards
+        /// it along to the <see cref="AddingTransaction.Add(NcIndexDocument)"/> method
+        /// </summary>
+        /// <returns>The add.</returns>
+        /// <param name="transaction">Transaction.</param>
+        /// <param name="contact">The contact to add</param>
+        public static void Add (this AddingTransaction transaction, McContact contact)
+        {
+            try {
+                var doc = contact.GetIndexDocument ();
+                if (doc != null) {
+                    transaction.Add (doc);
+                }
+            } catch (NullReferenceException e) {
+                Log.Error (Log.LOG_SEARCH, "IndexEmailmessage: caught null exception - {0}", e);
+            }
+        }
+    }
+
+    #endregion
 }

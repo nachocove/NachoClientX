@@ -103,35 +103,6 @@ namespace NachoCore.Brain
             return UpdateEmailMessageScores ((McEmailMessage)obj);
         }
 
-        // Try to get the file path of the body of an McAbstrItem (or its derived classes)
-        private string GetValidBodyPath (McAbstrItem item, string caller, out McBody outBody)
-        {
-            // Make sure that there is a body
-            var body = item.GetBody ();
-            outBody = body;
-            if (null == body) {
-                Log.Warn (Log.LOG_BRAIN, "{0}: null body (id={1}, bodyId={2})", caller, item.Id, item.BodyId);
-                return null;
-            }
-
-            // Make sure the body is completely downloaded
-            if (!body.IsValid || (McAbstrFileDesc.FilePresenceEnum.Complete != body.FilePresence)) {
-                Log.Warn (Log.LOG_BRAIN, "{0}: not a valid, downloaded body (id={1}, bodyId={2}, isValid={3}, filePresence={4})",
-                    caller, item.Id, item.BodyId, body.IsValid, body.FilePresence);
-                return null;
-            }
-
-            // Make sure that the file path exists
-            var filePath = body.GetFilePath ();
-            if (!File.Exists (filePath)) {
-                Log.Warn (Log.LOG_BRAIN, "{0}: {1} does not exist (id={2}, bodyId={3})", caller, filePath, item.Id, item.BodyId);
-                body.DeleteFile (); // fix the inconsistent state
-                return null;
-            }
-
-            return filePath;
-        }
-
         protected bool UpdateAddressUserAction (McEmailAddress emailAddress, int action)
         {
             if ((null == emailAddress) || (0 == emailAddress.Id)) {

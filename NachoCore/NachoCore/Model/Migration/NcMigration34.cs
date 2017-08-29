@@ -25,9 +25,9 @@ namespace NachoCore.Model
             NcIndex index;
             foreach (var account in McAccount.GetAllAccounts ()) {
                 index = Indexer.Instance.IndexForAccount (account.Id);
-                if (index.BeginRemoveTransaction ()) {
-                    var numUpdated = index.BulkRemoveEmailMessage ();
-                    index.EndRemoveTransaction ();
+                using (var transaction = index.RemovingTransaction ()) {
+                    var numUpdated = transaction.RemoveAllMessages ();
+                    transaction.Commit ();
                     UpdateProgress (numUpdated);
                 }
             }

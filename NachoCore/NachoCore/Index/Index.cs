@@ -27,26 +27,16 @@ namespace NachoCore.Index
             Lock = new Mutex ();
         }
 
-        private StandardAnalyzer Analyzer;
-        private FSDirectory IndexDirectory;
+        public readonly StandardAnalyzer Analyzer;
+        public readonly FSDirectory IndexDirectory;
 
         private Mutex Lock;
-        private IndexWriter Writer;
-        private IndexReader Reader;
 
         #endregion
 
         #region Index Status
 
         private bool Deleted;
-
-        public bool Dirty { protected set; get; }
-
-        public bool IsWriting {
-            get {
-                return (null != Writer);
-            }
-        }
 
         #endregion
 
@@ -92,147 +82,83 @@ namespace NachoCore.Index
 
         #region Adding Items
 
-        // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
-        // So, if you are going to use more than one item, please use the later combination.
-        public long Add (NcIndexDocument doc)
-        {
-            if (!BeginAddTransaction ()) {
-                return -1;
-            }
-            var bytesIndexed = BatchAdd (doc);
-            EndAddTransaction ();
-            return bytesIndexed;
-        }
-
-        public long BatchAdd (NcIndexDocument doc)
-        {
-            if (null == Writer) {
-                throw new ArgumentNullException ("writer not set up");
-            }
-
-            // Index the document
-            Writer.AddDocument (doc.Doc);
-            Dirty = true;
-
-            return doc.BytesIndexed;
-        }
-
-        public bool BeginAddTransaction ()
+        public AddingTransaction AddingTransaction ()
         {
             if (!Lock.WaitOne (KTimeoutMsec)) {
-                return false;
+                return null;
             }
             if (Deleted) {
                 Lock.ReleaseMutex ();
-                return false;
+                return null;
             }
-            if (null != Writer) {
-                throw new ArgumentException ("writer already exists");
-            }
-            Dirty = false;
-            Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
-            return true;
+            return new AddingTransaction (this, Lock);
         }
 
-        public void EndAddTransaction ()
+        // Add() is significantly slower when inserting multiple items than using a transaction
+        // So, if you are going to use more than one item, please use the later combination.
+        public long Add (NcIndexDocument doc)
         {
-            if (Dirty) {
-                Writer.Commit ();
-                Dirty = false;
+            long bytesIndexed = 0;
+            using (var transaction = AddingTransaction ()) {
+                if (transaction != null) {
+                    bytesIndexed += transaction.Add (doc);
+                    transaction.Commit ();
+                }
             }
-            Writer.Dispose ();
-            Writer = null;
-            Lock.ReleaseMutex ();
+            return bytesIndexed;
         }
 
         #endregion
 
         #region Removing Items
 
+        public RemovingTransaction RemovingTransaction ()
+        {
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return null;
+            }
+            if (Deleted) {
+                Lock.ReleaseMutex ();
+                return null;
+            }
+            try {
+                return new Index.RemovingTransaction (this, Lock);
+            } catch (NoSuchDirectoryException) {
+                // This can happen if the removal is done before anything is written to the index.
+                Lock.ReleaseMutex ();
+                return null;
+            }
+        }
+
         // Remove() is significantly slower than BeginRemoveTransaction() + BatchRemove() + EndRemoveTransaction()
         // So, if you are going to remove more than one item, please use the later combination.
         public bool Remove (string type, string id)
         {
-            if (!BeginRemoveTransaction ()) {
-                return false;
-            }
-            var isRemoved = BatchRemove (type, id);
-            EndRemoveTransaction ();
-            return isRemoved;
-        }
-
-        public bool BatchRemove (string type, string id)
-        {
-            if (null == Reader) {
-                throw new ArgumentNullException ("reader not set up");
-            }
-            var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "id", Analyzer);
-            var queryString = String.Format ("type:{0} AND id:{1}", type, id);
-            var query = parser.Parse (queryString);
-            var searcher = new IndexSearcher (Reader);
-            var matches = searcher.Search (query, 2);
-            if (1 != matches.TotalHits) {
-                if (1 < matches.TotalHits) {
-                    Debug ("{0}:{1} is not unique {2}", type, id, matches.TotalHits);
-                } else if (0 == matches.TotalHits) {
-                    Debug ("{0}:{1} not found", type, id);
+            var removed = true;
+            using (var transaction = RemovingTransaction ()) {
+                if (transaction != null) {
+                    if (!transaction.Remove (type, id)) {
+                        removed = false;
+                    }
+                    transaction.Commit ();
                 }
-                return false;
             }
-            Reader.DeleteDocument (matches.ScoreDocs [0].Doc);
-            Dirty = true;
-            return true;
-        }
-
-        public int BulkRemoveEmailMessage ()
-        {
-            if (null == Reader) {
-                throw new ArgumentNullException ("reader not set up");
-            }
-            var messages = new Term ("type", "message");
-            return Reader.DeleteDocuments (messages);
-        }
-
-        public bool BeginRemoveTransaction ()
-        {
-            if (!Lock.WaitOne (KTimeoutMsec)) {
-                return false;
-            }
-            if (Deleted) {
-                Lock.ReleaseMutex ();
-                return false;
-            }
-            if (null != Reader) {
-                throw new ArgumentException ("reader already exists");
-            }
-            try {
-                Reader = IndexReader.Open (IndexDirectory, false);
-            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
-                // This can happen if the removal is done before anything is written to the index.
-                Lock.ReleaseMutex ();
-                return false;
-            }
-            return true;
-        }
-
-        public void EndRemoveTransaction ()
-        {
-            Reader.Commit ();
-            Reader.Dispose ();
-            Reader = null;
-            Lock.ReleaseMutex ();
+            return removed;
         }
 
         #endregion
 
         #region Disposable interface
 
+        bool IsDisposed;
+
         public void Dispose ()
         {
-            Analyzer.Dispose ();
-            IndexDirectory.Dispose ();
-            Analyzer = null;
-            IndexDirectory = null;
+            if (!IsDisposed) {
+                Analyzer.Dispose ();
+                IndexDirectory.Dispose ();
+                IsDisposed = true;
+            }
         }
 
         #endregion
@@ -299,14 +225,105 @@ namespace NachoCore.Index
             return matchedItems;
         }
 
-        private void Debug (string fmt, params object [] args)
+        #endregion
+    }
+
+    public class AddingTransaction : IDisposable
+    {
+
+        readonly IndexWriter Writer;
+        bool NeedsCommit;
+        readonly Mutex IndexLock;
+
+        public AddingTransaction (NcIndex index, Mutex indexLock)
         {
-#if INDEX_DEBUG
-            Console.WriteLine (fmt, args);
-#endif
+            Writer = new IndexWriter (index.IndexDirectory, index.Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
+            IndexLock = indexLock;
         }
 
-        #endregion
+        public void Commit ()
+        {
+            if (NeedsCommit) {
+                Writer.Commit ();
+                NeedsCommit = false;
+            }
+        }
+
+        public void Dispose ()
+        {
+            Writer.Dispose ();
+            IndexLock.ReleaseMutex ();
+        }
+
+        public long Add (NcIndexDocument document)
+        {
+            Writer.AddDocument (document.Doc);
+            NeedsCommit = true;
+            return document.BytesIndexed;
+        }
+
+    }
+
+    public class RemovingTransaction : IDisposable
+    {
+
+        readonly IndexReader Reader;
+        readonly Mutex IndexLock;
+        bool NeedsCommit;
+        NcIndex Index;
+
+        public RemovingTransaction (NcIndex index, Mutex indexLock)
+        {
+            Index = index;
+            IndexLock = indexLock;
+            Reader = IndexReader.Open (Index.IndexDirectory, false);
+        }
+
+        public void Commit ()
+        {
+            if (NeedsCommit) {
+                Reader.Commit ();
+                NeedsCommit = false;
+            }
+        }
+
+        public bool Remove (string type, string id)
+        {
+            var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "id", Index.Analyzer);
+            var queryString = String.Format ("type:{0} AND id:{1}", type, id);
+            var query = parser.Parse (queryString);
+            var searcher = new IndexSearcher (Reader);
+            var matches = searcher.Search (query, 2);
+            if (matches.TotalHits != 1) {
+#if INDEX_DEBUG
+                if (1 < matches.TotalHits) {
+					Utils.Log.LOG_SEARCH.Debug ("{0}:{1} is not unique {2}", type, id, matches.TotalHits);
+				} else if (0 == matches.TotalHits) {
+					Utils.Log.LOG_SEARCH.Debug ("{0}:{1} not found", type, id);
+				}
+#endif
+                return false;
+            }
+            Reader.DeleteDocument (matches.ScoreDocs [0].Doc);
+            NeedsCommit = true;
+            return true;
+        }
+
+        public int RemoveAllMessages ()
+        {
+            var messages = new Term ("type", "message");
+            var count = Reader.DeleteDocuments (messages);
+            if (count > 0) {
+                NeedsCommit = true;
+            }
+            return count;
+        }
+
+        public void Dispose ()
+        {
+            Reader.Dispose ();
+            IndexLock.ReleaseMutex ();
+        }
     }
 
     public class MatchedItem

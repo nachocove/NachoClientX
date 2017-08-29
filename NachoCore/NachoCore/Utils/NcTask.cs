@@ -102,7 +102,8 @@ namespace NachoCore.Utils
             "UpdateUnreadMessageView",
             "OAuthHTTPServer",
             "OAuthHTTPClient",
-            "CallDirectoryUpdate"
+            "CallDirectoryUpdate",
+            "Indexer"
         };
 
         struct tracer

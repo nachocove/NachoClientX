@@ -198,12 +198,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcMessageIntent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcMessageThreads.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcObjectParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcQualifier.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcQuickResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcScoreCombiner.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcTimeVariance.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcTokenizer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\DateTime+ToString.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\String+SanitizeFileName.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\String+ToDateTime.cs" />
