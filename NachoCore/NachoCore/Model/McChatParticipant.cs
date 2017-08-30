@@ -95,7 +95,7 @@ namespace NachoCore.Model
             CachedColor = email.ColorIndex;
             if (ContactId != 0) {
                 var contact = McContact.QueryById<McContact> (ContactId);
-                if (contact != null){
+                if (contact != null) {
                     CachedName = contact.GetDisplayName ();
                     CachedInformalName = contact.GetInformalDisplayName ();
                     CachedPortraitId = contact.PortraitId;
@@ -107,14 +107,14 @@ namespace NachoCore.Model
             }
             var mailbox = MimeKit.MailboxAddress.Parse (EmailAddress);
             if (mailbox != null) {
-                if (String.IsNullOrEmpty (CachedName)){
+                if (String.IsNullOrEmpty (CachedName)) {
                     CachedName = mailbox.Name;
                 }
                 if (String.IsNullOrEmpty (CachedInformalName) && !String.IsNullOrEmpty (mailbox.Name)) {
                     CachedInformalName = mailbox.Name.Split (' ') [0];
                 }
             }
-            if (String.IsNullOrEmpty (CachedName)){
+            if (String.IsNullOrEmpty (CachedName)) {
                 CachedName = email.CanonicalEmailAddress;
             }
             if (String.IsNullOrEmpty (CachedInformalName)) {
@@ -123,7 +123,7 @@ namespace NachoCore.Model
             Update ();
         }
 
-        public static List<NcEmailAddress> ConvertToAddressList(List<McChatParticipant> participants)
+        public static List<NcEmailAddress> ConvertToAddressList (List<McChatParticipant> participants)
         {
             var result = new List<NcEmailAddress> ();
             foreach (var participant in participants) {

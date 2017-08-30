@@ -52,7 +52,7 @@ namespace NachoClient.iOS
 
         #region Setting Data
 
-        public void SetContact (McContact contact, string alternateEmail=null)
+        public void SetContact (McContact contact, string alternateEmail = null)
         {
             var name = contact.GetDisplayName ();
             var email = alternateEmail ?? contact.GetPrimaryCanonicalEmailAddress ();
@@ -79,7 +79,7 @@ namespace NachoClient.iOS
                     } else {
                         DetailTextLabel.Text = "";
                     }
-                } else if (!String.IsNullOrEmpty (phone)){
+                } else if (!String.IsNullOrEmpty (phone)) {
                     TextLabel.Text = phone;
                     DetailTextLabel.Text = "";
                 } else {
@@ -89,7 +89,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            PortraitView.SetPortrait(contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
+            PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
         }
 
         #endregion
