@@ -487,7 +487,7 @@ namespace NachoCore.IMAP
                     target.ServerId = ImapProtoControl.MessageServerId (Synckit.Folder, uid.Value);
                     return true;
                 });
-                EmailMessage = FixupFromInfo (EmailMessage, true);
+                EmailMessage = FixupFromInfo (EmailMessage);
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
             }
@@ -535,9 +535,7 @@ namespace NachoCore.IMAP
                     changed = true;
                 }
             }
-            bool ch;
-            FixupFromInfo (emailMessage, false, out ch);
-            if (ch) {
+            if (emailMessage.PopulateCachedFields ()) {
                 changed = true;
             }
             return changed;
@@ -613,49 +611,13 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage, bool updateDb)
+        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage)
         {
-            bool changed;
-            return FixupFromInfo (emailMessage, updateDb, out changed);
-        }
-
-        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage, bool updateDb, out bool changed)
-        {
-            changed = false;
-            if (!string.IsNullOrEmpty (emailMessage.From)) {
-                string cachedFromLetters = string.Empty;
-                int cachedFromColor = 1;
-                int fromEmailAddressId = 0;
-                try {
-                    cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
-                }
-
-                McEmailAddress fromEmailAddress;
-                if (McEmailAddress.Get (emailMessage.AccountId, emailMessage.From, out fromEmailAddress)) {
-                    fromEmailAddressId = fromEmailAddress.Id;
-                    cachedFromColor = fromEmailAddress.ColorIndex;
-                }
-                if (emailMessage.cachedFromLetters != cachedFromLetters ||
-                    emailMessage.cachedFromColor != cachedFromColor ||
-                    emailMessage.FromEmailAddressId != fromEmailAddressId) {
-                    if (updateDb) {
-                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                            var target = (McEmailMessage)record;
-                            target.cachedFromLetters = cachedFromLetters;
-                            target.cachedFromColor = cachedFromColor;
-                            target.FromEmailAddressId = fromEmailAddressId;
-                            return true;
-                        });
-                    } else {
-                        emailMessage.cachedFromLetters = cachedFromLetters;
-                        emailMessage.cachedFromColor = cachedFromColor;
-                        emailMessage.FromEmailAddressId = fromEmailAddressId;
-                    }
-                    changed = true;
-                }
-            }
+            emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.PopulateCachedFields ();
+                return true;
+            });
             return emailMessage;
         }
 
@@ -712,10 +674,6 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
                 emailMessage.Sender = summary.Envelope.Sender [0].ToString ();
-                McEmailAddress fromEmailAddress;
-                if (McEmailAddress.Get (accountId, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
-                    emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
-                }
             }
             if (null != summary.References && summary.References.Any ()) {
                 emailMessage.References = string.Join ("\n", summary.References);
@@ -764,7 +722,7 @@ namespace NachoCore.IMAP
             emailMessage.IsIncomplete = false;
             emailMessage.DetermineIfIsChat ();
 
-            return FixupFromInfo (emailMessage, false);
+            return emailMessage;
         }
 
         private static bool SetConversationId (McEmailMessage emailMessage, MessageSummary summary)

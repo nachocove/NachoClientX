@@ -836,7 +836,7 @@ namespace NachoClient.AndroidClient
                         name = attendee.Email;
                     }
                     NameLabel.Text = name;
-                    PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, ContactsHelper.GetInitials (contact));
+                    PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, contact.Initials);
                 } else {
                     NameLabel.Text = attendee.DisplayName;
                     PortraitView.SetPortrait (0, 1, ContactsHelper.NameToLetters (attendee.DisplayName));

@@ -99,7 +99,7 @@ namespace NachoCore.Model
                     CachedName = contact.GetDisplayName ();
                     CachedInformalName = contact.GetInformalDisplayName ();
                     CachedPortraitId = contact.PortraitId;
-                    CachedInitials = ContactsHelper.GetInitials (contact);
+                    CachedInitials = contact.Initials;
                 }
             }
             if (String.IsNullOrEmpty (CachedInitials)) {

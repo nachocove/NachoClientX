@@ -40,6 +40,7 @@ namespace NachoCore.Utils
             Resource = 8,
             // McCalendar
             Organizer = 9,
+            ReplyTo = 10
         };
 
         /// Which list?
@@ -142,7 +143,7 @@ namespace NachoCore.Utils
                 return "Unknown";
             default:
                 NcAssert.CaseError ();
-                return"";
+                return "";
             }
         }
 
@@ -186,7 +187,7 @@ namespace NachoCore.Utils
             switch (kind) {
             case Kind.Required:
                 return NcAttendeeType.Required;
-            case  Kind.Optional:
+            case Kind.Optional:
                 return NcAttendeeType.Optional;
             case Kind.Resource:
                 return NcAttendeeType.Resource;
@@ -294,26 +295,6 @@ namespace NachoCore.Utils
                 return addresses [0] as MailboxAddress;
             } else {
                 return null;
-            }
-        }
-
-        public static void ParseName (MailboxAddress address, ref McContact contact)
-        {
-            var parser = new CSharpNameParser.NameParser ();
-            CSharpNameParser.Name parsedName = parser.Parse (address.Name);
-            if (!String.IsNullOrEmpty (parsedName.FirstName)) {
-                contact.FirstName = parsedName.FirstName;
-                if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) {
-                    contact.MiddleName = parsedName.MiddleInitials;
-                }
-            } else if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) { //use middle name if first name is missing
-                contact.FirstName = parsedName.MiddleInitials;
-            }
-            if (!String.IsNullOrEmpty (parsedName.LastName)) {
-                contact.LastName = parsedName.LastName;
-            }
-            if (!String.IsNullOrEmpty (parsedName.Suffix)) {
-                contact.Suffix = parsedName.Suffix;
             }
         }
 

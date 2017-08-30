@@ -337,6 +337,113 @@ namespace NachoCore.Model
 
         public bool IsAction { get; set; }
 
+        /// <summary>
+        /// Access the <see cref="From"/> property as a list of structured mailboxes.  While it's not common,
+        /// it's possible for an email message to have more than one from address.  In such a scenario, the
+        /// <see cref="SenderMailbox"/> should specify the actual sender of the message.
+        /// </summary>
+        /// <value>From mailboxes.</value>
+        [Ignore]
+        public Mailbox [] FromMailboxes {
+            get {
+                if (Mailbox.TryParseArray (From, out var mailboxes)) {
+                    return mailboxes;
+                }
+                return new Mailbox [0];
+            }
+            set {
+                From = value?.ToAddressString ();
+            }
+        }
+
+        /// <summary>
+        /// Access the <see cref="Sender"/> property as a structured mailbox.  The sender is used when
+        /// a message is sent on behalf of someone else, or when the <see cref="FromMailboxes"/> field contains
+        /// multiple mailboxes.
+        /// </summary>
+        /// <value>The sender mailbox.</value>
+        [Ignore]
+        public Mailbox? SenderMailbox {
+            get {
+                if (Mailbox.TryParse (Sender, out var mailbox)) {
+                    return mailbox;
+                }
+                return null;
+            }
+            set {
+                Sender = value.ToString ();
+            }
+        }
+
+        /// <summary>
+        /// Access the <see cref="ReplyTo"/> property as a list of structured mailboxes.  While the reply to
+        /// field often has zero on one entries, it's possible to have more than one.
+        /// </summary>
+        /// <value>The reply to mailboxes.</value>
+        [Ignore]
+        public Mailbox [] ReplyToMailboxes {
+            get {
+                if (Mailbox.TryParseArray (ReplyTo, out var mailboxes)) {
+                    return mailboxes;
+                }
+                return new Mailbox [0];
+            }
+            set {
+                ReplyTo = value?.ToAddressString ();
+            }
+        }
+
+        /// <summary>
+        /// Access the <see cref="To"/> property as a list of structured mailboxes.
+        /// </summary>
+        /// <value>To mailboxes.</value>
+        [Ignore]
+        public Mailbox [] ToMailboxes {
+            get {
+                if (Mailbox.TryParseArray (To, out var mailboxes)) {
+                    return mailboxes;
+                }
+                return new Mailbox [0];
+            }
+            set {
+                To = value?.ToAddressString ();
+            }
+        }
+
+        /// <summary>
+        /// Access the <see cref="Cc"/> property as a list of structured mailboxes.
+        /// </summary>
+        /// <value>To mailboxes.</value>
+        [Ignore]
+        public Mailbox [] CcMailboxes {
+            get {
+                if (Mailbox.TryParseArray (Cc, out var mailboxes)) {
+                    return mailboxes;
+                }
+                return new Mailbox [0];
+            }
+            set {
+                Cc = value?.ToAddressString ();
+            }
+        }
+
+        /// <summary>
+        /// Access the <see cref="Bcc"/> property as a list of structured mailboxes.
+        /// </summary>
+        /// <value>To mailboxes.</value>
+        [Ignore]
+        public Mailbox [] BccMailboxes {
+            get {
+                if (Mailbox.TryParseArray (Bcc, out var mailboxes)) {
+                    return mailboxes;
+                }
+                return new Mailbox [0];
+            }
+            set {
+                Bcc = value?.ToAddressString ();
+            }
+        }
+
         /// Attachments are separate
 
         [Ignore]
@@ -1154,14 +1261,27 @@ namespace NachoCore.Model
 
         public void ProcessAfterReceipt ()
         {
-            Indexer.Instance.Add (this);
-            // TODO: glean contacts
-            // TODO: request index
-            // TODO: poulate FromEmailAddressId (if 0; perhaps it always gets set beforehand?)
+            //Brain.NcContactGleaner.GleanContactsHeader (this);
             // TODO: populate McMapEmailAddressEntry for from/to/cc
             // TODO: populate HeadersFiltered (used only by contact gleaner)
             // TODO: populate IsReply (maybe not, is only used by brain)
+            Indexer.Instance.Add (this);
         }
+
+        bool ShouldGlean ()
+        {
+            if (IsJunk) {
+                return false;
+            }
+            // TODO: disqualifiers from Brain
+            return true;
+        }
+
+        void GleanContacts (Mailbox [] mailboxes)
+        {
+        }
+
+
     }
 
     public class McEmailMessageThread
@@ -1257,13 +1377,6 @@ namespace NachoCore.Model
 
     public partial class McEmailMessage
     {
-        private bool emailAddressesChanged = false;
-
-        /// Indexes of To in McEmailAddress table
-        private List<int> dbToEmailAddressId = null;
-
-        /// Indexes of Cc in McEmailAddress table
-        private List<int> dbCcEmailAddressId = null;
 
         private List<McEmailMessageCategory> dbCategories = null;
         private IList<McEmailMessageCategory> appCategories = null;
@@ -1386,48 +1499,6 @@ namespace NachoCore.Model
             appMeetingRequestSet = false;
         }
 
-        [Ignore]
-        public List<int> ToEmailAddressId {
-            get {
-                ReadAddressMaps ();
-                return dbToEmailAddressId;
-            }
-            set {
-                emailAddressesChanged = true;
-                dbToEmailAddressId = value;
-            }
-        }
-
-        [Ignore]
-        public List<int> CcEmailAddressId {
-            get {
-                ReadAddressMaps ();
-                return dbCcEmailAddressId;
-            }
-            set {
-                emailAddressesChanged = true;
-                dbCcEmailAddressId = value;
-            }
-        }
-
-        protected void ReadAddressMaps ()
-        {
-            if (null == dbToEmailAddressId) {
-                if (0 == this.Id) {
-                    dbToEmailAddressId = new List<int> ();
-                } else {
-                    dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
-                }
-            }
-            if (null == dbCcEmailAddressId) {
-                if (0 == this.Id) {
-                    dbCcEmailAddressId = new List<int> ();
-                } else {
-                    dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
-                }
-            }
-        }
-
         private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
         {
             if (null != addressIdList) {
@@ -1440,23 +1511,55 @@ namespace NachoCore.Model
             }
         }
 
-        private void InsertAddressMaps ()
+        public void InsertAddressMaps ()
         {
-            if (0 < FromEmailAddressId) {
+            var sender = SenderMailbox;
+            if (sender.HasValue && McEmailAddress.GetOrCreate (AccountId, sender.Value, out var senderAddress)) {
                 var map = CreateAddressMap ();
-                map.EmailAddressId = FromEmailAddressId;
-                map.AddressType = NcEmailAddress.Kind.From;
-                map.Insert ();
-            }
-            if (0 < SenderEmailAddressId) {
-                var map = CreateAddressMap ();
-                map.EmailAddressId = SenderEmailAddressId;
+                map.EmailAddressId = senderAddress.Id;
                 map.AddressType = NcEmailAddress.Kind.Sender;
                 map.Insert ();
             }
-            InsertAddressList (dbToEmailAddressId, NcEmailAddress.Kind.To);
-            InsertAddressList (dbCcEmailAddressId, NcEmailAddress.Kind.Cc);
-            emailAddressesChanged = false;
+            foreach (var mailbox in FromMailboxes) {
+                if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = address.Id;
+                    map.AddressType = NcEmailAddress.Kind.From;
+                    map.Insert ();
+                }
+            }
+            foreach (var mailbox in ReplyToMailboxes) {
+                if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = address.Id;
+                    map.AddressType = NcEmailAddress.Kind.ReplyTo;
+                    map.Insert ();
+                }
+            }
+            foreach (var mailbox in ToMailboxes) {
+                if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = address.Id;
+                    map.AddressType = NcEmailAddress.Kind.To;
+                    map.Insert ();
+                }
+            }
+            foreach (var mailbox in CcMailboxes) {
+                if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = address.Id;
+                    map.AddressType = NcEmailAddress.Kind.Cc;
+                    map.Insert ();
+                }
+            }
+            foreach (var mailbox in BccMailboxes) {
+                if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = address.Id;
+                    map.AddressType = NcEmailAddress.Kind.Bcc;
+                    map.Insert ();
+                }
+            }
         }
 
         private void DeleteAddressMaps ()
@@ -1464,27 +1567,60 @@ namespace NachoCore.Model
             McMapEmailAddressEntry.DeleteMessageMapEntries (AccountId, Id);
         }
 
+        void SetInitialScore ()
+        {
+            if (0 == ScoreVersion) {
+                // Try to use the address score for initial email message score
+                // TODO - Should refactor IScorable to include a quick score function in Brain 2.0
+                McEmailAddress emailAddress = GetFromAddress ();
+                if (null != emailAddress) {
+                    if (emailAddress.IsVip || (0 < UserAction)) {
+                        Score = minHotScore;
+                    } else if (0 > UserAction) {
+                        Score = minHotScore - 0.1;
+                    } else if (0 < emailAddress.ScoreVersion) {
+                        Score = emailAddress.Score;
+                    } else {
+                        Score = 0.0;
+                    }
+                }
+            }
+        }
+
+        public bool PopulateCachedFields ()
+        {
+            var originalFromId = FromEmailAddressId;
+            var originalSenderId = SenderEmailAddressId;
+            var originalFromLetters = cachedFromLetters;
+            var originalFromColor = cachedFromColor;
+            var fromMailboxes = FromMailboxes;
+            if (fromMailboxes.Length > 0 && McEmailAddress.GetOrCreate (AccountId, fromMailboxes [0], out var fromAddress)) {
+                FromEmailAddressId = fromAddress.Id;
+                cachedFromLetters = fromMailboxes [0].Initials;
+                cachedFromColor = fromAddress.ColorIndex;
+            } else {
+                FromEmailAddressId = 0;
+                cachedFromLetters = "";
+                cachedFromColor = 1;
+            }
+
+            var sender = SenderMailbox;
+            if (sender.HasValue && McEmailAddress.GetOrCreate (AccountId, sender.Value, out var senderAddress)) {
+                SenderEmailAddressId = senderAddress.Id;
+            } else {
+                SenderEmailAddressId = 0;
+            }
+
+            return originalFromId != FromEmailAddressId || originalSenderId != SenderEmailAddressId || originalFromColor != cachedFromColor || originalFromLetters != cachedFromLetters;
+        }
+
         public override int Insert ()
         {
             using (var capture = CaptureWithStart ("Insert")) {
                 int returnVal = -1;
 
-                if (0 == ScoreVersion) {
-                    // Try to use the address score for initial email message score
-                    // TODO - Should refactor IScorable to include a quick score function in Brain 2.0
-                    McEmailAddress emailAddress = GetFromAddress ();
-                    if (null != emailAddress) {
-                        if (emailAddress.IsVip || (0 < UserAction)) {
-                            Score = minHotScore;
-                        } else if (0 > UserAction) {
-                            Score = minHotScore - 0.1;
-                        } else if (0 < emailAddress.ScoreVersion) {
-                            Score = emailAddress.Score;
-                        } else {
-                            Score = 0.0;
-                        }
-                    }
-                }
+                SetInitialScore ();
+                PopulateCachedFields ();
                 HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
 
                 NcModel.Instance.RunInTransaction (() => {
@@ -1518,10 +1654,6 @@ namespace NachoCore.Model
                 }
                 SaveMeetingRequest ();
                 SaveCategories ();
-                if (emailAddressesChanged) {
-                    DeleteAddressMaps ();
-                    InsertAddressMaps ();
-                }
                 // Score states are only affected by brain which uses the score states Update() method.
                 // So, no need to update score states here
             });

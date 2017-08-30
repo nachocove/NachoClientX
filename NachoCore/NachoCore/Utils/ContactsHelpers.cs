@@ -121,43 +121,6 @@ namespace NachoCore.Utils
             { Xml.Contacts.YomiLastName, "Yomi Last Name" },
         };
 
-        private static string GetFirstLetterOrDigit (string src)
-        {
-            string initial = "";
-            if (!String.IsNullOrEmpty (src)) {
-                foreach (char c in src) {
-                    if (Char.IsLetterOrDigit (c)) {
-                        initial += Char.ToUpperInvariant (c);
-                        break;
-                    }
-                }
-            }
-            return initial;
-        }
-
-        public static string GetInitials (McContact contact)
-        {
-            string initials = "";
-            // First try the user's name
-            initials += GetFirstLetterOrDigit (contact.FirstName);
-            if (!String.IsNullOrEmpty (contact.LastName)) {
-                if (Char.IsLetter (contact.LastName [0])) {
-                    initials += Char.ToUpperInvariant (contact.LastName [0]);
-                } else if (!String.IsNullOrEmpty (contact.MiddleName)) {
-                    initials += GetFirstLetterOrDigit (contact.MiddleName);
-                }
-            }
-            // Or, failing that, email address
-            if (String.IsNullOrEmpty (initials)) {
-                initials = GetFirstLetterOrDigit (contact.GetPrimaryCanonicalEmailAddress ());
-            }
-            // Or, finally, anything we've got
-            if (String.IsNullOrEmpty (initials)) {
-                initials = GetFirstLetterOrDigit (contact.GetDisplayName ());
-            }
-            return initials;
-        }
-
         public static void CopyContact (McContact orig, ref McContact copy)
         {
             copy.ServerId = orig.ServerId;

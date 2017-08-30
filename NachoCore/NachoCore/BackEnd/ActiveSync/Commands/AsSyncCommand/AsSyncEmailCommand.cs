@@ -42,27 +42,13 @@ namespace NachoCore.ActiveSync
                 }
                 emailMessage.IsIncomplete = true;
             }
-
-            // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
-            McEmailAddress fromEmailAddress;
-            if (McEmailAddress.Get (folder.AccountId, emailMessage.From, out fromEmailAddress)) {
-                emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
-            } else {
-                emailMessage.FromEmailAddressId = 0;
-                emailMessage.cachedFromLetters = "";
-                emailMessage.cachedFromColor = 1;
+            bool justCreated = false;
+            if (null == eMsg) {
+                justCreated = true;
+                emailMessage.AccountId = folder.AccountId;
             }
 
-            emailMessage.SenderEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.Sender);
-
             NcModel.Instance.RunInTransaction (() => {
-                bool justCreated = false;
-                if (null == eMsg) {
-                    justCreated = true;
-                    emailMessage.AccountId = folder.AccountId;
-                }
                 if (justCreated) {
                     emailMessage.ParseIntentFromSubject ();
                     emailMessage.IsJunk = folder.IsJunkFolder ();

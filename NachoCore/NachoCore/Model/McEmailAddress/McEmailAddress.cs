@@ -31,24 +31,85 @@ namespace NachoCore.Model
 
         public int ColorIndex { get; set; }
 
+        /// <summary>
+        /// Get or create an email address record given the canonical email address string, which is an address
+        /// normalized using all lowercase for the domain part, which is case insensitive.  This only checks for
+        /// a null/empty address and does no formal validation of the address.  It assumes that the address
+        /// came from something like a <see cref="Mailbox"/> that was created by parsing and validating a string.
+        /// </summary>
+        /// <returns><c>true if the address is not null or empty</c>, <c>false</c> otherwise</returns>
+        /// <param name="accountId">Account id</param>
+        /// <param name="canonicalEmailAddress">Email address normalized with lowercase domain part</param>
+        /// <param name="address">The found or created address</param>
+        static bool GetOrCreate (int accountId, string canonicalEmailAddress, out McEmailAddress address)
+        {
+            if (String.IsNullOrEmpty (canonicalEmailAddress)) {
+                address = null;
+                return false;
+            }
+            address = QueryByCanonicalAddress (canonicalEmailAddress);
+            if (address != null) {
+                return true;
+            }
+            McEmailAddress addedAddress = null;
+            NcModel.Instance.RunInTransaction (() => {
+                // Repeat the lookup while within the transaction, in case another thread added it just now.
+                // If it is still not found, create a new McEmailaddress.
+                addedAddress = QueryByCanonicalAddress (canonicalEmailAddress);
+                if (addedAddress == null) {
+                    addedAddress = new McEmailAddress (accountId, canonicalEmailAddress);
+                    addedAddress.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+                    addedAddress.Insert ();
+                }
+            });
+            address = addedAddress;
+            return true;
+        }
+
+        /// <summary>
+        /// Get or creates an email address for the given mailbox.  Returns true if an existing email address
+        /// record was found or created, false if the mailbox contains a null address.
+        /// </summary>
+        /// <returns><c>true</c>, if found or created, <c>false</c> otherwise.</returns>
+        /// <param name="accountId">Account id</param>
+        /// <param name="mailbox">Mailbox.</param>
+        /// <param name="address">The found or created address</param>
+        public static bool GetOrCreate (int accountId, Mailbox mailbox, out McEmailAddress address)
+        {
+            return GetOrCreate (accountId, mailbox.CanonicalAddress, out address);
+        }
+
+        /// <summary>
+        /// Get or create an email address record after parsing the input string as a mailbox.  This can be
+        /// passed a string that includes a name and email, like <c>Some Person &lt;some.person@example.com></c>,
+        /// or it can be passed a simple email address.  If the string could not be parsed, this will return
+        /// <c>false</c>.
+        /// </summary>
+        /// <returns><c>true if the string is a valid mailbox</c>, <c>false</c> otherwise</returns>
+        /// <param name="accountId">Account id</param>
+        /// <param name="emailAddressString">Email or mailbox string</param>
+        /// <param name="emailAddress">The found or created address record</param>
         public static bool Get (int accountId, string emailAddressString, out McEmailAddress emailAddress)
         {
+            if (Mailbox.TryParse (emailAddressString, out var mailbox)) {
+                return GetOrCreate (accountId, mailbox, out emailAddress);
+            }
             emailAddress = null;
-            if (String.IsNullOrEmpty (emailAddressString)) {
-                return false;
+            return false;
+        }
+
+        /// <summary>
+        /// Get or create the ID of the email address record that matches the given email or mailbox string.
+        /// </summary>
+        /// <returns>The id of the found or created address record, or <c>0</c> if the input is not a valid email or mailbox string</returns>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="emailAddressString">Email address string.</param>
+        public static int Get (int accountId, string emailAddressString)
+        {
+            if (Get (accountId, emailAddressString, out var address)) {
+                return address.Id;
             }
-            InternetAddressList addresses;
-            if (!InternetAddressList.TryParse (emailAddressString, out addresses)) {
-                return false;
-            }
-            if (0 == addresses.Count) {
-                return false;
-            }
-            NcAssert.True (1 == addresses.Count);
-            if (!(addresses [0] is MailboxAddress)) {
-                return false; // TODO: group addresses
-            }
-            return Get (accountId, addresses [0] as MailboxAddress, out emailAddress);
+            return 0;
         }
 
         /// <summary>
@@ -56,34 +117,10 @@ namespace NachoCore.Model
         /// </summary>
         public static bool Get (int accountId, MailboxAddress mailboxAddress, out McEmailAddress emailAddress)
         {
-            // See if a matching McEmailAddress exists, without opening a write transaction.
-            var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
-            McEmailAddress retval = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
-            if (null != retval) {
-                emailAddress = retval;
-                return true;
-            }
-            NcModel.Instance.RunInTransaction (() => {
-                // Repeat the lookup while within the transaction, in case another thread added it just now.
-                // If it is still not found, create a new McEmailaddress.
-                retval = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
-                if (null == retval) {
-                    retval = new McEmailAddress (accountId, mailboxAddress.Address);
-                    retval.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
-                    retval.Insert ();
-                }
-            });
-            emailAddress = retval;
-            return true;
-        }
-
-        public static int Get (int accountId, string emailAddressString)
-        {
-            McEmailAddress emailAddress;
-            if (!Get (accountId, emailAddressString, out emailAddress)) {
-                return 0;
-            }
-            return emailAddress.Id;
+            // TODO: deprecate this in favor of the Maibox apis
+            // FIXME: mailboxAddress.Address may have capitals in the domain and therefore not be entirely
+            // canonical, but this is how it has always worked
+            return GetOrCreate (accountId, mailboxAddress.Address, out emailAddress);
         }
 
         public static List<int> GetList (int accountId, string emailAddressListString)

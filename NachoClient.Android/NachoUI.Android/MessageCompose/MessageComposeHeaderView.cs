@@ -374,8 +374,7 @@ namespace NachoClient.AndroidClient
                 primaryLabel.Text = email;
                 secondaryLabel.Visibility = ViewStates.Gone;
             }
-            var initials = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            photoView.SetPortrait (contact.PortraitId, contact.CircleColor, initials);
+            photoView.SetPortrait (contact.PortraitId, contact.CircleColor, contact.Initials);
 
             return view;
         }

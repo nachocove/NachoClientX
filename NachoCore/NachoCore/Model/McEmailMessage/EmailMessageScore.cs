@@ -201,7 +201,7 @@ namespace NachoCore.Model
 
         delegate double classifier (McEmailMessage emailMessage);
 
-        public Tuple<double,double> Classify ()
+        public Tuple<double, double> Classify ()
         {
             double? memoized = null;
             classifier bayLike = (McEmailMessage emailMessage) => {
@@ -227,7 +227,7 @@ namespace NachoCore.Model
                         // TODO - incorporate content score
                     )
                 );
-            var ltrScore = 
+            var ltrScore =
                 QualifiersCombiner.Combine (this,
                     // A hot Score makes Score2 not matter currently, and any one qualifier match currently makes
                     // a message hot.
@@ -318,41 +318,6 @@ namespace NachoCore.Model
 
         public void AnalyzeOtherAddresses ()
         {
-            bool fromUpdated = false, toUpdated = false, ccUpdated = false;
-            if (!String.IsNullOrEmpty (From) && (0 == FromEmailAddressId)) {
-                FromEmailAddressId = McEmailAddress.Get (AccountId, From);
-                if (0 < FromEmailAddressId) {
-                    fromUpdated = true;
-                }
-            }
-            if (!String.IsNullOrEmpty (To)) {
-                ToEmailAddressId = McEmailAddress.GetList (AccountId, To);
-                if (0 < ToEmailAddressId.Count) {
-                    toUpdated = true;
-                }
-            }
-            if (!String.IsNullOrEmpty (Cc)) {
-                CcEmailAddressId = McEmailAddress.GetList (AccountId, Cc);
-                if (0 < CcEmailAddressId.Count) {
-                    ccUpdated = true;
-                }
-            }
-
-            // Insert the address maps for to and cc address lists before we update the to / cc statistics
-            // so that MarkDependencies() can correctly update emails NeedUpdate flag.
-            if (fromUpdated) {
-                var map = CreateAddressMap ();
-                map.EmailAddressId = FromEmailAddressId;
-                map.AddressType = NcEmailAddress.Kind.From;
-                map.Insert ();
-            }
-            if (toUpdated) {
-                InsertAddressList (ToEmailAddressId, NcEmailAddress.Kind.To);
-            }
-            if (ccUpdated) {
-                InsertAddressList (CcEmailAddressId, NcEmailAddress.Kind.Cc);
-            }
-
             // Update statistics for email addresses
             foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                 emailAddress.IncrementToEmailsReceived (markDependencies: false);
@@ -569,7 +534,7 @@ namespace NachoCore.Model
                 // meeting invite with a valid stop time, a single deadline time
                 // variance state machine is created. No other consideration is
                 // needed.
-                NcMeetingTimeVariance tv = 
+                NcMeetingTimeVariance tv =
                     new NcMeetingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
                 tvList.Add (tv);
                 return tvList;
@@ -772,7 +737,7 @@ namespace NachoCore.Model
             //
             // 1. ScoreVersion is non-zero
             // 2. TimeVarianceType is not DONE
-            List<NcEmailMessageIndex> emailMessageIdList = 
+            List<NcEmailMessageIndex> emailMessageIdList =
                 NcModel.Instance.Db.Query<NcEmailMessageIndex> ("SELECT m.Id FROM McEmailMessage AS m " +
                 "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ? ORDER BY DateReceived ASC", NcTimeVarianceType.DONE);
             int n = 0;
@@ -841,7 +806,7 @@ namespace NachoCore.Model
             return accountAddress == mbAddr.Address;
         }
 
-        protected void UpdateAnalysisInternal (DateTime newTime, double variance, Func<DateTime, double, bool> updateFunc, Func<bool, bool> setFunc, 
+        protected void UpdateAnalysisInternal (DateTime newTime, double variance, Func<DateTime, double, bool> updateFunc, Func<bool, bool> setFunc,
                                                Action<McEmailAddress, int> fromFunc, Action<McEmailAddress, int> toFunc, Action<McEmailAddress, int> ccFunc)
         {
             NcModel.Instance.RunInTransaction (() => {

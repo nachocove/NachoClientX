@@ -408,7 +408,7 @@ namespace NachoClient.AndroidClient
                     }
                 }
 
-                PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (contact));
+                PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, contact.Initials);
 
                 if (!String.IsNullOrEmpty (email)) {
                     EmailButton.Visibility = ViewStates.Visible;

@@ -159,7 +159,7 @@ namespace NachoClient.iOS
                     TextLabel.Text = displayName;
                     DetailTextLabel.Text = emailAddress;
                 }
-                PortraitView.SetPortrait (contactAddress.CachedContact.PortraitId, contactAddress.CachedContact.CircleColor, ContactsHelper.GetInitials (contactAddress.CachedContact));
+                PortraitView.SetPortrait (contactAddress.CachedContact.PortraitId, contactAddress.CachedContact.CircleColor, contactAddress.CachedContact.Initials);
             }
 
             public void AdoptTheme (Theme theme)

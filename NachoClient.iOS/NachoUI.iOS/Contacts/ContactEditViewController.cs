@@ -1321,7 +1321,7 @@ namespace NachoClient.iOS
 
             if (0 == contactCopy.PortraitId) {
                 headerInitialsLabel.BackgroundColor = userBackgroundColor;
-                headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contactCopy);
+                headerInitialsLabel.Text = contactCopy.Initials;
                 headerInitialsLabel.Hidden = false;
             } else {
                 headerPortraitImageView.Image = Util.ContactToPortraitImage (contactCopy);

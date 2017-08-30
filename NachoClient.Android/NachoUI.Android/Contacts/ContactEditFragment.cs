@@ -747,7 +747,7 @@ namespace NachoClient.AndroidClient
 
             void UpdatePortrait ()
             {
-                PortraitView.SetPortrait (Contact.PortraitId, Contact.CircleColor, NachoCore.Utils.ContactsHelper.GetInitials (Contact));
+                PortraitView.SetPortrait (Contact.PortraitId, Contact.CircleColor, Contact.Initials);
             }
 
         }

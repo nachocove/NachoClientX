@@ -1838,6 +1838,53 @@ namespace NachoCore.Model
             return name;
         }
 
+        [Ignore]
+        public string Initials {
+            get {
+                string initials = FirstName?.GetFirstLetterOrDigit () ?? "";
+                if (!String.IsNullOrEmpty (LastName)) {
+                    if (Char.IsLetter (LastName [0])) {
+                        initials += Char.ToUpperInvariant (LastName [0]);
+                    } else if (!String.IsNullOrEmpty (MiddleName)) {
+                        initials += MiddleName.GetFirstLetterOrDigit ();
+                    }
+                }
+                // Or, failing that, email address
+                if (String.IsNullOrEmpty (initials)) {
+                    initials = GetPrimaryCanonicalEmailAddress ()?.GetFirstLetterOrDigit () ?? "";
+                }
+                // Or, finally, anything we've got
+                if (String.IsNullOrEmpty (initials)) {
+                    initials = GetDisplayName ()?.GetFirstLetterOrDigit () ?? "";
+                }
+                return initials;
+            }
+        }
+
+        /// <summary>
+        /// Parses the full name and sets the relvant fields like <see cref="FirstName"/> and <see cref="LastName"/>
+        /// </summary>
+        /// <param name="name">The name to parse</param>
+        public void SetName (string name)
+        {
+            var parser = new CSharpNameParser.NameParser ();
+            CSharpNameParser.Name parsedName = parser.Parse (name);
+            if (!String.IsNullOrEmpty (parsedName.FirstName)) {
+                FirstName = parsedName.FirstName;
+                if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) {
+                    MiddleName = parsedName.MiddleInitials;
+                }
+            } else if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) { //use middle name if first name is missing
+                FirstName = parsedName.MiddleInitials;
+            }
+            if (!String.IsNullOrEmpty (parsedName.LastName)) {
+                LastName = parsedName.LastName;
+            }
+            if (!String.IsNullOrEmpty (parsedName.Suffix)) {
+                Suffix = parsedName.Suffix;
+            }
+        }
+
         public string GetInformalDisplayName ()
         {
             if (!String.IsNullOrEmpty (FirstName)) {

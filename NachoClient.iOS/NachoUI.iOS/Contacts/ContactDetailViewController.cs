@@ -444,7 +444,7 @@ namespace NachoClient.iOS
 
             if (0 == contact.PortraitId) {
                 headerInitialsLabel.BackgroundColor = userBackgroundColor;
-                headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+                headerInitialsLabel.Text = contact.Initials;
                 headerInitialsLabel.Hidden = false;
 
             } else {

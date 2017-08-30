@@ -824,31 +824,10 @@ namespace NachoCore.Utils
 
         public static string Initials (string fromAddressString)
         {
-            // Parse the from address
-            if (String.IsNullOrEmpty (fromAddressString)) {
-                Log.Error (Log.LOG_UTILS, "Initials passed a null or empty from string");
-                return "";
+            if (Mailbox.TryParse (fromAddressString, out var mailbox)) {
+                return mailbox.Initials;
             }
-            var initials = "";
-            try {
-                var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (fromAddressString);
-                if (null != mailboxAddress) {
-                    McContact contact = new McContact ();
-                    NcEmailAddress.ParseName (mailboxAddress, ref contact);
-                    initials = ContactsHelper.GetInitials (contact);
-                }
-                if (String.IsNullOrEmpty (initials)) {
-                    foreach (char c in fromAddressString) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                Log.Error (Log.LOG_UTILS, "Initials crashed\n{0}", e.StackTrace);
-            }
-            return initials;
+            return fromAddressString?.GetFirstLetterOrDigit () ?? "";
         }
 
         public static MimeMessage CreateMessage (McAccount account, List<NcEmailAddress> toList, List<NcEmailAddress> ccList, List<NcEmailAddress> bccList)
