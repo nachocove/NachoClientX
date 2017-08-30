@@ -296,6 +296,8 @@ namespace NachoCore.ActiveSync
                                     if (item.BodyId == 0) {
                                         Log.Error (Log.LOG_AS, "{0} ItemOperations: BodyId == 0 after message body download", CmdNameWithAccount);
                                         successInd = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
+                                    } else {
+                                        Index.Indexer.Instance.Add (item as McEmailMessage);
                                     }
                                 } else {
                                     item.ApplyAsXmlBody (xmlBody);

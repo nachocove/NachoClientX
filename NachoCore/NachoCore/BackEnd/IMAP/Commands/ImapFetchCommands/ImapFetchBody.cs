@@ -215,6 +215,8 @@ namespace NachoCore.IMAP
 
             MimeHelpers.PossiblyExtractAttachmentsFromBody (body, email, Cts.Token);
 
+            Index.Indexer.Instance.Add (email);
+
             return NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
         }
 

@@ -81,6 +81,7 @@ namespace NachoCore.Index
         public void Add (McEmailMessage message)
         {
             Log.LOG_SEARCH.Info ("Indexer Add requested for message {0}", message.Id);
+            // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
             JobQueue.Enqueue (IndexEmailMessagesJob);
             SetNeedsWork ();
         }
@@ -92,6 +93,7 @@ namespace NachoCore.Index
         public void Add (McContact contact)
         {
             Log.LOG_SEARCH.Info ("Indexer Add requested for contact {0}", contact.Id);
+            // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
             JobQueue.Enqueue (IndexContactsJob);
             SetNeedsWork ();
         }
@@ -110,6 +112,7 @@ namespace NachoCore.Index
                     DocumentType = EmailMessageIndexDocument.DocumentType
                 };
                 item.Insert ();
+                // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
                 JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
             }, "Indexer.RemoveMessage");
@@ -159,6 +162,9 @@ namespace NachoCore.Index
         {
             if (Interlocked.CompareExchange (ref State, (int)StateEnum.Started, (int)StateEnum.Stopped) == (int)StateEnum.Stopped) {
                 Log.LOG_SEARCH.Info ("Indexer started");
+                JobQueue.Enqueue (IndexEmailMessagesJob);
+                JobQueue.Enqueue (IndexContactsJob);
+                JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
             } else {
                 Log.LOG_SEARCH.Warn ("Start() called on Indexer that was not stopped");
@@ -214,9 +220,6 @@ namespace NachoCore.Index
             var originalThreadPriority = Thread.CurrentThread.Priority;
             Thread.CurrentThread.Priority = ThreadPriority.Lowest;
             Log.LOG_SEARCH.Info ("Indexer worker running");
-            JobQueue.Enqueue (IndexEmailMessagesJob);
-            JobQueue.Enqueue (IndexContactsJob);
-            JobQueue.Enqueue (UnindexJob);
             try {
                 while (State == (int)StateEnum.Working && JobQueue.TryDequeue (out var job)) {
                     job ();
@@ -326,7 +329,15 @@ namespace NachoCore.Index
         /// <param name="messages">Messages.</param>
         void IndexEmailMessages (int accountId, McEmailMessage [] messages)
         {
-            // TODO: make sure each message still exists and the account exists
+            // A note on stale data:
+            // 1. If an account is deleted, its entire index is blown away, but that
+            //    can't happen until a transaction completes, and starting a new
+            //    transaction on a deleted index will return a null transaction.
+            //    Since we watch out for a null transaction, we're safe from inserting
+            //    items into an index that has been deleted.
+            // 2. If a message has been deleted, its unindex job should still be pending
+            //    so it's okay to insert it in the index because it will quickly be removed
+            //    when the unindex job runs
             var index = IndexForAccount (accountId);
             // remove any messages that are already in the index
             using (var transaction = index.RemovingTransaction ()) {
@@ -345,7 +356,7 @@ namespace NachoCore.Index
                     NcModel.Instance.RunInTransaction (() => {
                         foreach (var message in messages) {
                             transaction.Add (message);
-                            message.UpdateIsIndex (message.SetIndexVersion ());
+                            message.UpdateIsIndex (message.GetIndexVersion ());
                         }
                         transaction.Commit ();
                     });
@@ -360,7 +371,15 @@ namespace NachoCore.Index
         /// <param name="contacts">Contacts.</param>
         void IndexContacts (int accountId, McContact [] contacts)
         {
-            // TODO: make sure each contact still exists and the account exists
+            // A note on stale data:
+            // 1. If an account is deleted, its entire index is blown away, but that
+            //    can't happen until a transaction completes, and starting a new
+            //    transaction on a deleted index will return a null transaction.
+            //    Since we watch out for a null transaction, we're safe from inserting
+            //    items into an index that has been deleted.
+            // 2. If a contact has been deleted, its unindex job should still be pending
+            //    so it's okay to insert it in the index because it will quickly be removed
+            //    when the unindex job runs
             var index = IndexForAccount (accountId);
             // remove any contacts that are already in the index
             using (var transaction = index.RemovingTransaction ()) {
@@ -379,8 +398,7 @@ namespace NachoCore.Index
                     NcModel.Instance.RunInTransaction (() => {
                         foreach (var contact in contacts) {
                             transaction.Add (contact);
-                            contact.SetIndexVersion ();
-                            contact.UpdateIndexVersion ();
+                            contact.UpdateIndexVersion (contact.GetIndexVersion ());
                         }
                         transaction.Commit ();
                     });
@@ -396,15 +414,23 @@ namespace NachoCore.Index
         /// <param name="items">Items.</param>
         void Unindex (int accountId, McSearchUnindexQueueItem [] items)
         {
+            // A note on stale data:
+            // 1. If an account is deleted, its entire index is blown away, but that
+            //    can't happen until a transaction completes, and starting a new
+            //    transaction on a deleted index will return a null transaction.
+            //    Since we watch out for a null transaction, we're safe from removing
+            //    items from an index that has been deleted.
             var index = IndexForAccount (accountId);
             using (var transaction = index.RemovingTransaction ()) {
-                NcModel.Instance.RunInTransaction (() => {
-                    foreach (var item in items) {
-                        transaction.Remove (item.DocumentType, item.DocumentId);
-                        item.Delete ();
-                    }
-                    transaction.Commit ();
-                });
+                if (transaction != null) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        foreach (var item in items) {
+                            transaction.Remove (item.DocumentType, item.DocumentId);
+                            item.Delete ();
+                        }
+                        transaction.Commit ();
+                    });
+                }
             }
         }
 
