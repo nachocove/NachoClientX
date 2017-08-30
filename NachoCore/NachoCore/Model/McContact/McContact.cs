@@ -992,8 +992,9 @@ namespace NachoCore.Model
         // We need a specialized version of Update() because the normal Update()
         // assumes there is a change in content and un-index the message. This would lead
         // to a perpetual loop of indexing and un-indexing.
-        public void UpdateIndexVersion ()
+        public void UpdateIndexVersion (int version)
         {
+            IndexVersion = version;
             NcModel.Instance.BusyProtect (() => {
                 return NcModel.Instance.Db.Execute ("UPDATE McContact SET IndexVersion = ? WHERE Id = ?",
                     IndexVersion, Id);
@@ -2137,18 +2138,12 @@ namespace NachoCore.Model
             ricCache = null;
         }
 
-        public void SetIndexVersion ()
+        public int GetIndexVersion ()
         {
-            if (0 == BodyId) {
-                IndexVersion = ContactIndexDocument.Version - 1;
-            } else {
-                var body = GetBody ();
-                if ((null != body) && body.IsComplete ()) {
-                    IndexVersion = ContactIndexDocument.Version;
-                } else {
-                    IndexVersion = ContactIndexDocument.Version - 1;
-                }
+            if (GetBodyIfComplete () == null) {
+                return ContactIndexDocument.Version - 1;
             }
+            return ContactIndexDocument.Version;
         }
 
         protected static bool CompareLists<T> (List<T> list1, List<T> list2, Func<T, T, bool> comparer)

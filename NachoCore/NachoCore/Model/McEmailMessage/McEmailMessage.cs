@@ -1541,11 +1541,12 @@ namespace NachoCore.Model
             return 0;
         }
 
-        public void UpdateIsIndex (int newIsIndexed)
+        public void UpdateIsIndex (int version)
         {
+            IsIndexed = version;
             NcModel.Instance.BusyProtect (() => {
                 return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ?, RowVersion = RowVersion + 1 WHERE Id = ?",
-                    newIsIndexed, Id);
+                    version, Id);
             });
         }
 
@@ -1633,26 +1634,12 @@ namespace NachoCore.Model
             return false;
         }
 
-        public int SetIndexVersion ()
+        public int GetIndexVersion ()
         {
-            int newIsIndexed;
-            if (IsJunk) {
-                // Don't index junk
-                newIsIndexed = EmailMessageIndexDocument.Version;
-            } else if (0 == BodyId) {
-                // No body to index. Try again later.
-                newIsIndexed = EmailMessageIndexDocument.Version - 1;
-            } else {
-                var body = GetBody ();
-                if ((null != body) && body.IsComplete ()) {
-                    // Message is fully indexed
-                    newIsIndexed = EmailMessageIndexDocument.Version;
-                } else {
-                    // Body not downloaded; try again later
-                    newIsIndexed = EmailMessageIndexDocument.Version - 1;
-                }
+            if (!IsJunk && GetBodyIfComplete () == null) {
+                return EmailMessageIndexDocument.Version - 1;
             }
-            return newIsIndexed;
+            return EmailMessageIndexDocument.Version;
         }
 
         public static McEmailMessage QueryByMessageId (int accountId, string messageId)
