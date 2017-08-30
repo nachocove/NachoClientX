@@ -169,7 +169,7 @@ namespace NachoCore.ActiveSync
             } else if (null != xmlServerId) {
                 // This means we are processing a body download prefetch response.
                 NcModel.Instance.RunInTransaction (() => {
-                    McPending.EmailBodyError(AccountId, xmlServerId.Value);
+                    McPending.EmailBodyError (AccountId, xmlServerId.Value);
                 });
             } else {
                 Log.Error (Log.LOG_AS, "{0}: MaybeErrorFileDesc: null xmlFileReference and xmlServerId", CmdNameWithAccount);
@@ -302,7 +302,7 @@ namespace NachoCore.ActiveSync
                                     item.Update ();
                                 }
                             }
-                            Log.Info (Log.LOG_AS, "{0} ItemOperations item {1} {2}fetched.", CmdNameWithAccount, serverId, 
+                            Log.Info (Log.LOG_AS, "{0} ItemOperations item {1} {2}fetched.", CmdNameWithAccount, serverId,
                                 (null == pending) ? "pre" : "");
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);

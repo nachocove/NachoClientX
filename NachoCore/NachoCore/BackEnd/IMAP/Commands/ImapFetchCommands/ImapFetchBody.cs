@@ -464,13 +464,13 @@ namespace NachoCore.IMAP
         /// <param name="s">S.</param>
         private void WriteASCIIString (Stream stream, string s)
         {
-            byte[] x = Encoding.ASCII.GetBytes (s);
+            byte [] x = Encoding.ASCII.GetBytes (s);
             stream.Write (x, 0, x.Length);
         }
 
         private void WriteUTF8String (Stream stream, string s)
         {
-            byte[] x = Encoding.UTF8.GetBytes (s);
+            byte [] x = Encoding.UTF8.GetBytes (s);
             stream.Write (x, 0, x.Length);
         }
 
@@ -482,7 +482,7 @@ namespace NachoCore.IMAP
         /// <param name="final">If true, the boundary is the final MIME boundary.</param>
         private void WriteBoundary (Stream stream, string boundary, bool final)
         {
-            WriteASCIIString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : "")); 
+            WriteASCIIString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : ""));
         }
 
         #endregion
@@ -567,7 +567,7 @@ namespace NachoCore.IMAP
                     break;
 
                 case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                    byte[] pbytes = new byte[previewLength];
+                    byte [] pbytes = new byte [previewLength];
                     bodyFile.Read (pbytes, 0, previewLength);
                     preview = Encoding.UTF8.GetString (pbytes);
                     break;
