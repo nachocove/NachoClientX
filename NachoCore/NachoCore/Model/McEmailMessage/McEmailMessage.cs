@@ -625,41 +625,21 @@ namespace NachoCore.Model
             }
         }
 
-        public static List<McEmailMessageThread> QueryInteractions (int accountId, McContact contact)
+        public static List<McEmailMessageThread> QueryInteractions (McContact contact)
         {
-            if (String.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
-                return new List<McEmailMessageThread> ();
-            }
+            var sql = "SELECT DISTINCT e.Id as FirstMessageId, 1 as MessageCount FROM McContactEmailAddressAttribute a " +
+                "JOIN McMapEmailAddressEntry am ON am.EmailAddressId = a.EmailAddress " +
+                "JOIN McEmailMessage e ON e.Id = am.ObjectId " +
+                "JOIN McMapFolderFolderEntry fm ON fm.FolderEntryId = e.Id " +
+                "JOIN McFolder f ON f.Id = fm.FolderId " +
+                "WHERE a.ContactId = ? " +
+                "AND likelihood (e.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (e.IsChat = 0, 0.8) " +
+                "AND likelihood (f.IsClientOwned != 1, 0.9) " +
+                "AND likelihood (f.Type != ?, 0.5) " +
+                "ORDER BY e.DateReceived DESC";
 
-            string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress () + "%";
-
-            // Not all accounts have deleted folder (e.g. Device). Using '0' is a trick.
-            McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
-            var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
-
-            var queryFormat =
-                "SELECT DISTINCT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
-                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                " JOIN McFolder AS f ON m.FolderId = f.Id " +
-                " WHERE " +
-                "{0}" +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (e.IsChat = 0, 0.8) AND " +
-                " likelihood (f.IsClientOwned != 1, 0.9) AND " +
-                " likelihood (m.ClassCode = ?, 0.2) AND " +
-                "{1}" +
-                " likelihood (m.FolderId != ?, 0.5) AND " +
-                " (likelihood (e.[From] LIKE ?, 0.05) OR " +
-                "  likelihood (e.[To] Like ?, 0.05) ) " +
-                " ORDER BY e.DateReceived DESC";
-
-            var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 0.2) AND ", accountId);
-            var account1 = SingleAccountString (" likelihood (m.AccountId = {0}, 0.2) AND ", accountId);
-
-            var query = String.Format (queryFormat, account0, account1);
-
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                query, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (sql, contact.Id, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);
         }
 
         public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)

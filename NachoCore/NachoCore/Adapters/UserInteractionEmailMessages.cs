@@ -31,7 +31,7 @@ namespace NachoCore
                 threadList = new List<McEmailMessageThread> ();
                 return true;
             }
-            var list = McEmailMessage.QueryInteractions (contact.AccountId, contact);
+            var list = McEmailMessage.QueryInteractions (contact);
             updatedThreadList = NcMessageThreads.ThreadByMessage (list);
             RemoveIgnoredMessages (updatedThreadList);
             return NcMessageThreads.AreDifferent (threadList, updatedThreadList, out adds, out deletes);
@@ -64,7 +64,7 @@ namespace NachoCore
                 return;
             }
             NcTask.Run (() => {
-                var rawList = McEmailMessage.QueryInteractions (contact.AccountId, contact);
+                var rawList = McEmailMessage.QueryInteractions (contact);
                 var newThreadList = NcMessageThreads.ThreadByMessage (rawList);
                 RemoveIgnoredMessages (newThreadList);
                 NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
@@ -112,7 +112,7 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return account.ContainsAccount (contact.AccountId);
+            return true;
         }
     }
 }
