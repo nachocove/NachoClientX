@@ -1154,6 +1154,7 @@ namespace NachoCore.Model
 
         public void ProcessAfterReceipt ()
         {
+            Indexer.Instance.Add (this);
             // TODO: glean contacts
             // TODO: request index
             // TODO: poulate FromEmailAddressId (if 0; perhaps it always gets set beforehand?)

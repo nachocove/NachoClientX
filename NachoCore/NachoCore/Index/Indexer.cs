@@ -80,6 +80,7 @@ namespace NachoCore.Index
         /// <param name="message">The message to index</param>
         public void Add (McEmailMessage message)
         {
+            Log.LOG_SEARCH.Info ("Indexer Add requested for message {0}", message.Id);
             JobQueue.Enqueue (IndexEmailMessagesJob);
             SetNeedsWork ();
         }
@@ -90,6 +91,7 @@ namespace NachoCore.Index
         /// <param name="contact">The contact to index</param>
         public void Add (McContact contact)
         {
+            Log.LOG_SEARCH.Info ("Indexer Add requested for contact {0}", contact.Id);
             JobQueue.Enqueue (IndexContactsJob);
             SetNeedsWork ();
         }
@@ -100,8 +102,14 @@ namespace NachoCore.Index
         /// <param name="message">The message to unindex</param>
         public void Remove (McEmailMessage message)
         {
+            Log.LOG_SEARCH.Info ("Indexer Remove requested for message {0}", message.Id);
             NcTask.Run (() => {
-                // TODO: insert unindex row
+                var item = new McSearchUnindexQueueItem () {
+                    AccountId = message.AccountId,
+                    DocumentId = message.GetIndexId (),
+                    DocumentType = EmailMessageIndexDocument.DocumentType
+                };
+                item.Insert ();
                 JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
             }, "Indexer.RemoveMessage");
@@ -113,8 +121,14 @@ namespace NachoCore.Index
         /// <param name="contact">The contact to unindex</param>
         public void Remove (McContact contact)
         {
+            Log.LOG_SEARCH.Info ("Indexer Remove requested for contact {0}", contact.Id);
             NcTask.Run (() => {
-                // TODO: insert unindex row
+                var item = new McSearchUnindexQueueItem () {
+                    AccountId = contact.AccountId,
+                    DocumentId = contact.GetIndexId (),
+                    DocumentType = ContactIndexDocument.DocumentType
+                };
+                item.Insert ();
                 JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
             }, "Indexer.RemoveContact");
@@ -133,6 +147,14 @@ namespace NachoCore.Index
 
         int State;
 
+        /// <summary>
+        /// Start the Indexer.  Typically called on app launch or foreground, this will start a worker to see if there are
+        /// any items right away.  Calling start doesn't mean that a worker will be continuously running, because a
+        /// worker will only stay alive as long as there is work to do.  The service must be started, however, before a
+        /// worker is allowed to run, and calling <see cref="Stop"/> not only interrupts any running worker, but prevents
+        /// further workers from running until Start is called again.  It is safe to call Start multiple times, although
+        /// a warning will be logged if you do because repeat calls likely indicate an issue with the calling code.
+        /// </summary>
         public void Start ()
         {
             if (Interlocked.CompareExchange (ref State, (int)StateEnum.Started, (int)StateEnum.Stopped) == (int)StateEnum.Stopped) {
@@ -143,12 +165,21 @@ namespace NachoCore.Index
             }
         }
 
+        /// <summary>
+        /// Stop the indexer. Typically called when the app goes to background, this will interrupt any worker currently
+        /// running and prevent another worker from running until <see cref="Start"/> is called.  It is safe to call
+        /// Stop multiple times, although this should not be standard practice.
+        /// </summary>
         public void Stop ()
         {
             Interlocked.Exchange (ref State, (int)StateEnum.Stopped);
             Log.LOG_SEARCH.Info ("Indexer stopped");
         }
 
+        /// <summary>
+        /// Notify the indexer that some work is required.  This will launch a worker if one is not already running.  It
+        /// has no effect if the indexer is stopped.
+        /// </summary>
         void SetNeedsWork ()
         {
             if (Interlocked.CompareExchange (ref State, (int)StateEnum.Working, (int)StateEnum.Started) == (int)StateEnum.Started) {
@@ -157,8 +188,27 @@ namespace NachoCore.Index
             }
         }
 
+        /// <summary>
+        /// The jobs that the worker needs to perform.  There are three possible jobs:
+        /// <list>
+        /// <item><description><see cref="IndexEmailMessagesJob"/></description></item>
+        /// <item><description><see cref="IndexContactsJob"/></description></item>
+        /// <item><description><see cref="UnindexJob"/></description></item>
+        /// </list>
+        /// That initially populate the queue.  The worker simply dequeues a job and runs it.
+        /// Each job runs only a small batch at a time so no one job takes up too much time.
+        /// If a job thinks it has more work to do, it will at itself back to the queue, although
+        /// at the end so other jobs run before it gets another shot.
+        /// The <see cref="Add"/> and <see cref="Remove"/> methods also put a job on the queue
+        /// to ensure it isn't missed if a worker has already started.
+        /// </summary>
         readonly ConcurrentQueue<Action> JobQueue = new ConcurrentQueue<Action> ();
 
+        /// <summary>
+        /// The body of the worker task that gets launched as needed.  This worker dequeues jobs
+        /// from the the <see cref="JobQueue"/>, runs them, checking the state between each run
+        /// so it can end if the indexer has been stopped.
+        /// </summary>
         void Work ()
         {
             var originalThreadPriority = Thread.CurrentThread.Priority;
@@ -196,6 +246,9 @@ namespace NachoCore.Index
 
         const int MaxIndexEmailMessagesBatchCount = 5;
 
+        /// <summary>
+        /// A <see cref="JobQueue"/> element, query and index a small batch of messages
+        /// </summary>
         void IndexEmailMessagesJob ()
         {
             var limit = MaxIndexEmailMessagesBatchCount;
@@ -218,6 +271,9 @@ namespace NachoCore.Index
 
         const int MaxIndexContactsBatchCount = 5;
 
+        /// <summary>
+        /// A <see cref="JobQueue"/> element, query and index a small batch of contacts
+        /// </summary>
         void IndexContactsJob ()
         {
             var limit = MaxIndexContactsBatchCount;
@@ -240,11 +296,34 @@ namespace NachoCore.Index
 
         const int MaxUnindexBatchCount = 5;
 
+        /// <summary>
+        /// A <see cref="JobQueue"/> element, query and unindex a small batch of items
+        /// </summary>
         void UnindexJob ()
         {
             var limit = MaxUnindexBatchCount;
+            var items = McSearchUnindexQueueItem.Query (maxItems: limit);
+            Log.LOG_SEARCH.Info ("Indexer found {0} unindex items", items.Count);
+            var itemsByAccount = new Dictionary<int, List<McSearchUnindexQueueItem>> ();
+            foreach (var item in items) {
+                if (!itemsByAccount.ContainsKey (item.AccountId)) {
+                    itemsByAccount [item.AccountId] = new List<McSearchUnindexQueueItem> ();
+                }
+                itemsByAccount [item.AccountId].Add (item);
+            }
+            foreach (var pair in itemsByAccount) {
+                Unindex (pair.Key, pair.Value.ToArray ());
+            }
+            if (items.Count == limit) {
+                JobQueue.Enqueue (UnindexJob);
+            }
         }
 
+        /// <summary>
+        /// Index a group of messages in a transaction
+        /// </summary>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="messages">Messages.</param>
         void IndexEmailMessages (int accountId, McEmailMessage [] messages)
         {
             // TODO: make sure each message still exists and the account exists
@@ -274,17 +353,11 @@ namespace NachoCore.Index
             }
         }
 
-        void UnindexEmailMessages (int accountId, string [] messageIndexIds)
-        {
-            var index = IndexForAccount (accountId);
-            using (var transaction = index.RemovingTransaction ()) {
-                foreach (var id in messageIndexIds) {
-                    transaction.Remove (EmailMessageIndexDocument.DocumentType, id);
-                }
-                transaction.Commit ();
-            }
-        }
-
+        /// <summary>
+        /// Index a group of contacts in a transaction
+        /// </summary>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="contacts">Contacts.</param>
         void IndexContacts (int accountId, McContact [] contacts)
         {
             // TODO: make sure each contact still exists and the account exists
@@ -315,14 +388,23 @@ namespace NachoCore.Index
             }
         }
 
-        void UnindexContact (int accountId, string [] contactIndexIds)
+        /// <summary>
+        /// Unindex a group of items in a transaction
+        /// </summary>
+        /// <returns>The unindex.</returns>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="items">Items.</param>
+        void Unindex (int accountId, McSearchUnindexQueueItem [] items)
         {
             var index = IndexForAccount (accountId);
             using (var transaction = index.RemovingTransaction ()) {
-                foreach (var id in contactIndexIds) {
-                    transaction.Remove (ContactIndexDocument.DocumentType, id);
-                }
-                transaction.Commit ();
+                NcModel.Instance.RunInTransaction (() => {
+                    foreach (var item in items) {
+                        transaction.Remove (item.DocumentType, item.DocumentId);
+                        item.Delete ();
+                    }
+                    transaction.Commit ();
+                });
             }
         }
 

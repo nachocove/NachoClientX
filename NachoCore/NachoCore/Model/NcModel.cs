@@ -157,7 +157,8 @@ namespace NachoCore.Model
                     typeof(McChat),
                     typeof(McChatMessage),
                     typeof(McChatParticipant),
-                    typeof(McAction)
+                    typeof(McAction),
+                    typeof(McSearchUnindexQueueItem),
                 };
             }
         }
