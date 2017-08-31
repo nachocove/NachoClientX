@@ -193,7 +193,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcBrainEventHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcBrainHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcContactGleaner.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcEmailAnalyzer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcMessageArchiver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Brain\NcMessageIntent.cs" />

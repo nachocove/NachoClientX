@@ -482,10 +482,10 @@ namespace NachoCore.Index
         {
 
             var parameters = new EmailMessageIndexParameters () {
-                From = NcEmailAddress.ParseAddressListString (message.From),
-                To = NcEmailAddress.ParseAddressListString (message.To),
-                Cc = NcEmailAddress.ParseAddressListString (message.Cc),
-                Bcc = NcEmailAddress.ParseAddressListString (message.Bcc),
+                From = message.FromMailboxes,
+                To = message.ToMailboxes,
+                Cc = message.CcMailboxes,
+                Bcc = message.BccMailboxes,
                 ReceivedDate = message.DateReceived,
                 Subject = message.Subject,
                 Preview = message.BodyPreview,

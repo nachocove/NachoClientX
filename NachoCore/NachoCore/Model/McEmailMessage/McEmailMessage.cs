@@ -634,12 +634,13 @@ namespace NachoCore.Model
                 "JOIN McFolder f ON f.Id = fm.FolderId " +
                 "WHERE a.ContactId = ? " +
                 "AND likelihood (e.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (fm.ClassCode = ?, 0.2) " +
                 "AND likelihood (e.IsChat = 0, 0.8) " +
                 "AND likelihood (f.IsClientOwned != 1, 0.9) " +
                 "AND likelihood (f.Type != ?, 0.5) " +
                 "ORDER BY e.DateReceived DESC";
 
-            return NcModel.Instance.Db.Query<McEmailMessageThread> (sql, contact.Id, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (sql, contact.Id, ClassCodeEnum.Email, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);
         }
 
         public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)
@@ -1241,27 +1242,80 @@ namespace NachoCore.Model
 
         public void ProcessAfterReceipt ()
         {
-            //Brain.NcContactGleaner.GleanContactsHeader (this);
-            // TODO: populate McMapEmailAddressEntry for from/to/cc
-            // TODO: populate HeadersFiltered (used only by contact gleaner)
-            // TODO: populate IsReply (maybe not, is only used by brain)
+            GleanContactsIfNeeded (GleanPhaseEnum.GLEAN_PHASE2);
             Indexer.Instance.Add (this);
         }
 
-        bool ShouldGlean ()
+        #region Contact Gleaning
+
+        static NcDisqualifier<McEmailMessage> [] GleaningDisqualifiers = new NcDisqualifier<McEmailMessage> []{
+            new NcMarketingEmailDisqualifier (),
+            new NcYahooBulkEmailDisqualifier (),
+        };
+
+        bool NeedsContactsGleaned (GleanPhaseEnum phase)
         {
+            if (HasBeenGleaned >= (int)phase) {
+                return false;
+            }
             if (IsJunk) {
                 return false;
             }
-            // TODO: disqualifiers from Brain
+            foreach (var disqualifier in GleaningDisqualifiers) {
+                if (disqualifier.Analyze (this)) {
+                    return false;
+                }
+            }
             return true;
         }
 
-        void GleanContacts (Mailbox [] mailboxes)
+        public void GleanContactsIfNeeded (GleanPhaseEnum phase)
         {
+            if (!NeedsContactsGleaned (phase)) {
+                return;
+            }
+            var folder = McFolder.GetGleanedFolder (AccountId);
+            McContact contact;
+            if (phase >= GleanPhaseEnum.GLEAN_PHASE1 && HasBeenGleaned < (int)GleanPhaseEnum.GLEAN_PHASE1) {
+                foreach (var mailbox in FromMailboxes) {
+                    McContact.CreateFromMailboxIfNeeded (folder, mailbox, out contact);
+                }
+                foreach (var mailbox in ToMailboxes) {
+                    McContact.CreateFromMailboxIfNeeded (folder, mailbox, out contact);
+                }
+            }
+            if (phase >= GleanPhaseEnum.GLEAN_PHASE2 && HasBeenGleaned < (int)GleanPhaseEnum.GLEAN_PHASE2) {
+                var sender = SenderMailbox;
+                if (sender.HasValue) {
+                    McContact.CreateFromMailboxIfNeeded (folder, sender.Value, out contact);
+                }
+                foreach (var mailbox in CcMailboxes) {
+                    McContact.CreateFromMailboxIfNeeded (folder, mailbox, out contact);
+                }
+                foreach (var mailbox in ReplyToMailboxes) {
+                    McContact.CreateFromMailboxIfNeeded (folder, mailbox, out contact);
+                }
+                foreach (var mailbox in BccMailboxes) {
+                    McContact.CreateFromMailboxIfNeeded (folder, mailbox, out contact);
+                }
+            }
+            MarkAsGleaned (phase);
         }
 
+        public void MarkAsGleaned (GleanPhaseEnum phase)
+        {
+            if (Id != 0) {
+                UpdateWithOCApply<McEmailMessage> ((item) => {
+                    var message = (McEmailMessage)item;
+                    message.HasBeenGleaned = (int)phase;
+                    return true;
+                });
+            } else {
+                HasBeenGleaned = (int)phase;
+            }
+        }
 
+        #endregion
     }
 
     public class McEmailMessageThread

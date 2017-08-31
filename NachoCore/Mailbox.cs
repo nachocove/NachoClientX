@@ -147,6 +147,20 @@ namespace NachoCore
             }
         }
 
+        public string Domain {
+            get {
+                if (MimeKitMailbox == null || MimeKitMailbox.Address == null) {
+                    return null;
+                }
+                var address = MimeKitMailbox.Address;
+                var atIndex = address.IndexOf ('@');
+                if (atIndex < 0) {
+                    return null;
+                }
+                return address.Substring (atIndex + 1).ToLowerInvariant ();
+            }
+        }
+
         /// <summary>
         /// Get one or two uppercase initals from the <see cref="Name"/>, falling back to the first letter of
         /// <see cref="Address"/> if needed.

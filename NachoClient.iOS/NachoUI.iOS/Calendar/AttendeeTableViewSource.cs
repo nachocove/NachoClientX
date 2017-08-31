@@ -22,7 +22,7 @@ namespace NachoClient.iOS
         protected bool recurring = false;
         public IAttendeeTableViewSourceDelegate owner;
         protected bool isMultiSelecting;
-        protected Dictionary<NSIndexPath,McAttendee> multiSelect = null;
+        protected Dictionary<NSIndexPath, McAttendee> multiSelect = null;
 
         const string AttendeeCell = "AttendeeCell";
 
@@ -79,7 +79,7 @@ namespace NachoClient.iOS
 
         public AttendeeTableViewSource (IAttendeeTableViewSourceDelegate owner)
         {
-            this.multiSelect = new Dictionary<NSIndexPath,McAttendee> ();
+            this.multiSelect = new Dictionary<NSIndexPath, McAttendee> ();
             this.owner = owner;
         }
 
@@ -123,7 +123,7 @@ namespace NachoClient.iOS
             var attendee = AttendeeList [indexPath.Row];
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.ContactSelectedCallback (contact);
@@ -247,7 +247,7 @@ namespace NachoClient.iOS
             attendeeResponseView.Tag = USER_RESPONSE_VIEW_TAG;
             MakeEmptyCircle (attendeeResponseView);
             UIImageView responseImageView = new UIImageView (new CGRect (2.5f, 2.5f, 15, 15));
-                
+
             responseImageView.Tag = USER_RESPONSE_TAG;
             attendeeResponseView.Add (responseImageView);
             view.AddSubview (attendeeResponseView);
@@ -347,9 +347,9 @@ namespace NachoClient.iOS
                     case EMAIL_SWIPE_TAG:
                         EmailSwipeHandler (attendee);
                         break;
-//                    case RESEND_INVITE_TAG:
-//                        ResendInvite (attendee);
-//                        break;
+                    //                    case RESEND_INVITE_TAG:
+                    //                        ResendInvite (attendee);
+                    //                        break;
                     default:
                         throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
                     }
@@ -471,7 +471,7 @@ namespace NachoClient.iOS
         {
             if (multiSelect.ContainsKey (indexPath)) {
                 iv.Image = UIImage.FromBundle ("gen-checkbox-checked");
-                iv.UserInteractionEnabled = true;        
+                iv.UserInteractionEnabled = true;
             } else {
                 iv.Image = UIImage.FromBundle ("gen-checkbox");
                 iv.UserInteractionEnabled = false;
@@ -517,7 +517,7 @@ namespace NachoClient.iOS
             alert.CancelButtonIndex = 0;
             alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                 if (1 == alertEvent.ButtonIndex) {
-                    owner.SendAttendeeInvite (attendee); 
+                    owner.SendAttendeeInvite (attendee);
                 }
             };
             alert.Show ();
@@ -527,7 +527,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.CallSwipeHandler (contact);
@@ -537,7 +537,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.EmailSwipeHandler (contact);

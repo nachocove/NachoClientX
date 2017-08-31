@@ -48,18 +48,12 @@ namespace NachoCore.Index
             return new Field (field, value, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.NO);
         }
 
-        protected void AddAddressList (string field, InternetAddressList addressList)
+        protected void AddMailboxes (string field, Mailbox [] mailboxes)
         {
             var domain_field = field + "_domain";
-            foreach (var address in addressList) {
-                var addressString = address.ToString ();
-                AddIndexedField (field, addressString);
-                var mbAddr = address as MailboxAddress;
-                if (null != mbAddr) {
-                    var idx = mbAddr.Address.IndexOf ("@");
-                    var domain = mbAddr.Address.Substring (idx + 1);
-                    AddIndexedField (domain_field, domain);
-                }
+            foreach (var mailbox in mailboxes) {
+                AddIndexedField (field, mailbox.ToString ());
+                AddIndexedField (domain_field, mailbox.Domain);
             }
         }
 
@@ -84,10 +78,10 @@ namespace NachoCore.Index
 
     public class EmailMessageIndexParameters
     {
-        public InternetAddressList From;
-        public InternetAddressList To;
-        public InternetAddressList Cc;
-        public InternetAddressList Bcc;
+        public Mailbox [] From;
+        public Mailbox [] To;
+        public Mailbox [] Cc;
+        public Mailbox [] Bcc;
         public string Subject;
         public string Content;
         public string Preview;
@@ -109,10 +103,10 @@ namespace NachoCore.Index
             BytesIndexed += dateString.Length;
 
             // Index the addresses
-            AddAddressList ("from", parameters.From);
-            AddAddressList ("to", parameters.To);
-            AddAddressList ("cc", parameters.Cc);
-            AddAddressList ("bcc", parameters.Bcc);
+            AddMailboxes ("from", parameters.From);
+            AddMailboxes ("to", parameters.To);
+            AddMailboxes ("cc", parameters.Cc);
+            AddMailboxes ("bcc", parameters.Bcc);
 
             // Index the preview
             AddIndexedField ("preview", parameters.Preview);

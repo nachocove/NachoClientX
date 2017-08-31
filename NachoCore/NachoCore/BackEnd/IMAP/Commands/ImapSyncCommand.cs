@@ -621,6 +621,10 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
+        static Dictionary<string, string> KnownMalformedSenders = new Dictionary<string, string> () {
+            {"\"Calendar <calendar-notification@google.com>\" <Google>", "Google Calendar <calendar-notification@google.com>"}
+        };
+
         public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary, List<BodyPartBasic> attachments)
         {
             NcAssert.NotNull (summary.Envelope, "Message Envelope is null!");
@@ -673,7 +677,11 @@ namespace NachoCore.IMAP
                 if (summary.Envelope.Sender.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
-                emailMessage.Sender = summary.Envelope.Sender [0].ToString ();
+                var sender = summary.Envelope.Sender [0].ToString ();
+                if (KnownMalformedSenders.ContainsKey (sender)) {
+                    sender = KnownMalformedSenders [sender];
+                }
+                emailMessage.Sender = sender;
             }
             if (null != summary.References && summary.References.Any ()) {
                 emailMessage.References = string.Join ("\n", summary.References);

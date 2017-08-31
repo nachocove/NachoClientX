@@ -44,6 +44,7 @@ namespace NachoClient.iOS
         int SectionCount = 0;
 
         int FromRow = -1;
+        int SenderRow = -1;
         int ReplyToRow = -1;
 
         int DebugAccountIdRow = 0;
@@ -57,14 +58,15 @@ namespace NachoClient.iOS
 
         bool IsDebugEnabled = false;
 
-        MailboxAddress FromAddress;
-        MailboxAddress ReplyToAddress;
+        Mailbox? FromAddress;
+        Mailbox? SenderAddress;
+        Mailbox? ReplyToAddress;
 
-        MailboxAddress[] ToAddresses;
-        MailboxAddress[] CcAddresses;
-        MailboxAddress[] BccAddresses;
-       
-        Dictionary <string, NcContactPortraitEmailIndex> PortraitCache;
+        Mailbox [] ToAddresses;
+        Mailbox [] CcAddresses;
+        Mailbox [] BccAddresses;
+
+        Dictionary<string, NcContactPortraitEmailIndex> PortraitCache;
 
         #endregion
 
@@ -118,9 +120,9 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RegisterClassForCellReuse (typeof(MessageAddressCell), MessageAddressCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof(NameValueCell), NameValueCellIdentifier);
-            TableView.RegisterClassForCellReuse (typeof(ButtonCell), ButtonCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (MessageAddressCell), MessageAddressCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ButtonCell), ButtonCellIdentifier);
         }
 
         public override void ViewDidLoad ()
@@ -165,10 +167,17 @@ namespace NachoClient.iOS
         public override nint RowsInSection (UITableView tableView, nint section)
         {
             if (section == FromSection) {
-                if (FromAddress != null && ReplyToAddress != null) {
-                    return 2;
+                int rows = 0;
+                if (FromAddress != null) {
+                    rows += 1;
                 }
-                return 1;
+                if (SenderAddress != null) {
+                    rows += 1;
+                }
+                if (ReplyToAddress != null) {
+                    rows += 1;
+                }
+                return rows;
             } else if (section == ToSection) {
                 return ToAddresses.Length;
             } else if (section == CcSection) {
@@ -282,23 +291,21 @@ namespace NachoClient.iOS
                     return cell;
                 }
             } else {
-                MailboxAddress mailbox = MailboxForIndexPath (indexPath);
-                if (mailbox != null) {
-                    var cell = tableView.DequeueReusableCell (MessageAddressCellIdentifier) as MessageAddressCell;
-                    NcContactPortraitEmailIndex portraitEntry;
-                    int portraitId = 0;
-                    int colorIndex = 1;
-                    if (PortraitCache.TryGetValue (mailbox.Address.ToLowerInvariant (), out portraitEntry)) {
-                        portraitId = portraitEntry.PortraitId;
-                        colorIndex = portraitEntry.ColorIndex;
-                    }
-                    cell.SetAddress (mailbox, portraitId, colorIndex);
-                    // Disabling contact details for now, because contact app is hidden
-                    //if (!(cell.AccessoryView is DisclosureAccessoryView)) {
-                    //    cell.AccessoryView = new DisclosureAccessoryView ();
-                    //}
-                    return cell;
+                var mailbox = MailboxForIndexPath (indexPath);
+                var cell = tableView.DequeueReusableCell (MessageAddressCellIdentifier) as MessageAddressCell;
+                NcContactPortraitEmailIndex portraitEntry;
+                int portraitId = 0;
+                int colorIndex = 1;
+                if (PortraitCache.TryGetValue (mailbox.Address.ToLowerInvariant (), out portraitEntry)) {
+                    portraitId = portraitEntry.PortraitId;
+                    colorIndex = portraitEntry.ColorIndex;
                 }
+                cell.SetAddress (mailbox, portraitId, colorIndex);
+                // Disabling contact details for now, because contact app is hidden
+                //if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                //    cell.AccessoryView = new DisclosureAccessoryView ();
+                //}
+                return cell;
             }
             return null;
         }
@@ -341,11 +348,9 @@ namespace NachoClient.iOS
                 }
             } else {
                 var mailbox = MailboxForIndexPath (indexPath);
-                if (mailbox != null) {
-                    var contact = McContact.QueryBestMatchByEmailAddress (Message.AccountId, mailbox.Address);
-                    if (contact != null) {
-                        ShowContact (contact);
-                    }
+                var contact = McContact.QueryBestMatchByEmailAddress (Message.AccountId, mailbox.Address);
+                if (contact != null) {
+                    ShowContact (contact);
                 }
             }
         }
@@ -359,23 +364,24 @@ namespace NachoClient.iOS
             }
         }
 
-        MailboxAddress MailboxForIndexPath (NSIndexPath indexPath)
+        Mailbox MailboxForIndexPath (NSIndexPath indexPath)
         {
-            MailboxAddress address = null;
             if (indexPath.Section == FromSection) {
                 if (indexPath.Row == FromRow) {
-                    address = FromAddress;
+                    return FromAddress.Value;
                 } else if (indexPath.Row == ReplyToRow) {
-                    address = ReplyToAddress;
+                    return ReplyToAddress.Value;
+                } else if (indexPath.Row == SenderRow) {
+                    return SenderAddress.Value;
                 }
             } else if (indexPath.Section == ToSection) {
-                address = ToAddresses [indexPath.Row];
+                return ToAddresses [indexPath.Row];
             } else if (indexPath.Section == CcSection) {
-                address = CcAddresses [indexPath.Row];
+                return CcAddresses [indexPath.Row];
             } else if (indexPath.Section == BccSection) {
-                address = BccAddresses [indexPath.Row];
+                return BccAddresses [indexPath.Row];
             }
-            return address;
+            return new Mailbox ();
         }
 
         #endregion
@@ -389,32 +395,36 @@ namespace NachoClient.iOS
             DetermineTableSections ();
         }
 
+        static bool IsEqual (Mailbox? a, Mailbox? b)
+        {
+            if (a.HasValue && b.HasValue) {
+                return a.Value.CanonicalAddress == b.Value.CanonicalAddress;
+            }
+            return false;
+        }
+
         void ParseHeaders ()
         {
-            FromAddress = null;
-            ReplyToAddress = null;
-            ToAddresses = null;
-            CcAddresses = null;
-            BccAddresses = null;
-            MailboxAddress.TryParse (Message.From, out FromAddress);
-            if (!String.IsNullOrWhiteSpace (Message.ReplyTo)) {
-                if (MailboxAddress.TryParse (Message.ReplyTo, out ReplyToAddress)) {
-                    if (FromAddress != null && FromAddress.Address.ToLowerInvariant () == ReplyToAddress.Address.ToLowerInvariant ()) {
-                        ReplyToAddress = null;
-                    }
-                }
+            var fromAddresses = Message.FromMailboxes;
+            if (fromAddresses.Length > 0) {
+                FromAddress = fromAddresses [0];
+            } else {
+                FromAddress = null;
+            }
+            SenderAddress = Message.SenderMailbox;
+            if (IsEqual (FromAddress, SenderAddress)) {
+                SenderAddress = null;
+            }
+            var replyToAddresses = Message.ReplyToMailboxes;
+            if (replyToAddresses.Length > 0 && !IsEqual (FromAddress, replyToAddresses [0])) {
+                ReplyToAddress = replyToAddresses [0];
+            } else {
+                ReplyToAddress = null;
             }
 
-            InternetAddressList iList;
-            if (!String.IsNullOrWhiteSpace(Message.To) && InternetAddressList.TryParse (Message.To, out iList)) {
-                ToAddresses = iList.Mailboxes.ToArray ();
-            }
-            if (!String.IsNullOrWhiteSpace(Message.Cc) && InternetAddressList.TryParse (Message.Cc, out iList)) {
-                CcAddresses = iList.Mailboxes.ToArray ();
-            }
-            if (!String.IsNullOrWhiteSpace(Message.Bcc) && InternetAddressList.TryParse (Message.Bcc, out iList)) {
-                BccAddresses = iList.Mailboxes.ToArray ();
-            }
+            ToAddresses = Message.ToMailboxes;
+            CcAddresses = Message.CcMailboxes;
+            BccAddresses = Message.BccMailboxes;
         }
 
         void CachePortraits ()
@@ -422,7 +432,7 @@ namespace NachoClient.iOS
             var entries = McContact.QueryForMessagePortraitEmails (Message.Id);
             PortraitCache = new Dictionary<string, NcContactPortraitEmailIndex> (entries.Count);
             foreach (var entry in entries) {
-                if (!PortraitCache.ContainsKey(entry.EmailAddress.ToLowerInvariant ())) {
+                if (!PortraitCache.ContainsKey (entry.EmailAddress.ToLowerInvariant ())) {
                     PortraitCache.Add (entry.EmailAddress.ToLowerInvariant (), entry);
                 }
             }
@@ -432,10 +442,18 @@ namespace NachoClient.iOS
         {
             int section = 0;
             int row = 0;
-            if (FromAddress != null){
+            if (FromAddress != null) {
                 FromRow = row;
                 FromSection = section;
                 section += 1;
+                row += 1;
+            }
+            if (SenderAddress != null) {
+                if (FromSection == -1) {
+                    FromSection = 1;
+                    section += 1;
+                }
+                SenderRow = row;
                 row += 1;
             }
             if (ReplyToAddress != null) {
@@ -446,19 +464,19 @@ namespace NachoClient.iOS
                 ReplyToRow = row;
                 row += 1;
             }
-            if (ToAddresses != null) {
+            if (ToAddresses.Length > 0) {
                 ToSection = section;
                 section += 1;
             } else {
                 ToSection = -1;
             }
-            if (CcAddresses != null) {
+            if (CcAddresses.Length > 0) {
                 CcSection = section;
                 section += 1;
             } else {
                 CcSection = -1;
             }
-            if (BccAddresses != null) {
+            if (BccAddresses.Length > 0) {
                 BccSection = section;
                 section += 1;
             } else {
@@ -473,11 +491,11 @@ namespace NachoClient.iOS
 
         void EnableDebugMode ()
         {
-            if (!IsDebugEnabled){
+            if (!IsDebugEnabled) {
                 if (Message.BodyId != 0) {
                     Body = McBody.QueryById<McBody> (Message.BodyId);
                     if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4 && Body.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                        Mime = MimeMessage.Load (Body.GetFilePath());
+                        Mime = MimeMessage.Load (Body.GetFilePath ());
                     }
                 }
                 var row = DebugBodyIdRow;
@@ -498,7 +516,7 @@ namespace NachoClient.iOS
                 DebugSection = SectionCount;
                 SectionCount += 1;
                 TableView.BeginUpdates ();
-                TableView.InsertSections (NSIndexSet.FromIndex((nint)DebugSection), UITableViewRowAnimation.Automatic);
+                TableView.InsertSections (NSIndexSet.FromIndex ((nint)DebugSection), UITableViewRowAnimation.Automatic);
                 TableView.EndUpdates ();
             }
         }
@@ -566,7 +584,7 @@ namespace NachoClient.iOS
             {
             }
 
-            public void AdoptTheme(Theme theme)
+            public void AdoptTheme (Theme theme)
             {
                 TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
                 TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
@@ -590,7 +608,7 @@ namespace NachoClient.iOS
                 SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
             }
 
-            public void AdoptTheme(Theme theme)
+            public void AdoptTheme (Theme theme)
             {
                 TextLabel.Font = theme.BoldDefaultFont.WithSize (17.0f);
                 TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
@@ -599,7 +617,7 @@ namespace NachoClient.iOS
                 DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
             }
 
-            public void SetAddress (MailboxAddress mailbox, int portraitId, int colorIndex)
+            public void SetAddress (Mailbox mailbox, int portraitId, int colorIndex)
             {
                 var initials = EmailHelper.Initials (mailbox.ToString ());
                 PortraitView.SetPortrait (portraitId, colorIndex, initials);

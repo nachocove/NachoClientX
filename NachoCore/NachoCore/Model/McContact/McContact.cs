@@ -284,6 +284,85 @@ namespace NachoCore.Model
             Source = source;
         }
 
+
+        const int MaxSaneAddressLength = 40;
+        static string [] AddressExclusionPatterns = new string []{
+            "noreply",
+            "no-reply",
+            "donotreply",
+            "do_not_reply",
+        };
+
+        /// TODO: I wanna be table driven!
+        protected static bool DoNotGlean (string address)
+        {
+            if (MaxSaneAddressLength < address.Length) {
+                return true;
+            }
+            if (address.Contains ("noreply")) {
+                return true;
+            }
+            if (address.Contains ("no-reply")) {
+                return true;
+            }
+            if (address.Contains ("donotreply")) {
+                return true;
+            }
+            if (address.Contains ("do_not_reply")) {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool CreateFromMailboxIfNeeded (McFolder folder, Mailbox mailbox, out McContact newContact)
+        {
+            newContact = null;
+            if (mailbox.Address.Length > MaxSaneAddressLength) {
+                return false;
+            }
+            foreach (var pattern in AddressExclusionPatterns) {
+                if (mailbox.Address.Contains (pattern)) {
+                    return false;
+                }
+            }
+            var contact = new McContact () {
+                AccountId = folder.AccountId,
+                Source = McAbstrItem.ItemSource.Internal
+            };
+            if (mailbox.Name != null && mailbox.Name != mailbox.Address) {
+                contact.SetName (mailbox.Name);
+            }
+            if (!McEmailAddress.GetOrCreate (contact.AccountId, mailbox, out var address)) {
+                return false;
+            }
+            contact.EmailAddresses.Add (new McContactEmailAddressAttribute () {
+                AccountId = contact.AccountId,
+                Name = "Email1Address",
+                Value = mailbox.Address,
+                EmailAddress = address.Id,
+                IsDefault = true,
+            });
+
+            NcModel.Instance.RunInTransaction (() => {
+                var matchingContacts = QueryByEmailAddressIdInFolder (folder.AccountId, folder.Id, address.Id);
+                foreach (var match in matchingContacts) {
+                    if (contact.HasSameName (match)) {
+                        // Bail if we find an exact match
+                        return;
+                    }
+                }
+                contact.Insert ();
+                folder.Link (contact);
+            });
+
+            if (contact.Id == 0) {
+                return false;
+            }
+            Indexer.Instance.Add (contact);
+            newContact = contact;
+            return true;
+        }
+
         [Ignore]
         public List<McContactDateAttribute> Dates {
             get {
@@ -1512,23 +1591,6 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<NcContactPortraitEmailIndex> (cmd, messageId);
         }
 
-        public static List<McContact> QueryGleanedContactsByEmailAddress (int accountId, string emailAddress)
-        {
-            // TODO - When we use Source = Internal for something other than gleaned, we need to fix this
-            //        query to use McMapFolderFolderEntry to look for only internal contacts in the 
-            //        gleaned folder
-            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                                              "SELECT c.* FROM McContact AS c " +
-                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
-                                              "WHERE " +
-                                              " s.Value = ? AND " +
-                                              " c.Source = ? AND " +
-                                              " likelihood (c.AccountId = ?, 1.0) AND " +
-                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
-                                              emailAddress, (int)McAbstrItem.ItemSource.Internal, accountId);
-            return contactList;
-        }
-
         public static List<McContact> QueryByPhoneNumber (int accountId, string phoneNumber)
         {
             return NcModel.Instance.Db.Query<McContact> (
@@ -1570,6 +1632,23 @@ namespace NachoCore.Model
                                               " likelihood (m.ClassCode = ?, 0.2) AND " +
                                               " likelihood (m.FolderId = ?, 0.05) ",
                                               accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
+            return contactList;
+        }
+
+        public static List<McContact> QueryByEmailAddressIdInFolder (int accountId, int folderId, int emailAddressId)
+        {
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                              " WHERE " +
+                                              " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                                              " s.EmailAddress = ? AND " +
+                                              " likelihood (m.ClassCode = ?, 0.2) AND " +
+                                              " likelihood (m.FolderId = ?, 0.05) ",
+                                              accountId, emailAddressId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
             return contactList;
         }
 

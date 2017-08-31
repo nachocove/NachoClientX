@@ -1278,7 +1278,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (detail.SeriesItem.OrganizerEmail, detail.Account.Id, false);
+                NcContactGleaner.GleanContacts (detail.SeriesItem.OrganizerEmail, detail.Account.Id);
                 contact = McContact.QueryByEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail).FirstOrDefault ();
             }
             ShowContact (contact);

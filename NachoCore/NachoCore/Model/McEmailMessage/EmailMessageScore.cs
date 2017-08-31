@@ -680,17 +680,6 @@ namespace NachoCore.Model
             }
         }
 
-        public void MarkAsGleaned (GleanPhaseEnum phase)
-        {
-            if (0 < Id) {
-                UpdateWithOCApply<McEmailMessage> ((item) => {
-                    var em = (McEmailMessage)item;
-                    em.HasBeenGleaned = (int)phase;
-                    return true;
-                });
-            }
-        }
-
         private static void TimeVarianceCallBack (int state, Int64 objId)
         {
             McEmailMessage emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)objId);
