@@ -326,7 +326,7 @@ namespace NachoCore.Model
                 } else if (IsRead) {
                     emailAddress.IncrementToEmailsRead (markDependencies: false);
                 }
-                emailAddress.MarkDependencies (NcEmailAddress.Kind.To);
+                emailAddress.MarkDependencies (EmailMessageAddressType.To);
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
@@ -337,7 +337,7 @@ namespace NachoCore.Model
                 } else if (IsRead) {
                     emailAddress.IncrementCcEmailsRead (markDependencies: false);
                 }
-                emailAddress.MarkDependencies (NcEmailAddress.Kind.Cc);
+                emailAddress.MarkDependencies (EmailMessageAddressType.Cc);
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }

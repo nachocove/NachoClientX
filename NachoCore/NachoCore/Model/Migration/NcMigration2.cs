@@ -36,7 +36,7 @@ namespace NachoCore.Model
             map.ObjectId = objectId;
             map.AccountId = accountId;
             map.EmailAddressId = emailAddress.Id;
-            map.AddressType = addressType;
+            //map.AddressType = addressType;
             // Override the default current version as there may be migration between this and current version
             map.MigrationVersion = Version ();
             map.Insert ();
@@ -80,7 +80,7 @@ namespace NachoCore.Model
 
                     emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                         var target = (McEmailMessage)record;
-                        target.FromEmailAddressId = 
+                        target.FromEmailAddressId =
                             ProcessAddress (accountId, objectId, target.From, NcEmailAddress.Kind.From);
                         target.SenderEmailAddressId =
                             ProcessAddress (accountId, objectId, target.Sender, NcEmailAddress.Kind.Sender);

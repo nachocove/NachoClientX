@@ -48,7 +48,7 @@ namespace NachoCore.Model
             return UID;
         }
 
-        public virtual string GetCalendarName()
+        public virtual string GetCalendarName ()
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
             var folder = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, Id).FirstOrDefault ();
@@ -143,19 +143,6 @@ namespace NachoCore.Model
             });
         }
 
-        private void InsertAddressMap ()
-        {
-            var map = CreateAddressMap ();
-            map.EmailAddressId = OrganizerEmailAddressId;
-            map.AddressType = NcEmailAddress.Kind.Organizer;
-            map.Insert ();
-        }
-
-        private void DeleteAddressMap ()
-        {
-            McMapEmailAddressEntry.DeleteMapEntries (AccountId, Id, NcEmailAddress.Kind.Organizer);
-        }
-
         public override int Insert ()
         {
             using (var capture = CaptureWithStart ("Insert")) {
@@ -165,7 +152,6 @@ namespace NachoCore.Model
                     retval = base.Insert ();
                     InsertExceptions ();
                     InsertRecurrences ();
-                    InsertAddressMap ();
                 });
                 return retval;
             }
@@ -177,8 +163,6 @@ namespace NachoCore.Model
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
-                    DeleteAddressMap ();
-                    InsertAddressMap ();
                     retval = base.Update ();
                     SaveExceptions ();
                     SaveRecurrences ();
@@ -240,7 +224,6 @@ namespace NachoCore.Model
             base.DeleteAncillary ();
             DeleteDbExceptions ();
             DeleteDbRecurrences ();
-            DeleteAddressMap ();
         }
 
         public override int Delete ()
@@ -275,7 +258,7 @@ namespace NachoCore.Model
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
                     Account = ConstMcAccount.NotAccountSpecific,
-                    Tokens = new string[] { DateTime.Now.ToString () },
+                    Tokens = new string [] { DateTime.Now.ToString () },
                 });
 
                 return retval;

@@ -1533,7 +1533,7 @@ namespace NachoCore.Model
             appMeetingRequestSet = false;
         }
 
-        private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
+        private void InsertAddressList (List<int> addressIdList, EmailMessageAddressType kind)
         {
             if (null != addressIdList) {
                 foreach (var addressId in addressIdList) {
@@ -1545,20 +1545,28 @@ namespace NachoCore.Model
             }
         }
 
+        public McMapEmailAddressEntry CreateAddressMap ()
+        {
+            var map = new McMapEmailAddressEntry ();
+            map.AccountId = AccountId;
+            map.ObjectId = Id;
+            return map;
+        }
+
         public void InsertAddressMaps ()
         {
             var sender = SenderMailbox;
             if (sender.HasValue && McEmailAddress.GetOrCreate (AccountId, sender.Value, out var senderAddress)) {
                 var map = CreateAddressMap ();
                 map.EmailAddressId = senderAddress.Id;
-                map.AddressType = NcEmailAddress.Kind.Sender;
+                map.AddressType = EmailMessageAddressType.Sender;
                 map.Insert ();
             }
             foreach (var mailbox in FromMailboxes) {
                 if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
                     var map = CreateAddressMap ();
                     map.EmailAddressId = address.Id;
-                    map.AddressType = NcEmailAddress.Kind.From;
+                    map.AddressType = EmailMessageAddressType.From;
                     map.Insert ();
                 }
             }
@@ -1566,7 +1574,7 @@ namespace NachoCore.Model
                 if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
                     var map = CreateAddressMap ();
                     map.EmailAddressId = address.Id;
-                    map.AddressType = NcEmailAddress.Kind.ReplyTo;
+                    map.AddressType = EmailMessageAddressType.ReplyTo;
                     map.Insert ();
                 }
             }
@@ -1574,7 +1582,7 @@ namespace NachoCore.Model
                 if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
                     var map = CreateAddressMap ();
                     map.EmailAddressId = address.Id;
-                    map.AddressType = NcEmailAddress.Kind.To;
+                    map.AddressType = EmailMessageAddressType.To;
                     map.Insert ();
                 }
             }
@@ -1582,7 +1590,7 @@ namespace NachoCore.Model
                 if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
                     var map = CreateAddressMap ();
                     map.EmailAddressId = address.Id;
-                    map.AddressType = NcEmailAddress.Kind.Cc;
+                    map.AddressType = EmailMessageAddressType.Cc;
                     map.Insert ();
                 }
             }
@@ -1590,7 +1598,7 @@ namespace NachoCore.Model
                 if (McEmailAddress.GetOrCreate (AccountId, mailbox, out var address)) {
                     var map = CreateAddressMap ();
                     map.EmailAddressId = address.Id;
-                    map.AddressType = NcEmailAddress.Kind.Bcc;
+                    map.AddressType = EmailMessageAddressType.Bcc;
                     map.Insert ();
                 }
             }

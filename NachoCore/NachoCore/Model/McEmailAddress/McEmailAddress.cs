@@ -155,7 +155,7 @@ namespace NachoCore.Model
                 " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
                 " WHERE (m.AddressType = ? OR m.AddressType = ?) AND (m.ObjectId = ?) " +
                 " GROUP BY a.Id",
-                NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc, messageId);
+                EmailMessageAddressType.To, EmailMessageAddressType.Cc, messageId);
         }
 
         public static List<McEmailAddress> QueryToAddressesByMessageId (int messageId)
@@ -165,7 +165,7 @@ namespace NachoCore.Model
                 " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
                 " WHERE m.AddressType = ? AND (m.ObjectId = ?) " +
                 " GROUP BY a.Id",
-                NcEmailAddress.Kind.To, messageId);
+                EmailMessageAddressType.To, messageId);
         }
 
         public static List<McEmailAddress> QueryCcAddressesByMessageId (int messageId)
@@ -175,7 +175,7 @@ namespace NachoCore.Model
                 " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
                 " WHERE m.AddressType = ? AND (m.ObjectId = ?) " +
                 " GROUP BY a.Id",
-                NcEmailAddress.Kind.Cc, messageId);
+                EmailMessageAddressType.Cc, messageId);
         }
     }
 }

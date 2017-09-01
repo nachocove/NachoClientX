@@ -36,17 +36,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                " f.AccountId = ? ", 
-                    typeof(T).Name), 
+                " f.AccountId = ? ",
+                    typeof (T).Name),
                 id);
-        }
-
-        public McMapEmailAddressEntry CreateAddressMap ()
-        {
-            var map = new McMapEmailAddressEntry ();
-            map.AccountId = AccountId;
-            map.ObjectId = Id;
-            return map;
         }
     }
 }

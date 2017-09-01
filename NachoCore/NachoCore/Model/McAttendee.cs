@@ -77,7 +77,7 @@ namespace NachoCore.Model
         private static int ToInt (string s, int defaultValue = 0)
         {
             int result;
-            if (int.TryParse(s, out result)) {
+            if (int.TryParse (s, out result)) {
                 return result;
             }
             return defaultValue;
@@ -172,11 +172,11 @@ namespace NachoCore.Model
 
         public static int GetParentType (McAbstrCalendarRoot r)
         {
-            if (r.GetType () == typeof(McCalendar)) {
+            if (r.GetType () == typeof (McCalendar)) {
                 return CALENDAR;
-            } else if (r.GetType () == typeof(McException)) {
+            } else if (r.GetType () == typeof (McException)) {
                 return EXCEPTION;
-            } else if (r.GetType () == typeof(McMeetingRequest)) {
+            } else if (r.GetType () == typeof (McMeetingRequest)) {
                 return MEETING_REQUEST;
             } else {
                 NcAssert.True (false);
@@ -230,38 +230,6 @@ namespace NachoCore.Model
             return null;
         }
 
-        private NcEmailAddress.Kind GetAddressMapType ()
-        {
-            switch (AttendeeType) {
-            case NcAttendeeType.Unknown:
-                return NcEmailAddress.Kind.Unknown;
-            case NcAttendeeType.Optional:
-                return NcEmailAddress.Kind.Optional;
-            case NcAttendeeType.Required:
-                return NcEmailAddress.Kind.Required;
-            case NcAttendeeType.Resource:
-                return NcEmailAddress.Kind.Resource;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (
-                    String.Format ("Unknown attendee type {0}", (int)AttendeeType));
-            }
-        }
-
-        private void InsertAddressMap ()
-        {
-            var map = CreateAddressMap ();
-            map.EmailAddressId = EmailAddressId;
-            map.AddressType = GetAddressMapType ();
-            map.Insert ();
-        }
-
-        private void DeleteAddressMap ()
-        {
-            // Delete all 3 address types (required, optional, resources) so that in case there
-            // is a change of AttendeeType, we still clean up the old map
-            McMapEmailAddressEntry.DeleteAttendeeMapEntries (AccountId, Id);
-        }
-
         public override int Insert ()
         {
             using (var capture = CaptureWithStart ("Insert")) {
@@ -269,7 +237,6 @@ namespace NachoCore.Model
                 NcModel.Instance.RunInTransaction (() => {
                     EmailAddressId = McEmailAddress.Get (AccountId, Email);
                     retval = base.Insert ();
-                    InsertAddressMap ();
                 });
                 return retval;
             }
@@ -281,8 +248,6 @@ namespace NachoCore.Model
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     EmailAddressId = McEmailAddress.Get (AccountId, Email);
-                    DeleteAddressMap ();
-                    InsertAddressMap ();
                     retval = base.Update ();
                 });
                 return retval;
@@ -295,7 +260,6 @@ namespace NachoCore.Model
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     retval = base.Delete ();
-                    DeleteAddressMap ();
                 });
                 return retval;
             }

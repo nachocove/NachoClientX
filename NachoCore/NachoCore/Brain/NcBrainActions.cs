@@ -70,7 +70,7 @@ namespace NachoCore.Brain
                 emailAddress.UpdateByBrain ();
             }
             if (updateDependencies && scoreUpdated) {
-                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
+                emailAddress.MarkDependencies (EmailMessageAddressType.From);
             }
             return true;
         }
@@ -118,7 +118,7 @@ namespace NachoCore.Brain
                     NcAssert.True (false);
                 }
                 emailAddress.ScoreStates.Update ();
-                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
+                emailAddress.MarkDependencies (EmailMessageAddressType.From);
             });
 
             return true;

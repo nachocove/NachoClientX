@@ -23,8 +23,6 @@ namespace NachoCore.Utils
             edit,
         };
 
-        /// These enums are persisted in db's McMapEmailAddressEntry. Must not modify existing values (unless
-        /// you do a migration.)
         public enum Kind
         {
             Unknown = 0,
@@ -39,8 +37,7 @@ namespace NachoCore.Utils
             Optional = 7,
             Resource = 8,
             // McCalendar
-            Organizer = 9,
-            ReplyTo = 10
+            Organizer = 9
         };
 
         /// Which list?

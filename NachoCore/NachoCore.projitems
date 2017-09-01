@@ -427,6 +427,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\McSearchUnindexQueueItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Mailbox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\String+Initials.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration60.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />
