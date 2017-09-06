@@ -207,7 +207,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\XElement+AnyNs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\XmlDocument+Wbxml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\Index.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\IndexDocument.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Mockables\IHttpClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Mockables\IHttpWebRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Mockables\MockableHttpClient.cs" />
@@ -428,6 +427,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Mailbox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Extensions\String+Initials.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration60.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\EmailMessageDocument.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\ContactDocument.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration61.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

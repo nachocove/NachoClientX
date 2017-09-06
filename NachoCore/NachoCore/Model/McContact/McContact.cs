@@ -1,5 +1,6 @@
 using SQLite;
 using System;
+using System.IO;
 using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
@@ -253,8 +254,8 @@ namespace NachoCore.Model
 
         public string CachedGroupLastName { get; set; }
 
-        // 0 means unindexed. If IndexedVersion == ContactIndexDocument.Version - 1, only McContact fields
-        // are indexed. If IndexedVersion == ContactIndexDocument.Version, both fields and body (note) are
+        // 0 means unindexed. If IndexedVersion == ContactDocument.Version - 1, only McContact fields
+        // are indexed. If IndexedVersion == ContactDocument.Version, both fields and body (note) are
         // indexed.
         public int IndexVersion { get; set; }
 
@@ -1016,7 +1017,7 @@ namespace NachoCore.Model
 
                 // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
                 if (this.IsGleaned ()) {
-                    IndexVersion = ContactIndexDocument.Version;
+                    IndexVersion = ContactDocument.Version;
                 }
 
                 int retval = 0;
@@ -1043,7 +1044,7 @@ namespace NachoCore.Model
                     }
                     EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
 
-                    if (!this.IsGleaned () && ContactIndexDocument.Version == this.IndexVersion) {
+                    if (!this.IsGleaned () && ContactDocument.Version == this.IndexVersion) {
                         // A non-gleaned contact that has already been indexed. Re-index the contact.
                         Indexer.Instance.Add (this);
                     }
@@ -1166,6 +1167,18 @@ namespace NachoCore.Model
         {
             EmailAddressesEclipsed = ShouldEmailAddressesBeEclipsed ();
             PhoneNumbersEclipsed = ShouldPhoneNumbersBeEclipsed ();
+        }
+
+        public string GetNote ()
+        {
+            var body = GetBodyIfComplete ();
+            if (body != null) {
+                try {
+                    return File.ReadAllText (body.GetFilePath ());
+                } catch (IOException) {
+                }
+            }
+            return null;
         }
 
         public override void DeleteAncillary ()
@@ -1878,8 +1891,8 @@ namespace NachoCore.Model
                 "  likelihood (b.FilePresence = ?, 0.5) AND " +
                 "  likelihood (c.IndexVersion < ?, 0.5)) " +
                 " LIMIT ?",
-                ContactIndexDocument.Version - 1, McAbstrFileDesc.FilePresenceEnum.Complete,
-                ContactIndexDocument.Version, maxContact
+                ContactDocument.Version - 1, McAbstrFileDesc.FilePresenceEnum.Complete,
+                ContactDocument.Version, maxContact
             );
         }
 
@@ -1915,6 +1928,21 @@ namespace NachoCore.Model
                 name = CompanyName;
             }
             return name;
+        }
+
+        [Ignore]
+        public string FullName {
+            get {
+                var names = new List<string> ();
+                foreach (var name in new string [] {
+                    Title, FirstName, MiddleName, LastName, Suffix
+                }) {
+                    if (!String.IsNullOrEmpty (name)) {
+                        names.Add (name);
+                    }
+                }
+                return string.Join (" ", names);
+            }
         }
 
         [Ignore]
@@ -2267,9 +2295,9 @@ namespace NachoCore.Model
         public int GetIndexVersion ()
         {
             if (GetBodyIfComplete () == null) {
-                return ContactIndexDocument.Version - 1;
+                return ContactDocument.Version - 1;
             }
-            return ContactIndexDocument.Version;
+            return ContactDocument.Version;
         }
 
         protected static bool CompareLists<T> (List<T> list1, List<T> list2, Func<T, T, bool> comparer)

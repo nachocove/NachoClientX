@@ -266,10 +266,6 @@ namespace NachoCore.Model
             Log.Info (Log.LOG_DB, "RemoveAccount: removing file data for account {0}", AccountId);
             String AccountDirPath = NcModel.Instance.GetAccountDirPath (AccountId);
             try {
-                var indexDirPath = NcModel.Instance.GetIndexPath (AccountId);
-                if (Directory.Exists (indexDirPath)) {
-                    Index.Indexer.Instance.DeleteIndex (AccountId);
-                }
                 Directory.Delete (AccountDirPath, true);
             } catch (Exception e) {
                 Log.Error (Log.LOG_DB, "RemoveAccount: cannot remove file data for account {0}. {1}", AccountId, e.Message);
@@ -293,6 +289,10 @@ namespace NachoCore.Model
 
             // delete all file system data for account id
             RemoveAccountFiles (AccountId);
+
+            // delete all indexed documents...must come after RemoveAccountDBData becaue it
+            // inserts a row that RemoveAccountDBData would delete
+            Index.Indexer.Instance.RemoveAccount (AccountId);
 
             NcApplication.Instance.Account = LoginHelpers.PickStartupAccount ();
             // if successful, unmark account is being removed since it is completed.

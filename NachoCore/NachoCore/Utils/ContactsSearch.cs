@@ -457,7 +457,7 @@ namespace NachoCore.Utils
         List<McContactEmailAddressAttribute> previousResults = null;
 
         string lastIndexSearchString = null;
-        List<MatchedItem> lastIndexResults = null;
+        IEnumerable<ContactDocument> lastIndexResults = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NachoCore.Utils.ContactsGeneralSearch"/> class.
@@ -493,20 +493,16 @@ namespace NachoCore.Utils
                 // arrive from the servers.  The database might change between those calls, but the
                 // index won't.  So cache the results of one index search, and reuse that if the
                 // search string hasn't changed.
-                List<MatchedItem> indexMatches;
+                IEnumerable<ContactDocument> indexMatches;
                 if (searchString == lastIndexSearchString) {
                     indexMatches = lastIndexResults;
                 } else {
-                    indexMatches = new List<MatchedItem> ();
-                    foreach (var account in McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.ContactReader)) {
-                        var index = Indexer.Instance.IndexForAccount (account.Id);
-                        indexMatches.AddRange (index.SearchAllContactFields (searchString, maxMatches: 100));
-                    }
+                    indexMatches = NcIndex.Main.SearchContacts (searchString, maxResults: 100);
                     lastIndexSearchString = searchString;
                     lastIndexResults = indexMatches;
                 }
 
-                rawContacts.AddRange (McContact.QueryByIds (indexMatches.Select (x => x.Id).Distinct ().ToList ()));
+                rawContacts.AddRange (McContact.QueryByIds (indexMatches.Select (x => x.ContactId.StringValue).Distinct ().ToList ()));
             }
 
             var allMatches = new List<SearchMatch> ();

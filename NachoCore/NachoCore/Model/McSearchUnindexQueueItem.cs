@@ -6,15 +6,14 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class McSearchUnindexQueueItem: McAbstrObjectPerAcc
-	{
+    public class McSearchUnindexQueueItem : McAbstrObjectPerAcc
+    {
         public string DocumentId { get; set; }
-        public string DocumentType { get; set; }
 
-        public static List<McSearchUnindexQueueItem> Query(int maxItems)
+        public static List<McSearchUnindexQueueItem> Query (int maxItems)
         {
             var sql = "SELECT * FROM McSearchUnindexQueueItem ORDER BY Id ASC LIMIT ?";
-            return NcModel.Instance.Db.Query<McSearchUnindexQueueItem>(sql, maxItems);
+            return NcModel.Instance.Db.Query<McSearchUnindexQueueItem> (sql, maxItems);
         }
     }
 }

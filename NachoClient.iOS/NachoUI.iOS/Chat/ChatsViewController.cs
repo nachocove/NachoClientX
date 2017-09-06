@@ -38,7 +38,7 @@ namespace NachoClient.iOS
 
         #region Constructors
 
-        public ChatsViewController () : base(UITableViewStyle.Plain)
+        public ChatsViewController () : base (UITableViewStyle.Plain)
         {
             AutomaticallyAdjustsScrollViewInsets = false;
             Account = NcApplication.Instance.Account;
@@ -66,7 +66,7 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RegisterClassForCellReuse (typeof(ChatTableViewCell), ChatCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ChatTableViewCell), ChatCellIdentifier);
             TableView.RowHeight = ChatTableViewCell.HEIGHT;
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, TableView.RowHeight, 0.0f, 0.0f);
         }
@@ -215,7 +215,7 @@ namespace NachoClient.iOS
                         chats = McChat.LastestChatsForAccount (Account.Id);
                         unreadCounts = McChat.UnreadCountsByChat (Account.Id);
                     }
-                    BeginInvokeOnMainThread(() => {
+                    BeginInvokeOnMainThread (() => {
                         HandleReloadResults (chats, unreadCounts);
                         IsReloading = false;
                     });
@@ -323,7 +323,7 @@ namespace NachoClient.iOS
         const string ChatCellIdentifier = "ChatCellIdentifier";
         List<McChat> Chats;
 
-        public ChatsSearchResultsViewController () : base(UITableViewStyle.Plain)
+        public ChatsSearchResultsViewController () : base (UITableViewStyle.Plain)
         {
             Searcher = new ChatSearcher (UpdateChats);
             Chats = new List<McChat> ();
@@ -338,7 +338,7 @@ namespace NachoClient.iOS
         public override void LoadView ()
         {
             base.LoadView ();
-            TableView.RegisterClassForCellReuse (typeof(ChatTableViewCell), ChatCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ChatTableViewCell), ChatCellIdentifier);
             TableView.RowHeight = ChatTableViewCell.HEIGHT;
         }
 
@@ -454,14 +454,13 @@ namespace NachoClient.iOS
     public class ChatSearcher : NSObject
     {
 
-        NcIndex SearchIndex;
         McAccount Account;
         Action<List<McChat>> ResultsCallback;
 
         Dictionary<int, McChat> ChatsByMessageId;
 
         string SearchText;
-        object SearchLockObject = new object();
+        object SearchLockObject = new object ();
         bool IsSearching;
         bool IsSearchCanceled;
 
@@ -473,7 +472,6 @@ namespace NachoClient.iOS
         public void Prepare ()
         {
             Account = NcApplication.Instance.Account;
-            SearchIndex = new NcIndex (NcModel.Instance.GetIndexPath (Account.Id));
             ChatsByMessageId = null;
             IsSearchCanceled = false;
         }
@@ -492,7 +490,7 @@ namespace NachoClient.iOS
                 chatsById.Add (chat.Id, chat);
             }
             ChatsByMessageId = new Dictionary<int, McChat> ();
-            foreach (var chatMessage in NcModel.Instance.Db.Table<McChatMessage>()) {
+            foreach (var chatMessage in NcModel.Instance.Db.Table<McChatMessage> ()) {
                 McChat chat = null;
                 chatsById.TryGetValue (chatMessage.ChatId, out chat);
                 ChatsByMessageId.Add (chatMessage.MessageId, chat);
@@ -541,19 +539,19 @@ namespace NachoClient.iOS
                 var foundChatsById = new Dictionary<int, McChat> ();
                 var chats = new List<McChat> ();
                 if (!String.IsNullOrEmpty (searchText)) {
-                    var results = SearchIndex.SearchAllEmailMessageFields (searchText);
+                    var results = NcIndex.Main.SearchEmails (searchText);
                     foreach (var result in results) {
                         McChat chat = null;
-                        ChatsByMessageId.TryGetValue (int.Parse (result.Id), out chat);
-                        if (chat != null && !foundChatsById.ContainsKey(chat.Id)) {
+                        ChatsByMessageId.TryGetValue (result.IntegerMessageId, out chat);
+                        if (chat != null && !foundChatsById.ContainsKey (chat.Id)) {
                             chats.Add (chat);
                             foundChatsById.Add (chat.Id, chat);
                         }
                     }
                 }
 
-                if (!IsSearchCanceled){
-                    BeginInvokeOnMainThread(() => {
+                if (!IsSearchCanceled) {
+                    BeginInvokeOnMainThread (() => {
                         ResultsCallback (chats);
                     });
                 }
@@ -650,12 +648,12 @@ namespace NachoClient.iOS
             var messageFont = A.Font_AvenirNextRegular14;
             var dateFont = A.Font_AvenirNextRegular14;
             var topSpacing = (HEIGHT - participantFont.LineHeight - messageFont.LineHeight * 2.0f) / 2.0f;
-            PhotoContainerView = new UIView (new CGRect(photoSpacing, photoSpacing, photoSize.Width, photoSize.Height));
+            PhotoContainerView = new UIView (new CGRect (photoSpacing, photoSpacing, photoSize.Width, photoSize.Height));
             var dateBaselineAdjust = participantFont.Ascender - dateFont.Ascender;
-            DateLabel = new UILabel (new CGRect(Bounds.Width - 40.0f - RightSpacing, topSpacing + dateBaselineAdjust, 40.0f, 20.0f));
+            DateLabel = new UILabel (new CGRect (Bounds.Width - 40.0f - RightSpacing, topSpacing + dateBaselineAdjust, 40.0f, 20.0f));
             var x = PhotoContainerView.Frame.X + PhotoContainerView.Frame.Width + photoSpacing;
-            ParticipantsLabel = new UILabel (new CGRect(x, topSpacing, DateLabel.Frame.X - x, participantFont.LineHeight));
-            MessageLabel = new UILabel (new CGRect(x, ParticipantsLabel.Frame.Y + ParticipantsLabel.Frame.Height, Bounds.Width - RightSpacing - x, messageFont.LineHeight * 2.0f));
+            ParticipantsLabel = new UILabel (new CGRect (x, topSpacing, DateLabel.Frame.X - x, participantFont.LineHeight));
+            MessageLabel = new UILabel (new CGRect (x, ParticipantsLabel.Frame.Y + ParticipantsLabel.Frame.Height, Bounds.Width - RightSpacing - x, messageFont.LineHeight * 2.0f));
 
             ParticipantsLabel.Font = participantFont;
             ParticipantsLabel.TextColor = A.Color_NachoGreen;
@@ -697,7 +695,7 @@ namespace NachoClient.iOS
             DateLabel.SizeToFit ();
             var frame = MessageLabel.Frame;
             var messageWidth = ContentView.Bounds.Width - rightSpacing - frame.X;
-            var messageSize = MessageLabel.SizeThatFits (new CGSize(messageWidth, 0.0f));
+            var messageSize = MessageLabel.SizeThatFits (new CGSize (messageWidth, 0.0f));
             frame.Height = messageSize.Height;
             frame.Width = messageWidth;
             MessageLabel.Frame = frame;
@@ -740,7 +738,7 @@ namespace NachoClient.iOS
                 DateLabel.Text = Pretty.TimeWithDecreasingPrecision (Chat.LastMessageDate);
                 if (Chat.LastMessagePreview == null) {
                     MessageLabel.Text = "";
-                }else{
+                } else {
                     MessageLabel.Text = Chat.LastMessagePreview;
                 }
             }

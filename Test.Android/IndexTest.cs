@@ -86,10 +86,10 @@ namespace Test.Common
             return message;
         }
 
-        private MimeMessage[] GenerateTextMessages (string[] subjects, string[] bodies,
-                                                    InternetAddressList[] tos = null,
-                                                    InternetAddressList[] froms = null,
-                                                    InternetAddressList[] ccs = null)
+        private MimeMessage [] GenerateTextMessages (string [] subjects, string [] bodies,
+                                                    InternetAddressList [] tos = null,
+                                                    InternetAddressList [] froms = null,
+                                                    InternetAddressList [] ccs = null)
         {
             int length = 0;
             // Find the length
@@ -125,7 +125,7 @@ namespace Test.Common
                 }
             }
 
-            var messages = new MimeMessage[length];
+            var messages = new MimeMessage [length];
 
             for (int n = 0; n < length; n++) {
                 string subject = null;
@@ -202,12 +202,12 @@ namespace Test.Common
         {
             // We do a thorough testing of all Index API for Id test. And we focus on the 
             // search test for other field tests.
-            string[] subjects = new string[3] {
+            string [] subjects = new string [3] {
                 "subject 1",
                 "subject 2",
                 "subject 3",
             };
-            string[] bodies = new string[3] {
+            string [] bodies = new string [3] {
                 "body 1",
                 "body 2",
                 "body 3",
@@ -258,7 +258,7 @@ namespace Test.Common
             TestEmailIdSearchAllEmails (emails.Length, false);
         }
 
-        private void VerifyMatches (string type, List<MatchedItem> matches, int[] expectedIds)
+        private void VerifyMatches (string type, List<MatchedItem> matches, int [] expectedIds)
         {
             Assert.AreEqual (expectedIds.Length, matches.Count);
 
@@ -275,12 +275,12 @@ namespace Test.Common
             }
         }
 
-        private void VerifyEmailMatches (List<MatchedItem> matches, int[] expectedIds)
+        private void VerifyEmailMatches (List<MatchedItem> matches, int [] expectedIds)
         {
             VerifyMatches ("message", matches, expectedIds);
         }
 
-        private void VerifyContacts (List<MatchedItem> matches, int[] expectedIds)
+        private void VerifyContacts (List<MatchedItem> matches, int [] expectedIds)
         {
             VerifyMatches ("contact", matches, expectedIds);
         }
@@ -288,7 +288,7 @@ namespace Test.Common
         [Test]
         public void TestEmailBody ()
         {
-            string[] bodies = new string[8] {
+            string [] bodies = new string [8] {
                 "words are words",
                 "sentences have words",
                 "nonsense have words",
@@ -308,30 +308,30 @@ namespace Test.Common
 
             // Search for "words". Should return 4 matches
             List<MatchedItem> matches;
-            matches = Index.SearchFields ("message", "words", new string[] { "body" });
-            VerifyEmailMatches (matches, new int[4] { 0, 1, 2, 3 });
+            matches = Index.SearchType ("message", "words");
+            VerifyEmailMatches (matches, new int [4] { 0, 1, 2, 3 });
 
             // Search for "nonsense". Should return 2 matches
             matches = Index.Search ("body:nonsense");
-            VerifyEmailMatches (matches, new int[2] { 2, 3 });
+            VerifyEmailMatches (matches, new int [2] { 2, 3 });
 
             // Search for "sentences". Should return 1 match
             matches = Index.Search ("body:sentences");
-            VerifyEmailMatches (matches, new int[1] { 1 });
+            VerifyEmailMatches (matches, new int [1] { 1 });
 
             // Search for "pre*". Should return 2 matches
             matches = Index.Search ("body:pre*");
-            VerifyEmailMatches (matches, new int[2] { 4, 5 });
+            VerifyEmailMatches (matches, new int [2] { 4, 5 });
 
             // Search for "sentences" and "necessarily". Should return 2 matches
             matches = Index.Search ("body:sentences OR body:necessarily");
-            VerifyEmailMatches (matches, new int[2] { 1, 3 });
+            VerifyEmailMatches (matches, new int [2] { 1, 3 });
         }
 
         [Test]
         public void TestEmailSubject ()
         {
-            string[] subjects = new string[6] {
+            string [] subjects = new string [6] {
                 "important - please read",
                 "not important - please ignore",
                 "daily rambling",
@@ -351,30 +351,30 @@ namespace Test.Common
             // Search "important" 
             List<MatchedItem> matches;
             matches = Index.Search ("subject:important");
-            VerifyEmailMatches (matches, new int[2] { 0, 1 });
+            VerifyEmailMatches (matches, new int [2] { 0, 1 });
 
             // Search "daily"
             matches = Index.Search ("subject:daily");
-            VerifyEmailMatches (matches, new int[1] { 2 });
+            VerifyEmailMatches (matches, new int [1] { 2 });
 
             // Search "status"
             matches = Index.Search ("subject:status");
-            VerifyEmailMatches (matches, new int[1] { 3 });
+            VerifyEmailMatches (matches, new int [1] { 3 });
 
             // Search "ra*"
             matches = Index.Search ("subject:ra*");
-            VerifyEmailMatches (matches, new int[2] { 2, 3 });
+            VerifyEmailMatches (matches, new int [2] { 2, 3 });
         }
 
         [Test]
         public void TestEmailAddressAndDomainFields ()
         {
-            string[] subjects = new string[3] {
+            string [] subjects = new string [3] {
                 "email #1",
                 "email #2",
                 "email #3",
             };
-            string[][] names = new string[][] {
+            string [] [] names = new string [] [] {
                 new string[2] {
                     "Bob Villa",
                     "John Johnson",
@@ -387,7 +387,7 @@ namespace Test.Common
                     "Dave Davidson",
                 },
             };
-            string[][] addresses = new string[][] {
+            string [] [] addresses = new string [] [] {
                 new string[2] {
                     "bvilla@company.net",
                     "jjohnson@startup.net"
@@ -401,7 +401,7 @@ namespace Test.Common
                 },
             };
 
-            InternetAddressList[] tos = new InternetAddressList[3];
+            InternetAddressList [] tos = new InternetAddressList [3];
             for (int i = 0; i < subjects.Length; i++) {
                 tos [i] = new InternetAddressList ();
                 for (int j = 0; j < names [i].Length; j++) {
@@ -419,39 +419,39 @@ namespace Test.Common
             // Search "bob"
             List<MatchedItem> matches;
             matches = Index.Search ("to:bob");
-            VerifyEmailMatches (matches, new int[3] { 0, 1, 2 });
+            VerifyEmailMatches (matches, new int [3] { 0, 1, 2 });
 
             // Search "bvilla@company.net"
             matches = Index.Search ("to:bvilla@company.net");
-            VerifyEmailMatches (matches, new int[2] { 0, 1 });
+            VerifyEmailMatches (matches, new int [2] { 0, 1 });
 
             // Search "ddavidson@startup.net"
             matches = Index.Search ("to:ddavidson@startup.net");
-            VerifyEmailMatches (matches, new int[1] { 2 });
+            VerifyEmailMatches (matches, new int [1] { 2 });
         }
 
         [Test]
         public void TestContact ()
         {
-            string[] first_name = new string[] {
+            string [] first_name = new string [] {
                 "Bob",
                 "Fred",
                 "JoAnn",
                 "John",
             };
-            string[] middle_name = new string[] {
+            string [] middle_name = new string [] {
                 null,
                 "John",
                 "Mary",
                 null,
             };
-            string[] last_name = new string[] {
+            string [] last_name = new string [] {
                 "Smith",
                 "Johnson",
                 "Fabrics",
                 "Brown",
             };
-            string[][] email_addresses = new string[][] {
+            string [] [] email_addresses = new string [] [] {
                 new string[] {
                     "bob@company.net",
                     "bsmithm@home.net",
@@ -465,7 +465,7 @@ namespace Test.Common
                 new string[] {
                 },
             };
-            string[][] phone_numbers = new string[][] {
+            string [] [] phone_numbers = new string [] [] {
                 new string[] {
                     "1-408-555-1111",
                     "1(650)555-2222",
@@ -479,7 +479,7 @@ namespace Test.Common
                 new string[] {
                 },
             };
-            string[][] addresses = new string[][] {
+            string [] [] addresses = new string [] [] {
                 new string[] {
                     "123 Main St., Fremont, CA 94538",
                 },
@@ -493,7 +493,7 @@ namespace Test.Common
                     "100 Seaside Ave., San Carlos, CA 94070",
                 },
             };
-            string[] notes = new string[] {
+            string [] notes = new string [] {
                 "This entry is a note",
                 "This entry is an experiment",
                 null,
@@ -501,7 +501,7 @@ namespace Test.Common
             };
 
             // Generate all 4 contact parameters objects
-            var contactParams = new ContactIndexParameters[first_name.Length];
+            var contactParams = new ContactIndexParameters [first_name.Length];
             for (int n = 0; n < first_name.Length; n++) {
                 contactParams [n] = new ContactIndexParameters ();
                 contactParams [n].FirstName = first_name [n];
@@ -543,55 +543,55 @@ namespace Test.Common
 
             // Search by first name
             matches = Index.Search ("first_name:fred");
-            VerifyContacts (matches, new int[] { 1 });
+            VerifyContacts (matches, new int [] { 1 });
             matches = Index.Search ("first_name:Jo*");
-            VerifyContacts (matches, new int[] { 2, 3 });
+            VerifyContacts (matches, new int [] { 2, 3 });
 
             // Search by middle name
             matches = Index.Search ("middle_name:Mary");
-            VerifyContacts (matches, new int[] { 2 });
+            VerifyContacts (matches, new int [] { 2 });
             matches = Index.Search ("middle_name:M*");
-            VerifyContacts (matches, new int[] { 2 });
+            VerifyContacts (matches, new int [] { 2 });
 
             // Search by last name
             matches = Index.Search ("last_name:Brown");
-            VerifyContacts (matches, new int[] { 3 });
+            VerifyContacts (matches, new int [] { 3 });
             matches = Index.Search ("last_name:J*");
-            VerifyContacts (matches, new int[] { 1 });
+            VerifyContacts (matches, new int [] { 1 });
 
             // Search by email address
             matches = Index.Search ("email_address:support@joannfrabrics.com");
-            VerifyContacts (matches, new int[] { 2 });
+            VerifyContacts (matches, new int [] { 2 });
             matches = Index.Search ("email_address:b*");
-            VerifyContacts (matches, new int[] { 0 });
+            VerifyContacts (matches, new int [] { 0 });
 
             // Search by email domain
             matches = Index.Search ("email_domain:company.net");
-            VerifyContacts (matches, new int[] { 0, 1 });
+            VerifyContacts (matches, new int [] { 0, 1 });
             matches = Index.Search ("email_domain:joann*");
-            VerifyContacts (matches, new int[] { 2 });
+            VerifyContacts (matches, new int [] { 2 });
 
             // Search by phone #
             matches = Index.Search ("phone_number:510-555-4321");
-            VerifyContacts (matches, new int[] { 2 });
+            VerifyContacts (matches, new int [] { 2 });
             matches = Index.Search ("phone_number:408*");
-            VerifyContacts (matches, new int[] { 1 });
+            VerifyContacts (matches, new int [] { 1 });
 
             // Search by address
             matches = Index.Search ("address:cunningham");
-            VerifyContacts (matches, new int[] { 1 });
+            VerifyContacts (matches, new int [] { 1 });
             matches = Index.Search ("address:CA");
-            VerifyContacts (matches, new int[] { 0, 3 });
+            VerifyContacts (matches, new int [] { 0, 3 });
 
             // Search by notes
             matches = Index.Search ("note:note");
-            VerifyContacts (matches, new int[] { 0 });
+            VerifyContacts (matches, new int [] { 0 });
             matches = Index.Search ("note:experiment");
-            VerifyContacts (matches, new int[] { 1 });
+            VerifyContacts (matches, new int [] { 1 });
             matches = Index.Search ("note:entry");
-            VerifyContacts (matches, new int[] { 0, 1 });
+            VerifyContacts (matches, new int [] { 0, 1 });
             matches = Index.Search ("note:測試");
-            VerifyContacts (matches, new int[] { 3 });
+            VerifyContacts (matches, new int [] { 3 });
             matches = Index.Search ("note:happy");
             Assert.AreEqual (0, matches.Count);
         }

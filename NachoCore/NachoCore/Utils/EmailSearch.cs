@@ -15,7 +15,7 @@ namespace NachoCore.Utils
         UpdateUiAction updateUi;
 
         object lockObject = new object ();
-        object serverResultsLock = new object();
+        object serverResultsLock = new object ();
 
         bool searchInProgress = false;
         string lastSearch = "";
@@ -25,7 +25,7 @@ namespace NachoCore.Utils
         List<McAccount> accounts;
         Dictionary<int, string> accountSearchTokens;
 
-        List<MatchedItem> indexResults;
+        IEnumerable<EmailMessageDocument> indexResults;
         Dictionary<int, List<NcEmailMessageIndex>> serverResults = new Dictionary<int, List<NcEmailMessageIndex>> ();
 
         List<McEmailMessageThread> finalResults = new List<McEmailMessageThread> ();
@@ -48,7 +48,7 @@ namespace NachoCore.Utils
                 serverResults.Clear ();
             }
             ClearCache ();
-            indexResults = new List<MatchedItem> ();
+            indexResults = new EmailMessageDocument [0];
             finalResults = new List<McEmailMessageThread> ();
         }
 
@@ -178,21 +178,18 @@ namespace NachoCore.Utils
                     }
 
                     if (!mergeOnly) {
-                        var indexMatches = new List<MatchedItem> ();
                         if (!string.IsNullOrEmpty (searchString)) {
                             int maxResults = Math.Min (100 * searchString.Length, 1000);
-                            foreach (var account in accounts) {
-                                using (var index = new NcIndex (NcModel.Instance.GetIndexPath (account.Id))) {
-                                    indexMatches.AddRange (index.SearchAllEmailMessageFields (searchString, maxResults));
-                                }
-                            }
+                            var accountId = accounts.Count == 1 ? accounts [0].Id : 0;
+                            indexResults = NcIndex.Main.SearchEmails (searchString, accountId);
+                        } else {
+                            indexResults = new EmailMessageDocument [0];
                         }
-                        indexResults = indexMatches;
                     }
 
                     // Merge the index results and server results, avoiding duplicates and bad items.
                     // Score the matches, and sort from highest to lowest score.
-                    var searchWords = searchString.Trim ().Split (new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var searchWords = searchString.Trim ().Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     var dbIds = new HashSet<int> ();
                     var messageIds = new HashSet<string> ();
                     var scoredResults = new List<SearchMatch> ();
@@ -200,20 +197,16 @@ namespace NachoCore.Utils
                     NcAssert.NotNull (indexResults, "StartSearch: indexResults is null");
                     foreach (var indexMatch in indexResults) {
                         NcAssert.NotNull (indexMatch, "StartSearch: indexMatch is null");
-                        try {
-                            float matchScore;
-                            int id = int.Parse (indexMatch.Id);
-                            if (ScoreMessage (id, searchWords, indexMatch.Score, out matchScore, dbIds, messageIds)) {
-                                scoredResults.Add (new SearchMatch () {
-                                    thread = new McEmailMessageThread () {
-                                        FirstMessageId = id,
-                                        MessageCount = 1,
-                                    },
-                                    matchScore = matchScore,
-                                });
-                            }
-                        } catch (FormatException) {
-                            Log.Error (Log.LOG_SEARCH, "Index search returned an item with a malformed id: {0}", indexMatch.Id);
+                        float matchScore;
+                        int id = indexMatch.IntegerMessageId;
+                        if (ScoreMessage (id, searchWords, indexMatch.Score, out matchScore, dbIds, messageIds)) {
+                            scoredResults.Add (new SearchMatch () {
+                                thread = new McEmailMessageThread () {
+                                    FirstMessageId = id,
+                                    MessageCount = 1,
+                                },
+                                matchScore = matchScore,
+                            });
                         }
                     }
                     // The serverResults collection can be modified by StatusIndicatorCallback at any time.
@@ -267,7 +260,7 @@ namespace NachoCore.Utils
             }, "EmailSearch");
         }
 
-        bool ScoreMessage (int messageId, string[] searchWords, float indexScore, out float score, HashSet<int> dbIds, HashSet<string> messageIds)
+        bool ScoreMessage (int messageId, string [] searchWords, float indexScore, out float score, HashSet<int> dbIds, HashSet<string> messageIds)
         {
             score = 0;
             if (!dbIds.Add (messageId)) {
@@ -279,24 +272,8 @@ namespace NachoCore.Utils
             }
 
             int localScore = 0;
-            foreach (string word in searchWords) {
-                localScore += ScoreForField (message.From, word, 3);
-                localScore += ScoreForField (message.Subject, word, 2);
-                localScore += ScoreForField (message.To, word);
-                localScore += ScoreForField (message.Cc, word);
-                localScore += ScoreForField (message.Bcc, word);
-            }
-
             score = (float)localScore + indexScore;
             return true;
-        }
-
-        int ScoreForField (string field, string word, int multiplier = 1)
-        {
-            if (null != field && field.ToLower ().Contains (word.ToLower ())) {
-                return word.Length * multiplier;
-            }
-            return 0;
         }
 
         void StatusIndicatorCallback (object sender, EventArgs e)
@@ -306,8 +283,7 @@ namespace NachoCore.Utils
             if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind &&
                 null != s.Account && null != s.Tokens && null != accountSearchTokens &&
                 accountSearchTokens.Keys.Contains (s.Account.Id) &&
-                s.Tokens.Contains (accountSearchTokens [s.Account.Id]))
-            {
+                s.Tokens.Contains (accountSearchTokens [s.Account.Id])) {
                 var matches = s.Status.GetValue<List<NcEmailMessageIndex>> ();
                 if (0 < matches.Count || serverResults.ContainsKey (s.Account.Id)) {
                     lock (serverResultsLock) {

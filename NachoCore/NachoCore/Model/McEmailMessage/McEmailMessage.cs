@@ -314,9 +314,9 @@ namespace NachoCore.Model
         // (i.e. indexing of an email message without its body downloaded), it is changed to an int.
         // I didn't want to rename it to IndexVersion (like McContact) in order to avoid a migration.
         //
-        // For header indexed messages, the field has the value of EmailMessageIndexDocument.Version-1.
-        // For header+body indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
-        // just increment the version # and implement the new version of EmailMessageIndexDocument.
+        // For header indexed messages, the field has the value of EmailMessageDocument.Version-1.
+        // For header+body indexed messages, EmailMessageDocument.Version. If a new indexing schema is needed,
+        // just increment the version # and implement the new version of EmailMessageDocument.
         // Brain will unindex all old version documents and re-index them using the new schema.
         public int IsIndexed { set; get; }
 
@@ -955,7 +955,7 @@ namespace NachoCore.Model
                 "   likelihood (b.FilePresence = ?, 0.5))" +
                 " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?",
-                EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version,
+                EmailMessageDocument.Version - 1, EmailMessageDocument.Version,
                 McAbstrFileDesc.FilePresenceEnum.Complete, maxMessages
             );
         }
@@ -1811,9 +1811,9 @@ namespace NachoCore.Model
         public int GetIndexVersion ()
         {
             if (!IsJunk && GetBodyIfComplete () == null) {
-                return EmailMessageIndexDocument.Version - 1;
+                return EmailMessageDocument.Version - 1;
             }
-            return EmailMessageIndexDocument.Version;
+            return EmailMessageDocument.Version;
         }
 
         public static McEmailMessage QueryByMessageId (int accountId, string messageId)

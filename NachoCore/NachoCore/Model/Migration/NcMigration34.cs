@@ -10,28 +10,24 @@ namespace NachoCore.Model
 {
     public class NcMigration34 : NcMigration
     {
-        protected TableQuery<McEmailMessage> IndexedEmailMessages ()
-        {
-            return Db.Table<McEmailMessage> ().Where ((e) => (e.IsIndexed > 0) && (e.IsIndexed < EmailMessageIndexDocument.Version));
-        }
 
         public override int GetNumberOfObjects ()
         {
-            return IndexedEmailMessages ().Count ();
+            return 1;
         }
 
         public override void Run (System.Threading.CancellationToken token)
         {
-            NcIndex index;
-            foreach (var account in McAccount.GetAllAccounts ()) {
-                index = Indexer.Instance.IndexForAccount (account.Id);
-                using (var transaction = index.RemovingTransaction ()) {
-                    var numUpdated = transaction.RemoveAllMessages ();
-                    transaction.Commit ();
-                    UpdateProgress (numUpdated);
-                }
-            }
-            Db.Execute ("UPDATE McEmailMessage SET IsIndexed = 0");
+            // Superceded by NcMigration61
+            //NcIndex index;
+            //foreach (var account in McAccount.GetAllAccounts ()) {
+            //    index = Indexer.Instance.IndexForAccount (account.Id);
+            //    using (var transaction = index.Transaction ()) {
+            //        transaction.RemoveAllMessages ();
+            //        transaction.Commit ();
+            //    }
+            //}
+            //Db.Execute ("UPDATE McEmailMessage SET IsIndexed = 0");
         }
     }
 }

@@ -33,45 +33,6 @@ namespace NachoCore.Index
 
         #endregion
 
-        #region Managing Account Indexes
-
-        readonly ConcurrentDictionary<int, NcIndex> IndexesByAccount = new ConcurrentDictionary<int, NcIndex> ();
-
-        /// <summary>
-        /// Get the index corresponding to a particular account.  Each account has its own index primarily
-        /// to allow for easy and thorough deletion of the entire account data.
-        /// </summary>
-        /// <returns>The index for an account.</returns>
-        /// <param name="accountId">The id number of the account</param>
-        public NcIndex IndexForAccount (int accountId)
-        {
-            if (IndexesByAccount.TryGetValue (accountId, out var index)) {
-                return index;
-            }
-            var indexPath = Model.NcModel.Instance.GetIndexPath (accountId);
-            index = new NcIndex (indexPath);
-            if (!IndexesByAccount.TryAdd (accountId, index)) {
-                // A race happens and this thread loses. There should be an Index in the dictionary now
-                index.Dispose ();
-                index = null;
-                var got = IndexesByAccount.TryGetValue (accountId, out index);
-                Utils.NcAssert.True (got);
-            }
-            return index;
-        }
-
-        /// <summary>
-        /// Delete the indexed items for a given account
-        /// </summary>
-        /// <param name="accountId">Account id number</param>
-        public void DeleteIndex (int accountId)
-        {
-            var index = IndexForAccount (accountId);
-            index.MarkForDeletion ();
-        }
-
-        #endregion
-
         #region Adding & Removing Items
 
         /// <summary>
@@ -108,8 +69,7 @@ namespace NachoCore.Index
             NcTask.Run (() => {
                 var item = new McSearchUnindexQueueItem () {
                     AccountId = message.AccountId,
-                    DocumentId = message.GetIndexId (),
-                    DocumentType = EmailMessageIndexDocument.DocumentType
+                    DocumentId = message.GetIndexDocumentId (),
                 };
                 item.Insert ();
                 // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
@@ -128,13 +88,35 @@ namespace NachoCore.Index
             NcTask.Run (() => {
                 var item = new McSearchUnindexQueueItem () {
                     AccountId = contact.AccountId,
-                    DocumentId = contact.GetIndexId (),
-                    DocumentType = ContactIndexDocument.DocumentType
+                    DocumentId = contact.GetIndexDocumentId (),
                 };
                 item.Insert ();
+                // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
                 JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
             }, "Indexer.RemoveContact");
+        }
+
+        /// <summary>
+        /// Delete the indexed items for a given account
+        /// </summary>
+        /// <remarks>
+        /// This method doesn't make its own task because the only time it's called
+        /// is already on a background task.
+        /// </remarks>
+        /// <param name="accountId">Account id number</param>
+        public void RemoveAccount (int accountId)
+        {
+            Log.LOG_SEARCH.Info ("Indexer Remove requested for account {0}", accountId);
+            // Insert a special item without a documentId, which indicates its the account
+            // that should be unindexed
+            var item = new McSearchUnindexQueueItem () {
+                AccountId = accountId
+            };
+            item.Insert ();
+            // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
+            JobQueue.Enqueue (UnindexJob);
+            SetNeedsWork ();
         }
 
         #endregion
@@ -257,16 +239,7 @@ namespace NachoCore.Index
             var limit = MaxIndexEmailMessagesBatchCount;
             var messages = McEmailMessage.QueryNeedsIndexing (maxMessages: limit);
             Log.LOG_SEARCH.Info ("Indexer found {0} messages to index", messages.Count);
-            var messagesByAccount = new Dictionary<int, List<McEmailMessage>> ();
-            foreach (var message in messages) {
-                if (!messagesByAccount.ContainsKey (message.AccountId)) {
-                    messagesByAccount [message.AccountId] = new List<McEmailMessage> ();
-                }
-                messagesByAccount [message.AccountId].Add (message);
-            }
-            foreach (var pair in messagesByAccount) {
-                IndexEmailMessages (pair.Key, pair.Value.ToArray ());
-            }
+            IndexEmailMessages (messages.ToArray ());
             if (messages.Count == limit) {
                 JobQueue.Enqueue (IndexEmailMessagesJob);
             }
@@ -282,16 +255,7 @@ namespace NachoCore.Index
             var limit = MaxIndexContactsBatchCount;
             var contacts = McContact.QueryNeedIndexing (maxContact: limit);
             Log.LOG_SEARCH.Info ("Indexer found {0} contacts to index", contacts.Count);
-            var contactsByAccount = new Dictionary<int, List<McContact>> ();
-            foreach (var contact in contacts) {
-                if (!contactsByAccount.ContainsKey (contact.AccountId)) {
-                    contactsByAccount [contact.AccountId] = new List<McContact> ();
-                }
-                contactsByAccount [contact.AccountId].Add (contact);
-            }
-            foreach (var pair in contactsByAccount) {
-                IndexContacts (pair.Key, pair.Value.ToArray ());
-            }
+            IndexContacts (contacts.ToArray ());
             if (contacts.Count == limit) {
                 JobQueue.Enqueue (IndexContactsJob);
             }
@@ -307,16 +271,7 @@ namespace NachoCore.Index
             var limit = MaxUnindexBatchCount;
             var items = McSearchUnindexQueueItem.Query (maxItems: limit);
             Log.LOG_SEARCH.Info ("Indexer found {0} unindex items", items.Count);
-            var itemsByAccount = new Dictionary<int, List<McSearchUnindexQueueItem>> ();
-            foreach (var item in items) {
-                if (!itemsByAccount.ContainsKey (item.AccountId)) {
-                    itemsByAccount [item.AccountId] = new List<McSearchUnindexQueueItem> ();
-                }
-                itemsByAccount [item.AccountId].Add (item);
-            }
-            foreach (var pair in itemsByAccount) {
-                Unindex (pair.Key, pair.Value.ToArray ());
-            }
+            Unindex (items.ToArray ());
             if (items.Count == limit) {
                 JobQueue.Enqueue (UnindexJob);
             }
@@ -327,7 +282,7 @@ namespace NachoCore.Index
         /// </summary>
         /// <param name="accountId">Account identifier.</param>
         /// <param name="messages">Messages.</param>
-        void IndexEmailMessages (int accountId, McEmailMessage [] messages)
+        void IndexEmailMessages (McEmailMessage [] messages)
         {
             // A note on stale data:
             // 1. If an account is deleted, its entire index is blown away, but that
@@ -338,24 +293,15 @@ namespace NachoCore.Index
             // 2. If a message has been deleted, its unindex job should still be pending
             //    so it's okay to insert it in the index because it will quickly be removed
             //    when the unindex job runs
-            var index = IndexForAccount (accountId);
-            // remove any messages that are already in the index
-            using (var transaction = index.RemovingTransaction ()) {
-                if (transaction != null) {
-                    foreach (var message in messages) {
-                        if (message.IsIndexed != 0) {
-                            transaction.Remove (EmailMessageIndexDocument.DocumentType, message.GetIndexId ());
-                        }
-                    }
-                    transaction.Commit ();
-                }
-            }
-            // add all messages to the index
-            using (var transaction = index.AddingTransaction ()) {
+            using (var transaction = NcIndex.Main.Transaction ()) {
                 if (transaction != null) {
                     NcModel.Instance.RunInTransaction (() => {
                         foreach (var message in messages) {
-                            transaction.Add (message);
+                            if (message.IsIndexed == 0) {
+                                transaction.Add (message);
+                            } else {
+                                transaction.Update (message);
+                            }
                             message.UpdateIsIndex (message.GetIndexVersion ());
                         }
                         transaction.Commit ();
@@ -369,7 +315,7 @@ namespace NachoCore.Index
         /// </summary>
         /// <param name="accountId">Account identifier.</param>
         /// <param name="contacts">Contacts.</param>
-        void IndexContacts (int accountId, McContact [] contacts)
+        void IndexContacts (McContact [] contacts)
         {
             // A note on stale data:
             // 1. If an account is deleted, its entire index is blown away, but that
@@ -380,24 +326,15 @@ namespace NachoCore.Index
             // 2. If a contact has been deleted, its unindex job should still be pending
             //    so it's okay to insert it in the index because it will quickly be removed
             //    when the unindex job runs
-            var index = IndexForAccount (accountId);
-            // remove any contacts that are already in the index
-            using (var transaction = index.RemovingTransaction ()) {
-                if (transaction != null) {
-                    foreach (var contact in contacts) {
-                        if (contact.IndexVersion != 0) {
-                            transaction.Remove (ContactIndexDocument.DocumentType, contact.GetIndexId ());
-                        }
-                    }
-                    transaction.Commit ();
-                }
-            }
-            // add all contacts to the index
-            using (var transaction = index.AddingTransaction ()) {
+            using (var transaction = NcIndex.Main.Transaction ()) {
                 if (transaction != null) {
                     NcModel.Instance.RunInTransaction (() => {
                         foreach (var contact in contacts) {
-                            transaction.Add (contact);
+                            if (contact.IndexVersion == 0) {
+                                transaction.Add (contact);
+                            } else {
+                                transaction.Update (contact);
+                            }
                             contact.UpdateIndexVersion (contact.GetIndexVersion ());
                         }
                         transaction.Commit ();
@@ -412,7 +349,7 @@ namespace NachoCore.Index
         /// <returns>The unindex.</returns>
         /// <param name="accountId">Account identifier.</param>
         /// <param name="items">Items.</param>
-        void Unindex (int accountId, McSearchUnindexQueueItem [] items)
+        void Unindex (McSearchUnindexQueueItem [] items)
         {
             // A note on stale data:
             // 1. If an account is deleted, its entire index is blown away, but that
@@ -420,12 +357,16 @@ namespace NachoCore.Index
             //    transaction on a deleted index will return a null transaction.
             //    Since we watch out for a null transaction, we're safe from removing
             //    items from an index that has been deleted.
-            var index = IndexForAccount (accountId);
-            using (var transaction = index.RemovingTransaction ()) {
+            using (var transaction = NcIndex.Main.Transaction ()) {
                 if (transaction != null) {
                     NcModel.Instance.RunInTransaction (() => {
                         foreach (var item in items) {
-                            transaction.Remove (item.DocumentType, item.DocumentId);
+                            // special case when documentId is empty, means we should unindex the account
+                            if (string.IsNullOrEmpty (item.DocumentId)) {
+                                transaction.RemoveAccount (item.AccountId);
+                            } else {
+                                transaction.Remove (item.DocumentId);
+                            }
                             item.Delete ();
                         }
                         transaction.Commit ();
@@ -453,6 +394,11 @@ namespace NachoCore.Index
             return message.Id.ToString ();
         }
 
+        public static string GetIndexDocumentId (this McEmailMessage message)
+        {
+            return string.Format ("{0}_{1}", EmailMessageDocument.DocumentType, message.Id);
+        }
+
         /// <summary>
         /// Get the body content that will be indexed for search purposes.  This method may block while the content
         /// is extracted, so it should be called on a background thread.
@@ -463,52 +409,13 @@ namespace NachoCore.Index
         {
             var body = message.GetBodyIfComplete ();
             if (body == null) {
-                return null;
+                return message.BodyPreview;
             }
             var bundle = new NcEmailMessageBundle (body);
             if (bundle.NeedsUpdate) {
                 bundle.Update ();
             }
             return bundle.FullText;
-        }
-
-        /// <summary>
-        /// Get the structured parameters that can be used to create a <see cref="EmailMessageIndexDocument"/>.
-        /// This method may block while the content parameter is extracted, so it should be called on a background thread.
-        /// </summary>
-        /// <returns>The parameters.</returns>
-        /// <param name="message">Message.</param>
-        public static EmailMessageIndexParameters GetIndexParameters (this McEmailMessage message)
-        {
-
-            var parameters = new EmailMessageIndexParameters () {
-                From = message.FromMailboxes,
-                To = message.ToMailboxes,
-                Cc = message.CcMailboxes,
-                Bcc = message.BccMailboxes,
-                ReceivedDate = message.DateReceived,
-                Subject = message.Subject,
-                Preview = message.BodyPreview,
-            };
-            parameters.Content = message.GetIndexContent ();
-            return parameters;
-        }
-
-        /// <summary>
-        /// Get the document that can be added to a search index.  This method may block while the parameters
-        /// are extracted, so it should be called on a background thread.
-        /// </summary>
-        /// <returns>The document.</returns>
-        /// <param name="message">Message.</param>
-        public static EmailMessageIndexDocument GetIndexDocument (this McEmailMessage message)
-        {
-            if (message.IsJunk) {
-                return null;
-            }
-            var id = message.GetIndexId ();
-            var parameters = message.GetIndexParameters ();
-            var doc = new EmailMessageIndexDocument (id, parameters);
-            return doc;
         }
     }
 
@@ -529,55 +436,9 @@ namespace NachoCore.Index
             return contact.Id.ToString ();
         }
 
-        /// <summary>
-        /// Get the parameters that can be used to construct a <see cref="ContactIndexDocument"/>
-        /// </summary>
-        /// <returns>The parameters.</returns>
-        /// <param name="contact">Contact.</param>
-        public static ContactIndexParameters GetIndexParameters (this McContact contact)
+        public static string GetIndexDocumentId (this McContact contact)
         {
-            var parameters = new ContactIndexParameters () {
-                FirstName = contact.FirstName,
-                MiddleName = contact.MiddleName,
-                LastName = contact.LastName,
-                CompanyName = contact.CompanyName,
-            };
-            foreach (var emailAddress in contact.EmailAddresses) {
-                parameters.EmailAddresses.Add (emailAddress.Value);
-                var addr = NcEmailAddress.ParseMailboxAddressString (emailAddress.Value);
-                if (addr != null) {
-                    var idx = emailAddress.Value.IndexOf ("@");
-                    parameters.EmailDomains.Add (emailAddress.Value.Substring (idx + 1));
-                }
-            }
-            foreach (var phoneNumber in contact.PhoneNumbers) {
-                parameters.PhoneNumbers.Add (phoneNumber.Value);
-            }
-            foreach (var address in contact.Addresses) {
-                string addressString = address.Street + "\n" + address.City + "\n" + address.State + "\n" + address.PostalCode + "\n" + address.Country + "\n";
-                parameters.Addresses.Add (addressString);
-            }
-            var body = contact.GetBodyIfComplete ();
-            if (body != null) {
-                try {
-                    parameters.Note = File.ReadAllText (body.GetFilePath ());
-                } catch (IOException) {
-                }
-            }
-            return parameters;
-        }
-
-        /// <summary>
-        /// Get the document that can be added to a search index
-        /// </summary>
-        /// <returns>The index document.</returns>
-        /// <param name="contact">Contact.</param>
-        public static ContactIndexDocument GetIndexDocument (this McContact contact)
-        {
-            var id = contact.GetIndexId ();
-            var parameters = contact.GetIndexParameters ();
-            var doc = new ContactIndexDocument (id, parameters);
-            return doc;
+            return string.Format ("{0}_{1}", ContactDocument.DocumentType, contact.Id);
         }
     }
 
@@ -589,41 +450,57 @@ namespace NachoCore.Index
     {
         /// <summary>
         /// Add an email message to the search index for this transaction.  This is a convenience
-        /// method that mostly just calls <see cref="EmailMessageExtensions.GetIndexDocument"/> and forwards
-        /// it along to the <see cref="AddingTransaction.Add(NcIndexDocument)"/> method
+        /// method that mostly just creates a <see cref="EmailMessageDocument"/> and forwards
+        /// it along to the <see cref="Transaction.Add"/> method
         /// </summary>
         /// <returns>The add.</returns>
         /// <param name="transaction">Transaction.</param>
         /// <param name="message">The message to add</param>
-        public static void Add (this AddingTransaction transaction, McEmailMessage message)
+        public static void Add (this Transaction transaction, McEmailMessage message)
         {
             try {
-                var doc = message.GetIndexDocument ();
-                if (doc != null) {
-                    transaction.Add (doc);
-                }
+                var doc = new EmailMessageDocument (message);
+                transaction.Add (doc.Document, EmailMessageDocument.Analyzer);
             } catch (NullReferenceException e) {
-                Log.Error (Log.LOG_SEARCH, "IndexEmailmessage: caught null exception - {0}", e);
+                Log.Error (Log.LOG_SEARCH, "Add EmailMessage: caught null exception - {0}", e);
+            }
+        }
+
+        public static void Update (this Transaction transaction, McEmailMessage message)
+        {
+            try {
+                var doc = new EmailMessageDocument (message);
+                transaction.Update (doc.DocumentIdTerm, doc.Document, EmailMessageDocument.Analyzer);
+            } catch (NullReferenceException e) {
+                Log.Error (Log.LOG_SEARCH, "Update EmailMessage: caught null exception - {0}", e);
             }
         }
 
         /// <summary>
         /// Add a contact to the search index for this transaction.  This is a convenience
-        /// method that mostly just calls <see cref="ContactExtensions.GetIndexDocument"/> and forwards
-        /// it along to the <see cref="AddingTransaction.Add(NcIndexDocument)"/> method
+        /// method that mostly just creates a  <see cref="ContactDocument"/> and forwards
+        /// it along to the <see cref="Transaction.Add"/> method
         /// </summary>
         /// <returns>The add.</returns>
         /// <param name="transaction">Transaction.</param>
         /// <param name="contact">The contact to add</param>
-        public static void Add (this AddingTransaction transaction, McContact contact)
+        public static void Add (this Transaction transaction, McContact contact)
         {
             try {
-                var doc = contact.GetIndexDocument ();
-                if (doc != null) {
-                    transaction.Add (doc);
-                }
+                var doc = new ContactDocument (contact);
+                transaction.Add (doc.Document, ContactDocument.Analyzer);
             } catch (NullReferenceException e) {
-                Log.Error (Log.LOG_SEARCH, "IndexEmailmessage: caught null exception - {0}", e);
+                Log.Error (Log.LOG_SEARCH, "Add Contact: caught null exception - {0}", e);
+            }
+        }
+
+        public static void Update (this Transaction transaction, McContact contact)
+        {
+            try {
+                var doc = new ContactDocument (contact);
+                transaction.Update (doc.DocumentIdTerm, doc.Document, ContactDocument.Analyzer);
+            } catch (NullReferenceException e) {
+                Log.Error (Log.LOG_SEARCH, "Update Contact: caught null exception - {0}", e);
             }
         }
     }
