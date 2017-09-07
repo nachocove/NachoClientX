@@ -1,4 +1,4 @@
-﻿﻿﻿// Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿// Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -86,7 +86,7 @@ namespace NachoCore.Model
         // To learn more about how the database plans and executes queries, define QUERY_DEBUG,
         // and then call NcModel.Instance.ExplainQuery(query) for the problematic queries.
         // The query string can have '?' in it without passing any actual arguments.
-        #if QUERY_DEBUG
+#if QUERY_DEBUG
 
         private class QueryPlan {
             public int selectid { get; set; }
@@ -105,7 +105,7 @@ namespace NachoCore.Model
             return result.ToString ();
         }
 
-        #endif
+#endif
     }
 
     public sealed class NcModel : SQLiteConnectionDelegate
@@ -171,8 +171,8 @@ namespace NachoCore.Model
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
-        public static string[] ExemptTables = new string[] { 
-            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation", "McBuildInfo",
+        public static string [] ExemptTables = new string [] {
+            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation", "McBuildInfo", "McEmailAddress"
         };
 
         public string DbFileName { set; get; }
@@ -203,8 +203,8 @@ namespace NachoCore.Model
                     if (!DbConns.TryGetValue (threadId, out db)) {
                         if (!ConnectionPool.TryDequeue (out db)) {
                             Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} + connection ({1})", threadId, ConnectionCounts ());
-                            db = new NcSQLiteConnection (DbFileName, 
-                                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
+                            db = new NcSQLiteConnection (DbFileName,
+                                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex,
                                 storeDateTimeAsTicks: true);
                             db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                             db.TraceThreshold = 500;
@@ -219,7 +219,7 @@ namespace NachoCore.Model
                     }
                 }
                 return db;
-            } 
+            }
 
             set {
                 NcAssert.True (null == value);
@@ -249,7 +249,7 @@ namespace NachoCore.Model
             DateTime staleCuttoff = DateTime.UtcNow - staleInterval;
             int uiThreadId = NcApplication.Instance.UiThreadId;
             foreach (var kvp in DbConns) {
-                if (uiThreadId != kvp.Key && kvp.Value.GetLastAccess() < staleCuttoff) {
+                if (uiThreadId != kvp.Key && kvp.Value.GetLastAccess () < staleCuttoff) {
                     NcSQLiteConnection staleConnection;
                     if (DbConns.TryRemove (kvp.Key, out staleConnection)) {
                         ConnectionPool.Enqueue (staleConnection);
@@ -334,7 +334,7 @@ namespace NachoCore.Model
                         using (var reader = new StreamReader (stream)) {
                             AccountIdString = reader.ReadLine ();
                             bool result = int.TryParse (AccountIdString, out AccountId);
-                            if (!result) {                     
+                            if (!result) {
                                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to parse AccountId from file.");
                             }
                         }
@@ -451,7 +451,7 @@ namespace NachoCore.Model
                 storedBuildInfo.Version != BuildInfo.Version) {
                 Db.RunInTransaction (() => {
                     foreach (var tableType in AllTables) {
-                        Db.CreateTable(tableType);
+                        Db.CreateTable (tableType);
                     }
                 });
                 var current = new McBuildInfo () {
@@ -505,7 +505,7 @@ namespace NachoCore.Model
                         }
                     }
                 }
-                return instance; 
+                return instance;
             }
         }
 
@@ -515,14 +515,14 @@ namespace NachoCore.Model
             }
         }
 
-        #if QUERY_DEBUG
+#if QUERY_DEBUG
 
         public void ExplainQuery (string query)
         {
             Log.Info (Log.LOG_DB, "Query: {0}\n{1}", query, ((NcSQLiteConnection)Db).ExplainQuery (query));
         }
 
-        #endif
+#endif
 
         public void Start ()
         {
@@ -541,7 +541,7 @@ namespace NachoCore.Model
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
-        void LogWriteFromUIThread(string tag)
+        void LogWriteFromUIThread (string tag)
         {
             if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
                 // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, PlatformProcess.Instance.GetStackTrace ());
