@@ -141,7 +141,7 @@ namespace NachoClient.iOS
                 NcTask.Run (() => {
                     // TODO: recents
                     //var recents = McContact.RicContactsSortedByRank (Account.Id, 5);
-                    var contacts = McContact.AllContactsSortedByName (true);
+                    var contacts = McContact.AllContactsSortedByName ();
                     var contactGroups = ContactGroup.CreateGroups (contacts, Cache);
                     InvokeOnMainThread (() => {
                         IsReloading = false;

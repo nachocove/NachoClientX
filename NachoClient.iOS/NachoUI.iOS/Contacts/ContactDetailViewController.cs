@@ -1157,6 +1157,7 @@ namespace NachoClient.iOS
                     contact.BodyId = McBody.InsertFile (contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, noteText).Id;
                 }
                 contact.Update ();
+                NachoCore.Index.Indexer.Instance.Add (contact);
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
                 contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
             }

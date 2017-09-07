@@ -939,6 +939,7 @@ namespace NachoClient.iOS
                         contact.Update ();
                     });
                     NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                    NachoCore.Index.Indexer.Instance.Add (contact);
                     break;
                 case ControllerType.Add:
                     SaveNotesText ();

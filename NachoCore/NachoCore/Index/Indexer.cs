@@ -42,9 +42,7 @@ namespace NachoCore.Index
         public void Add (McEmailMessage message)
         {
             Log.LOG_SEARCH.Info ("Indexer Add requested for message {0}", message.Id);
-            // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
-            JobQueue.Enqueue (IndexEmailMessagesJob);
-            SetNeedsWork ();
+            Enqueue (IndexEmailMessagesJob);
         }
 
         /// <summary>
@@ -54,9 +52,10 @@ namespace NachoCore.Index
         public void Add (McContact contact)
         {
             Log.LOG_SEARCH.Info ("Indexer Add requested for contact {0}", contact.Id);
-            // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
-            JobQueue.Enqueue (IndexContactsJob);
-            SetNeedsWork ();
+            Enqueue (IndexContactsJob);
+            // since adding a contact means that some other contacts may have become "eclipsed", we need to check for
+            // any contacts that should be unindexed as a result.
+            Enqueue (UnindexContactsJob);
         }
 
         /// <summary>
@@ -72,9 +71,7 @@ namespace NachoCore.Index
                     DocumentId = message.GetIndexDocumentId (),
                 };
                 item.Insert ();
-                // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
-                JobQueue.Enqueue (UnindexJob);
-                SetNeedsWork ();
+                Enqueue (UnindexJob);
             }, "Indexer.RemoveMessage");
         }
 
@@ -91,9 +88,7 @@ namespace NachoCore.Index
                     DocumentId = contact.GetIndexDocumentId (),
                 };
                 item.Insert ();
-                // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
-                JobQueue.Enqueue (UnindexJob);
-                SetNeedsWork ();
+                Enqueue (UnindexJob);
             }, "Indexer.RemoveContact");
         }
 
@@ -114,9 +109,7 @@ namespace NachoCore.Index
                 AccountId = accountId
             };
             item.Insert ();
-            // FIXME: no need to double enqueue here...maybe we need a different flagging mechanism to prevent lost jobs
-            JobQueue.Enqueue (UnindexJob);
-            SetNeedsWork ();
+            Enqueue (UnindexJob);
         }
 
         #endregion
@@ -146,6 +139,7 @@ namespace NachoCore.Index
                 Log.LOG_SEARCH.Info ("Indexer started");
                 JobQueue.Enqueue (IndexEmailMessagesJob);
                 JobQueue.Enqueue (IndexContactsJob);
+                JobQueue.Enqueue (UnindexContactsJob);
                 JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
                 StartListeningForStatusInd ();
@@ -176,6 +170,24 @@ namespace NachoCore.Index
                 Log.LOG_SEARCH.Info ("Indexer launching worker");
                 NcTask.Run (Work, "Indexer");
             }
+        }
+
+        /// <summary>
+        /// Enqueue a job and indicate that work needs to be done.  Note that all jobs are checked on start, so nothing
+        /// is enqueued unless the service has started
+        /// </summary>
+        /// <returns>The enqueue.</returns>
+        /// <param name="job">Job.</param>
+        void Enqueue (Action job)
+        {
+            if (State != (int)StateEnum.Stopped) {
+                // FIXME: It's possible that multiple calls to Enqueue could add the same job more than once before
+                // the worker actually starts.  This isn't a big problem because the jobs are designed to not do
+                // the same work twice, but it could lead to unnecessary queries.  Proabbly not a huge deal, and unless
+                // it becomes one, it's probably not worth trying to solve it by introducing locks or searching the queue
+                JobQueue.Enqueue (job);
+            }
+            SetNeedsWork ();
         }
 
         /// <summary>
@@ -263,6 +275,23 @@ namespace NachoCore.Index
             }
         }
 
+        const int MaxUnindexContactsBatchCount = 5;
+
+        /// <summary>
+        /// A <see cref="JobQueue"/> element, query a small batch of contacts that have become "eclipsed" and need
+        /// to be removed from the search index
+        /// </summary>
+        void UnindexContactsJob ()
+        {
+            var limit = MaxUnindexContactsBatchCount;
+            var contacts = McContact.QueryNeedsUnindexing (maxContact: limit);
+            Log.LOG_SEARCH.Info ("Indexer found {0} contacts to unindex", contacts.Count);
+            UnindexContacts (contacts.ToArray ());
+            if (contacts.Count == limit) {
+                JobQueue.Enqueue (UnindexContactsJob);
+            }
+        }
+
         const int MaxUnindexBatchCount = 5;
 
         /// <summary>
@@ -346,6 +375,27 @@ namespace NachoCore.Index
         }
 
         /// <summary>
+        /// Unindex a group of contacts.  While deleted contacts will be picked up by the
+        /// general UnidexJob, some gleaned contacts become "eclipsed" when a non-gleaned
+        /// contact contains the same email or phone number.  Such "eclipsed" gleaned contacts are
+        /// left in the database in case the non-gleaned contact is deleted or changed, but 
+        /// they are not visible in the UI, and therefore shoudl be removed from the search index
+        /// </summary>
+        /// <param name="contacts">Contacts.</param>
+        void UnindexContacts (McContact [] contacts)
+        {
+            using (var transaction = NcIndex.Main.Transaction ()) {
+                NcModel.Instance.RunInTransaction (() => {
+                    foreach (var contact in contacts) {
+                        transaction.Remove (contact.GetIndexDocumentId ());
+                        contact.UpdateIndexVersion (0);
+                    }
+                    transaction.Commit ();
+                });
+            }
+        }
+
+        /// <summary>
         /// Unindex a group of items in a transaction
         /// </summary>
         /// <returns>The unindex.</returns>
@@ -404,6 +454,7 @@ namespace NachoCore.Index
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_ContactSetChanged:
                 JobQueue.Enqueue (IndexContactsJob);
+                JobQueue.Enqueue (UnindexContactsJob);
                 SetNeedsWork ();
                 break;
             }

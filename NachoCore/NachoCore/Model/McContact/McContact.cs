@@ -1015,11 +1015,6 @@ namespace NachoCore.Model
                 EvaluateSelfEclipsing ();
                 UpdateCachedSortNames ();
 
-                // Indexing gleaned contacts is a waste of time.  Mark them as already indexed.
-                if (this.IsGleaned ()) {
-                    IndexVersion = ContactDocument.Version;
-                }
-
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     retval = base.Insert ();
@@ -1031,7 +1026,7 @@ namespace NachoCore.Model
             }
         }
 
-        public override int Update ()
+        public new int Update ()
         {
             using (var capture = CaptureWithStart ("Update")) {
                 EvaluateSelfEclipsing ();
@@ -1043,11 +1038,6 @@ namespace NachoCore.Model
                         InsertAncillaryData ();
                     }
                     EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
-
-                    if (!this.IsGleaned () && ContactDocument.Version == this.IndexVersion) {
-                        // A non-gleaned contact that has already been indexed. Re-index the contact.
-                        Indexer.Instance.Add (this);
-                    }
                 });
                 return retval;
             }
@@ -1813,16 +1803,12 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.ExecuteScalar<int> ("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false, bool usingLastName = false)
+        public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool usingLastName = false)
         {
             if (accountId == 0) {
-                return AllContactsSortedByName (withEclipsing: withEclipsing);
+                return AllContactsSortedByName ();
             }
-            var format = "SELECT Id, {0} as FirstLetter FROM McContact WHERE accountId = ? AND likelihood (IsAwaitingDelete = 0, 1.0)";
-            if (withEclipsing) {
-                format += " AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0)";
-            }
-            format += " ORDER BY {1}";
+            var format = "SELECT Id, {0} as FirstLetter FROM McContact WHERE accountId = ? AND likelihood (IsAwaitingDelete = 0, 1.0) AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0) ORDER BY {1}";
             string sql;
             if (usingLastName) {
                 sql = String.Format (format, "CachedGroupLastName", "CachedSortLastName");
@@ -1832,13 +1818,9 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<NcContactIndex> (sql, accountId);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false, bool usingLastName = false)
+        public static List<NcContactIndex> AllContactsSortedByName (bool usingLastName = false)
         {
-            var format = "SELECT Id, {0} as FirstLetter FROM McContact WHERE likelihood (IsAwaitingDelete = 0, 1.0)";
-            if (withEclipsing) {
-                format += " AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0)";
-            }
-            format += " ORDER BY {1}";
+            var format = "SELECT Id, {0} as FirstLetter FROM McContact WHERE likelihood (IsAwaitingDelete = 0, 1.0) AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0) ORDER BY {1}";
             string sql;
             if (usingLastName) {
                 sql = String.Format (format, "CachedGroupLastName", "CachedSortLastName");
@@ -1886,14 +1868,21 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McContact> (
                 "SELECT c.* FROM McContact as c " +
                 " LEFT JOIN McBody as b ON b.Id == c.BodyId " +
-                " WHERE likelihood (c.IndexVersion < ?, 0.5) OR " +
+                " WHERE (likelihood (c.IndexVersion < ?, 0.5) OR " +
                 " (likelihood (c.BodyId > 0, 0.2) AND " +
                 "  likelihood (b.FilePresence = ?, 0.5) AND " +
-                "  likelihood (c.IndexVersion < ?, 0.5)) " +
+                "  likelihood (c.IndexVersion < ?, 0.5))) " +
+                " AND (EmailAddressesEclipsed = 0 OR PhoneNumbersEclipsed = 0)" +
                 " LIMIT ?",
                 ContactDocument.Version - 1, McAbstrFileDesc.FilePresenceEnum.Complete,
                 ContactDocument.Version, maxContact
             );
+        }
+
+        public static List<McContact> QueryNeedsUnindexing (int maxContact)
+        {
+            var sql = "SELECT c.* FROM McContact c WHERE c.IndexVersion > 0 AND EmailAddressesEclipsed = 1 AND PhoneNumbersEclipsed = 1 LIMIT ?";
+            return NcModel.Instance.Db.Query<McContact> (sql, maxContact);
         }
 
         public static List<object> QueryNeedIndexingObjects (int maxContacts)

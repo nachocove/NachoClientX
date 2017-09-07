@@ -256,6 +256,7 @@ namespace NachoCore.Utils
                 } else {
                     contact.Update ();
                     NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                    NachoCore.Index.Indexer.Instance.Add (contact);
                 }
             });
         }
@@ -538,6 +539,7 @@ namespace NachoCore.Utils
             }
             contact.Update ();
             NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+            NachoCore.Index.Indexer.Instance.Add (contact);
         }
 
         public static string GetNoteText (McContact contact)
