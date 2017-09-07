@@ -33,7 +33,7 @@ namespace NachoCore.Model
             foreach (var account in accounts) {
                 var indexPath = NcModel.Instance.GetIndexPath (account.Id);
                 if (Directory.Exists (indexPath)) {
-                    Directory.Delete (indexPath);
+                    Directory.Delete (indexPath, recursive: true);
                 }
             }
         }

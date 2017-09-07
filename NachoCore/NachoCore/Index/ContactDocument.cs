@@ -16,7 +16,7 @@ namespace NachoCore.Index
 {
     public class ContactDocument
     {
-        public const int Version = 1;
+        public const int Version = 10;
         public readonly Document Document;
         public readonly float Score;
 
@@ -217,7 +217,7 @@ namespace NachoCore.Index
             // as the only token, and it would not match somep@company.com.
             var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
             var stream = analyzer.TokenStream (fieldName, reader);
-            var termAttribute = stream.AddAttribute<TermAttribute> ();
+            var termAttribute = stream.AddAttribute<ITermAttribute> ();
             stream.Reset ();
             var query = new BooleanQuery ();
             while (stream.IncrementToken ()) {

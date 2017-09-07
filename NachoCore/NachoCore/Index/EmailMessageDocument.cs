@@ -2,6 +2,7 @@
 //
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Analysis;
@@ -15,7 +16,7 @@ namespace NachoCore.Index
 {
     public class EmailMessageDocument
     {
-        public const int Version = 1;
+        public const int Version = 10;
         public readonly Document Document;
         public readonly float Score;
 
@@ -100,29 +101,49 @@ namespace NachoCore.Index
 
         public static Query ContentQuery (string userQueryString, int accountId = 0)
         {
+            // Find documents that
+            // 1. Are messages
+            // 2. Match the account (if nonzero)
+            // 3. Have a subject OR body that contains all of the terms
+            // 4. The final term is treated as a prefix for live searching ability
             var query = new BooleanQuery {
-                { TypeQuery (), Occur.MUST },
-                { FieldQuery (SubjectFieldName, userQueryString), Occur.MUST },
-                { FieldQuery (BodyFieldName, userQueryString), Occur.MUST },
+                { TypeQuery (), Occur.MUST }
             };
             if (accountId != 0) {
                 query.Add (AccountQuery (accountId), Occur.MUST);
             }
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            var tokens = TokenizeQueryString (userQueryString, analyzer);
+            if (tokens.Count > 0) {
+                var subjectQuery = new BooleanQuery ();
+                var bodyQuery = new BooleanQuery ();
+                var lastToken = tokens [tokens.Count - 1];
+                tokens.RemoveAt (tokens.Count - 1);
+                foreach (var token in tokens) {
+                    subjectQuery.Add (new TermQuery (new Term (SubjectFieldName, token)), Occur.MUST);
+                    bodyQuery.Add (new TermQuery (new Term (BodyFieldName, token)), Occur.MUST);
+                }
+                subjectQuery.Add (new PrefixQuery (new Term (SubjectFieldName, lastToken)), Occur.MUST);
+                bodyQuery.Add (new PrefixQuery (new Term (BodyFieldName, lastToken)), Occur.MUST);
+                query.Add (new BooleanQuery {
+                    {subjectQuery, Occur.SHOULD},
+                    {bodyQuery, Occur.SHOULD}
+                }, Occur.MUST);
+            }
             return query;
         }
 
-        static Query FieldQuery (string fieldName, string userQueryString)
+        static List<string> TokenizeQueryString (string userQueryString, Analyzer analyzer)
         {
+            var tokens = new List<string> ();
             var reader = new StringReader (userQueryString);
-            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
-            var stream = analyzer.TokenStream (fieldName, reader);
-            var termAttribute = stream.AddAttribute<TermAttribute> ();
+            var stream = analyzer.TokenStream (null, reader);
+            var termAttribute = stream.AddAttribute<ITermAttribute> ();
             stream.Reset ();
-            var query = new BooleanQuery ();
             while (stream.IncrementToken ()) {
-                query.Add (new PrefixQuery (new Term (fieldName, termAttribute.Term)), Occur.SHOULD);
+                tokens.Add (termAttribute.Term);
             }
-            return query;
+            return tokens;
         }
 
     }

@@ -10,6 +10,7 @@ using Lucene.Net.Store;
 using Lucene.Net.Index;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
+using NachoCore.Utils;
 
 namespace NachoCore.Index
 {
@@ -179,11 +180,12 @@ namespace NachoCore.Index
         /// <typeparam name="DocumentType">The type of document being searched</typeparam>
         public IEnumerable<DocumentType> Search<DocumentType> (Query query, Func<Document, float, DocumentType> factory, int maxResults = 1000)
         {
+            Log.LOG_SEARCH.Info ("Searching for: {0}", query.ToString ());
             try {
                 using (var reader = IndexReader.Open (IndexDirectory, readOnly: true)) {
                     var searcher = new IndexSearcher (reader);
                     var results = searcher.Search (query, maxResults);
-                    return results.ScoreDocs.Select (x => factory (searcher.Doc (x.Doc), x.Score));
+                    return results.ScoreDocs.Select (x => factory (searcher.Doc (x.Doc), x.Score)).ToArray ();
                 }
             } catch (NoSuchDirectoryException) {
                 // This can happen if a search is done before anything is written to the index.

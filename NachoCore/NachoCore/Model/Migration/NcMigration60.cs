@@ -30,19 +30,20 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Execute ("DELETE FROM McMapEmailAddressEntry");
             ConnectionHandle = NcModel.Instance.Db.Handle;
             InsertStatement = SQLite3.Prepare2 (ConnectionHandle, "INSERT INTO McMapEmailAddressEntry (AccountId, ObjectId, AddressType, EmailAddressId, MigrationVersion, CreatedAt, LastModified) VALUES(?,?,?,?,?,?,?)");
-            var selectStatement = SQLite3.Prepare2 (ConnectionHandle, "SELECT Id, \"From\", Sender, ReplyTo, \"To\", Cc, Bcc FROM McEmailMessage ORDER BY Id");
+            var selectStatement = SQLite3.Prepare2 (ConnectionHandle, "SELECT Id, AccountId, \"From\", Sender, ReplyTo, \"To\", Cc, Bcc FROM McEmailMessage ORDER BY Id");
             SQLite3.Result result;
             McEmailMessage message;
             do {
                 result = SQLite3.Step (selectStatement);
                 message = new McEmailMessage ();
                 message.Id = SQLite3.ColumnInt (selectStatement, 0);
-                message.From = SQLite3.ColumnString (selectStatement, 1);
-                message.Sender = SQLite3.ColumnString (selectStatement, 2);
-                message.ReplyTo = SQLite3.ColumnString (selectStatement, 3);
-                message.To = SQLite3.ColumnString (selectStatement, 4);
-                message.Cc = SQLite3.ColumnString (selectStatement, 5);
-                message.Bcc = SQLite3.ColumnString (selectStatement, 6);
+                message.AccountId = SQLite3.ColumnInt (selectStatement, 1);
+                message.From = SQLite3.ColumnString (selectStatement, 2);
+                message.Sender = SQLite3.ColumnString (selectStatement, 3);
+                message.ReplyTo = SQLite3.ColumnString (selectStatement, 4);
+                message.To = SQLite3.ColumnString (selectStatement, 5);
+                message.Cc = SQLite3.ColumnString (selectStatement, 6);
+                message.Bcc = SQLite3.ColumnString (selectStatement, 7);
                 InsertMapEntries (message);
             } while (result == SQLite3.Result.Row);
             if (result != SQLite3.Result.Done) {
