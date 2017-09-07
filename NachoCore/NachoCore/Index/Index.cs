@@ -180,15 +180,19 @@ namespace NachoCore.Index
         /// <typeparam name="DocumentType">The type of document being searched</typeparam>
         public IEnumerable<DocumentType> Search<DocumentType> (Query query, Func<Document, float, DocumentType> factory, int maxResults = 1000)
         {
-            Log.LOG_SEARCH.Info ("Searching for: {0}", query.ToString ());
-            try {
-                using (var reader = IndexReader.Open (IndexDirectory, readOnly: true)) {
-                    var searcher = new IndexSearcher (reader);
-                    var results = searcher.Search (query, maxResults);
-                    return results.ScoreDocs.Select (x => factory (searcher.Doc (x.Doc), x.Score)).ToArray ();
+            if (query != null) {
+                Log.LOG_SEARCH.Debug ("Searching for: {0}", query.ToString ());
+                try {
+                    using (var reader = IndexReader.Open (IndexDirectory, readOnly: true)) {
+                        var searcher = new IndexSearcher (reader);
+                        var results = searcher.Search (query, maxResults);
+                        return results.ScoreDocs.Select (x => factory (searcher.Doc (x.Doc), x.Score)).ToArray ();
+                    }
+                } catch (NoSuchDirectoryException) {
+                    // This can happen if a search is done before anything is written to the index.
                 }
-            } catch (NoSuchDirectoryException) {
-                // This can happen if a search is done before anything is written to the index.
+            } else {
+                Log.LOG_SEARCH.Debug ("Got null query, likely because there were no searchable tokens");
             }
             return new DocumentType [0];
         }

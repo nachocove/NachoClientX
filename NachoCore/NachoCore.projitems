@@ -430,6 +430,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\EmailMessageDocument.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\ContactDocument.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration61.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

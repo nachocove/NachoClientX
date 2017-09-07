@@ -54,7 +54,6 @@ namespace NachoCore.ActiveSync
                     NcAssert.True (0 < ur, "mcContact.Insert");
                     folder.Link (mcContact);
                 });
-                Index.Indexer.Instance.Add (mcContact);
             } else {
                 mcContact.Id = existingContact.Id;
                 folder.UpdateLink (mcContact);

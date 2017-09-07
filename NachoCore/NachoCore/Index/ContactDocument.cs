@@ -156,19 +156,25 @@ namespace NachoCore.Index
 
         public static Query GeneralQuery (string userQueryString)
         {
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            var tokens = analyzer.TokenizeQueryString (userQueryString);
+            if (tokens.Count == 0) {
+                return null;
+            }
+            var fieldNames = new string [] {
+                NameFieldName,
+                AliasFieldName,
+                NicknameFieldName,
+                CompanyFieldName,
+                EmailFieldName,
+                DomainFieldName,
+                PhoneFieldName,
+                AddressFieldName,
+                NoteFieldName
+            };
             return new BooleanQuery {
                 { TypeQuery (), Occur.MUST },
-                { new BooleanQuery {
-                        { FieldQuery (NameFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (AliasFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (NicknameFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (CompanyFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (EmailFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (DomainFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (PhoneFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (AddressFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (NoteFieldName, userQueryString), Occur.SHOULD },
-                }, Occur.MUST },
+                { FieldsQuery (fieldNames, tokens), Occur.MUST},
             };
         }
 
@@ -181,17 +187,30 @@ namespace NachoCore.Index
 
         public static Query NameAndEmailQuery (string userQueryString)
         {
+            // While some of our fields use a keyword analyzer, we always want to
+            // parse the query into multiple tokens, and then match each query token
+            // to the indexed tokens.  This allows a search for "some person" to still
+            // match an email address that has been tokenized as the single keyword
+            // somep@company.com, because the "some" token matches the prefix.  If we 
+            // instead used a keyword analyzer for the query, we'd get back "some person"
+            // as the only token, and it would not match somep@company.com.
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            var tokens = analyzer.TokenizeQueryString (userQueryString);
+            if (tokens.Count == 0) {
+                return null;
+            }
+            var fieldNames = new string [] {
+                NameFieldName,
+                AliasFieldName,
+                NicknameFieldName,
+                CompanyFieldName,
+                EmailFieldName,
+                DomainFieldName
+            };
             return new BooleanQuery {
                 { TypeQuery (), Occur.MUST },
                 { HasEmailQuery (), Occur.MUST },
-                { new BooleanQuery {
-                        { FieldQuery (NameFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (AliasFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (NicknameFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (CompanyFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (EmailFieldName, userQueryString), Occur.SHOULD },
-                        { FieldQuery (DomainFieldName, userQueryString), Occur.SHOULD },
-                }, Occur.MUST },
+                { FieldsQuery (fieldNames, tokens), Occur.MUST},
             };
         }
 
@@ -205,23 +224,39 @@ namespace NachoCore.Index
             return new TermQuery (new Term (HasEmailFieldName, HasEmailTrueValue));
         }
 
-        static Query FieldQuery (string fieldName, string userQueryString)
+        /// <summary>
+        /// Create a query that requires every token to appear somewhere across all the fields.
+        /// </summary>
+        /// <returns>The query.</returns>
+        /// <param name="fieldNames">Field names.</param>
+        /// <param name="tokens">Tokens.</param>
+        static Query FieldsQuery (IEnumerable<string> fieldNames, IEnumerable<string> tokens)
         {
-            var reader = new StringReader (userQueryString);
-            // While some of our fields use a keyword analyzer, we always want to
-            // parse the query into multiple tokens, and then match each query token
-            // to the indexed tokens.  This allows a search for "some person" to still
-            // match an email address that has been tokenized as the single keyword
-            // somep@company.com, because the "some" token matches the prefix.  If we 
-            // instead used a keyword analyzer for the query, we'd get back "some person"
-            // as the only token, and it would not match somep@company.com.
-            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
-            var stream = analyzer.TokenStream (fieldName, reader);
-            var termAttribute = stream.AddAttribute<ITermAttribute> ();
-            stream.Reset ();
             var query = new BooleanQuery ();
-            while (stream.IncrementToken ()) {
-                query.Add (new PrefixQuery (new Term (fieldName, termAttribute.Term)), Occur.SHOULD);
+            foreach (var token in tokens) {
+                var tokenQuery = new BooleanQuery ();
+                foreach (var fieldName in fieldNames) {
+                    tokenQuery.Add (new PrefixQuery (new Term (fieldName, token)), Occur.SHOULD);
+                }
+                query.Add (tokenQuery, Occur.MUST);
+            }
+            return query;
+        }
+
+        static Query NameQuery (string fieldName, IEnumerable<string> tokens)
+        {
+            var query = new BooleanQuery ();
+            foreach (var token in tokens) {
+                query.Add (new PrefixQuery (new Term (fieldName, token)), Occur.MUST);
+            }
+            return query;
+        }
+
+        static Query EmailQuery (string fieldName, IEnumerable<string> tokens)
+        {
+            var query = new BooleanQuery ();
+            foreach (var token in tokens) {
+                query.Add (new PrefixQuery (new Term (fieldName, token)), Occur.SHOULD);
             }
             return query;
         }

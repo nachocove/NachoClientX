@@ -148,6 +148,7 @@ namespace NachoCore.Index
                 JobQueue.Enqueue (IndexContactsJob);
                 JobQueue.Enqueue (UnindexJob);
                 SetNeedsWork ();
+                StartListeningForStatusInd ();
             } else {
                 Log.LOG_SEARCH.Warn ("Start() called on Indexer that was not stopped");
             }
@@ -160,6 +161,7 @@ namespace NachoCore.Index
         /// </summary>
         public void Stop ()
         {
+            StopListeningForStatusInd ();
             Interlocked.Exchange (ref State, (int)StateEnum.Stopped);
             Log.LOG_SEARCH.Info ("Indexer stopped");
         }
@@ -372,6 +374,38 @@ namespace NachoCore.Index
                         transaction.Commit ();
                     });
                 }
+            }
+        }
+
+        #endregion
+
+
+        #region System Events
+
+        int IsListeningForStatusInd;
+
+        void StartListeningForStatusInd ()
+        {
+            if (Interlocked.Exchange (ref IsListeningForStatusInd, 1) == 0) {
+                NcApplication.Instance.StatusIndEvent += StatusIndHandler;
+            }
+        }
+
+        void StopListeningForStatusInd ()
+        {
+            if (Interlocked.Exchange (ref IsListeningForStatusInd, 0) == 1) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndHandler;
+            }
+        }
+
+        void StatusIndHandler (object sender, EventArgs e)
+        {
+            var statusEvent = (StatusIndEventArgs)e;
+            switch (statusEvent.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ContactSetChanged:
+                JobQueue.Enqueue (IndexContactsJob);
+                SetNeedsWork ();
+                break;
             }
         }
 

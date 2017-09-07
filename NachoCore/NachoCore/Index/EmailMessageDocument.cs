@@ -1,14 +1,12 @@
 ﻿//  Copyright (C) 2016 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.IO;
 using System.Collections.Generic;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
-using Lucene.Net.Analysis.Tokenattributes;
 
 using NachoCore.Model;
 
@@ -101,6 +99,15 @@ namespace NachoCore.Index
 
         public static Query ContentQuery (string userQueryString, int accountId = 0)
         {
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            var tokens = analyzer.TokenizeQueryString (userQueryString);
+            if (tokens.Count == 0) {
+                return null;
+            }
+
+            var lastToken = tokens [tokens.Count - 1];
+            tokens.RemoveAt (tokens.Count - 1);
+
             // Find documents that
             // 1. Are messages
             // 2. Match the account (if nonzero)
@@ -112,38 +119,21 @@ namespace NachoCore.Index
             if (accountId != 0) {
                 query.Add (AccountQuery (accountId), Occur.MUST);
             }
-            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
-            var tokens = TokenizeQueryString (userQueryString, analyzer);
-            if (tokens.Count > 0) {
-                var subjectQuery = new BooleanQuery ();
-                var bodyQuery = new BooleanQuery ();
-                var lastToken = tokens [tokens.Count - 1];
-                tokens.RemoveAt (tokens.Count - 1);
-                foreach (var token in tokens) {
-                    subjectQuery.Add (new TermQuery (new Term (SubjectFieldName, token)), Occur.MUST);
-                    bodyQuery.Add (new TermQuery (new Term (BodyFieldName, token)), Occur.MUST);
-                }
-                subjectQuery.Add (new PrefixQuery (new Term (SubjectFieldName, lastToken)), Occur.MUST);
-                bodyQuery.Add (new PrefixQuery (new Term (BodyFieldName, lastToken)), Occur.MUST);
-                query.Add (new BooleanQuery {
-                    {subjectQuery, Occur.SHOULD},
-                    {bodyQuery, Occur.SHOULD}
-                }, Occur.MUST);
-            }
+            query.Add (new BooleanQuery {
+                {FieldQuery(SubjectFieldName, tokens, lastToken), Occur.SHOULD},
+                {FieldQuery(BodyFieldName, tokens, lastToken), Occur.SHOULD}
+            }, Occur.MUST);
             return query;
         }
 
-        static List<string> TokenizeQueryString (string userQueryString, Analyzer analyzer)
+        static Query FieldQuery (string fieldName, IEnumerable<string> tokens, string lastToken)
         {
-            var tokens = new List<string> ();
-            var reader = new StringReader (userQueryString);
-            var stream = analyzer.TokenStream (null, reader);
-            var termAttribute = stream.AddAttribute<ITermAttribute> ();
-            stream.Reset ();
-            while (stream.IncrementToken ()) {
-                tokens.Add (termAttribute.Term);
+            var query = new BooleanQuery ();
+            foreach (var token in tokens) {
+                query.Add (new TermQuery (new Term (fieldName, token)), Occur.MUST);
             }
-            return tokens;
+            query.Add (new PrefixQuery (new Term (fieldName, lastToken)), Occur.MUST);
+            return query;
         }
 
     }
