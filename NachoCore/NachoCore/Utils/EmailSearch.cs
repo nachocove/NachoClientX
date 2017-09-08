@@ -8,6 +8,40 @@ using NachoCore.Index;
 
 namespace NachoCore.Utils
 {
+
+    class EmailSearchResults
+    {
+        public string Query;
+        public string [] Tokens;
+        public readonly int [] ContactIds;
+        public readonly int [] MessageIds;
+
+        public EmailSearchResults (string query, string [] tokens, int [] contactIds, int [] messageIds)
+        {
+            Query = query;
+            Tokens = tokens;
+            ContactIds = contactIds;
+            MessageIds = messageIds;
+        }
+    }
+
+    class EmailSearcher : Searcher<EmailSearchResults>
+    {
+        public McAccount Account;
+        public int MaxContactResults = 5;
+        public int MaxMessageResults = 100;
+
+        protected override EmailSearchResults SearchResults (string query)
+        {
+            var accountId = (Account?.AccountType ?? McAccount.AccountTypeEnum.Unified) == McAccount.AccountTypeEnum.Unified ? 0 : Account.Id;
+            var contactResults = NcIndex.Main.SearchContactsNameAndEmails (query, maxResults: MaxContactResults);
+            var messageResults = NcIndex.Main.SearchEmails (query, accountId: accountId, maxResults: MaxMessageResults);
+            var contactIds = contactResults.Documents.Select (r => r.IntegerContactId).ToArray ();
+            var messageIds = messageResults.Documents.Select (r => r.IntegerMessageId).ToArray ();
+            return new EmailSearchResults (query, contactResults.ParsedTokens, contactIds, messageIds);
+        }
+    }
+
     public class EmailSearch : NachoEmailMessages
     {
         public delegate void UpdateUiAction (string searchString, List<McEmailMessageThread> results);
@@ -181,7 +215,7 @@ namespace NachoCore.Utils
                         if (!string.IsNullOrEmpty (searchString)) {
                             int maxResults = Math.Min (100 * searchString.Length, 1000);
                             var accountId = accounts.Count == 1 ? accounts [0].Id : 0;
-                            indexResults = NcIndex.Main.SearchEmails (searchString, accountId);
+                            indexResults = NcIndex.Main.SearchEmails (searchString, accountId).Documents;
                         } else {
                             indexResults = new EmailMessageDocument [0];
                         }

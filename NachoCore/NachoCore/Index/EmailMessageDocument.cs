@@ -97,10 +97,16 @@ namespace NachoCore.Index
             return new TermQuery (new Term (NcIndex.AccountIdFieldName, accountId.ToString ()));
         }
 
-        public static Query ContentQuery (string userQueryString, int accountId = 0)
+        public static Query ContentQuery (string userQueryString, out string [] parsedTokens, int accountId = 0)
         {
-            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            // First we want to parse the query into tokens, and the easiest way is to use
+            // the standard analyzer, but one without any stop words so nothing the user typed
+            // is thrown away.  This is important because our final token will be used as
+            // a prefix query, so we want it even if it appears to be a stop word as typed.
+            var stopWords = new HashSet<string> ();
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion, stopWords: stopWords);
             var tokens = analyzer.TokenizeQueryString (userQueryString);
+            parsedTokens = tokens.ToArray ();
             if (tokens.Count == 0) {
                 return null;
             }

@@ -503,19 +503,19 @@ namespace NachoClient.iOS
     {
 
         const string ContactCellIdentifier = "ContactCellIdentifier";
-        ContactsGeneralSearch Searcher;
-        List<McContactEmailAddressAttribute> Results;
+        ContactSearcher Searcher;
+        ContactSearchResults Results;
         public event EventHandler<McContact> ContactSelected;
 
         public ContactSearchResultsViewController () : base ()
         {
-            Searcher = new ContactsGeneralSearch (UpdateResults);
-            Results = new List<McContactEmailAddressAttribute> ();
+            Searcher = new ContactSearcher ();
+            Searcher.ResultsFound += UpdateResults;
         }
 
         public override void Cleanup ()
         {
-            Searcher = null;
+            Searcher.ResultsFound -= UpdateResults;
             base.Cleanup ();
         }
 
@@ -538,10 +538,10 @@ namespace NachoClient.iOS
 
         public void SearchForText (string searchText)
         {
-            Searcher.SearchFor (searchText);
+            Searcher.Search (searchText);
         }
 
-        void UpdateResults (string searchString, List<McContactEmailAddressAttribute> results)
+        void UpdateResults (object sender, ContactSearchResults results)
         {
             Results = results;
             TableView.ReloadData ();
@@ -554,22 +554,27 @@ namespace NachoClient.iOS
 
         public override nint RowsInSection (UITableView tableView, nint section)
         {
-            return Results.Count;
+            return Results?.ContactIds.Length ?? 0;
+        }
+
+        McContact GetContactAtIndex (int index)
+        {
+            // TODO: we could do some caching here
+            var id = Results.ContactIds [index];
+            return McContact.QueryById<McContact> (id);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             var cell = tableView.DequeueReusableCell (ContactCellIdentifier) as ContactCell;
-            var emailAttribute = Results [indexPath.Row];
-            var contact = emailAttribute.GetContact ();
-            cell.SetContact (contact, alternateEmail: emailAttribute.Value);
+            var contact = GetContactAtIndex (indexPath.Row);
+            cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
             return cell;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            var emailAttribute = Results [indexPath.Row];
-            var contact = emailAttribute.GetContact ();
+            var contact = GetContactAtIndex (indexPath.Row);
             if (ContactSelected != null) {
                 ContactSelected (this, contact);
             } else {

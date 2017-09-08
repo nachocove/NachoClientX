@@ -99,6 +99,7 @@ namespace NachoCore.Index
             Domains = domains.ToArray ();
 
             HasEmail = new Field (HasEmailFieldName, Emails.Length > 0 ? HasEmailTrueValue : HasEmailFalseValue, Field.Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS, Field.TermVector.NO);
+            Document.Add (HasEmail);
 
             var addresses = new List<Field> ();
             foreach (var attr in contact.Addresses) {
@@ -111,6 +112,7 @@ namespace NachoCore.Index
             var note = contact.GetNote ();
             if (note != null) {
                 Note = new Field (NoteFieldName, note, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
+                Document.Add (Note);
             }
         }
 
@@ -154,10 +156,16 @@ namespace NachoCore.Index
 
         public readonly static Analyzer Analyzer = CreateAnalyzer ();
 
-        public static Query GeneralQuery (string userQueryString)
+        public static Query GeneralQuery (string userQueryString, out string [] parsedTokens)
         {
-            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            // First we want to parse the query into tokens, and the easiest way is to use
+            // the standard analyzer, but one without any stop words so nothing the user typed
+            // is thrown away.  This is important because all of our tokens will be used as
+            // prefix queries, so they're useful even if they appear to be stop words as typed.
+            var stopWords = new HashSet<string> ();
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion, stopWords: stopWords);
             var tokens = analyzer.TokenizeQueryString (userQueryString);
+            parsedTokens = tokens.ToArray ();
             if (tokens.Count == 0) {
                 return null;
             }
@@ -178,14 +186,14 @@ namespace NachoCore.Index
             };
         }
 
-        public static Query GeneralAccountQuery (int accountId, string userQueryString)
+        public static Query GeneralAccountQuery (int accountId, string userQueryString, out string [] parsedTokens)
         {
-            var query = GeneralQuery (userQueryString) as BooleanQuery;
+            var query = GeneralQuery (userQueryString, out parsedTokens) as BooleanQuery;
             query.Add (new TermQuery (new Term (NcIndex.AccountIdFieldName, accountId.ToString ())), Occur.MUST);
             return query;
         }
 
-        public static Query NameAndEmailQuery (string userQueryString)
+        public static Query NameAndEmailQuery (string userQueryString, out string [] parsedTokens)
         {
             // While some of our fields use a keyword analyzer, we always want to
             // parse the query into multiple tokens, and then match each query token
@@ -194,8 +202,10 @@ namespace NachoCore.Index
             // somep@company.com, because the "some" token matches the prefix.  If we 
             // instead used a keyword analyzer for the query, we'd get back "some person"
             // as the only token, and it would not match somep@company.com.
-            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion);
+            var stopWords = new HashSet<string> ();
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion, stopWords: stopWords);
             var tokens = analyzer.TokenizeQueryString (userQueryString);
+            parsedTokens = tokens.ToArray ();
             if (tokens.Count == 0) {
                 return null;
             }

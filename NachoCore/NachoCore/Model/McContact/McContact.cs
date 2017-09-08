@@ -852,6 +852,21 @@ namespace NachoCore.Model
             return null;
         }
 
+        public string GetFirstAttributelMatchingTokens (string [] tokens)
+        {
+            foreach (var attr in EmailAddresses) {
+                if (attr.MatchesTokens (tokens)) {
+                    return attr.Value;
+                }
+            }
+            foreach (var attr in PhoneNumbers) {
+                if (attr.MatchesTokens (tokens)) {
+                    return attr.Value;
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         ///        Db.CreateTable<McContact> ();
         ///        Db.CreateTable<McContactDateAttribute> ();

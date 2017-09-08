@@ -72,6 +72,21 @@ namespace NachoCore.Model
             }
             return Name;
         }
+
+        public virtual bool MatchesTokens (string [] tokens)
+        {
+            foreach (var token in tokens) {
+                if (MatchesToken (token)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public virtual bool MatchesToken (string token)
+        {
+            return false;
+        }
     }
 }
 

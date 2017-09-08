@@ -916,6 +916,12 @@
 "Unread (message filter)" = "Unread";
 "Focus (message filter)" = "Focus";
 
+/* Section header for messages search */
+"Messages (search header)" = "Messages";
+
+/* Section header for messages search */
+"Contacts (search header)" = "Contacts";
+
 /* Label indicating a refresh just happened */
 "Last updated just now" = "Last updated just now";
 

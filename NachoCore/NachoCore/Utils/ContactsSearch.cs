@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using NachoCore.Brain;
 using NachoCore.Index;
 using NachoCore.Model;
 using NachoPlatform;
@@ -12,6 +11,32 @@ using System.Collections.Concurrent;
 
 namespace NachoCore.Utils
 {
+
+    class ContactSearchResults
+    {
+        public readonly string Query;
+        public readonly string [] Tokens;
+        public readonly int [] ContactIds;
+
+        public ContactSearchResults (string query, string [] tokens, int [] contactIds)
+        {
+            Query = query;
+            Tokens = tokens;
+            ContactIds = contactIds;
+        }
+    }
+
+    class ContactSearcher : Searcher<ContactSearchResults>
+    {
+        protected override ContactSearchResults SearchResults (string query)
+        {
+            var results = NcIndex.Main.SearchContacts (query);
+            var ids = results.Documents.Select (r => r.IntegerContactId).ToArray ();
+            return new ContactSearchResults (query, results.ParsedTokens, ids);
+        }
+    }
+
+
     // Search contacts.  Use class ContactsEmailSearch to limit the search to contacts with e-mail addresses.
     // Use class ContactsGeneralSearch to search all contacts.  The API for both classes is the same:
     // 1. Pass a delegate to the constructor that will update the UI when search results are available.
@@ -489,6 +514,7 @@ namespace NachoCore.Utils
             // When the user types the first couple letters, we want the app to display some results
             // quickly, and searching the index can take a long time.
             if (2 < searchString.Length) {
+
                 // This method can be called multiple times with the same string as search results
                 // arrive from the servers.  The database might change between those calls, but the
                 // index won't.  So cache the results of one index search, and reuse that if the
@@ -497,7 +523,7 @@ namespace NachoCore.Utils
                 if (searchString == lastIndexSearchString) {
                     indexMatches = lastIndexResults;
                 } else {
-                    indexMatches = NcIndex.Main.SearchContacts (searchString, maxResults: 100);
+                    indexMatches = NcIndex.Main.SearchContacts (searchString, maxResults: 100).Documents;
                     lastIndexSearchString = searchString;
                     lastIndexResults = indexMatches;
                 }

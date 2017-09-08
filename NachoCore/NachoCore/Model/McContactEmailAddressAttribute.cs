@@ -38,6 +38,23 @@ namespace NachoCore.Model
         {
             return SetHelper<McContactEmailAddressAttribute>.IsSuperSet (list1, list2);
         }
+
+        public override bool MatchesToken (string token)
+        {
+            if (Value == null) {
+                return false;
+            }
+            if (Value.StartsWith (token, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            var atIndex = Value.IndexOf ('@');
+            if (atIndex >= 0) {
+                if (Value.Substring (atIndex + 1).StartsWith (token, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
 

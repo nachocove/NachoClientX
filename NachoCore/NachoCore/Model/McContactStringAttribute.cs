@@ -63,6 +63,11 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => (contactId == x.ContactId) && (stringType == x.Type)).ToList ();
         }
+
+        public override bool MatchesToken (string token)
+        {
+            return Value?.StartsWith (token, StringComparison.OrdinalIgnoreCase) ?? false;
+        }
     }
 }
 

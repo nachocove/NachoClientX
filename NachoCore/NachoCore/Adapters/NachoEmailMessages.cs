@@ -301,6 +301,27 @@ namespace NachoCore
         #endregion
     }
 
+    public class NachoPrequeriedEmailMessages : NachoEmailMessages
+    {
+
+        readonly int [] MessageIds;
+
+        public NachoPrequeriedEmailMessages (int [] messageIds)
+        {
+            MessageIds = messageIds;
+        }
+
+        public override int Count ()
+        {
+            return MessageIds.Length;
+        }
+
+        public override McEmailMessageThread GetEmailThread (int i)
+        {
+            return new McEmailMessageThread { FirstMessageId = MessageIds [i], MessageCount = 1 };
+        }
+    }
+
     public static class NachoSyncResult
     {
         public static NcResult DoesNotSync ()

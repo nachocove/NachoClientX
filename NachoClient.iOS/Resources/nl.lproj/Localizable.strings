@@ -867,6 +867,12 @@
 "Unread (message filter)" = "Ongelezen";
 "Focus (message filter)" = "Focus";
 
+/* Section header for messages search */
+"Messages (search header)" = "Berichten";
+
+/* Section header for messages search */
+"Contacts (search header)" = "Contacten";
+
 /* Label indicating a refresh just happened */
 "Last updated just now" = "Laatst bijgewerkt op dit moment";
 

@@ -55,6 +55,7 @@ namespace NachoClient.iOS
         protected bool HasLoadedOnce;
         bool HasAppearedOnce;
         bool IsListeningForStatusInd;
+        readonly bool ShowsSearch;
 
         MessagesSyncManager SyncManager;
 
@@ -64,8 +65,9 @@ namespace NachoClient.iOS
 
         #region Constructors
 
-        public MessageListViewController () : base (UITableViewStyle.Plain)
+        public MessageListViewController (bool showsSearch = true) : base (UITableViewStyle.Plain)
         {
+            ShowsSearch = showsSearch;
             SyncManager = new MessagesSyncManager ();
             SyncManager.Delegate = this;
 
@@ -78,7 +80,6 @@ namespace NachoClient.iOS
             DoneSwipingButton = new UIBarButtonItem (NSBundle.MainBundle.LocalizedString ("Done", ""), UIBarButtonItemStyle.Plain, EndSwiping);
 
             NavigationItem.LeftItemsSupplementBackButton = true;
-            NavigationItem.LeftBarButtonItem = SearchButton;
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
 
@@ -1018,9 +1019,11 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
-        protected virtual void UpdateNavigationItem ()
+        void UpdateNavigationItem ()
         {
-            NavigationItem.LeftBarButtonItem = SearchButton;
+            if (ShowsSearch) {
+                NavigationItem.LeftBarButtonItem = SearchButton;
+            }
             if (SwipingIndexPath != null) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem [] {
                     DoneSwipingButton
@@ -1180,18 +1183,22 @@ namespace NachoClient.iOS
     {
 
         const string MessageCellIdentifier = "MessageCellIdentifier";
+        const string ContactCellIdentifier = "ContactCellIdentifier";
         public int NumberOfPreviewLines = 3;
 
-        EmailSearch SearchResults;
+        EmailSearcher Searcher;
+        EmailSearchResults Results;
+        NachoEmailMessages Messages;
 
         public MessageSearchResultsViewController () : base ()
         {
-            SearchResults = new EmailSearch (UpdateResults);
+            Searcher = new EmailSearcher ();
+            Searcher.ResultsFound += UpdateResults;
         }
 
         public override void Cleanup ()
         {
-            SearchResults = null;
+            Searcher.ResultsFound -= UpdateResults;
             base.Cleanup ();
         }
 
@@ -1199,66 +1206,172 @@ namespace NachoClient.iOS
         {
             base.LoadView ();
             TableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ContactCell), ContactCellIdentifier);
             TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize (17.0f), Theme.Active.DefaultFont.WithSize (14.0f));
         }
 
         public void PrepareForSearching ()
         {
-            SearchResults.EnterSearchMode (NcApplication.Instance.Account);
+            Searcher.Account = NcApplication.Instance.Account;
             TableView.ReloadData ();
         }
 
         public void StartServerSearch ()
         {
-            SearchResults.StartServerSearch ();
+            //SearchResults.StartServerSearch ();
         }
 
         public void EndSearching ()
         {
-            SearchResults.ExitSearchMode ();
+            //SearchResults.ExitSearchMode ();
         }
 
         public void SearchForText (string searchText)
         {
-            SearchResults.SearchFor (searchText);
+            Searcher.Search (searchText);
         }
 
-        void UpdateResults (string searchString, List<McEmailMessageThread> results)
+        void UpdateResults (object sender, EmailSearchResults results)
         {
+            Results = results;
+            Messages = new NachoPrequeriedEmailMessages (results.MessageIds);
             TableView.ReloadData ();
+        }
+
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (Results == null) {
+                return TableView.RowHeight;
+            }
+            if (Results.ContactIds.Length > 0 && indexPath.Section == 0) {
+                return 54.0f;
+            }
+            return TableView.RowHeight;
         }
 
         public override nint NumberOfSections (UITableView tableView)
         {
-            return 1;
+            if (Results == null || Results.ContactIds.Length == 0) {
+                return 1;
+            }
+            return 2;
         }
 
         public override nint RowsInSection (UITableView tableView, nint section)
         {
-            return SearchResults.Count ();
+            if (Results == null) {
+                return 0;
+            }
+            if (Results.ContactIds.Length > 0 && section == 0) {
+                return Results.ContactIds.Length;
+            }
+            return Results.MessageIds.Length;
+        }
+
+        public override string TitleForHeader (UITableView tableView, nint section)
+        {
+            if (Results == null || Results.ContactIds.Length == 0) {
+                return null;
+            }
+            if (section == 0) {
+                return NSBundle.MainBundle.LocalizedString ("Contacts (search header)", "Section header for messages search");
+            }
+            return NSBundle.MainBundle.LocalizedString ("Messages (search header)", "Section header for messages search");
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
-            var message = SearchResults.GetCachedMessage (indexPath.Row);
-            var thread = SearchResults.GetEmailThread (indexPath.Row);
-            cell.SetMessage (message, thread.MessageCount);
-            return cell;
+            if (Results.ContactIds.Length > 0 && indexPath.Section == 0) {
+                var cell = tableView.DequeueReusableCell (ContactCellIdentifier) as ContactCell;
+                cell.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
+                var contact = GetContact (indexPath.Row);
+                cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+                return cell;
+            } else {
+                var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                var thread = Messages.GetEmailThread (indexPath.Row);
+                cell.SetMessage (message, thread.MessageCount);
+                return cell;
+            }
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            var message = SearchResults.GetCachedMessage (indexPath.Row);
-            ShowMessage (message);
+            if (Results.ContactIds.Length > 0 && indexPath.Section == 0) {
+                var contact = GetContact (indexPath.Row);
+                ShowInteractions (contact);
+            } else {
+                var message = Messages.GetCachedMessage (indexPath.Row);
+                ShowMessage (message);
+            }
+        }
+
+        McContact GetContact (int index)
+        {
+            // TODO: we could do some caching here
+            var id = Results.ContactIds [index];
+            return McContact.QueryById<McContact> (id);
         }
 
         void ShowMessage (McEmailMessage message)
         {
             var messageViewController = new MessageViewController ();
             messageViewController.Message = message;
-            NavigationController.PushViewController (messageViewController, true);
-            NavigationController.SetNavigationBarHidden (false, true);
+            NavigationController.PushViewController (messageViewController, animated: true);
+            NavigationController.SetNavigationBarHidden (false, animated: true);
+        }
+
+        void ShowInteractions (McContact contact)
+        {
+            var messagesViewController = new MessageListViewController (showsSearch: false);
+            var messages = new UserInteractionEmailMessages (contact);
+            messagesViewController.SetEmailMessages (messages);
+            NavigationController.PushViewController (messagesViewController, animated: true);
+            NavigationController.SetNavigationBarHidden (false, animated: true);
+        }
+
+        class ContactCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            PortraitView PortraitView;
+            nfloat PortraitSize = 30.0f;
+
+            public ContactCell (IntPtr handle) : base (handle)
+            {
+                PortraitView = new PortraitView (new CGRect (0.0f, 0.0f, PortraitSize, PortraitSize));
+                ContentView.AddSubview (PortraitView);
+                HideDetailWhenEmpty = true;
+            }
+
+            public void SetContact (McContact contact, string alternateEmail = null)
+            {
+                var name = contact.GetDisplayName ();
+                var email = alternateEmail ?? contact.GetPrimaryCanonicalEmailAddress ();
+                if (string.IsNullOrWhiteSpace (name) || string.Compare (name, email, StringComparison.OrdinalIgnoreCase) == 0) {
+                    TextLabel.Text = email;
+                    DetailTextLabel.Text = "";
+                } else {
+                    TextLabel.Text = name;
+                    DetailTextLabel.Text = email;
+                }
+                PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, contact.Initials);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.BoldDefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                DetailTextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                DetailTextLabel.TextColor = theme.TableViewCellDetailLabelTextColor;
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                PortraitView.Center = new CGPoint (SeparatorInset.Left / 2.0f, ContentView.Bounds.Height / 2.0f);
+            }
+
         }
 
     }

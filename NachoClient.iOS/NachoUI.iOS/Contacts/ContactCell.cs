@@ -13,7 +13,7 @@ namespace NachoClient.iOS
     public class ContactCell : SwipeTableViewCell, ThemeAdopter
     {
         PortraitView PortraitView;
-        nfloat PortraitSize = 40.0f;
+        public nfloat PortraitSize = 40.0f;
 
         #region Creating a Cell
 

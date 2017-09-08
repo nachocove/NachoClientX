@@ -85,10 +85,11 @@ namespace NachoCore.Index
         /// <returns>The emails.</returns>
         /// <param name="userQueryString">The search string entered by the user</param>
         /// <param name="accountId">An optional account id, <c>0</c> for all accounts</param>
-        public IEnumerable<EmailMessageDocument> SearchEmails (string userQueryString, int accountId = 0)
+        public IndexResults<EmailMessageDocument> SearchEmails (string userQueryString, int accountId = 0, int maxResults = 1000)
         {
-            var query = EmailMessageDocument.ContentQuery (userQueryString, accountId);
-            return Search (query, (doc, score) => new EmailMessageDocument (doc, score));
+            var query = EmailMessageDocument.ContentQuery (userQueryString, out var tokens, accountId);
+            var documents = Search (query, (doc, score) => new EmailMessageDocument (doc, score), maxResults: maxResults);
+            return new IndexResults<EmailMessageDocument> (userQueryString, tokens, documents);
         }
 
         #endregion
@@ -100,10 +101,11 @@ namespace NachoCore.Index
         /// </summary>
         /// <returns>The contacts.</returns>
         /// <param name="userQueryString">The search string entered by the user</param>
-        public IEnumerable<ContactDocument> SearchContacts (string userQueryString, int maxResults = 100)
+        public IndexResults<ContactDocument> SearchContacts (string userQueryString, int maxResults = 100)
         {
-            var query = ContactDocument.GeneralQuery (userQueryString);
-            return Search (query, (doc, score) => new ContactDocument (doc, score), maxResults: maxResults);
+            var query = ContactDocument.GeneralQuery (userQueryString, out var tokens);
+            var documents = Search (query, (doc, score) => new ContactDocument (doc, score), maxResults: maxResults);
+            return new IndexResults<ContactDocument> (userQueryString, tokens, documents);
         }
 
         /// <summary>
@@ -114,10 +116,11 @@ namespace NachoCore.Index
         /// </summary>
         /// <returns>The contacts name and emails.</returns>
         /// <param name="userQueryString">The search string entered by the user</param>
-        public IEnumerable<ContactDocument> SearchContactsNameAndEmails (string userQueryString)
+        public IndexResults<ContactDocument> SearchContactsNameAndEmails (string userQueryString, int maxResults = 7)
         {
-            var query = ContactDocument.NameAndEmailQuery (userQueryString);
-            return Search (query, (doc, score) => new ContactDocument (doc, score));
+            var query = ContactDocument.NameAndEmailQuery (userQueryString, out var tokens);
+            var documents = Search (query, (doc, score) => new ContactDocument (doc, score), maxResults: maxResults);
+            return new IndexResults<ContactDocument> (userQueryString, tokens, documents);
         }
 
         #endregion
@@ -198,6 +201,20 @@ namespace NachoCore.Index
         }
 
         #endregion
+    }
+
+    public class IndexResults<DocumentType>
+    {
+        public readonly string Query;
+        public readonly string [] ParsedTokens;
+        public readonly IEnumerable<DocumentType> Documents;
+
+        public IndexResults (string query, string [] parsedTokens, IEnumerable<DocumentType> documents)
+        {
+            Query = query;
+            ParsedTokens = parsedTokens;
+            Documents = documents;
+        }
     }
 
     #region Transactions

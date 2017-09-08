@@ -540,7 +540,7 @@ namespace NachoClient.iOS
                 var chats = new List<McChat> ();
                 if (!String.IsNullOrEmpty (searchText)) {
                     var results = NcIndex.Main.SearchEmails (searchText);
-                    foreach (var result in results) {
+                    foreach (var result in results.Documents) {
                         McChat chat = null;
                         ChatsByMessageId.TryGetValue (result.IntegerMessageId, out chat);
                         if (chat != null && !foundChatsById.ContainsKey (chat.Id)) {
