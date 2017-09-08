@@ -39,8 +39,8 @@ namespace NachoClient.iOS
             }
         }
 
-        ContactsEmailSearch Searcher;
-        List<McContactEmailAddressAttribute> Results = new List<McContactEmailAddressAttribute> ();
+        EmailAutocompleteSearcher Searcher;
+        EmailAutocompleteSearchResults Results;
 
         public ContactAutocompleteMenu () : base ()
         {
@@ -51,7 +51,8 @@ namespace NachoClient.iOS
             TableView.SeparatorInset = new UIEdgeInsets (0.0f, 54.0f, 0.0f, 0.0f);
             AddSubview (TableView);
 
-            Searcher = new ContactsEmailSearch (SetResults);
+            Searcher = new EmailAutocompleteSearcher ();
+            Searcher.ResultsFound += UpdateResults;
 
             Hidden = true;
         }
@@ -81,17 +82,17 @@ namespace NachoClient.iOS
 
         public void Search (string text)
         {
-            Searcher.SearchFor (text);
+            Searcher.Search (text);
         }
 
-        public void SetResults (string text, List<McContactEmailAddressAttribute> results)
+        public void UpdateResults (object sender, EmailAutocompleteSearchResults results)
         {
             Results = results;
             TableView.ReloadData ();
-            if (Hidden && Results.Count > 0) {
+            if (Hidden && (Results?.EmailAttributes.Length ?? 0) > 0) {
                 Hidden = false;
                 AutocompleteDelegate?.AutocompleteMenuDidAppear (this);
-            } else if (!Hidden && Results.Count == 0) {
+            } else if (!Hidden && (Results?.EmailAttributes.Length ?? 0) == 0) {
                 Hidden = true;
                 AutocompleteDelegate?.AutocompleteMenuDidDisappear (this);
             }
@@ -99,7 +100,7 @@ namespace NachoClient.iOS
 
         public void Hide ()
         {
-            Results.Clear ();
+            Results = null;
             TableView.ReloadData ();
             Hidden = true;
             AutocompleteDelegate?.AutocompleteMenuDidDisappear (this);
@@ -114,13 +115,13 @@ namespace NachoClient.iOS
         [Foundation.Export ("tableView:numberOfRowsInSection:")]
         public nint RowsInSection (UITableView tableView, nint section)
         {
-            return Results.Count;
+            return Results?.EmailAttributes.Length ?? 0;
         }
 
         [Foundation.Export ("tableView:cellForRowAtIndexPath:")]
         public UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            var contact = Results [indexPath.Row];
+            var contact = Results.EmailAttributes [indexPath.Row];
             var cell = tableView.DequeueReusableCell (ContactCellIdentifier) as ContactCell;
             cell.SetContact (contact);
             cell.AdoptTheme (AdoptedTheme);
@@ -130,7 +131,7 @@ namespace NachoClient.iOS
         [Foundation.Export ("tableView:didSelectRowAtIndexPath:")]
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            var contactAddress = Results [indexPath.Row];
+            var contactAddress = Results.EmailAttributes [indexPath.Row];
             tableView.DeselectRow (indexPath, true);
             AutocompleteDelegate?.AutocompleteMenuDidSelect (this, contactAddress);
         }

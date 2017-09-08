@@ -12,7 +12,7 @@ using System.Collections.Concurrent;
 namespace NachoCore.Utils
 {
 
-    class ContactSearchResults
+    public class ContactSearchResults
     {
         public readonly string Query;
         public readonly string [] Tokens;
@@ -26,13 +26,59 @@ namespace NachoCore.Utils
         }
     }
 
-    class ContactSearcher : Searcher<ContactSearchResults>
+    public class ContactSearcher : Searcher<ContactSearchResults>
     {
+
+        public int MaxResults = 100;
+
         protected override ContactSearchResults SearchResults (string query)
         {
-            var results = NcIndex.Main.SearchContacts (query);
+            var results = NcIndex.Main.SearchContacts (query, maxResults: MaxResults);
             var ids = results.Documents.Select (r => r.IntegerContactId).ToArray ();
             return new ContactSearchResults (query, results.ParsedTokens, ids);
+        }
+    }
+
+    public class EmailAutocompleteSearchResults
+    {
+        public readonly string Query;
+        public readonly string [] Tokens;
+        public readonly McContactEmailAddressAttribute [] EmailAttributes;
+
+        public EmailAutocompleteSearchResults (string query, string [] tokens, McContactEmailAddressAttribute [] emailAttributes)
+        {
+            Query = query;
+            Tokens = tokens;
+            EmailAttributes = emailAttributes;
+        }
+    }
+
+    public class EmailAutocompleteSearcher : Searcher<EmailAutocompleteSearchResults>
+    {
+
+        public int MaxResults = 100;
+
+        protected override EmailAutocompleteSearchResults SearchResults (string query)
+        {
+            var emailAttributes = new List<McContactEmailAddressAttribute> ();
+            var foundAttributeIds = new HashSet<int> ();
+
+            var results = NcIndex.Main.SearchContactsNameAndEmails (query, maxResults: MaxResults);
+            var contactIds = results.Documents.Select (r => r.IntegerContactId);
+            var remainingResults = MaxResults;
+            var tokens = results.ParsedTokens;
+            foreach (var contactId in contactIds) {
+                var contactEmails = McContactEmailAddressAttribute.QueryByContactId<McContactEmailAddressAttribute> (contactId);
+                contactEmails.Sort ((x, y) => {
+                    return Convert.ToInt32 (y.MatchesTokens (tokens)) - Convert.ToInt32 (x.MatchesTokens (tokens));
+                });
+                emailAttributes.AddRange (contactEmails);
+                remainingResults -= contactEmails.Count;
+                if (remainingResults <= 0) {
+                    break;
+                }
+            }
+            return new EmailAutocompleteSearchResults (query, tokens, emailAttributes.ToArray ());
         }
     }
 
@@ -314,8 +360,6 @@ namespace NachoCore.Utils
             var emailMatches = new List<McContactEmailAddressAttribute> ();
 
             foreach (var searchWord in searchWords) {
-                // Search the database for contacts whose name matches the search string.
-                contactMatches.AddRange (McContact.SearchAllContactsByName (searchWord));
                 // Search the database for e-mail addresses that match the search string.
                 emailMatches.AddRange (McContact.SearchAllContactEmail (searchWord));
             }
@@ -501,8 +545,6 @@ namespace NachoCore.Utils
             var dbEmailMatches = new List<McContactEmailAddressAttribute> ();
 
             foreach (var searchWord in searchWords) {
-                // Search the database for contacts whose name matches the search string.
-                rawContacts.AddRange (McContact.SearchAllContactsByName (searchWord));
                 // Search the database for e-mail addresses that match the search string.
                 dbEmailMatches.AddRange (McContact.SearchAllContactEmail (searchWord));
             }

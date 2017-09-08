@@ -123,6 +123,18 @@ namespace NachoCore.Index
             return new IndexResults<ContactDocument> (userQueryString, tokens, documents);
         }
 
+        /// <summary>
+        /// Search for contacts who match the query string in name only.
+        /// </summary>
+        /// <returns>The contacts name</returns>
+        /// <param name="userQueryString">The search string entered by the user</param>
+        public IndexResults<ContactDocument> SearchContactsNames (string userQueryString, int maxResults = 100)
+        {
+            var query = ContactDocument.NameQuery (userQueryString, out var tokens);
+            var documents = Search (query, (doc, score) => new ContactDocument (doc, score), maxResults: maxResults);
+            return new IndexResults<ContactDocument> (userQueryString, tokens, documents);
+        }
+
         #endregion
 
         #region Adding and Removing Items

@@ -15,7 +15,7 @@ namespace NachoCore.Index
         public static List<string> TokenizeQueryString (this Analyzer analyzer, string userQueryString)
         {
             var tokens = new List<string> ();
-            var reader = new StringReader (userQueryString);
+            var reader = new StringReader (userQueryString ?? "");
             var stream = analyzer.TokenStream (null, reader);
             var termAttribute = stream.AddAttribute<ITermAttribute> ();
             stream.Reset ();

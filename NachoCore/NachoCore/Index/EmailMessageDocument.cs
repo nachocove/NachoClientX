@@ -62,9 +62,8 @@ namespace NachoCore.Index
 
         static Analyzer CreateAnalyzer ()
         {
-            var analyzer = new PerFieldAnalyzerWrapper (new StandardAnalyzer (NcIndex.LuceneVersion));
-            // TODO: customize per field
-            return analyzer;
+            var stopWords = new HashSet<string> ();
+            return new StandardAnalyzer (NcIndex.LuceneVersion, stopWords: stopWords);
         }
 
         public readonly static Analyzer Analyzer = CreateAnalyzer ();

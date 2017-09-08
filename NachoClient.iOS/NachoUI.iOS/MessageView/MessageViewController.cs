@@ -273,12 +273,6 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
 
             if (null != Message) {
-                if (!NcApplication.Instance.Account.ContainsAccount (Message.AccountId)) {
-                    Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, Message.AccountId);
-                    if (null != NavigationController) {
-                        NavigationController.PopViewController (false);
-                    }
-                }
                 NcBrain.MessageReadStatusUpdated (Message, DateTime.UtcNow, 0.1);
             }
 

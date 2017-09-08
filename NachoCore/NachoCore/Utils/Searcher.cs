@@ -14,7 +14,7 @@ using System.Threading;
 namespace NachoCore.Utils
 {
 
-    abstract class Searcher<ResultType>
+    public abstract class Searcher<ResultType>
     {
 
         public event EventHandler<ResultType> ResultsFound;

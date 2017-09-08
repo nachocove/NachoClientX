@@ -146,11 +146,11 @@ namespace NachoCore.Index
 
         static Analyzer CreateAnalyzer ()
         {
-            var analyzer = new PerFieldAnalyzerWrapper (new StandardAnalyzer (NcIndex.LuceneVersion));
+            var stopWords = new HashSet<string> ();
+            var analyzer = new PerFieldAnalyzerWrapper (new StandardAnalyzer (NcIndex.LuceneVersion, stopWords: stopWords));
             analyzer.AddAnalyzer (EmailFieldName, new KeywordAnalyzer ());
             analyzer.AddAnalyzer (DomainFieldName, new KeywordAnalyzer ());
             analyzer.AddAnalyzer (PhoneFieldName, new KeywordAnalyzer ());
-            // TODO: customize per field
             return analyzer;
         }
 
@@ -216,6 +216,28 @@ namespace NachoCore.Index
                 CompanyFieldName,
                 EmailFieldName,
                 DomainFieldName
+            };
+            return new BooleanQuery {
+                { TypeQuery (), Occur.MUST },
+                { HasEmailQuery (), Occur.MUST },
+                { FieldsQuery (fieldNames, tokens), Occur.MUST},
+            };
+        }
+
+        public static Query NameQuery (string userQueryString, out string [] parsedTokens)
+        {
+            var stopWords = new HashSet<string> ();
+            var analyzer = new StandardAnalyzer (NcIndex.LuceneVersion, stopWords: stopWords);
+            var tokens = analyzer.TokenizeQueryString (userQueryString);
+            parsedTokens = tokens.ToArray ();
+            if (tokens.Count == 0) {
+                return null;
+            }
+            var fieldNames = new string [] {
+                NameFieldName,
+                AliasFieldName,
+                NicknameFieldName,
+                CompanyFieldName,
             };
             return new BooleanQuery {
                 { TypeQuery (), Occur.MUST },
