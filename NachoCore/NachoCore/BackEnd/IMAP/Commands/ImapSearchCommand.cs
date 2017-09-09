@@ -23,7 +23,7 @@ namespace NachoCore.IMAP
         public override void Execute (NcStateMachine sm)
         {
             Sm = sm;
-            ExecuteNoTask();
+            ExecuteNoTask ();
         }
 
         protected override Event ExecuteCommand ()
@@ -31,15 +31,12 @@ namespace NachoCore.IMAP
             var orderBy = new [] { OrderBy.ReverseArrival };
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
 
-            var query = SearchQuery.SubjectContains (PendingSingle.Search_Prefix)
-                .Or (SearchQuery.BodyContains (PendingSingle.Search_Prefix))
-                .Or (SearchQuery.FromContains (PendingSingle.Search_Prefix))
-                .Or (SearchQuery.BccContains (PendingSingle.Search_Prefix))
-                .Or (SearchQuery.MessageContains (PendingSingle.Search_Prefix))
-                .Or (SearchQuery.CcContains (PendingSingle.Search_Prefix));
-            if (Client.Capabilities.HasFlag (ImapCapabilities.GMailExt1)) {
-                query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
-            }
+            // Since we'll only consider results that we already have in our local db, and since the only
+            // piece we might be missing locally is the message body, we only need to query the body field
+            SearchQuery query = SearchQuery.BodyContains (PendingSingle.Search_Prefix);
+            //if (Client.Capabilities.HasFlag (ImapCapabilities.GMailExt1)) {
+            //    query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
+            //}
             if (TimeSpan.Zero != timespan) {
                 query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
             }
@@ -70,9 +67,9 @@ namespace NachoCore.IMAP
                         var idList = McEmailMessage.QueryByServerIdList (AccountId, serverIdList);
                         if (idList.Any ()) {
                             foreach (var id in idList) {
-                                emailList.Add(id);
+                                emailList.Add (id);
                                 if (emailList.Count > PendingSingle.Search_MaxResults) {
-                                   break;
+                                    break;
                                 }
                             }
                         }

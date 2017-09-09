@@ -42,6 +42,52 @@ namespace NachoCore.Utils
         }
     }
 
+    class EmailServerSearcher : ServerSearcher<int []>
+    {
+        public McAccount Account;
+
+        protected override Dictionary<int, string> CreateServerSearchTokens (string query)
+        {
+            var tokens = new Dictionary<int, string> ();
+            if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                var accounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailReaderWriter).Where (x => x.AccountType != McAccount.AccountTypeEnum.Unified).ToList ();
+                foreach (var account in accounts) {
+                    tokens [account.Id] = BackEnd.Instance.StartSearchEmailReq (account.Id, query, null).GetValue<string> ();
+                }
+            } else {
+                tokens [Account.Id] = BackEnd.Instance.StartSearchEmailReq (Account.Id, query, null).GetValue<string> ();
+            }
+            return tokens;
+        }
+
+        protected override NcResult.SubKindEnum SuccessStatus {
+            get {
+                return NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded;
+            }
+        }
+
+        protected override NcResult.SubKindEnum ErrorStatus {
+            get {
+                return NcResult.SubKindEnum.Error_EmailSearchCommandFailed;
+            }
+        }
+
+        public override void Search (string query)
+        {
+            ResultsFromAllAccounts.Clear ();
+            base.Search (query);
+        }
+
+        readonly List<int> ResultsFromAllAccounts = new List<int> ();
+
+        protected override void HandleStatus (NcResult status)
+        {
+            var messageIds = status.GetValue<List<NcEmailMessageIndex>> ().Select (x => x.Id);
+            ResultsFromAllAccounts.AddRange (messageIds);
+            FoundResults (ResultsFromAllAccounts.ToArray ());
+        }
+    }
+
     public class EmailSearch : NachoEmailMessages
     {
         public delegate void UpdateUiAction (string searchString, List<McEmailMessageThread> results);

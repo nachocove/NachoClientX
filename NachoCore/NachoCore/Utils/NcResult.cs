@@ -194,7 +194,8 @@ namespace NachoCore.Utils
             Error_EmailMessageMarkedAnsweredFailed,
             Info_ActionSetChanged,
             Info_ActionMarkedNotNew,
-            Info_AccountNameChanged
+            Info_AccountNameChanged,
+            Info_ContactIndexUpdated
         };
 
         public enum WhyEnum

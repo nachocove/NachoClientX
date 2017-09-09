@@ -553,7 +553,6 @@ namespace NachoClient.iOS
 
         public void DidSelectSearch (NachoSearchController searchController)
         {
-            SearchResultsViewController.StartServerSearch ();
         }
 
         public void DidEndSearch (NachoSearchController searchController)
@@ -1184,21 +1183,37 @@ namespace NachoClient.iOS
 
         const string MessageCellIdentifier = "MessageCellIdentifier";
         const string ContactCellIdentifier = "ContactCellIdentifier";
+        const string ServerPlaceholderCellIdentifier = "ServerPlacehoderCellIdentifier";
         public int NumberOfPreviewLines = 3;
 
         EmailSearcher Searcher;
+        EmailServerSearcher ServerSearcher;
         EmailSearchResults Results;
         NachoEmailMessages Messages;
+        NachoEmailMessages ServerMessages;
+
+        int SectionCount;
+        int ContactsSection;
+        int LocalMessagesSection;
+        int ServerMessagesSection;
+        int ServerPlaceholderSection;
+
+        string Query;
+        bool ServerSearchStarted;
 
         public MessageSearchResultsViewController () : base ()
         {
             Searcher = new EmailSearcher ();
             Searcher.ResultsFound += UpdateResults;
+            ServerSearcher = new EmailServerSearcher ();
+            ServerSearcher.ResultsFound += UpdateServerResults;
         }
 
         public override void Cleanup ()
         {
             Searcher.ResultsFound -= UpdateResults;
+            ServerSearcher.ResultsFound -= UpdateServerResults;
+            ServerSearcher.Cleanup ();
             base.Cleanup ();
         }
 
@@ -1207,43 +1222,105 @@ namespace NachoClient.iOS
             base.LoadView ();
             TableView.RegisterClassForCellReuse (typeof (MessageCell), MessageCellIdentifier);
             TableView.RegisterClassForCellReuse (typeof (ContactCell), ContactCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (SwipeTableViewCell), ServerPlaceholderCellIdentifier);
             TableView.RowHeight = MessageCell.PreferredHeight (NumberOfPreviewLines, Theme.Active.DefaultFont.WithSize (17.0f), Theme.Active.DefaultFont.WithSize (14.0f));
         }
 
         public void PrepareForSearching ()
         {
             Searcher.Account = NcApplication.Instance.Account;
-            TableView.ReloadData ();
-        }
-
-        public void StartServerSearch ()
-        {
-            //SearchResults.StartServerSearch ();
+            ServerSearcher.Account = Searcher.Account;
+            ReloadTable ();
         }
 
         public void EndSearching ()
         {
-            //SearchResults.ExitSearchMode ();
+            ServerSearcher.Stop ();
         }
 
         public void SearchForText (string searchText)
         {
-            Searcher.Search (searchText);
+            Query = searchText;
+            Searcher.Search (Query);
+            ServerMessages = null;
+            ServerSearchStarted = false;
+            ReloadServerSection ();
         }
 
         void UpdateResults (object sender, EmailSearchResults results)
         {
             Results = results;
             Messages = new NachoPrequeriedEmailMessages (results.MessageIds);
+            ReloadTable ();
+        }
+
+        void UpdateServerResults (object sender, int [] messageIds)
+        {
+            ServerMessages = new NachoPrequeriedEmailMessages (messageIds);
+            ReloadTable ();
+        }
+
+        void ReloadTable ()
+        {
+            SectionCount = 0;
+            ContactsSection = -1;
+            LocalMessagesSection = -1;
+            ServerMessagesSection = -1;
+            ServerPlaceholderSection = -1;
+            if (Results != null && Results.ContactIds.Length > 0) {
+                ContactsSection = SectionCount++;
+            }
+            LocalMessagesSection = SectionCount++;
+            if (!string.IsNullOrEmpty (Query)) {
+                if (ServerMessages != null && ServerMessages.Count () > 0) {
+                    ServerMessagesSection = SectionCount++;
+                } else {
+                    ServerPlaceholderSection = SectionCount++;
+                }
+            }
             TableView.ReloadData ();
+        }
+
+        void ReloadServerSection ()
+        {
+            var serverSection = -1;
+            if (ServerMessagesSection >= 0) {
+                serverSection = ServerMessagesSection;
+            } else if (ServerPlaceholderSection >= 0) {
+                serverSection = ServerPlaceholderSection;
+            }
+            ServerMessagesSection = -1;
+            ServerPlaceholderSection = -1;
+            if (string.IsNullOrEmpty (Query)) {
+                if (serverSection >= 0) {
+                    SectionCount--;
+                    TableView.DeleteSections (NSIndexSet.FromIndex (serverSection), UITableViewRowAnimation.None);
+                }
+            } else {
+                bool insert = false;
+                if (serverSection < 0) {
+                    serverSection = SectionCount++;
+                    insert = true;
+                }
+                if (ServerMessages != null && ServerMessages.Count () > 0) {
+                    ServerMessagesSection = serverSection;
+                } else {
+                    ServerPlaceholderSection = serverSection;
+                }
+                if (insert) {
+                    TableView.InsertSections (NSIndexSet.FromIndex (serverSection), UITableViewRowAnimation.None);
+                } else {
+                    TableView.ReloadSections (NSIndexSet.FromIndex (serverSection), UITableViewRowAnimation.None);
+                }
+            }
         }
 
         public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            if (Results == null) {
-                return TableView.RowHeight;
+            if (indexPath.Section == ContactsSection) {
+                return 54.0f;
             }
-            if (Results.ContactIds.Length > 0 && indexPath.Section == 0) {
+            if (indexPath.Section == ServerPlaceholderSection) {
                 return 54.0f;
             }
             return TableView.RowHeight;
@@ -1251,59 +1328,88 @@ namespace NachoClient.iOS
 
         public override nint NumberOfSections (UITableView tableView)
         {
-            if (Results == null || Results.ContactIds.Length == 0) {
-                return 1;
-            }
-            return 2;
+            return SectionCount;
         }
 
         public override nint RowsInSection (UITableView tableView, nint section)
         {
-            if (Results == null) {
-                return 0;
-            }
-            if (Results.ContactIds.Length > 0 && section == 0) {
+            if (section == ContactsSection) {
                 return Results.ContactIds.Length;
             }
-            return Results.MessageIds.Length;
+            if (section == LocalMessagesSection) {
+                return Results?.MessageIds.Length ?? 0;
+            }
+            if (section == ServerMessagesSection) {
+                return ServerMessages.Count ();
+            }
+            if (section == ServerPlaceholderSection) {
+                return 1;
+            }
+            return 0;
         }
 
         public override string TitleForHeader (UITableView tableView, nint section)
         {
-            if (Results == null || Results.ContactIds.Length == 0) {
-                return null;
-            }
-            if (section == 0) {
+            if (section == ContactsSection) {
                 return NSBundle.MainBundle.LocalizedString ("Contacts (search header)", "Section header for messages search");
             }
-            return NSBundle.MainBundle.LocalizedString ("Messages (search header)", "Section header for messages search");
+            if (section == LocalMessagesSection) {
+                return NSBundle.MainBundle.LocalizedString ("Messages (search header)", "Section header for messages search");
+            }
+            return null;
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            if (Results.ContactIds.Length > 0 && indexPath.Section == 0) {
+            if (indexPath.Section == ContactsSection) {
                 var cell = tableView.DequeueReusableCell (ContactCellIdentifier) as ContactCell;
                 cell.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
                 var contact = GetContact (indexPath.Row);
                 cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
                 return cell;
-            } else {
+            }
+            if (indexPath.Section == LocalMessagesSection) {
                 var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                 var message = Messages.GetCachedMessage (indexPath.Row);
                 var thread = Messages.GetEmailThread (indexPath.Row);
                 cell.SetMessage (message, thread.MessageCount);
                 return cell;
             }
+            if (indexPath.Section == ServerMessagesSection) {
+                var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
+                var message = ServerMessages.GetCachedMessage (indexPath.Row);
+                var thread = ServerMessages.GetEmailThread (indexPath.Row);
+                cell.SetMessage (message, thread.MessageCount);
+                return cell;
+            }
+            if (indexPath.Section == ServerPlaceholderSection) {
+                var cell = tableView.DequeueReusableCell (ServerPlaceholderCellIdentifier) as SwipeTableViewCell;
+                if (ServerMessages == null) {
+                    cell.TextLabel.Text = string.Format (NSBundle.MainBundle.LocalizedString ("Search server for: {0}", ""), Query);
+                } else {
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Nothing found on server", "");
+                }
+                return cell;
+            }
+            return null;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            if (Results.ContactIds.Length > 0 && indexPath.Section == 0) {
+            if (indexPath.Section == ContactsSection) {
                 var contact = GetContact (indexPath.Row);
                 ShowInteractions (contact);
-            } else {
+            } else if (indexPath.Section == LocalMessagesSection) {
                 var message = Messages.GetCachedMessage (indexPath.Row);
                 ShowMessage (message);
+            } else if (indexPath.Section == ServerMessagesSection) {
+                var message = ServerMessages.GetCachedMessage (indexPath.Row);
+                ShowMessage (message);
+            } else if (indexPath.Section == ServerPlaceholderSection) {
+                if (!ServerSearchStarted) {
+                    ServerSearcher.Search (Query);
+                    TableView.DeselectRow (indexPath, animated: true);
+                }
             }
         }
 

@@ -272,6 +272,8 @@ namespace NachoCore.Index
             IndexContacts (contacts.ToArray ());
             if (contacts.Count == limit) {
                 JobQueue.Enqueue (IndexContactsJob);
+            } else {
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs { Status = NcResult.Info(NcResult.SubKindEnum.Info_ContactIndexUpdated) });
             }
         }
 
@@ -289,6 +291,8 @@ namespace NachoCore.Index
             UnindexContacts (contacts.ToArray ());
             if (contacts.Count == limit) {
                 JobQueue.Enqueue (UnindexContactsJob);
+			} else {
+				NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs { Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactIndexUpdated) });
             }
         }
 

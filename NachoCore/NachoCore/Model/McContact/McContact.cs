@@ -1505,6 +1505,7 @@ namespace NachoCore.Model
             var contact = new McContact (ItemSource.ActiveSync);
             contact.AccountId = accountId;
             contact.RefreshFromGalXml (xmlProperties);
+            Indexer.Instance.Add (contact);
             return contact;
         }
 

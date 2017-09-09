@@ -430,7 +430,7 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region System EventArgs
+        #region System Events
 
         bool IsListeningForStatusInd;
 
@@ -453,9 +453,16 @@ namespace NachoClient.iOS
         void StatusIndCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+            switch (s.Status.SubKind){
+            case NcResult.SubKindEnum.Info_ContactSetChanged:
                 SetNeedsReload ();
-            }
+				break;
+            // Search success means new GAL contacts possibly added
+            case NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded:
+				SetNeedsReload ();
+				break;
+
+			}
         }
 
         #endregion

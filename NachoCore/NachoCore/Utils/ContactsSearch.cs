@@ -26,7 +26,47 @@ namespace NachoCore.Utils
         }
     }
 
-    public class ContactSearcher : Searcher<ContactSearchResults>
+    public abstract class LocalAndGlobalContactSearcher<ResultType> : Searcher<ResultType>
+    {
+
+        readonly ContactServerSearcher ServerSearcher = new ContactServerSearcher ();
+
+        public override void Search (string query)
+        {
+            base.Search (query);
+            // Kicking off a sever search will result in new McContacts being added to the
+            // database and search index.  We use IndexChangedStatus to indicate that the
+            // base searcher class should automatically re-run the latest query when the
+            // contact index chages.  Because the server results will be added to our local index
+            // and because we'll re-run the search automatically, there is no need to directly
+            // handle results from the server searcher.
+            if (query != null && query.Length > 2) {
+                ServerSearcher.Search (query);
+            }
+        }
+
+        public override void Cleanup ()
+        {
+            ServerSearcher.Cleanup ();
+            base.Cleanup ();
+        }
+
+        /// <summary>
+        /// The contacts index changes when we do a server search and contacts are added
+        /// to the global address list (GAL) folder.  In such a case, we want the searcher
+        /// to automatically re-run the last requested search.  Implementing this property
+        /// tells the base Searcher class to watch for events of this sub kind, and re-run
+        /// the latest requested search.
+        /// </summary>
+        /// <value>The index changed status.</value>
+        protected override NcResult.SubKindEnum IndexChangedStatus {
+            get {
+                return NcResult.SubKindEnum.Info_ContactIndexUpdated;
+            }
+        }
+    }
+
+    public class ContactSearcher : LocalAndGlobalContactSearcher<ContactSearchResults>
     {
 
         public int MaxResults = 100;
@@ -36,6 +76,45 @@ namespace NachoCore.Utils
             var results = NcIndex.Main.SearchContacts (query, maxResults: MaxResults);
             var ids = results.Documents.Select (r => r.IntegerContactId).ToArray ();
             return new ContactSearchResults (query, results.ParsedTokens, ids);
+        }
+    }
+
+    public class ContactServerSearcher : ServerSearcher<int []>
+    {
+
+        List<McAccount> _Accounts;
+        List<McAccount> Accounts {
+            get {
+                if (_Accounts == null) {
+                    _Accounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.ContactReader).ToList ();
+                }
+                return _Accounts;
+            }
+        }
+
+        protected override Dictionary<int, string> CreateServerSearchTokens (string query)
+        {
+            var tokens = new Dictionary<int, string> ();
+            foreach (var account in Accounts) {
+                tokens [account.Id] = BackEnd.Instance.StartSearchContactsReq (account.Id, query, null).GetValue<string> ();
+            }
+            return tokens;
+        }
+
+        protected override NcResult.SubKindEnum SuccessStatus {
+            get {
+                return NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded;
+            }
+        }
+
+        protected override NcResult.SubKindEnum ErrorStatus {
+            get {
+                return NcResult.SubKindEnum.Error_ContactSearchCommandFailed;
+            }
+        }
+
+        protected override void HandleStatus (NcResult status)
+        {
         }
     }
 
@@ -53,7 +132,7 @@ namespace NachoCore.Utils
         }
     }
 
-    public class EmailAutocompleteSearcher : Searcher<EmailAutocompleteSearchResults>
+    public class EmailAutocompleteSearcher : LocalAndGlobalContactSearcher<EmailAutocompleteSearchResults>
     {
 
         public int MaxResults = 100;
