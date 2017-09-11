@@ -65,6 +65,7 @@ namespace NachoCore.Index
             Nickname = new Field (NicknameFieldName, contact.NickName ?? "", Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
             Company = new Field (CompanyFieldName, contact.CompanyName ?? "", Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
 
+            Document.Add (DocumentId);
             Document.Add (Type);
             Document.Add (AccountId);
             Document.Add (ContactId);

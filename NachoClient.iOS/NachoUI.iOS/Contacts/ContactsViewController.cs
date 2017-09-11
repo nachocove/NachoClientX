@@ -568,7 +568,12 @@ namespace NachoClient.iOS
         {
             // TODO: we could do some caching here
             var id = Results.ContactIds [index];
-            return McContact.QueryById<McContact> (id);
+            var contact = McContact.QueryById<McContact> (id);
+            if (contact == null) {
+                Log.LOG_SEARCH.Warn ("Contact search results returned a deleted contact: {0}", id);
+                NachoCore.Index.Indexer.Instance.RemoveContactId (NcApplication.Instance.Account.Id, id);
+            }
+            return contact;
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)

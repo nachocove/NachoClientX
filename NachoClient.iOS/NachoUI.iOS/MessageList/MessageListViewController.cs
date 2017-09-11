@@ -1377,10 +1377,14 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                 var message = Messages.GetCachedMessage (indexPath.Row);
                 var thread = Messages.GetEmailThread (indexPath.Row);
-                if (message != null && thread != null) {
+                if (message != null) {
                     cell.SetMessage (message, thread.MessageCount);
                     cell.SwipeView.Hidden = false;
                 } else {
+                    Log.LOG_SEARCH.Warn ("Message search results returned a deleted message: {0}", thread.FirstMessageId);
+                    var results = NcIndex.Main.SearchEmailsById (thread.FirstMessageId);
+                    var document = results.Documents.FirstOrDefault ();
+                    Indexer.Instance.RemoveMessageId (Searcher.Account.Id, thread.FirstMessageId);
                     cell.SwipeView.Hidden = true;
                 }
                 return cell;
@@ -1389,10 +1393,11 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                 var message = ServerMessages.GetCachedMessage (indexPath.Row);
                 var thread = ServerMessages.GetEmailThread (indexPath.Row);
-                if (message != null && thread != null) {
+                if (message != null) {
                     cell.SetMessage (message, thread.MessageCount);
                     cell.SwipeView.Hidden = false;
                 } else {
+                    Log.LOG_SEARCH.Warn ("Message server search results returned a deleted message: {0}", thread.FirstMessageId);
                     cell.SwipeView.Hidden = true;
                 }
                 return cell;
@@ -1413,13 +1418,19 @@ namespace NachoClient.iOS
         {
             if (indexPath.Section == ContactsSection) {
                 var contact = GetContact (indexPath.Row);
-                ShowInteractions (contact);
+                if (contact != null) {
+                    ShowInteractions (contact);
+                }
             } else if (indexPath.Section == LocalMessagesSection) {
                 var message = Messages.GetCachedMessage (indexPath.Row);
-                ShowMessage (message);
+                if (message != null) {
+                    ShowMessage (message);
+                }
             } else if (indexPath.Section == ServerMessagesSection) {
                 var message = ServerMessages.GetCachedMessage (indexPath.Row);
-                ShowMessage (message);
+                if (message != null) {
+                    ShowMessage (message);
+                }
             } else if (indexPath.Section == ServerPlaceholderSection) {
                 if (!ServerSearchStarted) {
                     ServerSearchStarted = true;
@@ -1433,7 +1444,12 @@ namespace NachoClient.iOS
         {
             // TODO: we could do some caching here
             var id = Results.ContactIds [index];
-            return McContact.QueryById<McContact> (id);
+            var contact = McContact.QueryById<McContact> (id);
+            if (contact == null) {
+                Log.LOG_SEARCH.Warn ("Message search results returned a deleted contact: {0}", id);
+                Indexer.Instance.RemoveContactId (Searcher.Account.Id, id);
+            }
+            return contact;
         }
 
         void ShowMessage (McEmailMessage message)

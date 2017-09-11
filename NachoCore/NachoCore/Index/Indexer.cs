@@ -76,6 +76,24 @@ namespace NachoCore.Index
         }
 
         /// <summary>
+        /// Notify the indexer that an email message with the given id needs to be removed.
+        /// This can be called when a search result returns a message that is not found in the
+        /// database.  While every deleted message should be unindexed at delete time, this
+        /// method can help clean up anything that somehow persisted in the index.
+        /// </summary>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="messageId">Message identifier.</param>
+        public void RemoveMessageId (int accountId, int messageId)
+        {
+            Log.LOG_SEARCH.Info ("Indexer Remove requested for message id {0}", messageId);
+            var message = new McEmailMessage {
+                AccountId = accountId,
+                Id = messageId
+            };
+            Remove (message);
+        }
+
+        /// <summary>
         /// Notify the indexer that a contact needs to be removed from the index
         /// </summary>
         /// <param name="contact">The contact to unindex</param>
@@ -90,6 +108,23 @@ namespace NachoCore.Index
                 item.Insert ();
                 Enqueue (UnindexJob);
             }, "Indexer.RemoveContact");
+        }
+
+        /// <summary>
+        /// Notify the indexer that a contact with the given id needs to be removed.
+        /// This can be called when a search result returns a contact that is not found in the
+        /// database.  While every deleted contact should be unindexed at delete time, this
+        /// method can help clean up anything that somehow persisted in the index.
+        /// </summary>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="contactId">Contact identifier.</param>
+        public void RemoveContactId (int accountId, int contactId)
+        {
+            var contact = new McContact {
+                AccountId = accountId,
+                Id = contactId
+            };
+            Remove (contact);
         }
 
         /// <summary>
@@ -273,7 +308,7 @@ namespace NachoCore.Index
             if (contacts.Count == limit) {
                 JobQueue.Enqueue (IndexContactsJob);
             } else {
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs { Status = NcResult.Info(NcResult.SubKindEnum.Info_ContactIndexUpdated) });
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs { Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactIndexUpdated) });
             }
         }
 
@@ -291,8 +326,8 @@ namespace NachoCore.Index
             UnindexContacts (contacts.ToArray ());
             if (contacts.Count == limit) {
                 JobQueue.Enqueue (UnindexContactsJob);
-			} else {
-				NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs { Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactIndexUpdated) });
+            } else {
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs { Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactIndexUpdated) });
             }
         }
 

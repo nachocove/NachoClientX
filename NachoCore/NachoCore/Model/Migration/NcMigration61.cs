@@ -27,15 +27,18 @@ namespace NachoCore.Model
 
         public override void Run (System.Threading.CancellationToken token)
         {
-            NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = 0");
-            NcModel.Instance.Db.Execute ("UPDATE McContact SET IndexVersion = 0");
-            var accounts = McAccount.GetAllAccounts ();
-            foreach (var account in accounts) {
-                var indexPath = NcModel.Instance.GetIndexPath (account.Id);
-                if (Directory.Exists (indexPath)) {
-                    Directory.Delete (indexPath, recursive: true);
-                }
-            }
+            // Replaced by migration 62, after this migration had already run in development,
+            // but before it had run in production.
+
+            //NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = 0");
+            //NcModel.Instance.Db.Execute ("UPDATE McContact SET IndexVersion = 0");
+            //var accounts = McAccount.GetAllAccounts ();
+            //foreach (var account in accounts) {
+            //    var indexPath = NcModel.Instance.GetIndexPath (account.Id);
+            //    if (Directory.Exists (indexPath)) {
+            //        Directory.Delete (indexPath, recursive: true);
+            //    }
+            //}
         }
     }
 }

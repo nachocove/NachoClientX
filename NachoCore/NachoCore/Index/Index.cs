@@ -51,7 +51,7 @@ namespace NachoCore.Index
         /// <summary>
         /// The path on disk to the main index
         /// </summary>
-        static string MainPath {
+        public static string MainPath {
             get {
                 return Path.Combine (NcApplication.GetDataDirPath (), "mainindex");
             }
@@ -90,6 +90,13 @@ namespace NachoCore.Index
             var query = EmailMessageDocument.ContentQuery (userQueryString, out var tokens, accountId);
             var documents = Search (query, (doc, score) => new EmailMessageDocument (doc, score), maxResults: maxResults);
             return new IndexResults<EmailMessageDocument> (userQueryString, tokens, documents);
+        }
+
+        public IndexResults<EmailMessageDocument> SearchEmailsById (int messageId)
+        {
+            var query = new TermQuery (new Term (EmailMessageDocument.MessageIdFieldName, messageId.ToString ()));
+            var documents = Search (query, (doc, score) => new EmailMessageDocument (doc, score));
+            return new IndexResults<EmailMessageDocument> (null, null, documents);
         }
 
         #endregion
@@ -318,6 +325,12 @@ namespace NachoCore.Index
         {
             var term = new Term (NcIndex.DocumentTypeFieldName, EmailMessageDocument.DocumentType);
             Remove (term);
+        }
+
+        public void RemoveAll ()
+        {
+            Writer.DeleteAll ();
+            NeedsCommit = true;
         }
 
         /// <summary>

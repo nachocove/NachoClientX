@@ -432,6 +432,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration61.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\Utils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Searcher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration62.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

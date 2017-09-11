@@ -43,6 +43,7 @@ namespace NachoCore.Index
             Subject = new Field (SubjectFieldName, message.Subject ?? "", Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
             Body = new Field (BodyFieldName, message.GetIndexContent () ?? "", Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
 
+            Document.Add (DocumentId);
             Document.Add (Type);
             Document.Add (AccountId);
             Document.Add (MessageId);

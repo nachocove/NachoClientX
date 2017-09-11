@@ -144,7 +144,12 @@ namespace NachoClient.AndroidClient
         McContact GetContact (int position)
         {
             var id = Results.ContactIds [position];
-            return McContact.QueryById<McContact> (id);
+            var contact = McContact.QueryById<McContact> (id);
+            if (contact == null) {
+                Log.LOG_SEARCH.Warn ("Contact search results returned a deleted contact: {0}", id);
+                NachoCore.Index.Indexer.Instance.RemoveContactId (NcApplication.Instance.Account.Id, id);
+            }
+            return contact;
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)

@@ -336,7 +336,7 @@ namespace NachoClient.AndroidClient
                 var message = messages.GetCachedMessage (position);
                 var thread = messages.GetEmailThread (position);
                 var messageHolder = (holder as MessageViewHolder);
-                if (message != null && thread != null) {
+                if (message != null) {
                     messageHolder.SetMessage (message, thread.MessageCount);
                     if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
                         messageHolder.IndicatorColor = Util.ColorForAccount (message.AccountId);
@@ -345,6 +345,8 @@ namespace NachoClient.AndroidClient
                     }
                     messageHolder.ContentView.Visibility = ViewStates.Visible;
                 } else {
+                    Log.LOG_SEARCH.Warn ("Message search results returned a deleted message: {0}", thread.FirstMessageId);
+                    NachoCore.Index.Indexer.Instance.RemoveMessageId (NcApplication.Instance.Account.Id, thread.FirstMessageId);
                     messageHolder.ContentView.Visibility = ViewStates.Invisible;
                 }
                 messageHolder.BackgroundView.SetBackgroundResource (values.GetResourceId (0, 0));
@@ -386,7 +388,12 @@ namespace NachoClient.AndroidClient
         {
             // TODO: we could do some caching here
             var id = Results.ContactIds [index];
-            return McContact.QueryById<McContact> (id);
+            var contact = McContact.QueryById<McContact> (id);
+            if (contact == null) {
+                Log.LOG_SEARCH.Warn ("Message search results returned a deleted contact: {0}", id);
+                NachoCore.Index.Indexer.Instance.RemoveContactId (NcApplication.Instance.Account.Id, id);
+            }
+            return contact;
         }
 
         class BasicItemViewHolder : ViewHolder
