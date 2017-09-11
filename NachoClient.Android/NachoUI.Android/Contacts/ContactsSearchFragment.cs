@@ -23,144 +23,153 @@ using NachoPlatform;
 namespace NachoClient.AndroidClient
 {
 
-	public class ContactsSearchFragment : Fragment, ContactsSearchAdapter.Listener
-	{
+    public class ContactsSearchFragment : Fragment, ContactsSearchAdapter.Listener
+    {
 
         public ContactsSearchFragment () : base ()
-		{
-			RetainInstance = true;
-		}
+        {
+            RetainInstance = true;
+        }
 
-		#region Subviews
+        #region Subviews
 
-		RecyclerView ListView;
+        RecyclerView ListView;
         ContactsSearchAdapter Adapter;
 
-		void FindSubviews (View view)
-		{
-			ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
-			ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
-		}
+        void FindSubviews (View view)
+        {
+            ListView = view.FindViewById (Resource.Id.list_view) as RecyclerView;
+            ListView.SetLayoutManager (new LinearLayoutManager (view.Context));
+        }
 
-		void ClearSubviews ()
-		{
-			ListView = null;
-		}
+        void ClearSubviews ()
+        {
+            ListView = null;
+        }
 
-		#endregion
+        #endregion
 
-		#region Fragment Lifecycle
+        #region Fragment Lifecycle
 
-		public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Android.OS.Bundle savedInstanceState)
-		{
-			var view = inflater.Inflate (Resource.Layout.ContactsSearchFragment, container, false);
-			FindSubviews (view);
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Android.OS.Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.ContactsSearchFragment, container, false);
+            FindSubviews (view);
             Adapter = new ContactsSearchAdapter (this);
-			ListView.SetAdapter (Adapter);
-			return view;
-		}
+            ListView.SetAdapter (Adapter);
+            return view;
+        }
 
-		public override void OnDestroyView ()
-		{
-			ClearSubviews ();
-			base.OnDestroyView ();
-		}
+        public override void OnDestroyView ()
+        {
+            ClearSubviews ();
+            base.OnDestroyView ();
+        }
 
-		#endregion
+        #endregion
 
-		#region Public API
+        #region Public API
 
-		public void SearchForText (string searchText)
-		{
-            Adapter.Searcher.SearchFor (searchText);
-		}
+        public void SearchForText (string searchText)
+        {
+            Adapter.Searcher.Search (searchText);
+        }
 
-		public void StartServerSearch ()
-		{
-		}
+        public void StartServerSearch ()
+        {
+        }
 
-		#endregion
+        #endregion
 
-		#region Adapter Listener
+        #region Adapter Listener
 
         public void OnContactSelected (McContact contact)
-		{
-			ShowContact (contact);
-		}
+        {
+            ShowContact (contact);
+        }
 
-		#endregion
+        #endregion
 
-		#region Private Helpers
+        #region Private Helpers
 
         void ShowContact (McContact contact)
-		{
+        {
             var intent = ContactViewActivity.BuildIntent (Activity, contact);
             StartActivity (intent);
         }
 
-		#endregion
-	}
+        #endregion
+    }
 
-	public class ContactsSearchAdapter : RecyclerView.Adapter
-	{
+    public class ContactsSearchAdapter : RecyclerView.Adapter
+    {
 
-		public interface Listener
-		{
+        public interface Listener
+        {
             void OnContactSelected (McContact contact);
-		}
+        }
 
-        public ContactsGeneralSearch Searcher { get; private set; }
-        List<McContactEmailAddressAttribute> Results;
-		WeakReference<Listener> WeakListener;
+        public ContactSearcher Searcher { get; private set; }
+        ContactSearchResults Results;
+        WeakReference<Listener> WeakListener;
 
         public ContactsSearchAdapter (Listener listener) : base ()
-		{
-			WeakListener = new WeakReference<Listener> (listener);
-            Searcher = new ContactsGeneralSearch (UpdateResults);
-            Results = new List<McContactEmailAddressAttribute> ();
-		}
-
-        void UpdateResults (string searchString, List<McContactEmailAddressAttribute> results)
         {
-        	Results = results;
+            WeakListener = new WeakReference<Listener> (listener);
+            Searcher = new ContactSearcher ();
+            Searcher.ResultsFound += UpdateResults;
+        }
+
+        void UpdateResults (object sender, ContactSearchResults results)
+        {
+            Results = results;
             NotifyDataSetChanged ();
         }
 
-		public override int ItemCount {
-			get {
-                return Results.Count;
-			}
-		}
+        public override int ItemCount {
+            get {
+                return Results?.ContactIds.Length ?? 0;
+            }
+        }
 
-		public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
-		{
+        public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
+        {
             var holder = ContactViewHolder.Create (parent);
-			holder.ContentView.Click += (sender, e) => {
-				ItemClicked (holder.AdapterPosition);
-			};
-			return holder;
-		}
+            holder.ContentView.Click += (sender, e) => {
+                ItemClicked (holder.AdapterPosition);
+            };
+            return holder;
+        }
 
-		public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
-		{
+        McContact GetContact (int position)
+        {
+            var id = Results.ContactIds [position];
+            return McContact.QueryById<McContact> (id);
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
+        {
             var contactHolder = (holder as ContactViewHolder);
-            var emailAttribute = Results [position];
-            var contact = emailAttribute.GetContact ();
-            contactHolder.SetContact (contact);
+            var contact = GetContact (position);
+            if (contact != null) {
+                contactHolder.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+                contactHolder.ContentView.Visibility = ViewStates.Visible;
+            } else {
+                contactHolder.ContentView.Visibility = ViewStates.Invisible;
+            }
             var values = contactHolder.BackgroundView.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.WindowBackground });
             contactHolder.BackgroundView.SetBackgroundResource (values.GetResourceId (0, 0));
-		}
+        }
 
-		void ItemClicked (int position)
-		{
-			Listener listener;
-			if (WeakListener.TryGetTarget (out listener)) {
-                var emailAttribute = Results [position];
-                var contact = emailAttribute.GetContact ();
+        void ItemClicked (int position)
+        {
+            Listener listener;
+            if (WeakListener.TryGetTarget (out listener)) {
+                var contact = GetContact (position);
                 if (contact != null) {
                     listener.OnContactSelected (contact);
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 }

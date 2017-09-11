@@ -1365,21 +1365,36 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (ContactCellIdentifier) as ContactCell;
                 cell.SeparatorInset = new UIEdgeInsets (0.0f, 64.0f, 0.0f, 0.0f);
                 var contact = GetContact (indexPath.Row);
-                cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+                if (contact != null) {
+                    cell.SwipeView.Hidden = false;
+                    cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+                } else {
+                    cell.SwipeView.Hidden = true;
+                }
                 return cell;
             }
             if (indexPath.Section == LocalMessagesSection) {
                 var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                 var message = Messages.GetCachedMessage (indexPath.Row);
                 var thread = Messages.GetEmailThread (indexPath.Row);
-                cell.SetMessage (message, thread.MessageCount);
+                if (message != null && thread != null) {
+                    cell.SetMessage (message, thread.MessageCount);
+                    cell.SwipeView.Hidden = false;
+                } else {
+                    cell.SwipeView.Hidden = true;
+                }
                 return cell;
             }
             if (indexPath.Section == ServerMessagesSection) {
                 var cell = tableView.DequeueReusableCell (MessageCellIdentifier) as MessageCell;
                 var message = ServerMessages.GetCachedMessage (indexPath.Row);
                 var thread = ServerMessages.GetEmailThread (indexPath.Row);
-                cell.SetMessage (message, thread.MessageCount);
+                if (message != null && thread != null) {
+                    cell.SetMessage (message, thread.MessageCount);
+                    cell.SwipeView.Hidden = false;
+                } else {
+                    cell.SwipeView.Hidden = true;
+                }
                 return cell;
             }
             if (indexPath.Section == ServerPlaceholderSection) {
@@ -1407,6 +1422,7 @@ namespace NachoClient.iOS
                 ShowMessage (message);
             } else if (indexPath.Section == ServerPlaceholderSection) {
                 if (!ServerSearchStarted) {
+                    ServerSearchStarted = true;
                     ServerSearcher.Search (Query);
                     TableView.DeselectRow (indexPath, animated: true);
                 }

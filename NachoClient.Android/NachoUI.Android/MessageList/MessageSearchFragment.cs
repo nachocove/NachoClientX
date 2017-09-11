@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.MessageSearchFragment, container, false);
             FindSubviews (view);
             Adapter = new MessageSearchAdapter (this);
-            Adapter.SearchResults.EnterSearchMode (NcApplication.Instance.Account);
+            Adapter.Account = NcApplication.Instance.Account;
             ListView.SetAdapter (Adapter);
             return view;
         }
@@ -74,7 +74,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnDestroyView ()
         {
-            Adapter.SearchResults.ExitSearchMode ();
+            Adapter.Cleanup ();
             ClearSubviews ();
             base.OnDestroyView ();
         }
@@ -85,12 +85,7 @@ namespace NachoClient.AndroidClient
 
         public void SearchForText (string searchText)
         {
-            Adapter.SearchResults.SearchFor (searchText);
-        }
-
-        public void StartServerSearch ()
-        {
-            Adapter.SearchResults.StartServerSearch ();
+            Adapter.Search (searchText);
         }
 
         #endregion
@@ -100,6 +95,11 @@ namespace NachoClient.AndroidClient
         public void OnMessageSelected (McEmailMessage message, McEmailMessageThread thread)
         {
             ShowMessage (message);
+        }
+
+        public void OnContactSelected (McContact contact)
+        {
+            ShowInteractions (contact);
         }
 
         #endregion
@@ -112,70 +112,365 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        void ShowInteractions (McContact contact)
+        {
+            var intent = MessageListActivity.BuildContactIntent (Activity, contact);
+            StartActivity (intent);
+        }
+
         #endregion
     }
 
-    public class MessageSearchAdapter : RecyclerView.Adapter
+    public class MessageSearchAdapter : GroupedListRecyclerViewAdapter
     {
 
         public interface Listener
         {
             void OnMessageSelected (McEmailMessage message, McEmailMessageThread thread);
+            void OnContactSelected (McContact contact);
         }
-        
-        public EmailSearch SearchResults { get; private set; }
+
         WeakReference<Listener> WeakListener;
+
+        EmailSearcher Searcher;
+        EmailServerSearcher ServerSearcher;
+        EmailSearchResults Results;
+        NachoEmailMessages Messages;
+        NachoEmailMessages ServerMessages;
+        string Query;
+        bool ServerSearchStarted;
+
+        int _GroupCount;
+        int ContactsGroupPosition;
+        int MessagesGroupPosition;
+        int ServerMessagesGroupPosition;
+        int ServerPlaceholderGroupPosition;
+
+        enum ViewType
+        {
+            Contact,
+            Message,
+            ServerPlaceholder
+        }
+
+        public McAccount Account {
+            get {
+                return Searcher.Account;
+            }
+            set {
+                Searcher.Account = value;
+                ServerSearcher.Account = value;
+            }
+        }
 
         public MessageSearchAdapter (Listener listener) : base ()
         {
             WeakListener = new WeakReference<Listener> (listener);
-            SearchResults = new EmailSearch (UpdateResults);
+            Searcher = new EmailSearcher ();
+            Searcher.ResultsFound += UpdateResults;
+            ServerSearcher = new EmailServerSearcher ();
+            ServerSearcher.ResultsFound += UpdateServerResults;
         }
 
-        void UpdateResults (string searchString, List<McEmailMessageThread> results)
+        public void Search (string query)
         {
+            Query = query;
+            Searcher.Search (query);
+            ServerMessages = null;
+            ServerSearchStarted = false;
+            ReloadServerGroup ();
+        }
+
+        void UpdateResults (object sender, EmailSearchResults results)
+        {
+            Results = results;
+            Messages = new NachoPrequeriedEmailMessages (results.MessageIds);
+            ReloadData ();
+        }
+
+        void UpdateServerResults (object sender, int [] messageIds)
+        {
+            ServerMessages = new NachoPrequeriedEmailMessages (messageIds);
+            ReloadServerGroup ();
+        }
+
+        public void Cleanup ()
+        {
+            Searcher.ResultsFound -= UpdateResults;
+            ServerSearcher.ResultsFound -= UpdateServerResults;
+            ServerSearcher.Cleanup ();
+        }
+
+        void ReloadData ()
+        {
+            _GroupCount = 0;
+            ContactsGroupPosition = -1;
+            MessagesGroupPosition = -1;
+            ServerMessagesGroupPosition = -1;
+            ServerPlaceholderGroupPosition = -1;
+            if (Results != null && Results.ContactIds.Length > 0) {
+                ContactsGroupPosition = _GroupCount++;
+            }
+            MessagesGroupPosition = _GroupCount++;
+            if (!string.IsNullOrEmpty (Query)) {
+                if (ServerMessages != null && ServerMessages.Count () > 0) {
+                    ServerMessagesGroupPosition = _GroupCount++;
+                } else {
+                    ServerPlaceholderGroupPosition = _GroupCount++;
+                }
+            }
             NotifyDataSetChanged ();
         }
 
-        public override int ItemCount {
-            get {
-                return SearchResults.Count ();
+        void ReloadServerGroup ()
+        {
+            var serverGroupPosition = -1;
+            if (ServerMessagesGroupPosition >= 0) {
+                serverGroupPosition = ServerMessagesGroupPosition;
+            } else if (ServerPlaceholderGroupPosition >= 0) {
+                serverGroupPosition = ServerPlaceholderGroupPosition;
             }
-        }
-
-        public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
-        {
-            var holder = MessageViewHolder.Create (parent);
-            holder.ContentView.Click += (sender, e) => {
-                ItemClicked (holder.AdapterPosition);
-            };
-            return holder;
-        }
-
-        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
-        {
-            var messageHolder = (holder as MessageViewHolder);
-            var message = SearchResults.GetCachedMessage (position);
-            var thread = SearchResults.GetEmailThread (position);
-            messageHolder.SetMessage (message, thread.MessageCount);
-            if (SearchResults.IncludesMultipleAccounts ()) {
-                messageHolder.IndicatorColor = Util.ColorForAccount (message.AccountId);
+            ServerMessagesGroupPosition = -1;
+            ServerPlaceholderGroupPosition = -1;
+            if (string.IsNullOrEmpty (Query)) {
+                if (serverGroupPosition >= 0) {
+                    _GroupCount--;
+                    NotifyDataSetChanged ();
+                }
             } else {
-                messageHolder.IndicatorColor = 0;
+                if (serverGroupPosition < 0) {
+                    serverGroupPosition = _GroupCount++;
+                }
+                if (ServerMessages != null && ServerMessages.Count () > 0) {
+                    ServerMessagesGroupPosition = serverGroupPosition;
+                } else {
+                    ServerPlaceholderGroupPosition = serverGroupPosition;
+                }
+                NotifyDataSetChanged ();
             }
-            var values = messageHolder.BackgroundView.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.WindowBackground });
-            messageHolder.BackgroundView.SetBackgroundResource (values.GetResourceId (0, 0));
         }
 
-        void ItemClicked (int position)
+        public override int GroupCount {
+            get {
+                return _GroupCount;
+            }
+        }
+
+        public override string GroupHeaderValue (Context context, int groupPosition)
         {
-            Listener listener;
-            if (WeakListener.TryGetTarget (out listener)) {
-                var message = SearchResults.GetCachedMessage (position);
-                var thread = SearchResults.GetEmailThread (position);
+            if (groupPosition == ContactsGroupPosition) {
+                return context.GetString (Resource.String.messages_search_header_contacts);
+            }
+            if (groupPosition == MessagesGroupPosition) {
+                return context.GetString (Resource.String.messages_search_header_messages);
+            }
+            return null;
+        }
+
+        public override int GroupItemCount (int groupPosition)
+        {
+            if (groupPosition == ContactsGroupPosition) {
+                return Results.ContactIds.Length;
+            }
+            if (groupPosition == MessagesGroupPosition) {
+                return Results?.MessageIds.Length ?? 0;
+            }
+            if (groupPosition == ServerMessagesGroupPosition) {
+                return ServerMessages.Count ();
+            }
+            if (groupPosition == ServerPlaceholderGroupPosition) {
+                return 1;
+            }
+            return 0;
+        }
+
+        public override int GetItemViewType (int groupPosition, int position)
+        {
+            if (groupPosition == ContactsGroupPosition) {
+                return (int)ViewType.Contact;
+            }
+            if (groupPosition == MessagesGroupPosition || groupPosition == ServerMessagesGroupPosition) {
+                return (int)ViewType.Message;
+            }
+            if (groupPosition == ServerPlaceholderGroupPosition) {
+                return (int)ViewType.ServerPlaceholder;
+            }
+            return 0;
+        }
+
+        public override RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType)
+        {
+            switch ((ViewType)viewType) {
+            case ViewType.Contact:
+                return ContactViewHolder.Create (parent);
+            case ViewType.Message:
+                return MessageViewHolder.Create (parent);
+            case ViewType.ServerPlaceholder:
+                return BasicItemViewHolder.Create (parent);
+            }
+            return null;
+        }
+
+        public override void OnBindHeaderViewHolder (RecyclerView.ViewHolder holder, int groupPosition)
+        {
+            base.OnBindHeaderViewHolder (holder, groupPosition);
+            var values = holder.ItemView.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.WindowBackground });
+            holder.ItemView.SetBackgroundResource (values.GetResourceId (0, 0));
+        }
+
+        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            var values = holder.ItemView.Context.Theme.ObtainStyledAttributes (new int [] { Android.Resource.Attribute.WindowBackground });
+            if (groupPosition == ContactsGroupPosition) {
+                var contact = GetContact (position);
+                var contactHolder = holder as ContactViewHolder;
+                if (contact != null) {
+                    contactHolder.SetContact (contact, contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+                    contactHolder.ContentView.Visibility = ViewStates.Visible;
+                } else {
+                    contactHolder.ContentView.Visibility = ViewStates.Invisible;
+                }
+                contactHolder.BackgroundView.SetBackgroundResource (values.GetResourceId (0, 0));
+            } else if (groupPosition == MessagesGroupPosition || groupPosition == ServerMessagesGroupPosition) {
+                var messages = MessagesGroupPosition == ServerMessagesGroupPosition ? ServerMessages : Messages;
+                var message = messages.GetCachedMessage (position);
+                var thread = messages.GetEmailThread (position);
+                var messageHolder = (holder as MessageViewHolder);
                 if (message != null && thread != null) {
+                    messageHolder.SetMessage (message, thread.MessageCount);
+                    if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                        messageHolder.IndicatorColor = Util.ColorForAccount (message.AccountId);
+                    } else {
+                        messageHolder.IndicatorColor = 0;
+                    }
+                    messageHolder.ContentView.Visibility = ViewStates.Visible;
+                } else {
+                    messageHolder.ContentView.Visibility = ViewStates.Invisible;
+                }
+                messageHolder.BackgroundView.SetBackgroundResource (values.GetResourceId (0, 0));
+            } else if (groupPosition == ServerPlaceholderGroupPosition) {
+                var viewHolder = holder as BasicItemViewHolder;
+                if (ServerMessages == null) {
+                    var format = viewHolder.ItemView.Context.GetString (Resource.String.messages_search_server_format);
+                    viewHolder.SetLabel (string.Format (format, Query));
+                } else {
+                    viewHolder.SetLabel (Resource.String.messages_search_server_no_results);
+                }
+                viewHolder.BackgroundView.SetBackgroundResource (values.GetResourceId (0, 0));
+            }
+        }
+
+        public override void OnViewHolderClick (RecyclerView.ViewHolder holder, int groupPosition, int position)
+        {
+            if (groupPosition == ContactsGroupPosition) {
+                var contact = GetContact (position);
+                if (contact != null && WeakListener.TryGetTarget (out var listener)) {
+                    listener.OnContactSelected (contact);
+                }
+            } else if (groupPosition == MessagesGroupPosition || groupPosition == ServerMessagesGroupPosition) {
+                var messages = MessagesGroupPosition == ServerMessagesGroupPosition ? ServerMessages : Messages;
+                var message = messages.GetCachedMessage (position);
+                var thread = messages.GetEmailThread (position);
+                if (message != null && thread != null && WeakListener.TryGetTarget (out var listener)) {
                     listener.OnMessageSelected (message, thread);
                 }
+            } else if (groupPosition == ServerPlaceholderGroupPosition) {
+                if (!ServerSearchStarted) {
+                    ServerSearchStarted = true;
+                    ServerSearcher.Search (Query);
+                }
+            }
+        }
+
+        McContact GetContact (int index)
+        {
+            // TODO: we could do some caching here
+            var id = Results.ContactIds [index];
+            return McContact.QueryById<McContact> (id);
+        }
+
+        class BasicItemViewHolder : ViewHolder
+        {
+
+            public readonly View BackgroundView;
+            public readonly View ContentView;
+            public readonly TextView LabelView;
+
+            public override View ClickTargetView {
+                get {
+                    return ContentView;
+                }
+            }
+
+            public static BasicItemViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.MessageSearchBasicItem, parent, false);
+                return new BasicItemViewHolder (view);
+            }
+
+            public BasicItemViewHolder (View view) : base (view)
+            {
+                BackgroundView = view.FindViewById (Resource.Id.background);
+                ContentView = view.FindViewById (Resource.Id.content);
+                LabelView = view.FindViewById (Resource.Id.label) as TextView;
+            }
+
+            public void SetLabel (string name)
+            {
+                LabelView.Text = name;
+            }
+
+            public void SetLabel (int nameResource)
+            {
+                var name = ItemView.Context.GetString (nameResource);
+                SetLabel (name);
+            }
+        }
+
+        class ContactViewHolder : ViewHolder
+        {
+
+            public readonly View BackgroundView;
+            public readonly View ContentView;
+            public readonly TextView NameView;
+            public readonly TextView DetailView;
+            public readonly PortraitView PortraitView;
+
+            public override View ClickTargetView {
+                get {
+                    return ContentView;
+                }
+            }
+
+            public static ContactViewHolder Create (ViewGroup parent)
+            {
+                var inflater = LayoutInflater.From (parent.Context);
+                var view = inflater.Inflate (Resource.Layout.MessageSearchContactItem, parent, false);
+                return new ContactViewHolder (view);
+            }
+
+            public ContactViewHolder (View view) : base (view)
+            {
+                BackgroundView = view.FindViewById (Resource.Id.background);
+                ContentView = view.FindViewById (Resource.Id.content);
+                NameView = view.FindViewById (Resource.Id.main_label) as TextView;
+                DetailView = view.FindViewById (Resource.Id.detail_label) as TextView;
+                PortraitView = view.FindViewById (Resource.Id.portrait_view) as PortraitView;
+            }
+
+            public void SetContact (McContact contact, string alternateEmail = null)
+            {
+                var name = contact.GetDisplayName ();
+                var email = alternateEmail ?? contact.GetPrimaryCanonicalEmailAddress ();
+                if (string.IsNullOrWhiteSpace (name) || string.Compare (name, email, StringComparison.OrdinalIgnoreCase) == 0) {
+                    NameView.Text = email;
+                    DetailView.Text = "";
+                } else {
+                    NameView.Text = name;
+                    DetailView.Text = email;
+                }
+                PortraitView.SetPortrait (contact.PortraitId, contact.CircleColor, contact.Initials);
             }
         }
     }

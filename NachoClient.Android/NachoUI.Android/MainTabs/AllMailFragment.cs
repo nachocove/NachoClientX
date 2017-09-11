@@ -108,12 +108,12 @@ namespace NachoClient.AndroidClient
 
         void ShowMessageCompose ()
         {
-        	var intent = MessageComposeActivity.NewMessageIntent (Activity, NcApplication.Instance.Account.Id);
-        	StartActivity (intent);
+            var intent = MessageComposeActivity.NewMessageIntent (Activity, NcApplication.Instance.Account.Id);
+            StartActivity (intent);
         }
 
         #endregion
-        
+
         #region Search
 
         MessageSearchFragment SearchFragment;
@@ -169,7 +169,6 @@ namespace NachoClient.AndroidClient
 
         void SearchViewQueryDidSubmit (object sender, SearchView.QueryTextSubmitEventArgs e)
         {
-            SearchFragment.StartServerSearch ();
         }
 
         #endregion

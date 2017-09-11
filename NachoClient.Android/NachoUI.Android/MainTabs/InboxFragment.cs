@@ -57,13 +57,13 @@ namespace NachoClient.AndroidClient
             // TODO: cancel editing (if active)
             // TODO: cancel row swiping (if active)
 
-			SetEmailMessages (NcEmailManager.Inbox (Account.Id));
+            SetEmailMessages (NcEmailManager.Inbox (Account.Id));
 
             UpdateFilterbar ();
             ReloadTable (); // to clear the table since the new Messages is empty
             HasLoadedOnce = false;
 
-			SetNeedsReload ();
+            SetNeedsReload ();
         }
 
         public bool OnOptionsItemSelected (MainTabsActivity tabActivity, IMenuItem item)
@@ -118,7 +118,7 @@ namespace NachoClient.AndroidClient
         void ShowMessageCompose ()
         {
             var intent = MessageComposeActivity.NewMessageIntent (Activity, NcApplication.Instance.Account.Id);
-			StartActivity (intent);
+            StartActivity (intent);
         }
 
         #endregion
@@ -168,7 +168,7 @@ namespace NachoClient.AndroidClient
                 InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Context.InputMethodService);
                 imm.ShowSoftInput (searchView.FindFocus (), ShowFlags.Implicit);
             });
-        	return true;
+            return true;
         }
 
         void SearchViewQueryTextChanged (object sender, SearchView.QueryTextChangeEventArgs e)
@@ -178,7 +178,6 @@ namespace NachoClient.AndroidClient
 
         void SearchViewQueryDidSubmit (object sender, SearchView.QueryTextSubmitEventArgs e)
         {
-            SearchFragment.StartServerSearch ();
         }
 
         #endregion

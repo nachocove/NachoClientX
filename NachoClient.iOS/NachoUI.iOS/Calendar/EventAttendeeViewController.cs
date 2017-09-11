@@ -14,7 +14,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser, INachoContactDefaultSelector
+    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, ContactPickerViewControllerDelegate, INachoAttendeeListChooser, INachoContactDefaultSelector
     {
 
         protected AttendeeTableViewSource AttendeeSource;
@@ -106,11 +106,67 @@ namespace NachoClient.iOS
             }
         }
 
+        NcEmailAddress ChoosingAddress;
+
         void ChooseAttendee (NcEmailAddress address)
         {
-            var dc = new ContactChooserViewController ();
-            dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-            NavigationController.PushViewController (dc, true);
+            ChoosingAddress = address;
+            var picker = new ContactPickerViewController ();
+            picker.PickerDelegate = this;
+            PresentViewController (new UINavigationController (picker), true, null);
+        }
+
+        public void ContactPickerDidPickContact (ContactPickerViewController vc, McContact contact)
+        {
+            DismissViewController (true, null);
+            var address = ChoosingAddress;
+            ChoosingAddress = null;
+            address.contact = contact;
+            address.address = contact.GetEmailAddress ();
+            NcAssert.True (null != address);
+
+            var mailboxAddress = address.ToMailboxAddress (mustUseAddress: true);
+
+            // FIXME: Deal with bad email address
+            if (null == mailboxAddress) {
+                return;
+            }
+
+            var name = mailboxAddress.Name;
+            if (String.IsNullOrEmpty (name)) {
+                name = mailboxAddress.Address;
+            }
+
+            switch (address.action) {
+            case NcEmailAddress.Action.edit:
+                AttendeeList [address.index].Name = name;
+                AttendeeList [address.index].Email = mailboxAddress.Address;
+                AttendeeList [address.index].AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
+                AttendeeList [address.index].AttendeeTypeIsSet = true;
+                break;
+            case NcEmailAddress.Action.create:
+                // Get rid of any existing attendees with the same e-mail address.
+                AttendeeList.RemoveAll ((McAttendee a) => { return a.Email == mailboxAddress.Address; });
+                var attendee = new McAttendee ();
+                attendee.AccountId = account.Id;
+                attendee.Name = name;
+                attendee.Email = mailboxAddress.Address;
+                attendee.AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
+                attendee.AttendeeTypeIsSet = true;
+                AttendeeList.Add (attendee);
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            UpdateLists ();
+
+        }
+
+        public void ContactPickerDidPickCancel (ContactPickerViewController vc)
+        {
+            ChoosingAddress = null;
+            DismissViewController (true, null);
         }
 
         public void LoadAttendees ()
@@ -334,61 +390,6 @@ namespace NachoClient.iOS
             AttendeeList = tempList;
             ConfigureEventAttendeesView ();
             UpdateLists ();
-        }
-
-        // INachoContactChooser delegate
-        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
-        {
-            NcAssert.True (null != address);
-
-            var mailboxAddress = address.ToMailboxAddress (mustUseAddress: true);
-
-            // FIXME: Deal with bad email address
-            if (null == mailboxAddress) {
-                return;
-            }
-
-            var name = mailboxAddress.Name;
-            if (String.IsNullOrEmpty (name)) {
-                name = mailboxAddress.Address;
-            }
-
-            switch (address.action) {
-            case NcEmailAddress.Action.edit:
-                AttendeeList [address.index].Name = name;
-                AttendeeList [address.index].Email = mailboxAddress.Address;
-                AttendeeList [address.index].AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
-                AttendeeList [address.index].AttendeeTypeIsSet = true;
-                break;
-            case NcEmailAddress.Action.create:
-                // Get rid of any existing attendees with the same e-mail address.
-                AttendeeList.RemoveAll ((McAttendee a) => { return a.Email == mailboxAddress.Address; });
-                var attendee = new McAttendee ();
-                attendee.AccountId = account.Id;
-                attendee.Name = name;
-                attendee.Email = mailboxAddress.Address;
-                attendee.AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
-                attendee.AttendeeTypeIsSet = true;
-                AttendeeList.Add (attendee);
-                break;
-            default:
-                NcAssert.CaseError ();
-                break;
-            }
-            UpdateLists ();
-        }
-
-        // INachoContactChooser delegate
-        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
-        {
-            // This is called when the user presses Enter in an empty search field.  There is nothing to delete.
-        }
-
-        // INachoContactChooser delegate
-        public void DismissINachoContactChooser (INachoContactChooser vc)
-        {
-            vc.Cleanup ();
-            NavigationController.PopToViewController (this, true);
         }
 
         public void EmailSwipeHandler (McContact contact)

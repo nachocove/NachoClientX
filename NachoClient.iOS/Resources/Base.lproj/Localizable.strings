@@ -922,6 +922,12 @@
 /* Section header for messages search */
 "Contacts (search header)" = "Contacts";
 
+/* Prompt for starting a search on the server */
+"Search server for: {0}" = "Search server for: {0}";
+
+/* Message indicating no matches were found on server */
+"Nothing found on server" = "Nothing found on server";
+
 /* Label indicating a refresh just happened */
 "Last updated just now" = "Last updated just now";
 

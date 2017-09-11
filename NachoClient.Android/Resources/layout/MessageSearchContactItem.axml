@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/background"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:id="@+id/content"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="?attr/messageItemPaddingLeft"
+        android:clickable="true"
+        android:background="?attr/selectableItemBackground">
+        <FrameLayout
+            android:id="@+id/portrait_frame"
+            android:layout_marginTop="?attr/messageItemPaddingTop"
+            android:layout_width="40dp"
+            android:layout_height="30dp"
+            android:layout_gravity="top"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginRight="?attr/messageItemPaddingLeft">
+            <nachoclient.androidclient.PortraitView
+                android:id="@+id/portrait_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_gravity="top"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0">
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingRight="?attr/messageItemPaddingRight"
+                android:paddingTop="?attr/messageItemPaddingTop"
+                android:paddingBottom="?attr/messageItemPaddingBottom">
+                <TextView
+                    android:id="@+id/main_label"
+                    tools:text="Some Person"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="left"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textAppearance="?attr/textAppearanceListItem" />
+                <TextView
+                    android:id="@+id/detail_label"
+                    tools:text="some.person@company.com"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="left"
+                    android:textAppearance="?attr/textAppearanceListItemDetail"
+                    android:ellipsize="end"
+                    android:singleLine="true" />
+            </LinearLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorListItemSeparator" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

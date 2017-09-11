@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ContactPickerViewControllerDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent, AccountPickerViewControllerDelegate
+    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, ContactPickerViewControllerDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent, AccountPickerViewControllerDelegate
     {
 
         #region Properties
@@ -543,9 +543,7 @@ namespace NachoClient.iOS
 
         public void ShowContactChooser (NcEmailAddress address)
         {
-            var chooserController = new ContactChooserViewController ();
-            chooserController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
-            FadeCustomSegue.Transition (this, chooserController);
+            // TODO: use new autocomplete
         }
 
         public void ShowContactSearch (NcEmailAddress address)
@@ -622,7 +620,7 @@ namespace NachoClient.iOS
 
         #endregion
     }
-    
+
     public class ComposeFieldLabel : UIView
     {
         public readonly UILabel NameLabel;

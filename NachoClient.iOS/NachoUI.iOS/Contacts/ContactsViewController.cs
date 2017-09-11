@@ -453,16 +453,16 @@ namespace NachoClient.iOS
         void StatusIndCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            switch (s.Status.SubKind){
+            switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_ContactSetChanged:
                 SetNeedsReload ();
-				break;
+                break;
             // Search success means new GAL contacts possibly added
             case NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded:
-				SetNeedsReload ();
-				break;
+                SetNeedsReload ();
+                break;
 
-			}
+            }
         }
 
         #endregion
@@ -575,17 +575,25 @@ namespace NachoClient.iOS
         {
             var cell = tableView.DequeueReusableCell (ContactCellIdentifier) as ContactCell;
             var contact = GetContactAtIndex (indexPath.Row);
-            cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+            if (contact != null) {
+                cell.SwipeView.Hidden = false;
+                cell.SetContact (contact, alternateEmail: contact.GetFirstAttributelMatchingTokens (Results.Tokens));
+            } else {
+                cell.SwipeView.Hidden = true;
+            }
+
             return cell;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             var contact = GetContactAtIndex (indexPath.Row);
-            if (ContactSelected != null) {
-                ContactSelected (this, contact);
-            } else {
-                ShowContact (contact);
+            if (contact != null) {
+                if (ContactSelected != null) {
+                    ContactSelected (this, contact);
+                } else {
+                    ShowContact (contact);
+                }
             }
         }
 

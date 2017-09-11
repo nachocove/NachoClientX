@@ -241,7 +241,7 @@ namespace NachoClient.AndroidClient
     class ContactAddressAdapter : BaseAdapter<EmailAddressField.TokenObject>, IFilterable
     {
 
-        List<McContactEmailAddressAttribute> SearchResults;
+        McContactEmailAddressAttribute [] SearchResults;
 
         public SearchHelper Searcher { get; }
 
@@ -249,18 +249,18 @@ namespace NachoClient.AndroidClient
 
         private class ContactsFilter : Filter
         {
-            public delegate void SearchResultsFound (List<McContactEmailAddressAttribute> searchResults);
+            public delegate void SearchResultsFound (McContactEmailAddressAttribute [] searchResults);
 
             public SearchResultsFound HandleSearch;
 
-            private ContactsEmailSearch searcher;
-            private List<McContactEmailAddressAttribute> cachedResults;
+            private EmailAutocompleteSearcher searcher;
+            private EmailAutocompleteSearchResults cachedResults;
 
             private class ResultsWrapper : Java.Lang.Object
             {
-                public readonly List<McContactEmailAddressAttribute> ContactResults;
+                public readonly McContactEmailAddressAttribute [] ContactResults;
 
-                public ResultsWrapper (List<McContactEmailAddressAttribute> contactResults)
+                public ResultsWrapper (McContactEmailAddressAttribute [] contactResults)
                 {
                     ContactResults = contactResults;
                 }
@@ -268,13 +268,16 @@ namespace NachoClient.AndroidClient
 
             public ContactsFilter ()
             {
-                searcher = new ContactsEmailSearch ((string searchString, List<McContactEmailAddressAttribute> results) => {
-                    cachedResults = results;
-                    if (null != HandleSearch) {
-                        HandleSearch (results);
-                    }
-                });
-                cachedResults = new List<McContactEmailAddressAttribute> ();
+                searcher = new EmailAutocompleteSearcher ();
+                searcher.ResultsFound += UpdateResults;
+            }
+
+            void UpdateResults (object sender, EmailAutocompleteSearchResults results)
+            {
+                cachedResults = results;
+                if (null != HandleSearch) {
+                    HandleSearch (results.EmailAttributes);
+                }
             }
 
             protected override FilterResults PerformFiltering (Java.Lang.ICharSequence constraint)
@@ -285,18 +288,18 @@ namespace NachoClient.AndroidClient
                 // whatever the UI is currently displaying.  (It can't return an empty set of results,
                 // on the list will be temporarily cleared.)
                 if (null == constraint) {
-                    cachedResults = new List<McContactEmailAddressAttribute> ();
+                    cachedResults = null;
                 } else {
                     // I have seen a case where PerformFiltering is called after Cleanup().  We don't
                     // have complete control over when PerformFiltering is called, so deal with the
                     // situation rather than try to prevent it.
                     if (null != searcher) {
-                        searcher.SearchFor (constraint.ToString ());
+                        searcher.Search (constraint.ToString ());
                     }
                 }
                 return new FilterResults () {
-                    Values = new ResultsWrapper (cachedResults),
-                    Count = cachedResults.Count,
+                    Values = new ResultsWrapper (cachedResults?.EmailAttributes ?? new McContactEmailAddressAttribute [0]),
+                    Count = cachedResults?.EmailAttributes.Length ?? 0,
                 };
             }
 
@@ -308,7 +311,8 @@ namespace NachoClient.AndroidClient
 
             public void Cleanup ()
             {
-                searcher.Dispose ();
+                searcher.ResultsFound -= UpdateResults;
+                searcher.Cleanup ();
                 searcher = null;
             }
         }
@@ -316,12 +320,12 @@ namespace NachoClient.AndroidClient
         public ContactAddressAdapter (Context context) : base ()
         {
             Context = context;
-            SearchResults = new List<McContactEmailAddressAttribute> ();
+            SearchResults = new McContactEmailAddressAttribute [0];
             filter = new ContactsFilter ();
             filter.HandleSearch = HandleSearch;
         }
 
-        void HandleSearch (List<McContactEmailAddressAttribute> searchResults)
+        void HandleSearch (McContactEmailAddressAttribute [] searchResults)
         {
             SearchResults = searchResults;
             NotifyDataSetChanged ();
@@ -342,7 +346,7 @@ namespace NachoClient.AndroidClient
 
         public override int Count {
             get {
-                return SearchResults.Count;
+                return SearchResults.Length;
             }
         }
 

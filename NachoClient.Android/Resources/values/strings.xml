@@ -143,6 +143,10 @@
     <string name="messages_filter_hot">Hot</string>
     <string name="messages_filter_unread">Unread</string>
     <string name="messages_filter_focus">Focus</string>
+    <string name="messages_search_server_format">Search server for: {0}</string>
+    <string name="messages_search_server_no_results">Nothing found on server</string>
+    <string name="messages_search_header_contacts">Contacts</string>
+    <string name="messages_search_header_messages">Messages</string>
 
     <!-- Message View -->
     <string name="message_action_hot">Hot</string>

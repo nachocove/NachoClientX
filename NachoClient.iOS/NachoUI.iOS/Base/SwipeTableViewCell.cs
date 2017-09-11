@@ -87,7 +87,7 @@ namespace NachoClient.iOS
 
         public new UIView ContentView { get; private set; }
 
-        private SwipeActionsView SwipeView;
+        public SwipeActionsView SwipeView { get; private set; }
         private UILabel _TextLabel;
 
         public new UILabel TextLabel {

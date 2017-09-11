@@ -553,7 +553,6 @@
     <Compile Include="NachoUI.iOS\Contacts\ContactDetailViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactsViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactEditViewController.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\Contacts\ContactDefaultSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\EditEventViewController.cs" />
     <Compile Include="NachoUI.iOS\Calendar\EventAttendeeViewController.cs" />
@@ -630,7 +629,6 @@
     <Compile Include="NachoUI.iOS\Actions\ActionCheckboxView.cs" />
     <Compile Include="NachoUI.iOS\Calendar\CalendarTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Calendar\AttendeeTableViewSource.cs" />
-    <Compile Include="NachoUI.iOS\Contacts\ContactCellOld.cs" />
     <Compile Include="NachoUI.iOS\Home\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\MessageList\MessageCell.cs" />
     <Compile Include="NachoUI.iOS\Contacts\LabelSelectionViewController.cs" />

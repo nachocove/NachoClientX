@@ -48,7 +48,7 @@ namespace NachoClient.AndroidClient
 
         public virtual int GetFooterViewType (int groupPosition)
         {
-        	return FooterItemViewHolder.VIEW_TYPE;
+            return FooterItemViewHolder.VIEW_TYPE;
         }
 
         public abstract RecyclerView.ViewHolder OnCreateGroupedViewHolder (ViewGroup parent, int viewType);
@@ -94,25 +94,25 @@ namespace NachoClient.AndroidClient
         {
             int groupPosition;
             int itemPosition;
-            GetGroupPosition(position, out groupPosition, out itemPosition);
-            if (itemPosition == HEADER_ITEM_POSITION){
+            GetGroupPosition (position, out groupPosition, out itemPosition);
+            if (itemPosition == HEADER_ITEM_POSITION) {
                 return GetHeaderViewType (groupPosition);
-            }else if (itemPosition == FOOTER_ITEM_POSITION){
+            } else if (itemPosition == FOOTER_ITEM_POSITION) {
                 return GetFooterViewType (groupPosition);
-            }else{
-                return GetItemViewType(groupPosition, itemPosition);
+            } else {
+                return GetItemViewType (groupPosition, itemPosition);
             }
         }
 
         public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
         {
-            switch (viewType){
+            switch (viewType) {
             case HeaderItemViewHolder.VIEW_TYPE:
                 return HeaderItemViewHolder.Create (parent);
             case FooterItemViewHolder.VIEW_TYPE:
                 return FooterItemViewHolder.Create (parent);
             }
-            var holder = OnCreateGroupedViewHolder(parent, viewType) as ViewHolder;
+            var holder = OnCreateGroupedViewHolder (parent, viewType) as ViewHolder;
             holder.ClickTargetView.Click += (sender, e) => {
                 int groupPosition;
                 int itemPosition;
@@ -130,12 +130,12 @@ namespace NachoClient.AndroidClient
             int groupPosition;
             int itemPosition;
             GetGroupPosition (position, out groupPosition, out itemPosition);
-            if (itemPosition == HEADER_ITEM_POSITION){
+            if (itemPosition == HEADER_ITEM_POSITION) {
                 OnBindHeaderViewHolder (holder, groupPosition);
-            }else if (itemPosition == FOOTER_ITEM_POSITION){
+            } else if (itemPosition == FOOTER_ITEM_POSITION) {
                 OnBindFooterViewHolder (holder, groupPosition);
-            }else{
-                OnBindViewHolder(holder, groupPosition, itemPosition);
+            } else {
+                OnBindViewHolder (holder, groupPosition, itemPosition);
             }
         }
 
@@ -145,14 +145,14 @@ namespace NachoClient.AndroidClient
             int groupItemCount;
             groupPosition = 0;
             itemPosition = HEADER_ITEM_POSITION;
-            for (; groupPosition < groupCount; ++groupPosition){
+            for (; groupPosition < groupCount; ++groupPosition) {
                 itemPosition = HEADER_ITEM_POSITION;
-                if (position == 0){
+                if (position == 0) {
                     return;
                 }
                 position -= 1;
-                groupItemCount = GroupItemCount(groupPosition);
-                if (position < groupItemCount){
+                groupItemCount = GroupItemCount (groupPosition);
+                if (position < groupItemCount) {
                     itemPosition = position;
                     return;
                 }
@@ -240,9 +240,9 @@ namespace NachoClient.AndroidClient
 
             public void SetHeader (string header)
             {
-                if (String.IsNullOrEmpty(header)){
+                if (String.IsNullOrEmpty (header)) {
                     HeaderTextView.Visibility = ViewStates.Gone;
-                }else{
+                } else {
                     HeaderTextView.Visibility = ViewStates.Visible;
                     HeaderTextView.Text = header;
                 }

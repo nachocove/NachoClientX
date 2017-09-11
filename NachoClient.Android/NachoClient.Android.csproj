@@ -1015,6 +1015,8 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\IconAlphaRounded.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\IconBetaRounded.png" />
     <AndroidResource Include="Resources\values-nl\strings.xml" />
+    <AndroidResource Include="Resources\layout\MessageSearchBasicItem.axml" />
+    <AndroidResource Include="Resources\layout\MessageSearchContactItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
