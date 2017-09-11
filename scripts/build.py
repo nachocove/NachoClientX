@@ -153,6 +153,9 @@ class DictWrappedObject(object):
     def __set__(self, name, value):
         self._values[name] = value
 
+    def get(self, name, default=None):
+        return self._values.get(name, default)
+
 
 class BuildConfig(DictWrappedObject):
 
@@ -168,7 +171,8 @@ class BuildConfig(DictWrappedObject):
             ShareBundleId=None,
             CallerIdBundleId=None,
             HockeyAppAppId=None,
-            FileSharingEnabled=False
+            FileSharingEnabled=False,
+            NachoSigningOnly=dict()
         ),
         Android=dict(
             PackageName=None,
@@ -452,7 +456,7 @@ class IOSBuilder(object):
         info_path = self.project_path('Info.plist')
         info = plistlib.readPlist(info_path)
         orig_bundle_id = info['CFBundleIdentifier']
-        info['CFBundleIdentifier'] = self.config.iOS.BundleId
+        info['CFBundleIdentifier'] = self.config.iOS.NachoSigningOnly.get('BundleId', self.config.iOS.BundleId)
         info['CFBundleVersion'] = self.build.number
         info['CFBundleShortVersionString'] = self.build.version_string_without_prerelease
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
@@ -469,8 +473,7 @@ class IOSBuilder(object):
     def edit_callerid_info(self):
         info_path = self.callerid_project_path('Info.plist')
         info = plistlib.readPlist(info_path)
-        orig_bundle_id = info['CFBundleIdentifier']
-        info['CFBundleIdentifier'] = self.config.iOS.CallerIdBundleId
+        info['CFBundleIdentifier'] = self.config.iOS.NachoSigningOnly.get('CallerIdBundleId', self.config.iOS.CallerIdBundleId)
         info['CFBundleVersion'] = self.build.number
         info['CFBundleShortVersionString'] = self.build.version_string_without_prerelease
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
@@ -480,8 +483,7 @@ class IOSBuilder(object):
     def edit_share_info(self):
         info_path = self.share_project_path('Info.plist')
         info = plistlib.readPlist(info_path)
-        orig_bundle_id = info['CFBundleIdentifier']
-        info['CFBundleIdentifier'] = self.config.iOS.ShareBundleId
+        info['CFBundleIdentifier'] = self.config.iOS.NachoSigningOnly.get('ShareBundleId', self.config.iOS.ShareBundleId)
         info['CFBundleVersion'] = self.build.number
         info['CFBundleShortVersionString'] = self.build.version_string_without_prerelease
         info['CFBundleDisplayName'] = self.config.iOS.DisplayName
@@ -491,20 +493,20 @@ class IOSBuilder(object):
     def edit_entitlements(self):
         entitlements_path = self.project_path('Entitlements.plist')
         entitlements = plistlib.readPlist(entitlements_path)
-        entitlements['com.apple.developer.icloud-container-identifiers'] = [self.config.iOS.iCloudContainer]
-        entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
+        entitlements['com.apple.developer.icloud-container-identifiers'] = [self.config.iOS.NachoSigningOnly.get('iCloudContainer', self.config.iOS.iCloudContainer)]
+        entitlements['com.apple.security.application-groups'] = [self.config.iOS.NachoSigningOnly.get('AppGroup', self.config.iOS.AppGroup)]
         plistlib.writePlist(entitlements, entitlements_path)
 
     def edit_callerid_entitlements(self):
         entitlements_path = self.callerid_project_path('Entitlements.plist')
         entitlements = plistlib.readPlist(entitlements_path)
-        entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
+        entitlements['com.apple.security.application-groups'] = [self.config.iOS.NachoSigningOnly.get('AppGroup', self.config.iOS.AppGroup)]
         plistlib.writePlist(entitlements, entitlements_path)
 
     def edit_share_entitlements(self):
         entitlements_path = self.share_project_path('Entitlements.plist')
         entitlements = plistlib.readPlist(entitlements_path)
-        entitlements['com.apple.security.application-groups'] = [self.config.iOS.AppGroup]
+        entitlements['com.apple.security.application-groups'] = [self.config.iOS.NachoSigningOnly.get('AppGroup', self.config.iOS.AppGroup)]
         plistlib.writePlist(entitlements, entitlements_path)
 
     def archive(self):

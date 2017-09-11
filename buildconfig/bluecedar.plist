@@ -22,6 +22,19 @@
 		<string></string>
 		<key>FileSharingEnabled</key>
 		<false/>
+		<key>NachoSigningOnly</key>
+		<dict>
+			<key>BundleId</key>
+			<string>com.nachocove.mail</string>
+			<key>AppGroup</key>
+			<string>group.com.nachocove.mail</string>
+			<key>iCloudContainer</key>
+			<string>iCloud.com.nachocove.mail</string>
+			<key>ShareBundleId</key>
+			<string>com.nachocove.mail.share</string>
+			<key>CallerIdBundleId</key>
+			<string>com.nachocove.mail.callerid</string>
+		</dict>
 	</dict>
 	<key>Android</key>
 	<dict>
