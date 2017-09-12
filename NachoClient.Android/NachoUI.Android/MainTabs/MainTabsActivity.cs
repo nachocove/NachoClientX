@@ -105,6 +105,7 @@ namespace NachoClient.AndroidClient
             base.OnCreate (savedInstanceState);
 
             MainApplication.RegisterHockeyAppUpdateManager (this);
+            MainApplication.StartCrashReporter ();
 
             // Kind of a kludge, but bail out and show the setup activity if we aren't ready to start yet
             if (!NcApplication.ReadyToStartUI ()) {

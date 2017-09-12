@@ -17,12 +17,11 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoClient.Build;
 
-#if HOCKEY_APP
 using HockeyApp;
-#endif
 
 namespace NachoClient.iOS
 {
+
     public class CrashReporter
     {
         public CrashReporter ()
@@ -31,92 +30,92 @@ namespace NachoClient.iOS
 
         public void Start ()
         {
-            if (Arch.SIMULATOR == Runtime.Arch) {
-                // Xaramin does not produce .dSYM files. So, there is nothing to
-                // upload to HockeyApp.
-                //
-                // For an explanation, see:
-                // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
-                Log.Info (Log.LOG_LIFECYCLE, "Crash reporting is disabled on simulator");
-                return;
-            }
 
             if (Debugger.IsAttached) {
                 Log.Info (Log.LOG_LIFECYCLE, "Crash reporting is disabled when debugger is attached");
                 return;
             }
 
-            #if HOCKEY_APP
+            if (string.IsNullOrEmpty (BuildInfo.HockeyAppAppId)) {
 
-            //We MUST wrap our setup in this block to wire up
-            // Mono's SIGSEGV and SIGBUS signals
-            HockeyApp.Setup.EnableCustomCrashReporting (() => {
+                NachoCore.Utils.CrashReporter.Instance.Start ();
 
-                //Get the shared instance
-                var manager = BITHockeyManager.SharedHockeyManager;
+            } else {
 
-                //Configure it to use our APP_ID
-                manager.Configure (BuildInfo.HockeyAppAppId, new HockeyAppCrashDelegate ());
-
-                // Enable automatic reporting
-                manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
-                manager.CrashManager.EnableOnDeviceSymbolication = false;
-                if (BuildInfo.Version.StartsWith ("DEV")) {
-                    manager.DebugLogEnabled = true;
+                if (Arch.SIMULATOR == Runtime.Arch) {
+                    // Xaramin does not produce .dSYM files. So, there is nothing to
+                    // upload to HockeyApp.
+                    //
+                    // For an explanation, see:
+                    // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
+                    Log.Info (Log.LOG_LIFECYCLE, "Crash reporting is disabled on simulator");
+                    return;
                 }
 
-                //Start the manager
-                manager.StartManager ();
+                //We MUST wrap our setup in this block to wire up
+                // Mono's SIGSEGV and SIGBUS signals
+                Setup.EnableCustomCrashReporting (() => {
 
-                //Authenticate (there are other authentication options)
-                #if HA_AUTH_ANONYMOUS
-                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.Anonymous;
-                #endif
-                #if HA_AUTH_USER
+                    //Get the shared instance
+                    var manager = BITHockeyManager.SharedHockeyManager;
+
+                    //Configure it to use our APP_ID
+                    manager.Configure (BuildInfo.HockeyAppAppId, new HockeyAppCrashDelegate ());
+
+                    // Enable automatic reporting
+                    manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
+                    manager.CrashManager.EnableOnDeviceSymbolication = false;
+                    if (BuildInfo.Version.StartsWith ("DEV")) {
+                        manager.DebugLogEnabled = true;
+                    }
+
+                    //Start the manager
+                    manager.StartManager ();
+
+                    //Authenticate (there are other authentication options)
+#if HA_AUTH_ANONYMOUS
+                    manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.Anonymous;
+#endif
+#if HA_AUTH_USER
                 manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppUser;
                 manager.Authenticator.Delegate = new HockeyAppAuthenticatorDelegate ();
-                #endif
-                #if HA_AUTH_EMAIL
+#endif
+#if HA_AUTH_EMAIL
                 manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppEmail;
                 manager.Authenticator.AuthenticationSecret = "fc041d7edcdd8b93951be3d4b9dd05d2";
-                #endif
-                manager.Authenticator.AuthenticateInstallation ();
+#endif
+                    manager.Authenticator.AuthenticateInstallation ();
 
-                //Rethrow any unhandled .NET exceptions as native iOS
-                // exceptions so the stack traces appear nicely in HockeyApp
-                AppDomain.CurrentDomain.UnhandledException += (sender, e) => {
-                    try {
-                        var ex = e.ExceptionObject as Exception;
-                        if (null != ex) {
-                            // See if we can get the part of the stack that is getting lost in ThrowExceptionAsNative().
-                            Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex);
+                    //Rethrow any unhandled .NET exceptions as native iOS
+                    // exceptions so the stack traces appear nicely in HockeyApp
+                    AppDomain.CurrentDomain.UnhandledException += (sender, e) => {
+                        try {
+                            var ex = e.ExceptionObject as Exception;
+                            if (null != ex) {
+                                // See if we can get the part of the stack that is getting lost in ThrowExceptionAsNative().
+                                Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex);
+                            }
+                        } catch {
                         }
-                    } catch {
-                    }
-                    Setup.ThrowExceptionAsNative (e.ExceptionObject);
-                };
+                        Setup.ThrowExceptionAsNative (e.ExceptionObject);
+                    };
 
-                NcApplication.UnobservedTaskException += (sender, e) =>
-                    Setup.ThrowExceptionAsNative (e.Exception);
-            });
-            #endif
+                    NcApplication.UnobservedTaskException += (sender, e) =>
+                        Setup.ThrowExceptionAsNative (e.Exception);
+                });
+            }
         }
 
         public void SetCrashFolder ()
         {
-            #if HOCKEY_APP
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
             }
-            #endif
         }
 
     }
-
-    
-    #if HOCKEY_APP
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
     {
@@ -174,5 +173,4 @@ namespace NachoClient.iOS
             });
         }
     }
-    #endif
 }

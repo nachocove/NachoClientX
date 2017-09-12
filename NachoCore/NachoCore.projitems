@@ -433,6 +433,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Index\Utils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Searcher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration62.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Freshdesk.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\CrashReporter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

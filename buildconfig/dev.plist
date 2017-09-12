@@ -20,7 +20,7 @@
 		<string>com.nachocove.nachomail.share</string>
 		<key>CallerIdBundleId</key>
 		<string>com.nachocove.nachomail.callerid</string>
-		<key>HockeyAppId</key>
+		<key>HockeyAppAppId</key>
 		<string></string>
 		<key>FileSharingEnabled</key>
 		<true/>
@@ -39,7 +39,7 @@
 		<string></string>
 		<key>FileProvider</key>
 		<string>com.nachocove.dev.fileprovider</string>
-		<key>HockeyAppId</key>
+		<key>HockeyAppAppId</key>
 		<string></string>
 	</dict>
 	<key>AWS</key>
@@ -58,6 +58,13 @@
 		<string></string>
 		<key>SupportS3Bucket</key>
 		<string></string>
+	</dict>
+	<key>Freshdesk</key>
+	<dict>
+		<key>Endpoint</key>
+		<string>https://support.nachocove.com</string>
+		<key>ApiKey</key>
+		<string>M6nnLyxB7YdFU2B5NqdS</string>
 	</dict>
 	<key>Pinger</key>
 	<dict>

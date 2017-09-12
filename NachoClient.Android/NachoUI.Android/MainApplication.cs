@@ -10,10 +10,8 @@ using NachoPlatform;
 using Android.Content;
 using System.IO;
 using System.Threading;
-#if HOCKEY_APP
 using NachoClient.Build;
 using System.Threading.Tasks;
-#endif
 
 namespace NachoClient.AndroidClient
 {
@@ -126,36 +124,50 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        #region HockeyApp
+        public static void StartCrashReporter ()
+        {
+            if (System.Diagnostics.Debugger.IsAttached) {
+                Log.LOG_LIFECYCLE.Info ("Crash reporting disabled because debugger is attached");
+            } else {
+                CrashReporter.Instance.Start (usingCustomMainHandler: true);
+                // Using an android-specific unhandled exception handler because
+                // The one used by CrashReporter ends up with a null StackTrace, but this
+                // one has a somewhat useful stack trace.  This is a xamarin bug.
+                // See https://bugzilla.xamarin.com/show_bug.cgi?id=54323
+                AndroidEnvironment.UnhandledExceptionRaiser += (sender, e) => {
+                    CrashReporter.Instance.ExceptionHandler (e.Exception);
+                };
+            }
+        }
 
         public static void RegisterHockeyAppUpdateManager (Activity activity)
         {
-#if HOCKEY_APP
             if (BuildInfoHelper.IsDev) {
                 return;
             }
-            NcAssert.False(string.IsNullOrEmpty (BuildInfo.HockeyAppAppId));
+            if (string.IsNullOrEmpty (BuildInfo.HockeyAppAppId)) {
+                return;
+            }
             if (CheckOnceForUpdates ()) {
                 updateRegistered = true;
                 //Register to with the Update Manager
                 HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
             }
-#endif
         }
 
         public static void UnregisterHockeyAppUpdateManager ()
         {
-#if HOCKEY_APP
             if (updateRegistered) {
                 HockeyApp.UpdateManager.Unregister ();
                 updateRegistered = false;
             }
-#endif
         }
 
         public static void SetupHockeyAppCrashManager (Activity activity)
         {
-#if HOCKEY_APP
+            if (string.IsNullOrEmpty (BuildInfo.HockeyAppAppId)) {
+                return;
+            }
             if (BuildInfoHelper.IsDev) {
                 return;
             }
@@ -166,7 +178,7 @@ namespace NachoClient.AndroidClient
 
             var myListener = new MyCustomCrashManagerListener ();
             // Register the crash manager before Initializing the trace writer
-            HockeyApp.CrashManager.Register (activity, BuildInfo.HockeyAppAppId, myListener); 
+            HockeyApp.CrashManager.Register (activity, BuildInfo.HockeyAppAppId, myListener);
 
             // Initialize the Trace Writer
             HockeyApp.TraceWriter.Initialize (myListener);
@@ -192,10 +204,7 @@ namespace NachoClient.AndroidClient
             };
 
             Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
-#endif
         }
-
-#if HOCKEY_APP
 
         static bool updateRegistered = false;
 
@@ -274,9 +283,5 @@ namespace NachoClient.AndroidClient
         }
 
         static bool IsHockeyInitialized;
-
-#endif
-
-        #endregion
     }
 }

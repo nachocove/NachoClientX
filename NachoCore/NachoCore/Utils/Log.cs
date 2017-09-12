@@ -151,8 +151,11 @@ namespace NachoCore.Utils
             if (ConsoleLevel.HasFlag (Level.Debug)) {
                 ConsoleLog.Debug (fmt, list);
             }
-            if (!TelemetryDisabled && TelemetryLevel.HasFlag (Level.Debug)) {
-                NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Debug, fmt, list);
+            if (TelemetryLevel.HasFlag (Level.Debug)) {
+                CrashReporter.Instance.ReceiveLog (Level.Debug, this.Subsystem, fmt, list);
+                if (!TelemetryDisabled) {
+                    NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Debug, fmt, list);
+                }
             }
         }
 
@@ -161,8 +164,11 @@ namespace NachoCore.Utils
             if (ConsoleLevel.HasFlag (Level.Info)) {
                 ConsoleLog.Info (fmt, list);
             }
-            if (!TelemetryDisabled && TelemetryLevel.HasFlag (Level.Info)) {
-                NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Info, fmt, list);
+            if (TelemetryLevel.HasFlag (Level.Info)) {
+                CrashReporter.Instance.ReceiveLog (Level.Info, this.Subsystem, fmt, list);
+                if (!TelemetryDisabled) {
+                    NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Info, fmt, list);
+                }
             }
         }
 
@@ -171,8 +177,11 @@ namespace NachoCore.Utils
             if (ConsoleLevel.HasFlag (Level.Warn)) {
                 ConsoleLog.Warn (fmt, list);
             }
-            if (!TelemetryDisabled && TelemetryLevel.HasFlag (Level.Warn)) {
-                NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Warn, fmt, list);
+            if (TelemetryLevel.HasFlag (Level.Warn)) {
+                CrashReporter.Instance.ReceiveLog (Level.Warn, this.Subsystem, fmt, list);
+                if (!TelemetryDisabled) {
+                    NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Warn, fmt, list);
+                }
             }
         }
 
@@ -181,8 +190,11 @@ namespace NachoCore.Utils
             if (ConsoleLevel.HasFlag (Level.Error)) {
                 ConsoleLog.Error (fmt, list);
             }
-            if (!TelemetryDisabled && TelemetryLevel.HasFlag (Level.Error)) {
-                NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Error, fmt, list);
+            if (TelemetryLevel.HasFlag (Level.Error)) {
+                CrashReporter.Instance.ReceiveLog (Level.Error, this.Subsystem, fmt, list);
+                if (!TelemetryDisabled) {
+                    NcApplication.Instance.TelemetryService.RecordLogEvent (this, Level.Error, fmt, list);
+                }
             }
         }
 

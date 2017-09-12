@@ -197,6 +197,10 @@ class BuildConfig(DictWrappedObject):
             Hostname=None,
             RootCert=None,
             CrlSigningCerts=[]
+        ),
+        Freshdesk=dict(
+            Endpoint=None,
+            ApiKey=None
         )
     )
 
@@ -231,6 +235,10 @@ class BuildInfoFile:
         self.add('AwsAuthRoleArn', config.AWS.AuthRoleArn)
         self.add('S3Bucket', config.AWS.S3Bucket)
         self.add('SupportS3Bucket', config.AWS.SupportS3Bucket)
+
+        # Freshdesk
+        self.add('FreshdeskEndpoint', config.Freshdesk.Endpoint)
+        self.add('FreshdeskApiKey', config.Freshdesk.ApiKey)
 
     def write(self, path):
         """
@@ -434,7 +442,7 @@ class IOSBuilder(object):
         path = self.project_path('BuildInfo.cs')
         infofile = BuildInfoFile()
         infofile.populate_with_config(self.build, self.config)
-        infofile.add('HockeyAppAppId', self.config.iOS.HockeyAppId)
+        infofile.add('HockeyAppAppId', self.config.iOS.HockeyAppAppId)
         infofile.add('AppGroup', self.config.iOS.AppGroup)
         infofile.add('ShareBundleId', self.config.iOS.ShareBundleId)
         infofile.add('CallerIdBundleId', self.config.iOS.CallerIdBundleId)
@@ -594,6 +602,7 @@ class AndroidBuilder(object):
         path = self.project_path('BuildInfo.cs')
         infofile = BuildInfoFile()
         infofile.populate_with_config(self.build, self.config)
+        infofile.add('HockeyAppAppId', self.config.Android.HockeyAppAppId)
         infofile.add('PackageName', self.config.Android.PackageName)
         infofile.add('FileProvider', self.config.Android.FileProvider)
         infofile.add('AppNameString', "@string/%s" % self.config.Android.AppNameString)

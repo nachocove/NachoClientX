@@ -87,7 +87,7 @@ namespace NachoPlatform
 
         public string Os ()
         {
-            return "Android " + Build.VERSION.Release;
+            return "Android " + (Build.VERSION.Release ?? "?");
         }
         public OsCode BaseOs ()
         {

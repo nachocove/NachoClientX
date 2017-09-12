@@ -18,7 +18,7 @@
 		<string>com.nachocove.nachomail.alpha.share</string>
 		<key>CallerIdBundleId</key>
 		<string>com.nachocove.nachomail.alpha.callerid</string>
-		<key>HockeyAppId</key>
+		<key>HockeyAppAppId</key>
 		<string></string>
 		<key>FileSharingEnabled</key>
 		<true/>
@@ -37,7 +37,7 @@
 		<string></string>
 		<key>FileProvider</key>
 		<string>com.nachocove.alpha.fileprovider</string>
-		<key>HockeyAppId</key>
+		<key>HockeyAppAppId</key>
 		<string></string>
 		<key>SigningKeystore</key>
 		<string>com.nachocove.nachomail.alpha</string>
