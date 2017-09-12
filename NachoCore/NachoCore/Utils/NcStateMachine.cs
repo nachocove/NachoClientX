@@ -295,7 +295,7 @@ namespace NachoCore.Utils
                     lock (LockObj) {
                         InProcess = false;
                     }
-                    Log.Error (Log.LOG_SYS, "FireLoop Exception: {0}", ex);
+                    // Log.Error (Log.LOG_SYS, "FireLoop Exception: {0}", ex);
                     throw;
                 }
                 PossiblyLeave:

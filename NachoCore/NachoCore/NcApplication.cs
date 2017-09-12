@@ -337,7 +337,7 @@ namespace NachoCore
                 // Don't let AWS SDK exception brain damage take down the app.
                 return true;
             }
-            Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
+            // Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
             return false;
         }
 
