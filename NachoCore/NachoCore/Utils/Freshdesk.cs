@@ -36,7 +36,7 @@ namespace NachoCore.Utils
             var ticket = new JObject ();
             ticket.Add ("subject", string.Format ("{0}: {1}", report.Exception, report.Message));
             ticket.Add ("description_html", @"<pre style=""font-family: monospace; word-wrap: normal; white-space: pre; overflow: auto; padding: 0 0 20px 0;"">" + report.ToString ().Replace ("&", "&amp;").Replace ("<", "&lt;") + "</pre>");
-            ticket.Add ("email", "owens@nachocove.com");
+            ticket.Add ("email", "crashreporter@nachocove.com");
             ticket.Add ("priority", 3); // 3 = High (see https://freshdesk.com/api#ticket)
             ticket.Add ("status", 2); // 2 = Open
             post.Add ("helpdesk_ticket", ticket);
