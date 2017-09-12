@@ -514,6 +514,15 @@ namespace NachoClient.iOS
         ContactSearchResults Results;
         public event EventHandler<McContact> ContactSelected;
 
+        public bool SearchNameAndEmailsOnly {
+            get {
+                return Searcher.SearchNameAndEmailsOnly;
+            }
+            set {
+                Searcher.SearchNameAndEmailsOnly = value;
+            }
+        }
+
         public ContactSearchResultsViewController () : base ()
         {
             Searcher = new ContactSearcher ();

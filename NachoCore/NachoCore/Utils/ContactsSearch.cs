@@ -70,10 +70,11 @@ namespace NachoCore.Utils
     {
 
         public int MaxResults = 100;
+        public bool SearchNameAndEmailsOnly;
 
         protected override ContactSearchResults SearchResults (string query)
         {
-            var results = NcIndex.Main.SearchContacts (query, maxResults: MaxResults);
+            var results = SearchNameAndEmailsOnly ? NcIndex.Main.SearchContactsNameAndEmails (query, maxResults: MaxResults) : NcIndex.Main.SearchContacts (query, maxResults: MaxResults);
             var ids = results.Documents.Select (r => r.IntegerContactId).ToArray ();
             return new ContactSearchResults (query, results.ParsedTokens, ids);
         }

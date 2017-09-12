@@ -105,7 +105,7 @@ namespace NachoClient.iOS
                 SearchResultsViewController.Cleanup ();
                 SearchResultsViewController = null;
             }
-            
+
             base.Cleanup ();
         }
 
@@ -152,6 +152,7 @@ namespace NachoClient.iOS
         {
             if (SearchController == null) {
                 SearchResultsViewController = new ContactSearchResultsViewController () { IsLongLived = true };
+                SearchResultsViewController.SearchNameAndEmailsOnly = true;
                 SearchResultsViewController.ContactSelected += SearchContactSelected;
                 SearchController = new NachoSearchController (SearchResultsViewController);
                 SearchController.Delegate = this;
