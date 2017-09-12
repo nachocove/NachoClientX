@@ -13,26 +13,83 @@ using Newtonsoft.Json.Linq;
 namespace NachoCore.Utils
 {
 
+    /// <summary>
+    /// A crash reporter than can handle uncaught exception and save crash logs that can later be
+    /// reported to a bug/support ticketing system.  The singleton <see cref="Instance"/> property
+    /// is the only crash reporter that can be created and used because we only need one central
+    /// place to handle uncaught exceptions.
+    /// </summary>
     public class CrashReporter
     {
 
-        public static readonly CrashReporter Instance = new CrashReporter (DefaultCrashFolder);
-        public static string Platform = NachoPlatform.Device.Instance.Os ();
-        public static string NachoVersion = NcApplication.GetVersionString ();
+        #region Getting a Crash Reporter
 
+        /// <summary>
+        /// The singleton shared crash reporter instanace
+        /// </summary>
+        public static readonly CrashReporter Instance = new CrashReporter (DefaultCrashFolder);
+
+        /// <summary>
+        /// Create a new crash reporter with the given folder for report storage
+        /// </summary>
+        /// <param name="crashFolder">Crash folder.</param>
+		CrashReporter (string crashFolder)
+        {
+            CrashFolder = crashFolder;
+        }
+
+        /// <summary>
+        /// The default folder for storing crash reports, used by <see cref="Instance"/>
+        /// </summary>
+        /// <value>The default crash folder.</value>
         static string DefaultCrashFolder {
             get {
                 return Path.Combine (NcApplication.GetDataDirPath (), "crashes");
             }
         }
 
-        readonly string CrashFolder;
+        /// <summary>
+        /// The folder in which to store reports for this instance.
+        /// </summary>
+		readonly string CrashFolder;
 
-        CrashReporter (string crashFolder)
-        {
-            CrashFolder = crashFolder;
-        }
+        #endregion
 
+        #region Cached Properties
+
+        /// <summary>
+        /// A cached value for the operating system name and version, to be saved in each crash report
+        /// </summary>
+        /// <remarks>
+        /// The original design used <see cref="NachoPlatform.Device.Os()"/> directly when constructing
+        /// a crash report, but Android's Device implementation would crash at that time.  Since the value
+        /// doesn't change during the lifetime of the app, we can just cache the value here when the app
+        /// starts up, and access it when creating a <see cref="CrashReport"/>
+        /// </remarks>
+        public static string Platform = NachoPlatform.Device.Instance.Os ();
+
+        /// <summary>
+        /// A cached value for the nacho mail version version, to be saved in each crash report
+        /// </summary>
+        /// <remarks>
+        /// While this doesn't suffer the same crash on Android as <see cref="Platform"/>, it shares
+        /// the same trait of never changing during the app lifetime, so for consistency, it's also
+        /// cached here at app startup.
+        /// </remarks>
+        public static string NachoVersion = NcApplication.GetVersionString ();
+
+        #endregion
+
+        #region Application Lifecycle
+
+        /// <summary>
+        /// Typically called at app startup, register exception handlers and report any crashes from
+        /// the previous app run.  On Android, the default <see cref="AppDomain.CurrentDomain.UnhandledException"/>
+        /// listener gets called with exceptions that have no stack trace, so on Android we use an Android-specific
+        /// listener.  The usingCustomMainHandler argument allows the caller to specify that it's using its own
+        /// listener.
+        /// </summary>
+        /// <param name="usingCustomMainHandler">Set to <c>true</c> if the caller defines its own unhandled exception handler</param>
         public void Start (bool usingCustomMainHandler = false)
         {
             ReportCrashes ();
@@ -47,10 +104,23 @@ namespace NachoCore.Utils
             }
 
             NcApplication.UnobservedTaskException += (sender, e) => {
-                ExceptionHandler (e.Exception);
+                if (e.Exception.InnerException != null) {
+                    ExceptionHandler (e.Exception.InnerException);
+                } else {
+                    ExceptionHandler (e.Exception);
+                }
             };
         }
 
+        #endregion
+
+        #region Custom Crash Reporting
+
+        /// <summary>
+        /// Can by called by a custom exception listener to report an uncaught exception that this reporter isn't listening for.
+        /// Used by Android, which has a platform-specific unhandled exception listener.
+        /// </summary>
+        /// <param name="e">The exception to report as a crash</param>
         public void ExceptionHandler (Exception e)
         {
             var logs = GetLogs ();
@@ -58,7 +128,19 @@ namespace NachoCore.Utils
             report.Save (CrashFolder);
         }
 
-        public void ReportCrashes ()
+        #endregion
+
+        #region Sending Reports to External Service
+
+        /// <summary>
+        /// Called on startup, scan the crash folder for reports, and send each to an external service.
+        /// </summary>
+        /// <remarks>
+        /// The design here is to scan the <see cref="CrashFolder"/> on a background task, and then call
+        /// the <see cref="Report(string[])"/> method back on the main thread.  We want to avoid any filesystem
+        ///  work on the main thread.
+        /// </remarks>
+        void ReportCrashes ()
         {
             NcTask.Run (() => {
                 try {
@@ -74,14 +156,26 @@ namespace NachoCore.Utils
             }, "CrashReporter.ReportCrashes");
         }
 
-        Queue<string> ReportQueue;
-
+        /// <summary>
+        /// Report all the filenames.
+        /// </summary>
+        /// <param name="filenames">Filenames.</param>
         void Report (string [] filenames)
         {
             ReportQueue = new Queue<string> (filenames);
             ReportNextInQueue ();
         }
 
+        /// <summary>
+        /// A queue of reports that need to be sent.  Since each report is sent via an async method
+        /// and we want to do one at a time, a queue works well because we can check it after each
+        /// send completes and send the next queued report until the queue is empty.
+        /// </summary>
+        Queue<string> ReportQueue;
+
+        /// <summary>
+        /// Check the <see cref="ReportQueue"/> and send the next one, if any
+        /// </summary>
         void ReportNextInQueue ()
         {
             if (ReportQueue.TryDequeue (out var filename)) {
@@ -89,6 +183,14 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Report a given crash to an external service
+        /// </summary>
+        /// <remarks>
+        /// The reporting is done on a background task to avoid any filesystem reads or http work on the main thread
+        /// </remarks>
+        /// <param name="filename">Filename.</param>
+        /// <param name="complete">Complete.</param>
         void Report (string filename, Action complete)
         {
             NcTask.Run (() => {
@@ -117,9 +219,54 @@ namespace NachoCore.Utils
             }, "CrashReporter.Report");
         }
 
+        #endregion
+
+        #region Log Capturing
+
+        /// <summary>
+        /// Typically called by the <see cref="Log"/> system, this allows the crash reporter
+        /// to remember recent logs and include them in a crash report.
+        /// </summary>
+        /// <param name="level">The log level</param>
+        /// <param name="category">The log category/tag</param>
+        /// <param name="fmt">The log message, with optional format placeholder</param>
+        /// <param name="args">The format arguments for the log message, if any</param>
+        public void ReceiveLog (Log.Level level, string category, string fmt, object [] args)
+        {
+            if (level == Log.Level.Debug) {
+                return;
+            }
+            var record = new LogRecord {
+                Level = level,
+                Category = category,
+                Message = fmt,
+                Arguments = args,
+                ThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId
+            };
+            LogQueue.Enqueue (record);
+            if (LogLimit > 0) {
+                while (LogQueue.Count > LogLimit) {
+                    LogQueue.TryDequeue (out var _);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The maximum number of logs to remember in a crash report.
+        /// </summary>
+        /// <remarks>
+        /// This number of 100 was just a guess at what might work.  We may adjust as needed after some real
+        /// world experience.
+        /// </remarks>
         int LogLimit = 100;
         readonly ConcurrentQueue<LogRecord> LogQueue = new ConcurrentQueue<LogRecord> ();
 
+        /// <summary>
+        /// A log record, with the log message and metadata.  Since we'll be receiving every log message,
+        /// but only writing those that come just before a crash, the idea is to not waste time
+        /// formatting a log message until we actually need to write it out during a crash report.
+        /// So the LogRecord remembers the log information without doing any work up front.
+        /// </summary>
         class LogRecord
         {
             public Log.Level Level;
@@ -145,26 +292,10 @@ namespace NachoCore.Utils
             }
         }
 
-        public void ReceiveLog (Log.Level level, string category, string fmt, object [] args)
-        {
-            if (level == Log.Level.Debug) {
-                return;
-            }
-            var record = new LogRecord {
-                Level = level,
-                Category = category,
-                Message = fmt,
-                Arguments = args,
-                ThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId
-            };
-            LogQueue.Enqueue (record);
-            if (LogLimit > 0) {
-                while (LogQueue.Count > LogLimit) {
-                    LogQueue.TryDequeue (out var _);
-                }
-            }
-        }
-
+        /// <summary>
+        /// Get the log messages that have been remembered, formatted and timestamped
+        /// </summary>
+        /// <returns>The logs.</returns>
         string [] GetLogs ()
         {
             var records = new List<LogRecord> (LogQueue);
@@ -173,21 +304,18 @@ namespace NachoCore.Utils
             });
             return records.Select (r => r.Line).ToArray ();
         }
+
+        #endregion
     }
 
+    /// <summary>
+    /// A single crash report with the exception and log information related to the crash
+    /// </summary>
     public class CrashReport
     {
 
-        const string VersionJsonKey = "version";
-        const string TimestampJsonKey = "timestamp";
-        const string ExceptionJsonKey = "exception";
-        const string MessageJsonKey = "message";
-        const string LogsJsonKey = "logs";
-        const string StackJsonKey = "stacktrace";
-        const string PlatformJsonKey = "platform";
-        const string NachoVersionJsonKey = "nacho_version";
-
         const int LatestVersion = 1;
+
         public int Version = LatestVersion;
         public DateTime Timestamp = DateTime.UtcNow;
         public string Exception;
@@ -197,6 +325,13 @@ namespace NachoCore.Utils
         public string Platform;
         public string NachoVersion;
 
+        #region Creating a Crash Report
+
+        /// <summary>
+        /// Create a crash report from an exception and collection of logs
+        /// </summary>
+        /// <param name="exception">Exception.</param>
+        /// <param name="logs">Logs.</param>
         public CrashReport (Exception exception, string [] logs)
         {
             Exception = exception.GetType ().ToString ();
@@ -209,11 +344,33 @@ namespace NachoCore.Utils
             NachoVersion = CrashReporter.NachoVersion;
         }
 
+        /// <summary>
+        /// Private default constructor so only the public constructors are availble
+        /// </summary>
         CrashReport ()
         {
         }
 
-        public static bool TryLoad (string path, out CrashReport report)
+        #endregion
+
+        #region Serialization
+
+        const string VersionJsonKey = "version";
+        const string TimestampJsonKey = "timestamp";
+        const string ExceptionJsonKey = "exception";
+        const string MessageJsonKey = "message";
+        const string LogsJsonKey = "logs";
+        const string StackJsonKey = "stacktrace";
+        const string PlatformJsonKey = "platform";
+        const string NachoVersionJsonKey = "nacho_version";
+
+        /// <summary>
+        /// Read a crash report from disk
+        /// </summary>
+        /// <returns><c>true</c>, if file could be read, <c>false</c> otherwise.</returns>
+        /// <param name="path">The file to load</param>
+        /// <param name="report">The loaded crash report</param>
+		public static bool TryLoad (string path, out CrashReport report)
         {
             report = null;
             try {
@@ -288,6 +445,10 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Save the crash report to disk
+        /// </summary>
+        /// <param name="parentFolder">The folder in which to save the crash report.  A timestamp based filename will be generated automatically.</param>
         public void Save (string parentFolder)
         {
             var filename = Timestamp.ToString ("u").Replace (':', '-') + ".nachocrash";
@@ -329,6 +490,8 @@ namespace NachoCore.Utils
             }
         }
 
+        #endregion
+
         public override string ToString ()
         {
             var lines = new List<string> ();
@@ -346,6 +509,11 @@ namespace NachoCore.Utils
 
     public static class ExceptionExtensions
     {
+        /// <summary>
+        /// Get the stack trace as an array of lines, including lines for inner exceptions
+        /// </summary>
+        /// <returns>The stack.</returns>
+        /// <param name="exception">Exception.</param>
         public static string [] NachoStack (this Exception exception)
         {
             var stack = new List<string> ();
