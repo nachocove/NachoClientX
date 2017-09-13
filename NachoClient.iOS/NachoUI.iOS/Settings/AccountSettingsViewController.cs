@@ -18,7 +18,628 @@ using SafariServices;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks, ISFSafariViewControllerDelegate
+
+    public class AccountSettingsViewController : NachoTableViewController, ISFSafariViewControllerDelegate, ThemeAdopter
+    {
+
+        public McAccount Account;
+        public string PasswordRectifyUrl { get; private set; }
+        public DateTime PasswordExpiry { get; private set; }
+        public BackEndStateEnum ServerIssue { get; private set; }
+        public McServer ServerWithIssue { get; private set; }
+
+        #region Creating a View Controller
+
+        public AccountSettingsViewController () : base (UITableViewStyle.Grouped)
+        {
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Account Settings", "Title for account settings screen");
+        }
+
+        #endregion
+
+        #region Theme
+
+        Theme AdoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != AdoptedTheme) {
+                AdoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
+        }
+
+        #endregion
+
+        #region View Lifecycle
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof (AccountInfoCell), AccountInfoCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ButtonCell), ButtonCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (SwitchCell), SwitchCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (IssueCell), IssueCellIdentifier);
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            ConfigureTable ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
+        }
+
+        #endregion
+
+        #region Table Configuration
+
+        int SectionCount;
+
+        int NameSection = 0;
+        int NameRowCount = 2;
+        int AddrRow = 0;
+        int NameRow = 1;
+
+        int IssuesSection = -1;
+        int IssuesRowCount = 0;
+        int PasswordIssueRow = -1;
+        int CertIssueRow = -1;
+        int ServerIssueRow = -1;
+
+        int AdvancedSection = -1;
+        int AdvancedRowCount = 0;
+        int PasswordNoticeRow = -1;
+        int UpdatePasswordRow = -1;
+        int AdvancedSettingsRow = -1;
+
+        int MiscSection = -1;
+        int MiscRowCount = 4;
+        int SignatureRow = 0;
+        int SyncRow = 1;
+        int NotificationsRow = 2;
+        int FastNotifyRow = 3;
+
+        int DefaultsSection = -1;
+        int DefaultsRowCount = 0;
+        int DefaultEmailRow = -1;
+        int DefaultCalendarRow = -1;
+
+        int ActionsSection = -1;
+        int ActionsRowCount = 0;
+        int DeleteActionRow = -1;
+
+        void ConfigureTable ()
+        {
+            int row = 0;
+            SectionCount = 0;
+
+            NameSection = -1;
+            IssuesSection = -1;
+            AdvancedSection = -1;
+            MiscSection = -1;
+            DefaultsSection = -1;
+
+            row = 0;
+            NameSection = SectionCount++;
+            AddrRow = row++;
+            NameRow = row++;
+            NameRowCount = row;
+
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out serverIssue)) {
+                ServerWithIssue = serverWithIssue;
+                ServerIssue = serverIssue;
+                row = 0;
+                ServerIssueRow = -1;
+                PasswordIssueRow = -1;
+                CertIssueRow = -1;
+                IssuesSection = SectionCount++;
+                switch (ServerIssue) {
+                case BackEndStateEnum.CredWait:
+                    PasswordIssueRow = row++;
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                    CertIssueRow = row++;
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    ServerIssueRow = row++;
+                    break;
+                }
+                IssuesRowCount = row;
+            } else {
+                ServerWithIssue = null;
+                ServerIssue = BackEndStateEnum.Running;
+            }
+
+            PasswordRectifyUrl = null;
+            var creds = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
+            DateTime expriry;
+            string rectifyUrl;
+            bool showPasswordNotice = LoginHelpers.PasswordWillExpire (Account.Id, out expriry, out rectifyUrl);
+            bool showUpdatePassword = creds != null && (creds.CredType == McCred.CredTypeEnum.Password || creds.CredType == McCred.CredTypeEnum.OAuth2) && ServerIssue != BackEndStateEnum.CredWait;
+            bool showAdvanced = Account.AccountService == McAccount.AccountServiceEnum.Exchange || Account.AccountService == McAccount.AccountServiceEnum.IMAP_SMTP;
+            PasswordExpiry = expriry;
+            PasswordRectifyUrl = rectifyUrl;
+            if (showPasswordNotice || showUpdatePassword || showAdvanced) {
+                row = 0;
+                PasswordNoticeRow = -1;
+                UpdatePasswordRow = -1;
+                AdvancedSettingsRow = -1;
+                AdvancedSection = SectionCount++;
+                if (showPasswordNotice) {
+                    PasswordNoticeRow = row++;
+                }
+                if (showUpdatePassword) {
+                    UpdatePasswordRow = row++;
+                }
+                if (showAdvanced) {
+                    AdvancedSettingsRow = row++;
+                }
+                AdvancedRowCount = row;
+            }
+
+            row = 0;
+            MiscSection = SectionCount++;
+            SignatureRow = row++;
+            SyncRow = row++;
+            NotificationsRow = row++;
+            FastNotifyRow = row++;
+            MiscRowCount = row;
+
+            bool isEmailSender = Account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
+            bool isCalWriter = Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter);
+            if (isEmailSender || isCalWriter) {
+                row = 0;
+                DefaultEmailRow = -1;
+                DefaultCalendarRow = -1;
+                DefaultsSection = SectionCount++;
+                if (isEmailSender) {
+                    DefaultEmailRow = row++;
+                }
+                if (isCalWriter) {
+                    DefaultCalendarRow = row++;
+                }
+                DefaultsRowCount = row;
+            }
+
+            row = 0;
+            ActionsSection = SectionCount++;
+            DeleteActionRow = row++;
+            ActionsRowCount = row;
+
+            TableView.ReloadData ();
+        }
+
+        #endregion
+
+        #region Table Delegate & Data Source
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return SectionCount;
+        }
+
+        public override nint RowsInSection (UITableView tableView, nint section)
+        {
+            if (section == NameSection) {
+                return NameRowCount;
+            }
+            if (section == IssuesSection) {
+                return IssuesRowCount;
+            }
+            if (section == AdvancedSection) {
+                return AdvancedRowCount;
+            }
+            if (section == MiscSection) {
+                return MiscRowCount;
+            }
+            if (section == DefaultsSection) {
+                return DefaultsRowCount;
+            }
+            if (section == ActionsSection) {
+                return ActionsRowCount;
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: AccountSettingsViewController.RowsInSection unknown table section {0}", section));
+        }
+
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == AddrRow) {
+                    return AccountInfoCell.PreferredHeight;
+                }
+            }
+            return NameValueCell.PreferredHeight;
+        }
+
+        const string AccountInfoCellIdentifier = "AccountInfoCellIdentifier";
+        const string NameValueCellIdentifier = "NameValueCellIdentifier";
+        const string ButtonCellIdentifier = "ButtonCellIdentifier";
+        const string SwitchCellIdentifier = "SwitchCellIdentifier";
+        const string IssueCellIdentifier = "IssueCellIdentifier";
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == AddrRow) {
+                    var cell = tableView.DequeueReusableCell (AccountInfoCellIdentifier, indexPath) as AccountInfoCell;
+                    cell.SetAccount (Account);
+                    return cell;
+                }
+                if (indexPath.Row == NameRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Nickname (account)", "Field label for account nickname");
+                    cell.ValueLabel.Text = Account.DisplayName;
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+            }
+            if (indexPath.Section == IssuesSection) {
+                if (indexPath.Row == PasswordIssueRow) {
+                    var cell = tableView.DequeueReusableCell (IssueCellIdentifier, indexPath) as IssueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Update Password (account issue)", "");
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == CertIssueRow) {
+                    var cell = tableView.DequeueReusableCell (IssueCellIdentifier, indexPath) as IssueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Certificate Issue (account issue)", "");
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == ServerIssueRow) {
+                    var cell = tableView.DequeueReusableCell (IssueCellIdentifier, indexPath) as IssueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Certificate Issue (account issue)", "");
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                    return cell;
+                }
+            }
+            if (indexPath.Section == AdvancedSection) {
+                if (indexPath.Row == PasswordNoticeRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = string.Format (NSBundle.MainBundle.LocalizedString ("Password expires {0}", ""), Pretty.ReminderDate (PasswordExpiry));
+                    cell.ValueLabel.Text = "";
+                    cell.AccessoryView = null;
+                    return cell;
+                }
+                if (indexPath.Row == UpdatePasswordRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Update Password", "Field label for account password update");
+                    cell.ValueLabel.Text = "";
+                    cell.AccessoryView = null;
+                    return cell;
+                }
+                if (indexPath.Row == AdvancedSettingsRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Advanced Settings (account)", "Field label for account advanced settings");
+                    cell.ValueLabel.Text = "";
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+            }
+            if (indexPath.Section == MiscSection) {
+                if (indexPath.Row == SignatureRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Signature", "Field label for account signature");
+                    cell.ValueLabel.Text = Account.GetPlainSignature ();
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == SyncRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Days to sync", "Field label for account sync");
+                    cell.ValueLabel.Text = Pretty.MaxAgeFilter (Account.DaysToSyncEmail);
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == NotificationsRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Notifications (account)", "Field label for account notifications option");
+                    cell.ValueLabel.Text = Pretty.NotificationConfiguration (Account.NotificationConfiguration);
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == FastNotifyRow) {
+                    var cell = tableView.DequeueReusableCell (SwitchCellIdentifier, indexPath) as SwitchCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Fast Notification", "Field label for account fast notification option");
+                    cell.Switch.On = Account.FastNotificationEnabled;
+                    cell.SetSwitchHandler ((sender, e) => {
+                        Account.FastNotificationEnabled = (sender as UISwitch).On;
+                        Account.Update ();
+                    });
+                    return cell;
+                }
+            }
+            if (indexPath.Section == DefaultsSection) {
+                if (indexPath.Row == DefaultEmailRow) {
+                    var cell = tableView.DequeueReusableCell (SwitchCellIdentifier, indexPath) as SwitchCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Email Account", "Field label for default email account toggle");
+                    var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                    cell.Switch.On = defaultEmailAccount != null && Account.Id == defaultEmailAccount.Id;
+                    cell.Switch.Enabled = !cell.Switch.On;
+                    cell.SetSwitchHandler ((sender, e) => {
+                        McAccount.SetDefaultAccount (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                        (sender as UISwitch).Enabled = false;
+                    });
+                    return cell;
+                }
+                if (indexPath.Row == DefaultCalendarRow) {
+                    var cell = tableView.DequeueReusableCell (SwitchCellIdentifier, indexPath) as SwitchCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Calendar Account", "Field label for default calendar account toggle");
+                    var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                    cell.Switch.On = defaultCalendarAccount != null && Account.Id == defaultCalendarAccount.Id;
+                    cell.Switch.Enabled = !cell.Switch.On;
+                    cell.SetSwitchHandler ((sender, e) => {
+                        McAccount.SetDefaultAccount (Account.Id, McAccount.AccountCapabilityEnum.CalWriter);
+                        (sender as UISwitch).Enabled = false;
+                    });
+                    return cell;
+                }
+            }
+            if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row == DeleteActionRow) {
+                    var cell = tableView.DequeueReusableCell (ButtonCellIdentifier, indexPath) as ButtonCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Delete This Account", "Delete account button title");
+                    cell.AccessoryView = new ImageAccessoryView ("gen-delete-all");
+                    return cell;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: AccountSettingsViewController.GetCell unknown index path {0}.{1}", indexPath.Section, indexPath.Row));
+        }
+
+        public override bool ShouldHighlightRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == NameRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == IssuesSection) {
+                if (indexPath.Row == PasswordIssueRow) {
+                    return true;
+                }
+                if (indexPath.Row == CertIssueRow) {
+                    return true;
+                }
+                if (indexPath.Row == ServerIssueRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == AdvancedSection) {
+                if (indexPath.Row == PasswordNoticeRow) {
+                    return true;
+                }
+                if (indexPath.Row == UpdatePasswordRow) {
+                    return true;
+                }
+                if (indexPath.Row == AdvancedSettingsRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == MiscSection) {
+                if (indexPath.Row == SignatureRow) {
+                    return true;
+                }
+                if (indexPath.Row == NotificationsRow) {
+                    return true;
+                }
+                if (indexPath.Row == SyncRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row == DeleteActionRow) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (ShouldHighlightRow (tableView, indexPath)) {
+                return indexPath;
+            }
+            return null;
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == NameRow) {
+                    EditNickname ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                }
+            } else if (indexPath.Section == IssuesSection) {
+                if (indexPath.Row == PasswordIssueRow) {
+                    ShowPasswordUpdate ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == CertIssueRow) {
+                    ShowCertIssue ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == ServerIssueRow) {
+                    ShowServerIssue ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                }
+            } else if (indexPath.Section == AdvancedSection) {
+                if (indexPath.Row == PasswordNoticeRow) {
+                    ShowPasswordExpiryNotice ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == UpdatePasswordRow) {
+                    ShowPasswordUpdate ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == AdvancedSettingsRow) {
+                    ShowAdvancedSettings ();
+                }
+            } else if (indexPath.Section == MiscSection) {
+                if (indexPath.Row == SignatureRow) {
+                    ShowSignatureEditor ();
+                } else if (indexPath.Row == SyncRow) {
+                    ShowDaysToSyncPicker ();
+                } else if (indexPath.Row == NotificationsRow) {
+                    ShowNotificationsPicker ();
+                }
+            } else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row == DeleteActionRow) {
+                    ShowDeleteConfirmation ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                }
+            }
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && AdoptedTheme != null) {
+                themed.AdoptTheme (AdoptedTheme);
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void EditNickname ()
+        {
+        }
+
+        void ShowSignatureEditor ()
+        {
+        }
+
+        void ShowDaysToSyncPicker ()
+        {
+        }
+
+        void ShowNotificationsPicker ()
+        {
+        }
+
+        void ShowDeleteConfirmation ()
+        {
+        }
+
+        void DeleteAccount ()
+        {
+        }
+
+        void ShowAdvancedSettings ()
+        {
+        }
+
+        void ShowPasswordUpdate ()
+        {
+        }
+
+        void ShowPasswordExpiryNotice ()
+        {
+        }
+
+        void ShowCertIssue ()
+        {
+        }
+
+        void ShowServerIssue ()
+        {
+        }
+
+        #endregion
+
+        #region Custom Cells
+
+        private class AccountInfoCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public readonly UIImageView AccountImageView;
+            public static nfloat PreferredHeight = 64.0f;
+            nfloat ImageSize = 40.0f;
+
+            public AccountInfoCell (IntPtr handle) : base (handle)
+            {
+                AccountImageView = new UIImageView (new CGRect (0.0f, 0.0f, ImageSize, ImageSize));
+                AccountImageView.ClipsToBounds = true;
+                AccountImageView.Layer.CornerRadius = ImageSize / 2.0f;
+                ContentView.AddSubview (AccountImageView);
+
+                SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.BoldDefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SetNeedsLayout ();
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                var imagePadding = (ContentView.Bounds.Height - AccountImageView.Bounds.Height) / 2.0f;
+                AccountImageView.Frame = new CGRect (imagePadding, imagePadding, AccountImageView.Frame.Width, AccountImageView.Frame.Height);
+            }
+
+            public void SetAccount (McAccount account)
+            {
+                TextLabel.Text = account.EmailAddr;
+                using (var image = Util.ImageForAccount (account)) {
+                    AccountImageView.Image = image;
+                }
+            }
+        }
+
+        class IssueCell : SwipeTableViewCell, ThemeAdopter
+        {
+            public IssueCell (IntPtr handle) : base (handle)
+            {
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SetNeedsLayout ();
+            }
+
+        }
+
+        class DisclosureAccessoryView : ImageAccessoryView
+        {
+            public DisclosureAccessoryView () : base ("gen-more-arrow")
+            {
+            }
+        }
+
+        #endregion
+
+    }
+
+    public partial class OldAccountSettingsViewController : NcUIViewControllerNoLeaks, ISFSafariViewControllerDelegate
     {
         protected UIView contentView;
         protected UIScrollView scrollView;
@@ -51,11 +672,11 @@ namespace NachoClient.iOS
             this.account = account;
         }
 
-        public AccountSettingsViewController () : base ()
+        public OldAccountSettingsViewController () : base ()
         {
         }
 
-        public AccountSettingsViewController (IntPtr handle) : base (handle)
+        public OldAccountSettingsViewController (IntPtr handle) : base (handle)
         {
         }
 
@@ -143,7 +764,7 @@ namespace NachoClient.iOS
                 contentView.AddSubview (AdvancedSettingsBlock);
                 yOffset = AdvancedSettingsBlock.Frame.Bottom;
             }
-                
+
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
             SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Signature", "Field label for account signature"), INDENT, 15, SignatureTapHandler);
@@ -284,7 +905,7 @@ namespace NachoClient.iOS
                 contentView.AddSubview (filler3);
                 yOffset = filler3.Frame.Bottom + 5;
             }
-                            
+
             DeleteAccountButton = UIButton.FromType (UIButtonType.System);
             DeleteAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
             Util.AddButtonImage (DeleteAccountButton, "email-delete-two", UIControlState.Normal);
@@ -482,7 +1103,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                ShowAdvancedSettings (); 
+                ShowAdvancedSettings ();
             }
         }
 
@@ -622,7 +1243,7 @@ namespace NachoClient.iOS
                 InvokeOnMainThread (() => {
                     ToggleDeleteAccountSpinnerView ();
                     // go back to main screen
-                    NcUIRedirector.Instance.GoBackToMainScreen ();  
+                    NcUIRedirector.Instance.GoBackToMainScreen ();
                 });
             };
             NcTask.Run (action, "RemoveAccount");

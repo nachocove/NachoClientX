@@ -708,6 +708,8 @@
     <Compile Include="CallDirectory.cs" />
     <Compile Include="NachoUI.iOS\MessageCompose\ContactAutocompleteMenu.cs" />
     <Compile Include="NachoPlatform.iOS\PlatformProcess.cs" />
+    <Compile Include="NachoUI.iOS\Base\ButtonCell.cs" />
+    <Compile Include="NachoUI.iOS\Base\SwitchCell.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\Base.lproj\AccountCreation.storyboard" />

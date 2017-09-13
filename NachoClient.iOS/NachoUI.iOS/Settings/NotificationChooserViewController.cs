@@ -24,7 +24,7 @@ namespace NachoClient.iOS
         UIBarButtonItem cancelButton;
 
         int accountId;
-        AccountSettingsViewController owner;
+        OldAccountSettingsViewController owner;
         McAccount.NotificationConfigurationEnum value;
 
         public NotificationChooserViewController (IntPtr handle) : base (handle)
@@ -35,7 +35,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void Setup (AccountSettingsViewController owner, int accountId, McAccount.NotificationConfigurationEnum value)
+        public void Setup (OldAccountSettingsViewController owner, int accountId, McAccount.NotificationConfigurationEnum value)
         {
             this.owner = owner;
             this.value = value;

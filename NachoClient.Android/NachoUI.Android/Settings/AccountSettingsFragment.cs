@@ -161,7 +161,7 @@ namespace NachoClient.AndroidClient
 
         private void ShowSignatureEditor ()
         {
-            var dialog = new SimpleTextDialog (Resource.String.account_signature, Resource.String.account_signature_hint, ItemsAdapter.SignatureText (), Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextFlagCapSentences, (text) => {
+            var dialog = new SimpleTextDialog (Resource.String.account_signature, Resource.String.account_signature_hint, Account.GetPlainSignature (), Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextFlagCapSentences, (text) => {
                 Account.HtmlSignature = null;
                 Account.Signature = text;
                 Account.Update ();
@@ -223,7 +223,8 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        private void GoogleAuthCompleted (object sender, AuthenticatorCompletedEventArgs e){
+        private void GoogleAuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
+        {
             if (e.IsAuthenticated) {
                 string access_token;
                 e.Account.Properties.TryGetValue ("access_token", out access_token);
@@ -315,7 +316,7 @@ namespace NachoClient.AndroidClient
     public class AccountSettingsAdapter : GroupedListRecyclerViewAdapter
     {
 
-        public interface Listener 
+        public interface Listener
         {
             void OnNameSelected ();
             void OnCredIssueSelected ();
@@ -367,7 +368,8 @@ namespace NachoClient.AndroidClient
         int DefaultEmailPosition = -1;
         int DefaultCalendarPosition = -1;
 
-        enum ViewType {
+        enum ViewType
+        {
             Account,
             Basic,
             Issue,
@@ -574,27 +576,27 @@ namespace NachoClient.AndroidClient
                 if (position == PasswordIssuePosition) {
                     (holder as IssueViewHolder).SetLabels (context.GetString (Resource.String.account_issue_cred));
                     return;
-                }else if (position == CertIssuePosition){
+                } else if (position == CertIssuePosition) {
                     (holder as IssueViewHolder).SetLabels (context.GetString (Resource.String.account_issue_cert));
                     return;
-                }else if (position == ServerIssuePosition){
+                } else if (position == ServerIssuePosition) {
                     (holder as IssueViewHolder).SetLabels (context.GetString (Resource.String.account_issue_server));
                     return;
                 }
             } else if (groupPosition == AdvancedGroupPosition) {
-                if (position == PasswordNoticePosition){
+                if (position == PasswordNoticePosition) {
                     (holder as SettingsBasicItemViewHolder).SetLabels (String.Format (context.GetString (Resource.String.account_password_expires), Pretty.ReminderDate (PasswordExpiry)));
                     return;
-                } else if (position == UpdatePasswordPosition){
+                } else if (position == UpdatePasswordPosition) {
                     (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_update_password));
                     return;
-                }else if (position == AdvancedSettingsPosition){
+                } else if (position == AdvancedSettingsPosition) {
                     (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_advanced));
                     return;
                 }
             } else if (groupPosition == MiscGroupPosition) {
                 if (position == SignaturePosition) {
-                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_signature), SignatureText ());
+                    (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_signature), Account.GetPlainSignature ());
                     return;
                 } else if (position == SyncPosition) {
                     (holder as SettingsBasicItemViewHolder).SetLabels (context.GetString (Resource.String.account_sync), SyncText ());
@@ -651,17 +653,17 @@ namespace NachoClient.AndroidClient
                 } else if (groupPosition == IssueGroupPosition) {
                     if (position == PasswordIssuePosition) {
                         listener.OnCredIssueSelected ();
-                    }else if (position == CertIssuePosition){
+                    } else if (position == CertIssuePosition) {
                         listener.OnCertIssueSelected ();
-                    }else if (position == ServerIssuePosition){
+                    } else if (position == ServerIssuePosition) {
                         listener.OnServerIssueSelected ();
                     }
                 } else if (groupPosition == AdvancedGroupPosition) {
-                    if (position == PasswordNoticePosition){
+                    if (position == PasswordNoticePosition) {
                         listener.OnPasswordNoticeSelected ();
-                    } else if (position == UpdatePasswordPosition){
+                    } else if (position == UpdatePasswordPosition) {
                         listener.OnPasswordUpdateSelected ();
-                    }else if (position == AdvancedSettingsPosition){
+                    } else if (position == AdvancedSettingsPosition) {
                         listener.OnAdvancedSelected ();
                     }
                 } else if (groupPosition == MiscGroupPosition) {
@@ -674,16 +676,6 @@ namespace NachoClient.AndroidClient
                     }
                 }
             }
-        }
-
-        public string SignatureText ()
-        {
-            if (!string.IsNullOrEmpty (Account.HtmlSignature)) {
-                var serializer = new HtmlTextSerializer (Account.HtmlSignature);
-                var text = serializer.Serialize ();
-                return text;
-            }
-            return Account.Signature;
         }
 
         private string SyncText ()

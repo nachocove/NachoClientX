@@ -90,7 +90,7 @@ namespace NachoCore.Model
 
         // Flags an account that's being configured
         public ConfigurationInProgressEnum ConfigurationInProgress { get; set; }
-        
+
         // This type is stored in the db; add to the end
         [Flags]
         public enum NotificationConfigurationEnum : int
@@ -371,7 +371,7 @@ namespace NachoCore.Model
         // Cache it!
         static McAccount _deviceAccount;
 
-        public static McAccount GetSalesForceAccount()
+        public static McAccount GetSalesForceAccount ()
         {
             return McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).SingleOrDefault ();
         }
@@ -483,23 +483,23 @@ namespace NachoCore.Model
         public static List<int> GetAllConfiguredNormalAccountIds ()
         {
             return (from account in McAccount.GetAllAccounts ()
-                             where
-                                 McAccount.AccountTypeEnum.Device != account.AccountType &&
-                                 McAccount.AccountTypeEnum.Unified != account.AccountType &&
-                                 McAccount.AccountTypeEnum.SalesForce != account.AccountType &&
-                                 McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
-                             select account.Id).ToList ();
+                    where
+                        McAccount.AccountTypeEnum.Device != account.AccountType &&
+                        McAccount.AccountTypeEnum.Unified != account.AccountType &&
+                        McAccount.AccountTypeEnum.SalesForce != account.AccountType &&
+                        McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                    select account.Id).ToList ();
         }
 
         public static List<McAccount> GetAllConfiguredNormalAccounts ()
         {
             return (from account in McAccount.GetAllAccounts ()
-                             where
-                                 McAccount.AccountTypeEnum.Device != account.AccountType &&
-                                 McAccount.AccountTypeEnum.Unified != account.AccountType &&
-                                 McAccount.AccountTypeEnum.SalesForce != account.AccountType &&
-                                 McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
-                             select account).ToList ();
+                    where
+                        McAccount.AccountTypeEnum.Device != account.AccountType &&
+                        McAccount.AccountTypeEnum.Unified != account.AccountType &&
+                        McAccount.AccountTypeEnum.SalesForce != account.AccountType &&
+                        McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                    select account).ToList ();
         }
 
         public static McAccount GetAccountBeingConfigured ()
@@ -548,9 +548,9 @@ namespace NachoCore.Model
         }
 
         private void GenerateLogSalt ()
-        { 
+        {
             RandomNumberGenerator rng = new RNGCryptoServiceProvider ();
-            byte[] randData = new byte[32];
+            byte [] randData = new byte [32];
             rng.GetBytes (randData);
             string randString = Convert.ToBase64String (randData);
             LogSalt = randString;
@@ -669,7 +669,7 @@ namespace NachoCore.Model
             return Id == accountId;
         }
 
-        public static byte[,] AccountColors = new byte[,] {
+        public static byte [,] AccountColors = new byte [,] {
             { 0xE0, 0xE0, 0xE0 },
             { 0x01, 0x6B, 0x5E },
             { 0xFA, 0xBF, 0x20 },
@@ -691,7 +691,7 @@ namespace NachoCore.Model
                 for (int i = 0; i < colorCount; ++i) {
                     indexCounts [i] = 0;
                 }
-                foreach (var account in GetAllAccounts()) {
+                foreach (var account in GetAllAccounts ()) {
                     indexCounts [account.ColorIndex] += 1;
                 }
                 int targetCount = 0;
@@ -720,7 +720,7 @@ namespace NachoCore.Model
             return McCred.QueryByAccountId<McCred> (Id).SingleOrDefault ();
         }
 
-        public AuthType GetAuthType() 
+        public AuthType GetAuthType ()
         {
             if (AccountService == McAccount.AccountServiceEnum.GoogleDefault) {
                 var cred = GetCred ();
@@ -741,6 +741,16 @@ namespace NachoCore.Model
         public List<McServer> GetServers ()
         {
             return McServer.QueryByAccountId<McServer> (Id).ToList ();
+        }
+
+        public string GetPlainSignature ()
+        {
+            if (!string.IsNullOrEmpty (HtmlSignature)) {
+                var serializer = new HtmlTextSerializer (HtmlSignature);
+                var text = serializer.Serialize ();
+                return text;
+            }
+            return Signature;
         }
     }
 
