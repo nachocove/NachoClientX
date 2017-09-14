@@ -44,7 +44,6 @@ namespace NachoClient.iOS
             }
         }
 
-
         public NcActivityIndicatorView (IntPtr handle) : base (handle)
         {
             SetupIndicator ();
@@ -53,6 +52,11 @@ namespace NachoClient.iOS
         public NcActivityIndicatorView (CGRect frame) : base (frame)
         {
             SetupIndicator ();
+        }
+
+        public NcActivityIndicatorView (nfloat size) : this (new CGRect (0, 0, size, size))
+        {
+            _IntrinsicSize = new CGSize (size, size);
         }
 
         private void SetupIndicator ()
@@ -82,6 +86,14 @@ namespace NachoClient.iOS
             MaskLayer.AddSublayer (StripImageReplicatorLayer);
             Layer.AddSublayer (MaskLayer);
             ResizeIndicator ();
+        }
+
+        CGSize _IntrinsicSize;
+
+        public override CGSize IntrinsicContentSize {
+            get {
+                return _IntrinsicSize;
+            }
         }
 
         public void StartAnimating ()
