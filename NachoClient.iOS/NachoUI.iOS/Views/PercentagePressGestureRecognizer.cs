@@ -11,8 +11,8 @@ namespace NachoClient.iOS
 
         public double MinimumTime = 0.1;
         public double MaximumTime = 0.3;
-        public UIOffset MinimumOffset = new UIOffset(0.0f, 5.0f);
-        public UIOffset MaximumOffset = new UIOffset(0.0f, 44.0f);
+        public UIOffset MinimumOffset = new UIOffset (0.0f, 5.0f);
+        public UIOffset MaximumOffset = new UIOffset (0.0f, 44.0f);
 
         CGPoint StartingPoint;
         UIOffset Offset;
@@ -24,7 +24,7 @@ namespace NachoClient.iOS
 
         CADisplayLink DisplayLink;
 
-        public PercentagePressGestureRecognizer (Action action) : base(action)
+        public PercentagePressGestureRecognizer (Action action) : base (action)
         {
         }
 
@@ -44,6 +44,9 @@ namespace NachoClient.iOS
 
         void DisplayFrame ()
         {
+            if (DisplayLink == null) {
+                return;
+            }
             if (StartTime < 0.0) {
                 StartTime = DisplayLink.Timestamp;
             } else {
@@ -70,7 +73,7 @@ namespace NachoClient.iOS
                     PastMinimum = true;
                 }
             }
-            if (PastMinimum){
+            if (PastMinimum) {
                 var timePercentage = Math.Min (1.0, MaximumTime != 0.0 ? Time / MaximumTime : 0.0);
                 var horizontalPercentage = 1.0;
                 var verticalPercentage = 1.0;
@@ -81,9 +84,9 @@ namespace NachoClient.iOS
                     verticalPercentage = Math.Max (0.0, Offset.Vertical / MaximumOffset.Vertical);
                 }
                 var offsetPercentage = Math.Min (1.0, Math.Min (horizontalPercentage, verticalPercentage));
-                PercentComplete = Math.Max(timePercentage, offsetPercentage);
+                PercentComplete = Math.Max (timePercentage, offsetPercentage);
                 State = UIGestureRecognizerState.Changed;
-                if (PercentComplete > 0.99){
+                if (PercentComplete > 0.99) {
                     PercentComplete = 1.0;
                     State = UIGestureRecognizerState.Recognized;
                 }
