@@ -72,6 +72,13 @@
 		<key>SupportS3Bucket</key>
 		<string>59f1d07a-prod-t3-trouble-tickets</string>
 	</dict>
+	<key>Freshdesk</key>
+	<dict>
+		<key>Endpoint</key>
+		<string>https://support.nachocove.com</string>
+		<key>ApiKey</key>
+		<string>M6nnLyxB7YdFU2B5NqdS</string>
+	</dict>
 	<key>Pinger</key>
 	<dict>
 		<key>Hostname</key>
