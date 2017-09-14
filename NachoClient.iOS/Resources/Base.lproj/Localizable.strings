@@ -1091,7 +1091,7 @@
 "Update Password (title)" = "Update Password";
 
 /* Prompt on update password screen */
-"Update the password for {0}" = "Update the password for {0}"
+"Update the password for {0}" = "Update the password for {0}";
 
 /* Prompt on update password screen */
 "Enter your account password" = "Enter your account password";
@@ -1190,7 +1190,10 @@
 "All fields must be filled in." = "All fields must be filled in.";
 
 /* Title for notification setting picker */
-"Notifications (setting title)" = "Notifications (setting title)";
+"Notifications (setting title)" = "Notifications";
+
+/* Title for the days to sync picker */
+"Days to Sync (setting title)" = "Days to Sync";
 
 "This signature will appear at the bottom of every message you send" = "This signature will appear at the bottom of every message you send";
 "It looks like you've copied some HTML content.  You can paste it here to use it as your signature" = "It looks like you've copied some HTML content.  You can paste it here to use it as your signature";

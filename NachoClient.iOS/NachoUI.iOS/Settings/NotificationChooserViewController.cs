@@ -5,195 +5,184 @@ using System;
 using Foundation;
 using UIKit;
 
-using System.IO;
-using System.Linq;
-using CoreGraphics;
-using System.Collections.Generic;
-
 using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class NotificationChooserViewController : NcUIViewControllerNoLeaks
+
+    public class NotificationChooserViewController : NachoTableViewController, ThemeAdopter
     {
-        UITableView tableView;
-        NotificationChoicesSource source;
 
-        UIBarButtonItem doneButton;
-        UIBarButtonItem cancelButton;
+        public McAccount Account;
 
-        int accountId;
-        OldAccountSettingsViewController owner;
-        McAccount.NotificationConfigurationEnum value;
+        const string OptionCellIdentifier = "OptionCellIdentifier";
 
-        public NotificationChooserViewController (IntPtr handle) : base (handle)
+        class NotificationOption
         {
+            public string Name;
+            public McAccount.NotificationConfigurationEnum Option;
+
+            public NotificationOption (McAccount.NotificationConfigurationEnum option)
+            {
+                Name = Pretty.NotificationConfiguration (option);
+                Option = option;
+            }
         }
 
-        public NotificationChooserViewController () : base ()
+        NotificationOption [] Options;
+
+        public NotificationChooserViewController () : base (UITableViewStyle.Grouped)
         {
-        }
-
-        public void Setup (OldAccountSettingsViewController owner, int accountId, McAccount.NotificationConfigurationEnum value)
-        {
-            this.owner = owner;
-            this.value = value;
-            this.accountId = accountId;
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-        }
-
-        protected override void CreateViewHierarchy ()
-        {
-            tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
-            source = new NotificationChoicesSource (this);
-            tableView.Source = source;
-            tableView.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Notifications (setting title)", "Title for notification setting picker");
-
-            View.Add (tableView);
-
             NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Notifications (setting title)", "Title for notification setting picker");
-            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+
+            Options = new NotificationOption [] {
+                new NotificationOption (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2),
+                new NotificationOption (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4),
+                new NotificationOption (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64),
+            };
+        }
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof (OptionCell), OptionCellIdentifier);
+        }
+
+        Theme adoptedTheme;
+
+        public void AdoptTheme (Theme theme)
+        {
+            if (theme != adoptedTheme) {
+                adoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.AdoptTheme (theme);
+            }
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-
-            doneButton = new NcUIBarButtonItem ();
-            cancelButton = new NcUIBarButtonItem ();
-
-            doneButton.Title = NSBundle.MainBundle.LocalizedString ("Save", "");
-            doneButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Save", "");
-
-            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
-            cancelButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Cancel", "");
-
-            cancelButton.Clicked += (sender, e) => {
-                NavigationController.PopViewController (true);
-            };
-
-            doneButton.Clicked += (sender, e) => {
-                owner.UpdateNotificationConfiguration (accountId, value);
-                NavigationController.PopViewController (true);
-            };
-
-            NavigationItem.LeftBarButtonItem = cancelButton;
-            NavigationItem.RightBarButtonItem = doneButton;
+            AdoptTheme (Theme.Active);
         }
 
-        protected override void ConfigureAndLayout ()
+        public override nint NumberOfSections (UITableView tableView)
         {
+            return 1;
         }
 
-        protected override void Cleanup ()
+        public override nint RowsInSection (UITableView tableView, nint section)
         {
-            doneButton = null;
-            cancelButton = null;
-            tableView.Source = null;
-            tableView.Dispose ();
-            tableView = null;
-            source = null;
+            return 1 + Options.Length;
         }
 
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                return this.NavigationController.TopViewController == this;
-            }
-        }
-
-        public bool IsChoiceSet (McAccount.NotificationConfigurationEnum choice)
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            if (0 == choice) {
-                return (0 == value);
-            } else {
-                return (choice == (value & choice));
-            }
-        }
-
-        public void SetChoice (McAccount.NotificationConfigurationEnum choice)
-        {
-            if (0 == choice) {
-                value = 0;
-            } else {
-                value = value ^ choice;
-            }
-        }
-
-        protected class NotificationChoicesSource : UITableViewSource
-        {
-            NotificationChooserViewController owner;
-
-            List<McAccount.NotificationConfigurationEnum> choices = new List<McAccount.NotificationConfigurationEnum> () {
-                0,
-                McAccount.NotificationConfigurationEnum.ALLOW_HOT_2,
-                McAccount.NotificationConfigurationEnum.ALLOW_VIP_4,
-                McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64,
-            };
-
-            public NotificationChoicesSource (NotificationChooserViewController owner)
-            {
-                this.owner = owner;
-            }
-
-            public override nint NumberOfSections (UITableView tableView)
-            {
-                return 1;
-            }
-
-            public override nint RowsInSection (UITableView tableview, nint section)
-            {
-                return choices.Count;
-            }
-
-            public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
-            {
-                const string cellId = "Choice";
-
-                var cell = tableView.DequeueReusableCell (cellId);
-                if (null == cell) {
-                    cell = new UITableViewCell (UITableViewCellStyle.Default, cellId);
-                }
-                var choice = choices [indexPath.Row];
-                cell.TextLabel.TextColor = A.Color_NachoDarkText;
-                cell.TextLabel.Font = A.Font_AvenirNextMedium14;
-                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
-                cell.TextLabel.Text = Pretty.NotificationConfiguration (choice);
-                ConfigureCell (cell, choice);
-                return cell;
-            }
-
-            protected void ConfigureCell (UITableViewCell cell, McAccount.NotificationConfigurationEnum choice)
-            {
-                if (owner.IsChoiceSet (choice)) {
-                    using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
-                        cell.ImageView.Image = image;
-                    }
+            var cell = tableView.DequeueReusableCell (OptionCellIdentifier) as OptionCell;
+            if (indexPath.Row == 0) {
+                cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("None (notification config)", "");
+                if (Account.NotificationConfiguration == 0) {
+                    cell.AccessoryView = new CheckmarkAccessoryView ();
                 } else {
-                    using (var image = UIImage.FromBundle ("gen-checkbox")) {
-                        cell.ImageView.Image = image;
+                    cell.AccessoryView = null;
+                }
+            } else {
+                var option = Options [indexPath.Row - 1];
+                cell.TextLabel.Text = option.Name;
+                if (Account.NotificationConfiguration.HasFlag (option.Option)) {
+                    cell.AccessoryView = new CheckmarkAccessoryView ();
+                } else {
+                    cell.AccessoryView = null;
+                }
+            }
+            return cell;
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && adoptedTheme != null) {
+                themed.AdoptTheme (adoptedTheme);
+            }
+        }
+
+        public override bool ShouldHighlightRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Row == 0) {
+                return Account.NotificationConfiguration != 0;
+            }
+            return true;
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Row == 0) {
+                Account.NotificationConfiguration = 0;
+            } else {
+                var option = Options [indexPath.Row - 1];
+                Account.NotificationConfiguration = Account.NotificationConfiguration ^ option.Option;
+            }
+            UpdateCheckmarks ();
+            var config = Account.NotificationConfiguration;
+            Account.UpdateWithOCApply<McAccount> ((record) => {
+                var account = record as McAccount;
+                account.NotificationConfiguration = config;
+                return true;
+            });
+            tableView.DeselectRow (indexPath, animated: true);
+        }
+
+        void UpdateCheckmarks ()
+        {
+            SwipeTableViewCell cell;
+            if (Account.NotificationConfiguration == 0) {
+                foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                    cell = TableView.CellAt (indexPath) as SwipeTableViewCell;
+                    if (indexPath.Row == 0) {
+                        cell.AccessoryView = new CheckmarkAccessoryView ();
+                    } else {
+                        cell.AccessoryView = null;
+                    }
+                }
+            } else {
+                foreach (var indexPath in TableView.IndexPathsForVisibleRows) {
+                    cell = TableView.CellAt (indexPath) as SwipeTableViewCell;
+                    if (indexPath.Row == 0) {
+                        cell.AccessoryView = null;
+                    } else {
+                        var option = Options [indexPath.Row - 1];
+                        if (Account.NotificationConfiguration.HasFlag (option.Option)) {
+                            if (cell.AccessoryView == null) {
+                                cell.AccessoryView = new CheckmarkAccessoryView ();
+                            }
+                        } else {
+                            cell.AccessoryView = null;
+                        }
                     }
                 }
             }
+        }
 
-            protected void ConfigureCells (UITableView tableView)
+        private class CheckmarkAccessoryView : ImageAccessoryView
+        {
+            public CheckmarkAccessoryView () : base ("checkmark-accessory")
             {
-                foreach (var cell in tableView.VisibleCells) {
-                    var indexPath = tableView.IndexPathForCell (cell);
-                    var choice = choices [indexPath.Row];
-                    ConfigureCell (cell, choice);
-                }
+            }
+        }
+
+        private class OptionCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public OptionCell (IntPtr ptr) : base (ptr)
+            {
             }
 
-            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+            public void AdoptTheme (Theme theme)
             {
-                var choice = choices [indexPath.Row];
-                owner.SetChoice (choice);
-                ConfigureCells (tableView);
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SetNeedsLayout ();
             }
         }
     }

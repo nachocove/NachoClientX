@@ -29,6 +29,8 @@ namespace NachoClient.iOS
 
         public AccountSettingsViewController () : base (UITableViewStyle.Grouped)
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
             NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Account Settings", "Title for account settings screen");
         }
 
@@ -571,14 +573,23 @@ namespace NachoClient.iOS
 
         void ShowSignatureEditor ()
         {
+            var signatureController = new SignatureEditViewController ();
+            signatureController.Account = Account;
+            NavigationController.PushViewController (signatureController, true);
         }
 
         void ShowDaysToSyncPicker ()
         {
+            var picker = new DaysToSyncChooserViewController ();
+            picker.Account = Account;
+            NavigationController.PushViewController (picker, animated: true);
         }
 
         void ShowNotificationsPicker ()
         {
+            var picker = new NotificationChooserViewController ();
+            picker.Account = Account;
+            NavigationController.PushViewController (picker, animated: true);
         }
 
         void ShowDeleteConfirmation ()
@@ -875,65 +886,4 @@ namespace NachoClient.iOS
         }
     }
 
-    /*
-    public partial class OldAccountSettingsViewController
-    {
-
-        protected void SignatureTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                var signatureController = new SignatureEditViewController ();
-                signatureController.Account = account;
-                signatureController.OnSave = OnSaveSignature;
-                NavigationController.PushViewController (signatureController, true);
-            }
-        }
-
-        protected void DaysToSyncTapHandler (NSObject sender)
-        {
-            NcActionSheet.Show (DaysToSyncBlock, this,
-                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
-                    UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
-                }),
-                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
-                    UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
-                }),
-                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null)
-            );
-        }
-
-        void ShowNotificationChooser ()
-        {
-            var vc = new NotificationChooserViewController ();
-            vc.Setup (this, account.Id, account.NotificationConfiguration);
-            NavigationController.PushViewController (vc, true);
-        }
-
-        protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
-        {
-            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
-            account.DaysToSyncEmail = code;
-            account.Update ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_DaysToSyncChanged);
-        }
-
-        public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
-        {
-            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
-            account.NotificationConfiguration = choice;
-            account.Update ();
-        }
-
-        void OnSaveSignature (SignatureEditViewController signatureController)
-        {
-            account.Signature = signatureController.EditedPlainSignature;
-            account.HtmlSignature = signatureController.EditedHtmlSignature;
-            account.Update ();
-            UpdateSignatureBlock ();
-        }
-
-
-    }
-    */
 }

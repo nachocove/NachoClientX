@@ -15,7 +15,6 @@ namespace NachoClient.iOS
     {
 
         public McAccount Account;
-        public Action<SignatureEditViewController> OnSave;
         public string EditedPlainSignature;
         public string EditedHtmlSignature;
         public bool IsHtmlEnabled { get; private set; }
@@ -33,7 +32,7 @@ namespace NachoClient.iOS
         {
             EditedPlainSignature = Account.Signature;
             EditedHtmlSignature = Account.HtmlSignature;
-            var tableView = new UITableView (new CGRect(0.0f, 0.0f, PreferredContentSize.Width, PreferredContentSize.Height), UITableViewStyle.Grouped);
+            var tableView = new UITableView (new CGRect (0.0f, 0.0f, PreferredContentSize.Width, PreferredContentSize.Height), UITableViewStyle.Grouped);
             tableView.Source = Source = new SignatureEditTableViewSource (this);
             View = TableView = tableView;
         }
@@ -72,7 +71,10 @@ namespace NachoClient.iOS
                 EditedHtmlSignature = "";
             }
             View.EndEditing (true);
-            OnSave (this);
+
+            Account.Signature = EditedPlainSignature;
+            Account.HtmlSignature = EditedHtmlSignature;
+            Account.Update ();
             NavigationController.PopViewController (true);
         }
 
@@ -93,7 +95,7 @@ namespace NachoClient.iOS
         public void PasteHtml ()
         {
             var pasteboard = UIPasteboard.General;
-            if (pasteboard.Contains (new string[] { "Apple Web Archive pasteboard type" })) {
+            if (pasteboard.Contains (new string [] { "Apple Web Archive pasteboard type" })) {
                 NSData webData = pasteboard.DataForPasteboardType ("Apple Web Archive pasteboard type");
                 if (null != webData) {
 
@@ -168,13 +170,13 @@ namespace NachoClient.iOS
                                                                     if (subResourceContentsObject is NSData) {
                                                                         NSData subResourceContents = (NSData)subResourceContentsObject;
                                                                         string dataUrl = string.Format ("data:{0};base64,{1}",
-                                                                            contentType, Convert.ToBase64String(subResourceContents.ToArray ()));
-                                                                        node.Attributes.Remove("src");
+                                                                            contentType, Convert.ToBase64String (subResourceContents.ToArray ()));
+                                                                        node.Attributes.Remove ("src");
                                                                         node.SetAttributeValue ("src", dataUrl);
-                                                                        node.Attributes.Remove("nacho-bundle-entry");
-                                                                        node.Attributes.Remove("nacho-resize");
-                                                                        node.Attributes.Remove("nacho-original-src");
-                                                                        node.Attributes.Add("nacho-data-url", "true");
+                                                                        node.Attributes.Remove ("nacho-bundle-entry");
+                                                                        node.Attributes.Remove ("nacho-resize");
+                                                                        node.Attributes.Remove ("nacho-original-src");
+                                                                        node.Attributes.Add ("nacho-data-url", "true");
                                                                         changed = true;
                                                                         break;
                                                                     }
@@ -220,16 +222,16 @@ namespace NachoClient.iOS
 
         protected override void OnKeyboardChanged ()
         {
-            TableView.ContentInset = new UIEdgeInsets (0.0f, 0.0f, keyboardHeight, 0.0f); 
-//            MakeCaretVisible (false);
+            TableView.ContentInset = new UIEdgeInsets (0.0f, 0.0f, keyboardHeight, 0.0f);
+            //            MakeCaretVisible (false);
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-//            if (null != this.NavigationController) {
-//                this.NavigationController.ToolbarHidden = true;
-//            }
+            //            if (null != this.NavigationController) {
+            //                this.NavigationController.ToolbarHidden = true;
+            //            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -244,16 +246,16 @@ namespace NachoClient.iOS
             }
         }
 
-//        private void MakeCaretVisible (bool animated)
-//        {
-//            var caretFrame = plainTextView.GetCaretRectForPosition (plainTextView.SelectedTextRange.End);
-//            plainTextView.ScrollRectToVisible (caretFrame, animated);
-//        }
-//
-//        private void SelectionChangedHandler (object sender, EventArgs args)
-//        {
-//            MakeCaretVisible (true);
-//        }
+        //        private void MakeCaretVisible (bool animated)
+        //        {
+        //            var caretFrame = plainTextView.GetCaretRectForPosition (plainTextView.SelectedTextRange.End);
+        //            plainTextView.ScrollRectToVisible (caretFrame, animated);
+        //        }
+        //
+        //        private void SelectionChangedHandler (object sender, EventArgs args)
+        //        {
+        //            MakeCaretVisible (true);
+        //        }
     }
 
     public class SignatureEditTableViewSource : UITableViewSource, IUIWebViewDelegate
@@ -271,11 +273,11 @@ namespace NachoClient.iOS
         const string ButtonCellIdentifier = "ButtonCellIdentifier";
         const string PreviewCellIdentifier = "PreviewCellIdentifier";
 
-        static UIEdgeInsets PreviewPadding = new UIEdgeInsets(10.0f, 10.0f, 10.0f, 10.0f);
+        static UIEdgeInsets PreviewPadding = new UIEdgeInsets (10.0f, 10.0f, 10.0f, 10.0f);
 
         static UIFont PlainTextFont = A.Font_AvenirNextRegular17;
 
-        public SignatureEditTableViewSource(SignatureEditViewController vc)
+        public SignatureEditTableViewSource (SignatureEditViewController vc)
         {
             ViewController = vc;
 
@@ -348,8 +350,8 @@ namespace NachoClient.iOS
 
         void UpdatePasteFooterText ()
         {
-            if (UIPasteboard.General.Contains (new string[] { "Apple Web Archive pasteboard type" })) {
-                PasteFooterLabel.Label.Text =  NSBundle.MainBundle.LocalizedString ("It looks like you've copied some HTML content.  You can paste it here to use it as your signature", "");
+            if (UIPasteboard.General.Contains (new string [] { "Apple Web Archive pasteboard type" })) {
+                PasteFooterLabel.Label.Text = NSBundle.MainBundle.LocalizedString ("It looks like you've copied some HTML content.  You can paste it here to use it as your signature", "");
             } else {
                 PasteFooterLabel.Label.Text = NSBundle.MainBundle.LocalizedString ("To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it", "");
             }
@@ -416,7 +418,7 @@ namespace NachoClient.iOS
                     cell = new ButtonCell (ButtonCellIdentifier);
                 }
                 cell.Button.SetTitle (NSBundle.MainBundle.LocalizedString ("Paste HTML Signature", ""), UIControlState.Normal);
-                cell.Button.Enabled = UIPasteboard.General.Contains (new string[] { "Apple Web Archive pasteboard type" });
+                cell.Button.Enabled = UIPasteboard.General.Contains (new string [] { "Apple Web Archive pasteboard type" });
                 cell.OnSelect = Paste;
                 return cell;
             }
@@ -438,9 +440,9 @@ namespace NachoClient.iOS
 
         public void ScheduleResizeSignatureView ()
         {
-             var selector = new ObjCRuntime.Selector ("resizeSignatureView");
-             var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
-             NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+            var selector = new ObjCRuntime.Selector ("resizeSignatureView");
+            var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+            NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
         }
 
         [Export ("resizeSignatureView")]
@@ -464,7 +466,7 @@ namespace NachoClient.iOS
                 // Evidently this reloads the sizes of the cells, but not the contents, which is exactly what we want in this case
                 ViewController.TableView.BeginUpdates ();
                 ViewController.TableView.EndUpdates ();
-            }else{
+            } else {
                 PlainSignatureView.Frame = frame;
             }
         }
@@ -479,7 +481,7 @@ namespace NachoClient.iOS
                 // Evidently this reloads the sizes of the cells, but not the contents, which is exactly what we want in this case
                 ViewController.TableView.BeginUpdates ();
                 ViewController.TableView.EndUpdates ();
-            }else{
+            } else {
                 HtmlSignatureView.Frame = frame;
             }
         }
@@ -502,14 +504,15 @@ namespace NachoClient.iOS
             ViewController.PasteHtml ();
         }
 
-        private class HeaderFooterView : UIView {
+        private class HeaderFooterView : UIView
+        {
 
             public UILabel Label;
             static UIEdgeInsets TextInsets = new UIEdgeInsets (5.0f, 10.0f, 5.0f, 10.0f);
 
-            public HeaderFooterView() : base(new CGRect(0.0f, 0.0f, 320.0f, 20.0f))
+            public HeaderFooterView () : base (new CGRect (0.0f, 0.0f, 320.0f, 20.0f))
             {
-                Label = new UILabel (new CGRect(TextInsets.Left, TextInsets.Top, Bounds.Width - TextInsets.Left - TextInsets.Right, Bounds.Height - TextInsets.Top - TextInsets.Bottom));
+                Label = new UILabel (new CGRect (TextInsets.Left, TextInsets.Top, Bounds.Width - TextInsets.Left - TextInsets.Right, Bounds.Height - TextInsets.Top - TextInsets.Bottom));
                 Label.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
                 Label.Font = A.Font_AvenirNextRegular14;
                 Label.TextAlignment = UITextAlignment.Center;
@@ -519,7 +522,8 @@ namespace NachoClient.iOS
                 AddSubview (Label);
             }
 
-            public nfloat PreferredHeightForWidth (nfloat width) {
+            public nfloat PreferredHeightForWidth (nfloat width)
+            {
                 var size = Label.SizeThatFits (new CGSize (width, 999999999.0f));
                 return size.Height + TextInsets.Top + TextInsets.Bottom;
             }
@@ -534,15 +538,15 @@ namespace NachoClient.iOS
             nfloat RightPadding = 10.0f;
             public Action<UISwitch> OnSwitch;
 
-            public SwitchCell(string reuseIdentifier) : base(UITableViewCellStyle.Default, reuseIdentifier)
+            public SwitchCell (string reuseIdentifier) : base (UITableViewCellStyle.Default, reuseIdentifier)
             {
-                SwitchView = new UISwitch();
-                SwitchView.Frame = new CGRect(Bounds.Width - RightPadding - SwitchView.Frame.Width, (Bounds.Height - SwitchView.Frame.Height) / 2.0f, SwitchView.Frame.Width, SwitchView.Frame.Height);
+                SwitchView = new UISwitch ();
+                SwitchView.Frame = new CGRect (Bounds.Width - RightPadding - SwitchView.Frame.Width, (Bounds.Height - SwitchView.Frame.Height) / 2.0f, SwitchView.Frame.Width, SwitchView.Frame.Height);
                 SwitchView.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin | UIViewAutoresizing.FlexibleLeftMargin;
                 SwitchView.ValueChanged += (object sender, EventArgs e) => {
                     OnSwitch (SwitchView);
                 };
-                Label = new UILabel(new CGRect(LeftPadding, 0.0f, SwitchView.Frame.X - LeftPadding, Bounds.Height));
+                Label = new UILabel (new CGRect (LeftPadding, 0.0f, SwitchView.Frame.X - LeftPadding, Bounds.Height));
                 Label.Font = A.Font_AvenirNextRegular17;
                 Label.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
                 ContentView.AddSubview (Label);
@@ -557,12 +561,12 @@ namespace NachoClient.iOS
             public readonly UIButton Button;
             public Action OnSelect;
 
-            public ButtonCell(string reuseIdentifier) : base(UITableViewCellStyle.Default, reuseIdentifier)
+            public ButtonCell (string reuseIdentifier) : base (UITableViewCellStyle.Default, reuseIdentifier)
             {
                 Button = new UIButton (UIButtonType.Custom);
                 Button.TitleLabel.Font = A.Font_AvenirNextRegular17;
-                Button.SetTitleColor(A.Color_NachoGreen, UIControlState.Normal);
-                Button.SetTitleColor(A.Color_NachoTextGray, UIControlState.Disabled);
+                Button.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+                Button.SetTitleColor (A.Color_NachoTextGray, UIControlState.Disabled);
                 Button.Frame = Bounds;
                 Button.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
                 Button.TouchUpInside += (object sender, EventArgs e) => {

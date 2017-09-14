@@ -592,7 +592,6 @@
     <Compile Include="NachoUI.iOS\Calendar\NotesViewerViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\SalesforceSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\SettingsLegalViewController.cs" />
-    <Compile Include="NachoUI.iOS\Settings\SettingsTextPropertyViewController.cs" />
     <Compile Include="NachoUI.iOS\Settings\SettingsUnreadCountViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\SalesforceCredentialsViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountCreation\SalesforceCredentialsViewController.designer.cs">
@@ -710,6 +709,7 @@
     <Compile Include="NachoPlatform.iOS\PlatformProcess.cs" />
     <Compile Include="NachoUI.iOS\Base\ButtonCell.cs" />
     <Compile Include="NachoUI.iOS\Base\SwitchCell.cs" />
+    <Compile Include="NachoUI.iOS\Settings\DaysToSyncChooserViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\Base.lproj\AccountCreation.storyboard" />
