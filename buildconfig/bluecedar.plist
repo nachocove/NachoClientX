@@ -49,7 +49,7 @@
 		<key>BackupAPIKey</key>
 		<string></string>
 		<key>FileProvider</key>
-		<string>com.nachocove.fileprovider</string>
+		<string>com.nachocove.bc.fileprovider</string>
 		<key>HockeyAppAppId</key>
 		<string></string>
 		<key>SigningKeystore</key>
