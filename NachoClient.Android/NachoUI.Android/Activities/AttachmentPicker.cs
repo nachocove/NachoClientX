@@ -16,13 +16,13 @@ namespace NachoClient.AndroidClient
 
         private const string FRAGMENT_ATTACHMENT_CHOOSER = "NachoClient.AndroidClient.AttachmentPicker.FRAGMENT_ATTACHMENT_CHOOSER";
 
-        private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
+        private const string CAMERA_OUTPUT_PHOTO_KEY = "cameraOutputPhoto";
 
         private const int REQUEST_EXTERNAL_APP = 101;
         private const int REQUEST_TAKE_PHOTO = 102;
         private const int REQUEST_NACHO_FILE = 103;
 
-        Android.Net.Uri CameraOutputUri;
+        string CameraOutputPhoto;
 
         public event EventHandler<McAttachment> AttachmentPicked;
 
@@ -32,16 +32,13 @@ namespace NachoClient.AndroidClient
 
         public void OnCreate (Bundle savedInstanceState)
         {
-            var cameraUriString = savedInstanceState.GetString (CAMERA_OUTPUT_URI_KEY);
-            if (cameraUriString != null) {
-                CameraOutputUri = Android.Net.Uri.Parse (cameraUriString);
-            }
+            CameraOutputPhoto = savedInstanceState.GetString (CAMERA_OUTPUT_PHOTO_KEY);
         }
 
         public void OnSaveInstanceState (Bundle outState)
         {
-            if (CameraOutputUri != null) {
-                outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
+            if (CameraOutputPhoto != null) {
+                outState.PutString (CAMERA_OUTPUT_PHOTO_KEY, CameraOutputPhoto);
             }
         }
 
@@ -54,7 +51,7 @@ namespace NachoClient.AndroidClient
                 }
                 switch (attachmentChooser.SelectedSource.Identifier) {
                 case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_TAKE_PHOTO:
-                    CameraOutputUri = Util.TakePhoto (fragment, REQUEST_TAKE_PHOTO);
+                    CameraOutputPhoto = Util.TakePhoto (fragment, REQUEST_TAKE_PHOTO);
                     break;
                 case AttachmentChooserFragment.AttachmentSource.IDENTIFIER_NACHO_FILE:
                     var intent = FilePickerActivity.BuildIntent (fragment.Activity);
@@ -85,15 +82,16 @@ namespace NachoClient.AndroidClient
             if (requestCode == REQUEST_TAKE_PHOTO) {
                 if (resultCode == Result.Ok) {
                     var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
-                    mediaScanIntent.SetData (CameraOutputUri);
+                    var uri = Util.ExternalPhotoUrl (fragment.Activity, CameraOutputPhoto);
+                    var path = Util.ExternalPhotoFile (CameraOutputPhoto).Path;
+                    mediaScanIntent.SetData (uri);
                     fragment.Activity.SendBroadcast (mediaScanIntent);
                     var attachment = McAttachment.InsertSaveStart (accountId);
-                    var filename = Path.GetFileName (CameraOutputUri.Path);
+                    var filename = Path.GetFileName (path);
                     attachment.SetDisplayName (filename);
                     attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
-                    attachment.UpdateFileCopy (CameraOutputUri.Path);
+                    attachment.UpdateFileCopy (path);
                     attachment.UpdateSaveFinish ();
-                    File.Delete (CameraOutputUri.Path);
                     if (AttachmentPicked != null) {
                         AttachmentPicked (this, attachment);
                     }
@@ -101,7 +99,7 @@ namespace NachoClient.AndroidClient
                 return true;
             }
             if (requestCode == REQUEST_EXTERNAL_APP) {
-                if (resultCode == Result.Ok){
+                if (resultCode == Result.Ok) {
                     try {
                         var clipData = data.ClipData;
                         if (null == clipData) {
@@ -124,11 +122,11 @@ namespace NachoClient.AndroidClient
                 }
                 return true;
             }
-            if (requestCode == REQUEST_NACHO_FILE){
-                if (resultCode == Result.Ok){
+            if (requestCode == REQUEST_NACHO_FILE) {
+                if (resultCode == Result.Ok) {
                     var attachmentId = data.GetIntExtra (FilePickerActivity.EXTRA_ATTACHMENT_ID, 0);
                     var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
-                    if (attachment != null){
+                    if (attachment != null) {
                         AttachmentPicked?.Invoke (this, attachment);
                     }
                 }
