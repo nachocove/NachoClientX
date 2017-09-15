@@ -201,6 +201,11 @@ class BuildConfig(DictWrappedObject):
         Freshdesk=dict(
             Endpoint=None,
             ApiKey=None
+        ),
+        GitHub=dict(
+            Endpoint=None,
+            Username=None,
+            ApiKey=None
         )
     )
 
@@ -239,6 +244,11 @@ class BuildInfoFile:
         # Freshdesk
         self.add('FreshdeskEndpoint', config.Freshdesk.Endpoint)
         self.add('FreshdeskApiKey', config.Freshdesk.ApiKey)
+
+        # Github
+        self.add('GitHubEndpoint', config.GitHub.Endpoint)
+        self.add('GitHubUsername', config.GitHub.ApiKey)
+        self.add('GitHubApiKey', config.GitHub.ApiKey)
 
     def write(self, path):
         """

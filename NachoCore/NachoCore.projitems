@@ -436,6 +436,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Freshdesk.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\CrashReporter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\AccountCredentialsValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Github.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

@@ -196,7 +196,7 @@ namespace NachoCore.Utils
             NcTask.Run (() => {
                 if (CrashReport.TryLoad (filename, out var report)) {
                     Log.LOG_UTILS.Info ("Attempting to report crash log: {0}", filename);
-                    FreshdeskSession.Shared.CreateTicket (report, (exception) => {
+                    GithubSession.Shared.CreateIssue (report, (exception) => {
                         if (exception == null) {
                             try {
                                 File.Delete (filename);

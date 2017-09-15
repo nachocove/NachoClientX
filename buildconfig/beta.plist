@@ -66,6 +66,15 @@
 		<key>ApiKey</key>
 		<string>M6nnLyxB7YdFU2B5NqdS</string>
 	</dict>
+	<key>GitHub</key>
+	<dict>
+		<key>Endpoint</key>
+		<string>https://api.github.com</string>
+		<key>Username</key>
+		<string>nacho-crashreporter</string>
+		<key>ApiKey</key>
+		<string>8f454708798e0eded7e711f945b5b008b7810c22</string>
+	</dict>
 	<key>Pinger</key>
 	<dict>
 		<key>Hostname</key>
