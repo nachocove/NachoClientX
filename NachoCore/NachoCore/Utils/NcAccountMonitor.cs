@@ -94,7 +94,7 @@ namespace NachoCore
                     info.UnreadCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, unreadCutoff);
                 }
                 info.UnreadCount += McChat.UnreadMessageCountForAccountSince (account.Id, unreadCutoff);
-                info.UnreadCount += McAction.CountOfNewActions (account.Id, since: unreadCutoff, excludingUnreadMessages: true);
+                //info.UnreadCount += McAction.CountOfNewActions (account.Id, since: unreadCutoff, excludingUnreadMessages: true);
                 if (unreadCountType == EmailHelper.ShowUnreadEnum.RecentMessages) {
                     info.RecentUnreadCount = info.UnreadCount;
                 } else {
@@ -102,7 +102,7 @@ namespace NachoCore
                         info.RecentUnreadCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, recentCutoff);
                     }
                     info.RecentUnreadCount += McChat.UnreadMessageCountForAccountSince (account.Id, recentCutoff);
-                    info.RecentUnreadCount += McAction.CountOfNewActions (account.Id, since: recentCutoff, excludingUnreadMessages: true);
+                    //info.RecentUnreadCount += McAction.CountOfNewActions (account.Id, since: recentCutoff, excludingUnreadMessages: true);
                 }
                 infos.Add (info);
             }
@@ -110,10 +110,10 @@ namespace NachoCore
                 return x.Account.Id - y.Account.Id;
             });
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                if (NeedsReload){
+                if (NeedsReload) {
                     IsReloading = false;
                     ReloadAccounts ();
-                }else{
+                } else {
                     HandleReloadResults (infos);
                     IsReloading = false;
                 }

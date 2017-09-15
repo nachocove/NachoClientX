@@ -133,11 +133,21 @@ namespace NachoClient.AndroidClient
         public void OnEndSelected ()
         {
             ShowDatePicker (CalendarItem.EndTime, (date) => {
+                if (CalendarItem.AllDayEvent) {
+                    date = date.AddDays (1.0);
+                }
                 CalendarItem.EndTime = date;
                 Adapter.NotifyEndChanged ();
-                if (CalendarItem.EndTime < CalendarItem.StartTime) {
-                    CalendarItem.StartTime = CalendarItem.EndTime;
-                    Adapter.NotifyStartChanged ();
+                if (CalendarItem.AllDayEvent) {
+                    if (CalendarItem.EndTime <= CalendarItem.StartTime) {
+                        CalendarItem.StartTime = CalendarItem.EndTime.AddDays (-1.0);
+                        Adapter.NotifyStartChanged ();
+                    }
+                } else {
+                    if (CalendarItem.EndTime < CalendarItem.StartTime) {
+                        CalendarItem.StartTime = CalendarItem.EndTime;
+                        Adapter.NotifyStartChanged ();
+                    }
                 }
             });
         }
@@ -572,8 +582,16 @@ namespace NachoClient.AndroidClient
                 if (position == InfoAllDayPosition) {
                     var switchHolder = (holder as SettingsSwitchItemViewHolder);
                     switchHolder.SetLabels (Resource.String.event_edit_all_day);
+                    switchHolder.Switch.Checked = CalendarItem.AllDayEvent;
                     switchHolder.SetChangeHandler ((sender, e) => {
                         CalendarItem.AllDayEvent = e.IsChecked;
+                        if (CalendarItem.AllDayEvent) {
+                            CalendarItem.StartTime = CalendarItem.StartTime.ToLocalTime ().Date;
+                            CalendarItem.EndTime = CalendarItem.EndTime.ToLocalTime ().Date.AddDays (1.0);
+                        } else {
+                            CalendarItem.StartTime = CalendarItem.StartTime.ToLocalTime ().Date.AddHours (9.0);
+                            CalendarItem.EndTime = CalendarItem.StartTime.ToLocalTime ().AddHours (1.0);
+                        }
                         NotifyStartChanged ();
                         NotifyEndChanged ();
                     });

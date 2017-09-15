@@ -171,8 +171,12 @@ namespace NachoCore.Utils
             calendar.OrganizerName = account.EmailAddr; //Pretty.UserNameForAccount (account);
             calendar.OrganizerEmail = account.EmailAddr;
 
-            calendar.StartTime = calendar.StartTime.ToUniversalTime ();
-            calendar.EndTime = calendar.EndTime.ToUniversalTime ();
+            // We really need to fix out date/time storage.  When saved to the db,
+            // we use Universal, but when loaded from the db we get Unspecified, and
+            // when edited in the UI we have Local.  The conversion here uses our 
+            // custom LocalT function that treats Unspecified as if it was Universal.
+            calendar.StartTime = calendar.StartTime.LocalT ().ToUniversalTime ();
+            calendar.EndTime = calendar.EndTime.LocalT ().ToUniversalTime ();
 
             // Auto-set the meeting status information based on the attendees
             if (0 == attendees.Count) {
@@ -218,6 +222,8 @@ namespace NachoCore.Utils
                 var sendBody = calendar.DescriptionWasChanged; // access DescriptionWasChanged before Update(), which clears it
                 calendar.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
                 calendar.Update ();
+                // Forcing regeneration now, so the calendar's event will be updated right away, which is important for updating the UI 
+                NcEventManager.RegenerateEvents (calendar);
                 var oldFolder = McFolder.QueryByFolderEntryId<McCalendar> (calendar.AccountId, calendar.Id).FirstOrDefault ();
                 if (folder.Id != oldFolder.Id) {
                     BackEnd.Instance.MoveCalCmd (account.Id, calendar.Id, folder.Id);
@@ -1389,52 +1395,68 @@ namespace NachoCore.Utils
                     }
 
                     foreach (var calendarItem in list) {
-
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
-
-                        // Delete any existing events that are later than calendarItem.RecurrencesGeneratedUntil.
-                        // These events can exist for two reasons: (1) The app was killed while generating events
-                        // for this item. (2) The calendar item was edited and its RecurrencesGeneratedUntil was
-                        // reset.
-                        foreach (var evt in McEvent.QueryEventsForCalendarItemAfter (calendarItem.Id, calendarItem.RecurrencesGeneratedUntil)) {
-                            evt.Delete ();
-                        }
-
-                        if (0 == calendarItem.recurrences.Count) {
-
-                            // Non-recurring event.  Create one McEvent.
-                            if (calendarItem.AllDayEvent) {
-                                ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
-                            } else {
-                                CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
-                            }
-                            calendarItem.UpdateRecurrencesGeneratedUntil (DateTime.MaxValue);
-
-                        } else {
-
-                            // Recurring event.  Create McEvents up through untilDate.
-                            var lastOneGeneratedAggregate = DateTime.MaxValue;
-                            foreach (var recurrence in calendarItem.recurrences) {
-                                var lastOneGenerated = ExpandRecurrences (
-                                                           calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, untilDate);
-                                if (lastOneGeneratedAggregate > lastOneGenerated) {
-                                    lastOneGeneratedAggregate = lastOneGenerated;
-                                }
-                            }
-                            calendarItem.UpdateRecurrencesGeneratedUntil (lastOneGeneratedAggregate);
-                        }
+                        _ExpandRecurrences (calendarItem, untilDate);
                     }
                 }
 
                 var el = NcModel.Instance.Db.Table<McEvent> ().Count ();
                 Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el);
-
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                    Tokens = new string [] { DateTime.Now.ToString () },
-                });
+                NotifyEventsUpdated ();
             }, "ExpandRecurrences");
+        }
+
+        public static void ExpandRecurrences (McCalendar calendar, DateTime untilDate)
+        {
+            lock (expandRecurrencesLock) {
+                _ExpandRecurrences (calendar, untilDate);
+            }
+            NotifyEventsUpdated ();
+        }
+
+        static void _ExpandRecurrences (McCalendar calendarItem, DateTime untilDate)
+        {
+            // Delete any existing events that are later than calendarItem.RecurrencesGeneratedUntil.
+            // These events can exist for two reasons: (1) The app was killed while generating events
+            // for this item. (2) The calendar item was edited and its RecurrencesGeneratedUntil was
+            // reset.
+
+            var events = McEvent.QueryEventsForCalendarItemAfter (calendarItem.Id, calendarItem.RecurrencesGeneratedUntil);
+            foreach (var evt in events) {
+                evt.Delete ();
+            }
+
+            if (0 == calendarItem.recurrences.Count) {
+
+                // Non-recurring event.  Create one McEvent.
+                if (calendarItem.AllDayEvent) {
+                    ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                } else {
+                    CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                }
+                calendarItem.UpdateRecurrencesGeneratedUntil (DateTime.MaxValue);
+
+            } else {
+
+                // Recurring event.  Create McEvents up through untilDate.
+                var lastOneGeneratedAggregate = DateTime.MaxValue;
+                foreach (var recurrence in calendarItem.recurrences) {
+                    var lastOneGenerated = ExpandRecurrences (calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, untilDate);
+                    if (lastOneGeneratedAggregate > lastOneGenerated) {
+                        lastOneGeneratedAggregate = lastOneGenerated;
+                    }
+                }
+                calendarItem.UpdateRecurrencesGeneratedUntil (lastOneGeneratedAggregate);
+            }
+        }
+
+        static void NotifyEventsUpdated ()
+        {
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
+                Account = ConstMcAccount.NotAccountSpecific,
+                Tokens = new string [] { DateTime.Now.ToString () },
+            });
         }
 
         protected static void CreateEventRecord (McCalendar c, DateTime startTime, DateTime endTime)

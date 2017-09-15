@@ -435,6 +435,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Model\Migration\NcMigration62.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\Freshdesk.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\CrashReporter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NachoCore\Utils\AccountCredentialsValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)NachoCore\BackEnd\ActiveSync\README.md" />

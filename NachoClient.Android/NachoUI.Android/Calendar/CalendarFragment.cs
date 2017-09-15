@@ -129,6 +129,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            Adapter.NotifyDataSetChanged ();
             Events.UiRefresh = () => {
                 Adapter.NotifyDataSetChanged ();
             };

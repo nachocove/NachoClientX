@@ -59,8 +59,7 @@ namespace NachoClient.iOS
 
         public void AdoptTheme (Theme theme)
         {
-            if (theme != adoptedTheme) 
-            {
+            if (theme != adoptedTheme) {
                 adoptedTheme = theme;
                 TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
                 TableView.TintColor = theme.TableViewTintColor;
@@ -233,7 +232,7 @@ namespace NachoClient.iOS
                         return cell;
                     }
                 }
-            } else if (indexPath.Section == SectionAbout){
+            } else if (indexPath.Section == SectionAbout) {
                 var cell = tableView.DequeueReusableCell (NameValueCellIdentifier) as SettingsNameValueCell;
                 cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("About Nacho Mail (setting)", "Button title for viewing about screen");
                 cell.ValueLabel.Text = "";
@@ -297,7 +296,7 @@ namespace NachoClient.iOS
         private void ShowAccount (McAccount account)
         {
             var vc = new AccountSettingsViewController ();
-            vc.SetAccount (account);
+            vc.Account = account;
             NavigationController.PushViewController (vc, true);
         }
 
@@ -315,7 +314,7 @@ namespace NachoClient.iOS
             var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
             using (var image = UIImage.FromBundle ("modal-close")) {
                 vc.NavigationItem.LeftBarButtonItem = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (object sender, EventArgs e) => {
-                    DismissViewController(true, () => {
+                    DismissViewController (true, () => {
                         AddAccountNavigationController = null;
                     });
                 });
@@ -334,9 +333,9 @@ namespace NachoClient.iOS
             var closeButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (closeButton, "icn-close");
             closeButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Close", "");
-            closeButton.Clicked += (object sender, EventArgs e) => { 
+            closeButton.Clicked += (object sender, EventArgs e) => {
                 credentialsViewController.Cancel ();
-                DismissViewController(true, null); 
+                DismissViewController (true, null);
             };
             credentialsViewController.NavigationItem.LeftBarButtonItem = closeButton;
             var navigationController = new UINavigationController (credentialsViewController);
@@ -362,7 +361,7 @@ namespace NachoClient.iOS
                 DismissViewController (true, () => {
                     ShowSalesforceAccount (account);
                 });
-            }else{
+            } else {
                 var syncingViewController = (AccountSyncingViewController)vc.Storyboard.InstantiateViewController ("AccountSyncingViewController");
                 syncingViewController.AccountDelegate = this;
                 syncingViewController.Account = account;
@@ -439,15 +438,15 @@ namespace NachoClient.iOS
 
             public AccountCell (IntPtr handle) : base (handle)
             {
-                AccountImageView = new UIImageView (new CGRect(0.0f, 0.0f, ImageSize, ImageSize));
+                AccountImageView = new UIImageView (new CGRect (0.0f, 0.0f, ImageSize, ImageSize));
                 AccountImageView.ClipsToBounds = true;
                 AccountImageView.Layer.CornerRadius = ImageSize / 2.0f;
-                ContentView.AddSubview(AccountImageView);
+                ContentView.AddSubview (AccountImageView);
 
-                SeparatorInset = new UIEdgeInsets(0.0f, PreferredHeight, 0.0f, 0.0f);
+                SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
             }
 
-            public void AdoptTheme(Theme theme)
+            public void AdoptTheme (Theme theme)
             {
                 TextLabel.Font = theme.BoldDefaultFont.WithSize (14.0f);
                 TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
@@ -462,10 +461,10 @@ namespace NachoClient.iOS
             }
 
             public bool IndicateError {
-                get{
+                get {
                     return _IndicateError;
                 }
-                set{
+                set {
                     _IndicateError = value;
                     if (_IndicateError && ErrorIndicator == null) {
                         ErrorIndicator = new ErrorIndicatorView (ErrorIndicatorSize);
@@ -492,27 +491,6 @@ namespace NachoClient.iOS
                     frame.Width -= ErrorIndicator.Frame.Width;
                     DetailTextLabel.Frame = frame;
                 }
-            }
-        }
-
-        private class ButtonCell : SwipeTableViewCell, ThemeAdopter
-        {
-
-            public static nfloat PreferredHeight = 44.0f;
-
-            public ButtonCell (IntPtr handle) : base (handle)
-            {
-            }
-
-            public void AdoptTheme (Theme theme)
-            {
-                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
-                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
-                var accessory = AccessoryView as AddAccessoryView;
-                if (accessory != null) {
-                    accessory.TintColor = theme.TableViewCellActionAccessoryColor;
-                }
-                SetNeedsLayout ();
             }
         }
 

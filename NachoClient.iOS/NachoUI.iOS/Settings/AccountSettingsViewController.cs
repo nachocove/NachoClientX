@@ -10,739 +10,880 @@ using NachoCore.Utils;
 using System.Linq;
 using NachoCore;
 using NachoPlatform;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net;
 using Xamarin.Auth;
 using SafariServices;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks, ISFSafariViewControllerDelegate
+
+    public class AccountSettingsViewController : NachoTableViewController, ISFSafariViewControllerDelegate, ThemeAdopter
     {
-        protected UIView contentView;
-        protected UIScrollView scrollView;
 
-        UIImageView accountImageView;
-        UILabel EmailAddress;
-        UcNameValuePair DisplayNameTextBlock;
-        UcNameValuePair ChangePasswordBlock;
-        UcNameValuePair ExpiredPasswordBlock;
-        UcNameValuePair RectifyPasswordBlock;
-        UcNameValuePair AdvancedSettingsBlock;
-        UcNameValuePair SignatureBlock;
-        UcNameValuePair DaysToSyncBlock;
-        UcNameValuePair NotificationsBlock;
-        UISwitch FastNotificationSwitch;
-        UISwitch DefaultEmailSwitch;
-        UISwitch DefaultCalendarSwitch;
-        UIButton FixAccountButton;
-        UIButton DeleteAccountButton;
-        UIView DeleteAccountBackgroundView;
-        UIActivityIndicatorView DeleteAccountActivityIndicator;
+        public McAccount Account;
+        public string PasswordRectifyUrl { get; private set; }
+        public DateTime PasswordExpiry { get; private set; }
+        public BackEndStateEnum ServerIssue { get; private set; }
+        public McServer ServerWithIssue { get; private set; }
 
-        McAccount account;
+        #region Creating a View Controller
 
-        static readonly nfloat HEIGHT = 50;
-        static readonly nfloat INDENT = 25;
-
-        public void SetAccount (McAccount account)
+        public AccountSettingsViewController () : base (UITableViewStyle.Grouped)
         {
-            this.account = account;
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
+            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Account Settings", "Title for account settings screen");
         }
 
-        public AccountSettingsViewController () : base ()
+        #endregion
+
+        #region Theme
+
+        Theme AdoptedTheme;
+
+        public void AdoptTheme (Theme theme)
         {
+            if (theme != AdoptedTheme) {
+                AdoptedTheme = theme;
+                TableView.BackgroundColor = theme.TableViewGroupedBackgroundColor;
+                TableView.TintColor = theme.TableViewTintColor;
+                TableView.AdoptTheme (theme);
+            }
         }
 
-        public AccountSettingsViewController (IntPtr handle) : base (handle)
+        #endregion
+
+        #region View Lifecycle
+
+        public override void LoadView ()
         {
+            base.LoadView ();
+            TableView.RegisterClassForCellReuse (typeof (AccountInfoCell), AccountInfoCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (NameValueCell), NameValueCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (ButtonCell), ButtonCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (SwitchCell), SwitchCellIdentifier);
+            TableView.RegisterClassForCellReuse (typeof (IssueCell), IssueCellIdentifier);
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            AdoptTheme (Theme.Active);
+            ConfigureTable ();
         }
 
         public override void ViewDidAppear (bool animated)
         {
-            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
-                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
-            }
             base.ViewDidAppear (animated);
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            View.EndEditing (true);
-            base.ViewWillDisappear (animated);
-        }
-
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                return this.NavigationController.TopViewController == this;
-            }
-        }
-
-        protected override void CreateViewHierarchy ()
-        {
-            NavigationController.NavigationBar.Translucent = false;
-            NavigationItem.Title = NSBundle.MainBundle.LocalizedString ("Account Settings", "Title for account settings screen");
-
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            scrollView = new UIScrollView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
-            scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
-            scrollView.ScrollEnabled = true;
-            scrollView.AlwaysBounceVertical = true;
-            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
-            View.AddSubview (scrollView);
-
-            contentView = new UIView (Util.CardContentRectangle (View.Frame.Width, View.Frame.Height));
-            contentView.Layer.CornerRadius = A.Card_Corner_Radius;
-            contentView.BackgroundColor = UIColor.White;
-            scrollView.AddSubview (contentView);
-
-            accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
-            accountImageView.Layer.CornerRadius = 25;
-            accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
-            contentView.AddSubview (accountImageView);
-
-            using (var image = Util.ImageForAccount (account)) {
-                accountImageView.Image = image;
-            }
-
-            EmailAddress = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));
-            EmailAddress.Text = account.EmailAddr;
-            EmailAddress.Font = A.Font_AvenirNextRegular17;
-            EmailAddress.TextColor = A.Color_NachoBlack;
-            contentView.AddSubview (EmailAddress);
-
-            nfloat yOffset = NMath.Max (accountImageView.Frame.Bottom, EmailAddress.Frame.Bottom);
-
-            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-            DisplayNameTextBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Nickname (account)", "Field label for account nickname"), INDENT, 15, ChangeDescriptionTapHandler);
-            contentView.AddSubview (DisplayNameTextBlock);
-            yOffset = DisplayNameTextBlock.Frame.Bottom;
-
-            var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if ((null != creds) && ((McCred.CredTypeEnum.Password == creds.CredType) || (McCred.CredTypeEnum.OAuth2 == creds.CredType))) {
-                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Update Password", "Field label for account password update"), INDENT, 15, ChangePasswordTapHandler);
-                contentView.AddSubview (ChangePasswordBlock);
-                yOffset = ChangePasswordBlock.Frame.Bottom;
-            }
-
-            if ((McAccount.AccountServiceEnum.Exchange == account.AccountService) || (McAccount.AccountServiceEnum.IMAP_SMTP == account.AccountService)) {
-                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-                AdvancedSettingsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Advanced Settings (account)", "Field label for account advanced settings"), INDENT, 15, AdvancedSettingsTapHandler);
-                contentView.AddSubview (AdvancedSettingsBlock);
-                yOffset = AdvancedSettingsBlock.Frame.Bottom;
-            }
-                
-            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-            SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Signature", "Field label for account signature"), INDENT, 15, SignatureTapHandler);
-            contentView.AddSubview (SignatureBlock);
-            yOffset = SignatureBlock.Frame.Bottom;
-
-            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-            DaysToSyncBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Days to sync", "Field label for account sync"), INDENT, 15, DaysToSyncTapHandler);
-            contentView.AddSubview (DaysToSyncBlock);
-            yOffset = DaysToSyncBlock.Frame.Bottom;
-
-            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-            NotificationsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), NSBundle.MainBundle.LocalizedString ("Notifications (account)", "Field label for account notifications option"), INDENT, 15, NotificationsTapHandler);
-            contentView.AddSubview (NotificationsBlock);
-            yOffset = NotificationsBlock.Frame.Bottom;
-
-            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-            var fastNotificationLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
-            fastNotificationLabel.Font = A.Font_AvenirNextRegular14;
-            fastNotificationLabel.TextAlignment = UITextAlignment.Left;
-            fastNotificationLabel.TextColor = A.Color_NachoDarkText;
-            fastNotificationLabel.Text = NSBundle.MainBundle.LocalizedString ("Fast Notification", "Field label for account fast notification option");
-            fastNotificationLabel.SizeToFit ();
-            ViewFramer.Create (fastNotificationLabel).Height (HEIGHT);
-
-            FastNotificationSwitch = new UISwitch ();
-            ViewFramer.Create (FastNotificationSwitch).RightAlignX (contentView.Frame.Width - INDENT);
-            ViewFramer.Create (FastNotificationSwitch).CenterY (yOffset, HEIGHT);
-
-            FastNotificationSwitch.ValueChanged += FastNotificationSwitchChangedHandler;
-
-            contentView.AddSubview (fastNotificationLabel);
-            contentView.AddSubview (FastNotificationSwitch);
-
-            yOffset = fastNotificationLabel.Frame.Bottom;
-
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
-                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-                var defaultEmailLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
-                defaultEmailLabel.Font = A.Font_AvenirNextRegular14;
-                defaultEmailLabel.TextAlignment = UITextAlignment.Left;
-                defaultEmailLabel.TextColor = A.Color_NachoDarkText;
-                defaultEmailLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Email Account", "Field label for default email account toggle");
-                defaultEmailLabel.SizeToFit ();
-                ViewFramer.Create (defaultEmailLabel).Height (HEIGHT);
-
-                DefaultEmailSwitch = new UISwitch ();
-                ViewFramer.Create (DefaultEmailSwitch).RightAlignX (contentView.Frame.Width - INDENT);
-                ViewFramer.Create (DefaultEmailSwitch).CenterY (yOffset, HEIGHT);
-
-                DefaultEmailSwitch.ValueChanged += DefaultEmailSwitchChangedHandler;
-
-                contentView.AddSubview (defaultEmailLabel);
-                contentView.AddSubview (DefaultEmailSwitch);
-
-                yOffset = defaultEmailLabel.Frame.Bottom;
-            }
-
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-
-                var defaultCalendarLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
-                defaultCalendarLabel.Font = A.Font_AvenirNextRegular14;
-                defaultCalendarLabel.TextAlignment = UITextAlignment.Left;
-                defaultCalendarLabel.TextColor = A.Color_NachoDarkText;
-                defaultCalendarLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Calendar Account", "Field label for default calendar account toggle");
-                defaultCalendarLabel.SizeToFit ();
-                ViewFramer.Create (defaultCalendarLabel).Height (HEIGHT);
-
-                DefaultCalendarSwitch = new UISwitch ();
-                ViewFramer.Create (DefaultCalendarSwitch).RightAlignX (contentView.Frame.Width - INDENT);
-                ViewFramer.Create (DefaultCalendarSwitch).CenterY (yOffset, HEIGHT);
-
-                DefaultCalendarSwitch.ValueChanged += DefaultCalendarSwitchChangedHandler;
-
-                contentView.AddSubview (defaultCalendarLabel);
-                contentView.AddSubview (DefaultCalendarSwitch);
-
-                yOffset = defaultCalendarLabel.Frame.Bottom;
-            }
-
-            var filler1 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
-            filler1.BackgroundColor = A.Color_NachoBackgroundGray;
-            contentView.AddSubview (filler1);
-            yOffset = filler1.Frame.Bottom + 5;
-
-            McServer serverWithIssue;
-            BackEndStateEnum serverIssue;
-            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
-                FixAccountButton = UIButton.FromType (UIButtonType.System);
-                FixAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
-                Util.AddButtonImage (FixAccountButton, "gen-avatar-alert", UIControlState.Normal);
-                FixAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
-                var serverIssueText = "";
-                switch (serverIssue) {
-                case BackEndStateEnum.CredWait:
-                    serverIssueText = NSBundle.MainBundle.LocalizedString ("Update Password (account issue)", "");
-                    break;
-                case BackEndStateEnum.CertAskWait:
-                    serverIssueText = NSBundle.MainBundle.LocalizedString ("Certificate Issue (account issue)", "");
-                    break;
-                case BackEndStateEnum.ServerConfWait:
-                    serverIssueText = NSBundle.MainBundle.LocalizedString ("Server Error (account issue)", "");
-                    break;
-                }
-                FixAccountButton.SetTitle (serverIssueText, UIControlState.Normal);
-                FixAccountButton.AccessibilityLabel = serverIssueText;
-                FixAccountButton.Font = A.Font_AvenirNextRegular14;
-                FixAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-                FixAccountButton.TouchUpInside += FixAccountButton_TouchUpInside;
-                contentView.AddSubview (FixAccountButton);
-                yOffset = FixAccountButton.Frame.Bottom;
-
-                var filler2 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
-                filler2.BackgroundColor = A.Color_NachoBackgroundGray;
-                contentView.AddSubview (filler2);
-                yOffset = filler2.Frame.Bottom + 5;
-            }
-
-            DateTime expiry;
-            string rectificationUrl;
-            if (LoginHelpers.PasswordWillExpire (account.Id, out expiry, out rectificationUrl)) {
-                var expiryText = string.Format (NSBundle.MainBundle.LocalizedString ("Password expires {0}", ""), Pretty.ReminderDate (expiry));
-                ExpiredPasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), expiryText, INDENT, 15, ExpiredPasswordTapHandler);
-                contentView.AddSubview (ExpiredPasswordBlock);
-                yOffset = ExpiredPasswordBlock.Frame.Bottom;
-                if (!String.IsNullOrEmpty (rectificationUrl)) {
-                    RectifyPasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), rectificationUrl, INDENT, 15, RectifyPasswordTapHandler);
-                    contentView.AddSubview (RectifyPasswordBlock);
-                    yOffset = RectifyPasswordBlock.Frame.Bottom;
-                }
-                var filler3 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
-                filler3.BackgroundColor = A.Color_NachoBackgroundGray;
-                contentView.AddSubview (filler3);
-                yOffset = filler3.Frame.Bottom + 5;
-            }
-                            
-            DeleteAccountButton = UIButton.FromType (UIButtonType.System);
-            DeleteAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
-            Util.AddButtonImage (DeleteAccountButton, "email-delete-two", UIControlState.Normal);
-            DeleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
-            DeleteAccountButton.SetTitle (NSBundle.MainBundle.LocalizedString ("Delete This Account", "Delete account button title"), UIControlState.Normal);
-            DeleteAccountButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Delete This Account", "");
-            DeleteAccountButton.Font = A.Font_AvenirNextRegular14;
-            DeleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            DeleteAccountButton.TouchUpInside += onDeleteAccount;
-            contentView.AddSubview (DeleteAccountButton);
-            yOffset = DeleteAccountButton.Frame.Bottom;
-
-            ViewFramer.Create (contentView).Height (yOffset);
-
-            // Delete Account Spinner - Keeping this separate from the validate credential spinner 
-            DeleteAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            DeleteAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
-            DeleteAccountBackgroundView.Hidden = true;
-            DeleteAccountBackgroundView.Alpha = 0.0f;
-            View.AddSubview (DeleteAccountBackgroundView);
-
-            UIView AlertMimicView = new UIView (new CGRect (DeleteAccountBackgroundView.Frame.Width / 2 - 90, DeleteAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
-            AlertMimicView.BackgroundColor = UIColor.White;
-            AlertMimicView.Layer.CornerRadius = 6.0f;
-            DeleteAccountBackgroundView.AddSubview (AlertMimicView);
-
-            UILabel DeleteAccountStatusMessage = new UILabel (new CGRect (8, 10, AlertMimicView.Frame.Width - 16, 25));
-            DeleteAccountStatusMessage.BackgroundColor = UIColor.White;
-            DeleteAccountStatusMessage.Alpha = 1.0f;
-            DeleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
-            DeleteAccountStatusMessage.TextColor = UIColor.Black;
-            DeleteAccountStatusMessage.Text = NSBundle.MainBundle.LocalizedString ("Deleting Account", "Account deletion wait message");
-            DeleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
-            AlertMimicView.AddSubview (DeleteAccountStatusMessage);
-
-            DeleteAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
-            DeleteAccountActivityIndicator.Frame = new CGRect (AlertMimicView.Frame.Width / 2 - 20, DeleteAccountStatusMessage.Frame.Bottom + 15, 40, 40);
-            DeleteAccountActivityIndicator.Color = A.Color_SystemBlue;
-            DeleteAccountActivityIndicator.Alpha = 1.0f;
-            DeleteAccountActivityIndicator.StartAnimating ();
-            AlertMimicView.AddSubview (DeleteAccountActivityIndicator);
-        }
-
-        protected override void ConfigureAndLayout ()
-        {
-            DisplayNameTextBlock.SetValue (account.DisplayName);
-
-            UpdateSignatureBlock ();
-
-            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (account.DaysToSyncEmail));
-
-            FastNotificationSwitch.SetState (account.FastNotificationEnabled, false);
-
-            if (DefaultEmailSwitch != null) {
-                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
-                bool isDefaultEmail = defaultEmailAccount != null && account.Id == defaultEmailAccount.Id;
-                DefaultEmailSwitch.SetState (isDefaultEmail, false);
-                DefaultEmailSwitch.Enabled = !isDefaultEmail;
-            }
-
-            if (DefaultCalendarSwitch != null) {
-                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
-                bool isDefaultCalendar = defaultCalendarAccount != null && account.Id == defaultCalendarAccount.Id;
-                DefaultCalendarSwitch.SetState (isDefaultCalendar, false);
-                DefaultCalendarSwitch.Enabled = !isDefaultCalendar;
-            }
-
-            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (account.NotificationConfiguration));
-
-            var contentViewWidth = contentView.Frame.Width;
-            var contentViewHeight = contentView.Frame.Height;
-            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            contentView.Frame = new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, contentViewWidth, contentViewHeight);
-            scrollView.ContentSize = new CGSize (contentView.Frame.Width + 2 * A.Card_Horizontal_Indent, contentView.Frame.Height + 2 * A.Card_Vertical_Indent);
-        }
-
-        void UpdateSignatureBlock ()
-        {
-            if (!string.IsNullOrEmpty (account.HtmlSignature)) {
-                var serializer = new HtmlTextSerializer (account.HtmlSignature);
-                var text = serializer.Serialize ();
-                SignatureBlock.SetValue (text);
-            } else {
-                SignatureBlock.SetValue (account.Signature);
-            }
-        }
-
-        protected override void OnKeyboardChanged ()
-        {
-            ConfigureAndLayout ();
-        }
-
-        protected override void Cleanup ()
-        {
-            accountImageView = null;
-
-            if (null != FixAccountButton) {
-                FixAccountButton.TouchUpInside -= FixAccountButton_TouchUpInside;
-            }
-            DeleteAccountButton.TouchUpInside -= onDeleteAccount;
-            FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
-            if (DefaultEmailSwitch != null) {
-                DefaultEmailSwitch.ValueChanged -= DefaultEmailSwitchChangedHandler;
-            }
-            if (DefaultCalendarSwitch != null) {
-                DefaultCalendarSwitch.ValueChanged -= DefaultCalendarSwitchChangedHandler;
+            if (Authenticator != null) {
+                Authenticator.Stop ();
+                Authenticator = null;
             }
         }
 
         public override void ViewDidDisappear (bool animated)
         {
             if (IsMovingFromParentViewController) {
-                if (account.Id == NcApplication.Instance.Account.Id) {
+                if (Account.Id == NcApplication.Instance.Account.Id) {
                     // reload the account, just in case something changed, since we did
                     // just come back out of the editing that account.
-                    NcApplication.Instance.Account = McAccount.QueryById<McAccount> (account.Id);
+                    NcApplication.Instance.Account = McAccount.QueryById<McAccount> (Account.Id);
                 }
             }
             base.ViewDidDisappear (animated);
         }
 
-        public bool TextFieldShouldReturn (UITextField whatField)
+        #endregion
+
+        #region Table Configuration
+
+        int SectionCount;
+
+        int NameSection = 0;
+        int NameRowCount = 2;
+        int AddrRow = 0;
+        int NameRow = 1;
+
+        int IssuesSection = -1;
+        int IssuesRowCount = 0;
+        int PasswordIssueRow = -1;
+        int CertIssueRow = -1;
+        int ServerIssueRow = -1;
+
+        int AdvancedSection = -1;
+        int AdvancedRowCount = 0;
+        int PasswordNoticeRow = -1;
+        int UpdatePasswordRow = -1;
+        int AdvancedSettingsRow = -1;
+
+        int MiscSection = -1;
+        int MiscRowCount = 4;
+        int SignatureRow = 0;
+        int SyncRow = 1;
+        int NotificationsRow = 2;
+        int FastNotifyRow = 3;
+
+        int DefaultsSection = -1;
+        int DefaultsRowCount = 0;
+        int DefaultEmailRow = -1;
+        int DefaultCalendarRow = -1;
+
+        int ActionsSection = -1;
+        int ActionsRowCount = 0;
+        int DeleteActionRow = -1;
+
+        void ConfigureTable ()
         {
-            View.EndEditing (true);
-            return true;
+            int row = 0;
+            SectionCount = 0;
+
+            NameSection = -1;
+            IssuesSection = -1;
+            AdvancedSection = -1;
+            MiscSection = -1;
+            DefaultsSection = -1;
+
+            row = 0;
+            NameSection = SectionCount++;
+            AddrRow = row++;
+            NameRow = row++;
+            NameRowCount = row;
+
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out serverIssue)) {
+                ServerWithIssue = serverWithIssue;
+                ServerIssue = serverIssue;
+                row = 0;
+                ServerIssueRow = -1;
+                PasswordIssueRow = -1;
+                CertIssueRow = -1;
+                IssuesSection = SectionCount++;
+                switch (ServerIssue) {
+                case BackEndStateEnum.CredWait:
+                    PasswordIssueRow = row++;
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                    CertIssueRow = row++;
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    ServerIssueRow = row++;
+                    break;
+                }
+                IssuesRowCount = row;
+            } else {
+                ServerWithIssue = null;
+                ServerIssue = BackEndStateEnum.Running;
+            }
+
+            PasswordRectifyUrl = null;
+            var creds = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
+            DateTime expriry;
+            string rectifyUrl;
+            bool showPasswordNotice = LoginHelpers.PasswordWillExpire (Account.Id, out expriry, out rectifyUrl);
+            bool showUpdatePassword = creds != null && (creds.CredType == McCred.CredTypeEnum.Password || creds.CredType == McCred.CredTypeEnum.OAuth2) && ServerIssue != BackEndStateEnum.CredWait;
+            bool showAdvanced = Account.AccountService == McAccount.AccountServiceEnum.Exchange || Account.AccountService == McAccount.AccountServiceEnum.IMAP_SMTP;
+            PasswordExpiry = expriry;
+            PasswordRectifyUrl = rectifyUrl;
+            if (showPasswordNotice || showUpdatePassword || showAdvanced) {
+                row = 0;
+                PasswordNoticeRow = -1;
+                UpdatePasswordRow = -1;
+                AdvancedSettingsRow = -1;
+                AdvancedSection = SectionCount++;
+                if (showPasswordNotice) {
+                    PasswordNoticeRow = row++;
+                }
+                if (showUpdatePassword) {
+                    UpdatePasswordRow = row++;
+                }
+                if (showAdvanced) {
+                    AdvancedSettingsRow = row++;
+                }
+                AdvancedRowCount = row;
+            }
+
+            row = 0;
+            MiscSection = SectionCount++;
+            SignatureRow = row++;
+            SyncRow = row++;
+            NotificationsRow = row++;
+            FastNotifyRow = row++;
+            MiscRowCount = row;
+
+            bool isEmailSender = Account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
+            bool isCalWriter = Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter);
+            if (isEmailSender || isCalWriter) {
+                row = 0;
+                DefaultEmailRow = -1;
+                DefaultCalendarRow = -1;
+                DefaultsSection = SectionCount++;
+                if (isEmailSender) {
+                    DefaultEmailRow = row++;
+                }
+                if (isCalWriter) {
+                    DefaultCalendarRow = row++;
+                }
+                DefaultsRowCount = row;
+            }
+
+            row = 0;
+            ActionsSection = SectionCount++;
+            DeleteActionRow = row++;
+            ActionsRowCount = row;
+
+            TableView.ReloadData ();
+        }
+
+        #endregion
+
+        #region Table Delegate & Data Source
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return SectionCount;
+        }
+
+        public override nint RowsInSection (UITableView tableView, nint section)
+        {
+            if (section == NameSection) {
+                return NameRowCount;
+            }
+            if (section == IssuesSection) {
+                return IssuesRowCount;
+            }
+            if (section == AdvancedSection) {
+                return AdvancedRowCount;
+            }
+            if (section == MiscSection) {
+                return MiscRowCount;
+            }
+            if (section == DefaultsSection) {
+                return DefaultsRowCount;
+            }
+            if (section == ActionsSection) {
+                return ActionsRowCount;
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: AccountSettingsViewController.RowsInSection unknown table section {0}", section));
+        }
+
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == AddrRow) {
+                    return AccountInfoCell.PreferredHeight;
+                }
+            }
+            return NameValueCell.PreferredHeight;
+        }
+
+        const string AccountInfoCellIdentifier = "AccountInfoCellIdentifier";
+        const string NameValueCellIdentifier = "NameValueCellIdentifier";
+        const string ButtonCellIdentifier = "ButtonCellIdentifier";
+        const string SwitchCellIdentifier = "SwitchCellIdentifier";
+        const string IssueCellIdentifier = "IssueCellIdentifier";
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == AddrRow) {
+                    var cell = tableView.DequeueReusableCell (AccountInfoCellIdentifier, indexPath) as AccountInfoCell;
+                    cell.SetAccount (Account);
+                    return cell;
+                }
+                if (indexPath.Row == NameRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Nickname (account)", "Field label for account nickname");
+                    cell.ValueLabel.Text = Account.DisplayName;
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+            }
+            if (indexPath.Section == IssuesSection) {
+                if (indexPath.Row == PasswordIssueRow) {
+                    var cell = tableView.DequeueReusableCell (IssueCellIdentifier, indexPath) as IssueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Update Password (account issue)", "");
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == CertIssueRow) {
+                    var cell = tableView.DequeueReusableCell (IssueCellIdentifier, indexPath) as IssueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Certificate Issue (account issue)", "");
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == ServerIssueRow) {
+                    var cell = tableView.DequeueReusableCell (IssueCellIdentifier, indexPath) as IssueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Certificate Issue (account issue)", "");
+                    if (!(cell.AccessoryView is ErrorAccessoryView)) {
+                        cell.AccessoryView = new ErrorAccessoryView ();
+                    }
+                    return cell;
+                }
+            }
+            if (indexPath.Section == AdvancedSection) {
+                if (indexPath.Row == PasswordNoticeRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = string.Format (NSBundle.MainBundle.LocalizedString ("Password expires {0}", ""), Pretty.ReminderDate (PasswordExpiry));
+                    cell.ValueLabel.Text = "";
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == UpdatePasswordRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Update Password", "Field label for account password update");
+                    cell.ValueLabel.Text = "";
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == AdvancedSettingsRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Advanced Settings (account)", "Field label for account advanced settings");
+                    cell.ValueLabel.Text = "";
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+            }
+            if (indexPath.Section == MiscSection) {
+                if (indexPath.Row == SignatureRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Signature", "Field label for account signature");
+                    cell.ValueLabel.Text = Account.GetPlainSignature ();
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == SyncRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Days to sync", "Field label for account sync");
+                    cell.ValueLabel.Text = Pretty.MaxAgeFilter (Account.DaysToSyncEmail);
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == NotificationsRow) {
+                    var cell = tableView.DequeueReusableCell (NameValueCellIdentifier, indexPath) as NameValueCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Notifications (account)", "Field label for account notifications option");
+                    cell.ValueLabel.Text = Pretty.NotificationConfiguration (Account.NotificationConfiguration);
+                    if (!(cell.AccessoryView is DisclosureAccessoryView)) {
+                        cell.AccessoryView = new DisclosureAccessoryView ();
+                    }
+                    return cell;
+                }
+                if (indexPath.Row == FastNotifyRow) {
+                    var cell = tableView.DequeueReusableCell (SwitchCellIdentifier, indexPath) as SwitchCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Fast Notification", "Field label for account fast notification option");
+                    cell.Switch.On = Account.FastNotificationEnabled;
+                    cell.SetSwitchHandler ((sender, e) => {
+                        Account.FastNotificationEnabled = (sender as UISwitch).On;
+                        Account.Update ();
+                    });
+                    return cell;
+                }
+            }
+            if (indexPath.Section == DefaultsSection) {
+                if (indexPath.Row == DefaultEmailRow) {
+                    var cell = tableView.DequeueReusableCell (SwitchCellIdentifier, indexPath) as SwitchCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Email Account", "Field label for default email account toggle");
+                    var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                    cell.Switch.On = defaultEmailAccount != null && Account.Id == defaultEmailAccount.Id;
+                    cell.Switch.Enabled = !cell.Switch.On;
+                    cell.SetSwitchHandler ((sender, e) => {
+                        McAccount.SetDefaultAccount (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                        (sender as UISwitch).Enabled = false;
+                    });
+                    return cell;
+                }
+                if (indexPath.Row == DefaultCalendarRow) {
+                    var cell = tableView.DequeueReusableCell (SwitchCellIdentifier, indexPath) as SwitchCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Default Calendar Account", "Field label for default calendar account toggle");
+                    var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                    cell.Switch.On = defaultCalendarAccount != null && Account.Id == defaultCalendarAccount.Id;
+                    cell.Switch.Enabled = !cell.Switch.On;
+                    cell.SetSwitchHandler ((sender, e) => {
+                        McAccount.SetDefaultAccount (Account.Id, McAccount.AccountCapabilityEnum.CalWriter);
+                        (sender as UISwitch).Enabled = false;
+                    });
+                    return cell;
+                }
+            }
+            if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row == DeleteActionRow) {
+                    var cell = tableView.DequeueReusableCell (ButtonCellIdentifier, indexPath) as ButtonCell;
+                    cell.TextLabel.Text = NSBundle.MainBundle.LocalizedString ("Delete This Account", "Delete account button title");
+                    cell.AccessoryView = new ImageAccessoryView ("gen-delete-all");
+                    return cell;
+                }
+            }
+            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("NcAssert.CaseError: AccountSettingsViewController.GetCell unknown index path {0}.{1}", indexPath.Section, indexPath.Row));
+        }
+
+        public override bool ShouldHighlightRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == NameRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == IssuesSection) {
+                if (indexPath.Row == PasswordIssueRow) {
+                    return true;
+                }
+                if (indexPath.Row == CertIssueRow) {
+                    return true;
+                }
+                if (indexPath.Row == ServerIssueRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == AdvancedSection) {
+                if (indexPath.Row == PasswordNoticeRow) {
+                    return true;
+                }
+                if (indexPath.Row == UpdatePasswordRow) {
+                    return true;
+                }
+                if (indexPath.Row == AdvancedSettingsRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == MiscSection) {
+                if (indexPath.Row == SignatureRow) {
+                    return true;
+                }
+                if (indexPath.Row == NotificationsRow) {
+                    return true;
+                }
+                if (indexPath.Row == SyncRow) {
+                    return true;
+                }
+            }
+            if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row == DeleteActionRow) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (ShouldHighlightRow (tableView, indexPath)) {
+                return indexPath;
+            }
+            return null;
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == NameSection) {
+                if (indexPath.Row == NameRow) {
+                    EditNickname ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                }
+            } else if (indexPath.Section == IssuesSection) {
+                if (indexPath.Row == PasswordIssueRow) {
+                    ShowPasswordUpdate ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == CertIssueRow) {
+                    ShowCertIssue ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == ServerIssueRow) {
+                    ShowServerIssue ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                }
+            } else if (indexPath.Section == AdvancedSection) {
+                if (indexPath.Row == PasswordNoticeRow) {
+                    ShowPasswordExpiryNotice ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == UpdatePasswordRow) {
+                    ShowPasswordUpdate ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                } else if (indexPath.Row == AdvancedSettingsRow) {
+                    ShowAdvancedSettings ();
+                }
+            } else if (indexPath.Section == MiscSection) {
+                if (indexPath.Row == SignatureRow) {
+                    ShowSignatureEditor ();
+                } else if (indexPath.Row == SyncRow) {
+                    ShowDaysToSyncPicker ();
+                } else if (indexPath.Row == NotificationsRow) {
+                    ShowNotificationsPicker ();
+                }
+            } else if (indexPath.Section == ActionsSection) {
+                if (indexPath.Row == DeleteActionRow) {
+                    ShowDeleteConfirmation ();
+                    tableView.DeselectRow (indexPath, animated: true);
+                }
+            }
+        }
+
+        public override void WillDisplay (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            base.WillDisplay (tableView, cell, indexPath);
+            var themed = cell as ThemeAdopter;
+            if (themed != null && AdoptedTheme != null) {
+                themed.AdoptTheme (AdoptedTheme);
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        void EditNickname ()
+        {
+            var alert = UIAlertController.Create (NSBundle.MainBundle.LocalizedString ("Nickname (account)", ""), null, UIAlertControllerStyle.Alert);
+            alert.AddTextField ((field) => {
+                field.Text = Account.DisplayName;
+            });
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIAlertActionStyle.Cancel, (action) => {
+            }));
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Save", ""), UIAlertActionStyle.Default, (action) => {
+                var name = alert.TextFields [0].Text;
+                if (!string.IsNullOrWhiteSpace (name)) {
+                    Account = Account.UpdateWithOCApply<McAccount> ((record) => {
+                        var account = record as McAccount;
+                        account.DisplayName = name;
+                        return true;
+                    });
+                    TableView.ReloadRows (new NSIndexPath [] { NSIndexPath.FromRowSection (NameRow, NameSection) }, UITableViewRowAnimation.None);
+                }
+            }));
+            PresentViewController (alert, animated: true, completionHandler: null);
+        }
+
+        void ShowSignatureEditor ()
+        {
+            var signatureController = new SignatureEditViewController ();
+            signatureController.Account = Account;
+            NavigationController.PushViewController (signatureController, true);
+        }
+
+        void ShowDaysToSyncPicker ()
+        {
+            var picker = new DaysToSyncChooserViewController ();
+            picker.Account = Account;
+            NavigationController.PushViewController (picker, animated: true);
+        }
+
+        void ShowNotificationsPicker ()
+        {
+            var picker = new NotificationChooserViewController ();
+            picker.Account = Account;
+            NavigationController.PushViewController (picker, animated: true);
+        }
+
+        void ShowDeleteConfirmation ()
+        {
+            var alert = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIAlertActionStyle.Cancel, (action) => {
+            }));
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Delete This Account", ""), UIAlertActionStyle.Destructive, (action) => {
+                DeleteAccount ();
+            }));
+            PresentViewController (alert, animated: true, completionHandler: null);
+        }
+
+        void DeleteAccount ()
+        {
+            var indicator = new ActivityIndicatorViewController ();
+            PresentViewController (indicator, animated: true, completionHandler: () => {
+                NcTask.Run (() => {
+                    NcAccountHandler.Instance.RemoveAccount (Account.Id);
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        DismissViewController (animated: false, completionHandler: () => {
+                            NavigationController.PopViewController (animated: true);
+                        });
+                    });
+                }, "RemoveAccount");
+            });
         }
 
         void ShowAdvancedSettings ()
         {
             var vc = new AdvancedSettingsViewController ();
-            vc.Setup (account);
-            NavigationController.PushViewController (vc, true);
+            vc.Setup (Account);
+            NavigationController.PushViewController (vc, animated: true);
         }
 
-        void ShowAccountValidation ()
+        void ShowPasswordUpdate ()
         {
-            var vc = new AccountValidationViewController ();
-            vc.ChangePassword (account);
-            NavigationController.PushViewController (vc, true);
-        }
-
-        protected void ChangeDescriptionTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                var descriptionViewController = new SettingsTextPropertyViewController ();
-                var tag = NSBundle.MainBundle.LocalizedString ("Create a nickname for this account.", "Title for nickname entry view");
-                descriptionViewController.Setup (NSBundle.MainBundle.LocalizedString ("Nickname (account)", ""), tag, account.DisplayName, OnSaveDescription);
-                NavigationController.PushViewController (descriptionViewController, true);
+            var authType = Account.GetAuthType ();
+            switch (authType) {
+            case McAccount.AuthType.UserPass:
+                ShowBasicPasswordUpdate ();
+                break;
+            case McAccount.AuthType.GoogleOAuth:
+                ShowGooglePasswordUpdate ();
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("AccountSettingsFragment.ShowPasswordUpdate: unknown auth type: {0}", authType));
             }
         }
 
-        protected void ChangePasswordTapHandler (NSObject sender)
+        AccountCredentialsValidator Validator;
+
+        void ShowBasicPasswordUpdate ()
         {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                if (!MaybeStartGmailAuth (account)) {
-                    ShowAccountValidation ();
+            var alert = UIAlertController.Create (NSBundle.MainBundle.LocalizedString ("Update Password (title)", ""), string.Format (NSBundle.MainBundle.LocalizedString ("Update the password for {0}", ""), Account.EmailAddr), UIAlertControllerStyle.Alert);
+            alert.AddTextField ((field) => {
+                field.SecureTextEntry = true;
+            });
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Cancel", ""), UIAlertActionStyle.Cancel, (obj) => { }));
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Save", ""), UIAlertActionStyle.Default, (obj) => {
+                StartPasswordValidation (alert.TextFields [0].Text);
+            }));
+            PresentViewController (alert, animated: true, completionHandler: null);
+        }
+
+        void StartPasswordValidation (string password)
+        {
+            var indicator = new ActivityIndicatorViewController ();
+            PresentViewController (indicator, animated: true, completionHandler: () => {
+                Validator = new AccountCredentialsValidator (Account);
+                Validator.Validate (password, ValidatorComplete);
+            });
+        }
+
+        void ValidatorComplete (bool success)
+        {
+            DismissViewController (animated: true, completionHandler: () => {
+                if (!success) {
+                    ShowBasicPasswordUpdate ();
                 }
+            });
+        }
+
+        void ShowPasswordExpiryNotice ()
+        {
+            var message = string.Format (NSBundle.MainBundle.LocalizedString ("Your password expires {0}", ""), Pretty.ReminderDate (PasswordExpiry));
+            var alert = UIAlertController.Create (NSBundle.MainBundle.LocalizedString ("Password Expiring", ""), message, UIAlertControllerStyle.Alert);
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Close", ""), UIAlertActionStyle.Cancel, (obj) => { }));
+            alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Clear Notification", ""), UIAlertActionStyle.Default, (obj) => {
+                LoginHelpers.ClearPasswordExpiration (Account.Id);
+                ConfigureTable ();
+            }));
+            if (!string.IsNullOrEmpty (PasswordRectifyUrl)) {
+                alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("Set New Password", ""), UIAlertActionStyle.Default, (obj) => {
+                    UIApplication.SharedApplication.OpenUrl (new NSUrl (PasswordRectifyUrl));
+                }));
             }
+            PresentViewController (alert, animated: false, completionHandler: null);
         }
 
-        protected void ExpiredPasswordTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                NcActionSheet.Show (ExpiredPasswordBlock, this,
-                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Clear Notification", "Title for alert when clearing issue warning"), () => {
-                        LoginHelpers.ClearPasswordExpiration (account.Id);
-                        ExpiredPasswordBlock.SetLabel (NSBundle.MainBundle.LocalizedString ("Password expiration cleared", "Message shown after issue warning has been cleared"));
-                    }),
-                    new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null)
-                );
-            }
-        }
-
-        protected void RectifyPasswordTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                DateTime expiry;
-                string rectificationUrl;
-                if (LoginHelpers.PasswordWillExpire (account.Id, out expiry, out rectificationUrl)) {
-                    if (!String.IsNullOrEmpty (rectificationUrl)) {
-                        var url = new NSUrl (rectificationUrl);
-                        if (UIApplication.SharedApplication.CanOpenUrl (url)) {
-                            UIApplication.SharedApplication.OpenUrl (url);
-                        }
-                    }
-                }
-            }
-        }
-
-        protected void AdvancedSettingsTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                ShowAdvancedSettings (); 
-            }
-        }
-
-        protected void SignatureTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                var signatureController = new SignatureEditViewController ();
-                signatureController.Account = account;
-                signatureController.OnSave = OnSaveSignature;
-                NavigationController.PushViewController (signatureController, true);
-            }
-        }
-
-        protected void DaysToSyncTapHandler (NSObject sender)
-        {
-            NcActionSheet.Show (DaysToSyncBlock, this,
-                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
-                    UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
-                }),
-                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
-                    UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
-                }),
-                new NcAlertAction (NSBundle.MainBundle.LocalizedString ("Cancel", ""), NcAlertActionStyle.Cancel, null)
-            );
-        }
-
-        protected void NotificationsTapHandler (NSObject sender)
-        {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                ShowNotificationChooser ();
-            }
-        }
-
-        void ShowNotificationChooser ()
-        {
-            var vc = new NotificationChooserViewController ();
-            vc.Setup (this, account.Id, account.NotificationConfiguration);
-            NavigationController.PushViewController (vc, true);
-        }
-
-        protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
-        {
-            account.FastNotificationEnabled = FastNotificationSwitch.On;
-            account.Update ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
-        }
-
-        protected void DefaultEmailSwitchChangedHandler (object sender, EventArgs e)
-        {
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            var mutablesModule = "DefaultAccounts";
-            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
-            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
-            DefaultEmailSwitch.Enabled = false;
-        }
-
-        protected void DefaultCalendarSwitchChangedHandler (object sender, EventArgs e)
-        {
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            var mutablesModule = "DefaultAccounts";
-            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
-            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
-            DefaultCalendarSwitch.Enabled = false;
-        }
-
-        protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
-        {
-            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
-            account.DaysToSyncEmail = code;
-            account.Update ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_DaysToSyncChanged);
-        }
-
-        public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
-        {
-            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
-            account.NotificationConfiguration = choice;
-            account.Update ();
-        }
-
-        void OnSaveSignature (SignatureEditViewController signatureController)
-        {
-            account.Signature = signatureController.EditedPlainSignature;
-            account.HtmlSignature = signatureController.EditedHtmlSignature;
-            account.Update ();
-            UpdateSignatureBlock ();
-        }
-
-        void OnSaveDescription (string text)
-        {
-            DisplayNameTextBlock.SetValue (text);
-            account.DisplayName = text;
-            account.Update ();
-        }
-
-        void FixAccountButton_TouchUpInside (object sender, EventArgs e)
-        {
-            McServer serverWithIssue;
-            BackEndStateEnum serverIssue;
-            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
-                switch (serverIssue) {
-                case BackEndStateEnum.CredWait:
-                    if (!MaybeStartGmailAuth (account)) {
-                        ShowAccountValidation ();
-                    }
-                    break;
-                case BackEndStateEnum.CertAskWait:
-                    CertAsk (McAccount.AccountCapabilityEnum.EmailSender);
-                    break;
-                case BackEndStateEnum.ServerConfWait:
-                    if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
-                        ShowAdvancedSettings ();
-                    } else {
-                        BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
-                        NavigationController.PopViewController (true);
-                    }
-                    break;
-                }
-            }
-        }
-
-        void CertAsk (McAccount.AccountCapabilityEnum capability)
+        void ShowCertIssue ()
         {
             var vc = new CertAskViewController ();
-            vc.Setup (account, capability);
-            NavigationController.PushViewController (vc, true);
+            vc.Setup (Account, McAccount.AccountCapabilityEnum.EmailSender);
+            NavigationController.PushViewController (vc, animated: true);
         }
 
-        void onDeleteAccount (object sender, EventArgs e)
+        void ShowServerIssue ()
         {
-            contentView.Hidden = true;
-            ToggleDeleteAccountSpinnerView ();
-            Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount (account.Id);
-                InvokeOnMainThread (() => {
-                    ToggleDeleteAccountSpinnerView ();
-                    // go back to main screen
-                    NcUIRedirector.Instance.GoBackToMainScreen ();  
-                });
-            };
-            NcTask.Run (action, "RemoveAccount");
-        }
-
-        void ToggleDeleteAccountSpinnerView ()
-        {
-            DeleteAccountBackgroundView.Hidden = !DeleteAccountBackgroundView.Hidden;
-
-            if (DeleteAccountBackgroundView.Hidden) {
-                DeleteAccountActivityIndicator.StopAnimating ();
-                DeleteAccountBackgroundView.Alpha = 0.0f;
+            if (ServerWithIssue.IsHardWired) {
+                BackEnd.Instance.ServerConfResp (Account.Id, ServerWithIssue.Capabilities, false);
+                NavigationController.PopViewController (animated: true);
             } else {
-                UIView.Animate (.15, () => {
-                    DeleteAccountBackgroundView.Alpha = 1.0f;
-                });
-                DeleteAccountActivityIndicator.StartAnimating ();
+                ShowAdvancedSettings ();
             }
         }
 
-        bool MaybeStartGmailAuth (McAccount account)
+        #endregion
+
+        #region Google Auth
+
+        GoogleOAuth2Authenticator Authenticator;
+
+        private void ShowGooglePasswordUpdate ()
         {
-            if (McAccount.AccountServiceEnum.GoogleDefault != account.AccountService) {
-                return false;
-            }
-            var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if (null == cred) {
-                return false;
-            }
-            if (McCred.CredTypeEnum.OAuth2 != cred.CredType) {
-                return false;
-            }
-
-            StartGoogleLogin ();
-
-            return true;
-        }
-
-        GoogleOAuth2Authenticator GoogleAuthenticator;
-
-        public void StartGoogleLogin ()
-        {
-
-            GoogleOAuth2Authenticator.Create (account.EmailAddr, (GoogleOAuth2Authenticator auth) => {
-
-                GoogleAuthenticator = auth;
-
+            GoogleOAuth2Authenticator.Create (Account.EmailAddr, (auth) => {
+                Authenticator = auth;
                 auth.AllowCancel = true;
-
-                // If authorization succeeds or is canceled, .Completed will be fired.
-                auth.Completed += (s, e) => {
-                    DismissViewController (true, () => {
-                        if (!e.IsAuthenticated) {
-                            return;
-                        }
-
-                        string access_token;
-                        e.Account.Properties.TryGetValue ("access_token", out access_token);
-
-                        string refresh_token;
-                        e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
-
-                        string expiresString = "0";
-                        uint expirationSecs = 0;
-                        if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
-                            if (!uint.TryParse (expiresString, out expirationSecs)) {
-                                Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
-                            }
-                        }
-
-                        var source = "https://www.googleapis.com/oauth2/v1/userinfo";
-                        var url = String.Format ("{0}?access_token={1}", source, access_token);
-                        Newtonsoft.Json.Linq.JObject userInfo;
-                        try {
-                            var userInfoString = new WebClient ().DownloadString (url);
-                            userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
-                        } catch (Exception ex) {
-                            Log.Info (Log.LOG_HTTP, "Could not download or parse userInfoString from {0}: {1}", source, ex);
-                            NcAlertView.ShowMessage (this, "Settings", string.Format ("Could not download user details. Please try again. ({0})", ex.Message));
-                            return;
-                        }
-
-                        if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
-                            // Can't change your email address
-                            NcAlertView.ShowMessage (this, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
-                            return;
-                        }
-
-                        var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-                        cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
-
-                        BackEnd.Instance.CredResp (account.Id);
-
-                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_McCredPasswordChanged);
-                        NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                            Status = result,
-                            Account = account,
-                        });
-                    });
-                };
-
+                auth.Completed += GoogleAuthCompleted;
                 auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
-                    DismissViewController (true, () => {
-                    });
+                    NavigationController.PopViewController (animated: true);
                 };
-
-                SFSafariViewController vc = auth.GetUI () as SFSafariViewController;
-                vc.Delegate = this;
-                this.PresentViewController (vc, true, null);
+                var authView = auth.GetUI () as SFSafariViewController;
+                PresentViewController (authView, animated: true, completionHandler: null);
             });
-
         }
 
         [Foundation.Export ("safariViewControllerDidFinish:")]
         public virtual void DidFinish (SFSafariViewController controller)
         {
-            GoogleAuthenticator.Stop ();
-            controller.Delegate = null;
-            GoogleAuthenticator = null;
+            Authenticator.Stop ();
+            Authenticator = null;
         }
 
+        private void GoogleAuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
+        {
+            if (e.IsAuthenticated) {
+                string access_token;
+                e.Account.Properties.TryGetValue ("access_token", out access_token);
+
+                string refresh_token;
+                e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
+
+                string expiresString = "0";
+                uint expirationSecs = 0;
+                if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
+                    if (!uint.TryParse (expiresString, out expirationSecs)) {
+                        Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
+                    }
+                }
+
+                var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
+
+                Newtonsoft.Json.Linq.JObject userInfo;
+                try {
+                    var userInfoString = new System.Net.WebClient ().DownloadString (url);
+                    userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                } catch (Exception ex) {
+                    Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info {0}", ex);
+                    var alert = UIAlertController.Create ("Nacho Mail", "We could not complete your account authentication.  Please try again.", UIAlertControllerStyle.Alert);
+                    alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("OK", ""), UIAlertActionStyle.Default, (action) => { }));
+                    PresentViewController (alert, animated: true, completionHandler: null);
+                    return;
+                }
+
+                if (!String.Equals (Account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
+                    // Can't change your email address
+                    var alert = UIAlertController.Create ("Nacho Mail", "You may not change your email address.  Create a new account to use a new email address.", UIAlertControllerStyle.Alert);
+                    alert.AddAction (UIAlertAction.Create (NSBundle.MainBundle.LocalizedString ("OK", ""), UIAlertActionStyle.Default, (action) => { }));
+                    PresentViewController (alert, animated: true, completionHandler: null);
+                    return;
+                }
+
+                var cred = Account.GetCred ();
+                cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
+
+                BackEnd.Instance.CredResp (Account.Id);
+            }
+            DismissViewController (animated: true, completionHandler: null);
+        }
+
+        #endregion
+
+        #region Custom Cells
+
+        private class AccountInfoCell : SwipeTableViewCell, ThemeAdopter
+        {
+
+            public readonly UIImageView AccountImageView;
+            public static nfloat PreferredHeight = 64.0f;
+            nfloat ImageSize = 40.0f;
+
+            public AccountInfoCell (IntPtr handle) : base (handle)
+            {
+                AccountImageView = new UIImageView (new CGRect (0.0f, 0.0f, ImageSize, ImageSize));
+                AccountImageView.ClipsToBounds = true;
+                AccountImageView.Layer.CornerRadius = ImageSize / 2.0f;
+                ContentView.AddSubview (AccountImageView);
+
+                SeparatorInset = new UIEdgeInsets (0.0f, PreferredHeight, 0.0f, 0.0f);
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.BoldDefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SetNeedsLayout ();
+            }
+
+            public override void LayoutSubviews ()
+            {
+                base.LayoutSubviews ();
+                var imagePadding = (ContentView.Bounds.Height - AccountImageView.Bounds.Height) / 2.0f;
+                AccountImageView.Frame = new CGRect (imagePadding, imagePadding, AccountImageView.Frame.Width, AccountImageView.Frame.Height);
+            }
+
+            public void SetAccount (McAccount account)
+            {
+                TextLabel.Text = account.EmailAddr;
+                using (var image = Util.ImageForAccount (account)) {
+                    AccountImageView.Image = image;
+                }
+            }
+        }
+
+        class IssueCell : SwipeTableViewCell, ThemeAdopter
+        {
+            public IssueCell (IntPtr handle) : base (handle)
+            {
+            }
+
+            public void AdoptTheme (Theme theme)
+            {
+                TextLabel.Font = theme.DefaultFont.WithSize (14.0f);
+                TextLabel.TextColor = theme.TableViewCellMainLabelTextColor;
+                SetNeedsLayout ();
+            }
+
+        }
+
+        class DisclosureAccessoryView : ImageAccessoryView
+        {
+            public DisclosureAccessoryView () : base ("gen-more-arrow")
+            {
+            }
+        }
+
+        #endregion
+
     }
+
+    public class ActivityIndicatorViewController : UIViewController
+    {
+        NcActivityIndicatorView IndicatorView;
+
+        public ActivityIndicatorViewController ()
+        {
+            ModalPresentationStyle = UIModalPresentationStyle.OverFullScreen;
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
+
+        public override void LoadView ()
+        {
+            base.LoadView ();
+            View = new UIView ();
+            View.BackgroundColor = UIColor.Black.ColorWithAlpha (0.7f);
+            IndicatorView = new NcActivityIndicatorView (30.0f);
+            IndicatorView.TranslatesAutoresizingMaskIntoConstraints = false;
+            View.AddSubview (IndicatorView);
+            IndicatorView.CenterXAnchor.ConstraintEqualTo (View.CenterXAnchor).Active = true;
+            IndicatorView.CenterYAnchor.ConstraintEqualTo (View.CenterYAnchor).Active = true;
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            IndicatorView.StartAnimating ();
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+            IndicatorView.StopAnimating ();
+        }
+    }
+
 }

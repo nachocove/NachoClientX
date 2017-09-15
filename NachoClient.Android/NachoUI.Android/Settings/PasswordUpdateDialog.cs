@@ -26,6 +26,7 @@ namespace NachoClient.AndroidClient
         McAccount Account;
         private EditText UsernameField;
         private EditText PasswordField;
+        AccountCredentialsValidator Validator;
 
         private Button SaveButton {
             get {
@@ -73,7 +74,8 @@ namespace NachoClient.AndroidClient
 
         public override void OnDismiss (IDialogInterface dialog)
         {
-            StopListeningForStatusInd ();
+            Validator?.Stop ();
+            Validator = null;
             UsernameField = null;
             PasswordField = null;
             base.OnDismiss (dialog);
@@ -108,51 +110,27 @@ namespace NachoClient.AndroidClient
 
         #region Private Helpers
 
-        List<McServer> ServersNeedingValidation;
-        McCred TestCreds;
-
         void Save ()
         {
             DisableActions ();
-            StartListeningForStatusInd ();
-            var creds = Account.GetCred ();
-            ServersNeedingValidation = Account.GetServers ();
-            TestCreds = new McCred ();
-            TestCreds.Username = creds.Username;
-            TestCreds.UserSpecifiedUsername = creds.UserSpecifiedUsername;
-            TestCreds.SetTestPassword (PasswordField.Text);
-            ValidateNextServer ();
-        }
-
-        void ValidateNextServer ()
-        {
-            if (ServersNeedingValidation == null) {
-                return;
-            }
-            if (ServersNeedingValidation.Count == 0) {
-                CompleteValidation ();
-            } else {
-                var server = ServersNeedingValidation.First ();
-                ServersNeedingValidation.RemoveAt (0);
-                if (!BackEnd.Instance.ValidateConfig (Account.Id, server, TestCreds).isOK ()) {
+            Validator = new AccountCredentialsValidator (Account);
+            Validator.Validate (PasswordField.Text, (success) => {
+                if (success) {
+                    CompleteValidation ();
+                } else {
                     FailValidation ();
                 }
-            }
-
+            });
         }
 
         void CompleteValidation ()
         {
-            StopListeningForStatusInd ();
             Dismiss ();
         }
 
         void FailValidation ()
         {
             EnableActions ();
-            StopListeningForStatusInd ();
-            ServersNeedingValidation = null;
-            TestCreds = null;
             PasswordField.Text = "";
             PasswordField.RequestFocus ();
             Dialog.Window.SetSoftInputMode (SoftInput.StateAlwaysVisible);
@@ -177,44 +155,5 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
-        #region Event Listener
-
-        bool IsListeningForStatusInd = false;
-
-        void StartListeningForStatusInd ()
-        {
-            if (!IsListeningForStatusInd) {
-                NcApplication.Instance.StatusIndEvent += StatusIndCallback;
-                IsListeningForStatusInd = true;
-            }
-        }
-
-        void StopListeningForStatusInd ()
-        {
-            if (IsListeningForStatusInd) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndCallback;
-                IsListeningForStatusInd = false;
-            }
-        }
-
-        void StatusIndCallback (object sender, EventArgs e)
-        {
-            var statusEvent = e as StatusIndEventArgs;
-            if (statusEvent.Account == null || statusEvent.Account.Id != Account.Id) {
-                return;
-            }
-            switch (statusEvent.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_ValidateConfigSucceeded:
-                ValidateNextServer ();
-                break;
-            case NcResult.SubKindEnum.Error_ValidateConfigFailedAuth:
-            case NcResult.SubKindEnum.Error_ValidateConfigFailedComm:
-            case NcResult.SubKindEnum.Error_ValidateConfigFailedUser:
-                FailValidation ();
-                break;
-            }
-        }
-
-        #endregion
     }
 }
