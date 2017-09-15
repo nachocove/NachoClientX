@@ -15,7 +15,7 @@ namespace NachoCore
     /// </summary>
     public class NcEventManager
     {
-        private NcEventManager() { }
+        private NcEventManager () { }
 
         private static object lockObject = new object ();
 
@@ -29,7 +29,7 @@ namespace NachoCore
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Always keep the events accurate for the next 30 days, so that local notifications will be correct.
-            AddEventWindow (typeof(NcEventManager), TimeSpan.FromDays (30));
+            AddEventWindow (typeof (NcEventManager), TimeSpan.FromDays (30));
         }
 
         public static DateTime BeginningOfEventsOfInterest {
@@ -72,6 +72,18 @@ namespace NachoCore
 
         private static void RegenerateEvents ()
         {
+            UpdateLatestEndDate ();
+            CalendarHelper.ExpandRecurrences (latestEndDate);
+        }
+
+        public static void RegenerateEvents (McCalendar calendar)
+        {
+            UpdateLatestEndDate ();
+            CalendarHelper.ExpandRecurrences (calendar, latestEndDate);
+        }
+
+        static void UpdateLatestEndDate ()
+        {
             maxDuration = TimeSpan.MinValue;
             foreach (var duration in eventWindows.Values) {
                 if (duration > maxDuration) {
@@ -79,7 +91,6 @@ namespace NachoCore
                 }
             }
             latestEndDate = DateTime.UtcNow + maxDuration;
-            CalendarHelper.ExpandRecurrences (latestEndDate);
         }
 
         private static void StatusIndicatorCallback (object sender, EventArgs e)

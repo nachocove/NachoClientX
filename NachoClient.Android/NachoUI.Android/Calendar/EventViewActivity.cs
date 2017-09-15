@@ -26,6 +26,7 @@ namespace NachoClient.AndroidClient
 
         public const string ACTION_DELETE = "NachoClient.AndroidClient.EventViewActivity.ACTION_DELETE";
         public const string EXTRA_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_EVENT_ID";
+        public const string EXTRA_CALENDAR_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_CALENDAR_ID";
         public const string EXTRA_ANDROID_EVENT_ID = "NachoClient.AndroidClient.EventViewActivity.EXTRA_ANDROID_EVENT_ID";
         public const int REQUEST_EDIT_EVENT = 1;
 
@@ -39,13 +40,14 @@ namespace NachoClient.AndroidClient
             if (calendarEvent.DeviceEventId != 0) {
                 return BuildAndroidEventIntent (context, calendarEvent.DeviceEventId);
             }
-            return BuildIntent (context, calendarEvent.Id);
+            return BuildIntent (context, calendarEvent.Id, calendarEvent.CalendarId);
         }
 
-        public static Intent BuildIntent (Context context, int eventId)
+        public static Intent BuildIntent (Context context, int eventId, int calendarId)
         {
             var intent = new Intent (context, typeof (EventViewActivity));
             intent.PutExtra (EXTRA_EVENT_ID, eventId);
+            intent.PutExtra (EXTRA_CALENDAR_ID, calendarId);
             return intent;
         }
 
@@ -104,6 +106,12 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle savedInstanceState)
         {
             PopulateFromIntent ();
+            // Events get regenerated and replaced as the underlying calendar item changes,
+            // so if we couldn't query an event, just close and have the user retry
+            if (Event == null) {
+                Finish ();
+                return;
+            }
             base.OnCreate (savedInstanceState);
             SetContentView (Resource.Layout.EventViewActivity);
             FindSubviews ();
@@ -120,26 +128,46 @@ namespace NachoClient.AndroidClient
 
         void PopulateFromIntent ()
         {
-        	var bundle = Intent.Extras;
+            var bundle = Intent.Extras;
             if (Intent.HasExtra (EXTRA_EVENT_ID)) {
                 var eventId = bundle.GetInt (EXTRA_EVENT_ID);
-                Event = McEvent.QueryById<McEvent> (eventId);
+                Event = GetEvent (eventId);
             } else {
                 var androidEventId = bundle.GetLong (EXTRA_ANDROID_EVENT_ID);
                 Event = NachoPlatform.AndroidCalendars.GetEvent (androidEventId);
             }
-            // FIXME: allow editing of device events (remove the && Event.CalendarId != 0)
-            // Currently the edit view is based off of a McCalendar, which android device events
-            // do not have, as they exist only in memory and not in the database linked to other objects.
-            // AndroidCalendars has a method for creating a McCalendar from a device event, but it needs to
-            // be reworked a little bit so the edit view doesn't have to care if the McCalendar is in the datbase
-            // or not.
-            CanEditEvent = CalendarHelper.CanEdit (Event) && Event.CalendarId != 0;
+            if (Event != null) {
+                // FIXME: allow editing of device events (remove the && Event.CalendarId != 0)
+                // Currently the edit view is based off of a McCalendar, which android device events
+                // do not have, as they exist only in memory and not in the database linked to other objects.
+                // AndroidCalendars has a method for creating a McCalendar from a device event, but it needs to
+                // be reworked a little bit so the edit view doesn't have to care if the McCalendar is in the datbase
+                // or not.
+                CanEditEvent = CalendarHelper.CanEdit (Event) && Event.CalendarId != 0;
+            }
+        }
+
+        McEvent GetEvent (int eventId)
+        {
+            var calendarEvent = McEvent.QueryById<McEvent> (eventId);
+            if (calendarEvent == null) {
+                // The event could have disappeared after an edit, but since we only allow editing of
+                // non-recurring events, we can query the db for the newly generated event.  It would
+                // be even better if events weren't deleted and regenereated in the first place.
+                var bundle = Intent.Extras;
+                if (Intent.HasExtra (EXTRA_CALENDAR_ID)) {
+                    var calendarId = bundle.GetInt (EXTRA_CALENDAR_ID);
+                    var events = McEvent.QueryEventsForCalendarItemAfter (calendarId, DateTime.MinValue);
+                    calendarEvent = events.FirstOrDefault ();
+                }
+            }
+            return calendarEvent;
+
         }
 
         public override void OnAttachFragment (Fragment fragment)
         {
-        	base.OnAttachFragment (fragment);
+            base.OnAttachFragment (fragment);
             if (fragment is EventViewFragment) {
                 EventViewFragment = (fragment as EventViewFragment);
                 EventViewFragment.Event = Event;
@@ -236,8 +264,14 @@ namespace NachoClient.AndroidClient
                 if (data != null && data.Action == EventEditActivity.ACTION_DELETE) {
                     FinishWithDeleteAction ();
                 } else {
-                    Event = McEvent.QueryById<McEvent> (Event.Id);
-                    Update ();
+                    Event = GetEvent (Event.Id);
+                    if (Event != null) {
+                        Update ();
+                    } else {
+                        // Couldn't find the regenerated event...shouldn't happen, but if it does,
+                        // just close instead of crashing
+                        Finish ();
+                    }
                 }
             }
         }
@@ -279,21 +313,21 @@ namespace NachoClient.AndroidClient
 
         void ShowCancelConfirmation ()
         {
-        	var builder = new AlertDialog.Builder (this);
+            var builder = new AlertDialog.Builder (this);
             builder.SetTitle (Resource.String.event_cancel_confirmation_message);
-        	var items = new string [] {
-        				GetString (Resource.String.event_cancel_confirmation_accept)
-        			};
-        	builder.SetItems (items, (sender, e) => {
-        		switch (e.Which) {
-        		case 0:
-        			CancelOccurrence ();
-        			break;
-        		default:
-        			break;
-        		}
-        	});
-        	builder.Show ();
+            var items = new string [] {
+                        GetString (Resource.String.event_cancel_confirmation_accept)
+                    };
+            builder.SetItems (items, (sender, e) => {
+                switch (e.Which) {
+                case 0:
+                    CancelOccurrence ();
+                    break;
+                default:
+                    break;
+                }
+            });
+            builder.Show ();
         }
 
         void ShowForward ()
@@ -322,7 +356,7 @@ namespace NachoClient.AndroidClient
         void FinishWithDeleteAction ()
         {
             var intent = new Intent (ACTION_DELETE);
-			SetResult (Result.Ok, intent);
+            SetResult (Result.Ok, intent);
             Finish ();
         }
 
@@ -352,7 +386,7 @@ namespace NachoClient.AndroidClient
 
         void ShowResponseConfirmation (NcResponseType response)
         {
-        	var builder = new AlertDialog.Builder (this);
+            var builder = new AlertDialog.Builder (this);
             builder.SetTitle (Resource.String.event_response_confirmation_message);
             var all_format = GetString (Resource.String.event_response_confirmation_all_format);
             var occurrence_format = GetString (Resource.String.event_response_confirmation_occurrence_format);
@@ -372,19 +406,19 @@ namespace NachoClient.AndroidClient
                 String.Format (all_format, action),
                 String.Format (occurrence_format, action)
             };
-        	builder.SetItems (items, (sender, e) => {
-        		switch (e.Which) {
-        		case 0:
+            builder.SetItems (items, (sender, e) => {
+                switch (e.Which) {
+                case 0:
                     CalendarHelper.SendMeetingResponse (Event, response, false);
-        			break;
+                    break;
                 case 1:
                     CalendarHelper.SendMeetingResponse (Event, response, true);
                     break;
-        		default:
-        			break;
-        		}
-        	});
-        	builder.Show ();
+                default:
+                    break;
+                }
+            });
+            builder.Show ();
         }
 
         #endregion
