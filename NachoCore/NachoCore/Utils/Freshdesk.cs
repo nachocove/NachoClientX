@@ -54,14 +54,4 @@ namespace NachoCore.Utils
             }
         }
     }
-
-    public class FreshdeskRequest
-    {
-        NcHttpRequest HttpRequest;
-
-        protected FreshdeskRequest (HttpMethod method, Uri uri)
-        {
-            HttpRequest = new NcHttpRequest (method, uri);
-        }
-    }
 }
