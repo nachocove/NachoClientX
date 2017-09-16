@@ -36,7 +36,7 @@ namespace NachoCore.Utils
             request.Cred = new Model.McCred { Username = Username, Password = ApiKey };
             var issue = new JObject ();
             issue.Add ("title", string.Format ("{0}: {1}", report.Exception, report.Message));
-            issue.Add ("body", "```\\n" + report.ToString () + "\\n```");
+            issue.Add ("body", "```\n" + report.ToString () + "\n```");
             var labels = new JArray ();
             labels.Add ("CRASH");
             issue.Add ("labels", labels);
