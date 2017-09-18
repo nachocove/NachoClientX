@@ -37,7 +37,7 @@ namespace NachoCore.IMAP
         /// </summary>
         const uint KRung0SyncWindowSize = 3;
 
-        private static uint[] KRungSyncWindowSize = { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
+        private static uint [] KRungSyncWindowSize = { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
         /// <summary>
         /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
@@ -81,7 +81,7 @@ namespace NachoCore.IMAP
             return overallWindowSize;
         }
 
-        private int FolderExamineInterval { 
+        private int FolderExamineInterval {
             get {
                 return NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync ? KFolderExamineQSInterval : KFolderExamineInterval;
             }
@@ -185,12 +185,12 @@ namespace NachoCore.IMAP
             }
             bool havePending = null != pending;
             Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, FastSync {7}, ImapNeedFullSync {8})",
-                folder.ImapFolderNameRedacted (), 
+                folder.ImapFolderNameRedacted (),
                 folder.ImapUidNext,
                 folder.ImapLastExamine.ToString ("MM/dd/yyyy hh:mm:ss.fff tt"),
                 folder.ImapLastUidSynced,
-                folder.ImapUidHighestUidSynced, 
-                folder.ImapUidLowestUidSynced, 
+                folder.ImapUidHighestUidSynced,
+                folder.ImapUidLowestUidSynced,
                 havePending,
                 fastSync,
                 folder.ImapNeedFullSync);
@@ -310,7 +310,11 @@ namespace NachoCore.IMAP
             }
 
             NcAssert.True (startingPoint > 0, "RegularSyncInstructions: Possibly trying to get syncinstructions before the folder has been opened!");
-            var startingUid = new UniqueId (startingPoint - 1);
+            // UniqueId can't take 0 as its argument, so if startingPoint is 1, just use 1 instead of 1 - 1 (0)
+            // Because this function isn't called if folder.ImapUidNext is 1, the only case where startingPoint
+            // could be 1 is when it is set to folder.ImapLastUidSynced, in which case startingPointMustBeInSet is false
+            // and therefore this startingUid is not used.
+            var startingUid = new UniqueId (startingPoint > 1 ? startingPoint - 1 : startingPoint);
 
             if (folder.IsDefaultInboxFolder ()) {
                 span *= KInboxWindowMultiplier;
@@ -347,7 +351,7 @@ namespace NachoCore.IMAP
 
                 // in quick sync, stop here. Don't bother with anything past new mails.
                 if (NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.QuickSync) {
-                    
+
                     // see if there's missing mail in the set (could get deleted via debug menu).
                     if (span > 0 && currentMails.Any ()) {
                         var missingEmailSet = missingEmails.Where (x => x.Id <= currentMails.Max ().Id && x.Id > currentMails.Min ().Id).ToList ();
@@ -559,7 +563,7 @@ namespace NachoCore.IMAP
                 Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
                 span -= (uint)Synckit.UploadMessages.Count;
             } else {
-                 Synckit.UploadMessages = new List<NcEmailMessageIndex> ();
+                Synckit.UploadMessages = new List<NcEmailMessageIndex> ();
             }
             Synckit.SyncInstructions = FastSyncInstructions (Synckit.Folder, ref protocolState, span);
             return Synckit.SyncInstructions.Any () || Synckit.UploadMessages.Any ();
@@ -574,7 +578,7 @@ namespace NachoCore.IMAP
         {
             // Turn the result into a UniqueIdSet
             UniqueIdSet currentMails = new UniqueIdSet ();
-            foreach (var uid in McEmailMessage.QueryByImapUidRange(folder.AccountId, folder.Id, min, max, span)) {
+            foreach (var uid in McEmailMessage.QueryByImapUidRange (folder.AccountId, folder.Id, min, max, span)) {
                 currentMails.Add (new UniqueId ((uint)uid.Id));
             }
             return currentMails;
