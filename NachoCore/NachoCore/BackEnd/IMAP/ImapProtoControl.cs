@@ -35,8 +35,9 @@ namespace NachoCore.IMAP
 
         public override BackEndStateEnum BackEndState {
             get {
-                if (null != BackEndStatePreset) {
-                    return (BackEndStateEnum)BackEndStatePreset;
+                var presetRawValue = BackEndStatePresetRawValue;
+                if (presetRawValue != -1) {
+                    return (BackEndStateEnum)presetRawValue;
                 }
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
@@ -64,10 +65,10 @@ namespace NachoCore.IMAP
                 case (uint)Lst.PingW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.Parked:
-                    return (ProtocolState.HasSyncedInbox) ? 
-                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                    return (ProtocolState.HasSyncedInbox) ?
+                        BackEndStateEnum.PostAutoDPostInboxSync :
                         BackEndStateEnum.PostAutoDPreInboxSync;
-                    
+
                 default:
                     NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
@@ -138,12 +139,12 @@ namespace NachoCore.IMAP
             SetupAccount ();
             NcCapture.AddKind (KImapStrategyPick);
 
-            Sm = new NcStateMachine ("IMAPPC", new ImapStateMachineContext ()) { 
+            Sm = new NcStateMachine ("IMAPPC", new ImapStateMachineContext ()) {
                 Name = string.Format ("IMAPPC({0})", AccountId),
-                LocalEventType = typeof(ImapEvt),
-                LocalStateType = typeof(Lst),
+                LocalEventType = typeof (ImapEvt),
+                LocalStateType = typeof (Lst),
                 TransIndication = UpdateSavedState,
-                TransTable = new[] {
+                TransTable = new [] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new uint[] {
@@ -436,7 +437,7 @@ namespace NachoCore.IMAP
         // State-machine's state persistance callback.
         void UpdateSavedState ()
         {
-            BackEndStatePreset = null;
+            BackEndStatePresetRawValue = -1;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
             if ((uint)Lst.Parked != stateToSave &&
@@ -553,7 +554,7 @@ namespace NachoCore.IMAP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
-            BackEndStatePreset = BackEndStateEnum.Running;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.Running;
             SetCmd (new ImapDiscoverCommand (this));
             ExecuteCmd ();
         }
@@ -580,7 +581,7 @@ namespace NachoCore.IMAP
 
         void DoUiServConfReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.ServerConfWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
             if (null == Sm.Arg) {
                 Log.Error (Log.LOG_IMAP, "DoUiServConfReq: Sm.Arg is null");
@@ -648,7 +649,7 @@ namespace NachoCore.IMAP
 
         void DoUiCertOkReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.CertAskWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CertAskWait;
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
@@ -709,10 +710,10 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: nothing to do.");
                 } else {
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: starting extra request.");
-                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA", new ImapStateMachineContext ()) { 
+                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA", new ImapStateMachineContext ()) {
                         Name = string.Format ("IMAPPC:EXTRA({0})", AccountId),
-                        LocalEventType = typeof(ImapEvt),
-                        TransTable = new[] {
+                        LocalEventType = typeof (ImapEvt),
+                        TransTable = new [] {
                             new Node {
                                 State = (uint)St.Start,
                                 Invalid = new [] {
@@ -747,9 +748,9 @@ namespace NachoCore.IMAP
                         break;
 
                     case PickActionEnum.Sync:
-                        // TODO add support for user-initiated Sync of >= 1 folders.
-                        // if current op is a sync including specified folder(s) - we must make sure we don't
-                        // have 2 concurrent syncs of the same folder.
+                    // TODO add support for user-initiated Sync of >= 1 folders.
+                    // if current op is a sync including specified folder(s) - we must make sure we don't
+                    // have 2 concurrent syncs of the same folder.
                     case PickActionEnum.Ping:
                     case PickActionEnum.Wait:
                     default:
@@ -760,7 +761,7 @@ namespace NachoCore.IMAP
                     return;
                 }
 
-            // If we got here, we decided that doing an extra request was a bad idea, ...
+                // If we got here, we decided that doing an extra request was a bad idea, ...
             } else if (0 == ConcurrentExtraRequests) {
                 // ... and we are currently processing no extra requests. Only in this case will we 
                 // interrupt the base request, and only then if we are not already dealing with a "hot" request.
@@ -884,7 +885,7 @@ namespace NachoCore.IMAP
                 PushAssist.Stop ();
             }
             CancelCmd ();
-            BackEndStatePreset = BackEndStateEnum.CredWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
@@ -936,7 +937,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private byte[] PushAssistAuthBlob ()
+        private byte [] PushAssistAuthBlob ()
         {
 
             SaslMechanism sasl;
@@ -977,7 +978,7 @@ namespace NachoCore.IMAP
 
         public TimeSpan IdleRequestTimeoutSec {
             get {
-                if (isGoogle()) {
+                if (isGoogle ()) {
                     // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
                     // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
                     // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
@@ -985,9 +986,9 @@ namespace NachoCore.IMAP
                     //var timeout = new TimeSpan(0, 9, 0);
                     //
                     // UPDATE: Based on my tests, gmail seems to drop the connection after 5 minutes now.
-                    return new TimeSpan(0, 4, 30);
+                    return new TimeSpan (0, 4, 30);
                 } else {
-                    return new TimeSpan(0, 30, 0);
+                    return new TimeSpan (0, 30, 0);
                 }
             }
         }

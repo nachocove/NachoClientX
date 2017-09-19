@@ -32,7 +32,15 @@ namespace NachoCore
 
         protected bool LastIsDoNotDelayOk;
         protected BackEndStateEnum LastBackEndState;
-        protected BackEndStateEnum? BackEndStatePreset;
+
+        /// <remarks>
+        /// Using an integer "raw value" instead of a BackEndStateEnum because
+        /// 1. Need to store a "not set" value that isn't defined as an enum option
+        /// 2. Don't want to change the enum definition because it's used a lot of places
+        /// 3. Using a nullalble value here (as the previous code did) causes a race condition when reading
+        /// 4. ints are atomic in C#, so we'll never see an inconsistent value
+        /// </remarks>
+        protected int BackEndStatePresetRawValue;
 
         public int AccountId;
 

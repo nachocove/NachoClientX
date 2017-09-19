@@ -51,8 +51,9 @@ namespace NachoCore.SFDC
 
         public override BackEndStateEnum BackEndState {
             get {
-                if (null != BackEndStatePreset) {
-                    return (BackEndStateEnum)BackEndStatePreset;
+                var presetRawValue = BackEndStatePresetRawValue;
+                if (presetRawValue != -1) {
+                    return (BackEndStateEnum)presetRawValue;
                 }
                 switch (Sm.State) {
                 case (uint)St.Start:
@@ -63,13 +64,13 @@ namespace NachoCore.SFDC
 
                 case (uint)Lst.UiServConfW:
                     return BackEndStateEnum.ServerConfWait;
-                
+
                 case (uint)Lst.DiscW:
                     return BackEndStateEnum.Running;
-                
+
                 case (uint)Lst.Parked:
                 case (uint)Lst.SyncW:
-                    return FirstSyncDone ?  BackEndStateEnum.PostAutoDPostInboxSync : BackEndStateEnum.PostAutoDPreInboxSync;
+                    return FirstSyncDone ? BackEndStateEnum.PostAutoDPostInboxSync : BackEndStateEnum.PostAutoDPreInboxSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
@@ -121,12 +122,12 @@ namespace NachoCore.SFDC
             ProtoControl = this;
             Capabilities = SalesForceCapabilities;
             SetupAccount ();
-            Sm = new NcStateMachine ("SFDCPC") { 
+            Sm = new NcStateMachine ("SFDCPC") {
                 Name = string.Format ("SFDCPC({0})", AccountId),
-                LocalEventType = typeof(SfdcEvt),
-                LocalStateType = typeof(Lst),
+                LocalEventType = typeof (SfdcEvt),
+                LocalStateType = typeof (Lst),
                 TransIndication = UpdateSavedState,
-                TransTable = new[] {
+                TransTable = new [] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new uint[] {
@@ -146,7 +147,7 @@ namespace NachoCore.SFDC
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
-                    },     
+                    },
                     new Node {
                         State = (uint)Lst.UiCrdW,
                         Drop = new [] {
@@ -255,7 +256,7 @@ namespace NachoCore.SFDC
 
         void UpdateSavedState ()
         {
-            BackEndStatePreset = null;
+            BackEndStatePresetRawValue = -1;
             if (LastBackEndState != BackEndState) {
                 var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
                 res.Value = AccountId;
@@ -274,7 +275,7 @@ namespace NachoCore.SFDC
 
         void DoDisc ()
         {
-            BackEndStatePreset = BackEndStateEnum.Running;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.Running;
             if (SFDCSetup != null) {
                 SFDCSetup.Cancel ();
                 SFDCSetup = null;
@@ -372,7 +373,7 @@ namespace NachoCore.SFDC
         void DoUiCredReq ()
         {
             CancelCmd ();
-            BackEndStatePreset = BackEndStateEnum.CredWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
