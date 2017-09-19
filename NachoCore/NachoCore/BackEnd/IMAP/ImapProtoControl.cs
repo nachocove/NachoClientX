@@ -64,10 +64,10 @@ namespace NachoCore.IMAP
                 case (uint)Lst.PingW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.Parked:
-                    return (ProtocolState.HasSyncedInbox) ? 
-                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                    return (ProtocolState.HasSyncedInbox) ?
+                        BackEndStateEnum.PostAutoDPostInboxSync :
                         BackEndStateEnum.PostAutoDPreInboxSync;
-                    
+
                 default:
                     NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
@@ -138,12 +138,12 @@ namespace NachoCore.IMAP
             SetupAccount ();
             NcCapture.AddKind (KImapStrategyPick);
 
-            Sm = new NcStateMachine ("IMAPPC", new ImapStateMachineContext ()) { 
+            Sm = new NcStateMachine ("IMAPPC", new ImapStateMachineContext ()) {
                 Name = string.Format ("IMAPPC({0})", AccountId),
-                LocalEventType = typeof(ImapEvt),
-                LocalStateType = typeof(Lst),
+                LocalEventType = typeof (ImapEvt),
+                LocalStateType = typeof (Lst),
                 TransIndication = UpdateSavedState,
-                TransTable = new[] {
+                TransTable = new [] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new uint[] {
@@ -709,10 +709,10 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: nothing to do.");
                 } else {
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: starting extra request.");
-                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA", new ImapStateMachineContext ()) { 
+                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA", new ImapStateMachineContext ()) {
                         Name = string.Format ("IMAPPC:EXTRA({0})", AccountId),
-                        LocalEventType = typeof(ImapEvt),
-                        TransTable = new[] {
+                        LocalEventType = typeof (ImapEvt),
+                        TransTable = new [] {
                             new Node {
                                 State = (uint)St.Start,
                                 Invalid = new [] {
@@ -747,9 +747,9 @@ namespace NachoCore.IMAP
                         break;
 
                     case PickActionEnum.Sync:
-                        // TODO add support for user-initiated Sync of >= 1 folders.
-                        // if current op is a sync including specified folder(s) - we must make sure we don't
-                        // have 2 concurrent syncs of the same folder.
+                    // TODO add support for user-initiated Sync of >= 1 folders.
+                    // if current op is a sync including specified folder(s) - we must make sure we don't
+                    // have 2 concurrent syncs of the same folder.
                     case PickActionEnum.Ping:
                     case PickActionEnum.Wait:
                     default:
@@ -760,7 +760,7 @@ namespace NachoCore.IMAP
                     return;
                 }
 
-            // If we got here, we decided that doing an extra request was a bad idea, ...
+                // If we got here, we decided that doing an extra request was a bad idea, ...
             } else if (0 == ConcurrentExtraRequests) {
                 // ... and we are currently processing no extra requests. Only in this case will we 
                 // interrupt the base request, and only then if we are not already dealing with a "hot" request.
@@ -936,7 +936,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private byte[] PushAssistAuthBlob ()
+        private byte [] PushAssistAuthBlob ()
         {
 
             SaslMechanism sasl;
@@ -977,7 +977,7 @@ namespace NachoCore.IMAP
 
         public TimeSpan IdleRequestTimeoutSec {
             get {
-                if (isGoogle()) {
+                if (isGoogle ()) {
                     // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
                     // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
                     // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
@@ -985,9 +985,9 @@ namespace NachoCore.IMAP
                     //var timeout = new TimeSpan(0, 9, 0);
                     //
                     // UPDATE: Based on my tests, gmail seems to drop the connection after 5 minutes now.
-                    return new TimeSpan(0, 4, 30);
+                    return new TimeSpan (0, 4, 30);
                 } else {
-                    return new TimeSpan(0, 30, 0);
+                    return new TimeSpan (0, 30, 0);
                 }
             }
         }
@@ -1039,7 +1039,14 @@ namespace NachoCore.IMAP
                         var tmpClient = _Client;
                         _Client = null;
                         NcTask.Run (() => {
-                            tmpClient.Disconnect (false);
+                            try {
+                                tmpClient.Disconnect (false);
+                            } catch (System.IO.IOException e) {
+                                // Have seen a crash when the disconnect throws an IOExcpetion
+                                // if the socket has already been shut down.  I don't think
+                                // it's anything we need to worry about, so just log it and ignore it.
+                                Log.LOG_IMAP.Warn ("IOException when disconnecting client: {0}", e.Message);
+                            }
                             tmpClient.Dispose ();
                         }, "ImapProtoControlClientCleanup");
                     }
