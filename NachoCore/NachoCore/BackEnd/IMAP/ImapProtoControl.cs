@@ -35,8 +35,12 @@ namespace NachoCore.IMAP
 
         public override BackEndStateEnum BackEndState {
             get {
-                if (null != BackEndStatePreset) {
-                    return (BackEndStateEnum)BackEndStatePreset;
+                // Important to copy value because another thread may be updating it
+                // and we don't want it to change between the time we check it for -1
+                // and the time we return it.
+                var presetRawValue = BackEndStatePresetRawValue;
+                if (presetRawValue != -1) {
+                    return (BackEndStateEnum)presetRawValue;
                 }
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
@@ -436,7 +440,7 @@ namespace NachoCore.IMAP
         // State-machine's state persistance callback.
         void UpdateSavedState ()
         {
-            BackEndStatePreset = null;
+            BackEndStatePresetRawValue = -1;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
             if ((uint)Lst.Parked != stateToSave &&
@@ -553,7 +557,7 @@ namespace NachoCore.IMAP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
-            BackEndStatePreset = BackEndStateEnum.Running;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.Running;
             SetCmd (new ImapDiscoverCommand (this));
             ExecuteCmd ();
         }
@@ -580,7 +584,7 @@ namespace NachoCore.IMAP
 
         void DoUiServConfReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.ServerConfWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
             if (null == Sm.Arg) {
                 Log.Error (Log.LOG_IMAP, "DoUiServConfReq: Sm.Arg is null");
@@ -648,7 +652,7 @@ namespace NachoCore.IMAP
 
         void DoUiCertOkReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.CertAskWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CertAskWait;
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
@@ -884,7 +888,7 @@ namespace NachoCore.IMAP
                 PushAssist.Stop ();
             }
             CancelCmd ();
-            BackEndStatePreset = BackEndStateEnum.CredWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
         }

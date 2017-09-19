@@ -49,8 +49,12 @@ namespace NachoCore.SMTP
 
         public override BackEndStateEnum BackEndState {
             get {
-                if (null != BackEndStatePreset) {
-                    return (BackEndStateEnum)BackEndStatePreset;
+                // Important to copy value because another thread may be updating it
+                // and we don't want it to change between the time we check it for -1
+                // and the time we return it.
+                var presetRawValue = BackEndStatePresetRawValue;
+                if (presetRawValue != -1) {
+                    return (BackEndStateEnum)presetRawValue;
                 }
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
@@ -140,12 +144,12 @@ namespace NachoCore.SMTP
             Capabilities = McAccount.SmtpCapabilities;
             SetupAccount ();
 
-            Sm = new NcStateMachine ("SMTPPC") { 
+            Sm = new NcStateMachine ("SMTPPC") {
                 Name = string.Format ("SMTPPC({0})", AccountId),
-                LocalEventType = typeof(SmtpEvt),
-                LocalStateType = typeof(Lst),
+                LocalEventType = typeof (SmtpEvt),
+                LocalStateType = typeof (Lst),
                 TransIndication = UpdateSavedState,
-                TransTable = new[] {
+                TransTable = new [] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new uint[] {
@@ -439,7 +443,7 @@ namespace NachoCore.SMTP
         {
             Cmd.Execute (Sm);
         }
-        
+
         private void DoDisc ()
         {
             // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
@@ -456,7 +460,7 @@ namespace NachoCore.SMTP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
-            BackEndStatePreset = BackEndStateEnum.Running;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.Running;
             SetCmd (new SmtpDiscoveryCommand (this, MainClient));
             ExecuteCmd ();
         }
@@ -482,7 +486,7 @@ namespace NachoCore.SMTP
 
         private void DoUiServConfReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.ServerConfWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
             if (null == Sm.Arg) {
                 Log.Error (Log.LOG_SMTP, "DoUiServConfReq: Sm.Arg is null");
@@ -502,7 +506,7 @@ namespace NachoCore.SMTP
 
         private void DoUiCertOkReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.CertAskWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CertAskWait;
             if (null == Sm.Arg) {
                 Log.Error (Log.LOG_SMTP, "DoUiCertOkReq: Sm.Arg is null");
                 throw new Exception ("DoUiCertOkReq: Sm.Arg can not be null");
@@ -577,7 +581,7 @@ namespace NachoCore.SMTP
             }
 
             var send = McPending.QueryEligible (AccountId, McAccount.SmtpCapabilities).
-                Where (x => 
+                Where (x =>
                     McPending.Operations.EmailSend == x.Operation ||
                        McPending.Operations.EmailForward == x.Operation ||
                        McPending.Operations.EmailReply == x.Operation
@@ -638,7 +642,7 @@ namespace NachoCore.SMTP
         private void DoUiCredReq ()
         {
             CancelCmd ();
-            BackEndStatePreset = BackEndStateEnum.CredWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
@@ -653,7 +657,7 @@ namespace NachoCore.SMTP
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
-            BackEndStatePreset = null;
+            BackEndStatePresetRawValue = -1;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
             if ((uint)Lst.Parked != stateToSave &&

@@ -44,8 +44,12 @@ namespace NachoCore.ActiveSync
 
         public override BackEndStateEnum BackEndState {
             get {
-                if (null != BackEndStatePreset) {
-                    return (BackEndStateEnum)BackEndStatePreset;
+                // Important to copy value because another thread may be updating it
+                // and we don't want it to change between the time we check it for -1
+                // and the time we return it.
+                var presetRawValue = BackEndStatePresetRawValue;
+                if (presetRawValue != -1) {
+                    return (BackEndStateEnum)presetRawValue;
                 }
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
@@ -73,15 +77,15 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.ProvW:
                 case (uint)Lst.SettingsW:
                 case (uint)Lst.FSyncW:
-                case (uint)Lst.FSync2W: 
+                case (uint)Lst.FSync2W:
                 case (uint)Lst.SyncW:
                 case (uint)Lst.PingW:
                 case (uint)Lst.QOpW:
                 case (uint)Lst.HotQOpW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.IdleW:
-                    return (ProtocolState.HasSyncedInbox) ? 
-                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                    return (ProtocolState.HasSyncedInbox) ?
+                        BackEndStateEnum.PostAutoDPostInboxSync :
                         BackEndStateEnum.PostAutoDPreInboxSync;
 
                 default:
@@ -154,12 +158,12 @@ namespace NachoCore.ActiveSync
              *  - NcCommStatus will eventually shut us down as TempFail counts against Quality. 
              *  - Max deferrals on pending will pull "bad" pendings out of the Q.
              */
-            Sm = new NcStateMachine ("ASPC") { 
+            Sm = new NcStateMachine ("ASPC") {
                 Name = string.Format ("ASPC({0})", AccountId),
-                LocalEventType = typeof(CtlEvt),
-                LocalStateType = typeof(Lst),
+                LocalEventType = typeof (CtlEvt),
+                LocalStateType = typeof (Lst),
                 TransIndication = UpdateSavedState,
-                TransTable = new[] {
+                TransTable = new [] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new [] {
@@ -168,7 +172,7 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.UiSetServConf,
-                            (uint)CtlEvt.E.UiCertOkNo, 
+                            (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                         },
                         Invalid = new [] {
@@ -190,7 +194,7 @@ namespace NachoCore.ActiveSync
 
                     new Node {
                         // There is no HardFail. Can't pass DiscW w/out a working server - period.
-                        State = (uint)Lst.DiscW, 
+                        State = (uint)Lst.DiscW,
                         Drop = new [] {
                             (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
@@ -779,7 +783,7 @@ namespace NachoCore.ActiveSync
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
-            BackEndStatePreset = null;
+            BackEndStatePresetRawValue = -1;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
             switch (stateToSave) {
@@ -813,7 +817,7 @@ namespace NachoCore.ActiveSync
         // State-machine action methods.
         private void DoUiServConfReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.ServerConfWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
             AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
             Owner.ServConfReq (this, AutoDFailureReason);
@@ -821,7 +825,7 @@ namespace NachoCore.ActiveSync
 
         private void DoSetServConf ()
         {
-            if (CmdIs (typeof(AsAutodiscoverCommand))) {
+            if (CmdIs (typeof (AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
                 autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet, "ASPCDSSC");
             }
@@ -830,18 +834,18 @@ namespace NachoCore.ActiveSync
         private void DoUiCredReq ()
         {
             lock (CmdLockObject) {
-                if (null != Cmd && !CmdIs (typeof(AsAutodiscoverCommand))) {
+                if (null != Cmd && !CmdIs (typeof (AsAutodiscoverCommand))) {
                     CancelCmd ();
                 }
             }
-            BackEndStatePreset = BackEndStateEnum.CredWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
 
         private void DoSetCred ()
         {
-            if (CmdIs (typeof(AsAutodiscoverCommand))) {
+            if (CmdIs (typeof (AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
                 autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet, "ASPCDSC");
             }
@@ -849,14 +853,14 @@ namespace NachoCore.ActiveSync
 
         private void DoUiCertOkReq ()
         {
-            BackEndStatePreset = BackEndStateEnum.CertAskWait;
+            BackEndStatePresetRawValue = (int)BackEndStateEnum.CertAskWait;
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
 
         private void DoCertOkNo ()
         {
-            if (CmdIs (typeof(AsAutodiscoverCommand))) {
+            if (CmdIs (typeof (AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
                 autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertN, "ASPCDCON");
             }
@@ -864,7 +868,7 @@ namespace NachoCore.ActiveSync
 
         private void DoCertOkYes ()
         {
-            if (CmdIs (typeof(AsAutodiscoverCommand))) {
+            if (CmdIs (typeof (AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
                 autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "ASPCDCOY");
             }
@@ -975,10 +979,10 @@ namespace NachoCore.ActiveSync
                     Log.Info (Log.LOG_AS, "DoExtraOrDont: Nothing to do.");
                 } else {
                     Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");
-                    var dummySm = new NcStateMachine ("ASPC:EXTRA") { 
+                    var dummySm = new NcStateMachine ("ASPC:EXTRA") {
                         Name = string.Format ("ASPC:EXTRA({0})", AccountId),
-                        LocalEventType = typeof(AsEvt),
-                        TransTable = new[] {
+                        LocalEventType = typeof (AsEvt),
+                        TransTable = new [] {
                             new Node {
                                 State = (uint)St.Start,
                                 Invalid = new [] {
@@ -1010,9 +1014,9 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case PickActionEnum.Sync:
-                        // TODO add support for user-initiated Sync of >= 1 folders.
-                        // if current op is a sync including specified folder(s) - we must make sure we don't
-                        // have 2 concurrent syncs of the same folder.
+                    // TODO add support for user-initiated Sync of >= 1 folders.
+                    // if current op is a sync including specified folder(s) - we must make sure we don't
+                    // have 2 concurrent syncs of the same folder.
                     case PickActionEnum.Ping:
                     case PickActionEnum.Wait:
                     default:
@@ -1023,7 +1027,7 @@ namespace NachoCore.ActiveSync
                     return;
                 }
 
-            // If we got here, we decided that doing an extra request was a bad idea, ...
+                // If we got here, we decided that doing an extra request was a bad idea, ...
             } else if (0 == ConcurrentExtraRequests) {
 
                 // ... and we are currently processing no extra requests. Only in this case will we 
