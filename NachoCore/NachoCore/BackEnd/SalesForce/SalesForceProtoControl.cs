@@ -51,6 +51,9 @@ namespace NachoCore.SFDC
 
         public override BackEndStateEnum BackEndState {
             get {
+                // Important to copy value because another thread may be updating it
+                // and we don't want it to change between the time we check it for -1
+                // and the time we return it.
                 var presetRawValue = BackEndStatePresetRawValue;
                 if (presetRawValue != -1) {
                     return (BackEndStateEnum)presetRawValue;
