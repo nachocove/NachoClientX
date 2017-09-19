@@ -33,6 +33,7 @@ namespace NachoCore
         protected bool LastIsDoNotDelayOk;
         protected BackEndStateEnum LastBackEndState;
         protected BackEndStateEnum? BackEndStatePreset;
+        protected object BackEndStatePresetLock = new object ();
 
         public int AccountId;
 
