@@ -130,7 +130,7 @@ namespace NachoClient.iOS
             SendButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (SendButton, "icn-send");
             SendButton.AccessibilityLabel = NSBundle.MainBundle.LocalizedString ("Send", "");
-            SendButton.Clicked += ConfirmHeaderDetailsBeforeSend;
+            SendButton.Clicked += Send;
 
             QuickResponseButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (QuickResponseButton, "contact-quickemail");
