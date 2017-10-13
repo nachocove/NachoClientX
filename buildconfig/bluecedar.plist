@@ -34,6 +34,14 @@
 			<string>com.nachocove.mail.share</string>
 			<key>CallerIdBundleId</key>
 			<string>com.nachocove.mail.callerid</string>
+			<key>TeamId</key>
+			<string>38U63XUCR3</string>
+			<key>ProvisioningProfile</key>
+			<string>Nacho Mail</string>
+			<key>ShareProvisioningProfile</key>
+			<string>Nacho Mail Share App Store</string>
+			<key>CallerIdProvisioningProfile</key>
+			<string>Nacho Mail Caller ID App Store</string>
 		</dict>
 	</dict>
 	<key>Android</key>

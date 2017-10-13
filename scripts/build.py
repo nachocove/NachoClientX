@@ -571,6 +571,14 @@ class IOSBuilder(object):
                     compileBitcode=False,
                     iCloudContainerEnvironment='Production'
                 )
+            profiles = dict()
+            profiles[self.config.iOS.NachoSigningOnly.get('BundleId', self.config.iOS.BundleId)] = self.config.iOS.NachoSigningOnly.get('ProvisioningProfile')
+            profiles[self.config.iOS.NachoSigningOnly.get('ShareBundleId', self.config.iOS.ShareBundleId)] = self.config.iOS.NachoSigningOnly.get('ShareProvisioningProfile')
+            profiles[self.config.iOS.NachoSigningOnly.get('CallerIdBundleId', self.config.iOS.BundleId)] = self.config.iOS.NachoSigningOnly.get('CallerIdProvisioningProfile')
+            options['provisioningProfiles'] = profiles
+            options['signingCertificate'] = 'iOS Distribution'
+            options['signingStyle'] = 'manual'
+            options['teamID'] = self.config.iOS.NachoSigningOnly.get('TeamId')
             plistlib.writePlist(options, temp_file)
             return temp_file.name
 
