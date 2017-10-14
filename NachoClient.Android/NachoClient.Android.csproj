@@ -50,6 +50,8 @@
     <MandroidI18n>cjk;mideast;other;rare;west</MandroidI18n>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <AotAssemblies>true</AotAssemblies>
+    <AndroidLinkMode>Full</AndroidLinkMode>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
   <Target Name="BuildDevBuildSettings">
     <Exec Command="$(SolutionDir)/scripts/mk_build_info.py android" WorkingDirectory="$(ProjectDir)" />
