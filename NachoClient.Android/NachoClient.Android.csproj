@@ -63,7 +63,7 @@
     <Exec Command="$(SolutionDir)/scripts/mk_log_settings.py" WorkingDirectory="$(ProjectDir)" />
   </Target>
   <Target Name="CleanNachoNative">
-    <Exec Command="bash -cl make clean" WorkingDirectory="$(ProjectDir)/../native.Android" />
+    <Exec Command="bash -cl 'make clean'" WorkingDirectory="$(ProjectDir)/../native.Android" />
   </Target>
   <Target Name="CleanNachoLogSettings">
     <Exec Command="rm -f LogSettings.cs" WorkingDirectory="$(ProjectDir)" />
