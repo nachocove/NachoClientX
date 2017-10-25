@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "regdom.h"
 
 static void* nacho_regdom_tree = NULL;
