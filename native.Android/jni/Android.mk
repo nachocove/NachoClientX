@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_CFLAGS    += -std=c99
+LOCAL_CFLAGS    += -std=c99 -D_FILE_OFFSET_BITS=32
 LOCAL_MODULE    := nachosqlite3
 LOCAL_SRC_FILES := nc_sqlite3.c
 include $(BUILD_SHARED_LIBRARY)
