@@ -216,6 +216,10 @@ namespace NachoCore
                     return;
                 }
                 var account = McAccount.QueryById<McAccount> (cred.AccountId);
+                if (account == null) {
+                    Log.LOG_SYS.Warn ("OAUTH2 got null account ({0}) for cred {1}, skipping", cred.AccountId, cred.Id);
+                    continue;
+                }
                 switch (account.AccountType) {
                 case McAccount.AccountTypeEnum.SalesForce:
                     // don't bother. We don't know the timeout anyway, and we can refresh when needed.
@@ -234,7 +238,7 @@ namespace NachoCore
                         Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh needed.", cred.AccountId);
                         RefreshCredential (cred);
                     } else {
-                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}, is {2}, expiryFractionSecs {3} ({4}), status {5}", 
+                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}, is {2}, expiryFractionSecs {3} ({4}), status {5}",
                             cred.AccountId, cred.Expiry, DateTime.UtcNow, expiryFractionSecs, cred.Expiry.AddSeconds (-expiryFractionSecs),
                             status != null ? status.ToString () : "NULL");
                     }
@@ -474,14 +478,14 @@ namespace NachoCore
 
                 Newtonsoft.Json.Linq.JObject decodedResponse;
                 try {
-                    var jsonResponse = Encoding.UTF8.GetString(response.GetContent ());
+                    var jsonResponse = Encoding.UTF8.GetString (response.GetContent ());
 #if DEBUG
                     Log.Info (Log.LOG_SYS, "{0}: : OAUTH2 response: {1}", logHeader, jsonResponse);
 #endif
                     decodedResponse = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_HTTP, "Could not decode user info: {0}", ex);
-                    onFailure(Cred, true);
+                    onFailure (Cred, true);
                     return;
                 }
 
