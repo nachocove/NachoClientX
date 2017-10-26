@@ -221,13 +221,17 @@ namespace NachoClient.iOS
             // Swap us out as the window's root view controller because we are no longer needed
             var windowSnapshot = window.SnapshotView (false);
             window.RootViewController = appViewController;
-            windowSnapshot.Frame = new CoreGraphics.CGRect (0, -appViewController.View.Frame.Top, windowSnapshot.Frame.Width, windowSnapshot.Frame.Height);
-            appViewController.View.AddSubview (windowSnapshot);
-            UIView.Animate (0.3, 0.0, 0, () => {
-                windowSnapshot.Alpha = 0.0f;
-            }, () => {
-                windowSnapshot.RemoveFromSuperview ();
-            });
+            if (windowSnapshot != null) {
+                windowSnapshot.Frame = new CoreGraphics.CGRect (0, -appViewController.View.Frame.Top, windowSnapshot.Frame.Width, windowSnapshot.Frame.Height);
+                appViewController.View.AddSubview (windowSnapshot);
+                UIView.Animate (0.3, 0.0, 0, () => {
+                    windowSnapshot.Alpha = 0.0f;
+                }, () => {
+                    windowSnapshot.RemoveFromSuperview ();
+                });
+            } else {
+                Log.LOG_UI.Warn ("Got null snapshot from window when showing application");
+            }
         }
 
         #endregion
