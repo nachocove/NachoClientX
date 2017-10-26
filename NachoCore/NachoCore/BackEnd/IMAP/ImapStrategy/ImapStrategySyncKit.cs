@@ -695,7 +695,7 @@ namespace NachoCore.IMAP
 
                 case 2:
                     // If inbox hasn't sync'd in kInboxMinSyncTime seconds, add it to the list at (or near) the top.
-                    if (defInbox.ImapNeedFullSync || defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-KInboxMinSyncTime)) {
+                    if (defInbox != null && (defInbox.ImapNeedFullSync || defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-KInboxMinSyncTime))) {
                         maybeAddFolderToList (folderList, defInbox);
                     }
 
@@ -717,6 +717,9 @@ namespace NachoCore.IMAP
 
         private void maybeAddFolderToList (List<McFolder> folderList, McFolder folder)
         {
+            if (folder == null) {
+                return;
+            }
             if (folder.ImapNoSelect || // not a folder that ever contains mail. Don't sync it.
                 folder.ImapUidNext <= 1) { // this means there are no messages in the folder. Don't bother syncing it.
                 return;
