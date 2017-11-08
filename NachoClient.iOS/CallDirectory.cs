@@ -72,7 +72,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_CONTACTS, "Updating CallDirectory");
             var mainDb = NcModel.Instance.Db;
             using (var sharedDb = GetSharedDb ()) {
-                sharedDb.RunInTransaction (() => {
+                sharedDb?.RunInTransaction (() => {
                     var entryCount = 0;
                     sharedDb.Execute ("DROP TABLE IF EXISTS CallDirectory");
                     sharedDb.Execute ("CREATE TABLE CallDirectory (PhoneNumber INT, Label TEXT)");
@@ -153,17 +153,23 @@ namespace NachoClient.iOS
         SQLiteConnection GetSharedDb ()
         {
             var path = GetSharedDbPath ();
-            return new SQLiteConnection (path, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, storeDateTimeAsTicks: true);
+            if (path != null) {
+                return new SQLiteConnection (path, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, storeDateTimeAsTicks: true);
+            }
+            return null;
         }
 
         string GetSharedDbPath ()
         {
             var container = NSFileManager.DefaultManager.GetContainerUrl (BuildInfo.AppGroup);
-            var path = container.Append ("Documents", true).Append ("Data", true).Append ("shareddb", false).Path;
-            if (!Directory.Exists (Path.GetDirectoryName (path))) {
-                Directory.CreateDirectory (Path.GetDirectoryName (path));
+            if (container != null) {
+                var path = container.Append ("Documents", true).Append ("Data", true).Append ("shareddb", false).Path;
+                if (!Directory.Exists (Path.GetDirectoryName (path))) {
+                    Directory.CreateDirectory (Path.GetDirectoryName (path));
+                }
+                return path;
             }
-            return path;
+            return null;
         }
 
         static bool CreateEntry (string phoneString, string firstName, string lastName, string displayName, string companyName, out long phoneNumber, out string label)
