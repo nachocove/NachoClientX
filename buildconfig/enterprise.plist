@@ -22,6 +22,17 @@
 		<string></string>
 		<key>FileSharingEnabled</key>
 		<false/>
+		<key>NachoSigningOnly</key>
+		<dict>
+			<key>TeamId</key>
+			<string>38U63XUCR3</string>
+			<key>ProvisioningProfile</key>
+			<string>Nacho Mail Enterprise</string>
+			<key>ShareProvisioningProfile</key>
+			<string>Nacho Mail Enterprise Share</string>
+			<key>CallerIdProvisioningProfile</key>
+			<string>Nacho Mail Enterprise Caller ID</string>
+		</dict>
 	</dict>
 	<key>Android</key>
 	<dict>
