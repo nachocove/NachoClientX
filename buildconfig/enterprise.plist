@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>iOS</key>
+	<dict>
+		<key>DisplayName</key>
+		<string>Nacho Mail</string>
+		<key>BundleId</key>
+		<string>com.nachocove.mail.ent</string>
+		<key>IconSet</key>
+		<string>Resources/Images.xcassets/AppIcon.appiconset</string>
+		<key>AppGroup</key>
+		<string>group.com.nachocove.mail.ent</string>
+		<key>iCloudContainer</key>
+		<string>iCloud.com.nachocove.mail.ent</string>
+		<key>ShareBundleId</key>
+		<string>com.nachocove.mail.ent.share</string>
+		<key>CallerIdBundleId</key>
+		<string>com.nachocove.mail.ent.callerid</string>
+		<key>HockeyAppAppId</key>
+		<string></string>
+		<key>FileSharingEnabled</key>
+		<false/>
+	</dict>
+	<key>Android</key>
+	<dict>
+		<key>PackageName</key>
+		<string>com.nachocove.mail</string>
+		<key>IconDrawable</key>
+		<string>Icon</string>
+		<key>RoundIconDrawable</key>
+		<string>IconRounded</string>
+		<key>AppNameString</key>
+		<string>app_name</string>
+		<key>BackupAPIKey</key>
+		<string></string>
+		<key>FileProvider</key>
+		<string>com.nachocove.bc.fileprovider</string>
+		<key>HockeyAppAppId</key>
+		<string></string>
+		<key>SigningKeystore</key>
+		<string></string>
+	</dict>
+	<key>AWS</key>
+	<dict>
+		<key>Prefix</key>
+		<string>prod</string>
+		<key>AccountId</key>
+		<string></string>
+		<key>IdentityPoolId</key>
+		<string></string>
+		<key>UnauthRoleArn</key>
+		<string></string>
+		<key>AuthRoleArn</key>
+		<string>NO PUBLIC AUTHENTICATION</string>
+		<key>S3Bucket</key>
+		<string>59f1d07a-prod-t3-</string>
+		<key>SupportS3Bucket</key>
+		<string>59f1d07a-prod-t3-trouble-tickets</string>
+	</dict>
+	<key>Freshdesk</key>
+	<dict>
+		<key>Endpoint</key>
+		<string>https://support.nachocove.com</string>
+		<key>ApiKey</key>
+		<string>M6nnLyxB7YdFU2B5NqdS</string>
+	</dict>
+	<key>GitHub</key>
+	<dict>
+		<key>Endpoint</key>
+		<string>https://api.github.com</string>
+		<key>Username</key>
+		<string>nacho-crashreporter</string>
+		<key>ApiKey</key>
+		<string>8f454708798e0eded7e711f945b5b008b7810c22</string>
+	</dict>
+	<key>Pinger</key>
+	<dict>
+		<key>Hostname</key>
+		<string></string>
+		<key>RootCert</key>
+		<string>-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
+QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB
+CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97
+nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt
+43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P
+T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4
+gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO
+BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR
+TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw
+DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr
+hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg
+06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF
+PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls
+YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
+CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
+-----END CERTIFICATE-----</string>
+		<key>CrlSigningCerts</key>
+		<array>
+			<string></string>
+			<string></string>
+		</array>
+	</dict>
+</dict>
+</plist>
