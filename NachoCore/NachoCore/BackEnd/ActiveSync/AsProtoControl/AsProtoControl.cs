@@ -725,7 +725,9 @@ namespace NachoCore.ActiveSync
             LastBackEndState = BackEndState;
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
-            PushAssist = new PushAssist (this);
+            if (PushAssistCommon.IsPingerEnabled) {
+                PushAssist = new PushAssist (this);
+            }
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 

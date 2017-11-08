@@ -433,7 +433,9 @@ namespace NachoCore.IMAP
             LastBackEndState = BackEndState;
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new ImapStrategy (this);
-            PushAssist = new PushAssist (this);
+            if (PushAssistCommon.IsPingerEnabled) {
+                PushAssist = new PushAssist (this);
+            }
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 

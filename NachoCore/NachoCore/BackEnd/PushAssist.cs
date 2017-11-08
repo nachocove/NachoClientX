@@ -67,10 +67,12 @@ namespace NachoCore
         // This is the first 8 bytes of SHA-256 hash of the session token;
         protected string DebugSessionToken;
 
-        private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
-            new ConcurrentDictionary <string, WeakReference> ();
+        private static ConcurrentDictionary<string, WeakReference> ContextObjectMap =
+            new ConcurrentDictionary<string, WeakReference> ();
 
         public static string PingerHostName = BuildInfo.PingerHostname;
+
+        public static bool IsPingerEnabled = BuildInfo.PingerHostname != null && BuildInfo.PingerHostname != "";
 
         public const int ApiVersion = 1;
 
@@ -179,7 +181,7 @@ namespace NachoCore
             // Notify others a new device token is set
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
             result.Value = token;
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
                 Account = ConstMcAccount.NotAccountSpecific,
             });
@@ -272,9 +274,9 @@ namespace NachoCore
             // Start -> DevTokW -> CliTokW -> SessTokW -> Active
             Sm = new NcStateMachine ("PA") {
                 Name = string.Format ("PA({0})", AccountId),
-                LocalStateType = typeof(Lst),
-                LocalEventType = typeof(PAEvt),
-                TransTable = new[] {
+                LocalStateType = typeof (Lst),
+                LocalEventType = typeof (PAEvt),
+                TransTable = new [] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new [] {
@@ -295,7 +297,7 @@ namespace NachoCore
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
                         }
                     },
-                    new Node { 
+                    new Node {
                         State = (uint)Lst.DevTokW,
                         Drop = new [] {
                             (uint)PAEvt.E.CliTok,
@@ -606,7 +608,7 @@ namespace NachoCore
             PostEvent (SmEvt.E.Success, mnemonic);
         }
 
-        public static string SafeToBase64 (byte[] bytes)
+        public static string SafeToBase64 (byte [] bytes)
         {
             if (null == bytes) {
                 return null;
@@ -629,7 +631,7 @@ namespace NachoCore
         private static PingerResponse ParsePingerResponse (NcHttpResponse httpResponse)
         {
             NcAssert.NotNull (httpResponse);
-            byte[] contentBytes = httpResponse.GetContent ();
+            byte [] contentBytes = httpResponse.GetContent ();
             string jsonResponse = (null != contentBytes && contentBytes.Length > 0) ? Encoding.UTF8.GetString (contentBytes) : null;
             if (string.IsNullOrEmpty (jsonResponse)) {
                 return null;
@@ -706,7 +708,7 @@ namespace NachoCore
             // TODO - maybe turn these to debug logs once ping stablizes??
             Log.Info (Log.LOG_PUSH, "[PA] start session starts: client_id={0}, context={1}",
                 NcApplication.Instance.ClientId, ClientContext);
-            
+
             var clientId = NcApplication.Instance.ClientId;
             if (null == clientId) {
                 PostEvent (PAEvt.E.CliTokLoss, "START_NO_CLI");
@@ -807,7 +809,7 @@ namespace NachoCore
                 SessionToken = response.Token;
                 DebugSessionToken = HashHelper.Sha256 (SessionToken).Substring (0, 8);
                 ClearRetry ();
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Status = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistArmed),
                     Account = Owner.Account,
                 });
@@ -827,7 +829,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_PUSH, "[PA] defer session starts: client_id={0}, context={1}, token={2}",
                 NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
-            
+
             var clientId = NcApplication.Instance.ClientId;
             if (String.IsNullOrEmpty (clientId) ||
                 String.IsNullOrEmpty (ClientContext) ||
@@ -1064,7 +1066,7 @@ namespace NachoCore
             ResetTimeout (timeoutAction);
             HttpClient.SendRequest (request, (MaxTimeoutMsec / 1000),
                 (response, token) => {
-                    byte[] contentBytes = response.GetContent ();
+                    byte [] contentBytes = response.GetContent ();
                     string content = null != contentBytes ? Encoding.UTF8.GetString (contentBytes) : null;
                     if (HttpStatusCode.OK == response.StatusCode) {
                         Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
