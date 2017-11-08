@@ -574,7 +574,7 @@ class IOSBuilder(object):
             profiles = dict()
             profiles[self.config.iOS.NachoSigningOnly.get('BundleId', self.config.iOS.BundleId)] = self.config.iOS.NachoSigningOnly.get('ProvisioningProfile')
             profiles[self.config.iOS.NachoSigningOnly.get('ShareBundleId', self.config.iOS.ShareBundleId)] = self.config.iOS.NachoSigningOnly.get('ShareProvisioningProfile')
-            profiles[self.config.iOS.NachoSigningOnly.get('CallerIdBundleId', self.config.iOS.BundleId)] = self.config.iOS.NachoSigningOnly.get('CallerIdProvisioningProfile')
+            profiles[self.config.iOS.NachoSigningOnly.get('CallerIdBundleId', self.config.iOS.CallerIdBundleId)] = self.config.iOS.NachoSigningOnly.get('CallerIdProvisioningProfile')
             options['provisioningProfiles'] = profiles
             options['signingCertificate'] = 'iOS Distribution'
             options['signingStyle'] = 'manual'
