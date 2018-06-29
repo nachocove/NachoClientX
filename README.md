@@ -35,21 +35,20 @@ Next up is configuring the Android SDK.
 
 1. Open Visual Studio
 2. Go to Tools > SDK Manager
-3. Select the following under Platforms (TODO: review this list and build scripts, we shouldn't need them all)
-    - Android SDK Platform 25
-    - Android SDK Platform 23
-    - Android SDK Platform 21
-    - Android SDK Platform 19
-    - Android SDK Platform 15
-    - Android SDK Platform 10
-4. Select the following under Tools (TODO: review this list and build scripts, try to avoid version number specifics)
-    - Android SDK Tools 25.2.5
+3. Select the following under Platforms (as of June 2018, if not installed, Visual Studio will prompt to install on project open)
+    - Android SDK Platform 25 (aka Android 7.1 Nougat)
+    - Android SDK Platform 19 (aka Android 4.4 KitKat)
+    - Android SDK Platform 15 (aka Android 4.0.3 Ice Cream Sandwich)
+    - Android SDK Platform 10 (aka Android 2.3 Gingerbread)
+4. Select the following under Tools (most should already be checked, but verify each)
+    - Android SDK Tools
     - Android SDK Platform Tools
-    - Android SDK Build Tools 25.0.2
+    - Android SDK Build Tools 25.0.2*
     - Android Emulator
     - NDK
     - Extras > Android Support Repository
 
+\* Version is hard-coded by TokenAutoComplete, would be nice to remove exact version dependency
 
 Configuring your env
 --------------------
@@ -58,7 +57,7 @@ A few build scripts need to know where the android NDK is (TODO: see if we can e
 
 So, add something like the following line to your .bash_profile or .bashrc file:
 
-    export NDK=/Users/yourname/Library/Developer/Xamarin/android-ndk/android-ndk-r14b
+    export NDK=/Users/yourname/Library/Developer/Xamarin/android-sdk-macosx/ndk-bundle
 
 This is a typical location where Visual Studio installs the android ndk, but it may not be correct for all
 installations.  Be sure to find the path yourself.
