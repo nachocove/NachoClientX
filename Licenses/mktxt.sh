@@ -1,6 +1,7 @@
 #! /bin/bash
 
-LIST="MimeKit \
+LIST="NachoClientX \
+MimeKit \
     WbXML \
     bc-csharp \
     Antlr \
